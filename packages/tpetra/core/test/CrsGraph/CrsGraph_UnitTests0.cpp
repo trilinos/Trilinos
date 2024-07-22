@@ -75,6 +75,8 @@ namespace { // (anonymous)
   double errorTolSlack = 1e+1;
   std::string filedir;
 
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+
 #define STD_TESTS(graph) \
   { \
     auto STCOMM = graph.getComm(); \
@@ -120,7 +122,6 @@ namespace { // (anonymous)
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
 
     // Create a contiguous Map to use as the graph's row Map.
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t numLocal = 10;
     const GO indexBase = 0;
     RCP<const map_type> map =
@@ -185,7 +186,6 @@ namespace { // (anonymous)
       using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
       using map_type = Tpetra::Map<LO, GO, Node>;
 
-      const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
       // get a comm
       RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
       const int myRank = comm->getRank();
@@ -223,7 +223,6 @@ namespace { // (anonymous)
     typedef Tpetra::CrsGraph<LO, GO, Node>  GRPH;
     using map_type = Tpetra::Map<LO, GO, Node>;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     // create a Map with numLocal entries per node
@@ -272,7 +271,6 @@ namespace { // (anonymous)
     using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
@@ -317,7 +315,6 @@ namespace { // (anonymous)
     using map_type = Tpetra::Map<LO, GO, Node>;
 
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
@@ -417,7 +414,6 @@ namespace { // (anonymous)
     using map_type = Tpetra::Map<LO, GO, Node>;
 
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
@@ -449,7 +445,6 @@ namespace { // (anonymous)
     out << "CrsGrap EmptyGraphAlloc0 test" << endl;
     Teuchos::OSTab tab0 (out);
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -566,7 +561,6 @@ namespace { // (anonymous)
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     using map_type = Tpetra::Map<LO, GO, Node>;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -608,7 +602,6 @@ namespace { // (anonymous)
     using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int numProcs = comm->getSize();
@@ -666,7 +659,6 @@ namespace { // (anonymous)
     using std::endl;
     using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Tpetra::CrsGraph: Test insert into nonowned rows" << endl;
     Teuchos::OSTab tab0 (out);
@@ -841,6 +833,61 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ConstrFromRowPtrsAndLocalInds, LO, GO , Node )
+  {
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO, Node>;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+
+    using row_ptrs_device_view_type = typename crs_graph_type::row_ptrs_device_view_type;
+    using local_inds_dualv_type = typename crs_graph_type::local_inds_dualv_type;
+    using local_inds_wdv_type = typename crs_graph_type::local_inds_wdv_type;
+
+    // Get a communicator
+    const auto comm = Tpetra::getDefaultComm();
+
+    // Create a Map with one row per process
+    constexpr size_t numLocal = 1;
+    const auto map = Teuchos::make_rcp<map_type>(INVALID, numLocal, 0, comm);
+
+    // Create a diagonal graph by creating the local row pointer and column indices arrays and passing them
+    // to the CrsGraph constructor that takes these arrays as arguments. Note that the CrsGraph class stores
+    // the local column indices array as a wrapped dual view. Here, we construct this local column indices array
+    // as a wrapped dual view and pass it as such to the CrsGraph constructor.
+    const typename row_ptrs_device_view_type::non_const_type rowPointers(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row pointers"), 2);
+    {
+      const auto rowPointers_h = Kokkos::create_mirror_view(Kokkos::view_alloc(Kokkos::WithoutInitializing), rowPointers);
+      rowPointers_h(0) = 0; rowPointers_h(1) = 1;
+      Kokkos::deep_copy(rowPointers, rowPointers_h);
+    }
+    
+    local_inds_wdv_type columnIndices;
+    {
+      local_inds_dualv_type columnIndices_("column indices", 1);
+      columnIndices = local_inds_wdv_type(columnIndices_);
+    }
+
+    const auto crs_graph = Teuchos::make_rcp<crs_graph_type>(
+      rowPointers,
+      columnIndices,
+      map,
+      map,
+      Teuchos::null,
+      Teuchos::null,
+      Teuchos::null,
+      Teuchos::null
+    );
+
+    // Check that after the construction of the CrsGraph, the use counts of the host and device views of the local
+    // column indices wrapped dual view are equal. This property is key to ensure that the sync mechanism of the
+    // wrapped dual view works correctly.
+    TEST_EQUALITY(columnIndices.host_view_use_count(), columnIndices.device_view_use_count());
+
+    // Check that the right arrays are stored in the constructed CrsGraph instance. Note that these checks also
+    // check that we can call getHostView() and getDeviceView() on the local column indices wrapped dual view.
+    TEST_ASSERT(crs_graph->getLocalRowPtrsDevice() == rowPointers);
+    TEST_ASSERT(crs_graph->getLocalIndicesHost() == columnIndices.getHostView(Tpetra::Access::ReadOnly));
+    TEST_ASSERT(crs_graph->getLocalIndicesDevice() == columnIndices.getDeviceView(Tpetra::Access::ReadOnly));
+  }
 
 //
 // INSTANTIATIONS
@@ -849,16 +896,17 @@ namespace { // (anonymous)
 // Tests to build and run.  We will instantiate them over all enabled
 // LocalOrdinal (LO), GlobalOrdinal (GO), and Node (NODE) types.
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0,   LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1,   LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation,   LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst,           LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals,          LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,         LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile,  LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,     LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs,            LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0,              LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1,              LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation,              LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst,                      LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs,            LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals,                     LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,                    LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile,             LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,                LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs,                       LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ConstrFromRowPtrsAndLocalInds, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
