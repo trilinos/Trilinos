@@ -232,7 +232,8 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
                  bool scaleResidualHist,
                  bool solvePreconditioned,
                  int maxIts,
-                 double tol) {
+                 double tol,
+                 bool computeCondEst) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -337,6 +338,9 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
       }
 
+      std::string belosTypeUpper(belosType);
+      std::transform(belosTypeUpper.begin(), belosTypeUpper.end(), belosTypeUpper.begin(), ::toupper);
+
       // Belos parameter list
       RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
       belosList->set("Maximum Iterations", maxIts);  // Maximum number of iterations allowed
@@ -346,8 +350,12 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
       belosList->set("Output Style", Belos::Brief);
       if (!scaleResidualHist)
         belosList->set("Implicit Residual Scaling", "None");
+      if (computeCondEst && (belosTypeUpper == "CG" || belosTypeUpper == "PSEUDOBLOCK CG"))
+        belosList->set("Estimate Condition Number", true);
 
       int numIts;
+      Scalar conditionNumberEstimate = zero;
+      Teuchos::ArrayRCP<typename STS::magnitudeType> eigenvalueEstimates;
       Belos::ReturnType ret = Belos::Unconverged;
 
       constexpr bool verbose = false;
@@ -393,6 +401,13 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         ret    = solver->solve();
         numIts = solver->getNumIters();
 
+        if ((belosTypeUpper == "CG" || belosTypeUpper == "PSEUDOBLOCK CG") &&
+            belosList->isParameter("Estimate Condition Number") &&
+            belosList->get<bool>("Estimate Condition Number")) {
+          conditionNumberEstimate = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, tMV, tOP>>(solver)->getConditionEstimate();
+          eigenvalueEstimates     = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, tMV, tOP>>(solver)->getEigenEstimates();
+        }
+
       } catch (std::invalid_argument&) {
         // Construct a Belos LinearProblem object
         RCP<Belos::LinearProblem<SC, MV, OP>> belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
@@ -411,10 +426,22 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         // Perform solve
         ret    = solver->solve();
         numIts = solver->getNumIters();
+
+        if ((belosTypeUpper == "CG" || belosTypeUpper == "PSEUDOBLOCK CG") &&
+            belosList->isParameter("Estimate Condition Number") &&
+            belosList->get<bool>("Estimate Condition Number")) {
+          conditionNumberEstimate = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, MV, OP>>(solver)->getConditionEstimate();
+          eigenvalueEstimates     = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, MV, OP>>(solver)->getEigenEstimates();
+        }
       }
 
       // Get the number of iterations for this solve.
       out << "Number of iterations performed for this solve: " << numIts << std::endl;
+
+      if (conditionNumberEstimate != zero) {
+        out << "Condition number estimate: " << conditionNumberEstimate << std::endl;
+        out << "Eigenvalue estimates: " << eigenvalueEstimates().toString() << std::endl;
+      }
 
       // Check convergence
       if (ret != Belos::Converged)
