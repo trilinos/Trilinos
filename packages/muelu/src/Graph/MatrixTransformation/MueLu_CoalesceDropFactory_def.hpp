@@ -58,34 +58,47 @@ namespace MueLu {
 namespace Details {
 template <class real_type, class LO>
 struct DropTol {
-  KOKKOS_INLINE_FUNCTION //NEW
   DropTol()               = default;
-  KOKKOS_INLINE_FUNCTION //NEW
   DropTol(DropTol const&) = default;
-  KOKKOS_INLINE_FUNCTION //NEW
   DropTol(DropTol&&)      = default;
 
   DropTol& operator=(DropTol const&) = default;
   DropTol& operator=(DropTol&&)      = default;
 
-  KOKKOS_INLINE_FUNCTION //NEW
   DropTol(real_type val_, real_type diag_, LO col_, bool drop_)
     : val{val_}
     , diag{diag_}
     , col{col_}
     , drop{drop_} {}
 
-  real_type val{0};
-  real_type diag{0};
-  LO col{-1};
-  //NEW Can't run these host functions on device
-  //real_type val{Teuchos::ScalarTraits<real_type>::zero()};
-  //real_type diag{Teuchos::ScalarTraits<real_type>::zero()};
-  //LO col{Teuchos::OrdinalTraits<LO>::invalid()};
+  real_type val{Teuchos::ScalarTraits<real_type>::zero()};
+  real_type diag{Teuchos::ScalarTraits<real_type>::zero()};
+  LO col{Teuchos::OrdinalTraits<LO>::invalid()};
   bool drop{true};
 
   // CMS: Auxillary information for debugging info
   //      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
+};
+
+template <class real_type, class LO>
+struct DropTolKokkos {
+  KOKKOS_INLINE_FUNCTION //NEW
+  DropTolKokkos()               = default;
+  KOKKOS_INLINE_FUNCTION //NEW
+  DropTolKokkos(DropTolKokkos const&) = default;
+  KOKKOS_INLINE_FUNCTION //NEW
+  DropTolKokkos(DropTolKokkos&&)      = default;
+
+  DropTolKokkos& operator=(DropTolKokkos const&) = default;
+  DropTolKokkos& operator=(DropTolKokkos&&)      = default;
+
+  KOKKOS_INLINE_FUNCTION //NEW
+  DropTolKokkos(LO col_, bool drop_)
+    : col{col_}
+    , drop{drop_} {}
+
+  LO col{-1};
+  LO drop{true};
 };
 }  // namespace Details
 
@@ -729,7 +742,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 		using ExecSpace = typename Node::execution_space;
 		using TeamPol = Kokkos::TeamPolicy<ExecSpace>;
 		using TeamMem = typename TeamPol::member_type;
-		using DropTol = Details::DropTol<real_type, LO>;
+		using DropTolKokkos = Details::DropTolKokkos<real_type, LO>;
 		
 		//move from host to device
 		ArrayView<const SC>  ghostedDiagValsArrayView = ghostedDiagVals.view(ghostedDiagVals.lowerOffset(), ghostedDiagVals.size());
@@ -741,7 +754,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 		
 		int algorithm = classicalAlgo;
 		Kokkos::View<LO*, ExecSpace>rownnzView("rownnzView", A_device.numRows());
-		auto drop_views = Kokkos::View<DropTol*, ExecSpace>("drop_views", A_device.nnz());
+		auto drop_views = Kokkos::View<DropTolKokkos*, ExecSpace>("drop_views", A_device.nnz());
 		//stackedTimer->stop("init");
 
 		//stackedTimer->start("loop");
@@ -752,74 +765,103 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
 			size_t n = 0;
 			auto drop_view = Kokkos::subview(drop_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row+1)));
+			
 			//find magnitudes
 			Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, (LO)nnz), [&] (const LO colID, size_t &count) {
 				LO col = rowView.colidx(colID);
 				if(row == col) {
-					drop_view(colID) = DropTol(0, 1, colID, false);
+					drop_view(colID) = DropTolKokkos(colID, true);
 					count++;
 				}
 				//Don't aggregate boundaries
 				else if(!boundaryNodesDevice(colID)) {
-					typename STS::magnitudeType aiiajj = static_cast<SC>(std::fabs(static_cast<double>(threshold * threshold * ghostedDiagValsView(col) * ghostedDiagValsView(row))));  // eps^2*|a     _ii|*|a_jj|
-					typename STS::magnitudeType aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(colID) * rowView.value(colID))));                                            // |a_i     j|^2
-					drop_view(colID) = DropTol(aij, aiiajj, colID, false);
+					drop_view(colID) = DropTolKokkos(colID, false);
 					count++;
 				}
 			}, n);
+
+			size_t dropStart = n;
 			if (algorithm == unscaled_cut) {
-				Kokkos::Experimental::sort_team(teamMember, drop_view, [](DropTol const& a, DropTol const& b) {
-					return a.val > b.val;
+				Kokkos::Experimental::sort_team(teamMember, drop_view, [=](DropTolKokkos const& x, DropTolKokkos const& y) {
+					if(x.drop || y.drop) {
+						return x.drop < y.drop;
+					}
+					else {
+						typename STS::magnitudeType x_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(x.col) * rowView.value(x.col))));                                            // |a_i     j|^2
+						typename STS::magnitudeType y_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(y.col) * rowView.value(y.col))));                                            // |a_i     j|^2
+						return x_aij > y_aij;
+					}
 				});
 
 				//find index where dropping starts
-				size_t dropStart;
 				Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, n), [=](size_t i, size_t& min) {
 					auto const& x = drop_view(i - 1);
 					auto const& y = drop_view(i);
-					auto a = x.val;
-					auto b = y.val;
-					if(a > realThreshold * b) {
+					typename STS::magnitudeType x_aij = 0;
+					typename STS::magnitudeType y_aij = 0;
+					if(!x.drop) {
+						x_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(x.col) * rowView.value(x.col))));                                            // |a_i     j|^2
+					}
+					if(!y.drop) {
+						y_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(y.col) * rowView.value(y.col))));                                            // |a_i     j|^2
+					}
+
+					if(x_aij > realThreshold * y_aij) {
 						if(i < min) {
 							min = i;
 						}
 					}
 				}, Kokkos::Min<size_t>(dropStart));
-
-				if(dropStart < n) {
-					Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, n), [=](size_t i) {
-						drop_view(i).drop = true;
-					});
-				}
           	 	} else if (algorithm == scaled_cut) {
-				Kokkos::Experimental::sort_team(teamMember, drop_view, [](DropTol const& a, DropTol const& b) {
-					return a.val / a.diag > b.val / b.diag;
+				Kokkos::Experimental::sort_team(teamMember, drop_view, [=](DropTolKokkos const& x, DropTolKokkos const& y) {
+					if(x.drop || y.drop) {
+						return x.drop < y.drop;
+					}
+					else {
+						typename STS::magnitudeType x_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(x.col) * rowView.value(x.col))));                                            // |a_i     j|^2
+						typename STS::magnitudeType y_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(y.col) * rowView.value(y.col))));                                            // |a_i     j|^2
+						typename STS::magnitudeType x_aiiajj = static_cast<SC>(std::fabs(static_cast<double>(threshold * threshold * ghostedDiagValsView(rowView.colidx(x.col)) * ghostedDiagValsView(row))));  // eps^2*|a     _ii|*|a_jj|
+						typename STS::magnitudeType y_aiiajj = static_cast<SC>(std::fabs(static_cast<double>(threshold * threshold * ghostedDiagValsView(rowView.colidx(y.col)) * ghostedDiagValsView(row))));  // eps^2*|a     _ii|*|a_jj|
+						return x_aij / x_aiiajj > y_aij / y_aiiajj;
+					}
 				});
 
+
 				//find index where dropping starts
-				size_t dropStart;
 				Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, n), [=](size_t i, size_t& min) {
 					auto const& x = drop_view(i - 1);
 					auto const& y = drop_view(i);
-					auto a = x.val / x.diag;
-					auto b = y.val / y.diag;
-					if(a > realThreshold * b) {
+					typename STS::magnitudeType x_val = 0;
+					typename STS::magnitudeType y_val = 0;
+					if(!x.drop) {
+						typename STS::magnitudeType x_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(x.col) * rowView.value(x.col))));                                            // |a_i     j|^2
+						typename STS::magnitudeType x_aiiajj = static_cast<SC>(std::fabs(static_cast<double>(threshold * threshold * ghostedDiagValsView(rowView.colidx(x.col)) * ghostedDiagValsView(row))));  // eps^2*|a     _ii|*|a_jj|
+						x_val = x_aij / x_aiiajj;
+					}
+					if(!y.drop) {
+						typename STS::magnitudeType y_aij    = static_cast<SC>(std::fabs(static_cast<double>(rowView.value(y.col) * rowView.value(y.col))));                                            // |a_i     j|^2
+						typename STS::magnitudeType y_aiiajj = static_cast<SC>(std::fabs(static_cast<double>(threshold * threshold * ghostedDiagValsView(rowView.colidx(y.col)) * ghostedDiagValsView(row))));  // eps^2*|a     _ii|*|a_jj|
+						y_val = y_aij / y_aiiajj;
+					}
+
+					if(x_val > realThreshold * y_val) {
 						if(i < min) {
 							min = i;
 						}
 					}
 				}, Kokkos::Min<size_t>(dropStart));
-
-				if(dropStart < n) {
-					Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, n), [=](size_t i) {
-						drop_view(i).drop = true;
-					});
-				}
 	  	 	}
-			Kokkos::Experimental::sort_team(teamMember, drop_view, [](DropTol const& a, DropTol const& b) {
-				return a.col < b.col;
+
+			if(dropStart < n) {
+				Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, n), [=](size_t i) {
+					drop_view(i).drop = true;
+				});
+			}
+
+			Kokkos::Experimental::sort_team(teamMember, drop_view, [](DropTolKokkos const& a, DropTolKokkos const& b) {
+		 		return a.col < b.col;
 			});
-		 
+
 		  	LO rownnz = 0;
 		  	GO rowDropped = 0;
 		  	Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, n), [=](const size_t idxID, LO& keep, GO& drop) {
