@@ -28,7 +28,6 @@
 // ************************************************************************
 // @HEADER
 
-
 #ifndef __TrilinosCouplings_Pamgen_Utils_hpp_
 #define __TrilinosCouplings_Pamgen_Utils_hpp_
 #include <iostream>
