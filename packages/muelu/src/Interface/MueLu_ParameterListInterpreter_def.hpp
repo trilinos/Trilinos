@@ -26,6 +26,7 @@
 
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_ClassicalPFactory.hpp"
@@ -54,6 +55,7 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_ReitzingerPFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_ScaledNullspaceFactory.hpp"
@@ -131,6 +133,9 @@ ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterLi
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), comm);
   SetParameterList(paramList);
 }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~ParameterListInterpreter() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {

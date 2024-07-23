@@ -28,6 +28,7 @@ template <class Scalar,
 class PerfModels {
  public:
   PerfModels();
+  ~PerfModels();
 
   /* Single Node tests based upon the STREAM benchmark for measuring memory
    * bandwith and computation rate. These processes compute either the addition

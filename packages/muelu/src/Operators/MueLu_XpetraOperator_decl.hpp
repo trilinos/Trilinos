@@ -34,11 +34,10 @@ class XpetraOperator : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdin
   //@{
 
   //! Constructor
-  XpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H)
-    : Hierarchy_(H) {}
+  XpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H);
 
   //! Destructor.
-  virtual ~XpetraOperator() {}
+  virtual ~XpetraOperator();
 
   //@}
 
@@ -60,7 +59,7 @@ class XpetraOperator : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdin
              Scalar /* beta */     = Teuchos::ScalarTraits<Scalar>::one()) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
-  bool hasTransposeApply() const { return false; }
+  bool hasTransposeApply() const;
 
   //! Compute a residual R = B - (*this) * X
   void residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
@@ -71,7 +70,7 @@ class XpetraOperator : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdin
   //@{
 
   //! Direct access to the underlying MueLu::Hierarchy.
-  RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const { return Hierarchy_; }
+  RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const;
 
   //@}
 

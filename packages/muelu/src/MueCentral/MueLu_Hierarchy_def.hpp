@@ -94,6 +94,9 @@ Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~Hierarchy() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddLevel(const RCP<Level>& level) {
   int levelID = LastLevelID() + 1;  // ID of the inserted level
 
