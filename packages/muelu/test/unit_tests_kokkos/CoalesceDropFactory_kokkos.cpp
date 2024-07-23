@@ -919,6 +919,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
     expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, 0.0,
                                                              0.0, 2.0, reuseGraph));
     expectedBoundaryNodesVector.push_back({true, true});
+
+    // test case 9
+    Teuchos::ParameterList params9 = Teuchos::ParameterList(params0);
+    params9.set("aggregation: drop scheme", "classical");
+    params9.set("aggregation: classical algo", "unscaled cut");
+    params9.set("aggregation: drop tol", 3.6);
+    params.push_back(params9);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, -1.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({false, false});
   }
 
   for (size_t testNo = 0; testNo < params.size(); ++testNo) {
