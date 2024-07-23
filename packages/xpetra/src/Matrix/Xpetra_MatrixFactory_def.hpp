@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
 #ifndef XPETRA_MATRIXFACTORY_DEF_HPP
