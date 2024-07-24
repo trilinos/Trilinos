@@ -404,7 +404,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   int fieldRank = Intrepid2::getFieldRank(range_basis->getFunctionSpace());
   TEUCHOS_ASSERT((fieldRank == 0) || (fieldRank == 1));
 
-  auto entryFilterTol = 100*Teuchos::ScalarTraits<typename STS::magnitudeType>::eps();
+  auto entryFilterTol = 1e5*Teuchos::ScalarTraits<typename STS::magnitudeType>::eps();
 
   // range dof coordinates
   range_basis->getDofCoords(range_dofCoords_d);
