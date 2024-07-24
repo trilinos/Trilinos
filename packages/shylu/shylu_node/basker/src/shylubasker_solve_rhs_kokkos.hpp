@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_SOLVE_RHS_KOKKOS_HPP
 #define SHYLUBASKER_SOLVE_RHS_KOKKOS_HPP
 //This file contains the kokkos functors needed for shylubasker_solve_rhs.hpp
