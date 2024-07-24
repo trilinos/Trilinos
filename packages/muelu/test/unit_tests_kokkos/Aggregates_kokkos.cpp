@@ -754,16 +754,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
 
   level.Request(*aggFact);
   aggFact->Build(level);
+  auto graph                 = level.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
   RCP<Aggregates> aggregates = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
   Array<LO> aggPtr;
   Array<LO> aggNodes;
   Array<LO> unaggregated;
 
+  auto boundaryNodes   = graph->GetBoundaryNodeMap();
+  auto boundaryNodes_h = Kokkos::create_mirror_view(boundaryNodes);
+  Kokkos::deep_copy(boundaryNodes_h, boundaryNodes);
+
+  for (LocalOrdinal i = 0; i < boundaryNodes_h.extent_int(0); ++i) {
+    TEST_EQUALITY(boundaryNodes_h(i), false);
+  }
+
   typename Aggregates::aggregates_sizes_type::const_type aggSizes = aggregates->ComputeAggregateSizes(true);
 
   auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView(Xpetra::Access::ReadOnly);
   for (auto i = 0; i < (nx / 2 * ny / 2); i++) {
-    TEST_EQUALITY(vertex2AggId(i, 0) != MUELU_UNAGGREGATED, true);  // check that all nodes are aggregated
+    TEST_INEQUALITY(vertex2AggId(i, 0), MUELU_UNAGGREGATED);  // check that all nodes are aggregated
+    TEST_INEQUALITY(graph->getNeighborVertices(i).length, 1);
   }
 
   // Repeat with greedy Dirichlet
@@ -781,20 +791,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
 
   levelGreedyAndNoPreserve.Request("Aggregates", aggFact.get());
   levelGreedyAndNoPreserve.Request("UnAmalgamationInfo", amalgFact.get());
+  levelGreedyAndNoPreserve.Request("Graph", dropFact.get());
+
+  aggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(false));
 
   levelGreedyAndNoPreserve.Request(*aggFact);
   aggFact->Build(levelGreedyAndNoPreserve);
+  graph = levelGreedyAndNoPreserve.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
+  graph->print(out, MueLu::Debug);
   aggregates = levelGreedyAndNoPreserve.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
-  aggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(false));
+
+  boundaryNodes   = graph->GetBoundaryNodeMap();
+  boundaryNodes_h = Kokkos::create_mirror_view(boundaryNodes);
+  Kokkos::deep_copy(boundaryNodes_h, boundaryNodes);
+
+  for (LocalOrdinal i = 0; i < boundaryNodes_h.extent_int(0); ++i) {
+    if (i == 2) {
+      TEST_EQUALITY(boundaryNodes_h(i), true);
+      TEST_EQUALITY(graph->getNeighborVertices(i).length, 1);
+    } else {
+      TEST_EQUALITY(boundaryNodes_h(i), false);
+      TEST_INEQUALITY(graph->getNeighborVertices(i).length, 1);
+    }
+  }
 
   typename Aggregates::aggregates_sizes_type::const_type aggSizesGreedy = aggregates->ComputeAggregateSizes(true);
-  // There should be the same number of aggregates in the greedy dirichlet case as in the standard case
-  // though note the aggregates will be smaller in the greedy dirirchlet case.
-  // This may not be true for all problem setups, but is true for the setup in this test case.
-  TEST_EQUALITY(aggSizesGreedy.extent(0) == aggSizes.extent(0), true)
 
   vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView(Xpetra::Access::ReadOnly);
-  TEST_EQUALITY(vertex2AggId(2, 0) == MUELU_UNAGGREGATED, true);  // check that the node with the Dof flagged as dirichlet is unaggregated
+  for (auto i = 0; i < (nx / 2 * ny / 2); i++) {
+    if (i == 2) {
+      TEST_EQUALITY(vertex2AggId(i, 0), MUELU_UNAGGREGATED);  // check that the node with the Dof flagged as dirichlet is unaggregated
+    } else {
+      TEST_INEQUALITY(vertex2AggId(i, 0), MUELU_UNAGGREGATED);
+    }
+  }
 
   // Repeat with greedy Dirichlet and preserve Dirichlet points
   Level levelGreedyAndPreserve;
@@ -816,7 +846,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
 
   levelGreedyAndPreserve.Request(*aggFact);
   aggFact->Build(levelGreedyAndPreserve);
+  graph      = levelGreedyAndPreserve.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
   aggregates = levelGreedyAndPreserve.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
+
+  boundaryNodes   = graph->GetBoundaryNodeMap();
+  boundaryNodes_h = Kokkos::create_mirror_view(boundaryNodes);
+  Kokkos::deep_copy(boundaryNodes_h, boundaryNodes);
+
+  for (LocalOrdinal i = 0; i < boundaryNodes_h.extent_int(0); ++i) {
+    if (i == 2) {
+      TEST_EQUALITY(boundaryNodes_h(i), true);
+      TEST_EQUALITY(graph->getNeighborVertices(i).length, 1);
+    } else {
+      TEST_EQUALITY(boundaryNodes_h(i), false);
+      TEST_INEQUALITY(graph->getNeighborVertices(i).length, 1);
+    }
+  }
 
   typename Aggregates::aggregates_sizes_type::const_type aggSizesGreedyPreserve = aggregates->ComputeAggregateSizes(true);
   // check that dirichlet aggs are preserved
@@ -826,7 +871,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
 
   vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView(Xpetra::Access::ReadOnly);
   for (auto i = 0; i < (nx / 2 * ny / 2); i++) {
-    TEST_EQUALITY(vertex2AggId(i, 0) != MUELU_UNAGGREGATED, true);  // check that all nodes are aggregated
+    TEST_INEQUALITY(vertex2AggId(i, 0), MUELU_UNAGGREGATED);  // check that all nodes are aggregated
   }
 }
 
