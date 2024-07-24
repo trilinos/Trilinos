@@ -62,7 +62,9 @@
 
 #if defined(XPETRA_ENABLE_DEPRECATED_CODE)
 #ifdef __GNUC__
+#if defined(Xpetra_SHOW_DEPRECATED_WARNINGS)
 #warning "The header file Trilinos/packages/xpetra/src/CrsGraph/Xpetra_EpetraCrsGraph.hpp is deprecated."
+#endif
 #endif
 #else
 #error "The header file Trilinos/packages/xpetra/src/CrsGraph/Xpetra_EpetraCrsGraph.hpp is deprecated."
