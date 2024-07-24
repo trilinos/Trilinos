@@ -143,6 +143,7 @@ constexpr const std::string_view TIME_KOKKOS_DEEP_COPY_VERBOSE2 =
 constexpr const std::string_view TIME_KOKKOS_FENCE = "TPETRA_TIME_KOKKOS_FENCE";
 constexpr const std::string_view TIME_KOKKOS_FUNCTIONS =
     "TPETRA_TIME_KOKKOS_FUNCTIONS";
+constexpr const std::string_view ALLOW_RELAXED_SYNCHRONIZATION = "TPETRA_ALLOW_RELAXED_SYNCHRONIZATION";
 
 // construct an std::array of string_view with any number of provided
 // string_views
@@ -160,7 +161,8 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     USE_TEUCHOS_TIMERS, USE_KOKKOS_PROFILING, DEBUG, VERBOSE, TIMING,
     HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL, OVERLAP,
     SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
-    TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
+    TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS,
+    ALLOW_RELAXED_SYNCHRONIZATION);
 
 // clang-format off
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
@@ -761,6 +763,16 @@ bool Behavior::timeKokkosFunctions() {
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_FUNCTIONS,
+      defaultValue);
+}
+
+bool Behavior::allowRelaxedSynchronizationSemantics() {
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariable(
+      value_, initialized_, BehaviorDetails::ALLOW_RELAXED_SYNCHRONIZATION,
       defaultValue);
 }
 

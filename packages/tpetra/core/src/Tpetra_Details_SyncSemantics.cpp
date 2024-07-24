@@ -39,6 +39,8 @@
 // @HEADER
 */
 #include "Tpetra_Details_SyncSemantics.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+
 #include <stdexcept>
 
 namespace Tpetra {
@@ -51,19 +53,23 @@ namespace Details {
 
 
   void enableRelaxedSyncs() {
-    if(SyncSematicsDetails::useRelaxedSyncs)
-      throw std::runtime_error("ERROR: Tpetra::Details::enableRelaxedSyncs(): Cannot call twice in a row");
-
-    SyncSematicsDetails::useRelaxedSyncs = true;
-    Kokkos::fence("Tpetra::enableRelaxedSyncs");
+    if (Behavior::allowRelaxedSynchronizationSemantics()) {
+      if(SyncSematicsDetails::useRelaxedSyncs)
+	throw std::runtime_error("ERROR: Tpetra::Details::enableRelaxedSyncs(): Cannot call twice in a row");
+      
+      SyncSematicsDetails::useRelaxedSyncs = true;
+      Kokkos::fence("Tpetra::enableRelaxedSyncs");
+    }
   }
 
   void disableRelaxedSyncs() {
-    if(!SyncSematicsDetails::useRelaxedSyncs)
-      throw std::runtime_error("ERROR: Tpetra::Details::disableRelaxedSyncs(): Cannot call twice in a row");
-
-    SyncSematicsDetails::useRelaxedSyncs = false;
-    // Kokkos::fence("Tpetra::disableRelaxedSyncs");
+    if (Behavior::allowRelaxedSynchronizationSemantics()) {
+      if(!SyncSematicsDetails::useRelaxedSyncs)
+	throw std::runtime_error("ERROR: Tpetra::Details::disableRelaxedSyncs(): Cannot call twice in a row");
+      
+      SyncSematicsDetails::useRelaxedSyncs = false;
+      // Kokkos::fence("Tpetra::disableRelaxedSyncs");
+    }
   }
 
   bool areRelaxedSyncsEnabled() {

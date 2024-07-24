@@ -327,6 +327,12 @@ public:
 
   /// \brief Search the environment for TPETRA_ variables and reject unrecognized ones
   static void reject_unrecognized_env_vars();
+
+  /// \brief Allows/Bans the use of relaxed synchronization semantics
+  ///
+  /// This is *not* allowed by default.  You may control this at run time via the 
+  /// <tt>TPETRA_ALLOW_RELAXED_SYNCHRONIZATION</tt> environment variable.
+  static bool allowRelaxedSynchronizationSemantics();
 };
 
 
