@@ -18,6 +18,9 @@
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector_@ENSEMBLE_SIZE@_@DEVICE@.hpp"
 #include "Stokhos_Xpetra_MP_Vector.hpp"
 
+#pragma push_macro("HAVE_XPETRA_THYRA")
+#undef HAVE_XPETRA_THYRA
+
 #include "@CLASS_FILE_NAME@_def.hpp"
 
 #define XPETRA_INST_S_LO_GO_N(S, LO, GO, N) \
@@ -26,6 +29,8 @@
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(XPETRA_INST_S_LO_GO_N)
+
+#pragma pop_macro("HAVE_XPETRA_THYRA")
 
 #endif
 

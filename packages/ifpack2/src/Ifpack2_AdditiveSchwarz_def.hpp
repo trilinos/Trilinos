@@ -277,7 +277,7 @@ pointMapFromMeshMap(const Teuchos::RCP<const map_type> & meshMap,const typename 
 }
 
 template <typename MV, typename Map>
-void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const int numVectors, bool initialize)
+void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const size_t numVectors, bool initialize)
 {
   if(!mv_ptr || mv_ptr->getNumVectors() != numVectors) {
     mv_ptr.reset(new MV(map, numVectors, initialize));

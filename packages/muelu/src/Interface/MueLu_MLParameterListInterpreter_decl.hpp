@@ -125,7 +125,7 @@ class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal,
   MLParameterListInterpreter(const std::string& xmlFileName, std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
 
   //! Destructor.
-  virtual ~MLParameterListInterpreter() {}
+  virtual ~MLParameterListInterpreter() = default;
 
   //@}
 

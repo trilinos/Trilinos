@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_CrsGraph

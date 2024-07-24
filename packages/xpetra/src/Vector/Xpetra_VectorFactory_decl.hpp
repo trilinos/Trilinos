@@ -96,6 +96,7 @@ class VectorFactory {
 
     XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
     XPETRA_FACTORY_END;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
 };  // class VectorFactory

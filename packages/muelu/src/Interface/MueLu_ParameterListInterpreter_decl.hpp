@@ -124,7 +124,7 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
   ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
 
   //! Destructor.
-  virtual ~ParameterListInterpreter() {}
+  virtual ~ParameterListInterpreter();
 
   //@}
 

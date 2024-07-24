@@ -25,6 +25,7 @@
 // 
 // ***********************************************************************
 // @HEADER
+
 #include <EpetraExt_AmesosBTFGlobal_LinearProblem.h>
 
 #include <Epetra_Import.h>

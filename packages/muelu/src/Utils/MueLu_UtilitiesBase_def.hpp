@@ -278,8 +278,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
   if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
-    using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-    using device_type       = typename CrsGraph::device_type;
+    using device_type = typename CrsGraph::device_type;
     Kokkos::View<size_t*, device_type> offsets("offsets", rowMap->getLocalNumElements());
     crsOp->getCrsGraph()->getLocalDiagOffsets(offsets);
     crsOp->getCrsMatrix()->getLocalDiagCopy(*diag, offsets);
