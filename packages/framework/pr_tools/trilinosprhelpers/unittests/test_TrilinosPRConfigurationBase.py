@@ -210,9 +210,9 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             source_repo_url="https://github.com/trilinos/Trilinos",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
-            pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
-            genconfig_build_name="rhel7_sems-gnu-7.2.0-openmpi-1.10.1-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
-            dashboard_build_name="gnu-7.2.0-openmpi-1.10.1_release_static_openmp",
+            pullrequest_build_name="Trilinos-pullrequest-gcc",
+            genconfig_build_name="rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
+            dashboard_build_name="gnu-openmpi_release_static",
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_cdash_track="Pull Request",
@@ -257,7 +257,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
 
     def dummy_args_gcc_720(self):
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc"
         return args
 
 
@@ -517,13 +517,12 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     def test_TrilinosPRConfigurationBaseProperty_config_script(self):
         """
         Validate that the property config_script loads properly.
-        Since dummy args is loading the configuration for "Trilinos_pullrequest_gcc_7.2.0"
-        the mapped configuration script should be loading "PullRequestLinuxGCC7.2.0TestingSettings.cmake"
+        Since dummy args is loading the configuration for "Trilinos_pullrequest_gcc"
+        the mapped configuration script should be loading "PullRequestLinuxGCCTestingSettings.cmake"
         """
         args = self.dummy_args()
 
-        # Test the gcc 7.2.0 mapping
-        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         self.assertEqual(pr_config.config_script, "generatedPRFragment.cmake")
 
