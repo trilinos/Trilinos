@@ -309,7 +309,6 @@ public:
        const Kokkos::View<const mag_type*, device_type>& rowNorms,
        const crs_matrix_type& A)
   {
-    using execution_space = typename device_type::execution_space;
     using functor_type = ComputeLocalRowScaledColumnNorms<SC, LO, GO, NT>;
 
     functor_type functor (rowScaledColNorms, rowNorms, A);
