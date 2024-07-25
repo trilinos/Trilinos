@@ -106,12 +106,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
   TEST_EQUALITY(2, H->GetGlobalNumLevels());
 
   // When Kokkos Kernels uses TPLs, some Kokkos::deep_copy in the Kokkos Kernels native implementations are not called.
-#if  defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) \
-  || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) \
-  || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-  constexpr int kkNativeDeepCopies = 0;
-#else
-  constexpr int kkNativeDeepCopies = 8;
+  int kkNativeDeepCopies = 8;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  if constexpr (Node::is_cpu)
+    kkNativeDeepCopies = 0;
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>)
+    kkNativeDeepCopies = 0;
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>)
+    kkNativeDeepCopies = 0;
 #endif
 
   if (Node::is_cpu) {
