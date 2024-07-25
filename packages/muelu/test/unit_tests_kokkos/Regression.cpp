@@ -101,7 +101,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
   else {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), kkNativeDeepCopies + 34);
   }
-#endif // KOKKOS_HAS_SHARED_SPACE
+#endif  // KOKKOS_HAS_SHARED_SPACE
 
   auto X = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(map, 1);
   auto B = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(map, 1);
