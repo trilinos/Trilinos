@@ -180,7 +180,8 @@ template <typename DomainBoxType,
 inline void local_coarse_search_arborx(
     const Kokkos::View<BoxIdent<DomainBoxType, DomainIdentType>*, ExecutionSpace>& localDomain,
     const Kokkos::View<BoxIdent<RangeBoxType, RangeIdentType>*, ExecutionSpace>& localRange,
-    Kokkos::View<IdentIntersection<DomainIdentType, RangeIdentType>*, ExecutionSpace>& searchResults)
+    Kokkos::View<IdentIntersection<DomainIdentType, RangeIdentType>*, ExecutionSpace>& searchResults,
+    ExecutionSpace const& execSpace = ExecutionSpace{})
 {
   using ExecSpace       = ExecutionSpace;
   using MemSpace        = typename ExecSpace::memory_space;
@@ -191,7 +192,6 @@ inline void local_coarse_search_arborx(
       "The domain and range boxes must have the same floating-point precision");
 
   Kokkos::Profiling::pushRegion("STK call arborx");
-  auto execSpace = ExecSpace{};
 
   auto localRangeWrapped = impl::wrap_view_for_arborx(localRange);
   auto localDomainWrapped = impl::wrap_view_for_arborx(localDomain);

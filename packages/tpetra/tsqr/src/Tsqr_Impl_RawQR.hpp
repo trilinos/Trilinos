@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TSQR_IMPL_RAWQR_HPP
 #define TSQR_IMPL_RAWQR_HPP
 

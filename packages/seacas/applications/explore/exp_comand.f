@@ -251,7 +251,7 @@ C   --Read first time step variables
 
       WRITE (*, *)
       CALL PRTERR ('CMDREQ',
-     & 'Use "precision low|normal|high|#" to control" output precision')
+     & 'Use "precision low|normal|high|#" to control output precision')
 
       if (domape .and. domapn) then
         call PRTERR('CMDREQ',
@@ -319,7 +319,8 @@ C   --Read command line
         IF (LISTYP .EQ. ' ') THEN
           CALL ABRSTR (LISTYP, WORD, SELTBL)
           IF (LISTYP .NE. ' ') THEN
-            CALL PRTERR ('CMDREQ', 'Please use the SELECT command')
+            CALL PRTERR ('CMDREQ', 'Please use the SELECT '
+     $            // LISTYP(:LENSTR(LISTYP)) // ' command')
             VERB = 'SELECT'
           ELSE
             LISTYP = WORD

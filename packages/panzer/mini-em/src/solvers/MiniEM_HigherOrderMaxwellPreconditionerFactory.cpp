@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "MiniEM_HigherOrderMaxwellPreconditionerFactory.hpp"
 
 #include "Teko_BlockLowerTriInverseOp.hpp"
@@ -297,6 +307,9 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
      lvlList.set("M1_beta",Ms);
      lvlList.set("Coordinates", S_E_prec_pl.get<RCP<TpMV> >("Coordinates"));
      lvlList.set("invMk_1_invBeta",M0inv);
+
+     // make sure we build all levels
+     muelulist.set("coarse: max size", Teuchos::as<int>(S_E_prec_pl.get<RCP<TpMV> >("Coordinates")->getMap()->getGlobalNumElements()-1));
 
      Teko::InverseLibrary myInvLib = invLib;
 

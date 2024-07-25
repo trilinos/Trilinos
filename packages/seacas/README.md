@@ -13,4 +13,3 @@ Sandia National Laboratories,
 We appreciate feedback from users of this package.  Please send
 comments, suggestions, and bug reports to Greg Sjaardema
 <gdsjaar@sandia.gov>, <gsjaardema@gmail.com>
-

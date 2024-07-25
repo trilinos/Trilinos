@@ -66,6 +66,7 @@ endif()
 IF ( NETCDF_NCDUMP_BINARY )
   SET(NETCDF_NCDUMP ${NETCDF_NCDUMP_BINARY})
   SET( cbind_OLDTESTS
+    test-field-utils
     testwt
     testwtd
     testwtd-to-f
@@ -108,6 +109,8 @@ IF ( NETCDF_NCDUMP_BINARY )
     test-add-assembly
     testwt-blob
     testrd-blob
+    testwt-field-metadata
+    testrd-field-metadata
   )
 
   IF (SEACASExodus_ENABLE_THREADSAFE)
@@ -154,6 +157,15 @@ IF ( NETCDF_NCDUMP_BINARY )
     TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
     set_property(TARGET ${testName} PROPERTY C_STANDARD 99)
   ENDFOREACH ( testName )
+
+  TRIBITS_ADD_TEST(
+     test-field-utils
+     NOEXEPREFIX
+     NOEXESUFFIX
+     NAME exodus-test-field-utils
+     COMM mpi serial
+     NUM_MPI_PROCS 1
+    )
 
   IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   TRIBITS_ADD_TEST(

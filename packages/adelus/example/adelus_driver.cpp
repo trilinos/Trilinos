@@ -1,46 +1,11 @@
 /*
 //@HEADER
-// ************************************************************************
+// *****************************************************************************
+//                        Adelus
 //
-//                        Adelus v. 1.0
-//       Copyright (2020) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of NTESS nor the names of the contributors may be
-// used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Vinh Dang (vqdang@sandia.gov)
-//                    Joseph Kotulski (jdkotul@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2020 NTESS and the Adelus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 //@HEADER
 */
 
@@ -68,7 +33,7 @@
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas2_gemv.hpp>
 #include "Adelus.hpp"
- 
+
 int main( int argc, char* argv[] )
 {
   char processor_name[MPI_MAX_PROCESSOR_NAME];
@@ -150,7 +115,7 @@ int main( int argc, char* argv[] )
 
   int my_rows_max;
   int my_cols_max;
- 
+
   Adelus::GetDistribution( MPI_COMM_WORLD,
                            nprocs_row, matrix_size, nrhs,
                            my_rows, my_cols, my_first_row, my_first_col,
@@ -269,7 +234,7 @@ int main( int argc, char* argv[] )
 #else
         ScalarA tmp(310.0 + (double)(rank*10),250.0 + (double)(rank*10));
 #endif
-        if ( ( (i-(my_first_row-1)) >= 0 ) && ( (i-(my_first_col-1)) >= 0 ) && 
+        if ( ( (i-(my_first_row-1)) >= 0 ) && ( (i-(my_first_col-1)) >= 0 ) &&
              ( (i-(my_first_row-1)) < my_rows ) && ( (i-(my_first_col-1)) < my_cols ) )
           my_A(i-(my_first_row-1),i-(my_first_col-1)) = my_A(i-(my_first_row-1),i-(my_first_col-1)) + tmp;
       });
@@ -307,7 +272,7 @@ int main( int argc, char* argv[] )
     MPI_Barrier (MPI_COMM_WORLD);
 
     //4. Launch Adelus
-    if(rank == 0) { 
+    if(rank == 0) {
       printf("Using ADELUS\n");
 #ifdef KOKKOS_ENABLE_CUDA
       printf("CUDA is enabled\n");
@@ -333,7 +298,7 @@ int main( int argc, char* argv[] )
     }
 
     // Create handle
-    Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
+    Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space>
       ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_row, nrhs );
 
     double time = 0.0;
@@ -350,9 +315,9 @@ int main( int argc, char* argv[] )
       Kokkos::fence();
 
       MPI_Barrier (MPI_COMM_WORLD);
-    
+
       gettimeofday( &begin, NULL );
-  
+
 #ifdef KKVIEW_API
       Adelus::FactorSolve (ahandle, my_A, &secs);
 #endif
@@ -367,15 +332,15 @@ int main( int argc, char* argv[] )
 #endif
 
       Kokkos::fence();
-        
+
       gettimeofday( &end, NULL );
 
       MPI_Barrier (MPI_COMM_WORLD);
-  
+
       // Calculate time
       double time_iter = 1.0 *    ( end.tv_sec  - begin.tv_sec  ) +
                          1.0e-6 * ( end.tv_usec - begin.tv_usec );
-        
+
       printf( "  Real runs on rank %d: repeat ( %d ) time( %lf s )\n", rank, repeat, time_iter);
 
       time += time_iter;

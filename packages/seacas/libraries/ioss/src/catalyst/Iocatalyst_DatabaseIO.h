@@ -85,6 +85,9 @@ namespace Iocatalyst {
 
     std::string get_catalyst_dump_dir() const;
 
+    void set_split_type_changed(bool split_type_changed) { split_type_c = split_type_changed; }
+    IOSS_NODISCARD bool split_type_changed() const { return split_type_c; }
+
   private:
     bool open_group_nl(const std::string & /* group_name */) override { return false; }
     bool create_subgroup_nl(const std::string & /* group_name */) override { return false; }
@@ -202,5 +205,6 @@ namespace Iocatalyst {
     class ImplementationT;
     std::unique_ptr<ImplementationT> Impl;
     bool                             useDeepCopy;
+    bool                             split_type_c{false};
   };
 } // namespace Iocatalyst

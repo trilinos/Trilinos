@@ -693,11 +693,95 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      MatvecKernelDriver
-      SOURCES MatvecKernelDriver.cpp
-      COMM serial mpi
-    )
+  ENDIF()
+ENDIF()
+
+
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
+  Tpetra_INST_SERIAL
+  Tpetra_INST_CUDA
+  Tpetra_INST_HIP
+)
+
+IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
+
+  TRIBITS_ADD_EXECUTABLE(
+    MatvecKernelDriver
+    SOURCES MatvecKernelDriver.cpp
+    COMM serial mpi
+    CATEGORIES BASIC PERFORMANCE
+  )
+
+  IF (Tpetra_INST_SERIAL)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "150 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_Serial
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
+
+  ENDIF()
+
+  IF (Tpetra_INST_CUDA)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "600 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_CUDA
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
+
+  ENDIF()
+
+  IF (Tpetra_INST_HIP)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "600 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_HIP
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
 
   ENDIF()
 ENDIF()

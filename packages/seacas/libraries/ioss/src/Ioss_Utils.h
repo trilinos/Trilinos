@@ -309,9 +309,6 @@ namespace Ioss {
 
     IOSS_NODISCARD static int log_power_2(uint64_t value);
 
-    IOSS_NODISCARD static char **get_name_array(size_t count, int size);
-    static void                  delete_name_array(char **names, int count);
-
     /** \brief Get formatted time and date strings.
      *
      *  Fill time_string and date_string with current time and date
@@ -476,7 +473,7 @@ namespace Ioss {
                                                      const std::string &type,
                                                      const std::string &working_directory);
 
-    static void get_fields(int64_t entity_count, char **names, int num_names,
+    static void get_fields(int64_t entity_count, Ioss::NameList &names,
                            Ioss::Field::RoleType fld_role, const DatabaseIO *db, int *local_truth,
                            std::vector<Ioss::Field> &fields);
 
@@ -519,7 +516,7 @@ namespace Ioss {
      *  \param[out] lines The vector of strings containing the lines of the file
      *  \param[in] max_line_length The maximum number of characters in any line of the file.
      */
-    static void input_file(const std::string &file_name, std::vector<std::string> *lines,
+    static void input_file(const std::string &file_name, Ioss::NameList *lines,
                            size_t max_line_length = 0);
 
     template <class T> IOSS_NODISCARD static std::string to_string(const T &t)
@@ -565,14 +562,14 @@ namespace Ioss {
     static void generate_history_mesh(Ioss::Region *region);
 
     static void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                            const std::string &header, const std::string &suffix = "\n\t");
+                            const std::string &header, const std::string &suffix = "\n\t",
+                            bool detail = false);
 
     static void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
                               const std::string &header, const std::string &suffix = "\n\t",
                               bool print_empty = false);
 
-    static void insert_sort_and_unique(const std::vector<std::string> &src,
-                                       std::vector<std::string>       &dest)
+    static void insert_sort_and_unique(const Ioss::NameList &src, Ioss::NameList &dest)
     {
       dest.insert(dest.end(), src.begin(), src.end());
       std::sort(dest.begin(), dest.end(), std::less<>());

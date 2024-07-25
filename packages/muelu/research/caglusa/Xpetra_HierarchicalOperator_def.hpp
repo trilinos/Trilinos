@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef XPETRA_HIERARCHICALOPERATOR_DEF_HPP
 #define XPETRA_HIERARCHICALOPERATOR_DEF_HPP
 
@@ -30,6 +39,7 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      Teuchos::rcp_dynamic_cast<TpCrs>(Teuchos::rcp_dynamic_cast<CrsWrap>(basisMatrix)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
                      tTransferMatrices,
                      params));
+  this->setTpetra_RowMatrix(op_);
 }
 
 }  // namespace Xpetra

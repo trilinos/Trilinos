@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 Custom PR Executor for Standard testing
@@ -56,8 +56,12 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
             gc.write_cmake_fragment()
 
         # Execute the call to ctest.
+        verbosity_flag = "-VV"
+        if "BUILD_NUMBER" in os.environ:
+            print("Running under Jenkins, keeping output less verbose to avoid space issues")
+            verbosity_flag = "-V"
         cmd = ['ctest',
-               "-V",
+               verbosity_flag,
                 "-S", f"{self.arg_ctest_driver}",
                f"-Dsource_dir:PATH={self.arg_source_dir}",
                f"-Dbuild_dir:PATH={self.arg_build_dir}",

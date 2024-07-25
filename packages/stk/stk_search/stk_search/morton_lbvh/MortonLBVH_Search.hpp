@@ -160,13 +160,14 @@ inline void export_from_box_vec_to_morton_tree(const std::vector<BoxType> &boxVe
 template <typename RealType, typename ExecutionSpace>
 inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
                                MortonAabbTree<RealType, ExecutionSpace> &tree2,
-                               CollisionList<ExecutionSpace> &searchResults)
+                               CollisionList<ExecutionSpace> &searchResults,
+                               ExecutionSpace const& execSpace = ExecutionSpace{})
 {
   Kokkos::Profiling::pushRegion("Initialization");
   Kokkos::Profiling::pushRegion("Get global bounds");
   // Get total bounds
-  TotalBoundsFunctor<RealType, ExecutionSpace>::apply(tree1);
-  TotalBoundsFunctor<RealType, ExecutionSpace>::apply(tree2);
+  TotalBoundsFunctor<RealType, ExecutionSpace>::apply(tree1, execSpace);
+  TotalBoundsFunctor<RealType, ExecutionSpace>::apply(tree2, execSpace);
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
 
@@ -177,8 +178,8 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
 
   // Morton encode the centroids of the leaves
   Kokkos::Profiling::pushRegion("Morton encoding of leaves");
-  MortonEncoder<RealType, ExecutionSpace>::apply(tree1, sortTree1);
-  MortonEncoder<RealType, ExecutionSpace>::apply(tree2, sortTree2);
+  MortonEncoder<RealType, ExecutionSpace>::apply(tree1, execSpace, sortTree1);
+  MortonEncoder<RealType, ExecutionSpace>::apply(tree2, execSpace, sortTree2);
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
 
@@ -186,11 +187,11 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   Kokkos::Profiling::pushRegion("Sort the trees");
   if (sortTree1) {
     // printf("Sorting tree with %d leaves\n", tree1.hm_numLeaves());
-    SortByCode<RealType, ExecutionSpace>::apply(tree1);
+    SortByCode<RealType, ExecutionSpace>::apply(tree1, execSpace);
   }
   if (sortTree2) {
     // printf("Sorting tree with %d leaves\n", tree1.hm_numLeaves());
-    SortByCode<RealType, ExecutionSpace>::apply(tree2);
+    SortByCode<RealType, ExecutionSpace>::apply(tree2, execSpace);
   }
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
@@ -200,10 +201,10 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   bool buildTree1 = (sortTree1 && flipOrder);
   bool buildTree2 = (sortTree2 && !flipOrder);
   if (buildTree1) {
-    BuildRadixTree<RealType, ExecutionSpace>::apply(tree1);
+    BuildRadixTree<RealType, ExecutionSpace>::apply(tree1, execSpace);
   }
   if (buildTree2) {
-    BuildRadixTree<RealType, ExecutionSpace>::apply(tree2);
+    BuildRadixTree<RealType, ExecutionSpace>::apply(tree2, execSpace);
   }
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
@@ -211,10 +212,10 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   // Augment the trees to be bounding volume (box) hierarchies
   Kokkos::Profiling::pushRegion("Augment the trees to be bounding volume hierarchies");
   if (buildTree1) {
-    UpdateInteriorNodeBVs<RealType, ExecutionSpace>::apply(tree1);
+    UpdateInteriorNodeBVs<RealType, ExecutionSpace>::apply(tree1, execSpace);
   }
   if (buildTree2) {
-    UpdateInteriorNodeBVs<RealType, ExecutionSpace>::apply(tree2);
+    UpdateInteriorNodeBVs<RealType, ExecutionSpace>::apply(tree2, execSpace);
   }
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
@@ -223,10 +224,10 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   // Test the boxes from the non-tree against the tree that was built.
   Kokkos::Profiling::pushRegion("Search query");
   if (flipOrder) {
-    Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(tree2, tree1, searchResults, true);
+    Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(tree2, tree1, searchResults, execSpace, true);
   }
   else {
-    Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(tree1, tree2, searchResults);
+    Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(tree1, tree2, searchResults, execSpace);
   }
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
@@ -235,7 +236,8 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
 template <typename RealType, class ExecutionSpace, typename BoxType>
 inline void morton_lbvh_search(const std::vector<BoxType> &boxA,
                                const std::vector<BoxType> &boxB,
-                               CollisionList<ExecutionSpace> &searchResults)
+                               CollisionList<ExecutionSpace> &searchResults,
+                               ExecutionSpace const& execSpace = ExecutionSpace{})
 {
   Kokkos::Profiling::pushRegion("morton_lbvh_search: export boxes to trees");
   MortonAabbTree<RealType, ExecutionSpace> mlbvhA("a"), mlbvhB("b");
@@ -246,7 +248,7 @@ inline void morton_lbvh_search(const std::vector<BoxType> &boxA,
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("morton_lbvh_search: execute search");
-  morton_lbvh_search<RealType, ExecutionSpace>(mlbvhA, mlbvhB, searchResults);
+  morton_lbvh_search<RealType, ExecutionSpace>(mlbvhA, mlbvhB, searchResults, execSpace);
   Kokkos::Profiling::popRegion();
 }
 

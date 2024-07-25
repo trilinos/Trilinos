@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+# @HEADER
+# *****************************************************************************
+#            TriBITS: Tribal Build, Integrate, and Test System
+#
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
+# @HEADER
 
 import sys
 import os
@@ -37,12 +45,12 @@ For example, the file packages/SOME_PACKAGE/Copyright.txt should look like:
   $ cat packages/teuchos/Copyright.txt
     // @HEADER
     // ***********************************************************************
-    // 
+    //
     //                    Teuchos: Common Tools Package
     //                 Copyright (2004) Sandia Corporation
     //
     // ...
-    // 
+    //
     // ***********************************************************************
     // @HEADER
 

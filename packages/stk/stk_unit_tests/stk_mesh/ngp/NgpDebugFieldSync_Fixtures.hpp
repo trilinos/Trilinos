@@ -394,6 +394,7 @@ public:
     const int component = 0;
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    ngpField.sync_to_device();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
@@ -412,6 +413,7 @@ public:
   {
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    ngpField.sync_to_device();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {

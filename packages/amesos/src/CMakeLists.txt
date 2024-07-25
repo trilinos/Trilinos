@@ -105,6 +105,20 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO OR ${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
 ENDIF()
 
 #
+# MKL CSS files
+#
+
+IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
+  SET(HEADERS ${HEADERS}
+    Amesos_CssMKL.h
+    )
+
+  SET(SOURCES ${SOURCES}
+    Amesos_CssMKL.cpp
+    )
+ENDIF()
+
+#
 # CSparse files
 #
 

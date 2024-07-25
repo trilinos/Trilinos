@@ -112,7 +112,6 @@ INCLUDE(CMakeCuda.txt)
 # requirements are fulfilled.
 #
 
-
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")

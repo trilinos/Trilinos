@@ -1,45 +1,13 @@
 // @HEADER
-// ************************************************************************
-//
-//        Phalanx: A Partial Differential Equation Field Evaluation
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef PHX_ALLOCATION_TRACKER_HPP
 #define PHX_ALLOCATION_TRACKER_HPP
 
@@ -91,14 +59,14 @@ namespace PHX {
     const PHX::ViewCreationMode& mode_;
     const PHX::FieldTag& tag_;
     const std::vector<PHX::index_size_type>& extended_dimensions_;
-    PHX::any& field_;
+    std::any& field_;
     Kokkos::Impl::SharedAllocationTracker& tracker_;
   public:
     
     KokkosViewCreateFunctor(const PHX::ViewCreationMode& mode,
                             const PHX::FieldTag& tag,
                             const std::vector<PHX::index_size_type>& extended_dimensions,
-                            PHX::any& field,
+                            std::any& field,
                             Kokkos::Impl::SharedAllocationTracker& tracker) :
       mode_(mode),
       tag_(tag),
@@ -215,7 +183,7 @@ namespace PHX {
         \param[in]  extended_dimensions Size of any hidden dimensions for the scalar type. This can be empty for types that don't have hidden dimensions.
      */
     template<class EvaluationType>
-    void createView(PHX::any& field,
+    void createView(std::any& field,
                     Kokkos::Impl::SharedAllocationTracker& tracker,
                     const std::size_t& allocation_size_in_bytes,
                     const PHX::FieldTag& tag,
@@ -228,7 +196,7 @@ namespace PHX {
       Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::AllocateMemory,
                                                                                   tag,extended_dimensions,field,tracker));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(field.empty(),std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(!field.has_value(),std::runtime_error,
                                  "Error: PHX::MemoryManager::createView(): could not build a Kokkos::View for field named \""
                                  << tag.identifier() << "\" of type \"" << tag.dataTypeInfo().name()
                                  << "\" for the evaluation type \"" << PHX::print<EvaluationType>() << "\".");
@@ -248,15 +216,15 @@ namespace PHX {
         \returns Newly created view wrapped in an any object.
      */
     template<class EvaluationType>
-    PHX::any createViewFromAllocationTracker(const PHX::FieldTag& tag,
+    std::any createViewFromAllocationTracker(const PHX::FieldTag& tag,
                                              const std::vector<PHX::index_size_type>& extended_dimensions,
                                              Kokkos::Impl::SharedAllocationTracker& tracker)
     {
-      PHX::any field;
+      std::any field;
       using EvalDataTypes = typename PHX::eval_scalar_types<EvaluationType>::type;
       Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::UseTracker,
                                                                                   tag,extended_dimensions,field,tracker));
-      TEUCHOS_TEST_FOR_EXCEPTION(field.empty(),std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(!field.has_value(),std::runtime_error,
                                  "Error: PHX::MemoryManager::createViewUsingTracker(): could not build a Kokkos::View for field named \""
                                  << tag.identifier() << "\" of type \"" << tag.dataTypeInfo().name()
                                  << "\" for the evaluation type \"" << PHX::print<EvaluationType>() << "\".");

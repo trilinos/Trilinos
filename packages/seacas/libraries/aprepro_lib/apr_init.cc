@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,7 +40,7 @@ namespace SEAMS {
       {"cosh", do_cosh, "cosh(x)", "Hyperbolic cosine of x."},
       {"d2r", do_d2r, "d2r(x)", "Degrees to radians."},
       {"erf", do_erf, "erf(x)", "Error Function of x"},
-      {"erf", do_erfc, "erfc(x)", "Complementary Error Function of x"},
+      {"erfc", do_erfc, "erfc(x)", "Complementary Error Function of x"},
       {"exp", do_exp, "exp(x)", "Exponential: e^x"},
       {"expm1", do_expm1, "expm1(x)", "Exponential: Accurate version of e^x - 1.0 for small x"},
       {"floor", do_floor, "floor(x)", "Largest integer not greater than x."},

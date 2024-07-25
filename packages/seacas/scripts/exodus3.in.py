@@ -6764,6 +6764,7 @@ def internal_transfer_variables(exoFrom, exo_to, obj_type, additionalVariables, 
         varNames = []
         varNames.extend(origVarNames)
         varNames.extend(newVariableNames)
+
         truthTable = []
         if nOrigVars > 0:
             truthTable = exoFrom.get_variable_truth_table(obj_type)

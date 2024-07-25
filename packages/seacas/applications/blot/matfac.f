@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -101,6 +101,6 @@ C               --nodal references to face
 
   160 CONTINUE
       RETURN
-10000  FORMAT (' Poss. Contiguity Prob. at Hex ', I7,
-     *  ', Nodes ', 4(I7,1X), 10(I7,1X))
+10000  FORMAT (' Poss. Contiguity Prob. at Hex ', I11,
+     *  ', Nodes ', 4(I11,1X), 10(I11,1X))
       END

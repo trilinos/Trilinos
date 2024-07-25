@@ -236,10 +236,8 @@
       \textit{colmap\_X\_level.mm}.}
         
 \cbb{keep data}{string}{"{}"}{Keep a subset of the hierarchy data after the
-      hierarchy is constructed.  Use comma-separated array in braces}
-        
-\cbb{save data}{string}{"{}"}{Data to dump to disk after the
-      hierarchy is constructed.  Use comma-separated array in braces}
+      hierarchy is constructed.  This could be for disk I/O, or for
+      use in other preconditioners. Use comma-separated array in braces}
         
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
         
@@ -400,6 +398,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{repartition: rebalance Nullspace}{bool}{true}{Rebalancing of Nullspace during the setup.}
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
+        
+\cbb{repartition: save importer}{bool}{false}{Mark Importer as 'Final' to keep it on the hierarchy after setup is complete.}
         
 \cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
         

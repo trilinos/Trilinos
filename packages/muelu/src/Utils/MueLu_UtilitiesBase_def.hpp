@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_UTILITIESBASE_DEF_HPP
 #define MUELU_UTILITIESBASE_DEF_HPP
 
@@ -68,6 +32,7 @@
 #include <Xpetra_StridedMap.hpp>
 
 #include "MueLu_Exceptions.hpp"
+#include "Xpetra_CrsMatrixFactory.hpp"
 
 #include <KokkosKernels_Handle.hpp>
 #include <KokkosGraph_RCM.hpp>
@@ -83,10 +48,124 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   return rcp(new CrsMatrixWrap(Op));
 }
 
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+removeSmallEntries(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+                   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold,
+                   const bool keepDiagonal) {
+  using crs_matrix      = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using row_ptr_type    = typename crs_matrix::local_graph_type::row_map_type::non_const_type;
+  using col_idx_type    = typename crs_matrix::local_graph_type::entries_type::non_const_type;
+  using vals_type       = typename crs_matrix::local_matrix_type::values_type;
+  using execution_space = typename crs_matrix::local_matrix_type::execution_space;
+
+  using ATS      = Kokkos::ArithTraits<Scalar>;
+  using impl_SC  = typename ATS::val_type;
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+
+  auto lclA = A->getLocalMatrixDevice();
+
+  auto rowptr = row_ptr_type("rowptr", lclA.numRows() + 1);
+  col_idx_type idx;
+  vals_type vals;
+  LocalOrdinal nnz;
+
+  if (keepDiagonal) {
+    auto lclRowMap = A->getRowMap()->getLocalMap();
+    auto lclColMap = A->getColMap()->getLocalMap();
+    Kokkos::parallel_scan(
+        "removeSmallEntries::rowptr",
+        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
+        KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
+          auto row      = lclA.row(rlid);
+          auto rowInCol = lclColMap.getLocalElement(lclRowMap.getGlobalElement(rlid));
+          for (LocalOrdinal k = 0; k < row.length; ++k) {
+            if ((impl_ATS::magnitude(row.value(k)) > threshold) || (row.colidx(k) == rowInCol)) {
+              partial_nnz += 1;
+            }
+          }
+          if (is_final)
+            rowptr(rlid + 1) = partial_nnz;
+        },
+        nnz);
+
+    idx  = col_idx_type("idx", nnz);
+    vals = vals_type("vals", nnz);
+
+    Kokkos::parallel_for(
+        "removeSmallEntries::indicesValues",
+        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
+        KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+          auto row      = lclA.row(rlid);
+          auto rowInCol = lclColMap.getLocalElement(lclRowMap.getGlobalElement(rlid));
+          auto I        = rowptr(rlid);
+          for (LocalOrdinal k = 0; k < row.length; ++k) {
+            if ((impl_ATS::magnitude(row.value(k)) > threshold) || (row.colidx(k) == rowInCol)) {
+              idx(I)  = row.colidx(k);
+              vals(I) = row.value(k);
+              I += 1;
+            }
+          }
+        });
+
+    Kokkos::fence();
+  } else {
+    Kokkos::parallel_scan(
+        "removeSmallEntries::rowptr",
+        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
+        KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
+          auto row = lclA.row(rlid);
+          for (LocalOrdinal k = 0; k < row.length; ++k) {
+            if (impl_ATS::magnitude(row.value(k)) > threshold) {
+              partial_nnz += 1;
+            }
+          }
+          if (is_final)
+            rowptr(rlid + 1) = partial_nnz;
+        },
+        nnz);
+
+    idx  = col_idx_type("idx", nnz);
+    vals = vals_type("vals", nnz);
+
+    Kokkos::parallel_for(
+        "removeSmallEntries::indicesValues",
+        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
+        KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+          auto row = lclA.row(rlid);
+          auto I   = rowptr(rlid);
+          for (LocalOrdinal k = 0; k < row.length; ++k) {
+            if (impl_ATS::magnitude(row.value(k)) > threshold) {
+              idx(I)  = row.colidx(k);
+              vals(I) = row.value(k);
+              I += 1;
+            }
+          }
+        });
+
+    Kokkos::fence();
+  }
+
+  auto lclNewA = typename crs_matrix::local_matrix_type("thresholdedMatrix", lclA.numRows(), lclA.numCols(), nnz, vals, rowptr, idx);
+  auto newA    = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclNewA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
+
+  return newA;
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetThresholdedMatrix(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ain, const Scalar threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow) {
+    GetThresholdedMatrix(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ain, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow) {
+  auto crsWrap = rcp_dynamic_cast<CrsMatrixWrap>(Ain);
+  if (!crsWrap.is_null()) {
+    auto crsMat      = crsWrap->getCrsMatrix();
+    auto filteredMat = removeSmallEntries(crsMat, threshold, keepDiagonal);
+    return rcp_static_cast<CrsMatrixWrap>(filteredMat);
+  }
+
   RCP<const Map> rowmap   = Ain->getRowMap();
   RCP<const Map> colmap   = Ain->getColMap();
   RCP<CrsMatrixWrap> Aout = rcp(new CrsMatrixWrap(rowmap, expectedNNZperRow <= 0 ? Ain->getGlobalMaxNumRowEntries() : expectedNNZperRow));
@@ -199,8 +278,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
   if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
-    using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-    using device_type       = typename CrsGraph::device_type;
+    using device_type = typename CrsGraph::device_type;
     Kokkos::View<size_t*, device_type> offsets("offsets", rowMap->getLocalNumElements());
     crsOp->getCrsGraph()->getLocalDiagOffsets(offsets);
     crsOp->getCrsMatrix()->getLocalDiagCopy(*diag, offsets);

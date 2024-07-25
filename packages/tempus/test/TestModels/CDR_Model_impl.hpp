@@ -1,10 +1,11 @@
-// @HEADER
-// ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
 //
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
-// ****************************************************************************
-// @HEADER
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
 
 #ifndef NOX_THYRA_MODEL_EVALUATOR_1DFEM_DEF_HPP
 #define NOX_THYRA_MODEL_EVALUATOR_1DFEM_DEF_HPP

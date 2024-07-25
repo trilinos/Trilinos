@@ -226,8 +226,7 @@ namespace Ioss {
     IOSS_NODISCARD const AliasMap &get_alias_map(EntityType entity_type) const;
 
     /// Get a map containing all aliases defined for the entity with basename 'my_name'
-    int get_aliases(const std::string &my_name, EntityType type,
-                    std::vector<std::string> &aliases) const;
+    int get_aliases(const std::string &my_name, EntityType type, Ioss::NameList &aliases) const;
 
     // This routine transfers all relevant aliases from the 'this'
     // region and applies them to the 'to' file.
@@ -265,11 +264,11 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     IOSS_NODISCARD Property get_implicit_property(const std::string &my_name) const override;
 
-    IOSS_NODISCARD const std::vector<std::string> &get_information_records() const;
-    void add_information_records(const std::vector<std::string> &info);
-    void add_information_record(const std::string &info);
+    IOSS_NODISCARD const Ioss::NameList &get_information_records() const;
+    void                                 add_information_records(const Ioss::NameList &info);
+    void                                 add_information_record(const std::string &info);
 
-    IOSS_NODISCARD const std::vector<std::string> &get_qa_records() const;
+    IOSS_NODISCARD const Ioss::NameList &get_qa_records() const;
     void add_qa_record(const std::string &code, const std::string &code_qa,
                        const std::string &date = "", const std::string &time = "");
 
@@ -353,7 +352,7 @@ inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exis
  *
  *  \returns The informative strings.
  */
-inline const std::vector<std::string> &Ioss::Region::get_information_records() const
+inline const Ioss::NameList &Ioss::Region::get_information_records() const
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->get_information_records();
@@ -363,7 +362,7 @@ inline const std::vector<std::string> &Ioss::Region::get_information_records() c
  *
  *  \param[in] info The strings to add.
  */
-inline void Ioss::Region::add_information_records(const std::vector<std::string> &info)
+inline void Ioss::Region::add_information_records(const Ioss::NameList &info)
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->add_information_records(info);
@@ -411,7 +410,7 @@ inline void Ioss::Region::add_qa_record(const std::string &code, const std::stri
  *  \returns All QA records in a single vector. Every 4 consecutive elements of the
  *           vector make up a single QA record.
  */
-inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
+inline const Ioss::NameList &Ioss::Region::get_qa_records() const
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->get_qa_records();

@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef _MiniEM_Interpolation_hpp_
 #define _MiniEM_Interpolation_hpp_
 
@@ -18,15 +28,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #endif
 #include "MiniEM_Utils.hpp"
-#include "MiniEM_MatrixFreeInterpolationOp.hpp"
-#include "MiniEM_MatrixFreeInterpolationOp.cpp"
 
-
-Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
-                                  const std::string& lo_basis_name,
-                                  const std::string& ho_basis_name,
-                                  Intrepid2::EOperator op=Intrepid2::OPERATOR_VALUE,
-                                  size_t worksetSize=1000);
 
 void addInterpolationToRequestHandler(const std::string& name,
                                       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,

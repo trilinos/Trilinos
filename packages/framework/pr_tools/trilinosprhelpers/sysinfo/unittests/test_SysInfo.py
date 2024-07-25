@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8; mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 """
@@ -16,10 +16,8 @@ from unittest import TestCase
 
 try:                                    # pragma: no cover
     import unittest.mock as mock        # pragma: no cover
-    from unittest.mock import patch
 except:                                 # pragma: no cover
     import mock                         # pragma: no cover
-    from mock import patch
 
 #from mock import Mock
 #from mock import mock_open
@@ -102,7 +100,7 @@ class SysInfoTest(TestCase):
             builtins_open = "{}.open".format(self._builtins())
 
             meminfo = None
-            with patch(builtins_open, mo) as m:
+            with mock.patch(builtins_open, mo) as m:
                 meminfo = si.meminfo
 
             print("SysInfo.meminfo = {}".format(meminfo))
@@ -126,7 +124,7 @@ class SysInfoTest(TestCase):
 
         if si.have_psutil:
             meminfo = None
-            with patch("trilinosprhelpers.sysinfo.SysInfo._get_psutil_vm_total", side_effect=mock_psutil_vm_total) as m:
+            with mock.patch.object(si, "_get_psutil_vm_total", side_effect=mock_psutil_vm_total) as m:
                 meminfo = si.meminfo
 
             print("SysInfo.meminfo = {}".format(meminfo))
@@ -145,7 +143,7 @@ class SysInfoTest(TestCase):
 
         if si.have_psutil:
             meminfo = None
-            with patch("trilinosprhelpers.sysinfo.SysInfo._get_psutil_vm_total", side_effect=mock_psutil_vm_total) as m:
+            with mock.patch.object(si, "_get_psutil_vm_total", side_effect=mock_psutil_vm_total) as m:
                 meminfo = si.meminfo
 
                 print("SysInfo.meminfo = {}".format(meminfo))
@@ -160,7 +158,7 @@ class SysInfoTest(TestCase):
                 # req memory: 6 GB / Core
                 # max cores : 3
                 # expected  : 3
-                with patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
+                with mock.patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
                     n = si.compute_num_usable_cores(6, 3)
                     print("- n = {}".format(n))
                     self.assertEqual(3, n)
@@ -170,7 +168,7 @@ class SysInfoTest(TestCase):
                 # req memory: 1 GB / Core
                 # max cores : 32
                 # expected  : 20
-                with patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
+                with mock.patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
                     n = si.compute_num_usable_cores(1, 32)
                     print("- n = {}".format(n))
                     self.assertEqual(20, n)
@@ -180,7 +178,7 @@ class SysInfoTest(TestCase):
                 # req memory: 5 GB / Core
                 # max cores : 32
                 # expected  : 12
-                with patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
+                with mock.patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
                     n = si.compute_num_usable_cores(5, 32)
                     print("- n = {}".format(n))
                     self.assertEqual(12, n)
@@ -190,7 +188,7 @@ class SysInfoTest(TestCase):
                 # req memory: 5 GB / Core
                 # max cores : 0
                 # expected  : 1
-                with patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
+                with mock.patch("multiprocessing.cpu_count", side_effect=mock_multiprocessing_cpu_count) as m:
                     n = si.compute_num_usable_cores(5, 0)
                     print("- n = {}".format(n))
                     self.assertEqual(1, n)

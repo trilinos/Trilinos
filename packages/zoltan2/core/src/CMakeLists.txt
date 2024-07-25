@@ -10,7 +10,27 @@ TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_OpenMP
   HAVE_ZOLTAN2_OMP
   "Enable OpenMP support in Zoltan2."
   ${${PROJECT_NAME}_ENABLE_OpenMP}
-)
+  )
+
+
+# Hypergraph partitioning requires adding additional types to
+# Tpetra, which are not needed for other cases
+# See: https://github.com/trilinos/Trilinos/issues/13094
+TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_HyperGraph
+  HAVE_ZOLTAN2CORE_HYPERGRAPH
+  "Enable Hypergraph partitioning support in Zoltan2."
+  ON
+  )
+ASSERT_DEFINED(Trilinos_ENABLE_Tpetra)
+IF(Trilinos_ENABLE_Tpetra)
+  IF(Tpetra_ENABLE_Reduced_ETI AND Zoltan2_ENABLE_HyperGraph)
+    MESSAGE(FATAL_ERROR "Zoltan2: Cannot enable HyperGraph when Tpetra_Reduced_ETI=ON")
+  ENDIF()
+  IF(NOT Zoltan2_ENABLE_HyperGraph)
+    MESSAGE(STATUS "Zoltan2: Disabling HyperGraph support")
+  ENDIF()
+ENDIF()
+
 
 
 TRIBITS_CONFIGURE_FILE(Zoltan2_config.h)
@@ -97,6 +117,11 @@ APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/Zoltan2_config.h
   ${PARAM_HEADER}
   )
+
+# Remove off HyperGraph support if it is disabled
+IF(NOT Zoltan2_ENABLE_HyperGraph)
+  LIST(REMOVE_ITEM HEADERS "${DIR}/models/Zoltan2_HyperGraphModel.hpp")
+ENDIF()
 
 # for Trilinos_version.h
 ASSERT_DEFINED(PROJECT_BINARY_DIR)

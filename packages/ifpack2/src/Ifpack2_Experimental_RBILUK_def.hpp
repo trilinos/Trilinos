@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
 #define IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
@@ -233,39 +200,6 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
 
 namespace
 {
-template<class MatrixType>
-Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>
-makeLocalFilter (const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A)
-{
-  using row_matrix_type = typename RBILUK<MatrixType>::row_matrix_type;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
-
-  // If A_'s communicator only has one process, or if its column and
-  // row Maps are the same, then it is already local, so use it
-  // directly.
-  if (A->getRowMap ()->getComm ()->getSize () == 1 ||
-      A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
-    return A;
-  }
-
-  // If A_ is already a LocalFilter, then use it directly.  This
-  // should be the case if RILUK is being used through
-  // AdditiveSchwarz, for example.
-  RCP<const LocalFilter<row_matrix_type> > A_lf_r =
-    rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
-  if (! A_lf_r.is_null ()) {
-    return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
-  }
-  else {
-    // A_'s communicator has more than one process, its row Map and
-    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
-    // have to wrap it in a LocalFilter.
-    return rcp (new LocalFilter<row_matrix_type> (A));
-  }
-}
 
 template<class MatrixType>
 Teuchos::RCP<const typename RBILUK<MatrixType>::crs_graph_type>
@@ -281,7 +215,7 @@ getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matri
   using crs_graph_type = typename RBILUK<MatrixType>::crs_graph_type;
   using block_crs_matrix_type = typename RBILUK<MatrixType>::block_crs_matrix_type;
 
-  auto A_local = makeLocalFilter<MatrixType>(A);
+  auto A_local = RBILUK<MatrixType>::makeLocalFilter(A);
 
   {
     RCP<const LocalFilter<row_matrix_type> > filteredA =
@@ -363,7 +297,7 @@ void RBILUK<MatrixType>::initialize ()
      "underlying graph is fill complete.");
 
   blockSize_ = this->A_->getBlockSize();
-  this->A_local_ = makeLocalFilter<MatrixType>(this->A_);
+  this->A_local_ = this->makeLocalFilter(this->A_);
 
   Teuchos::Time timer ("RBILUK::initialize");
   double startTime = timer.wallTime();
@@ -953,9 +887,9 @@ void RBILUK<MatrixType>::compute ()
         "streams are not yet supported.");
 
       auto lclMtx = A_local_bcrs->getLocalMatrixDevice();
-      this->A_local_rowmap_  = lclMtx.graph.row_map;
-      this->A_local_entries_ = lclMtx.graph.entries;
-      this->A_local_values_  = lclMtx.values;
+      auto A_local_rowmap  = lclMtx.graph.row_map;
+      auto A_local_entries = lclMtx.graph.entries;
+      auto A_local_values  = lclMtx.values;
 
       // L_block_->resumeFill ();
       // U_block_->resumeFill ();
@@ -978,7 +912,7 @@ void RBILUK<MatrixType>::compute ()
       auto U_values  = lclU.values;
 
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
-                                                  this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
+                                                  A_local_rowmap, A_local_entries, A_local_values,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
     }
   } // Stop timing

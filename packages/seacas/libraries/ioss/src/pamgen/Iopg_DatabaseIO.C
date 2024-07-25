@@ -1473,8 +1473,8 @@ namespace Iopg {
     return elemMap;
   }
 
-  void DatabaseIO::compute_block_membership_nl(Ioss::SideBlock          *sideblock,
-                                               std::vector<std::string> &block_membership) const
+  void DatabaseIO::compute_block_membership_nl(Ioss::SideBlock *sideblock,
+                                               Ioss::NameList  &block_membership) const
   {
     Ioss::IntVector block_ids(elementBlockCount);
     if (elementBlockCount == 1) {

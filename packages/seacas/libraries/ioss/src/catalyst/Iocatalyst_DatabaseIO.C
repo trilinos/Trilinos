@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <tokenize.h>
 
+#include "Ioss_CodeTypes.h"       // for IOSS_SCALAR()
 #include "Ioss_CommSet.h"         // for CommSet
 #include "Ioss_DBUsage.h"         // for DatabaseUsage, etc
 #include "Ioss_DatabaseIO.h"      // for DatabaseIO
@@ -38,6 +39,7 @@
 #include <cstdlib>
 #include <fmt/ostream.h>
 #include <map>
+#include <cstdlib>
 
 #include <catalyst.hpp>
 #include <catalyst/Iocatalyst_DatabaseIO.h>
@@ -69,6 +71,7 @@ namespace Iocatalyst {
     inline static const std::string BOUNDARYCONDS      = "boundaryconditions";
     inline static const std::string CATCONDNODE        = "CATALYST_CONDUIT_NODE";
     inline static const std::string CATDUMPDIR         = "CATALYST_DATA_DUMP_DIRECTORY";
+    inline static const std::string CATREADTIMESTEP    = "CATALYST_READER_TIME_STEP";
     inline static const std::string COMPONENTCOUNT     = "component_count";
     inline static const std::string COMPONENTDEGREE    = "component_degree";
     inline static const std::string COUNT              = "count";
@@ -114,7 +117,6 @@ namespace Iocatalyst {
     inline static const std::string ROLE               = "role";
     inline static const std::string SHALLOWCOPYFIELDS  = "SHALLOW_COPY_FIELDS";
     inline static const std::string SIDEBLOCKS         = "sideblocks";
-    inline static const std::string STATETIME          = "state_time";
     inline static const std::string STORAGE            = "storage";
     inline static const std::string TIME               = "time";
     inline static const std::string TOPOLOGYTYPE       = "topology_type";
@@ -140,6 +142,8 @@ namespace Iocatalyst {
     inline static const std::string RANGEBEG = "m_rangeBeg";
     inline static const std::string RANGEEND = "m_rangeEnd";
     inline static const std::string FACE     = "m_face";
+
+    inline static const std::string SURFACESPLITTYPE = "surface_split_type";
 
     std::string getValuePath(const std::string &prop)
     {
@@ -286,6 +290,7 @@ namespace Iocatalyst {
     conduit_cpp::Node                        DBNode;
     mutable Ioss::Map                        NodeMap;
     std::map<std::string, Ioss::SideBlock *> sideBlocks;
+    char                                     read_db_field_separator;
 
   public:
     conduit_cpp::Node &databaseNode() { return this->DBNode; }
@@ -305,12 +310,18 @@ namespace Iocatalyst {
 
     bool defineModel(Ioss::Region *region)
     {
-      assert(region->model_defined());
+      if (!region->model_defined()) {
+        std::ostringstream errmsg;
+        errmsg << "Catalyst Write in defineModel(): model isn't defined in region"
+               << "\n";
+        IOSS_ERROR(errmsg);
+      }
 
       auto &node = this->DBNode;
       node       = conduit_cpp::Node();
 
       node[detail::getAPISizePath()].set_int8(region->get_database()->int_byte_size_api());
+      node[detail::SURFACESPLITTYPE].set_int8(region->get_database()->get_surface_split_type());
       RegionContainer rc;
       rc.push_back(region);
       this->defineEntityGroup(node[detail::REGION], rc);
@@ -339,9 +350,8 @@ namespace Iocatalyst {
     bool readTime(Ioss::Region *region)
     {
       auto &node = this->DBNode;
-      if (node.has_child(detail::STATETIME)) {
-        const auto time = node[detail::STATETIME].as_float64();
-        region->add_state(time);
+      if (node.has_path(getTimePath())) {
+        region->add_state(node[getTimePath()].as_float64());
       }
       return true;
     }
@@ -576,6 +586,8 @@ namespace Iocatalyst {
       return retVal;
     }
 
+    std::string getTimePath() { return detail::DATABASE + detail::FS + detail::TIME; }
+
     Ioss::Map &get_node_map(const Ioss::DatabaseIO *dbase) const
     {
       if (this->NodeMap.defined()) {
@@ -807,9 +819,115 @@ namespace Iocatalyst {
       return true;
     }
 
-    template <typename GroupingEntityT>
-    bool readFields(const conduit_cpp::Node &&parent, GroupingEntityT *block) const
+    std::vector<std::string> getScalarNamesFromNonScalarField(const Ioss::Field &field) const
     {
+      int                      ncomp = field.get_component_count(Ioss::Field::InOut::INPUT);
+      std::vector<std::string> fnames;
+      for (int i = 1; i <= ncomp; i++) {
+        if (read_db_field_separator == '\0') {
+          fnames.push_back(
+              field.get_component_name(i, Ioss::Field::InOut::INPUT, read_db_field_separator));
+        }
+        else {
+          fnames.push_back(field.get_component_name(i, Ioss::Field::InOut::INPUT));
+        }
+      }
+      return fnames;
+    }
+
+    template <typename T>
+    std::vector<T> getInterweavedScalarDataFromConduitNode(const std::vector<std::string> fnames,
+                                                           conduit_cpp::Node &node) const
+    {
+      int            ncomp   = fnames.size();
+      auto         &&t_node  = node[fnames[0] + detail::FS + detail::VALUE];
+      int            num_get = t_node.number_of_elements();
+      std::vector<T> vals(ncomp * num_get);
+
+      for (int i = 0; i < num_get; i++) {
+        for (int j = 0; j < ncomp; j++) {
+          std::string path_to_value = fnames[j] + detail::FS + detail::VALUE;
+          auto      &&child_value   = node[path_to_value];
+          vals[i * ncomp + j]       = reinterpret_cast<const T *>(child_value.element_ptr(0))[i];
+        }
+      }
+      return vals;
+    }
+
+    template <typename T>
+    void addFieldNodeAndDataToConduitNode(const Ioss::Field &field, void *data,
+                                          conduit_cpp::Node &node) const
+    {
+      int ncomp              = field.get_component_count(Ioss::Field::InOut::INPUT);
+      int num_get            = field.raw_count();
+      node[field.get_name()] = conduit_cpp::Node();
+      auto &&f_node          = node[field.get_name()];
+      f_node[detail::ROLE].set(static_cast<std::int8_t>(field.get_role()));
+      f_node[detail::TYPE].set(static_cast<std::int8_t>(field.get_type()));
+      f_node[detail::COUNT].set(static_cast<std::int64_t>(field.raw_count()));
+      f_node[detail::INDEX].set(static_cast<std::int64_t>(field.get_index()));
+      f_node[detail::COMPONENTCOUNT].set(static_cast<std::int64_t>(ncomp));
+      f_node[detail::STORAGE].set(field.raw_storage()->name());
+      f_node[detail::VALUE].set(static_cast<T *>(data), ncomp * num_get);
+    }
+
+    void combineScalarFieldsInConduitNodeToNonScalarField(const Ioss::Field &field,
+                                                          conduit_cpp::Node &node) const
+    {
+      std::vector<std::string> fnames = this->getScalarNamesFromNonScalarField(field);
+
+      switch (field.get_type()) {
+      case Ioss::Field::BasicType::DOUBLE:
+        this->addFieldNodeAndDataToConduitNode<double>(
+            field, this->getInterweavedScalarDataFromConduitNode<double>(fnames, node).data(),
+            node);
+        break;
+
+      case Ioss::Field::BasicType::INT32:
+        this->addFieldNodeAndDataToConduitNode<std::int32_t>(
+            field, this->getInterweavedScalarDataFromConduitNode<std::int32_t>(fnames, node).data(),
+            node);
+        break;
+
+      case Ioss::Field::BasicType::INT64:
+        this->addFieldNodeAndDataToConduitNode<std::int64_t>(
+            field, this->getInterweavedScalarDataFromConduitNode<std::int64_t>(fnames, node).data(),
+            node);
+        break;
+
+      case Ioss::Field::BasicType::CHARACTER:
+        this->addFieldNodeAndDataToConduitNode<std::int8_t>(
+            field, this->getInterweavedScalarDataFromConduitNode<char>(fnames, node).data(), node);
+        break;
+      default:
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR in {} on read: {}, unsupported field type: {}\n", __func__,
+                   field.get_name(), field.type_string());
+        IOSS_ERROR(errmsg);
+      }
+
+      // Remove Related Scalars from Conduit Node
+      for (int i = 0; i < fnames.size(); i++) {
+        node.remove(fnames[i]);
+      }
+    }
+
+    template <typename GroupingEntityT>
+    bool readFields(conduit_cpp::Node &&parent, GroupingEntityT *block) const
+    {
+      // Assumption: count = entity_count (in block)
+      Ioss::DatabaseIO *dbase           = block->get_database();
+      Ioss::EntityType  b_t             = block->type();
+      bool              is_entity_block = false;
+      if (b_t == Ioss::EntityType::ELEMENTBLOCK || b_t == Ioss::EntityType::EDGEBLOCK ||
+          b_t == Ioss::EntityType::FACEBLOCK || b_t == Ioss::EntityType::NODEBLOCK ||
+          b_t == Ioss::EntityType::SIDEBLOCK || b_t == Ioss::EntityType::STRUCTUREDBLOCK) {
+        is_entity_block = true;
+      }
+      Ioss::NameList field_names;
+      field_names.reserve(parent.number_of_children());
+      size_t entity_count = 0;
+
       for (conduit_index_t idx = 0, max = parent.number_of_children(); idx < max; ++idx) {
         auto     &&child   = parent[idx];
         const auto name    = child.name();
@@ -819,17 +937,48 @@ namespace Iocatalyst {
         const auto index   = child[detail::INDEX].as_int64();
         const auto storage = child[detail::STORAGE].as_string();
         if (!block->field_exists(name)) {
-          block->field_add(
-              Ioss::Field(name, type, storage, role, count, index).set_zero_copy_enabled());
+          if (storage == IOSS_SCALAR() && role == Ioss::Field::TRANSIENT && is_entity_block) {
+            // Add to get_fields() call
+            field_names.push_back(name);
+            if (entity_count == 0)
+              entity_count = count;
+          }
+          else {
+            block->field_add(
+                Ioss::Field(name, type, storage, role, count, index).set_zero_copy_enabled());
+          }
         }
         else {
-          // TODO verify field details.
-          auto field = block->get_fieldref(name);
-          if (!field.has_transform()) {
+          // Verify field details.
+          auto field_block = block->get_fieldref(name);
+          if (!field_block.has_transform()) {
             block->get_fieldref(name).set_zero_copy_enabled();
           }
-          assert(field.get_type() == type);
-          auto f = block->get_fieldref(name);
+          auto field_conduit =
+              Ioss::Field(name, type, storage, role, count, index).set_zero_copy_enabled();
+          if (field_block != field_conduit) {
+            std::ostringstream errmsg;
+            errmsg << "Catalyst Read: Field '" << name << "' from conduit "
+                   << "already exists in block '" << block->name().c_str() << "' of type '"
+                   << block->type_string() << "' and differs from it\n";
+            IOSS_ERROR(errmsg);
+          }
+        }
+      }
+
+      // Apply Exodus Properties to Scalar Fields in Entity Blocks
+      if (!field_names.empty()) {
+        std::vector<Ioss::Field> fields;
+        Ioss::Utils::get_fields(entity_count, field_names, Ioss::Field::TRANSIENT, dbase, nullptr,
+                                fields);
+        for (const auto &field : fields) {
+          block->field_add(field.set_zero_copy_enabled());
+        }
+
+        for (const auto &field : fields) {
+          if (field.raw_storage()->name() != IOSS_SCALAR()) {
+            this->combineScalarFieldsInConduitNodeToNonScalarField(field, parent);
+          }
         }
       }
 
@@ -843,6 +992,7 @@ namespace Iocatalyst {
   {
     for (conduit_index_t idx = 0, max = parent.number_of_children(); idx < max; ++idx) {
       auto &&child = parent[idx];
+
       this->readProperties(child[detail::PROPERTIES], region);
 
       // read fields (meta-data only)
@@ -1039,17 +1189,29 @@ namespace Iocatalyst {
     auto &node = this->DBNode;
     region->get_database()->set_int_byte_size_api(
         static_cast<Ioss::DataSize>(node[detail::getAPISizePath()].as_int8()));
-    auto tpath = detail::REGION + detail::FS + detail::TIME;
-    if (node.has_path(tpath)) {
-      region->add_state(node[tpath].to_float64());
+    const auto write_split_type =
+        static_cast<Ioss::SurfaceSplitType>(node[detail::SURFACESPLITTYPE].as_int8());
+    if (write_split_type != region->get_database()->get_surface_split_type()) {
+      static_cast<DatabaseIO *>(region->get_database())->set_split_type_changed(true);
+    }
+    read_db_field_separator = region->get_database()->get_field_separator();
+
+    if (node.has_path(getTimePath())) {
+      region->add_state(node[getTimePath()].to_float64());
     }
     this->readEntityGroup<Ioss::Region>(node[detail::REGION], region);
     this->readEntityGroup<Ioss::NodeBlock>(node[detail::NODEBLOCKS], region);
     this->readEntityGroup<Ioss::ElementBlock>(node[detail::ELEMENTBLOCKS], region);
     this->readEntityGroup<Ioss::EdgeBlock>(node[detail::EDGEBLOCKS], region);
     this->readEntityGroup<Ioss::FaceBlock>(node[detail::FACEBLOCKS], region);
-    this->readEntityGroup<Ioss::SideBlock>(node[detail::SIDEBLOCKS], region);
-    this->readEntityGroup<Ioss::SideSet>(node[detail::SIDESETS], region);
+
+    bool surface_split_changed =
+        static_cast<DatabaseIO *>(region->get_database())->split_type_changed();
+    if (!surface_split_changed) {
+      this->readEntityGroup<Ioss::SideBlock>(node[detail::SIDEBLOCKS], region);
+      this->readEntityGroup<Ioss::SideSet>(node[detail::SIDESETS], region);
+    }
+
     this->readEntityGroup<Ioss::NodeSet>(node[detail::NODESETS], region);
     this->readEntityGroup<Ioss::EdgeSet>(node[detail::EDGESETS], region);
     this->readEntityGroup<Ioss::FaceSet>(node[detail::FACESETS], region);
@@ -1078,14 +1240,20 @@ namespace Iocatalyst {
     if (is_input()) {
       auto &pm = get_property_manager();
       if (pm.exists(detail::CATCONDNODE)) {
-        auto c_node_ptr = reinterpret_cast<conduit_node *>(
-            get_property_manager().get(detail::CATCONDNODE).get_pointer());
+        auto c_node_ptr =
+            reinterpret_cast<conduit_node *>(pm.get(detail::CATCONDNODE).get_pointer());
         this->Impl->setDatabaseNode(c_node_ptr);
       }
       else {
-        // we'll use filename as the location for the data dumps and read those.
+        int timestep = 0;
+        if (pm.exists(detail::CATREADTIMESTEP)) {
+          timestep = pm.get(detail::CATREADTIMESTEP).get_int();
+        }
+        else if(const char* ts = std::getenv(detail::CATREADTIMESTEP.c_str())) {
+          timestep = std::stoi(std::string(ts));
+        }
         std::ostringstream path;
-        path << get_catalyst_dump_dir() << detail::EXECUTE_INVC << filename
+        path << get_catalyst_dump_dir() << detail::EXECUTE_INVC << timestep
              << detail::PARAMS_CONDUIT_BIN << util().parallel_size() << detail::DOT
              << util().parallel_rank();
         auto &root  = this->Impl->root();
@@ -1116,11 +1284,21 @@ namespace Iocatalyst {
 
   bool DatabaseIO::end_nl(Ioss::State state)
   {
-    assert(this->dbState == state);
+    if (this->dbState != state) {
+      std::ostringstream errmsg;
+      errmsg << "Catalyst: dbState != state in end_nl"
+             << "\n";
+      IOSS_ERROR(errmsg);
+    }
 
     if (!is_input()) {
       auto region = this->get_region();
-      assert(region != nullptr);
+      if (region == nullptr) {
+        std::ostringstream errmsg;
+        errmsg << "Catalyst: region is nullptr in end_nl"
+               << "\n";
+        IOSS_ERROR(errmsg);
+      }
 
       auto &impl = (*this->Impl.get());
       switch (state) {
@@ -1162,7 +1340,7 @@ namespace Iocatalyst {
       // invoke catalyst.
       auto &impl      = (*this->Impl.get());
       auto &dbaseNode = this->Impl->databaseNode();
-      dbaseNode[detail::REGION + detail::FS + detail::TIME].set_float64(time);
+      dbaseNode[this->Impl->getTimePath()].set_float64(time);
       conduit_cpp::Node node;
       CatalystManager::getInstance().execute(catPipeID, state, time, impl.databaseNode());
     }
@@ -1180,7 +1358,12 @@ namespace Iocatalyst {
   void DatabaseIO::read_meta_data_nl()
   {
     auto region = this->get_region();
-    assert(region != nullptr);
+    if (region == nullptr) {
+      std::ostringstream errmsg;
+      errmsg << "Catalyst: region is nullptr in read_meta_data_nl()"
+             << "\n";
+      IOSS_ERROR(errmsg);
+    }
 
     auto &impl = (*this->Impl.get());
     impl.readModel(region);
@@ -1189,7 +1372,12 @@ namespace Iocatalyst {
   void DatabaseIO::get_step_times_nl()
   {
     auto region = this->get_region();
-    assert(region != nullptr);
+    if (region == nullptr) {
+      std::ostringstream errmsg;
+      errmsg << "Catalyst: region is nullptr in get_step_times_nl()"
+             << "\n";
+      IOSS_ERROR(errmsg);
+    }
 
     auto &impl = (*this->Impl.get());
     impl.readTime(region);
@@ -1420,6 +1608,9 @@ namespace Iocatalyst {
   int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *sb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
+    if (split_type_changed()) {
+      return -1;
+    }
     auto &impl = (*this->Impl.get());
     return impl.getField(detail::SIDEBLOCKS, sb, field, data, data_size);
   }
@@ -1450,6 +1641,9 @@ namespace Iocatalyst {
   int64_t DatabaseIO::get_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
+    if (split_type_changed()) {
+      return -1;
+    }
     auto &impl = (*this->Impl.get());
     return impl.getField(detail::SIDESETS, ss, field, data, data_size);
   }
@@ -1531,6 +1725,9 @@ namespace Iocatalyst {
   int64_t DatabaseIO::get_zc_field_internal(const Ioss::SideBlock *sb, const Ioss::Field &field,
                                             void **data, size_t *data_size) const
   {
+    if (split_type_changed()) {
+      return -1;
+    }
     auto &impl = (*this->Impl.get());
     return impl.getFieldZeroCopy(detail::SIDEBLOCKS, sb, field, data, data_size);
   }
@@ -1561,6 +1758,9 @@ namespace Iocatalyst {
   int64_t DatabaseIO::get_zc_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field,
                                             void **data, size_t *data_size) const
   {
+    if (split_type_changed()) {
+      return -1;
+    }
     auto &impl = (*this->Impl.get());
     return impl.getFieldZeroCopy(detail::SIDESETS, ss, field, data, data_size);
   }

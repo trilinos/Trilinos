@@ -1,0 +1,125 @@
+
+after ex_open
+after ex_get_quadrature(exoid, &quad, &quad_cnt), error = 0
+
+Quadrature Metadata: Name: `2x2x2`, Cardinality: 8
+ordinal,	  xi      eta     zeta    weight
+       0	-0.577	-0.577	-0.577	 1.000
+       1	 0.577	-0.577	-0.577	 1.000
+       2	-0.577	 0.577	-0.577	 1.000
+       3	 0.577	 0.577	-0.577	 1.000
+       4	-0.577	-0.577	 0.577	 1.000
+       5	 0.577	-0.577	 0.577	 1.000
+       6	-0.577	 0.577	 0.577	 1.000
+       7	 0.577	 0.577	 0.577	 1.000
+
+Quadrature Metadata: Name: `1x2x1`, Cardinality: 2
+ordinal,	  xi      eta     zeta    weight
+       0	-0.500	 0.500	-0.500	 1.000
+       1	 0.500	-0.500	 0.500	 1.000
+after ex_get_basis(exoid, &basis, &bas_cnt), error = 0
+
+Basis Metadata: Name: `HGRAD_QUAD_C2_FEM`, Cardinality: 9
+ordinal,	 subc:  _dim	_ordinal	_dof_ordinal	_num_dof	 xi      eta     zeta
+       0	       0	       0	       0	       1	-1.000	-1.000	 0.000
+       1	       0	       1	       0	       1	 1.000	-1.000	 0.000
+       2	       0	       2	       0	       1	 1.000	 1.000	 0.000
+       3	       0	       3	       0	       1	-1.000	 1.000	 0.000
+       4	       1	       0	       0	       1	 0.000	-1.000	 0.000
+       5	       1	       1	       0	       1	 1.000	 0.000	 0.000
+       6	       1	       2	       0	       1	 0.000	 1.000	 0.000
+       7	       1	       3	       0	       1	-1.000	 0.000	 0.000
+       8	       2	       0	       0	       1	 0.000	 0.000	 0.000
+
+Basis Metadata: Name: `TESTING_SECOND_BASIS`, Cardinality: 3
+ordinal,	 subc:  _dim	_ordinal	_dof_ordinal	_num_dof	 xi      eta     zeta
+       0	       0	       0	       0	       1	-1.000	-1.000	 1.000
+       1	       0	       1	       0	       1	 1.000	-1.000	-1.000
+       2	       0	       2	       0	       1	 1.000	 1.000	 1.000
+after ex_get_field_metadata(exoid, fields), error = 0
+
+Field Metadata: Name: `Disp`, Nesting: 1
+	Nesting level: 0, Type: EX_VECTOR_3D, Cardinality: 3, Separator: " "
+		Component 1, Full name = DispX
+		Component 2, Full name = DispY
+		Component 3, Full name = DispZ
+
+Field Metadata: Name: `Velocity`, Nesting: 1
+	Nesting level: 0, Type: EX_VECTOR_3D, Cardinality: 3, Separator: "%"
+		Component 1, Full name = Velocity%X
+		Component 2, Full name = Velocity%Y
+		Component 3, Full name = Velocity%Z
+after ex_get_field_metadata(exoid, fields), error = 0
+
+Field Metadata: Name: `Disp`, Nesting: 1
+	Nesting level: 0, Type: EX_VECTOR_3D, Cardinality: 3, Separator: " "
+		Component 1, Full name = DispX
+		Component 2, Full name = DispY
+		Component 3, Full name = DispZ
+
+Field Metadata: Name: `Velocity`, Nesting: 1
+	Nesting level: 0, Type: EX_VECTOR_3D, Cardinality: 3, Separator: "%"
+		Component 1, Full name = Velocity%X
+		Component 2, Full name = Velocity%Y
+		Component 3, Full name = Velocity%Z
+after ex_get_field_metadata(exoid, fields), error = 0
+
+Field Metadata: Name: `Gradient`, Nesting: 2
+	Nesting level: 0, Type: EX_VECTOR_3D, Cardinality: 3, Separator: "-"
+	Nesting level: 1, Type: EX_BASIS (HGRAD_QUAD_C2_FEM), Cardinality: 9, Separator: "$"
+		Component 1 1, Full name = Gradient-X$0
+		Component 2 1, Full name = Gradient-Y$0
+		Component 3 1, Full name = Gradient-Z$0
+		Component 1 2, Full name = Gradient-X$1
+		Component 2 2, Full name = Gradient-Y$1
+		Component 3 2, Full name = Gradient-Z$1
+		Component 1 3, Full name = Gradient-X$2
+		Component 2 3, Full name = Gradient-Y$2
+		Component 3 3, Full name = Gradient-Z$2
+		Component 1 4, Full name = Gradient-X$3
+		Component 2 4, Full name = Gradient-Y$3
+		Component 3 4, Full name = Gradient-Z$3
+		Component 1 5, Full name = Gradient-X$4
+		Component 2 5, Full name = Gradient-Y$4
+		Component 3 5, Full name = Gradient-Z$4
+		Component 1 6, Full name = Gradient-X$5
+		Component 2 6, Full name = Gradient-Y$5
+		Component 3 6, Full name = Gradient-Z$5
+		Component 1 7, Full name = Gradient-X$6
+		Component 2 7, Full name = Gradient-Y$6
+		Component 3 7, Full name = Gradient-Z$6
+		Component 1 8, Full name = Gradient-X$7
+		Component 2 8, Full name = Gradient-Y$7
+		Component 3 8, Full name = Gradient-Z$7
+		Component 1 9, Full name = Gradient-X$8
+		Component 2 9, Full name = Gradient-Y$8
+		Component 3 9, Full name = Gradient-Z$8
+
+Field Metadata: Name: `Curl`, Nesting: 1
+	Nesting level: 0, Type: EX_QUADRATURE (2x2x2), Cardinality: 8, Separator: "@"
+		Component 1, Full name = Curl@0
+		Component 2, Full name = Curl@1
+		Component 3, Full name = Curl@2
+		Component 4, Full name = Curl@3
+		Component 5, Full name = Curl@4
+		Component 6, Full name = Curl@5
+		Component 7, Full name = Curl@6
+		Component 8, Full name = Curl@7
+
+Field Metadata: Name: `Species`, Nesting: 2
+	Nesting level: 0, Type: EX_FIELD_TYPE_USER_DEFINED, Cardinality: 4, Separator: "_"
+	User-defined suffices: h2o,gas,ch4,methane
+	Nesting level: 1, Type: EX_QUADRATURE (1x2x1), Cardinality: 2, Separator: "-"
+	User-defined suffices: h2o,gas,ch4,methane
+		Component 1 1, Full name = Species_h2o-0
+		Component 2 1, Full name = Species_gas-0
+		Component 3 1, Full name = Species_ch4-0
+		Component 4 1, Full name = Species_methane-0
+		Component 1 2, Full name = Species_h2o-1
+		Component 2 2, Full name = Species_gas-1
+		Component 3 2, Full name = Species_ch4-1
+		Component 4 2, Full name = Species_methane-1
+after ex_initialize_basis_struct(basis, bas_cnt, -1), error = 0
+after ex_initialize_quadrature_struct(quad, quad_cnt, -1), error = 0
+
+after ex_close, error =   0

@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <Teuchos_ConfigDefs.hpp>
@@ -85,15 +53,14 @@ namespace std {
   }
 }
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
 using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
-std::string getElementBlock(const Triplet & element,
-                            const CartesianConnManager & connManager)
-                                    
-{
+std::string getElementBlock(
+  const Triplet & element,
+  const CartesianConnManager & connManager
+) {
   int localElmtId = connManager.computeLocalBrickElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
@@ -116,30 +83,30 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
   // build the topology
   using CCM = CartesianConnManager;
-  RCP<CCM> connManager = rcp(new CCM);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 
   // build the dof manager, and assocaite with the topology
   using DOFManager = panzer::DOFManager;
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   using Basis = Intrepid2::Basis<PHX::Device,double,double>;
   
-  RCP<Basis> bhgrad2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
-  RCP<const FieldPattern> hgrad2 = rcp(new Intrepid2FieldPattern(bhgrad2));
+  RCP<Basis> bhgrad2 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device, double, double>>(2);
+  RCP<const FieldPattern> hgrad2 = Teuchos::make_rcp<Intrepid2FieldPattern>(bhgrad2);
   out << "HGRAD2\n" << *hgrad2 << std::endl;
 
-  RCP<Basis> bhgrad1 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(1));
-  RCP<const FieldPattern> hgrad1 = rcp(new Intrepid2FieldPattern(bhgrad1));
+  RCP<Basis> bhgrad1 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device, double, double>>(1);
+  RCP<const FieldPattern> hgrad1 = Teuchos::make_rcp<Intrepid2FieldPattern>(bhgrad1);
   out << "HGRAD1\n" << *hgrad1 << std::endl;
   
-  RCP<Basis> bhcurl = rcp(new Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device,double,double>(1));
-  RCP<const FieldPattern> hcurl = rcp(new Intrepid2FieldPattern(bhcurl));
+  RCP<Basis> bhcurl = Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device, double, double>>(1);
+  RCP<const FieldPattern> hcurl = Teuchos::make_rcp<Intrepid2FieldPattern>(bhcurl);
   out << "HCURL2\n" << *hcurl << std::endl;
   
-  RCP<Basis> bhdiv = rcp(new Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device,double,double>(1));
-  RCP<const FieldPattern> hdiv = rcp(new Intrepid2FieldPattern(bhdiv));
+  RCP<Basis> bhdiv = Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device, double, double>>(1);
+  RCP<const FieldPattern> hdiv = Teuchos::make_rcp<Intrepid2FieldPattern>(bhdiv);
   out << "HDIV2\n" << *hdiv << std::endl;
 
   // Add fields. Use Hgrad2 for testing DG so that we have unknowns on
@@ -479,5 +446,4 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   
 }
 
-} // end unit test
-} // end panzer
+} // namespace panzer::unit test

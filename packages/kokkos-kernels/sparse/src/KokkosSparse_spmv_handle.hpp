@@ -36,8 +36,11 @@ enum SPMVAlgorithm {
                     /// is only used once.
   SPMV_NATIVE,      /// Use the best KokkosKernels implementation, even if a TPL
                     /// implementation is available.
-  SPMV_MERGE_PATH,  /// Use load-balancing merge path algorithm (for CrsMatrix
-                    /// only)
+  SPMV_MERGE_PATH,  /// Use algorithm optimized for matrices with
+                    /// imbalanced/irregular sparsity patterns (merge path or
+                    /// similar). May call a TPL. For CrsMatrix only.
+  SPMV_NATIVE_MERGE_PATH,  /// Use the KokkosKernels implementation of merge
+                           /// path. For CrsMatrix only.
   SPMV_BSR_V41,  /// Use experimental version 4.1 algorithm (for BsrMatrix only)
   SPMV_BSR_V42,  /// Use experimental version 4.2 algorithm (for BsrMatrix only)
   SPMV_BSR_TC    /// Use experimental tensor core algorithm (for BsrMatrix only)
@@ -59,6 +62,7 @@ inline const char* get_spmv_algorithm_name(SPMVAlgorithm a) {
     case SPMV_FAST_SETUP: return "SPMV_FAST_SETUP";
     case SPMV_NATIVE: return "SPMV_NATIVE";
     case SPMV_MERGE_PATH: return "SPMV_MERGE_PATH";
+    case SPMV_NATIVE_MERGE_PATH: return "SPMV_NATIVE_MERGE_PATH";
     case SPMV_BSR_V41: return "SPMV_BSR_V41";
     case SPMV_BSR_V42: return "SPMV_BSR_V42";
     case SPMV_BSR_TC: return "SPMV_BSR_TC";
@@ -73,10 +77,11 @@ inline const char* get_spmv_algorithm_name(SPMVAlgorithm a) {
 inline bool is_spmv_algorithm_native(SPMVAlgorithm a) {
   switch (a) {
     case SPMV_NATIVE:
-    case SPMV_MERGE_PATH:
+    case SPMV_NATIVE_MERGE_PATH:
     case SPMV_BSR_V41:
     case SPMV_BSR_V42:
     case SPMV_BSR_TC: return true;
+    // DEFAULT, FAST_SETUP and MERGE_PATH may call TPLs
     default: return false;
   }
 }
@@ -235,7 +240,8 @@ struct SPMVHandleImpl {
                 "SPMVHandleImpl: Ordinal must not be a const type");
   SPMVHandleImpl(SPMVAlgorithm algo_) : algo(algo_) {}
   ~SPMVHandleImpl() {
-    if (tpl) delete tpl;
+    if (tpl_rank1) delete tpl_rank1;
+    if (tpl_rank2) delete tpl_rank2;
   }
 
   ImplType* get_impl() { return this; }
@@ -243,9 +249,9 @@ struct SPMVHandleImpl {
   /// Get the SPMVAlgorithm used by this handle
   SPMVAlgorithm get_algorithm() const { return this->algo; }
 
-  bool is_set_up                     = false;
-  const SPMVAlgorithm algo           = SPMV_DEFAULT;
-  TPL_SpMV_Data<ExecutionSpace>* tpl = nullptr;
+  const SPMVAlgorithm algo                 = SPMV_DEFAULT;
+  TPL_SpMV_Data<ExecutionSpace>* tpl_rank1 = nullptr;
+  TPL_SpMV_Data<ExecutionSpace>* tpl_rank2 = nullptr;
   // Expert tuning parameters for native SpMV
   // TODO: expose a proper Experimental interface to set these. Currently they
   // can be assigned directly in the SPMVHandle as they are public members.
@@ -351,6 +357,7 @@ struct SPMVHandle
     } else {
       switch (get_algorithm()) {
         case SPMV_MERGE_PATH:
+        case SPMV_NATIVE_MERGE_PATH:
           throw std::invalid_argument(std::string("SPMVHandle: algorithm ") +
                                       get_spmv_algorithm_name(get_algorithm()) +
                                       " cannot be used if A is a BsrMatrix");

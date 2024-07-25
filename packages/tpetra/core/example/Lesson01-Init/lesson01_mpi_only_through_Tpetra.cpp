@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /*!
 \example lesson01_mpi_only_through_Tpetra.cpp
 \brief Initialization example for a code that only uses MPI through Tpetra.
