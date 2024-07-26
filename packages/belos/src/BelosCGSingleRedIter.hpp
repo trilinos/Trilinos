@@ -300,30 +300,30 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::CGSingleRedIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 
-          // W_ = (R_, AZ_, Z_)
+          // W_ = (AZ_, R_, Z_)
           W_ = MVT::Clone( *tmp, 3 );
           std::vector<int> index2(2,0);
           std::vector<int> index(1,0);
 
-          // S_ = (R_, AZ_)
+          // S_ = (AZ_, R_)
           index2[0] = 0;
           index2[1] = 1;
           S_ = MVT::CloneViewNonConst( *W_, index2 );
 
           // U_ = (AZ_, Z_)
-          index2[0] = 1;
+          index2[0] = 0;
           index2[1] = 2;
           U_ = MVT::CloneViewNonConst( *W_, index2 );
 
-          index[0] = 0;
-          R_ = MVT::CloneViewNonConst( *W_, index );
           index[0] = 1;
+          R_ = MVT::CloneViewNonConst( *W_, index );
+          index[0] = 0;
           AZ_ = MVT::CloneViewNonConst( *W_, index );
           index[0] = 2;
           Z_ = MVT::CloneViewNonConst( *W_, index );
 
           // T_ = (R_, Z_)
-          index2[0] = 0;
+          index2[0] = 1;
           index2[1] = 2;
           T_ = MVT::CloneViewNonConst( *W_, index2 );
 
@@ -455,14 +455,14 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
       // Compute first <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R_> combined (also computes unneeded <AZ_,R_>)
       MVT::MvTransMv( one, *S_, *T_, sHt );
-      rHz_ = sHt(0,1);
-      delta = sHt(1,1);
-      rHr_ = sHt(0,0);
+      rHz_ = sHt(1,1);
+      delta = sHt(0,1);
+      rHr_ = sHt(1,0);
     } else {
       // Compute first <s,z> a.k.a. <r,z> and <Az,z> combined
       MVT::MvTransMv( one, *S_, *Z_, sHz );
-      rHz_ = sHz(0,0);
-      delta = sHz(1,0);
+      rHz_ = sHz(1,0);
+      delta = sHz(0,0);
     }
     if ((Teuchos::ScalarTraits<ScalarType>::magnitude(delta) < Teuchos::ScalarTraits<ScalarType>::eps()) &&
         (stest_->checkStatus(this) == Passed))
@@ -514,9 +514,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHt(0,1);
-        delta = sHt(1,1);
-        rHr_ = sHt(0,0);
+        rHz_ = sHt(1,1);
+        delta = sHt(0,1);
+        rHr_ = sHt(1,0);
 
         // Increment the iteration
         iter_++;
@@ -589,8 +589,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHz(0,0);
-        delta = sHz(1,0);
+        rHz_ = sHz(1,0);
+        delta = sHz(0,0);
         //
         beta = rHz_ / rHz_old;
         alpha = rHz_ / (delta - (beta*rHz_ / alpha));
