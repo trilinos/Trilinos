@@ -1,6 +1,6 @@
 // @HEADER
 // *****************************************************************************
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //
 // Copyright 2008 NTESS and the Phalanx contributors.
@@ -156,10 +156,45 @@ namespace PHX {
         check_use_count_(true)
     {}
 
-    ViewOfViews(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
-    ViewOfViews& operator=(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
-    ViewOfViews(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& src) = default;
-    ViewOfViews& operator=(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& ) = default;
+    /// A new outer view is allocated internally and points to the same inner views as src.
+    ViewOfViews(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& src)
+      : ViewOfViews()
+    { this->initializeFromSource(src); }
+
+    /// A new outer view is allocated internally and points to the same inner views as src.
+    ViewOfViews(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& src)
+      : ViewOfViews()
+    { this->initializeFromSource(src); }
+
+    /// A new outer view is allocated internally and points to the same inner views as src.
+    ViewOfViews& operator=(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& src)
+    {
+      if (this->isInitialized())
+        PHX::freeInnerViewsOfHostHostViewOfViews(this->view_host_);
+
+      device_view_is_synced_ = false;
+      is_initialized_ = false;
+      use_count_ = 0;
+      check_use_count_ = true;
+
+      this->initializeFromSource(src);
+      return *this;
+    }
+
+    /// A new outer view is allocated internally and points to the same inner views as src.
+    ViewOfViews& operator=(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& src)
+    {
+      if (this->isInitialized())
+        PHX::freeInnerViewsOfHostHostViewOfViews(this->view_host_);
+
+      device_view_is_synced_ = false;
+      is_initialized_ = false;
+      use_count_ = 0;
+      check_use_count_ = true;
+
+      this->initializeFromSource(src);
+      return *this;
+    }
 
     // Making this a kokkos function eliminates cuda compiler warnings
     // in objects that contain ViewOfViews that are copied to device.
@@ -310,7 +345,51 @@ namespace PHX {
       KOKKOS_ASSERT(device_view_is_synced_);
       return view_device_;
     }
-  };
+
+  private:
+
+    /// Internal initialization from a copy
+    void initializeFromSource(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& source)
+    {
+      if (source.isInitialized()) {
+        auto v = source.getViewHost();
+
+        if constexpr (OuterViewRank == 1) {
+          this->initialize(v.label(),v.extent(0));
+          for (std::size_t i=0; i < v.extent(0); ++i) {
+            this->addView(v(i),i);
+          }
+        }
+        else if constexpr (OuterViewRank == 2) {
+          this->initialize(v.label(),v.extent(0),v.extent(1));
+          for (std::size_t i=0; i < v.extent(0); ++i) {
+            for (std::size_t j=0; j < v.extent(1); ++j) {
+              this->addView(v(i,j),i,j);
+            }
+          }
+        }
+        else if constexpr (OuterViewRank == 3) {
+          this->initialize(v.label(),v.extent(0),v.extent(1),v.extent(2));
+          for (std::size_t i=0; i < v.extent(0); ++i) {
+            for (std::size_t j=0; j < v.extent(1); ++j) {
+              for (std::size_t k=0; k < v.extent(2); ++k) {
+                this->addView(v(i,j,k),i,j,k);
+              }
+            }
+          }
+        }
+
+        if (source.deviceViewIsSynced()) {
+          this->syncHostToDevice();
+        }
+      }
+
+      if (source.safetyCheck())
+        this->enableSafetyCheck();
+      else
+        this->disableSafetyCheck();
+    }
+};
 
   /// Returns a rank-1 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
   template<typename InnerViewType,typename... OuterViewProps>

@@ -94,6 +94,15 @@ TEUCHOS_UNIT_TEST(ViewOfViews,from_separate_views) {
           TEST_FLOATING_EQUALITY(c_host(cell,pt,eq),5.0,tol);
         }
   }
+
+  // Need to manually clean out the inner view memory. The Kokkos view
+  // dtor calls a parallel_for in the destructor for the view. A view
+  // of views thus calls nested parallel_fors that are not
+  // allowed. This results in a hang at the parallel_for mutex.
+  {
+    for (size_t i=0; i < v_host_managed.size(); ++i)
+      v_host_managed(i) = {};
+  }
 }
 
 // Note: The outer view will call the default ctor on device for first
