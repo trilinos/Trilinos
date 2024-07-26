@@ -7,13 +7,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES MueLu_MatrixDriver.cpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Epetra1DLaplace
-    SOURCES Epetra1DLaplace.cpp MueLu_MemoryProfiler.cpp
-    )
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra1DLaplace
   SOURCES Tpetra1DLaplace.cpp MueLu_MemoryProfiler.cpp

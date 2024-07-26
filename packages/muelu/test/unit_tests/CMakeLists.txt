@@ -117,19 +117,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-
-IF( HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
-APPEND_SET(SOURCES
-  ParameterList/MLParameterListInterpreter.cpp
-)
-ENDIF()
-
-APPEND_SET(SOURCES
-  ParameterList/CreateSublists.cpp
-)
-ENDIF()
-
 APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
@@ -148,12 +135,8 @@ ENDIF()
 
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Ifpack
   ${PACKAGE_NAME}_ENABLE_Ifpack2
-  ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_EpetraExt
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Zoltan
   )
@@ -165,23 +148,12 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedSmoother.cpp)
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
-  APPEND_SET(SOURCES Smoothers/IfpackSmoother.cpp)
-ENDIF()
-
 IF(${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Smoothers/BelosSmoother.cpp)
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
   APPEND_SET(SOURCES Smoothers/StratimikosSmoother.cpp)
-ENDIF()
-
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
-  APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
-  IF(NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
-    APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
-  ENDIF()
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -201,8 +173,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
 
-IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
-    (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
+IF ((${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests ON)
 ELSE()
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests OFF)
@@ -279,66 +250,6 @@ ENDIF()
       COMM serial mpi
       )
   ENDIF()
-
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-
-    TRIBITS_ADD_TEST(
-      UnitTests
-      NAME "UnitTestsEpetra"
-      ARGS "--linAlgebra=Epetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
-
-    TRIBITS_ADD_TEST(
-      UnitTests
-      NAME "UnitTestsEpetra"
-      ARGS "--linAlgebra=Epetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 4
-      COMM mpi
-      )
-
-    TRIBITS_ADD_TEST(
-      UnitTests_Blocked
-      NAME "UnitTestsBlockedEpetra"
-      ARGS "--linAlgebra=Epetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
-
-    TRIBITS_ADD_TEST(
-      UnitTests_Blocked
-      NAME "UnitTestsBlockedEpetra"
-      ARGS "--linAlgebra=Epetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 4
-      COMM mpi
-      )
-
-    IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
-      TRIBITS_ADD_TEST(
-        UnitTests_CreatePreconditioner
-        NAME "UnitTestsCreatePreconditionerEpetra"
-        ARGS "--linAlgebra=Epetra"
-        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-        NUM_MPI_PROCS 1
-        COMM serial mpi
-        )
-
-      TRIBITS_ADD_TEST(
-        UnitTests_CreatePreconditioner
-        NAME "UnitTestsCreatePreconditionerEpetra"
-        ARGS "--linAlgebra=Epetra"
-        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-        NUM_MPI_PROCS 4
-        COMM mpi
-        )
-    ENDIF()
-
-  ENDIF() # Epetra / EpetraExt
 
   TRIBITS_ADD_TEST(
     UnitTests
@@ -448,8 +359,3 @@ ENDIF()
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
-
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
-  ADD_SUBDIRECTORY(ParameterList/CreateSublists/)
-ENDIF()
