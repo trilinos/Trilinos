@@ -24,10 +24,6 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_SmootherBase.hpp"
 
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_Utilities_kokkos_fwd.hpp"
-#endif
-
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
 #include "Xpetra_MatrixFactory_fwd.hpp"
