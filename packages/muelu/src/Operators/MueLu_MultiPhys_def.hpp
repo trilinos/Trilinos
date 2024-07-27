@@ -29,9 +29,6 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 #include <MueLu_HierarchyUtils.hpp>
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_Utilities_kokkos.hpp"
-#endif
 #include "MueLu_VerbosityLevel.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
