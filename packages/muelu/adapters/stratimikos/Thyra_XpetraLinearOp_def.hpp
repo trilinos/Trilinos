@@ -25,6 +25,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>::XpetraLinearOp() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~XpetraLinearOp() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>::initialize(
     const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
     const RCP<const VectorSpaceBase<Scalar> > &domainSpace,

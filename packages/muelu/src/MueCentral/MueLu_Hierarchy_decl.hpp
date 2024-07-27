@@ -102,7 +102,7 @@ class Hierarchy : public BaseClass {
   Hierarchy(const RCP<Matrix>& A, const std::string& label);
 
   //! Destructor.
-  virtual ~Hierarchy() {}
+  virtual ~Hierarchy();
 
   //@}
 

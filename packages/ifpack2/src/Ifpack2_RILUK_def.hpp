@@ -1154,7 +1154,6 @@ void RILUK<MatrixType>::compute ()
       A_local_crs_nc_->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
     }
 
-    using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
     if (!isKokkosKernelsStream_) {
       compute_kkspiluk();
     }
@@ -1170,7 +1169,7 @@ void RILUK<MatrixType>::compute ()
 
 namespace Impl {
 template <typename MV, typename Map>
-void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const int numVectors, bool initialize)
+void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const size_t numVectors, bool initialize)
 {
   if(!mv_ptr || mv_ptr->getNumVectors() != numVectors) {
     mv_ptr.reset(new MV(map, numVectors, initialize));

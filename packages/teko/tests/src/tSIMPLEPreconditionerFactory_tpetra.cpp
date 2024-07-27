@@ -749,7 +749,7 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_hierarchicalSolves(int verbosity,
 
   ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Included Subblocks", "3");
   ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Inverse Type", "Belos");
-  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Preconditioner Type", "SINGLE_BGS");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Preconditioner Type", "SINGLE_BLOCK");
 
   ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
   ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
@@ -757,8 +757,7 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_hierarchicalSolves(int verbosity,
   ifl.sublist("SIMPLE").set("Inverse Pressure Type", "Belos");
   ifl.sublist("SIMPLE").set("Preconditioner Pressure Type", "Ifpack2");
 
-  ifl.sublist("SINGLE_BGS").set("Type", "Block Gauss-Seidel");
-  ifl.sublist("SINGLE_BGS").set("Inverse Type", "Ifpack2");
+  ifl.sublist("SINGLE_BLOCK").set("Type", "Ifpack2");
 
   RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
   RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("HBGS");

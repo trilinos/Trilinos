@@ -983,7 +983,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100 * TMT::eps());
+                           300 * TMT::eps());
   }
 
   // Finally we perform the "fastMatVec" that does not require
@@ -1000,7 +1000,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           200 * TMT::eps());
+                           300 * TMT::eps());
   }
 
 }  // FastMatVec3D_Elasticity

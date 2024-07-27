@@ -141,7 +141,7 @@ class Test_parse_args(unittest.TestCase):
 
                 Parse the repo and build information
 
-                optional arguments:
+                options:
                   -h, --help            show this help message and exit
 
                 Required Arguments:

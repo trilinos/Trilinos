@@ -202,6 +202,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("solver", &dsolveType, "solve type: (none | belos | standalone | matvec)");
   std::string belosType = "cg";
   clp.setOption("belosType", &belosType, "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
+  bool computeCondEst = false;
+  clp.setOption("condEst", "noCondEst", &computeCondEst, "compute condition number estimate (currently only available for Pseudoblock CG)");
   double dtol = 1e-12, tol;
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
@@ -521,7 +523,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         // Solve the system numResolves+1 times
-        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol);
+        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst);
 
         comm->barrier();
       } catch (const std::exception& e) {

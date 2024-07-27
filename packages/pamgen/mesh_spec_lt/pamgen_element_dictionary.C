@@ -1,4 +1,11 @@
-// $Id$
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
 
 #include "pamgen_code_types.h"
 #include "pamgen_element_dictionary.h"

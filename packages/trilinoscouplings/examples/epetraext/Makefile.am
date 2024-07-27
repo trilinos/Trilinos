@@ -1,5 +1,3 @@
-#@HEADER
-#@HEADER
 
 # include definitions of TRILINOSCOUPLINGS_INCLUDES and TRILINOSCOUPLINGS_LIBS
 include $(top_builddir)/Makefile.export.trilinoscouplings

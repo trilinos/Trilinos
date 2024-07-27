@@ -46,9 +46,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   {
     auto dots = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
     Kokkos::deep_copy(Q, dots);
-    int strides[2];
-    Q.stride(strides);
-    LDQ = strides[1];
+    LDQ = Q.stride(1);
   }
 
   Teuchos::LAPACK<LocalOrdinal, Scalar> lapack;

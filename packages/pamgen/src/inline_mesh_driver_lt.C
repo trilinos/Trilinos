@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
 
 #include "../mesh_spec_lt/pamgen_mesh_specification.h"
 #include "inline_mesh_desc.h"

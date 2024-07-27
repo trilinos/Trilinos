@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//            TriBITS: Tribal Build, Integrate, and Test System
+//
+// Copyright 2013-2016 NTESS and the TriBITS contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef WINMATH_H
 #define WINMATH_H
 
@@ -82,7 +91,7 @@ inline double atanh(double x)
 }
 
 inline double round(double val)
-{   
+{
     return floor(val + 0.5);
 }
 
@@ -180,7 +189,7 @@ inline long double tgammal(long double z){
   return return_val;
 }
 
-// This function was adapted from a public domain implementation of erf 
+// This function was adapted from a public domain implementation of erf
 // which is available at http://www.johndcook.com/cpp_erf.html. The only
 // changes made were to change the type from double to float.
 inline float erff(float x)
