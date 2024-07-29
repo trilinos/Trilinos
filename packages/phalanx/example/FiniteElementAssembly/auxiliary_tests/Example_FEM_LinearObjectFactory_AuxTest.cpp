@@ -49,7 +49,7 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
   
   const int max_entries_per_row = 27*num_equations;
   const int min_entries_per_row = 8*num_equations;
-  for (size_t row=0; row < graph.numRows(); ++row) {
+  for (decltype(graph)::size_type row=0; row < graph.numRows(); ++row) {
     TEST_ASSERT(graph.rowConst(row).length <= max_entries_per_row);
     TEST_ASSERT(graph.rowConst(row).length >= min_entries_per_row);
     std::cout << "row(" << row << ") = ";
