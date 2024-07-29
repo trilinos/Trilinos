@@ -35,6 +35,15 @@ unique design feature of Trilinos is its focus on packages.
   documentation for that package. Links to these can be found down the
   right side of any page on the website and at [the package website](https://trilinos.github.io/packages.html).
 
+- Sample build scripts for various platforms can be found in the
+  sampleScripts directory.  Please note that these sample scripts are
+  only a starting point for you to develop a script that works for
+  your own platform.
+
+- If you have questions, please submit an issue on the Trilinos repo 
+  [GitHub Issues page](https://github.com/trilinos/Trilinos/issues).
+
+
 ### License
 
 Trilinos is licensed on a per-package basis. Most packages are now
