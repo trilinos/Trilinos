@@ -1,6 +1,6 @@
 // @HEADER
 // *****************************************************************************
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //
 // Copyright 2008 NTESS and the Phalanx contributors.
@@ -13,6 +13,7 @@
 
 #include "Sacado.hpp" // for IsADType
 #include <utility> // for declval
+#include <memory> // for shared_ptr
 
 namespace PHX {
 
@@ -32,38 +33,45 @@ namespace PHX {
 
   namespace details {
     struct ViewOfViewsDeleter {
+      bool do_safety_check_ = false;
+
       template <class D, class... P>
       std::enable_if_t<
           Kokkos::is_view_v<typename Kokkos::View<D, P...>::value_type>>
       operator()(Kokkos::View<D, P...>* vov) const {
-         if (vov->use_count() > 1) {
-           Kokkos::abort("\n ERROR - PHX::ViewOfViews \n");
-         }
+        if (do_safety_check_) {
+          if (vov->use_count() > 1) {
+            Kokkos::abort("\n\n********\n ERROR - PHX::ViewOfViews - please free all instances of device Kokkos::View<View<...>> \n before deleting the host ViewOfView!\n********\n\n");
+          }
+        }
 
         // destroy inner views on host, outside of a parallel region
         constexpr size_t rank = Kokkos::View<D, P...>::rank();
-        if constexpr (rank == 0) {
-          (*vov)() = {};
-        } else if constexpr (rank == 1) {
-          for (size_t i = 0; i < vov->extent(0); ++i) {
-            (*vov)(i) = {};
-          }
-        } else if constexpr (rank == 2) {
-          for (size_t i = 0; i < vov->extent(0); ++i) {
-            for (size_t j = 0; j < vov->extent(1); ++j) {
-              (*vov)(i, j) = {};
+        static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<typename Kokkos::View<D, P...>::memory_space, Kokkos::HostSpace>::accessible;
+        if (device_view_is_accessible_from_host) {
+          if constexpr (rank == 0) {
+            (*vov)() = {};
+          } else if constexpr (rank == 1) {
+            for (size_t i = 0; i < vov->extent(0); ++i) {
+              (*vov)(i) = {};
             }
-          }
-        } else if constexpr (rank == 3) {
-          for (size_t i = 0; i < vov->extent(0); ++i) {
-            for (size_t j = 0; j < vov->extent(1); ++j) {
-              for (size_t k = 0; k < vov->extent(2); ++k) {
-                (*vov)(i, j, k) = {};
+          } else if constexpr (rank == 2) {
+            for (size_t i = 0; i < vov->extent(0); ++i) {
+              for (size_t j = 0; j < vov->extent(1); ++j) {
+                (*vov)(i, j) = {};
               }
             }
+          } else if constexpr (rank == 3) {
+            for (size_t i = 0; i < vov->extent(0); ++i) {
+              for (size_t j = 0; j < vov->extent(1); ++j) {
+                for (size_t k = 0; k < vov->extent(2); ++k) {
+                  (*vov)(i, j, k) = {};
+                }
+              }
+            }
+          } else {
+            static_assert(std::is_void_v<decltype(vov)>, "\n\n********\n Error - PHX::ViewOfViews - ViewOfView with outer view greater than rank 3 is not supported!\n********\n\n");
           }
-        } else {
-          static_assert(std::is_void_v<decltype(vov)>, "not supported");
         }
         // dispose of the outer view
         delete vov;
@@ -156,6 +164,8 @@ namespace PHX {
       } else {
         view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(*view_device_));
       }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
     }
 
     /// Ctor that uses a user specified execution space instance.
@@ -175,6 +185,8 @@ namespace PHX {
       } else {
         view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),*view_device_));
       }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
     }
 
     ViewOfViews()
@@ -184,10 +196,20 @@ namespace PHX {
     {}
 
     /// Enable safety check in dtor for external references.
-    void enableSafetyCheck() { check_use_count_ = true; }
+    void enableSafetyCheck()
+    {
+      check_use_count_ = true;
+      if (this->isInitialized())
+        std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+    }
 
     /// Disable safety check in dtor for external references.
-    void disableSafetyCheck() { check_use_count_ = false; }
+    void disableSafetyCheck()
+    {
+      check_use_count_ = false;
+      if (this->isInitialized())
+        std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+    }
 
     /// Allocate the out view objects. Extents are for the outer view. Uses the default execution space.
     template<typename... Extents>
@@ -200,6 +222,9 @@ namespace PHX {
       } else {
         view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(*view_device_));
       }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+
       device_view_is_synced_ = false;
       is_initialized_ = true;
     }
@@ -219,6 +244,9 @@ namespace PHX {
       } else {
         view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),*view_device_));
       }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+
       device_view_is_synced_ = false;
       is_initialized_ = true;
     }

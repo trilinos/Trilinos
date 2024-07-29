@@ -72,12 +72,6 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_DefaultStreamInitialize) {
     v_of_v.enableSafetyCheck();
     TEST_ASSERT(v_of_v.safetyCheck());
 
-    // Uncomment the line below to prove the ViewOfViews prevents
-    // device views from outliving host view. This line will cause a
-    // Kokkos::abort() and error message since v_dev above is still in
-    // scope when the ViewOfViews is destoryed.
-    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
-
     // Test the const versions of accessors
     {
       const PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>& const_v_of_v = v_of_v;
@@ -132,12 +126,6 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_DefaultStreamCtor) {
         v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
       });
     }
-
-    // Uncomment the line below to prove the ViewOfViews prevents
-    // device views from outliving host view. This line will cause a
-    // Kokkos::abort() and error message since v_dev above is still in
-    // scope when the ViewOfViews is destoryed.
-    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
   }
 
   auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
@@ -211,11 +199,6 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_UserStreamCtor) {
       });
     }
 
-    // Uncomment the line below to prove the ViewOfViews prevents
-    // device views from outliving host view. This line will cause a
-    // Kokkos::abort() and error message since v_dev above is still in
-    // scope when the ViewOfViews is destoryed.
-    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
   }
 
   streams[3].fence();
@@ -294,12 +277,6 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_UserStreamInitialize) {
         v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
       });
     }
-
-    // Uncomment the line below to prove the ViewOfViews prevents
-    // device views from outliving host view. This line will cause a
-    // Kokkos::abort() and error message since v_dev above is still in
-    // scope when the ViewOfViews is destoryed.
-    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
   }
 
   streams[3].fence();
@@ -332,7 +309,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
 */
 
 // Make sure that an uninitialized ViewOviews3 can be default
-// constructed and destoryed. Happens in application unit tests.
+// constructed and destroyed. Happens in application unit tests.
 struct MeshEvaluationTestStruct {
     using InnerView = Kokkos::View<double***,mem_t>;
     PHX::ViewOfViews<2,InnerView,mem_t> v_of_v_;
@@ -749,4 +726,68 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
       TEST_FLOATING_EQUALITY( b_h(cell,pt).fastAccessDx(1),gold_dx1,tol);
     }
   }
+}
+
+
+// This test checks that the safety check works. Since the safety
+// check occurs in the deleter, the error calls abort instead of
+// throwning a exception. We would need to switch the test harness to
+// gtest to be able to test aborts in unit tests, so the needed code
+// check is commented out for now. You can manually run this check by
+// uncommenting the line below.
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_SafetyCheckAbort) {
+
+  const int num_cells = 10;
+  const int num_pts = 8;
+  const int num_equations = 32;
+
+  Kokkos::View<double***,mem_t> a("a",num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> b("b",num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> c("c",num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> d("d",num_cells,num_pts,num_equations);
+
+  Kokkos::deep_copy(a,2.0);
+  Kokkos::deep_copy(b,3.0);
+  Kokkos::deep_copy(c,4.0);
+
+  {
+    using InnerView = Kokkos::View<double***,mem_t>;
+    constexpr int OuterViewRank = 2;
+    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v;
+
+    TEST_ASSERT(!v_of_v.isInitialized());
+    v_of_v.initialize("outer host",2,2);
+    TEST_ASSERT(v_of_v.isInitialized());
+
+    v_of_v.addView(a,0,0);
+    v_of_v.addView(b,0,1);
+    v_of_v.addView(c,1,0);
+    v_of_v.addView(d,1,1);
+
+    TEST_ASSERT(!v_of_v.deviceViewIsSynced());
+    v_of_v.syncHostToDevice();
+    TEST_ASSERT(v_of_v.deviceViewIsSynced());
+
+    auto v_dev = v_of_v.getViewDevice();
+    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+    Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
+      v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
+    });
+
+    // Uncomment the line below to prove the ViewOfViews prevents
+    // device views from outliving host view. This line will cause a
+    // Kokkos::abort() and error message since v_dev above is still in
+    // scope when the ViewOfViews is destroyed.
+    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
+  }
+
+  auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
+
+  const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int cell=0; cell < num_cells; ++cell)
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq) {
+        TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
+      }
 }
