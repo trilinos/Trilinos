@@ -945,15 +945,15 @@ namespace phalanx_test {
     {
       Kokkos::View<StdDevAtomic,PHX::Device> values("v");
       Kokkos::parallel_for("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i) {
-        bool success = false;
+        bool success_local = false;
         do {
           StdDevAtomic n_minus_one(values());
           StdDevAtomic n(n_minus_one);
           n.count_ += 1;
           n.mean_ += ( a(i) - n_minus_one.mean_ ) / n.count_;
           n.M2_ += ( a(i) - n_minus_one.mean_ ) * ( a(i) - n.mean_ );
-          success = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
-        } while (!success);
+          success_local = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
+        } while (!success_local);
       });
       PHX::Device().fence();
 

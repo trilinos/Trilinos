@@ -124,12 +124,6 @@ TEUCHOS_UNIT_TEST(ViewOfViews,ArrayOfViews) {
   const int num_pts = 8;
   const int num_equations = 32;
 
-  // Requirement 1: The inner view must be unmanaged on device to
-  // prevent double deletion! To initialize correctly, we need to deep
-  // copy from host with the inner views propeties matching exactly on
-  // host and device.
-
-  using InnerViewUnmanaged = Kokkos::View<double***,mem_t,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using InnerView = Kokkos::View<double***,mem_t>;
 
   // For making sure the views are not destroyed.
@@ -140,10 +134,6 @@ TEUCHOS_UNIT_TEST(ViewOfViews,ArrayOfViews) {
     InnerView a("a",num_cells,num_pts,num_equations);
     InnerView b("b",num_cells,num_pts,num_equations);
     InnerView c("c",num_cells,num_pts,num_equations);
-
-    // vec[0] = a;
-    // vec[1] = b;
-    // vec[2] = c;
 
     a_of_v[0] = a;
     a_of_v[1] = b;
