@@ -37,7 +37,8 @@
     </ParameterList>
 
     <ParameterList name="Assembly">
-        <Parameter name="Workset Size" type="int" value="1"/>
+        <Parameter name="Workset Size" type="int" value="4"/>
+        <Parameter name="Use Tpetra" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
@@ -177,42 +178,30 @@
           <ParameterList name="NOX Stratimikos Options">
           </ParameterList>
           <ParameterList name="Stratimikos">
-            <Parameter name="Linear Solver Type" type="string" value="AztecOO"/>
+            <Parameter name="Linear Solver Type" type="string" value="Belos"/>
             <ParameterList name="Linear Solver Types">
-              <ParameterList name="AztecOO">
-                <ParameterList name="Forward Solve"> 
-                  <ParameterList name="AztecOO Settings">
-                    <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-                    <Parameter name="Convergence Test" type="string" value="r0"/>
-                    <Parameter name="Size of Krylov Subspace" type="int" value="200"/>
-                    <Parameter name="Output Frequency" type="int" value="10"/>
-                  </ParameterList>
-                  <Parameter name="Max Iterations" type="int" value="200"/>
-                  <Parameter name="Tolerance" type="double" value="1e-5"/>
-                </ParameterList>
-              </ParameterList>
               <ParameterList name="Belos">
-                <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+                <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
                 <ParameterList name="Solver Types">
-                  <ParameterList name="Block GMRES">
+                  <ParameterList name="Pseudo Block GMRES">
                     <Parameter name="Convergence Tolerance" type="double" value="1e-5"/>
-                    <Parameter name="Output Frequency" type="int" value="10"/>
+                    <Parameter name="Output Frequency" type="int" value="1"/>
                     <Parameter name="Output Style" type="int" value="1"/>
                     <Parameter name="Verbosity" type="int" value="33"/>
-                    <Parameter name="Maximum Iterations" type="int" value="100"/>
+                    <Parameter name="Maximum Iterations" type="int" value="200"/>
                     <Parameter name="Block Size" type="int" value="1"/>
-                    <Parameter name="Num Blocks" type="int" value="20"/>
+                    <Parameter name="Num Blocks" type="int" value="200"/>
                     <Parameter name="Flexible Gmres" type="bool" value="0"/>
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+            <Parameter name="Preconditioner Type" type="string" value="Ifpack2"/>
             <ParameterList name="Preconditioner Types">
-              <ParameterList name="Ifpack">
+              <ParameterList name="Ifpack2">
                 <Parameter name="Overlap" type="int" value="1"/>
-                <Parameter name="Prec Type" type="string" value="ILU"/>
-                <ParameterList name="Ifpack Settings">
+                <Parameter name="Prec Type" type="string" value="ILUT"/>
+                <ParameterList name="Ifpack2 Settings">
                   <Parameter name="fact: drop tolerance" type="double" value="0"/>
                   <Parameter name="fact: ilut level-of-fill" type="double" value="1"/>
                   <Parameter name="fact: level-of-fill" type="int" value="1"/>
