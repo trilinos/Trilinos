@@ -140,7 +140,7 @@ namespace PHX {
     // Inner views are unmanaged by runtime construction with pointer
     // (avoids template parameter). Used to correctly initialize outer
     // device view on device.
-    static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<typename OuterViewType::memory_space, Kokkos::HostSpace>::accessible;
+    static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename OuterViewType::memory_space>::accessible;
     std::conditional_t<device_view_is_accessible_from_host, std::shared_ptr<OuterViewType>, std::shared_ptr<typename OuterViewType::HostMirror>> view_host_unmanaged_;
     // True if the host view has not been synced to device
     bool device_view_is_synced_;
