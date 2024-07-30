@@ -48,10 +48,10 @@ class AmalgamationFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Constructor
-  AmalgamationFactory() = default;
+  AmalgamationFactory();
 
   //! Destructor
-  virtual ~AmalgamationFactory() = default;
+  virtual ~AmalgamationFactory();
 
   RCP<const ParameterList> GetValidParameterList() const override;
 

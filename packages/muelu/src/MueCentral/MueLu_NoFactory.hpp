@@ -28,11 +28,11 @@ namespace MueLu {
 */
 class NoFactory : public FactoryBase {
   //! Constructor.
-  NoFactory() {}
+  NoFactory();
 
  public:
   //! Destructor.
-  virtual ~NoFactory() {}
+  virtual ~NoFactory();
 
   //! Implementation of FactoryBase interface
   //@{
@@ -41,7 +41,7 @@ class NoFactory : public FactoryBase {
   void CallBuild(Level& requestedLevel) const;
 
   //!
-  void CallDeclareInput(Level& /* requestedLevel */) const {}
+  void CallDeclareInput(Level& /* requestedLevel */) const;
 
   //@}
 
@@ -49,12 +49,7 @@ class NoFactory : public FactoryBase {
   //@{
 
   //!
-  static const RCP<const NoFactory> getRCP() {
-    if (noFactory_.is_null())
-      noFactory_ = rcp(new NoFactory());
-
-    return noFactory_;
-  }
+  static const RCP<const NoFactory> getRCP();
 
   //!
   static const NoFactory* get();

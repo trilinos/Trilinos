@@ -45,6 +45,9 @@ UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::UncoupledAggrega
   : bDefinitionPhase_(true) {}
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
+UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::~UncoupledAggregationFactory() = default;
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

@@ -76,20 +76,13 @@ class FactoryManager : public FactoryManagerBase {
   //@{
 
   //! @brief Constructor.
-  FactoryManager() {
-    SetIgnoreUserData(false);  // set IgnorUserData flag to false (default behaviour)
-    useKokkos_ = !Node::is_serial;
-  }
+  FactoryManager();
 
   //! Constructor used by HierarchyFactory (temporary, will be removed)
-  FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable) {
-    factoryTable_ = factoryTable;
-    SetIgnoreUserData(false);  // set IgnorUserData flag to false (default behaviour) //TODO: use parent class constructor instead
-    useKokkos_ = !Node::is_serial;
-  }
+  FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable);
 
   //! Destructor.
-  virtual ~FactoryManager() {}
+  virtual ~FactoryManager();
 
   //@}
 
