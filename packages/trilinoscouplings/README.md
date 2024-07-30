@@ -1,9 +1,10 @@
 # TrilinosCouplings Package
 
-TrilinosCouplings is a meta-package, in the sense that its purpose
-is to resolve compile-time circular dependencies.  Thus, each source
-file belongs to another Trilinos package, and is governed by that
-particular package's copyright agreement.
+TrilinosCouplings is a meta-package of other Trilinos packages, in
+the sense that its purpose is to resolve compile-time circular
+dependencies between Trilinos packages.  Thus is part of the
+infrastructure/coupling provided by Trilinos and falls under the
+Trilinos copyright and license.
 
 
 ## Copyright and License
