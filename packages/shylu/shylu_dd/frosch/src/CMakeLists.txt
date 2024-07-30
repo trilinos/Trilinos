@@ -112,6 +112,8 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_AlgebraicOverlappingPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_GDSWPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_GDSWPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_GeometricOneLevelPreconditioner_decl.hpp
+  SchwarzPreconditioners/FROSch_GeometricOneLevelPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_OneLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_OneLevelPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_decl.hpp
