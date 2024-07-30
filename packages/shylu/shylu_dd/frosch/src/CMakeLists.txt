@@ -91,6 +91,8 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_CoarseOperator_def.hpp
   SchwarzOperators/FROSch_GDSWCoarseOperator_decl.hpp
   SchwarzOperators/FROSch_GDSWCoarseOperator_def.hpp
+  SchwarzOperators/FROSch_GeometricOverlappingOperator_decl.hpp
+  SchwarzOperators/FROSch_GeometricOverlappingOperator_def.hpp
   SchwarzOperators/FROSch_HarmonicCoarseOperator_decl.hpp
   SchwarzOperators/FROSch_HarmonicCoarseOperator_def.hpp
   SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_decl.hpp
