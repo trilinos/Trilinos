@@ -790,7 +790,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeB &b_,
                const MultiVectorLocalViewTypeX &x_) {
         IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ComputeResidual::<SeqTag>");
+        IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<SeqTag>", execution_space);
 
         y = y_; b = b_; x = x_;
         if constexpr (is_device<execution_space>::value) {
@@ -818,7 +818,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_) {
         IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ComputeResidual::<AsyncTag>");
+        IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<AsyncTag>", execution_space);
 
         b = b_; x = x_; x_remote = x_remote_;
         if constexpr (is_device<execution_space>::value) {
@@ -892,7 +892,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX_Remote &x_remote_,
                const bool compute_owned) {
         IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ComputeResidual::<OverlapTag>");
+        IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<OverlapTag>", execution_space);
 
         b = b_; x = x_; x_remote = x_remote_;
         if constexpr (is_device<execution_space>::value) {

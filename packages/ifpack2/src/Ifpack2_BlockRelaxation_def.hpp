@@ -22,6 +22,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
 #include "Tpetra_Import_Util.hpp"
+#include "Ifpack2_BlockHelper_Timers.hpp"
 
 namespace Ifpack2 {
 
@@ -606,7 +607,7 @@ initialize ()
     Teuchos::RCP<const row_graph_type> graph = A_->getGraph ();
 
     if(!hasBlockCrsMatrix_ && List_.isParameter("relaxation: container") && List_.get<std::string>("relaxation: container") == "BlockTriDi" ) {
-      TEUCHOS_FUNC_TIME_MONITOR("Ifpack2::BlockRelaxation::initialize::convertToBlockCrsMatrix");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::convertToBlockCrsMatrix");
       int block_size = List_.get<int>("partitioner: block size");
       bool use_explicit_conversion = List_.isParameter("partitioner: explicit convert to BlockCrs") && List_.get<bool>("partitioner: explicit convert to BlockCrs");
       TEUCHOS_TEST_FOR_EXCEPT_MSG
@@ -627,7 +628,7 @@ initialize ()
         }
         graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, true);
       }
-      Kokkos::DefaultExecutionSpace().fence();
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     }
 
     NumLocalRows_      = A_->getLocalNumRows ();
@@ -640,15 +641,22 @@ initialize ()
     Partitioner_ = Teuchos::null;
 
     if (PartitionerType_ == "linear") {
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::linear");
       Partitioner_ =
         rcp (new Ifpack2::LinearPartitioner<row_graph_type> (graph));
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     } else if (PartitionerType_ == "line") {
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::line");
       Partitioner_ =
         rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (graph));
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     } else if (PartitionerType_ == "user") {
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::user");
       Partitioner_ =
         rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (graph ) );
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     } else if (PartitionerType_ == "zoltan2") {
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::zoltan2");
       #if defined(HAVE_IFPACK2_ZOLTAN2)
       if (graph->getComm ()->getSize () == 1) {
         // Only one MPI, so call zoltan2 with global graph
@@ -664,6 +672,7 @@ initialize ()
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Zoltan2 not enabled.");
       #endif
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();    
     } else {
       // We should have checked for this in setParameters(), so it's a
       // logic_error, not an invalid_argument or runtime_error.
@@ -674,8 +683,12 @@ initialize ()
     }
 
     // need to partition the graph of A
-    Partitioner_->setParameters (List_);
-    Partitioner_->compute ();
+    {
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::Partitioner");
+      Partitioner_->setParameters (List_);
+      Partitioner_->compute ();
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
+    }
 
     // get actual number of partitions
     NumLocalBlocks_ = Partitioner_->numLocalParts ();
@@ -696,7 +709,12 @@ initialize ()
       "NumSweeps_ = " << NumSweeps_ << " < 0.");
 
     // Extract the submatrices
-    ExtractSubmatricesStructure ();
+    {
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::ExtractSubmatricesStructure");
+      ExtractSubmatricesStructure ();
+      IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
+    }
+    
 
     // Compute the weight vector if we're doing overlapped Jacobi (and
     // only if we're doing overlapped Jacobi).
@@ -724,6 +742,7 @@ initialize ()
       //    only needed when Schwarz combine mode is ADD as opposed to ZERO (which is RAS)
 
       if (schwarzCombineMode_ == "ADD") {
+        IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::ADD");
         typedef Tpetra::MultiVector<        typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type,  typename MatrixType::global_ordinal_type,typename MatrixType::node_type> scMV;
         Teuchos::RCP<const import_type> theImport = A_->getGraph()->getImporter();
         if (!theImport.is_null()) {
@@ -737,7 +756,7 @@ initialize ()
           nonOverLapW.doExport (*W_,         *theImport, Tpetra::ADD);
           W_->doImport(         nonOverLapW, *theImport, Tpetra::INSERT);
         }
-
+        IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
       }
       W_->reciprocal (*W_);
     }
