@@ -8,7 +8,7 @@ MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
   # generator, but it doesn't hurt to do it for other generators as
   # well.
   TRIBITS_COPY_INSTALLER_RESOURCE(Trilinos_README
-    "${Trilinos_SOURCE_DIR}/README"
+    "${Trilinos_SOURCE_DIR}/README.md"
     "${Trilinos_BINARY_DIR}/README.txt")
   TRIBITS_COPY_INSTALLER_RESOURCE(Trilinos_LICENSE
     "${Trilinos_SOURCE_DIR}/LICENSE"
