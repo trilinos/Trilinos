@@ -17,7 +17,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_MatrixFreeTentativePFactory.hpp"
@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentative, Sc
 
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeVect
 
   auto amalgFact = rcp(new AmalgamationFactory());
 
-  auto dropFact = rcp(new CoalesceDropFactory_kokkos());
+  auto dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   auto aggFact = rcp(new UncoupledAggregationFactory());
@@ -249,7 +249,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeUsin
 
   auto amalgFact = rcp(new AmalgamationFactory());
 
-  auto dropFact = rcp(new CoalesceDropFactory_kokkos());
+  auto dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   auto aggFact = rcp(new UncoupledAggregationFactory());
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MatrixVsMatrixFre
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 
-    RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
     RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
@@ -414,7 +414,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MatrixVsMatrixFre
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 
-    RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
     RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());

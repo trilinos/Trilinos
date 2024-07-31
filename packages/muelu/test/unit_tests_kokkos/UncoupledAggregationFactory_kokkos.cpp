@@ -18,7 +18,7 @@
 //#include <Galeri_XpetraMaps.hpp>
 
 #include <MueLu_AmalgamationFactory.hpp>
-#include <MueLu_CoalesceDropFactory_kokkos.hpp>
+#include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_config.hpp>
 #include <MueLu_TestHelpers_kokkos.hpp>
 #include <MueLu_Version.hpp>
@@ -83,8 +83,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build, Scalar, Lo
   aLevel.Request("A");
   aLevel.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
@@ -128,8 +128,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_MIS2_Coarse
   aLevel.Request("A");
   aLevel.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
@@ -175,8 +175,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_MIS2_Aggreg
   aLevel.Request("A");
   aLevel.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());

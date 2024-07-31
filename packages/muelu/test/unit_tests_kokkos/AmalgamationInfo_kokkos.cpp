@@ -20,7 +20,7 @@
 #include <MueLu_AmalgamationInfo.hpp>
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 namespace MueLuTests {
 
@@ -106,8 +106,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationInfo_kokkos, UnamalgateAggregate, 
                                                                            nStridedOffset,
                                                                            stridedblocksize));
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   RCP<LWGraph_kokkos> graph;

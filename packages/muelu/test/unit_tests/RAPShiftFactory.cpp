@@ -267,12 +267,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Factory,
   std::string myInputString =
       "<ParameterList name=\"MueLu\">"
       "  <ParameterList name=\"Factories\">"
-      "   <ParameterList name=\"myFilteredAFact\">"
-      "     <Parameter name=\"factory\"                             type=\"string\" value=\"FilteredAFactory\"/>"
-      "   </ParameterList>"
       "   <ParameterList name=\"myProlongatorFact\">"
       "     <Parameter name=\"factory\"                             type=\"string\" value=\"SaPFactory\"/>"
-      "     <Parameter name=\"A\"                                   type=\"string\" value=\"myFilteredAFact\"/>"
       "   </ParameterList>"
       "   <ParameterList name=\"myRAPFact\">"
       "     <Parameter name=\"factory\"                             type=\"string\" value=\"RAPShiftFactory\"/>"

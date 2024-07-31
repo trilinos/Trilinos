@@ -53,11 +53,11 @@ RCP<const ParameterList> ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal
   SET_VALID_ENTRY("aggregation: coloring algorithm");
   SET_VALID_ENTRY("aggregation: coloring: use color graph");
 #undef SET_VALID_ENTRY
-  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A");
-  validParamList->set<RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
-  validParamList->set<RCP<const FactoryBase> >("Graph", null, "Generating factory of the graph");
-  validParamList->set<RCP<const FactoryBase> >("Coloring Graph", null, "Generating factory of the graph");
-  validParamList->set<RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
+  validParamList->set<RCP<const FactoryBase>>("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
+  validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
+  validParamList->set<RCP<const FactoryBase>>("Coloring Graph", null, "Generating factory of the graph");
+  validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
   return validParamList;
 }
@@ -78,14 +78,25 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
   FactoryMonitor m(*this, "Build", currentLevel);
   const ParameterList& pL = GetParameterList();
-  RCP<const Matrix> A     = Get<RCP<Matrix> >(currentLevel, "A");
+  RCP<const Matrix> A     = Get<RCP<Matrix>>(currentLevel, "A");
 
   RCP<const LWGraph> graph;
   bool use_color_graph = pL.get<bool>("aggregation: coloring: use color graph");
   if (use_color_graph)
-    graph = Get<RCP<LWGraph> >(currentLevel, "Coloring Graph");
-  else
-    graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
+    if (IsType<RCP<LWGraph>>(currentLevel, "Coloring Graph")) {
+      graph = Get<RCP<LWGraph>>(currentLevel, "Coloring Graph");
+    } else {
+      auto graph_k = Get<RCP<LWGraph_kokkos>>(currentLevel, "Coloring Graph");
+      graph        = graph_k->copyToHost();
+    }
+  else {
+    if (IsType<RCP<LWGraph>>(currentLevel, "Graph")) {
+      graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
+    } else {
+      auto graph_k = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+      graph        = graph_k->copyToHost();
+    }
+  }
 
   /* ============================================================= */
   /* Phase 1 : Compute an initial MIS                              */
@@ -232,7 +243,7 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     GO l_counts[] = {(GO)num_c_points, (GO)num_f_points, (GO)num_d_points};
     GO g_counts[3];
 
-    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+    RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 3, l_counts, g_counts);
     GetOStream(Statistics1) << "ClassicalMapFactory(" << coloringAlgo << "): C/F/D = " << g_counts[0] << "/" << g_counts[1] << "/" << g_counts[2] << std::endl;
   }

@@ -179,12 +179,20 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   RCP<const Teuchos::Comm<int>> comm;
   LO numRows;
   bool runOnHost;
+  bool forceAggregationToHost = pL.get<bool>("aggregation: deterministic");
   if (IsType<RCP<LWGraph>>(currentLevel, "Graph")) {
     graph      = Get<RCP<LWGraph>>(currentLevel, "Graph");
     aggregates = rcp(new Aggregates(*graph));
     comm       = graph->GetComm();
     numRows    = graph->GetNodeNumVertices();
     runOnHost  = true;
+  } else if (forceAggregationToHost) {
+    auto graph_k = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+    graph        = graph_k->copyToHost();
+    aggregates   = rcp(new Aggregates(*graph));
+    comm         = graph->GetComm();
+    numRows      = graph->GetNodeNumVertices();
+    runOnHost    = true;
   } else {
     graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
     aggregates   = rcp(new Aggregates(*graph_kokkos));

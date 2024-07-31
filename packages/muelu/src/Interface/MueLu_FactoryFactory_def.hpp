@@ -102,9 +102,9 @@
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_NodePartitionInterface.hpp"
 
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #ifdef HAVE_MUELU_DEPRECATED_CODE
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #endif
@@ -213,9 +213,9 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   if (factoryName == "UserPFactory") return Build2<UserPFactory>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "VariableDofLaplacianFactory") return Build2<VariableDofLaplacianFactory>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "ZeroSubBlockAFactory") return Build2<ZeroSubBlockAFactory>(paramList, factoryMapIn, factoryManagersIn);
-  if (factoryName == "CoalesceDropFactory_kokkos") return Build2<CoalesceDropFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_DEPRECATED_CODE
+  if (factoryName == "CoalesceDropFactory_kokkos") return Build2<CoalesceDropFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "NullspaceFactory_kokkos") return Build2<NullspaceFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "SaPFactory_kokkos") return Build2<SaPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 #endif

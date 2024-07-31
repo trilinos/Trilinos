@@ -16,6 +16,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -37,14 +38,14 @@ gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdin
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
-  dropFact->SetPreDropFunction(rcp(new PreDropFunctionConstVal(0.00001)));
+  // dropFact->SetPreDropFunction(rcp(new PreDropFunctionConstVal(0.00001)));
 
   level.Request("Graph", dropFact.get());
   dropFact->Build(level);
 
-  auto graph = level.Get<RCP<LWGraph> >("Graph", dropFact.get());
+  auto graph = level.Get<RCP<LWGraph_kokkos> >("Graph", dropFact.get());
   level.Release("Graph", dropFact.get());
-  return graph;
+  return graph->copyToHost();
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph, CreateLWGraph, Scalar, LocalOrdinal, GlobalOrdinal, Node) {

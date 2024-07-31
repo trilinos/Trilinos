@@ -36,7 +36,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Maxwell_Utils.hpp"
 
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -282,15 +281,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
       !precList22_.isType<std::string>("Preconditioner Type") &&
       !precList22_.isParameter("reuse: type"))
     precList22_.set("reuse: type", "full");
-
-  // This should be taken out again as soon as
-  // CoalesceDropFactory_kokkos supports BlockSize > 1 and
-  // drop tol != 0.0
-  if (useKokkos_ && precList11_.isParameter("aggregation: drop tol") && precList11_.get<double>("aggregation: drop tol") != 0.0) {
-    GetOStream(Warnings0) << solverName_ + "::compute(): Setting \"aggregation: drop tol\". to 0.0, since CoalesceDropFactory_kokkos does not "
-                          << "support BlockSize > 1 and drop tol != 0.0" << std::endl;
-    precList11_.set("aggregation: drop tol", 0.0);
-  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1712,11 +1702,10 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildNodalProlongato
     coarseMapFact    = rcp(new CoarseMapFactory());
     Tfact            = rcp(new CoordinatesTransferFactory());
     UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    dropFact         = rcp(new CoalesceDropFactory());
     if (useKokkos_) {
-      dropFact       = rcp(new CoalesceDropFactory_kokkos());
       TentativePFact = rcp(new TentativePFactory_kokkos());
     } else {
-      dropFact       = rcp(new CoalesceDropFactory());
       TentativePFact = rcp(new TentativePFactory());
     }
     if (algo == "sa")

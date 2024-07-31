@@ -298,6 +298,10 @@ class LWGraphBase {
     return graph;
   }
 
+  const std::string& getObjectLabel() const {
+    return objectLabel_;
+  }
+
  private:
   //! Underlying graph (with label)
   mutable local_graph_type graph_;

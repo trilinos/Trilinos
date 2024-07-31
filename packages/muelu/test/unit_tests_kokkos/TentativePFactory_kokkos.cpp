@@ -17,7 +17,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentative, Scala
 
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
@@ -251,7 +251,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorB
 
   auto amalgFact = rcp(new AmalgamationFactory());
 
-  auto dropFact = rcp(new CoalesceDropFactory_kokkos());
+  auto dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   auto aggFact = rcp(new UncoupledAggregationFactory());
@@ -352,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDe
 
   auto amalgFact = rcp(new AmalgamationFactory());
 
-  auto dropFact = rcp(new CoalesceDropFactory_kokkos());
+  auto dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   auto aggFact = rcp(new UncoupledAggregationFactory());

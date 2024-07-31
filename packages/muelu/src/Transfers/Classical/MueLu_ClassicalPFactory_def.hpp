@@ -31,6 +31,7 @@
 #include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 
 //#define CMS_DEBUG
 //#define CMS_DUMP
@@ -68,13 +69,13 @@ RCP<const ParameterList> ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   }
 
 #undef SET_VALID_ENTRY
-  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
   //    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
-  validParamList->set<RCP<const FactoryBase> >("Graph", null, "Generating factory of the graph");
-  validParamList->set<RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase> >("CoarseMap", Teuchos::null, "Generating factory of the CoarseMap");
-  validParamList->set<RCP<const FactoryBase> >("FC Splitting", Teuchos::null, "Generating factory of the FC Splitting");
-  validParamList->set<RCP<const FactoryBase> >("BlockNumber", Teuchos::null, "Generating factory for Block Number");
+  validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
+  validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+  validParamList->set<RCP<const FactoryBase>>("CoarseMap", Teuchos::null, "Generating factory of the CoarseMap");
+  validParamList->set<RCP<const FactoryBase>>("FC Splitting", Teuchos::null, "Generating factory of the FC Splitting");
+  validParamList->set<RCP<const FactoryBase>>("BlockNumber", Teuchos::null, "Generating factory for Block Number");
   //    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
 
   return validParamList;
@@ -111,10 +112,16 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
 
   // We begin by getting a MIS (from a graph coloring) and then at that point we need
   // to start generating entries for the prolongator.
-  RCP<const Matrix> A                              = Get<RCP<Matrix> >(fineLevel, "A");
-  RCP<const Map> ownedCoarseMap                    = Get<RCP<const Map> >(fineLevel, "CoarseMap");
-  RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel, "FC Splitting");
-  RCP<const LWGraph> graph                         = Get<RCP<LWGraph> >(fineLevel, "Graph");
+  RCP<const Matrix> A                              = Get<RCP<Matrix>>(fineLevel, "A");
+  RCP<const Map> ownedCoarseMap                    = Get<RCP<const Map>>(fineLevel, "CoarseMap");
+  RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector>>(fineLevel, "FC Splitting");
+  RCP<const LWGraph> graph;
+  if (IsType<RCP<LWGraph>>(fineLevel, "Graph")) {
+    graph = Get<RCP<LWGraph>>(fineLevel, "Graph");
+  } else {
+    auto graph_k = Get<RCP<LWGraph_kokkos>>(fineLevel, "Graph");
+    graph        = graph_k->copyToHost();
+  }
   //    LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
   //    RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
   RCP<const Import> Importer = A->getCrsGraph()->getImporter();
@@ -205,7 +212,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
   if (drop_algo.find("block diagonal") != std::string::npos || drop_algo == "signed classical") {
     RCP<LocalOrdinalVector> OwnedBlockNumber;
-    OwnedBlockNumber = Get<RCP<LocalOrdinalVector> >(fineLevel, "BlockNumber");
+    OwnedBlockNumber = Get<RCP<LocalOrdinalVector>>(fineLevel, "BlockNumber");
     if (Importer.is_null())
       BlockNumber = OwnedBlockNumber;
     else {

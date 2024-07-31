@@ -41,7 +41,6 @@
 #include "MueLu_InterfaceAggregationFactory.hpp"
 #include "MueLu_InverseApproximationFactory.hpp"
 
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 
 #include "MueLu_FactoryManager_decl.hpp"
@@ -130,7 +129,7 @@ const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal,
     }
     if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
-    if (varName == "Graph") return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
+    if (varName == "Graph") return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
     if (varName == "UnAmalgamationInfo") return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory()));
     if (varName == "Aggregates") return SetAndReturnDefaultFactory(varName, rcp(new UncoupledAggregationFactory()));
     if (varName == "AggregateQualities") return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));

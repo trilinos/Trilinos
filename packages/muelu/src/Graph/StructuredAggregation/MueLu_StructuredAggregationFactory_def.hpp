@@ -16,6 +16,7 @@
 #include "MueLu_AggregationStructuredAlgorithm.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -50,16 +51,16 @@ RCP<const ParameterList> StructuredAggregationFactory<Scalar, LocalOrdinal, Glob
   SET_VALID_ENTRY("aggregation: coarsening rate");
   SET_VALID_ENTRY("aggregation: coarsening order");
 #undef SET_VALID_ENTRY
-  validParamList->set<RCP<const FactoryBase> >("Graph", Teuchos::null,
-                                               "Graph of the matrix after amalgamation but without dropping.");
-  validParamList->set<RCP<const FactoryBase> >("numDimensions", Teuchos::null,
-                                               "Number of spatial dimension provided by CoordinatesTransferFactory.");
-  validParamList->set<RCP<const FactoryBase> >("gNodesPerDim", Teuchos::null,
-                                               "Global number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
-  validParamList->set<RCP<const FactoryBase> >("lNodesPerDim", Teuchos::null,
-                                               "Local number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
-  validParamList->set<RCP<const FactoryBase> >("DofsPerNode", Teuchos::null,
-                                               "Generating factory for variable \'DofsPerNode\', usually the same as the \'Graph\' factory");
+  validParamList->set<RCP<const FactoryBase>>("Graph", Teuchos::null,
+                                              "Graph of the matrix after amalgamation but without dropping.");
+  validParamList->set<RCP<const FactoryBase>>("numDimensions", Teuchos::null,
+                                              "Number of spatial dimension provided by CoordinatesTransferFactory.");
+  validParamList->set<RCP<const FactoryBase>>("gNodesPerDim", Teuchos::null,
+                                              "Global number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
+  validParamList->set<RCP<const FactoryBase>>("lNodesPerDim", Teuchos::null,
+                                              "Local number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
+  validParamList->set<RCP<const FactoryBase>>("DofsPerNode", Teuchos::null,
+                                              "Generating factory for variable \'DofsPerNode\', usually the same as the \'Graph\' factory");
   validParamList->set<const bool>("aggregation: single coarse point", false,
                                   "Allows the aggreagtion process to reduce spacial dimensions to a single layer");
 
@@ -131,12 +132,18 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
   // General problem informations are gathered from data stored in the problem matix.
-  RCP<const LWGraph> graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
-  RCP<const Map> fineMap   = graph->GetDomainMap();
-  const int myRank         = fineMap->getComm()->getRank();
-  const int numRanks       = fineMap->getComm()->getSize();
-  const GO minGlobalIndex  = fineMap->getMinGlobalIndex();
-  const LO dofsPerNode     = Get<LO>(currentLevel, "DofsPerNode");
+  RCP<const LWGraph> graph;
+  if (IsType<RCP<LWGraph>>(currentLevel, "Graph")) {
+    graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
+  } else {
+    auto graph_k = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+    graph        = graph_k->copyToHost();
+  }
+  RCP<const Map> fineMap  = graph->GetDomainMap();
+  const int myRank        = fineMap->getComm()->getRank();
+  const int numRanks      = fineMap->getComm()->getSize();
+  const GO minGlobalIndex = fineMap->getMinGlobalIndex();
+  const LO dofsPerNode    = Get<LO>(currentLevel, "DofsPerNode");
 
   // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
   // obtain a nodeMap.
@@ -153,16 +160,16 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (currentLevel.GetLevelID() == 0) {
     // On level 0, data is provided by applications and has no associated factory.
     numDimensions    = currentLevel.Get<int>("numDimensions", NoFactory::get());
-    lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
+    lFineNodesPerDir = currentLevel.Get<Array<LO>>("lNodesPerDim", NoFactory::get());
     if (coupled) {
-      gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
+      gFineNodesPerDir = currentLevel.Get<Array<GO>>("gNodesPerDim", NoFactory::get());
     }
   } else {
     // On level > 0, data is provided directly by generating factories.
     numDimensions    = Get<int>(currentLevel, "numDimensions");
-    lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
+    lFineNodesPerDir = Get<Array<LO>>(currentLevel, "lNodesPerDim");
     if (coupled) {
-      gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
+      gFineNodesPerDir = Get<Array<GO>>(currentLevel, "gNodesPerDim");
     }
   }
 
@@ -206,13 +213,13 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Array<GO> meshData;
     if (currentLevel.GetLevelID() == 0) {
       // On level 0, data is provided by applications and has no associated factory.
-      meshData = currentLevel.Get<Array<GO> >("aggregation: mesh data", NoFactory::get());
+      meshData = currentLevel.Get<Array<GO>>("aggregation: mesh data", NoFactory::get());
       TEUCHOS_TEST_FOR_EXCEPTION(meshData.empty() == true, Exceptions::RuntimeError,
                                  "The meshData array is empty, somehow the input for structured"
                                  " aggregation are not captured correctly.");
     } else {
       // On level > 0, data is provided directly by generating factories.
-      meshData = Get<Array<GO> >(currentLevel, "aggregation: mesh data");
+      meshData = Get<Array<GO>>(currentLevel, "aggregation: mesh data");
     }
     // Note, LBV Feb 5th 2018:
     // I think that it might make sense to pass ghostInterface rather than interpolationOrder.
@@ -258,13 +265,13 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   *out << "Compute coarse mesh data" << std::endl;
-  std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
+  std::vector<std::vector<GO>> coarseMeshData = geoData->getCoarseMeshData();
 
   // Now we are ready for the big loop over the fine node that will assign each
   // node on the fine grid to an aggregate and a processor.
   RCP<const FactoryBase> graphFact = GetFactory("Graph");
   RCP<const Map> coarseCoordinatesFineMap, coarseCoordinatesMap;
-  RCP<MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node> >
+  RCP<MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>>
       myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm(graphFact));
 
   if (interpolationOrder == 0 && outputAggregates) {

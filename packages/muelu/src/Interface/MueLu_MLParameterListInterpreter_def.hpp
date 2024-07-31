@@ -47,8 +47,6 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
-// #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
@@ -208,11 +206,7 @@ void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetP
                              "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
   // Create MueLu factories
-  RCP<Factory> dropFact;
-  if (useKokkosRefactor)
-    dropFact = rcp(new CoalesceDropFactory_kokkos());
-  else
-    dropFact = rcp(new CoalesceDropFactory());
+  RCP<Factory> dropFact = rcp(new CoalesceDropFactory());
 
   if (agg_use_aux) {
     dropFact->SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
