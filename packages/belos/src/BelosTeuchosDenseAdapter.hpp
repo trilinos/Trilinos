@@ -229,11 +229,11 @@ namespace Belos {
       if (transpose)    
         return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(dm, Teuchos::CONJ_TRANS));
       else 
-        return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(dm, Teuchos::NO_TRANS));
+        return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy, dm));
     }
 
     //! \brief Returns a raw pointer to the (non-const) data on the host.
-    static ScalarType* GetRawHostPtr(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm )
+    static ScalarType* GetRawHostPtr( Teuchos::SerialDenseMatrix<int,ScalarType> & dm )
     { return dm.values(); }     
 
     //! \brief Returns a raw pointer to const data on the host.
