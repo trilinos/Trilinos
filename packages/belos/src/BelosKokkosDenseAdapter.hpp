@@ -385,7 +385,7 @@ namespace Belos {
     }
 
     //! \brief Returns a raw pointer to const data on the host.
-    static Scalar const * GetConstRawHostPtr(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
+    static Scalar const * GetConstRawHostPtr(const Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
         return reinterpret_cast<Scalar const *>(dm.h_view.data());
     }
 
@@ -486,18 +486,18 @@ namespace Belos {
     //@{ \name Data access methods
 
     //! \brief Access a reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static IST & Value( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j )
+    static Scalar & Value( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j )
     { 
     //Mark as modified on host, since we don't know if it will be. 
         std::cout << "Modifying on host." << std::endl;
       dm.modify_host();
-      return dm.h_view(i,j);
+      return reinterpret_cast<Scalar&>(dm.h_view(i,j));
       // TODO Will this result in extra syncs? Is always marking modified the best way?
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const IST & ValueConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
-      return dm.h_view(i,j);
+    static const Scalar & ValueConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
+      return reinterpret_cast<Scalar const &>(dm.h_view(i,j));
       //TODO check const semantics here?
     }
 
