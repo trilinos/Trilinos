@@ -1,8 +1,8 @@
 // @HEADER
 // *****************************************************************************
-//            NOX: An Object-Oriented Nonlinear Solver Package
+//           Trilinos: An Object-Oriented Solver Framework
 //
-// Copyright 2002 NTESS and the NOX contributors.
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
