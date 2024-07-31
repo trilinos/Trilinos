@@ -181,7 +181,7 @@ class ScalarFunctor {
       LO col          = rowView.colidx(colID);
       impl_Scalar val = rowView.value(colID);
 
-      if (!dropFunctor(row, col, rowView.value(colID)) || row == col) {
+      if ((!bndNodes(row) && !dropFunctor(row, col, rowView.value(colID))) || row == col) {
         colsAux(offset + rownnz) = col;
 
         LO valID                = (reuseGraph ? colID : rownnz);
@@ -216,7 +216,7 @@ class ScalarFunctor {
     //        boundaryNodes[row] = true;
     // We do not do it this way now because there is no framework for distinguishing isolated
     // and boundary nodes in the aggregation algorithms
-    bndNodes(row) = (rownnz == 1 && aggregationMayCreateDirichlet);
+    bndNodes(row) |= (rownnz == 1 && aggregationMayCreateDirichlet);
 
     nnz += rownnz;
   }
@@ -521,6 +521,9 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   } else if (blkSize == 1 && threshold != zero) {
     // Scalar problem with dropping
 
+    // Detect and record rows that correspond to Dirichlet boundary conditions
+    boundaryNodes = Utilities::DetectDirichletRows_kokkos(*A, dirichletThreshold);
+
     typedef typename Matrix::local_matrix_type local_matrix_type;
     typedef typename LWGraph_kokkos::local_graph_type kokkos_graph_type;
     typedef typename kokkos_graph_type::row_map_type::non_const_type rows_type;
@@ -566,8 +569,6 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       valsAux = vals_type(Kokkos::ViewAllocateWithoutInitializing("FA_aux_vals"), nnzA);
     }
 
-    typename boundary_nodes_type::non_const_type bndNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
-
     LO nnzFA = 0;
     {
       if (algo == "classical") {
@@ -587,8 +588,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           auto ghostedDiagView = ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
           CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
-          CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, aggregationMayCreateDirichlet);
+          CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(boundaryNodes), decltype(dropFunctor)>
+              scalarFunctor(kokkosMatrix, boundaryNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, aggregationMayCreateDirichlet);
 
           Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0, numRows),
                                   scalarFunctor, nnzFA);
@@ -659,8 +660,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
           CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
               dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
-          CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, true);
+          CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(boundaryNodes), decltype(dropFunctor)>
+              scalarFunctor(kokkosMatrix, boundaryNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, true);
 
           Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0, numRows),
                                   scalarFunctor, nnzFA);
@@ -668,8 +669,6 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
     numDropped = nnzA - nnzFA;
-
-    boundaryNodes = bndNodes;
 
     {
       SubFactoryMonitor m2(*this, "CompressRows", currentLevel);

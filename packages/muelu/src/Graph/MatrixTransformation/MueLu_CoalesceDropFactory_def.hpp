@@ -170,7 +170,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
 
   RCP<LocalOrdinalVector> ghostedBlockNumber;
-  ArrayRCP<const LO> g_block_id;
 
   if (algo == "distance laplacian") {
     // Grab the coordinates for distance laplacian
@@ -193,7 +192,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     } else {
       ghostedBlockNumber = BlockNumber;
     }
-    g_block_id = ghostedBlockNumber->getData(0);
     //      }
     if (algo == "block diagonal colored signed classical")
       generateColoringGraph = true;
@@ -443,11 +441,13 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         // RS style needs the max negative off-diagonal, SA style needs the diagonal
         if (useSignedClassicalRS) {
           if (ghostedBlockNumber.is_null()) {
-            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A);
+            auto negMaxOffDiagonalVec = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A);
+            negMaxOffDiagonal         = negMaxOffDiagonalVec->getData(0);
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Calculated max point off-diagonal" << std::endl;
           } else {
-            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A, *ghostedBlockNumber);
+            auto negMaxOffDiagonalVec = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A, *ghostedBlockNumber);
+            negMaxOffDiagonal         = negMaxOffDiagonalVec->getData(0);
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Calculating max block off-diagonal" << std::endl;
           }
@@ -467,6 +467,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             Utilities::ApplyRowSumCriterionHost(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);
           }
         }
+
+        ArrayRCP<const LO> g_block_id;
+        if (!ghostedBlockNumber.is_null())
+          g_block_id = ghostedBlockNumber->getData(0);
 
         LO realnnz = 0;
         rows(0)    = 0;
