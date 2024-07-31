@@ -476,9 +476,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       // Solve the least squares problem.
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-                 DMT::GetRawHostPtr(*H_), DMT::GetStride(*H_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
-                 //TODO: Should one of H_ or y have a const ptr?
-                 //TODO: Add data mod specifiers?
+                 DMT::GetConstRawHostPtr(*H_), DMT::GetStride(*H_), 
+		 DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
 
       // Make sure the result goes back to the device
       DMT::SyncHostToDevice( *y );
