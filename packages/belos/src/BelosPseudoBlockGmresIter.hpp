@@ -383,7 +383,7 @@ namespace Belos {
         //
         blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 	           Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		   DMT::GetRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]), 
+		   DMT::GetConstRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]), 
                    DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
 
         DMT::SyncHostToDevice( *y ); 	
