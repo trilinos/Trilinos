@@ -262,7 +262,17 @@ namespace Belos {
           << "SubviewCopy is incorrect. Possible view but not copy." << endl;
         return false;
       }
-      
+      // Try to take a subview of a subview
+      RCP<DM> dm5 = DMT::Subview(*dm3, 1, 1);
+      DMT::Value(*dm5,0,0) = testVal-(ScalarType)10; 
+      if (DMT::ValueConst(*dm3,0,0) != DMT::ValueConst(*dm5,0,0) ||
+	  DMT::ValueConst(*dm1,1,1) != (testVal-(ScalarType)10)) {
+          om->stream(Warnings)
+            << "*** ERROR *** DenseMatTraits::" << endl
+            << "Subview of a subview is incorrect. Possibly can't take hierarchical subviews." << endl;
+        return false;
+      }
+
 
       //TODO: Try to add matrices of mismatched size (eg dm3, dm4) and make sure it throws error. 
       //
@@ -302,12 +312,11 @@ namespace Belos {
         return false;
       }
 
-      //ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
-      //DMT::RawPtrDataModified(*dm2);
-      //ScalarType const * testPtr2 = DMT::GetConstRawHostPtr(*dm2);
-      //TODO: Test handing this to lapack function? 
-      //TODO: Should something err if view is modified on device and 
-      //try to access on host without sync? 
+      // Check that we can get a raw pointer from a non-const and const object for BLAS/LAPACK calls
+      DMT::SyncDeviceToHost( *dm2 );
+      ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
+      RCP<const DM> cdm2 = DMT::SubviewConst(*dm2, DMT::GetNumRows(*dm2), DMT::GetNumCols(*dm2)); 
+      const ScalarType * testPtr2 = DMT::GetConstRawHostPtr(*cdm2);
       //
       //Compute Frobenius norm. //TODO: Do Frob norm of a matrix we know the answer for and check it. 
       DMT::NormFrobenius(*dm2);
