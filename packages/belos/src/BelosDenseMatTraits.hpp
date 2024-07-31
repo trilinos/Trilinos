@@ -125,7 +125,7 @@ View(const pointer_type &ptr, const IntType&... indices)
     /// because this is what is expected by LAPACK.
     /// \note This raw pointer is intended only for passing data to LAPACK
     /// functions. Other operations on the raw data may result in undefined behavior!
-    static ScalarType* GetRawHostPtr(const DM & dm )
+    static ScalarType* GetRawHostPtr(DM & dm )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
     //! \brief Returns a raw pointer to const data on the host.

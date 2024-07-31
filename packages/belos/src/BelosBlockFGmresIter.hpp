@@ -503,13 +503,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       // Solve the least squares problem.
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-<<<<<<< HEAD
-                 R_->values (), R_->stride (), y.values (), y.stride ());
-=======
-                 DMT::GetRawHostPtr(*H_), DMT::GetStride(*H_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
-                 //TODO: Should one of H_ or y have a const ptr?
-                 //TODO: Add data mod specifiers?
->>>>>>> ec33f6f2e54 (Finally got the Kokkos Dense + Tpetra Block GMRES test building and passing on CPUgit status)
+                 DMT::GetConstRawHostPtr(*R_), DMT::GetStride(*R_), 
+                 DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
 
       // Make sure the result goes back to the device
       DMT::SyncHostToDevice( *y );
