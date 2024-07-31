@@ -501,11 +501,10 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       Teuchos::RCP<DM> y = DMT::SubviewCopy(*z_, curDim_, blockSize_);
 
       // Solve the least squares problem.
-      blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-                Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-                DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
-                 //TODO: Should one of R_ or y have a const ptr?
-                 //TODO: Add data mod specifiers?
+      blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+                 Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
+                 DMT::GetConstRawHostPtr(*R_), DMT::GetStride(*R_),
+		 DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
 
       // Make sure the result goes back to the device
       DMT::SyncHostToDevice( *y );
