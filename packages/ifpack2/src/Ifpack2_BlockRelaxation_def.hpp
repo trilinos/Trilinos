@@ -150,6 +150,7 @@ getValidParameters () const
   validParams->set("partitioner: print level", false);
   validParams->set("partitioner: explicit convert to BlockCrs", false);
   validParams->set("partitioner: checkBlockConsistency", true);
+  validParams->set("partitioner: use LIDs", true);
 
   return validParams;
 }
@@ -612,20 +613,23 @@ initialize ()
       bool use_explicit_conversion = List_.isParameter("partitioner: explicit convert to BlockCrs") && List_.get<bool>("partitioner: explicit convert to BlockCrs");
       TEUCHOS_TEST_FOR_EXCEPT_MSG
         (use_explicit_conversion && block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
+      bool use_LID = !List_.isParameter("partitioner: use LIDs") || List_.get<bool>("partitioner: use LIDs");
+      bool check_block_consistency = !List_.isParameter("partitioner: checkBlockConsistency") || List_.get<bool>("partitioner: checkBlockConsistency");
+
+      if ( (use_LID || !use_explicit_conversion) && check_block_consistency ) {
+        if ( !A_->getGraph ()->getImporter().is_null()) {
+          TEUCHOS_TEST_FOR_EXCEPT_MSG
+            (!Tpetra::Import_Util::checkBlockConsistency(*(A_->getGraph ()->getColMap()), block_size), 
+            "The pointwise graph of the input matrix A pointwise is not consistent with block_size.");
+        }
+      }
       if(use_explicit_conversion) {
-        A_bcrs = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, false);
+        A_bcrs = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, use_LID);
         A_ = A_bcrs;
         hasBlockCrsMatrix_ = true;
         graph = A_->getGraph ();
       }
       else {
-        if ( !List_.isParameter("partitioner: checkBlockConsistency") || List_.get<bool>("partitioner: checkBlockConsistency")) {
-          if ( !A_->getGraph ()->getImporter().is_null()) {
-            TEUCHOS_TEST_FOR_EXCEPT_MSG
-              (!Tpetra::Import_Util::checkBlockConsistency(*(A_->getGraph ()->getColMap()), block_size), 
-              "The pointwise graph of the input matrix A pointwise is not consistent with block_size.");
-          }
-        }
         graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, true);
       }
       IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
