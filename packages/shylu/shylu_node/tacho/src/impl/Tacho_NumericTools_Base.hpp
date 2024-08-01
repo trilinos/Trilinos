@@ -44,6 +44,7 @@ public:
   using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
   using size_type_array = typename supernode_info_type::size_type_array;
   using value_type_array = typename supernode_info_type::value_type_array;
+  using int_type_array = typename supernode_info_type::int_type_array;
 
   using ordinal_pair_type_array = typename supernode_info_type::ordinal_pair_type_array;
   using value_type_matrix = typename supernode_info_type::value_type_matrix;
