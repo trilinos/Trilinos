@@ -25,6 +25,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CoordinatesTransferFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoordinatesTransferFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

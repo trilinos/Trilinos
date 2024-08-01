@@ -52,6 +52,22 @@ namespace MueLu {
   (!useKokkos_) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FactoryManager() {
+  SetIgnoreUserData(false);  // set IgnorUserData flag to false (default behaviour)
+  useKokkos_ = !Node::is_serial;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable) {
+  factoryTable_ = factoryTable;
+  SetIgnoreUserData(false);  // set IgnorUserData flag to false (default behaviour) //TODO: use parent class constructor instead
+  useKokkos_ = !Node::is_serial;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~FactoryManager() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
   factoryTable_[varName] = factory;
 }

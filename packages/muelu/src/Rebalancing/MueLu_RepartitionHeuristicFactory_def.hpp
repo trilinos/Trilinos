@@ -33,6 +33,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RepartitionHeuristicFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RepartitionHeuristicFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

@@ -113,7 +113,7 @@ class UncoupledAggregationFactory : public SingleLevelFactoryBase {
   UncoupledAggregationFactory();
 
   //! Destructor.
-  virtual ~UncoupledAggregationFactory() {}
+  virtual ~UncoupledAggregationFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 

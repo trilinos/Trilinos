@@ -45,7 +45,7 @@ class RAPFactory : public TwoLevelFactoryBase {
 
   RAPFactory();
 
-  virtual ~RAPFactory() {}
+  virtual ~RAPFactory();
 
   //@}
 

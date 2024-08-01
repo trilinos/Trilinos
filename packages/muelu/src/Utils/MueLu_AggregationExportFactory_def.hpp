@@ -39,6 +39,19 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AggregationExportFactory()
+  : doFineGraphEdges_(false)
+  , doCoarseGraphEdges_(false)
+  , numNodes_(0)
+  , numAggs_(0)
+  , dims_(0)
+  , myRank_(-1)
+  , aggsOffset_(0) {}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AggregationExportFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

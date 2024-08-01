@@ -34,6 +34,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RebalanceTransferFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RebalanceTransferFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

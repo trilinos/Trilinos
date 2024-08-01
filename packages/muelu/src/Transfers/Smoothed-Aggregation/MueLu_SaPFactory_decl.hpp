@@ -77,10 +77,10 @@ class SaPFactory : public PFactory {
   /*! @brief Constructor.
     User can supply a factory for generating the tentative prolongator.
   */
-  SaPFactory() {}
+  SaPFactory();
 
   //! Destructor.
-  virtual ~SaPFactory() {}
+  virtual ~SaPFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 

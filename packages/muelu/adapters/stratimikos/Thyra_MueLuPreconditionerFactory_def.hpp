@@ -346,6 +346,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MueLuPreconditionerFactory()
   : paramList_(rcp(new ParameterList())) {}
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~MueLuPreconditionerFactory() = default;
+
 // Overridden from PreconditionerFactoryBase
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
