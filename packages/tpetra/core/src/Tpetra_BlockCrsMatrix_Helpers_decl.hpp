@@ -113,7 +113,7 @@ namespace Tpetra {
   /// Important! It's assumed that point GIDs associated with a single mesh GID appear consecutively in pointMap.
   template<class LO, class GO, class Node>
   Teuchos::RCP<const Tpetra::Map<LO,GO,Node>>
-  createMeshMap(LO const &blockSize, const Tpetra::Map<LO,GO,Node> &pointMap);
+  createMeshMap(LO const &blockSize, const Tpetra::Map<LO,GO,Node> &pointMap, bool use_local_ID=false);
 
   /// \brief Non-member constructor that creates a point CrsMatrix from an existing BlockCrsMatrix.
   ///
