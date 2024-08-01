@@ -576,11 +576,11 @@ TEUCHOS_UNIT_TEST(SolutionHistory, initWorkingState_Failing)
 
   TEUCHOS_ASSERT(sh->getCurrentState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getCurrentState() == sh->getStateTimeIndexNM1());
-  TEUCHOS_ASSERT(get_ele(*(sh->getCurrentState()->getX()), 0) == 1.0 );
+  TEUCHOS_ASSERT(get_ele(*(sh->getCurrentState()->getX()), 0) == 1.0);
 
   TEUCHOS_ASSERT(sh->getWorkingState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getWorkingState() == sh->getStateTimeIndexN());
-  TEUCHOS_ASSERT(std::isnan(get_ele(*(sh->getWorkingState()->getX()), 0))); // !!!
+  TEUCHOS_ASSERT(std::isnan(get_ele(*(sh->getWorkingState()->getX()), 0)));  // !!!
 
   TEST_COMPARE(sh->getCurrentState()->getIndex(), ==, 0);
   TEST_FLOATING_EQUALITY(sh->getCurrentState()->getTime(), 0.0, 1.0e-14);
@@ -601,11 +601,11 @@ TEUCHOS_UNIT_TEST(SolutionHistory, initWorkingState_Failing)
 
   TEUCHOS_ASSERT(sh->getCurrentState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getCurrentState() == sh->getStateTimeIndexNM1());
-  TEUCHOS_ASSERT(get_ele(*(sh->getCurrentState()->getX()), 0) == 1.0 );
+  TEUCHOS_ASSERT(get_ele(*(sh->getCurrentState()->getX()), 0) == 1.0);
 
   TEUCHOS_ASSERT(sh->getWorkingState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getWorkingState() == sh->getStateTimeIndexN());
-  TEUCHOS_ASSERT(get_ele(*(sh->getWorkingState()->getX()), 0) == 1.0 );  // !!!
+  TEUCHOS_ASSERT(get_ele(*(sh->getWorkingState()->getX()), 0) == 1.0);  // !!!
 
   TEST_COMPARE(sh->getCurrentState()->getIndex(), ==, 0);
   TEST_FLOATING_EQUALITY(sh->getCurrentState()->getTime(), 0.0, 1.0e-14);
