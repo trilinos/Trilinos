@@ -99,6 +99,11 @@ SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 # Some CMake and TriBiTS tweaks just for Trilinos
 include(TrilinosTweaks)
 
+# Hacks for nvcc-as-compiler
+IF(DEFINED CMAKE_CUDA_COMPILER)
+  ENABLE_LANGUAGE(CUDA)
+ENDIF()
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
 

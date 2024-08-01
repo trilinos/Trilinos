@@ -354,6 +354,24 @@ function(tribits_add_executable EXE_NAME)
 
   tribits_add_executable_get_adjusted_sources_list(EXE_SOURCES)
 
+
+  # Modified version of Dan's HACK
+  if(DEFINED Kokkos_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES  ${Kokkos_CUDA_ARCHITECTURES})
+    set(CMAKE_CUDA_ARCHITECTURES  ${Kokkos_CUDA_ARCHITECTURES} PARENT_SCOPE)
+
+    foreach(X in ${EXE_SOURCES})
+      if(X MATCHES "cpp$")
+        set_source_files_properties(${X} PROPERTIES LANGUAGE ${Kokkos_COMPILE_LANGUAGE})
+        MESSAGE("CUDA: ${X}")
+      else()
+        MESSAGE("NOT CUDA: ${X}")
+      endif()
+    endforeach()
+  endif()
+
+
+
   tribits_add_executable_assert_testonlylibs()
 
   tribits_add_executable_assert_importedlibs()

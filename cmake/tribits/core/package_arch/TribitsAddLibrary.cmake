@@ -92,7 +92,7 @@ include(TribitsSetAndIncDirs)
 #     Required base name of the library.  The name of the actual library name
 #     will be prefixed by ``${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}`` to
 #     produce::
-#     
+#
 #       <libTargetName> = ${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}<libBaseName>
 #
 #     This is the name passed to ``add_library(<libTargetName> ...)``.  The
@@ -348,7 +348,7 @@ function(tribits_add_library  LIBRARY_NAME_IN)
   cmake_parse_arguments(
     #prefix
     PARSE
-    #Options    
+    #Options
     "STATIC;SHARED;TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY"
     #one_value_keywords
     ""
@@ -378,6 +378,21 @@ function(tribits_add_library  LIBRARY_NAME_IN)
   # Create library target if not doing installation testing or if this is a
   # TESTONLY library.
   #
+
+  # Modified version of Dan's HACK
+  if(DEFINED Kokkos_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES  ${Kokkos_CUDA_ARCHITECTURES})
+    set(CMAKE_CUDA_ARCHITECTURES  ${Kokkos_CUDA_ARCHITECTURES} PARENT_SCOPE)
+
+    foreach(X in ${PARSE_SOURCES})
+      if(X MATCHES "cpp$")
+        set_source_files_properties(${X} PROPERTIES LANGUAGE ${Kokkos_COMPILE_LANGUAGE})
+        MESSAGE("CUDA: ${X}")
+      else()
+        MESSAGE("NOT CUDA: ${X}")
+      endif()
+    endforeach()
+  endif()
 
   if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_TESTONLY)
 
