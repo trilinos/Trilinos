@@ -426,6 +426,13 @@ namespace Tpetra {
                      const ImpView &imports,
                      const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    doPostsAndWaitsKokkos (const ExpView &exports,
+                           const ExpPacketsView &numExportPacketsPerLID,
+                           const ImpView &imports,
+                           const ImpPacketsView &numImportPacketsPerLID);
+
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
     /// Call this overload when you have the same number of Packets
@@ -640,6 +647,16 @@ namespace Tpetra {
     actor_.doPostsAndWaits(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
 
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  Distributor::
+  doPostsAndWaitsKokkos (const ExpView &exports,
+                         const ExpPacketsView &numExportPacketsPerLID,
+                         const ImpView &imports,
+                         const ImpPacketsView &numImportPacketsPerLID)
+  {
+    actor_.doPostsAndWaitsKokkos(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  }
 
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type

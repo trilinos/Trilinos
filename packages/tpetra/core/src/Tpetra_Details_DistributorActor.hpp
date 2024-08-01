@@ -53,6 +53,13 @@ public:
                        const ImpView &imports,
                        const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  void doPostsAndWaitsKokkos(const DistributorPlan& plan,
+                             const ExpView &exports,
+                             const ExpPacketsView &numExportPacketsPerLID,
+                             const ImpView &imports,
+                             const ImpPacketsView &numImportPacketsPerLID);
+
   template <class ExpView, class ImpView>
   void doPosts(const DistributorPlan& plan,
                const ExpView& exports,
@@ -65,6 +72,27 @@ public:
                const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                const ImpView &imports,
                const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  void doPostsKokkos(const DistributorPlan& plan,
+                     const ExpView &exports,
+                     const ExpPacketsView &numExportPacketsPerLID,
+                     const ImpView &imports,
+                     const ImpPacketsView &numImportPacketsPerLID);
+
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  void doPostsAllToAllKokkos(
+      const DistributorPlan &plan, const ExpView &exports,
+      const ExpPacketsView &numExportPacketsPerLID,
+      const ImpView &imports,
+      const ImpPacketsView &numImportPacketsPerLID);
+
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  void doPostsNbrAllToAllVKokkos(
+      const DistributorPlan &plan, const ExpView &exports,
+      const ExpPacketsView &numExportPacketsPerLID,
+      const ImpView &imports,
+      const ImpPacketsView &numImportPacketsPerLID);
 
   void doWaits(const DistributorPlan& plan);
 
@@ -144,6 +172,22 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
   static_assert(areKokkosViews<ExpView, ImpView>,
       "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  doWaits(plan);
+}
+
+
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+void DistributorActor::doPostsAndWaitsKokkos(const DistributorPlan& plan,
+                                             const ExpView &exports,
+                                             const ExpPacketsView &numExportPacketsPerLID,
+                                             const ImpView &imports,
+                                             const ImpPacketsView &numImportPacketsPerLID)
+{
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaitsKokkos must be Kokkos::Views");
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
+      "Num packets arrays for DistributorActor::doPostsAndWaitsKokkos must be Kokkos::Views");
+  doPostsKokkos(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   doWaits(plan);
 }
 
@@ -760,6 +804,113 @@ void DistributorActor::doPostsAllToAll(
                                  << "\".");
 }
 
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+void DistributorActor::doPostsAllToAllKokkos(
+    const DistributorPlan &plan, const ExpView &exports,
+    const ExpPacketsView &numExportPacketsPerLID,
+    const ImpView &imports,
+    const ImpPacketsView &numImportPacketsPerLID) {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !plan.getIndicesTo().is_null(), std::runtime_error,
+      "Send Type=\"Alltoall\" only works for fast-path communication.");
+
+  using size_type = Teuchos::Array<size_t>::size_type;
+  using ExpExecSpace = typename ExpPacketsView::execution_space;
+  using ImpExecSpace = typename ImpPacketsView::execution_space;
+
+  auto comm = plan.getComm();
+  Kokkos::View<int*, ExpExecSpace> sendcounts("sendcounts", comm->getSize());
+  Kokkos::View<int*, ExpExecSpace> sdispls("sdispls", comm->getSize());
+  std::vector<int> recvcounts(comm->getSize(), 0);
+  std::vector<int> rdispls(comm->getSize(), 0);
+
+  size_t curPKToffset = 0;
+  auto starts = Kokkos::Compat::getKokkosViewDeepCopy<ExpExecSpace>(plan.getStartsTo());
+  auto lengths = Kokkos::Compat::getKokkosViewDeepCopy<ExpExecSpace>(plan.getLengthsTo());
+  auto procs = Kokkos::Compat::getKokkosViewDeepCopy<ExpExecSpace>(plan.getProcsTo());
+  Kokkos::parallel_scan(plan.getNumSends(), KOKKOS_LAMBDA(const size_t pp, size_t& offset, bool is_final) {
+    if(is_final) sdispls(procs(pp)) = offset;
+    size_t numPackets = 0;
+    for(size_t j = starts(pp); j < starts(pp) + lengths(pp); j++) {
+      numPackets += numExportPacketsPerLID(j);
+    }
+    /*
+    // numPackets is converted down to int, so make sure it can be represented
+    TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
+                               "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                               "Send count for send "
+                                   << pp << " (" << numPackets
+                                   << ") is too large "
+                                      "to be represented as int.");
+    */
+    if(is_final) sendcounts(procs(pp)) = static_cast<int>(numPackets);
+    offset += numPackets;
+  }, curPKToffset);
+
+  const size_type actualNumReceives =
+      Teuchos::as<size_type>(plan.getNumReceives()) +
+      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
+
+  size_t curBufferOffset = 0;
+  size_t curLIDoffset = 0;
+  for (size_type i = 0; i < actualNumReceives; ++i) {
+    size_t totalPacketsFrom_i = 0;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<ImpExecSpace>(0, plan.getLengthsFrom()[i]), KOKKOS_LAMBDA(const size_t j, size_t& total) {
+      total += numImportPacketsPerLID(curLIDoffset + j);
+    }, totalPacketsFrom_i);
+    curLIDoffset += plan.getLengthsFrom()[i];
+
+    rdispls[plan.getProcsFrom()[i]] = curBufferOffset;
+    // totalPacketsFrom_i is converted down to int, so make sure it can be
+    // represented
+    TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                               std::logic_error,
+                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Recv count for receive "
+                                   << i << " (" << totalPacketsFrom_i
+                                   << ") is too large "
+                                      "to be represented as int.");
+    recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
+    curBufferOffset += totalPacketsFrom_i;
+  }
+
+  Teuchos::RCP<const Teuchos::MpiComm<int>> mpiComm =
+      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm =
+      mpiComm->getRawMpiComm();
+  using T = typename ExpView::non_const_value_type;
+  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
+
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
+    MPIX_Comm *mpixComm = *plan.getMPIXComm();
+    TEUCHOS_TEST_FOR_EXCEPTION(!mpixComm, std::runtime_error,
+                               "MPIX_Comm is null in doPostsAllToAll \""
+                                   << __FILE__ << ":" << __LINE__);
+
+    const int err = MPIX_Alltoallv(
+        exports.data(), sendcounts.data(), sdispls.data(), rawType,
+        imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                               "MPIX_Alltoallv failed with error \""
+                                   << Teuchos::mpiErrorCodeToString(err)
+                                   << "\".");
+
+    return;
+  }
+#endif // HAVE_TPETRACORE_MPI_ADVANCE
+
+  const int err = MPI_Alltoallv(
+      exports.data(), sendcounts.data(), sdispls.data(), rawType,
+      imports.data(), recvcounts.data(), rdispls.data(), rawType, (*rawComm)());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                             "MPI_Alltoallv failed with error \""
+                                 << Teuchos::mpiErrorCodeToString(err)
+                                 << "\".");
+}
+
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
 template <class ExpView, class ImpView>
 void DistributorActor::doPostsNbrAllToAllV(
@@ -767,6 +918,89 @@ void DistributorActor::doPostsNbrAllToAllV(
     const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID,
     const ImpView &imports,
     const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !plan.getIndicesTo().is_null(), std::runtime_error,
+      "Send Type=\"Alltoall\" only works for fast-path communication.");
+
+  const Teuchos_Ordinal numSends = plan.getProcsTo().size();
+  const Teuchos_Ordinal numRecvs = plan.getProcsFrom().size();
+
+  auto comm = plan.getComm();
+  std::vector<int> sendcounts(numSends, 0);
+  std::vector<int> sdispls(numSends, 0);
+  std::vector<int> recvcounts(numRecvs, 0);
+  std::vector<int> rdispls(numRecvs, 0);
+
+  Teuchos::RCP<const Teuchos::MpiComm<int>> mpiComm =
+      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm =
+      mpiComm->getRawMpiComm();
+  using T = typename ExpView::non_const_value_type;
+  using ExpExecSpace = typename ExpPacketsView::execution_space;
+  using ImpExecSpace = typename ImpPacketsView::execution_space;
+  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
+
+  // unlike standard alltoall, entry `i` in sdispls and sendcounts
+  // refer to the ith participating rank, rather than rank i
+  size_t curPKToffset = 0;
+  for (Teuchos_Ordinal pp = 0; pp < numSends; ++pp) {
+    sdispls[pp] = curPKToffset;
+    size_t numPackets = 0;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<ExpExecSpace>(plan.getStartsTo()[pp],
+                            plan.getStartsTo()[pp] + plan.getLengthsTo()[pp]),
+                            KOKKOS_LAMBDA(const size_t j, size_t& packets) {
+      packets += numExportPacketsPerLID(j);
+    }, numPackets);
+    // numPackets is converted down to int, so make sure it can be represented
+    TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
+                               "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                               "Send count for send "
+                                   << pp << " (" << numPackets
+                                   << ") is too large "
+                                      "to be represented as int.");
+    sendcounts[pp] = static_cast<int>(numPackets);
+    curPKToffset += numPackets;
+  }
+  size_t curBufferOffset = 0;
+  size_t curLIDoffset = 0;
+  for (Teuchos_Ordinal i = 0; i < numRecvs; ++i) {
+    size_t totalPacketsFrom_i = 0;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<ImpExecSpace>(0, plan.getLengthsFrom()[i]), KOKKOS_LAMBDA(const size_t j, size_t& total) {
+      total += numImportPacketsPerLID(curLIDoffset + j);
+    }, totalPacketsFrom_i);
+    curLIDoffset += plan.getLengthsFrom()[i];
+
+    rdispls[i] = curBufferOffset;
+    // totalPacketsFrom_i is converted down to int, so make sure it can be
+    // represented
+    TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                               std::logic_error,
+                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Recv count for receive "
+                                   << i << " (" << totalPacketsFrom_i
+                                   << ") is too large "
+                                      "to be represented as int.");
+    recvcounts[i] = static_cast<int>(totalPacketsFrom_i);
+    curBufferOffset += totalPacketsFrom_i;
+  }
+
+  MPIX_Comm *mpixComm = *plan.getMPIXComm();
+  const int err = MPIX_Neighbor_alltoallv(
+      exports.data(), sendcounts.data(), sdispls.data(), rawType,
+      imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                             "MPIX_Neighbor_alltoallv failed with error \""
+                                 << Teuchos::mpiErrorCodeToString(err)
+                                 << "\".");
+}
+
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+void DistributorActor::doPostsNbrAllToAllVKokkos(
+    const DistributorPlan &plan, const ExpView &exports,
+    const ExpPacketsView &numExportPacketsPerLID,
+    const ImpView &imports,
+    const ImpPacketsView &numImportPacketsPerLID) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       !plan.getIndicesTo().is_null(), std::runtime_error,
       "Send Type=\"Alltoall\" only works for fast-path communication.");
@@ -795,7 +1029,7 @@ void DistributorActor::doPostsNbrAllToAllV(
     size_t numPackets = 0;
     for (size_t j = plan.getStartsTo()[pp];
          j < plan.getStartsTo()[pp] + plan.getLengthsTo()[pp]; ++j) {
-      numPackets += numExportPacketsPerLID[j];
+      numPackets += numExportPacketsPerLID(j);
     }
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
@@ -812,7 +1046,7 @@ void DistributorActor::doPostsNbrAllToAllV(
   for (Teuchos_Ordinal i = 0; i < numRecvs; ++i) {
     size_t totalPacketsFrom_i = 0;
     for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
-      totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset + j];
+      totalPacketsFrom_i += numImportPacketsPerLID(curLIDoffset + j);
     }
     curLIDoffset += plan.getLengthsFrom()[i];
 
@@ -1176,6 +1410,393 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         selfReceiveOffset += numExportPacketsPerLID[selfIndex];
         ++selfIndex;
       }
+    }
+  }
+}
+
+struct scanAndMaxResults {
+  size_t max=0;
+  size_t total=0;
+};
+
+//all views should have same execspace
+template <class View1, class View2, class View3, class View4, class View5>
+struct scanAndMax {
+  scanAndMax(const View1& a, const View2& b, const View3& c, const View4& d, const View5& e) :
+             sendPacketOffsets_ (a), packetsPerSend_(b), starts_(c), lengths_ (d), numExportPacketsPerLID_(e) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t pp, scanAndMaxResults& update, bool final_pass) const {
+    if(final_pass) sendPacketOffsets_(pp) = update.total;
+    size_t numPackets = 0;
+    for(size_t j = starts_(pp); j < starts_(pp) + lengths_(pp); j++) {
+      numPackets += numExportPacketsPerLID_(j);
+    }
+    if(update.max < numPackets) update.max = numPackets;
+    if(final_pass) packetsPerSend_(pp) = numPackets;
+    update.total += numPackets;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join(scanAndMaxResults& dst, const scanAndMaxResults& src) const {
+    if(dst.max < src.max) {
+      dst.max = src.max;
+    }
+    dst.total += src.total;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init(scanAndMaxResults& dst) const {
+    dst.max = Kokkos::reduction_identity<size_t>::max();
+    dst.total = 0;
+  }
+
+  View1 sendPacketOffsets_;
+  View2 packetsPerSend_;
+  View3 starts_;
+  View4 lengths_;
+  View5 numExportPacketsPerLID_;
+};
+
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+void DistributorActor::doPostsKokkos(const DistributorPlan& plan,
+                                     const ExpView &exports,
+                                     const ExpPacketsView &numExportPacketsPerLID,
+                                     const ImpView &imports,
+                                     const ImpPacketsView &numImportPacketsPerLID)
+{
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+  using Teuchos::Array;
+  using Teuchos::as;
+  using Teuchos::ireceive;
+  using Teuchos::isend;
+  using Teuchos::send;
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+  using Kokkos::Compat::create_const_view;
+  using Kokkos::Compat::create_view;
+  using Kokkos::Compat::subview_offset;
+  using Kokkos::Compat::deep_copy_offset;
+  using ExpExecSpace = typename ExpPacketsView::execution_space;
+  using ImpExecSpace = typename ImpPacketsView::execution_space;
+  using TeamPol = Kokkos::TeamPolicy<ExpExecSpace>;
+  using TeamMem = typename TeamPol::member_type;
+  typedef Array<size_t>::size_type size_type;
+  typedef ExpView exports_view_type;
+  typedef ImpView imports_view_type;
+
+#ifdef KOKKOS_ENABLE_CUDA
+  static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
+                 ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                 "Please do not use Tpetra::Distributor with UVM "
+                 "allocations.  See GitHub issue #1088.");
+#endif // KOKKOS_ENABLE_CUDA
+
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
+                   ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+                   "Please do not use Tpetra::Distributor with SharedUSM "
+                   "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+  // Run-time configurable parameters that come from the input
+  // ParameterList set by setParameterList().
+  const Details::EDistributorSendType sendType = plan.getSendType();
+
+#ifdef HAVE_TPETRA_MPI
+  //  All-to-all communication layout is quite different from
+  //  point-to-point, so we handle it separately.
+  if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+    doPostsAllToAllKokkos(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+    return;
+  }
+#ifdef HAVE_TPETRACORE_MPI_ADVANCE
+  else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
+  {
+    doPostsAllToAllKokkos(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+    return;
+  } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
+    doPostsNbrAllToAllVKokkos(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+    return;
+  }
+#endif
+
+#else // HAVE_TPETRA_MPI
+    if (plan.hasSelfMessage()) {
+      size_t packetsPerSend;
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<ExpExecSpace>(plan.getStartsTo()[0], plan.getStartsTo()[0]+plan.getLengthsTo()[0]), KOKKOS_LAMBDA(const size_t j, size_t& packets) {
+        packets += numExportPacketsPerLID(j);
+      }, packetsPerSend);
+
+      deep_copy_offset(imports, exports, (size_t)0, (size_t)0, packetsPerSend);
+    }
+#endif // HAVE_TPETRA_MPI
+
+  const int myProcID = plan.getComm()->getRank ();
+  size_t selfReceiveOffset = 0;
+
+#ifdef HAVE_TPETRA_DEBUG
+  // Different messages may have different numbers of packets.
+  size_t totalNumImportPackets = Kokkos::Experimental::reduce(ImpExecSpace(), numImportPacketsPerLID);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      imports.extent (0) < totalNumImportPackets, std::runtime_error,
+      "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
+      "enough entries to hold the expected number of import packets.  "
+      "imports.extent(0) = " << imports.extent (0) << " < "
+      "totalNumImportPackets = " << totalNumImportPackets << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+     "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
+     << requests_.size () << " != 0.");
+#endif // HAVE_TPETRA_DEBUG
+  // Distributor uses requests_.size() as the number of outstanding
+  // nonblocking message requests, so we resize to zero to maintain
+  // this invariant.
+  //
+  // getNumReceives() does _not_ include the self message, if there is
+  // one.  Here, we do actually send a message to ourselves, so we
+  // include any self message in the "actual" number of receives to
+  // post.
+  //
+  // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+  // doesn't (re)allocate its array of requests.  That happens in
+  // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+  // demand), or Resize_().
+  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+  requests_.resize (0);
+
+  // Post the nonblocking receives.  It's common MPI wisdom to post
+  // receives before sends.  In MPI terms, this means favoring
+  // adding to the "posted queue" (of receive requests) over adding
+  // to the "unexpected queue" (of arrived messages not yet matched
+  // with a receive).
+  {
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+    size_t curBufferOffset = 0;
+    size_t curLIDoffset = 0;
+    for (size_type i = 0; i < actualNumReceives; ++i) {
+      size_t totalPacketsFrom_i = 0;
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<ImpExecSpace>(0, plan.getLengthsFrom()[i]), KOKKOS_LAMBDA(const size_t j, size_t& total) {
+        total += numImportPacketsPerLID(curLIDoffset+j);
+      }, totalPacketsFrom_i);
+      // totalPacketsFrom_i is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
+                                 "to be represented as int.");
+      curLIDoffset += plan.getLengthsFrom()[i];
+      if (plan.getProcsFrom()[i] != myProcID && totalPacketsFrom_i) {
+        // If my process is receiving these packet(s) from another
+        // process (not a self-receive), and if there is at least
+        // one packet to receive:
+        //
+        // 1. Set up the persisting view (recvBuf) into the imports
+        //    array, given the offset and size (total number of
+        //    packets from process getProcsFrom()[i]).
+        // 2. Start the Irecv and save the resulting request.
+        imports_view_type recvBuf =
+          subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
+        requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+              mpiTag_, *plan.getComm()));
+      }
+      else { // Receiving these packet(s) from myself
+        selfReceiveOffset = curBufferOffset; // Remember the offset
+      }
+      curBufferOffset += totalPacketsFrom_i;
+    }
+  }
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  Teuchos::TimeMonitor timeMonSends (*timer_doPosts4KV_sends_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+  // setup views containing starting-offsets into exports for each send,
+  // and num-packets-to-send for each send.
+  Kokkos::View<size_t*, Kokkos::DefaultHostExecutionSpace> sendPacketOffsets("sendPacketOffsets", plan.getNumSends());
+  Kokkos::View<size_t*, Kokkos::DefaultHostExecutionSpace> packetsPerSend("packetsPerSend", plan.getNumSends());
+  auto sendPacketOffsets_d = Kokkos::create_mirror_view(ExpExecSpace(), sendPacketOffsets); //TEMP
+  auto packetsPerSend_d = Kokkos::create_mirror_view(ExpExecSpace(), packetsPerSend); //TEMP
+
+  auto starts = Kokkos::Compat::getKokkosViewDeepCopy<ExpExecSpace>(plan.getStartsTo());
+  auto lengths = Kokkos::Compat::getKokkosViewDeepCopy<ExpExecSpace>(plan.getLengthsTo());
+  scanAndMaxResults results;
+  Kokkos::parallel_scan(Kokkos::RangePolicy<ExpExecSpace>(0, plan.getNumSends()), scanAndMax(sendPacketOffsets_d, packetsPerSend_d, starts, lengths, numExportPacketsPerLID), results);
+  size_t maxNumPackets = results.max;
+
+  // maxNumPackets will be used as a message length, so make sure it can be represented as int
+  TEUCHOS_TEST_FOR_EXCEPTION(maxNumPackets > size_t(INT_MAX),
+                             std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                             "maxNumPackets = " << maxNumPackets << " is too large to be "
+                             "represented as int.");
+  Kokkos::deep_copy(sendPacketOffsets, sendPacketOffsets_d); //TEMP
+  Kokkos::deep_copy(packetsPerSend, packetsPerSend_d); //TEMP
+
+  // setup scan through getProcsTo() list starting with higher numbered procs
+  // (should help balance message traffic)
+  size_t numBlocks = plan.getNumSends() + plan.hasSelfMessage();
+  size_t procIndex = 0;
+  while ((procIndex < numBlocks) && (plan.getProcsTo()[procIndex] < myProcID)) {
+    ++procIndex;
+  }
+  if (procIndex == numBlocks) {
+    procIndex = 0;
+  }
+
+  size_t selfNum = 0;
+  size_t selfIndex = 0;
+  if (plan.getIndicesTo().is_null()) {
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_fast_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+    // Data are already blocked (laid out) by process, so we don't
+    // need a separate send buffer (besides the exports array).
+    for (size_t i = 0; i < numBlocks; ++i) {
+      size_t p = i + procIndex;
+      if (p > (numBlocks - 1)) {
+        p -= numBlocks;
+      }
+
+      if (plan.getProcsTo()[p] != myProcID && packetsPerSend[p] > 0) {
+        exports_view_type tmpSend =
+          subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
+
+        if (sendType == Details::DISTRIBUTOR_ISEND) {
+          exports_view_type tmpSendBuf =
+            subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
+          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+                mpiTag_, *plan.getComm()));
+        }
+        else { // DISTRIBUTOR_SEND
+          send<int> (tmpSend,
+              as<int> (tmpSend.size ()),
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
+        }
+      }
+      else { // "Sending" the message to myself
+        selfNum = p;
+      }
+    }
+
+    if (plan.hasSelfMessage()) {
+      deep_copy_offset(imports, exports, selfReceiveOffset,
+          sendPacketOffsets[selfNum], packetsPerSend[selfNum]);
+    }
+  }
+  else { // data are not blocked by proc, use send buffer
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_slow_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+    // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
+    typedef typename ExpView::non_const_value_type Packet;
+    typedef typename ExpView::array_layout Layout;
+    typedef typename ExpView::device_type Device;
+    typedef typename ExpView::memory_traits Mem;
+
+    // This buffer is long enough for only one message at a time.
+    // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
+    // of sendType requested by user.
+    // This code path formerly errored out with message:
+    //     Tpetra::Distributor::doPosts(4-arg, Kokkos):
+    //     The "send buffer" code path
+    //     doesn't currently work with nonblocking sends.
+    // Now, we opt to just do the communication in a way that works.
+#ifdef HAVE_TPETRA_DEBUG
+    if (sendType != Details::DISTRIBUTOR_SEND) {
+      if (plan.getComm()->getRank() == 0)
+        std::cout << "The requested Tpetra send type "
+                  << DistributorSendTypeEnumToString(sendType)
+                  << " requires Distributor data to be ordered by"
+                  << " the receiving processor rank.  Since these"
+                  << " data are not ordered, Tpetra will use Send"
+                  << " instead." << std::endl;
+    }
+#endif
+
+    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
+                                                        maxNumPackets);
+
+    Kokkos::View<size_t*, ExpExecSpace> indicesOffsets ("indicesOffsets", numExportPacketsPerLID.extent(0));
+    size_t ioffset = 0;
+    Kokkos::parallel_scan(Kokkos::RangePolicy<ExpExecSpace>(0, numExportPacketsPerLID.extent(0)), KOKKOS_LAMBDA(const size_t j, size_t& offset, bool is_final) {
+      if(is_final) indicesOffsets(j) = offset;
+      offset += numExportPacketsPerLID(j);
+    }, ioffset);
+
+    for (size_t i = 0; i < numBlocks; ++i) {
+      size_t p = i + procIndex;
+      if (p > (numBlocks - 1)) {
+        p -= numBlocks;
+      }
+
+      if (plan.getProcsTo()[p] != myProcID) {
+        size_t j = plan.getStartsTo()[p];
+        size_t numPacketsTo_p = 0;
+        //mirror in case execspaces are different
+        auto sendArrayMirror = Kokkos::create_mirror_view(ExpExecSpace(), sendArray);
+        Kokkos::deep_copy(sendArrayMirror, sendArray);
+        auto exportsMirror = Kokkos::create_mirror_view(ExpExecSpace(), exports);
+        Kokkos::deep_copy(exportsMirror, exports);
+        Kokkos::parallel_scan(Kokkos::RangePolicy<ExpExecSpace>(0, plan.getLengthsTo()[p]), KOKKOS_LAMBDA(const size_t k, size_t& offset, bool is_final) {
+          if(is_final) {
+            const size_t dst_end = offset + numExportPacketsPerLID(j + k);
+            const size_t src_end = indicesOffsets(j + k) + numExportPacketsPerLID(j + k);
+            auto dst_sub = Kokkos::subview(sendArrayMirror, Kokkos::make_pair(offset, dst_end));
+            auto src_sub = Kokkos::subview(exportsMirror, Kokkos::make_pair(indicesOffsets(j + k), src_end));
+            Kokkos::Experimental::local_deep_copy(dst_sub, src_sub);
+          }
+          offset += numExportPacketsPerLID(j + k);
+        }, numPacketsTo_p);
+        Kokkos::deep_copy(sendArray, sendArrayMirror);
+        typename ExpView::execution_space().fence();
+
+        if (numPacketsTo_p > 0) {
+          ImpView tmpSend =
+            subview_offset(sendArray, size_t(0), numPacketsTo_p);
+
+          send<int> (tmpSend,
+              as<int> (tmpSend.size ()),
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
+        }
+      }
+      else { // "Sending" the message to myself
+        selfNum = p;
+        selfIndex = plan.getStartsTo()[p];
+      }
+    }
+
+    if (plan.hasSelfMessage()) {
+      //mirror in case execspaces are different
+      auto importsMirror = Kokkos::create_mirror_view(ExpExecSpace(), imports);
+      Kokkos::deep_copy(importsMirror, imports);
+      auto exportsMirror = Kokkos::create_mirror_view(ExpExecSpace(), exports);
+      Kokkos::deep_copy(exportsMirror, exports);
+      size_t temp;
+      Kokkos::parallel_scan(Kokkos::RangePolicy<ExpExecSpace>(0, plan.getLengthsTo()[selfNum]), KOKKOS_LAMBDA(const size_t k, size_t& offset, bool is_final) {
+        if(is_final) {
+          const size_t dst_end = selfReceiveOffset + offset + numExportPacketsPerLID(selfIndex + k);
+          const size_t src_end = indicesOffsets(selfIndex + k) + numExportPacketsPerLID(selfIndex + k);
+          auto dst_sub = Kokkos::subview(importsMirror, Kokkos::make_pair(selfReceiveOffset + offset, dst_end));
+          auto src_sub = Kokkos::subview(exportsMirror, Kokkos::make_pair(indicesOffsets(selfIndex + k), src_end));
+          Kokkos::Experimental::local_deep_copy(dst_sub, src_sub);
+        }
+        offset += numExportPacketsPerLID(selfIndex + k);
+      }, temp);
+      Kokkos::deep_copy(imports, importsMirror);
+      selfIndex += plan.getLengthsTo()[selfNum];
+      selfReceiveOffset += temp;
     }
   }
 }
