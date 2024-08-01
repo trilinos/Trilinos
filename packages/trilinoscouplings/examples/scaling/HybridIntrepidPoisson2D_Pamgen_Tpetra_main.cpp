@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /** \file  HybridIntrepidPoisson2D_Pamgen_Tpetra_main.cpp
     \brief Example: Discretize Poisson's equation with Dirichlet
            boundary conditions on a quadrilateral mesh using nodal

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "MueLu_Monitor.hpp"
 int MueLu::FactoryMonitor::timerIdentifier_ = 0;
 
@@ -25,6 +34,8 @@ Monitor::Monitor(const BaseClass& object, const std::string& msg, const std::str
   : printMonitor_(object, label + msg + " (" + object.description() + ")", msgLevel)
   , timerMonitor_(object, label + object.ShortClassName() + ": " + msg + " (total)", timerLevel) {}
 
+Monitor::~Monitor() = default;
+
 SubMonitor::SubMonitor(const BaseClass& object, const std::string& msg, MsgType msgLevel, MsgType timerLevel)
   : printMonitor_(object, msg, msgLevel)
   , timerMonitor_(object, object.ShortClassName() + ": " + msg + " (sub, total)", timerLevel) {}
@@ -32,6 +43,8 @@ SubMonitor::SubMonitor(const BaseClass& object, const std::string& msg, MsgType 
 SubMonitor::SubMonitor(const BaseClass& object, const std::string& msg, const std::string& label, MsgType msgLevel, MsgType timerLevel)
   : printMonitor_(object, label + msg, msgLevel)
   , timerMonitor_(object, label + object.ShortClassName() + ": " + msg + " (sub, total)", timerLevel) {}
+
+SubMonitor::~SubMonitor() = default;
 
 FactoryMonitor::FactoryMonitor(const BaseClass& object, const std::string& msg, int levelID, MsgType msgLevel, MsgType timerLevel)
   : Monitor(object, msg, msgLevel, timerLevel)
@@ -54,6 +67,8 @@ FactoryMonitor::FactoryMonitor(const BaseClass& object, const std::string& msg, 
   }
 }
 
+FactoryMonitor::~FactoryMonitor() = default;
+
 SubFactoryMonitor::SubFactoryMonitor(const BaseClass& object, const std::string& msg, int levelID, MsgType msgLevel, MsgType timerLevel)
   : SubMonitor(object, msg, msgLevel, timerLevel) {
   if (object.IsPrint(TimingsByLevel) && Teuchos::TimeMonitor::getStackedTimer().is_null())
@@ -67,5 +82,7 @@ SubFactoryMonitor::SubFactoryMonitor(const BaseClass& object, const std::string&
     levelTimeMonitor_ = rcp(new TimeMonitor(object, label + object.ShortClassName() + ": " + msg + " (sub, total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
   }
 }
+
+SubFactoryMonitor::~SubFactoryMonitor() = default;
 
 }  // namespace MueLu

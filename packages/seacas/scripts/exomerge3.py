@@ -54,10 +54,7 @@ if sys.version_info[0] < 3:
 
 # import exodus module
 # (exodus.py should be in the same directory as this file)
-try:
-    import exodus
-except Exception:
-    import exodus3 as exodus
+import exodus3 as exodus
 
 # informal version number of this module
 __version__ = "8.6.1"

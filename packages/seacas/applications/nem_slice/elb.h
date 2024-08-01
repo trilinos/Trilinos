@@ -211,7 +211,7 @@ template <typename INT> struct Graph_Description
   std::vector<INT>              adj{};
   std::vector<INT>              start{};
   std::vector<std::vector<INT>> sur_elem;
-  Graph_Description<INT>() = default;
+  Graph_Description() = default;
 };
 
 /* Various constants */

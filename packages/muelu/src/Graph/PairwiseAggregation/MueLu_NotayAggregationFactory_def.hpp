@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 
@@ -60,6 +24,7 @@
 
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -96,10 +61,10 @@ RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrd
 #undef SET_VALID_ENTRY
 
   // general variables needed in AggregationFactory
-  validParamList->set<RCP<const FactoryBase> >("A", null, "Generating factory of the matrix");
-  validParamList->set<RCP<const FactoryBase> >("Graph", null, "Generating factory of the graph");
-  validParamList->set<RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase> >("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
+  validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of the matrix");
+  validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
+  validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+  validParamList->set<RCP<const FactoryBase>>("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
   return validParamList;
 }
@@ -149,8 +114,14 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
                              "NotayAggregationFactory::Build(): \"aggregation: pairwise: size\""
                              " must be a strictly positive integer");
 
-  RCP<const LWGraph> graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
-  RCP<const Matrix> A      = Get<RCP<Matrix> >(currentLevel, "A");
+  RCP<const LWGraph> graph;
+  if (IsType<RCP<LWGraph>>(currentLevel, "Graph"))
+    graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
+  else {
+    auto graph_k = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+    graph        = graph_k->copyToHost();
+  }
+  RCP<const Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
 
   // Setup aggregates & aggStat objects
   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
@@ -197,8 +168,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
   if (ordering == O_RANDOM)
     MueLu::NotayUtils::RandomReorder(orderingVector);
   else if (ordering == O_CUTHILL_MCKEE) {
-    RCP<Xpetra::Vector<LO, LO, GO, NO> > rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
-    auto localVector                               = rcmVector->getData(0);
+    RCP<Xpetra::Vector<LO, LO, GO, NO>> rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
+    auto localVector                              = rcmVector->getData(0);
     for (LO i = 0; i < numRows; i++)
       orderingVector[i] = localVector[i];
   }
@@ -234,7 +205,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
     // Directly compute rowsum from A, rather than coarseA
     row_sum_type rowSum("rowSum", numLocalAggregates);
     {
-      std::vector<std::vector<LO> > agg2vertex(numLocalAggregates);
+      std::vector<std::vector<LO>> agg2vertex(numLocalAggregates);
       auto vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
       for (LO i = 0; i < (LO)numRows; i++) {
         if (aggStat[i] != AGGREGATED)
@@ -284,8 +255,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(localOrderingVector);
     else if (ordering == O_CUTHILL_MCKEE) {
-      RCP<Xpetra::Vector<LO, LO, GO, NO> > rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
-      auto localVector                               = rcmVector->getData(0);
+      RCP<Xpetra::Vector<LO, LO, GO, NO>> rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
+      auto localVector                              = rcmVector->getData(0);
       for (LO i = 0; i < numRows; i++)
         localOrderingVector[i] = localVector[i];
     }

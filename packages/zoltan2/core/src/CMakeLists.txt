@@ -17,15 +17,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_OpenMP
 # Tpetra, which are not needed for other cases
 # See: https://github.com/trilinos/Trilinos/issues/13094
 TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_HyperGraph
-  HAVE_ZOLTAN2_HYPERGRAPH
+  HAVE_ZOLTAN2CORE_HYPERGRAPH
   "Enable Hypergraph partitioning support in Zoltan2."
-  ${${PROJECT_NAME}_ENABLE_HyperGraph}
   ON
   )
 ASSERT_DEFINED(Trilinos_ENABLE_Tpetra)
-IF(Trilinos_ENABLE_TPETRA)
-  IF(Tpetra_ENABLE_REDUCED_ETI AND Zoltan2_ENABLE_HyperGraph)
-    MESSAGE(FATAL_ERROR "Zoltan2: Cannot enable HyperGraph wwhen Tpetra_Reduced_ETI=ON")
+IF(Trilinos_ENABLE_Tpetra)
+  IF(Tpetra_ENABLE_Reduced_ETI AND Zoltan2_ENABLE_HyperGraph)
+    MESSAGE(FATAL_ERROR "Zoltan2: Cannot enable HyperGraph when Tpetra_Reduced_ETI=ON")
   ENDIF()
   IF(NOT Zoltan2_ENABLE_HyperGraph)
     MESSAGE(STATUS "Zoltan2: Disabling HyperGraph support")

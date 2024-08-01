@@ -28,6 +28,7 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include <string>
 //  #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util.h"
@@ -79,8 +80,11 @@
 #ifdef HAVE_AMESOS_TAUCS
 #include "Amesos_Taucs.h"
 #endif
-#ifdef HAVE_AMESOS_PARDISO
+#if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
 #include "Amesos_Pardiso.h"
+#endif
+#ifdef HAVE_AMESOS_CSS_MKL
+#include "Amesos_CssMKL.h"
 #endif
 #ifdef HAVE_AMESOS_PARAKLETE
 #include "Amesos_Paraklete.h"
@@ -116,55 +120,55 @@
 //
 //
 
-int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file, 
-		       SparseSolverType SparseSolver,
-		       bool transpose, 
-		       int special, AMESOS_MatrixType matrix_type ) {
+int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
+                       SparseSolverType SparseSolver,
+                       bool transpose,
+                       int special, AMESOS_MatrixType matrix_type ) {
 
 
   Epetra_Map * readMap;
-  Epetra_CrsMatrix * readA; 
-  Epetra_Vector * readx; 
+  Epetra_Vector * readx;
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
+  Epetra_CrsMatrix *serialA;
    
   std::string FileName = matrix_file ;
   int FN_Size = FileName.size() ; 
   std::string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
   std::string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
   bool NonContiguousMap = false; 
-
-  if ( LastFiveBytes == ".triU" ) { 
-    // Call routine to read in unsymmetric Triplet matrix
-    NonContiguousMap = true; 
-    EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
-						      readb, readxexact, NonContiguousMap ) );
-  } else {
-    if ( LastFiveBytes == ".triS" ) { 
+  {
+    Teuchos::RCP< Teuchos::Time > ioTimer = Teuchos::TimeMonitor::getNewCounter ("TestSolver::Matrix Read");
+    Teuchos::TimeMonitor LocalTimer (*ioTimer);
+    if ( LastFiveBytes == ".triU" ) {
+      // Call routine to read in unsymmetric Triplet matrix
       NonContiguousMap = true; 
-      // Call routine to read in symmetric Triplet matrix
-      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
-							readb, readxexact, NonContiguousMap ) );
+      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, serialA, readx,
+                                                        readb, readxexact, NonContiguousMap ) );
     } else {
-      if (  LastFourBytes == ".mtx" ) { 
-	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
-							       readA, readx, readb, readxexact) );
+      if ( LastFiveBytes == ".triS" ) { 
+        NonContiguousMap = true; 
+        // Call routine to read in symmetric Triplet matrix
+        EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, serialA, readx,
+                                                          readb, readxexact, NonContiguousMap ) );
       } else {
-	// Call routine to read in HB problem
-	Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
-						     readb, readxexact) ;
+        if (  LastFourBytes == ".mtx" ) { 
+          EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap,
+                                                                 serialA, readx, readb, readxexact) );
+        } else {
+          // Call routine to read in HB problem
+          Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, serialA, readx,
+                                                     readb, readxexact);
+        }
       }
     }
   }
 
   Epetra_CrsMatrix transposeA(Copy, *readMap, 0);
-  Epetra_CrsMatrix *serialA ; 
 
   if ( transpose ) {
-    assert( CrsMatrixTranspose( readA, &transposeA ) == 0 ); 
-    serialA = &transposeA ; 
-  } else {
-    serialA = readA ; 
+    assert( CrsMatrixTranspose( serialA, &transposeA ) == 0 );
+    serialA = &transposeA;
   }
 
   Epetra_RowMatrix * passA = 0; 
@@ -215,6 +219,8 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   //  Epetra_Vector xcomp(*map_);      // X as computed by the solver
   bool distribute_matrix = ( matrix_type == AMESOS_Distributed ) ; 
   if ( distribute_matrix ) { 
+    Teuchos::RCP< Teuchos::Time > distTimer = Teuchos::TimeMonitor::getNewCounter ("TestSolver::Matrix Distribute");
+    Teuchos::TimeMonitor LocalTimer (*distTimer);
     // Create Exporter to distribute read-in matrix and vectors
     //
     //  Initialize x, b and xexact to the values read in from the file
@@ -225,7 +231,11 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     Comm.Barrier();
     
     A.Export(*serialA, exporter, Add);
-    assert(A.FillComplete()==0);    
+    //assert(A.FillComplete()==0);
+    if(A.FillComplete()!=0) {
+      exit(0);
+    }
+    delete serialA;
     
     Comm.Barrier();
 
@@ -236,9 +246,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     passxexact = &xexact;
     passresid = &resid;
     passtmp = &tmp;
-
   } else { 
-
     passA = serialA; 
     passx = readx; 
     passb = readb;
@@ -253,9 +261,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
 
-  Epetra_LinearProblem Problem(  (Epetra_RowMatrix *) passA, 
-				 (Epetra_MultiVector *) passx, 
-				 (Epetra_MultiVector *) passb );
+  Epetra_LinearProblem Problem(  (Epetra_RowMatrix *) passA,
+                                 (Epetra_MultiVector *) passx,
+                                 (Epetra_MultiVector *) passb );
   
 
   for ( int i = 0; i < 1+special ; i++ ) { 
@@ -265,20 +273,20 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       //  TEST_UMFPACK is never set by configure
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) {
-	Teuchos::ParameterList ParamList ;
-	ParamList.set( "MaxProcs", -3 );
-	Amesos_Superludist A_Superludist( Problem ) ; 
+        Teuchos::ParameterList ParamList ;
+        ParamList.set( "MaxProcs", -3 );
+        Amesos_Superludist A_Superludist( Problem );
 
   //ParamList.set( "Redistribute", true );
   //ParamList.set( "AddZeroToDiag", true );
   Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
   ParamList.set( "MaxProcs", -3 );
 
-	EPETRA_CHK_ERR( A_Superludist.SetParameters( ParamList ) ); 
-	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 
-	EPETRA_CHK_ERR( A_Superludist.SymbolicFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_Superludist.NumericFactorization(  ) ); 
-	EPETRA_CHK_ERR( A_Superludist.Solve(  ) ); 
+        EPETRA_CHK_ERR( A_Superludist.SetParameters( ParamList ) );
+        EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) );
+        EPETRA_CHK_ERR( A_Superludist.SymbolicFactorization(  ) );
+        EPETRA_CHK_ERR( A_Superludist.NumericFactorization(  ) );
+        EPETRA_CHK_ERR( A_Superludist.Solve(  ) );
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
     } else if ( SparseSolver == DSCPACK ) {
@@ -318,7 +326,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_taucs.Solve(  ) ); 
 
 #endif
-#ifdef HAVE_AMESOS_PARDISO
+#if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
     } else if ( SparseSolver == PARDISO ) {
 
       Teuchos::ParameterList ParamList ;
@@ -330,6 +338,35 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_pardiso.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( A_pardiso.Solve(  ) ); 
 
+#endif
+#ifdef HAVE_AMESOS_CSS_MKL
+    } else if ( SparseSolver == CSS ) {
+
+      Teuchos::ParameterList ParamList;
+      Amesos_CssMKL A_css( Problem ); 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( A_css.SetParameters( ParamList ) );
+      EPETRA_CHK_ERR( A_css.SetUseTranspose( transpose ) );
+      {
+        Teuchos::RCP< Teuchos::Time > symbolTimer = Teuchos::TimeMonitor::getNewCounter ("TestSolver::Symbolic(CSS)");
+        Teuchos::TimeMonitor LocalTimer (*symbolTimer);
+        EPETRA_CHK_ERR( A_css.SymbolicFactorization(  ) );
+      }
+      {
+        Teuchos::RCP< Teuchos::Time > numericTimer = Teuchos::TimeMonitor::getNewCounter("TestSolver::Numeric (CSS)");
+        Teuchos::TimeMonitor LocalTimer (*numericTimer);
+        EPETRA_CHK_ERR( A_css.NumericFactorization(  ) );
+      }
+      {
+        Teuchos::RCP< Teuchos::Time > solveTimer = Teuchos::TimeMonitor::getNewCounter  ("TestSolver::Solve   (CSS)");
+        Teuchos::TimeMonitor LocalTimer (*solveTimer);
+        EPETRA_CHK_ERR( A_css.Solve(  ) );
+      }
+      bool printTime = true;
+      if (printTime) {
+        A_css.PrintTiming();
+        TimeMonitor::summarize();
+      }
 #endif
 #ifdef HAVE_AMESOS_PARAKLETE
     } else if ( SparseSolver == PARAKLETE ) {
@@ -479,9 +516,11 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   passx->Norm2( &xnorm ) ; 
   SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm) ;
 
-  delete readA;
   delete readx;
   delete readb;
+  if ( !distribute_matrix ) {
+    delete serialA;
+  }
   delete readxexact;
   delete readMap;
   delete map_;

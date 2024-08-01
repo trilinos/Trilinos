@@ -1,51 +1,18 @@
 // @HEADER
-// ************************************************************************
-//
-//        Phalanx: A Partial Differential Equation Field Evaluation
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_Print.hpp"
-#include <Phalanx_any.hpp>
+#include <any>
 #include <unordered_map>
 #include <map>
 
@@ -112,11 +79,11 @@ namespace phalanx_test {
     Kokkos::View<double**,PHX::Device>::HostMirror host_P = Kokkos::create_mirror_view(P);
     Kokkos::View<double**,PHX::Device>::HostMirror host_T = Kokkos::create_mirror_view(T);
 
-    std::unordered_map<std::string,PHX::any> data_container;
+    std::unordered_map<std::string,std::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<double**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
+      std::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
 
     Kokkos::View<double**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
@@ -210,11 +177,11 @@ namespace phalanx_test {
     host_T = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
     host_k = Kokkos::View<FadType*,PHX::Device>::HostMirror("host_k",1,deriv_dim);
 
-    std::unordered_map<std::string,PHX::any> data_container;
+    std::unordered_map<std::string,std::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<FadType**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
+      std::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
 
     Kokkos::View<FadType**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
@@ -978,15 +945,15 @@ namespace phalanx_test {
     {
       Kokkos::View<StdDevAtomic,PHX::Device> values("v");
       Kokkos::parallel_for("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i) {
-        bool success = false;
+        bool success_local = false;
         do {
           StdDevAtomic n_minus_one(values());
           StdDevAtomic n(n_minus_one);
           n.count_ += 1;
           n.mean_ += ( a(i) - n_minus_one.mean_ ) / n.count_;
           n.M2_ += ( a(i) - n_minus_one.mean_ ) * ( a(i) - n.mean_ );
-          success = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
-        } while (!success);
+          success_local = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
+        } while (!success_local);
       });
       PHX::Device().fence();
 

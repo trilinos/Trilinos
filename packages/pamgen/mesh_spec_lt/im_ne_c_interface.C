@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include <cstring>
 #include "pamgen_im_ne_nemesisI.h"
 #include "pamgen_mesh_specification.h"

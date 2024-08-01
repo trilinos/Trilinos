@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 // Teko includes
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
@@ -69,11 +32,37 @@ DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory(
     const Teuchos::RCP<std::ostream>& os, bool printResidual)
     : outputStream_(Teko::getOutputStream()),
       invFactory_(invFactory),
+      precFactory_(Teuchos::null),
       diagString_(label),
       printResidual_(printResidual) {
   initTimers(diagString_);
 
   if (os != Teuchos::null) outputStream_ = os;
+}
+
+/** Construct a preconditioner factory that applies a specified
+ * preconditioned solver, a fixed number of times.
+ */
+DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory(
+    const Teuchos::RCP<Teko::InverseFactory>& invFactory,
+    const Teuchos::RCP<Teko::InverseFactory>& precFactory, const std::string& label,
+    const Teuchos::RCP<std::ostream>& os, bool printResidual)
+    : outputStream_(Teko::getOutputStream()),
+      invFactory_(invFactory),
+      precFactory_(precFactory),
+      diagString_(label),
+      printResidual_(printResidual) {
+  initTimers(diagString_);
+
+  if (os != Teuchos::null) outputStream_ = os;
+}
+
+double DiagnosticPreconditionerFactory::totalInitialBuildTime() const {
+  return buildTimer_->totalElapsedTime() + precBuildTimer_->totalElapsedTime();
+}
+
+double DiagnosticPreconditionerFactory::totalRebuildTime() const {
+  return rebuildTimer_->totalElapsedTime() + precRebuildTimer_->totalElapsedTime();
 }
 
 DiagnosticPreconditionerFactory::~DiagnosticPreconditionerFactory() {
@@ -145,7 +134,24 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(
           << "\")");
 
   // build user specified preconditioner
-  ModifiableLinearOp& diagOp_ptr = state.getModifiableOp("diagnosticOp");
+  ModifiableLinearOp& diagOp_ptr      = state.getModifiableOp("diagnosticOp");
+  ModifiableLinearOp& diagOp_prec_ptr = state.getModifiableOp("prec_diagnosticOp");
+
+  if (precFactory_ != Teuchos::null) {
+    if (diagOp_prec_ptr == Teuchos::null) {
+      {
+        // start timer on construction, end on destruction
+        Teuchos::TimeMonitor monitor(*precBuildTimer_, false);
+
+        diagOp_prec_ptr = precFactory_->buildInverse(lo);
+      }
+
+      state.addModifiableOp("prec_diagnosticOp", diagOp_prec_ptr);
+    } else {
+      Teuchos::TimeMonitor monitor(*precRebuildTimer_, false);
+      Teko::rebuildInverse(*precFactory_, lo, diagOp_prec_ptr);
+    }
+  }
 
   if (diagOp_ptr == Teuchos::null) {
     ModifiableLinearOp invOp;
@@ -153,7 +159,10 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(
       // start timer on construction, end on destruction
       Teuchos::TimeMonitor monitor(*buildTimer_, false);
 
-      invOp = Teko::buildInverse(*invFactory_, lo);
+      if (diagOp_prec_ptr.is_null())
+        invOp = Teko::buildInverse(*invFactory_, lo);
+      else
+        invOp = Teko::buildInverse(*invFactory_, lo, diagOp_prec_ptr);
     }
 
     // only printing residual requires use of forward operator
@@ -172,7 +181,10 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(
       // start timer on construction, end on destruction
       Teuchos::TimeMonitor monitor(*rebuildTimer_, false);
 
-      Teko::rebuildInverse(*invFactory_, lo, invOp);
+      if (diagOp_prec_ptr.is_null())
+        Teko::rebuildInverse(*invFactory_, lo, invOp);
+      else
+        Teko::rebuildInverse(*invFactory_, lo, diagOp_prec_ptr, invOp);
     }
   }
 
@@ -192,12 +204,16 @@ void DiagnosticPreconditionerFactory::initializeFromParameterList(
       "Parameter \"Descriptive Label\" is required by a Teko::DiagnosticPreconditionerFactory");
 
   // grab library and preconditioner name
-  std::string invName = settings.get<std::string>("Inverse Factory");
-  diagString_         = settings.get<std::string>("Descriptive Label");
+  std::string invName  = settings.get<std::string>("Inverse Factory");
+  std::string precName = "";
+  if (settings.isParameter("Preconditioner Factory"))
+    precName = settings.get<std::string>("Preconditioner Factory");
+  diagString_ = settings.get<std::string>("Descriptive Label");
 
   // build preconditioner factory
   Teuchos::RCP<const InverseLibrary> il = getInverseLibrary();
   invFactory_                           = il->getInverseFactory(invName);
+  if (precName != "") precFactory_ = il->getInverseFactory(precName);
   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_ == Teuchos::null, std::runtime_error,
                              "ERROR: \"Inverse Factory\" = " << invName << " could not be found");
 
@@ -228,12 +244,18 @@ bool DiagnosticPreconditionerFactory::updateRequestedParameters(const Teuchos::P
       "ERROR: Teko::DiagnosticPreconditionerFactory::updateRequestedParameters requires that a "
           << "preconditioner factory has been set. Currently it is null!");
 
-  return invFactory_->updateRequestedParameters(pl);
+  bool success = true;
+  success &= invFactory_->updateRequestedParameters(pl);
+  if (precFactory_) success &= precFactory_->updateRequestedParameters(pl);
+
+  return success;
 }
 
 void DiagnosticPreconditionerFactory::initTimers(const std::string& str) {
-  buildTimer_   = Teuchos::rcp(new Teuchos::Time(str + " buildTimer"));
-  rebuildTimer_ = Teuchos::rcp(new Teuchos::Time(str + " rebuildTimer"));
+  buildTimer_       = Teuchos::rcp(new Teuchos::Time(str + " buildTimer"));
+  rebuildTimer_     = Teuchos::rcp(new Teuchos::Time(str + " rebuildTimer"));
+  precBuildTimer_   = Teuchos::rcp(new Teuchos::Time(str + " precBuildTimer"));
+  precRebuildTimer_ = Teuchos::rcp(new Teuchos::Time(str + " precRebuildTimer"));
 }
 
 }  // end namespace Teko

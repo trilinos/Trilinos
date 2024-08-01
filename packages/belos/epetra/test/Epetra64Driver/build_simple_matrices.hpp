@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                 Belos: Block Linear Solvers Package
+//
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef __BUILD_SIMPLE_MATRICES_HPP
 #define __BUILD_SIMPLE_MATRICES_HPP
 
@@ -10,7 +19,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
- 
+
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 
@@ -52,7 +61,7 @@ void build_simple_matrix(
 
   long long offsetEpetra64;
 
-  build_maps(nGlobalRows, testEpetra64, comm, 
+  build_maps(nGlobalRows, testEpetra64, comm,
              &vectorMap, &rowMap, &colMap, offsetEpetra64, verbose);
 
   // Create an integer vector nnzPerRow that is used to build the Epetra Matrix.
@@ -61,7 +70,7 @@ void build_simple_matrix(
   std::vector<int> nnzPerRow(nMyRows+1, 0);
 
   // Also create lists of the nonzeros to be assigned to processors.
-  // To save programming time and complexity, these vectors are allocated 
+  // To save programming time and complexity, these vectors are allocated
   // bigger than they may actually be needed.
   std::vector<itype> iv(3*nMyRows+1);
   std::vector<itype> jv(3*nMyRows+1);
@@ -69,7 +78,7 @@ void build_simple_matrix(
 
   itype nMyNonzeros = 0;
   for (itype i = 0, myrowcnt = 0; i < nGlobalRows; i++) {
-    if (rowMap->MyGID(i+offsetEpetra64)) { 
+    if (rowMap->MyGID(i+offsetEpetra64)) {
       // This processor owns part of this row; see whether it owns the nonzeros
       if (i > 0 && (!colMap || colMap->MyGID(i-1+offsetEpetra64))) {
         iv[nMyNonzeros] = i + offsetEpetra64;

@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Kokkos_Core.hpp"
 
 #include "Teuchos_Assert.hpp"
@@ -33,7 +43,7 @@ class MyClass {
   Vector<double,3> d_;
   // To test for cuda warnings when MyClass is lambda captured to
   // device
-  PHX::ViewOfViews3<1,Kokkos::View<double*>> e_;
+  PHX::ViewOfViews<1,Kokkos::View<double*>> e_;
 
 public:
   MyClass() :

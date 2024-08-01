@@ -291,4 +291,24 @@ namespace Iocatalyst {
     return (extents.i + offset) * (extents.j + offset) * (extents.k + offset);
   }
 
+  std::map<std::string, double>* BlockMesh::getTransientCellFieldMap()
+  {
+    return &(this->transientCellFields);
+  }
+
+  std::map<std::string, double>* BlockMesh::getTransientPointFieldMap()
+  {
+    return &(this->transientPointFields);
+  }
+
+  void BlockMesh::addTransientCellField(std::string f_name, double f_value)
+  {
+    this->transientCellFields.insert({ f_name, f_value });
+  }
+
+  void BlockMesh::addTransientPointField(std::string f_name, double f_value)
+  {
+    this->transientPointFields.insert({ f_name, f_value });
+  }
+
 } // namespace Iocatalyst

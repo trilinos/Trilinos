@@ -1,4 +1,12 @@
-// $Id$
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #ifndef radial_trisection_inline_mesh_descH
 #define radial_trisection_inline_mesh_descH
 #include "radial_inline_mesh_desc.h"

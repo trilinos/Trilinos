@@ -1,42 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_CRSRILUK_DEF_HPP
 #define IFPACK2_CRSRILUK_DEF_HPP
@@ -552,6 +521,9 @@ void RILUK<MatrixType>::initialize ()
     isAllocated_   = false;
     isComputed_    = false;
     Graph_ = Teuchos::null;
+    Y_tmp_ = nullptr;
+    reordered_x_ = nullptr;
+    reordered_y_ = nullptr;
 
     if (isKokkosKernelsStream_) {
       Graph_v_ = std::vector< Teuchos::RCP<iluk_graph_type> >(num_streams_);
@@ -612,7 +584,7 @@ void RILUK<MatrixType>::initialize ()
         } else {
           perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
           reverse_perm_v_.resize(perm_v_.size());
-          for(int istream=0; istream < perm_v_.size(); ++istream) {
+          for(size_t istream=0; istream < perm_v_.size(); ++istream) {
             using perm_type = typename lno_nonzero_view_t::non_const_type;
             const auto perm = perm_v_[istream];
             const auto perm_length = perm.extent(0);
@@ -1182,7 +1154,6 @@ void RILUK<MatrixType>::compute ()
       A_local_crs_nc_->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
     }
 
-    using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
     if (!isKokkosKernelsStream_) {
       compute_kkspiluk();
     }
@@ -1194,6 +1165,16 @@ void RILUK<MatrixType>::compute ()
   isComputed_ = true;
   ++numCompute_;
   computeTime_ += (timer.wallTime() - startTime);
+}
+
+namespace Impl {
+template <typename MV, typename Map>
+void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const size_t numVectors, bool initialize)
+{
+  if(!mv_ptr || mv_ptr->getNumVectors() != numVectors) {
+    mv_ptr.reset(new MV(map, numVectors, initialize));
+  }
+}
 }
 
 template<class MatrixType>
@@ -1254,11 +1235,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
       if (isKokkosKernelsSpiluk_ && isKokkosKernelsStream_ && hasStreamReordered_) {
-        MV ReorderedX (X.getMap(), X.getNumVectors());
-        MV ReorderedY (Y.getMap(), Y.getNumVectors());
+        Impl::resetMultiVecIfNeeded(reordered_x_, X.getMap(), X.getNumVectors(), false);
+        Impl::resetMultiVecIfNeeded(reordered_y_, Y.getMap(), Y.getNumVectors(), false);
+        Kokkos::fence();
         for (size_t j = 0; j < X.getNumVectors(); j++) {
           auto X_j = X.getVector(j);
-          auto ReorderedX_j = ReorderedX.getVectorNonConst(j);
+          auto ReorderedX_j = reordered_x_->getVectorNonConst(j);
           auto X_lcl = X_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
           auto ReorderedX_lcl = ReorderedX_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
           local_ordinal_type stream_begin = 0;
@@ -1268,29 +1250,29 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             stream_end = stream_begin + perm_i.extent(0);
             auto X_lcl_sub = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
             auto ReorderedX_lcl_sub = Kokkos::subview (ReorderedX_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
-            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(exec_space_instances_[i], 0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
               ReorderedX_lcl_sub(perm_i(ii)) = X_lcl_sub(ii);
             });
             stream_begin = stream_end;
           }
         }
-        Kokkos::fence(); // Make sure X is completely reordered
+        Kokkos::fence();
         if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
           // Solve L Y = X for Y.
-          L_solver_->apply (ReorderedX, Y, mode);
+          L_solver_->apply (*reordered_x_, Y, mode);
           // Solve U Y = Y for Y.
-          U_solver_->apply (Y, ReorderedY, mode);
+          U_solver_->apply (Y, *reordered_y_, mode);
         }
         else { // Solve U^P (L^P Y) = X for Y (where P is * or T).
           // Solve U^P Y = X for Y.
-          U_solver_->apply (ReorderedX, Y, mode);
+          U_solver_->apply (*reordered_x_, Y, mode);
           // Solve L^P Y = Y for Y.
-          L_solver_->apply (Y, ReorderedY, mode);
+          L_solver_->apply (Y, *reordered_y_, mode);
         }
 
         for (size_t j = 0; j < Y.getNumVectors(); j++) {
           auto Y_j = Y.getVectorNonConst(j);
-          auto ReorderedY_j = ReorderedY.getVector(j);
+          auto ReorderedY_j = reordered_y_->getVector(j);
           auto Y_lcl = Y_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
           auto ReorderedY_lcl = ReorderedY_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
           local_ordinal_type stream_begin = 0;
@@ -1300,12 +1282,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             stream_end = stream_begin + perm_i.extent(0);
             auto Y_lcl_sub = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
             auto ReorderedY_lcl_sub = Kokkos::subview (ReorderedY_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
-            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(exec_space_instances_[i], 0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
               Y_lcl_sub(ii) = ReorderedY_lcl_sub(perm_i(ii));
             });
             stream_begin = stream_end;
           }
         }
+        Kokkos::fence();
       }
       else {
         if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
@@ -1313,18 +1296,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           //NOTE (Nov-15-2022):
           //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
           //since cusparseSpSV_solve() does not support in-place computation
-          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
 
           // Start by solving L Y_tmp = X for Y_tmp.
-          L_solver_->apply (X, Y_tmp, mode);
+          L_solver_->apply (X, *Y_tmp_, mode);
 
           if (!this->isKokkosKernelsSpiluk_) {
             // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
             // write "solve D Y = Y for Y."
-            Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+            Y_tmp_->elementWiseMultiply (one, *D_, *Y_tmp_, zero);
           }
 
-          U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
+          U_solver_->apply (*Y_tmp_, Y, mode); // Solve U Y = Y_tmp.
 #else
           // Start by solving L Y = X for Y.
           L_solver_->apply (X, Y, mode);
@@ -1343,10 +1326,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           //NOTE (Nov-15-2022):
           //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
           //since cusparseSpSV_solve() does not support in-place computation
-          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
 
           // Start by solving U^P Y_tmp = X for Y_tmp.
-          U_solver_->apply (X, Y_tmp, mode);
+          U_solver_->apply (X, *Y_tmp_, mode);
 
           if (!this->isKokkosKernelsSpiluk_) {
             // Solve D^P Y = Y.
@@ -1354,10 +1337,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
             // need to do an elementwise multiply with the conjugate of
             // D_, not just with D_ itself.
-            Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+            Y_tmp_->elementWiseMultiply (one, *D_, *Y_tmp_, zero);
 	      }
 
-          L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+          L_solver_->apply (*Y_tmp_, Y, mode); // Solve L^P Y = Y_tmp.
 #else
           // Start by solving U^P Y = X for Y.
           U_solver_->apply (X, Y, mode);
@@ -1387,9 +1370,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Y.scale (beta);
         }
       } else { // alpha != zero
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-        apply (X, Y_tmp, mode);
-        Y.update (alpha, Y_tmp, beta);
+        Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
+        apply (X, *Y_tmp_, mode);
+        Y.update (alpha, *Y_tmp_, beta);
       }
     }
   }//end timing

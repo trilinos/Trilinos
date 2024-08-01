@@ -45,7 +45,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC TestForException_throwTest
     ARGS  --no-enable-stacktrace
     PASS_REGULAR_EXPRESSION_ALL
-      "teuchos.core.test.MemoryManagement.SimpleThrowFunctions.cpp:50"
+      "teuchos.core.test.MemoryManagement.SimpleThrowFunctions.cpp:16"
       "Throw number = 1"
       "Throw test that evaluated to true: true"
       "This is an exception I throw!"
@@ -57,7 +57,7 @@ ASSERT_DEFINED(${PARENT_PACKAGE_NAME}_ENABLE_STACKTRACE)
 IF (${PARENT_PACKAGE_NAME}_ENABLE_STACKTRACE)
 
   SET(PASS_REGEXS
-    "teuchos.core.test.MemoryManagement.SimpleThrowFunctions.cpp:50"
+    "teuchos.core.test.MemoryManagement.SimpleThrowFunctions.cpp:16"
     "Throw number = 1"
     "Throw test that evaluated to true: true"
     "This is an exception I throw!"

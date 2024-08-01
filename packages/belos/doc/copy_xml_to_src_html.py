@@ -1,4 +1,12 @@
 #! /usr/bin/env python
+# @HEADER
+# *****************************************************************************
+#                 Belos: Block Linear Solvers Package
+#
+# Copyright 2004-2016 NTESS and the Belos contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
+# @HEADER
 
 import os
 import shlex
@@ -41,16 +49,16 @@ def main(buildDir):
     packageSrcDir = os.path.join(trilinosBasePath, 'packages', package)
     packageBuildDir = os.path.join(buildDir, 'packages', package)
 
-    # Assumptions: 
+    # Assumptions:
     # - source/packages/<pkg>/doc/html created by build_docs script
     # - XML files created in build/packages/<pkg>/doc/parameterList
-    if os.path.isdir(os.path.join(packageSrcDir, 'doc', 'html')):  
+    if os.path.isdir(os.path.join(packageSrcDir, 'doc', 'html')):
         xmlFilePath = os.path.join(packageBuildDir, 'doc', 'parameterList')
         if os.path.isdir(xmlFilePath):
             xmlFiles = glob.glob(os.path.join(xmlFilePath, '*.xml'))
             if not xmlFiles:
                 print "ERROR: XML files not found in" + xmlFilePath
-            else:         
+            else:
                 for file in xmlFiles:
                     print "  Copying file " + file
                     shutil.copy(file, os.path.join(packageSrcDir, 'doc', 'html'))

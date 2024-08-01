@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_NUMERIC_TOOLS_LEVELSET_HPP__
 #define __TACHO_NUMERIC_TOOLS_LEVELSET_HPP__
@@ -72,6 +64,21 @@ Sandia National Laboratories, Albuquerque, NM, USA
 
 //#define TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD
 //#define TACHO_ENABLE_LEVELSET_TOOLS_USE_LIGHT_KERNEL
+
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE))
+  // SpMV flag
+  #if (CUSPARSE_VERSION >= 11400)
+    #define TACHO_CUSPARSE_SPMV_ALG CUSPARSE_SPMV_ALG_DEFAULT
+  #else
+    #define TACHO_CUSPARSE_SPMV_ALG CUSPARSE_MV_ALG_DEFAULT
+  #endif
+  // SpMM flag
+  #if (CUSPARSE_VERSION >= 11000)
+    #define TACHO_CUSPARSE_SPMM_ALG CUSPARSE_SPMM_ALG_DEFAULT
+  #else
+    #define TACHO_CUSPARSE_SPMM_ALG CUSPARSE_MM_ALG_DEFAULT
+  #endif
+#endif
 
 namespace Tacho {
 
@@ -1768,13 +1775,14 @@ public:
                         s0.rowptrU.data(), s0.colindU.data(), s0.nzvalsU.data(),
                         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                         CUSPARSE_INDEX_BASE_ZERO, computeType);
+
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
       cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                               &alpha, s0.U_cusparse, vecX, &beta, vecY,
-                              computeType, CUSPARSE_MM_ALG_DEFAULT, &buffer_size_U);
+                              computeType, TACHO_CUSPARSE_SPMM_ALG, &buffer_size_U);
 #else
       cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.U_cusparse, vecX, &beta, vecY,
-                              computeType, CUSPARSE_MV_ALG_DEFAULT, &buffer_size_U);
+                              computeType, TACHO_CUSPARSE_SPMV_ALG, &buffer_size_U);
 #endif
       if (s0.spmv_explicit_transpose) {
         // create matrix (transpose or L)
@@ -1787,10 +1795,10 @@ public:
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
         cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                 &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MM_ALG_DEFAULT, &buffer_size_L);
+                                computeType, TACHO_CUSPARSE_SPMM_ALG, &buffer_size_L);
 #else
         cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MV_ALG_DEFAULT, &buffer_size_L);
+                                computeType, TACHO_CUSPARSE_SPMV_ALG, &buffer_size_L);
 #endif
       } else {
         // create matrix (L_cusparse stores the same ptrs as descrU, but optimized for trans)
@@ -1802,10 +1810,10 @@ public:
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
         cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                 &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MM_ALG_DEFAULT, &buffer_size_L);
+                                computeType, TACHO_CUSPARSE_SPMM_ALG, &buffer_size_L);
 #else
         cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MV_ALG_DEFAULT, &buffer_size_L);
+                                computeType, TACHO_CUSPARSE_SPMV_ALG, &buffer_size_L);
 #endif
       }
       // allocate workspace
@@ -2233,6 +2241,21 @@ public:
     exit(0);
     #endif
 #if defined(KOKKOS_ENABLE_CUDA)
+    // Re-create CuSparse CSR
+    if (s0.spmv_explicit_transpose) {
+      size_t nnz = s0.nzvalsL.extent(0);
+      cusparseCreateCsr(&s0.L_cusparse, m, m, nnz,
+                        s0.rowptrL.data(), s0.colindL.data(), s0.nzvalsL.data(),
+                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                        CUSPARSE_INDEX_BASE_ZERO, computeType);
+    } else {
+      size_t nnz = s0.nzvalsU.extent(0);
+      cusparseCreateCsr(&s0.L_cusparse, m, m, nnz,
+                        s0.rowptrU.data(), s0.colindU.data(), s0.nzvalsU.data(),
+                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                        CUSPARSE_INDEX_BASE_ZERO, computeType);
+    }
+    // Call SpMV/SPMM
     cusparseStatus_t status;
     if (nrhs > 1) {
       if (lvl == nlvls-1) {
@@ -2248,13 +2271,13 @@ public:
                               &alpha, s0.L_cusparse, 
                                       matX,
                               &beta,  matY,
-                              computeType, CUSPARSE_MM_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, TACHO_CUSPARSE_SPMM_ALG, (void*)buffer_L.data());
       } else {
         status = cusparseSpMM(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                               &alpha, s0.L_cusparse,  // L_cusparse stores the same ptrs as descrU, but optimized for trans
                                       matX,
                               &beta,  matY,
-                              computeType, CUSPARSE_MM_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, TACHO_CUSPARSE_SPMM_ALG, (void*)buffer_L.data());
       }
     } else {
       if (lvl == nlvls-1) {
@@ -2270,13 +2293,13 @@ public:
                               &alpha, s0.L_cusparse, 
                                       vecX,
                               &beta,  vecY,
-                              computeType, CUSPARSE_MV_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, TACHO_CUSPARSE_SPMV_ALG, (void*)buffer_L.data());
       } else {
         status = cusparseSpMV(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE,
                               &alpha, s0.L_cusparse, // L_cusparse stores the same ptrs as descrU, but optimized for trans
                                       vecX,
                               &beta,  vecY,
-                              computeType, CUSPARSE_MV_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, TACHO_CUSPARSE_SPMV_ALG, (void*)buffer_L.data());
       }
     }
     if (CUSPARSE_STATUS_SUCCESS != status) {
@@ -2584,6 +2607,13 @@ public:
     }
 
     cusparseStatus_t status;
+    // Re-create CuSparse CSR
+    size_t nnz = s0.nzvalsU.extent(0);
+    cusparseCreateCsr(&s0.U_cusparse, m, m, nnz,
+                      s0.rowptrU.data(), s0.colindU.data(), s0.nzvalsU.data(),
+                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                      CUSPARSE_INDEX_BASE_ZERO, computeType);
+    // Call SpMV/SPMM
     if (nrhs > 1) {
       if (lvl == 0) {
         // start : create DnMat for T
@@ -2596,7 +2626,7 @@ public:
                             &alpha, s0.U_cusparse, 
                                     vecX,
                             &beta,  vecY,
-                            computeType, CUSPARSE_MM_ALG_DEFAULT, (void*)buffer_U.data());
+                            computeType, TACHO_CUSPARSE_SPMM_ALG, (void*)buffer_U.data());
     } else {
       if (lvl == 0) {
         // start : create DnMat for T
@@ -2609,7 +2639,7 @@ public:
                             &alpha, s0.U_cusparse, 
                                     vecX,
                             &beta,  vecY,
-                            computeType, CUSPARSE_MV_ALG_DEFAULT, (void*)buffer_U.data());
+                            computeType, TACHO_CUSPARSE_SPMV_ALG, (void*)buffer_U.data());
     }
     if (CUSPARSE_STATUS_SUCCESS != status) {
        printf( " Failed cusparseSpMV for SpMV\n" );
@@ -3574,7 +3604,6 @@ public:
           }
         }
       } // end of lower tri solve
-
       {
         typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)

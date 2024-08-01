@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Kokkos_Core.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -84,6 +94,15 @@ TEUCHOS_UNIT_TEST(ViewOfViews,from_separate_views) {
           TEST_FLOATING_EQUALITY(c_host(cell,pt,eq),5.0,tol);
         }
   }
+
+  // Need to manually clean out the inner view memory. The Kokkos view
+  // dtor calls a parallel_for in the destructor for the view. A view
+  // of views thus calls nested parallel_fors that are not
+  // allowed. This results in a hang at the parallel_for mutex.
+  {
+    for (size_t i=0; i < v_host_managed.size(); ++i)
+      v_host_managed(i) = {};
+  }
 }
 
 // Note: The outer view will call the default ctor on device for first
@@ -105,12 +124,6 @@ TEUCHOS_UNIT_TEST(ViewOfViews,ArrayOfViews) {
   const int num_pts = 8;
   const int num_equations = 32;
 
-  // Requirement 1: The inner view must be unmanaged on device to
-  // prevent double deletion! To initialize correctly, we need to deep
-  // copy from host with the inner views propeties matching exactly on
-  // host and device.
-
-  using InnerViewUnmanaged = Kokkos::View<double***,mem_t,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using InnerView = Kokkos::View<double***,mem_t>;
 
   // For making sure the views are not destroyed.
@@ -121,10 +134,6 @@ TEUCHOS_UNIT_TEST(ViewOfViews,ArrayOfViews) {
     InnerView a("a",num_cells,num_pts,num_equations);
     InnerView b("b",num_cells,num_pts,num_equations);
     InnerView c("c",num_cells,num_pts,num_equations);
-
-    // vec[0] = a;
-    // vec[1] = b;
-    // vec[2] = c;
 
     a_of_v[0] = a;
     a_of_v[1] = b;

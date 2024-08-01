@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_UTILITIESBASE_DEF_HPP
 #define MUELU_UTILITIESBASE_DEF_HPP
 
@@ -314,8 +278,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
   if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
-    using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-    using device_type       = typename CrsGraph::device_type;
+    using device_type = typename CrsGraph::device_type;
     Kokkos::View<size_t*, device_type> offsets("offsets", rowMap->getLocalNumElements());
     crsOp->getCrsGraph()->getLocalDiagOffsets(offsets);
     crsOp->getCrsMatrix()->getLocalDiagCopy(*diag, offsets);
@@ -621,53 +584,84 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+Teuchos::RCP<Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A) {
-  size_t numRows = A.getRowMap()->getLocalNumElements();
-  Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
-  Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
-  Teuchos::ArrayView<const LocalOrdinal> cols;
-  Teuchos::ArrayView<const Scalar> vals;
-  for (size_t i = 0; i < numRows; ++i) {
-    A.getLocalRowView(i, cols, vals);
-    Magnitude mymax = ZERO;
-    for (LocalOrdinal j = 0; j < cols.size(); ++j) {
-      if (Teuchos::as<size_t>(cols[j]) != i) {
-        mymax = std::max(mymax, -Teuchos::ScalarTraits<Scalar>::real(vals[j]));
-      }
-    }
-    maxvec[i] = mymax;
-  }
-  return maxvec;
+  // Get/Create distributed objects
+  RCP<const Map> rowMap = A.getRowMap();
+  auto diag             = Xpetra::VectorFactory<Magnitude, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, false);
+
+  // Implement using Kokkos
+  using local_vector_type = typename Vector::dual_view_type::t_dev_um;
+  using local_matrix_type = typename Matrix::local_matrix_type;
+  using execution_space   = typename local_vector_type::execution_space;
+  using values_type       = typename local_matrix_type::values_type;
+  using scalar_type       = typename values_type::non_const_value_type;
+  using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
+  using KAT_M             = typename Kokkos::ArithTraits<mag_type>;
+  using size_type         = typename local_matrix_type::non_const_size_type;
+
+  auto diag_dev      = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+  auto local_mat_dev = A.getLocalMatrixDevice();
+  Kokkos::RangePolicy<execution_space, int> my_policy(0, static_cast<int>(diag_dev.extent(0)));
+
+  Kokkos::parallel_for(
+      "GetMatrixMaxMinusOffDiagonal", my_policy,
+      KOKKOS_LAMBDA(const LocalOrdinal rowIdx) {
+        auto mymax = KAT_M::zero();
+        auto row   = local_mat_dev.row(rowIdx);
+        for (LocalOrdinal entryIdx = 0; entryIdx < row.length; ++entryIdx) {
+          if (rowIdx != row.colidx(entryIdx)) {
+            mymax = std::max(mymax, -KAT_S::magnitude(row.value(entryIdx)));
+          }
+        }
+        diag_dev(rowIdx, 0) = mymax;
+      });
+
+  return diag;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+Teuchos::RCP<Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber) {
   TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()), std::runtime_error, "GetMatrixMaxMinusOffDiagonal: BlockNumber must match's A's column map.");
 
-  Teuchos::ArrayRCP<const LocalOrdinal> block_id = BlockNumber.getData(0);
+  // Get/Create distributed objects
+  RCP<const Map> rowMap = A.getRowMap();
+  auto diag             = Xpetra::VectorFactory<Magnitude, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, false);
 
-  size_t numRows = A.getRowMap()->getLocalNumElements();
-  Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
-  Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
-  Teuchos::ArrayView<const LocalOrdinal> cols;
-  Teuchos::ArrayView<const Scalar> vals;
-  for (size_t i = 0; i < numRows; ++i) {
-    A.getLocalRowView(i, cols, vals);
-    Magnitude mymax = ZERO;
-    for (LocalOrdinal j = 0; j < cols.size(); ++j) {
-      if (Teuchos::as<size_t>(cols[j]) != i && block_id[i] == block_id[cols[j]]) {
-        mymax = std::max(mymax, -Teuchos::ScalarTraits<Scalar>::real(vals[j]));
-      }
-    }
-    //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax);
+  // Implement using Kokkos
+  using local_vector_type = typename Vector::dual_view_type::t_dev_um;
+  using local_matrix_type = typename Matrix::local_matrix_type;
+  using execution_space   = typename local_vector_type::execution_space;
+  using values_type       = typename local_matrix_type::values_type;
+  using scalar_type       = typename values_type::non_const_value_type;
+  using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
+  using KAT_M             = typename Kokkos::ArithTraits<mag_type>;
+  using size_type         = typename local_matrix_type::non_const_size_type;
 
-    maxvec[i] = mymax;
-  }
-  return maxvec;
+  auto diag_dev        = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+  auto local_mat_dev   = A.getLocalMatrixDevice();
+  auto local_block_dev = BlockNumber.getDeviceLocalView(Xpetra::Access::ReadOnly);
+  Kokkos::RangePolicy<execution_space, int> my_policy(0, static_cast<int>(diag_dev.extent(0)));
+
+  Kokkos::parallel_for(
+      "GetMatrixMaxMinusOffDiagonal", my_policy,
+      KOKKOS_LAMBDA(const LocalOrdinal rowIdx) {
+        auto mymax = KAT_M::zero();
+        auto row   = local_mat_dev.row(rowIdx);
+        for (LocalOrdinal entryIdx = 0; entryIdx < row.length; ++entryIdx) {
+          if ((rowIdx != row.colidx(entryIdx)) && (local_block_dev(rowIdx, 0) == local_block_dev(row.colidx(entryIdx), 0))) {
+            mymax = std::max(mymax, -KAT_S::magnitude(row.value(entryIdx)));
+          }
+        }
+        diag_dev(rowIdx, 0) = mymax;
+      });
+
+  return diag;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

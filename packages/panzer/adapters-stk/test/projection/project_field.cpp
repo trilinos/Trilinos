@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
@@ -75,7 +85,11 @@ public:
   void operator()(const int elem) const
   {
     for(int i=0;i<static_cast<int>(points.extent(1));i++) {
-      auto x = points(elem,i,0), y = points(elem,i,1), z = points(elem,i,2);
+      auto x = points(elem,i,0);
+      auto y = points(elem,i,1);
+      double z = 0.;
+      if (points.extent(2) == 3)
+        z = points(elem,i,2);
       if (funAtPoints.rank() == 3) {
         for(int d=0;d<static_cast<int>(funAtPoints.extent(2));d++)
           funAtPoints(elem,i,d) = fun(x,y,z,d); // vector basis

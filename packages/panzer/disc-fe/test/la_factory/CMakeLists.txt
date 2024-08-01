@@ -42,9 +42,10 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test)
 
-SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp)
+SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp tBlockedTpetraLinearObjFactory.cpp)
+
 IF(PANZER_HAVE_EPETRA_STACK)
-  APPEND_SET(FILES tBlockedLinearObjFactory.cpp tBlockedTpetraLinearObjFactory.cpp
+  APPEND_SET(FILES tBlockedLinearObjFactory.cpp
              tEpetra_GlbEvalData.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

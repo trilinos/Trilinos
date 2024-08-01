@@ -17,31 +17,9 @@ TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
 
 
-# NOTE: Once the deprecated code is removed this entire block should be replaced with
-# APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-# APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-APPEND_SET(HEADERS
-  Tpetra_KokkosCompat_DefaultNode.hpp
-  Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp
-)
-
-APPEND_SET(SOURCES
-  Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.cpp
-)
-
-IF (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE OR Tpetra_ENABLE_DEPRECATED_CODE)
-  APPEND_SET(HEADERS
-    Kokkos_BufferMacros.hpp 
-    KokkosCompat_ClassicNodeAPI_Wrapper.hpp
-    Kokkos_ConfigDefs.hpp
-    Kokkos_DefaultNode.hpp
-    Kokkos_LinAlgVersion.hpp
-    Kokkos_MultiVectorKernelOps.hpp
-    Kokkos_NodeAPIConfigDefs.hpp
-    Kokkos_Version.hpp
-  )
-ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})

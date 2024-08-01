@@ -984,25 +984,6 @@ namespace {
       pool.data.resize(isize);
       switch (interFace.data_storage_type) {
       case 1: ige->get_field_data(field_name, Data(pool.data), isize); break;
-      case 2:
-        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          ige->get_field_data(field_name, Data(pool.data), isize);
-        }
-        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          ige->get_field_data(field_name, pool.data_int);
-        }
-        else if (basic_type == Ioss::Field::INT64) {
-          ige->get_field_data(field_name, pool.data_int64);
-        }
-        else if (basic_type == Ioss::Field::REAL) {
-          ige->get_field_data(field_name, pool.data_double);
-        }
-        else if (basic_type == Ioss::Field::COMPLEX) {
-          ige->get_field_data(field_name, pool.data_complex);
-        }
-        else {
-        }
-        break;
 #ifdef SEACAS_HAVE_KOKKOS
       case 3:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
@@ -1078,25 +1059,6 @@ namespace {
 
       switch (interFace.data_storage_type) {
       case 1: oge->put_field_data(out_field_name, Data(pool.data), osize); break;
-      case 2:
-        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          oge->put_field_data(field_name, Data(pool.data), osize);
-        }
-        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          oge->put_field_data(field_name, pool.data_int);
-        }
-        else if (basic_type == Ioss::Field::INT64) {
-          oge->put_field_data(field_name, pool.data_int64);
-        }
-        else if (basic_type == Ioss::Field::REAL) {
-          oge->put_field_data(field_name, pool.data_double);
-        }
-        else if (basic_type == Ioss::Field::COMPLEX) {
-          oge->put_field_data(field_name, pool.data_complex);
-        }
-        else {
-        }
-        break;
 #ifdef SEACAS_HAVE_KOKKOS
       case 3:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
@@ -1258,25 +1220,6 @@ namespace {
     pool.data.resize(isize);
     switch (interFace.data_storage_type) {
     case 1: ige->get_field_data(field_name, Data(pool.data), isize); break;
-    case 2:
-      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        ige->get_field_data(field_name, Data(pool.data), isize);
-      }
-      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        ige->get_field_data(field_name, pool.data_int);
-      }
-      else if (basic_type == Ioss::Field::INT64) {
-        ige->get_field_data(field_name, pool.data_int64);
-      }
-      else if (basic_type == Ioss::Field::REAL) {
-        ige->get_field_data(field_name, pool.data_double);
-      }
-      else if (basic_type == Ioss::Field::COMPLEX) {
-        ige->get_field_data(field_name, pool.data_complex);
-      }
-      else {
-      }
-      break;
 #ifdef SEACAS_HAVE_KOKKOS
     case 3:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
@@ -1352,25 +1295,6 @@ namespace {
 
     switch (interFace.data_storage_type) {
     case 1: oge->put_field_data(field_name, Data(pool.data), isize); break;
-    case 2:
-      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        oge->put_field_data(field_name, Data(pool.data), isize);
-      }
-      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        oge->put_field_data(field_name, pool.data_int);
-      }
-      else if (basic_type == Ioss::Field::INT64) {
-        oge->put_field_data(field_name, pool.data_int64);
-      }
-      else if (basic_type == Ioss::Field::REAL) {
-        oge->put_field_data(field_name, pool.data_double);
-      }
-      else if (basic_type == Ioss::Field::COMPLEX) {
-        oge->put_field_data(field_name, pool.data_complex);
-      }
-      else {
-      }
-      break;
 #ifdef SEACAS_HAVE_KOKKOS
     case 3:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
@@ -1446,7 +1370,7 @@ namespace {
   {
     out.add_information_records(in.get_information_records());
 
-    const std::vector<std::string> &qa = in.get_qa_records();
+    const Ioss::NameList &qa = in.get_qa_records();
     for (size_t i = 0; i < qa.size(); i += 4) {
       out.add_qa_record(qa[i + 0], qa[i + 1], qa[i + 2], qa[i + 3]);
     }

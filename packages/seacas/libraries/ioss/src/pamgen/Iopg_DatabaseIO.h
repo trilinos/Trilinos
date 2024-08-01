@@ -80,8 +80,8 @@ namespace Iopg {
     IOSS_NODISCARD std::string title() const { return databaseTitle; }
     IOSS_NODISCARD int         maximum_symbol_length() const override { return 32; }
 
-    void compute_block_membership_nl(Ioss::SideBlock          *efblock,
-                                     std::vector<std::string> &block_membership) const override;
+    void compute_block_membership_nl(Ioss::SideBlock *efblock,
+                                     Ioss::NameList  &block_membership) const override;
 
   private:
     void read_meta_data_nl() override;

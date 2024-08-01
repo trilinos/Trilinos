@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
+// @HEADER
+// *****************************************************************************
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //
-//       Ifpack2:  Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_HYPRE_DEF_HPP
 #define IFPACK2_HYPRE_DEF_HPP
@@ -90,54 +57,7 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
   SolverType_(PCG),
   PrecondType_(Euclid),
   UsePreconditioner_(false),
-  Dump_(false)
-{
-  MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A->getRowMap()->getComm())->getRawMpiComm());
-
-  // Check that RowMap and RangeMap are the same.  While this could handle the
-  // case where RowMap and RangeMap are permutations, other Ifpack PCs don't
-  // handle this either.
-  if (!A_->getRowMap()->isSameAs(*A_->getRangeMap())) {
-    IFPACK2_CHK_ERRV(-1);
-  }
-  // Hypre expects the RowMap to be Linear.
-  if (A_->getRowMap()->isContiguous()) {
-    GloballyContiguousRowMap_ = A_->getRowMap();
-    GloballyContiguousColMap_ = A_->getColMap();
-  } else {  
-    // Must create GloballyContiguous Maps for Hypre
-    if(A_->getDomainMap()->isSameAs(*A_->getRowMap())) {
-      Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
-      GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
-      GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
-                                                   A_->getRowMap()->getLocalNumElements(), 0, A_->getRowMap()->getComm()));
-    }
-    else {
-      throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
-    }
-  }
-  // Next create vectors that will be used when ApplyInverse() is called
-  HYPRE_Int ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
-  HYPRE_Int iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
-  // X in AX = Y
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
-  XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
-
-  // Y in AX = Y
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
-  YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
-
-  // Cache
-  VectorCache_.resize(A->getRowMap()->getLocalNumElements());
-} //Constructor
+  Dump_(false) { }
 
 //==============================================================================
 template<class LocalOrdinal, class Node>
@@ -150,9 +70,9 @@ template<class LocalOrdinal, class Node>
 void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Destroy(){
   if(isInitialized()){
     IFPACK2_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   }
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   if(IsSolverCreated_){
     IFPACK2_CHK_ERRV(SolverDestroyPtr_(Solver_));
   }
@@ -182,11 +102,57 @@ void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::initi
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
 
-  if(IsInitialized_) return;  
+  if(IsInitialized_) return;
   double startTime = timer->wallTime();
   {
     Teuchos::TimeMonitor timeMon (*timer);
-    
+
+    MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
+
+    // Check that RowMap and RangeMap are the same.  While this could handle the
+    // case where RowMap and RangeMap are permutations, other Ifpack PCs don't
+    // handle this either.
+    if (!A_->getRowMap()->isSameAs(*A_->getRangeMap())) {
+      IFPACK2_CHK_ERRV(-1);
+    }
+    // Hypre expects the RowMap to be Linear.
+    if (A_->getRowMap()->isContiguous()) {
+      GloballyContiguousRowMap_ = A_->getRowMap();
+      GloballyContiguousColMap_ = A_->getColMap();
+    } else {
+      // Must create GloballyContiguous Maps for Hypre
+      if(A_->getDomainMap()->isSameAs(*A_->getRowMap())) {
+        Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
+        GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
+        GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
+                                                     A_->getRowMap()->getLocalNumElements(), 0, A_->getRowMap()->getComm()));
+      }
+      else {
+        throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
+      }
+    }
+    // Next create vectors that will be used when ApplyInverse() is called
+    HYPRE_Int ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+    HYPRE_Int iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+    // X in AX = Y
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
+    XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
+
+    // Y in AX = Y
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
+    YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
+
+    // Cache
+    VectorCache_.resize(A_->getRowMap()->getLocalNumElements());
+
     // set flags
     IsInitialized_=true;
     NumInitialize_++;
