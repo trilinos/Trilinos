@@ -44,8 +44,6 @@ struct rowptr_sum {
       _rowptr[i] = update;
     }
   }
-
-  //ordinal_type nnz() { return _rowptr[_rowptr.extent(0)]; }
 };
 
 template <typename SupernodeInfoType> struct TeamFunctor_ExtractCrs {
@@ -58,10 +56,6 @@ public:
   typedef typename supernode_info_type::value_type value_type;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
   typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
-
-  //typedef typename supernode_info_type::rowptr_view rowptr_view;
-  //typedef typename supernode_info_type::colind_view colind_view;
-  //typedef typename supernode_info_type::nzvals_view nzvals_view;
 
 private:
   supernode_info_type _info;

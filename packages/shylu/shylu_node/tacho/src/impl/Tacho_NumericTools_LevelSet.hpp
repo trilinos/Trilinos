@@ -222,8 +222,8 @@ private:
   rocblas_handle _handle_lapack;
   std::vector<rocblas_handle> _handles;
   // workspace for SpMV
-  rocsparse_dnmat_descr matT, matW;
-  rocsparse_dnvec_descr vecT, vecW;
+  rocsparse_dnmat_descr matL, matU, matW;
+  rocsparse_dnvec_descr vecL, vecU, vecW;
 
   using blas_handle_type = rocblas_handle;
   using lapack_handle_type = rocblas_handle;
@@ -1599,7 +1599,7 @@ public:
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
     }
-    // attach to Cusparse/Rocsparse data struct
+    // attach to Cusparse data struct
     cusparseCreateDnMat(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), computeType, CUSPARSE_ORDER_COL);
     cusparseCreateDnVec(&vecW, m, (void*)(_w_vec.data()), computeType);
     // also to T, to be destroyed before each SpMV call
@@ -1623,9 +1623,14 @@ public:
     if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
     }
-    // attach to Cusparse/Rocsparse data struct
+    // attach to Rocsparse data struct
     rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
     rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
+    // also to T, to be destroyed before each SpMV call
+    rocsparse_create_dnmat_descr(&matL, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
+    rocsparse_create_dnvec_descr(&vecL, m, (void*)(_w_vec.data()), rocsparse_compute_type);
+    rocsparse_create_dnmat_descr(&matU, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
+    rocsparse_create_dnvec_descr(&vecU, m, (void*)(_w_vec.data()), rocsparse_compute_type);
     // vectors used for preprocessing
     rocsparse_dnvec_descr vecX, vecY;
     rocsparse_create_dnvec_descr(&vecX, m, (void*)_w_vec.data(), rocsparse_compute_type);
@@ -2059,6 +2064,21 @@ public:
       cusparseDestroyDnVec(vecU);
       cusparseDestroyDnMat(matW);
       cusparseDestroyDnVec(vecW); 
+#elif defined(KOKKOS_ENABLE_HIP)
+      for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+        const ordinal_type pbeg = _h_level_ptr(lvl);
+        // the first supernode in this lvl (where the CRS matrix is stored)
+        auto &s0 = _h_supernodes(_h_level_sids(pbeg));
+        rocsparse_destroy_spmat_descr(s0.descrU);
+        rocsparse_destroy_spmat_descr(s0.descrL);
+        rocsparse_destroy_handle(s0.rocsparseHandle);
+      }
+      rocsparse_destroy_dnmat_descr(matL);
+      rocsparse_destroy_dnvec_descr(vecL);
+      rocsparse_destroy_dnmat_descr(matU);
+      rocsparse_destroy_dnvec_descr(vecU);
+      rocsparse_destroy_dnmat_descr(matW);
+      rocsparse_destroy_dnvec_descr(vecW); 
 #endif
       _is_spmv_extracted = 0;
     }
@@ -2358,12 +2378,15 @@ public:
       cusparseCreateDnMat(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), computeType, CUSPARSE_ORDER_COL);
       cusparseCreateDnVec(&vecW, m, (void*)(_w_vec.data()), computeType);
 #elif defined(KOKKOS_ENABLE_HIP)
+      // destroy previous
+      rocsparse_destroy_dnmat_descr(matW);
+      rocsparse_destroy_dnvec_descr(vecW);
+      // create new
       rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
       rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
 #endif
     }
     const ordinal_type ldt = t.stride(1);
-    const ordinal_type ldw = _w_vec.stride(1);
     auto &s0 = _h_supernodes(_h_level_sids(pbeg));
     #else
     exit(0);
@@ -2427,13 +2450,13 @@ public:
     if (nrhs > 1) {
       if (lvl == nlvls-1) {
         // start : destroy previous
-        rocsparse_destroy_dnmat_descr(matT);
+        rocsparse_destroy_dnmat_descr(matL);
         // start : create DnMat for T
-        rocsparse_create_dnmat_descr(&matT, m, nrhs, ldt, (void*)(t.data()), rocsparse_compute_type, rocsparse_order_column);
+        rocsparse_create_dnmat_descr(&matL, m, nrhs, ldt, (void*)(t.data()), rocsparse_compute_type, rocsparse_order_column);
       }
       // create vectors
-      auto vecX = ((nlvls-1-lvl)%2 == 0 ? matT : matW);
-      auto vecY = ((nlvls-1-lvl)%2 == 0 ? matW : matT);
+      auto vecX = ((nlvls-1-lvl)%2 == 0 ? matL : matW);
+      auto vecY = ((nlvls-1-lvl)%2 == 0 ? matW : matL);
       if (s0.spmv_explicit_transpose) {
         size_t buffer_size_L = buffer_L.extent(0);
         status = rocsparse_spmm(s0.rocsparseHandle, rocsparse_operation_none, rocsparse_operation_none,
@@ -2452,13 +2475,13 @@ public:
     } else {
       if (lvl == nlvls-1) {
         // start : destroy previous
-        rocsparse_destroy_dnvec_descr(vecT);
+        rocsparse_destroy_dnvec_descr(vecL);
         // start : create DnVec for T
-        rocsparse_create_dnvec_descr(&vecT, m, (void*)(t.data()), rocsparse_compute_type);
+        rocsparse_create_dnvec_descr(&vecL, m, (void*)(t.data()), rocsparse_compute_type);
       }
       size_t buffer_size_L = buffer_L.extent(0);
-      auto vecX = ((nlvls-1-lvl)%2 == 0 ? vecT : vecW);
-      auto vecY = ((nlvls-1-lvl)%2 == 0 ? vecW : vecT);
+      auto vecX = ((nlvls-1-lvl)%2 == 0 ? vecL : vecW);
+      auto vecY = ((nlvls-1-lvl)%2 == 0 ? vecW : vecL);
       if (s0.spmv_explicit_transpose) {
         status =
           #if ROCM_VERSION >= 50400
@@ -2709,7 +2732,6 @@ public:
     const value_type alpha (1);
     const value_type beta  (0);
     const ordinal_type ldt = t.stride(1);
-    const ordinal_type ldw = _w_vec.stride(1);
     #else
     exit(0);
     #endif
@@ -2779,10 +2801,11 @@ public:
     if (nrhs > 1) {
       if (lvl == 0) {
         // start : create DnMat for T
-        rocsparse_create_dnmat_descr(&matT, m, nrhs, ldt, (void*)(t.data()), rocsparse_compute_type, rocsparse_order_column);
+        rocsparse_destroy_dnmat_descr(matU);
+        rocsparse_create_dnmat_descr(&matU, m, nrhs, ldt, (void*)(t.data()), rocsparse_compute_type, rocsparse_order_column);
       }
-      auto vecX = (lvl%2 == 0 ? matT : matW);
-      auto vecY = (lvl%2 == 0 ? matW : matT);
+      auto vecX = (lvl%2 == 0 ? matU : matW);
+      auto vecY = (lvl%2 == 0 ? matW : matU);
       status = rocsparse_spmm(s0.rocsparseHandle, rocsparse_operation_none, rocsparse_operation_none,
                               &alpha, s0.descrU, vecX, &beta, vecY,
                               rocsparse_compute_type, rocsparse_spmm_alg_default,
@@ -2791,10 +2814,11 @@ public:
     } else {
       if (lvl == 0) {
         // start : create DnVec for T
-        rocsparse_create_dnvec_descr(&vecT, m, (void*)(t.data()), rocsparse_compute_type);
+        rocsparse_destroy_dnvec_descr(vecU);
+        rocsparse_create_dnvec_descr(&vecU, m, (void*)(t.data()), rocsparse_compute_type);
       }
-      auto vecX = (lvl%2 == 0 ? vecT : vecW);
-      auto vecY = (lvl%2 == 0 ? vecW : vecT);
+      auto vecX = (lvl%2 == 0 ? vecU : vecW);
+      auto vecY = (lvl%2 == 0 ? vecW : vecU);
       status =
         #if ROCM_VERSION >= 50400
         rocsparse_spmv_ex
@@ -2839,12 +2863,6 @@ public:
       if (lvl%2 == 0) {
         Kokkos::deep_copy(t, _w_vec);
       }
-#if defined(KOKKOS_ENABLE_HIP)
-      if (nrhs > 1)
-        rocsparse_destroy_dnmat_descr(matT);
-      else
-        rocsparse_destroy_dnvec_descr(vecT);
-#endif
     }
 #endif
   }
