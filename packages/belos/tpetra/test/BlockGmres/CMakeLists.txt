@@ -70,7 +70,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_KokkosDense_BlockGMRES_hb_test
-  SOURCES test_kokkos_bl_gmres.cpp
+  SOURCES test_kokkos_bl_gmres_hb.cpp
   ARGS "--verbose"
   COMM serial mpi
   )
