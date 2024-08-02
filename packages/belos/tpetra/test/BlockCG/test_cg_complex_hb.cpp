@@ -17,6 +17,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -63,6 +64,7 @@ int run(int argc, char *argv[])
 
   // Get test parameters from command-line processor
   bool verbose = false, proc_verbose = false, debug = false;
+  bool pseudo = false; // block or pseudo block
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;      // total number of right-hand sides to solve for
   int blocksize = 1;   // blocksize used by solver
@@ -73,6 +75,7 @@ int run(int argc, char *argv[])
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
+  cmdp.setOption("pseudo","not-pseudo",&pseudo,"Use pseudo-block CG solver.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
@@ -139,8 +142,11 @@ int run(int argc, char *argv[])
     return -1;
   }
 
-  // Start the block CG iteration
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+  RCP<Belos::SolverManager<ST,MV,OP> > solver;
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP>( rcpFromRef(problem), rcpFromRef(belosList) ) );
+  else
+    solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP>( rcpFromRef(problem), rcpFromRef(belosList) ) );
 
   // Print out information about problem
   if (proc_verbose) {
@@ -154,7 +160,7 @@ int run(int argc, char *argv[])
   }
   
   // Perform solve
-  Belos::ReturnType ret = solver.solve();
+  Belos::ReturnType ret = solver->solve();
 
   // Compute actual residuals.
   bool badRes = false;
