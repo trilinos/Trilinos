@@ -481,9 +481,9 @@ int main(int argc, char *argv[]) {
   }
  
 
-  typedef stk::mesh::Field<double, stk::mesh::Cartesian>  CoordFieldType;
+  typedef stk::mesh::Field<double>  CoordFieldType;
   // get coordinates field
-  CoordFieldType *coords = metaData.get_field<CoordFieldType>(NODE_RANK,"coordinates");
+  CoordFieldType *coords = metaData.get_field<double>(NODE_RANK,"coordinates");
 
   // get buckets containing entities of node rank
   stk::mesh::Selector nothingSelector;
