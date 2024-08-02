@@ -47,7 +47,7 @@ namespace PHX {
 
         // destroy inner views on host, outside of a parallel region
         constexpr size_t rank = Kokkos::View<D, P...>::rank();
-        static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<typename Kokkos::View<D, P...>::memory_space, Kokkos::HostSpace>::accessible;
+        static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename Kokkos::View<D, P...>::memory_space>::accessible;
         if (device_view_is_accessible_from_host) {
           if constexpr (rank == 0) {
             (*vov)() = {};
