@@ -209,6 +209,7 @@ private:
   // (separte for U and L, so that we can "destroy" without waiting for the other)
   cusparseDnMatDescr_t matL, matU, matW;
   cusparseDnVecDescr_t vecL, vecU, vecW;
+  cusparseHandle_t cusparseHandle;
   #endif
 
   using blas_handle_type = cublasHandle_t;
@@ -224,6 +225,7 @@ private:
   // workspace for SpMV
   rocsparse_dnmat_descr matL, matU, matW;
   rocsparse_dnvec_descr vecL, vecU, vecW;
+  rocsparse_handle rocsparseHandle;
 
   using blas_handle_type = rocblas_handle;
   using lapack_handle_type = rocblas_handle;
@@ -1599,6 +1601,8 @@ public:
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
     }
+    // create cusparse handle
+    cusparseCreate(&cusparseHandle);
     // attach to Cusparse data struct
     cusparseCreateDnMat(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), computeType, CUSPARSE_ORDER_COL);
     cusparseCreateDnVec(&vecW, m, (void*)(_w_vec.data()), computeType);
@@ -1623,6 +1627,8 @@ public:
     if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
     }
+    // create rocsparse handle
+    rocsparse_create_handle(&rocsparseHandle);
     // attach to Rocsparse data struct
     rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
     rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
@@ -1876,7 +1882,6 @@ public:
       value_type beta = one;
       #endif
 #if defined(KOKKOS_ENABLE_CUDA)
-      cusparseCreate(&s0.cusparseHandle);
       // create matrix
       cusparseCreateCsr(&s0.U_cusparse, m, m, s0.nnzU,
                         s0.rowptrU, s0.colindU, s0.nzvalsU,
@@ -1884,11 +1889,11 @@ public:
                         CUSPARSE_INDEX_BASE_ZERO, computeType);
 
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
-      cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      cusparseSpMM_bufferSize(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                               &alpha, s0.U_cusparse, vecX, &beta, vecY,
                               computeType, TACHO_CUSPARSE_SPMM_ALG, &buffer_size_U);
 #else
-      cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.U_cusparse, vecX, &beta, vecY,
+      cusparseSpMV_bufferSize(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.U_cusparse, vecX, &beta, vecY,
                               computeType, TACHO_CUSPARSE_SPMV_ALG, &buffer_size_U);
 #endif
       if (s0.spmv_explicit_transpose) {
@@ -1899,11 +1904,11 @@ public:
                           CUSPARSE_INDEX_BASE_ZERO, computeType);
         // workspace size
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
-        cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
+        cusparseSpMM_bufferSize(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                 &alpha, s0.L_cusparse, vecX, &beta, vecY,
                                 computeType, TACHO_CUSPARSE_SPMM_ALG, &buffer_size_L);
 #else
-        cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
+        cusparseSpMV_bufferSize(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
                                 computeType, TACHO_CUSPARSE_SPMV_ALG, &buffer_size_L);
 #endif
       } else {
@@ -1915,11 +1920,11 @@ public:
                           CUSPARSE_INDEX_BASE_ZERO, computeType);
         // workspace size for transpose SpMV
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
-        cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
+        cusparseSpMM_bufferSize(cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                 &alpha, s0.L_cusparse, vecX, &beta, vecY,
                                 computeType, TACHO_CUSPARSE_SPMM_ALG, &buffer_size_L);
 #else
-        cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
+        cusparseSpMV_bufferSize(cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
                                 computeType, TACHO_CUSPARSE_SPMV_ALG, &buffer_size_L);
 #endif
       }
@@ -1931,7 +1936,6 @@ public:
         Kokkos::resize(buffer_L, buffer_size_L);
       }
 #elif defined(KOKKOS_ENABLE_HIP)
-      rocsparse_create_handle(&s0.rocsparseHandle);
       // create matrix
       rocsparse_create_csr_descr(&(s0.descrU), m, m, s0.nnzU,
                                  s0.rowptrU, s0.colindU, s0.nzvalsU,
@@ -1942,7 +1946,7 @@ public:
       #else
       rocsparse_spmv
       #endif
-          (s0.rocsparseHandle, rocsparse_operation_none,
+          (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -1957,7 +1961,7 @@ public:
       // preprocess
       buffer_size_U = buffer_U.extent(0);
       rocsparse_spmv_ex
-          (s0.rocsparseHandle, rocsparse_operation_none,
+          (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            rocsparse_spmv_stage_preprocess,
@@ -1974,7 +1978,7 @@ public:
         #else
         rocsparse_spmv
         #endif
-          (s0.rocsparseHandle, rocsparse_operation_none,
+          (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -1989,7 +1993,7 @@ public:
         // preprocess
         buffer_size_L = buffer_L.extent(0);
         rocsparse_spmv_ex
-          (s0.rocsparseHandle, rocsparse_operation_none,
+          (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
             rocsparse_spmv_stage_preprocess,
@@ -2006,7 +2010,7 @@ public:
         #else
         rocsparse_spmv
         #endif
-          (s0.rocsparseHandle, rocsparse_operation_transpose,
+          (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -2021,7 +2025,7 @@ public:
         // preprocess
         buffer_size_L = buffer_L.extent(0);
         rocsparse_spmv_ex
-          (s0.rocsparseHandle, rocsparse_operation_transpose,
+          (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
             rocsparse_spmv_stage_preprocess,
@@ -2056,7 +2060,6 @@ public:
         auto &s0 = _h_supernodes(_h_level_sids(pbeg));
         cusparseDestroySpMat(s0.U_cusparse);
         cusparseDestroySpMat(s0.L_cusparse);
-        cusparseDestroy(s0.cusparseHandle);
       }
       cusparseDestroyDnMat(matL);
       cusparseDestroyDnVec(vecL);
@@ -2064,6 +2067,7 @@ public:
       cusparseDestroyDnVec(vecU);
       cusparseDestroyDnMat(matW);
       cusparseDestroyDnVec(vecW); 
+      cusparseDestroy(cusparseHandle);
 #elif defined(KOKKOS_ENABLE_HIP)
       for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
         const ordinal_type pbeg = _h_level_ptr(lvl);
@@ -2071,7 +2075,6 @@ public:
         auto &s0 = _h_supernodes(_h_level_sids(pbeg));
         rocsparse_destroy_spmat_descr(s0.descrU);
         rocsparse_destroy_spmat_descr(s0.descrL);
-        rocsparse_destroy_handle(s0.rocsparseHandle);
       }
       rocsparse_destroy_dnmat_descr(matL);
       rocsparse_destroy_dnvec_descr(vecL);
@@ -2079,6 +2082,7 @@ public:
       rocsparse_destroy_dnvec_descr(vecU);
       rocsparse_destroy_dnmat_descr(matW);
       rocsparse_destroy_dnvec_descr(vecW); 
+      rocsparse_destroy_handle(rocsparseHandle);
 #endif
       _is_spmv_extracted = 0;
     }
@@ -2420,7 +2424,7 @@ public:
       auto matX = ((nlvls-1-lvl)%2 == 0 ? matL : matW);
       auto matY = ((nlvls-1-lvl)%2 == 0 ? matW : matL);
       // SpMM
-      status = cusparseSpMM(s0.cusparseHandle, opL, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      status = cusparseSpMM(cusparseHandle, opL, CUSPARSE_OPERATION_NON_TRANSPOSE,
                             &alpha, s0.L_cusparse, 
                                     matX,
                             &beta,  matY,
@@ -2436,7 +2440,7 @@ public:
       auto vecX = ((nlvls-1-lvl)%2 == 0 ? vecL : vecW);
       auto vecY = ((nlvls-1-lvl)%2 == 0 ? vecW : vecL);
       // SpMV
-      status = cusparseSpMV(s0.cusparseHandle, opL,
+      status = cusparseSpMV(cusparseHandle, opL,
                             &alpha, s0.L_cusparse, 
                                     vecX,
                             &beta,  vecY,
@@ -2459,14 +2463,14 @@ public:
       auto vecY = ((nlvls-1-lvl)%2 == 0 ? matW : matL);
       if (s0.spmv_explicit_transpose) {
         size_t buffer_size_L = buffer_L.extent(0);
-        status = rocsparse_spmm(s0.rocsparseHandle, rocsparse_operation_none, rocsparse_operation_none,
+        status = rocsparse_spmm(rocsparseHandle, rocsparse_operation_none, rocsparse_operation_none,
                                 &alpha, s0.descrL, vecX, &beta, vecY,
                                 rocsparse_compute_type, rocsparse_spmm_alg_default,
                                 rocsparse_spmm_stage_compute,
                                 &buffer_size_L, (void*)buffer_L.data());
       } else {
         size_t buffer_size_L = buffer_L.extent(0);
-        status = rocsparse_spmm(s0.rocsparseHandle, rocsparse_operation_transpose, rocsparse_operation_none,
+        status = rocsparse_spmm(rocsparseHandle, rocsparse_operation_transpose, rocsparse_operation_none,
                                 &alpha, s0.descrL, vecX, &beta, vecY, // dscrL stores the same ptrs as descrU, but optimized for trans
                                 rocsparse_compute_type, rocsparse_spmm_alg_default,
                                 rocsparse_spmm_stage_compute,
@@ -2489,7 +2493,7 @@ public:
           #else
           rocsparse_spmv
           #endif
-          (s0.rocsparseHandle, rocsparse_operation_none,
+          (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -2503,7 +2507,7 @@ public:
           #else
           rocsparse_spmv
           #endif
-          (s0.rocsparseHandle, rocsparse_operation_transpose,
+          (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY, // dscrL stores the same ptrs as descrU, but optimized for trans
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -2764,7 +2768,7 @@ public:
       auto vecX = (lvl%2 == 0 ? matU : matW);
       auto vecY = (lvl%2 == 0 ? matW : matU);
       // SpMM
-      status = cusparseSpMM(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      status = cusparseSpMM(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                             &alpha, s0.U_cusparse, 
                                     vecX,
                             &beta,  vecY,
@@ -2779,7 +2783,7 @@ public:
       auto vecX = (lvl%2 == 0 ? vecU : vecW);
       auto vecY = (lvl%2 == 0 ? vecW : vecU);
       // SpMV
-      status = cusparseSpMV(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      status = cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                             &alpha, s0.U_cusparse, 
                                     vecX,
                             &beta,  vecY,
@@ -2806,7 +2810,7 @@ public:
       }
       auto vecX = (lvl%2 == 0 ? matU : matW);
       auto vecY = (lvl%2 == 0 ? matW : matU);
-      status = rocsparse_spmm(s0.rocsparseHandle, rocsparse_operation_none, rocsparse_operation_none,
+      status = rocsparse_spmm(rocsparseHandle, rocsparse_operation_none, rocsparse_operation_none,
                               &alpha, s0.descrU, vecX, &beta, vecY,
                               rocsparse_compute_type, rocsparse_spmm_alg_default,
                               rocsparse_spmm_stage_compute,
@@ -2825,7 +2829,7 @@ public:
         #else
         rocsparse_spmv
         #endif
-          (s0.rocsparseHandle, rocsparse_operation_none,
+          (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400

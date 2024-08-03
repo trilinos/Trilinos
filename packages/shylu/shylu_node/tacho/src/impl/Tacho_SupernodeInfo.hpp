@@ -142,11 +142,9 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
     bool spmv_explicit_transpose;
 #if defined(KOKKOS_ENABLE_CUDA)
-    cusparseHandle_t cusparseHandle;
     cusparseSpMatDescr_t U_cusparse;
     cusparseSpMatDescr_t L_cusparse;
 #elif defined(KOKKOS_ENABLE_HIP)
-    rocsparse_handle rocsparseHandle;
     rocsparse_spmat_descr descrU;
     rocsparse_spmat_descr descrL;
 #endif
