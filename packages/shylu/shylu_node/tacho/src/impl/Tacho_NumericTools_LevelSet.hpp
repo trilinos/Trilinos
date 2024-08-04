@@ -641,14 +641,14 @@ public:
       }
       }
       print_stat_init();
+      fflush(stdout);
     }
   }
 
   inline void release(const ordinal_type verbose = 0) override {
     base_type::release(false);
-    if (variant == 3 && _is_spmv_extracted) {
-      Kokkos::fence();
-      this->releaseCRS();
+    if (variant == 3) {
+      this->releaseCRS(true);
     }
     track_free(_buf_factor_ptr.span() * sizeof(size_type));
     track_free(_buf_solve_ptr.span() * sizeof(size_type));
@@ -661,6 +661,7 @@ public:
       printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
       printf("===========================================\n");
       print_stat_memory();
+      fflush(stdout);
     }
   }
 
@@ -789,6 +790,7 @@ public:
     if (verbose) {
       printf("Summary: CreateStream : %3d\n", _nstreams);
       printf("===========================\n");
+      fflush(stdout);
     }
 #endif
   }
@@ -1585,7 +1587,11 @@ public:
     // ========================
     // free CRS, 
     // if it has been extracted
-    this->releaseCRS();
+#if defined(KOKKOS_ENABLE_HIP)
+    this->releaseCRS(!lu);
+#else
+    this->releaseCRS(true);
+#endif
 
     // ========================
     // workspace
@@ -2051,38 +2057,39 @@ public:
 #endif
   }
 
-  inline void releaseCRS() {
+  inline void releaseCRS(bool release_all) {
     if(_is_spmv_extracted) {
+      Kokkos::fence();
+      if (release_all) {
+        for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          const ordinal_type pbeg = _h_level_ptr(lvl);
+          // the first supernode in this lvl (where the CRS matrix is stored)
+          auto &s0 = _h_supernodes(_h_level_sids(pbeg));
 #if defined(KOKKOS_ENABLE_CUDA)
-      for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
-        const ordinal_type pbeg = _h_level_ptr(lvl);
-        // the first supernode in this lvl (where the CRS matrix is stored)
-        auto &s0 = _h_supernodes(_h_level_sids(pbeg));
-        cusparseDestroySpMat(s0.U_cusparse);
-        cusparseDestroySpMat(s0.L_cusparse);
+          cusparseDestroySpMat(s0.U_cusparse);
+          cusparseDestroySpMat(s0.L_cusparse);
+#elif defined(KOKKOS_ENABLE_HIP)
+          rocsparse_destroy_spmat_descr(s0.descrU);
+          rocsparse_destroy_spmat_descr(s0.descrL);
+#endif
+        }
       }
+#if defined(KOKKOS_ENABLE_CUDA)
+      cusparseDestroy(cusparseHandle);
       cusparseDestroyDnMat(matL);
       cusparseDestroyDnVec(vecL);
       cusparseDestroyDnMat(matU);
       cusparseDestroyDnVec(vecU);
       cusparseDestroyDnMat(matW);
       cusparseDestroyDnVec(vecW); 
-      cusparseDestroy(cusparseHandle);
 #elif defined(KOKKOS_ENABLE_HIP)
-      for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
-        const ordinal_type pbeg = _h_level_ptr(lvl);
-        // the first supernode in this lvl (where the CRS matrix is stored)
-        auto &s0 = _h_supernodes(_h_level_sids(pbeg));
-        rocsparse_destroy_spmat_descr(s0.descrU);
-        rocsparse_destroy_spmat_descr(s0.descrL);
-      }
+      rocsparse_destroy_handle(rocsparseHandle);
       rocsparse_destroy_dnmat_descr(matL);
       rocsparse_destroy_dnvec_descr(vecL);
       rocsparse_destroy_dnmat_descr(matU);
       rocsparse_destroy_dnvec_descr(vecU);
       rocsparse_destroy_dnmat_descr(matW);
       rocsparse_destroy_dnvec_descr(vecW); 
-      rocsparse_destroy_handle(rocsparseHandle);
 #endif
       _is_spmv_extracted = 0;
     }
@@ -2240,6 +2247,7 @@ public:
       printf("=====================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n\n",time_parallel,time_device,time_update );
       print_stat_factor();
+      fflush(stdout);
     }
   }
 
@@ -3826,6 +3834,7 @@ public:
       printf("Summary: LevelSetTools-Variant-%d (Cholesky Solve: %3d)\n", variant, nrhs);
       printf("=======================================================\n");
       print_stat_solve();
+      fflush(stdout);
     }
   }
 
@@ -3987,6 +3996,7 @@ public:
       printf("=================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n\n",time_parallel,time_device,time_update );
       print_stat_factor();
+      fflush(stdout);
     }
   }
 
@@ -4179,6 +4189,7 @@ public:
       printf("Summary: LevelSetTools-Variant-%d (LDL Solve: %3d)\n", variant, nrhs);
       printf("==================================================\n");
       print_stat_solve();
+      fflush(stdout);
     }
   }
 
@@ -4345,6 +4356,7 @@ public:
       printf("================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n\n",time_parallel,time_device,time_update );
       print_stat_factor();
+      fflush(stdout);
     }
   }
 
