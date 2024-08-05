@@ -8,6 +8,7 @@
 // @HEADER
 
 #include "Teko_JacobiPreconditionerFactory.hpp"
+#include "Teko_BlockDiagonalInverseOp.hpp"
 
 using Teuchos::rcp;
 
@@ -37,7 +38,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(
   invOpsStrategy_->getInvD(blo, state, invDiag);
   TEUCHOS_ASSERT(rows == (int)invDiag.size());
 
-  return createDiagonalInverseOp(invDiag, "Jacobi");
+  return createBlockDiagonalInverseOp(blo, invDiag, "Jacobi");
 }
 
 //! Initialize from a parameter list
