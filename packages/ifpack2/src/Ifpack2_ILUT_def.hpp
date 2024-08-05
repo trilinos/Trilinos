@@ -910,6 +910,8 @@ void ILUT<MatrixType>::compute ()
     // Set L, U rowmaps back to original state. Par_ilut can change them, which invalidates them
     // if compute is called again.
     if (this->isComputed()) {
+      Kokkos::resize(L_rowmap_, L_rowmap_orig_.size());
+      Kokkos::resize(U_rowmap_, U_rowmap_orig_.size());
       Kokkos::deep_copy(L_rowmap_, L_rowmap_orig_);
       Kokkos::deep_copy(U_rowmap_, U_rowmap_orig_);
     }
