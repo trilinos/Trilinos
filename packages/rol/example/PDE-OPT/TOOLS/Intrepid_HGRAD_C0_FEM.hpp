@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef __INTREPID_HGRAD_C0_FEM_HPP__
 #define __INTREPID_HGRAD_C0_FEM_HPP__
 
