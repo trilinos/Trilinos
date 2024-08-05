@@ -37,28 +37,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(
   invOpsStrategy_->getInvD(blo, state, invDiag);
   TEUCHOS_ASSERT(rows == (int)invDiag.size());
 
-  // create a blocked linear operator
-  BlockedLinearOp precond = createBlockedOp();
-  std::stringstream ss;
-  ss << "Jacobi Preconditioner ( ";
-
-  // start filling the blocked operator
-  beginBlockFill(precond, rows, rows);  // this is assuming the matrix is square
-
-  // build blocked diagonal matrix
-  for (int i = 0; i < rows; i++) {
-    ss << " op" << i << " = " << invDiag[i]->description() << ", ";
-    precond->setBlock(i, i, invDiag[i]);
-  }
-  ss << " )";
-
-  endBlockFill(precond);
-  // done filling the blocked operator
-
-  // precond->setObjectLabel(ss.str());
-  precond->setObjectLabel("Jacobi");
-
-  return precond;
+  return createDiagonalInverseOp(invDiag, "Jacobi");
 }
 
 //! Initialize from a parameter list
