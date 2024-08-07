@@ -96,9 +96,10 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
 
   Ptr<const BlockedTpetraLOF> blk_tpetra_lof = ptr_dynamic_cast<const BlockedTpetraLOF>(ptrFromRef(lof));
   if(blk_tpetra_lof!=null) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                               "panzer::cloneWithNewRangeAndDomain: Blocked Tpetra LOF does not yet support "
-                               "different range and domain indexers!");
+    auto rangeUGI  = (rUgi==null ? blk_tpetra_lof->getRangeGlobalIndexer() : rUgi);
+    auto domainUGI = (dUgi==null ? blk_tpetra_lof->getDomainGlobalIndexer() : dUgi);
+    auto mpiComm = rcp(new Teuchos::MpiComm<int>(blk_tpetra_lof->getComm()));
+    return rcp(new BlockedTpetraLOF(mpiComm, {rangeUGI, domainUGI}));
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
