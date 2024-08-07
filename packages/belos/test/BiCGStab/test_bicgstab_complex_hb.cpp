@@ -15,7 +15,7 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosMinresSolMgr.hpp"
+#include "BelosBiCGStabSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -25,7 +25,9 @@
 #endif
 
 // I/O for Harwell-Boeing files
-#include "Tpetra_Util_iohb.h"
+#ifdef HAVE_BELOS_TRIUTILS
+#include "Trilinos_Util_iohb.h"
+#endif
 
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
@@ -68,7 +70,7 @@ bool proc_verbose = false;
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by MINRES solver.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by BiCGStab solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -81,13 +83,22 @@ bool proc_verbose = false;
   if (!verbose)
     frequency = -1;  // reset frequency if test is not verbose
 
+
+#ifndef HAVE_BELOS_TRIUTILS
+  std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
+  if (MyPID==0) {
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  }
+  return -1;
+#endif
+
   // Get the data from the HB file
   int dim,dim2,nnz;
   MT *dvals;
   int *colptr,*rowind;
   ST *cvals;
   nnz = -1;
-  info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
     if (MyPID==0) {
@@ -144,10 +155,10 @@ bool proc_verbose = false;
   }
   //
   // *******************************************************************
-  // *************Start the MINRES iteration***********************
+  // *************Start the BiCGStab iteration***********************
   // *******************************************************************
   //
-  Belos::MinresSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
+  Belos::BiCGStabSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
 
   //
   // **********Print out information about problem*******************
@@ -157,7 +168,7 @@ bool proc_verbose = false;
     std::cout << "Dimension of matrix: " << dim << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of MINRES iterations: " << maxits << std::endl;
+    std::cout << "Max number of BiCGStab iterations: " << maxits << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
