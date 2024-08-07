@@ -91,9 +91,11 @@ int main(int argc, char *argv[]) {
   bool allprint      = false;
   bool verbose = (myRank==0);
   std::string filename("arc130.mtx");
+  std::string solvername("Superlu");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&filename,"Filename for Matrix-Market test matrix.");
+  cmdp.setOption("solvername",&solvername,"Name of solver.");
   cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
   cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");
@@ -149,12 +151,12 @@ int main(int argc, char *argv[]) {
 
   // Constructor from Factory
   RCP<Amesos2::Solver<MAT,MV> > solver;
-  if( !Amesos2::query("Superlu") ){
-    *fos << "SuperLU solver not enabled.  Exiting..." << std::endl;
+  if( !Amesos2::query(solvername) ){
+    *fos << solvername << " solver not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;
   }
 
-  solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
+  solver = Amesos2::create<MAT,MV>(solvername, A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
 
