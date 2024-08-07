@@ -33,10 +33,17 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
         "--verbose --filename=mhd1280b.cua"
       )
 
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_KokkosDense_gcrodr_complex_hb
+      SOURCES test_kokkos_gcrodr_complex_hb.cpp
+      ARGS
+        "--verbose --filename=mhd1280b.cua"
+      )
+
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraGCRODRComplexFiles
       SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
-      EXEDEPS Tpetra_gcrodr_complex_hb 
+      EXEDEPS Tpetra_gcrodr_complex_hb Tpetra_KokkosDense_gcrodr_complex_hb
     )
 
 ENDIF()
