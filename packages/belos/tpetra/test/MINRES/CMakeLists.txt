@@ -14,8 +14,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT 
 )
 
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_KokkosDense_Minres_hb_test
+  Tpetra_KokkosDense_minres_hb_test
   SOURCES test_kokkos_minres_hb.cpp
   COMM serial mpi
   ARGS
@@ -25,7 +27,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_Minres_hb_test
+  Tpetra_minres_hb_test
   SOURCES test_minres_hb.cpp
   COMM serial mpi
   ARGS
@@ -34,8 +36,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
+IF (Tpetra_INST_COMPLEX_DOUBLE)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_minres_complex_hb
+      SOURCES test_minres_complex_hb.cpp
+      ARGS
+        "--verbose --filename=mhd1280b.cua"
+      )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraMinresComplexFiles
+      SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
+      SOURCE_FILES mhd1280b.cua
+      EXEDEPS Tpetra_minres_complex_hb
+    )
+
+ENDIF()
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestMinresFiles
   SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
-  EXEDEPS Tpetra_Minres_hb_test Tpetra_KokkosDense_Minres_hb_test
+  EXEDEPS Tpetra_minres_hb_test Tpetra_KokkosDense_minres_hb_test
   )
+
+ENDIF()
