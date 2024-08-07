@@ -97,14 +97,11 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using ordinal_type_array = Kokkos::View<ordinal_type *, device_type>;
   using size_type_array = Kokkos::View<size_type *, device_type>;
   using value_type_array = Kokkos::View<value_type *, device_type>;
+  using int_type_array = Kokkos::View<int*, Kokkos::LayoutLeft, device_type>;
 
   using ordinal_pair_type = Kokkos::pair<ordinal_type, ordinal_type>;
   using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
-
-  using rowptr_view = Kokkos::View<int *, device_type>;
-  using colind_view = Kokkos::View<int *, device_type>;
-  using nzvals_view = Kokkos::View<value_type *, device_type>;
   using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
   struct Supernode {
@@ -125,21 +122,21 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     bool do_not_apply_pivots;
 
     // for using SpMV
-    rowptr_view rowptrU;
-    colind_view colindU;
-    nzvals_view nzvalsU;
+    size_t nnzU;
+    int* rowptrU;
+    int* colindU;
+    value_type* nzvalsU;
 
-    rowptr_view rowptrL;
-    colind_view colindL;
-    nzvals_view nzvalsL;
+    size_t nnzL;
+    int* rowptrL;
+    int* colindL;
+    value_type* nzvalsL;
 
     bool spmv_explicit_transpose;
 #if defined(KOKKOS_ENABLE_CUDA)
-    cusparseHandle_t cusparseHandle;
     cusparseSpMatDescr_t U_cusparse;
     cusparseSpMatDescr_t L_cusparse;
 #elif defined(KOKKOS_ENABLE_HIP)
-    rocsparse_handle rocsparseHandle;
     rocsparse_spmat_descr descrU;
     rocsparse_spmat_descr descrL;
 #endif
