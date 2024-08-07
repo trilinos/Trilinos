@@ -11,8 +11,8 @@
 #include <percept/function/internal/IsInElement.hpp>
 
 
-#include <Intrepid_CellTools.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_CellTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 #include <percept/norm/IntrepidManager.hpp>
 #include <percept/FieldTypes.hpp>
@@ -112,19 +112,18 @@
       VERIFY_OP(found_parametric_coordinates.dimension(1), == , (int)cellDim,
                 "IsInElement::isInElement bad found_parametric_coordinates 2nd dim");
 
-      unsigned cellOrd = 0;  // FIXME
-      Intrepid::CellTools<double>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo, cellOrd);
+      Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo);
       MDArrayUInt inclusion_results(1);  // FIXME
-      Intrepid::CellTools<double>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo);
+      Intrepid2::CellTools<Kokkos::HostSpace>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo);
       found_it = inclusion_results(0);
       if (found_it)
         {
           // for testing only
           if (0)
             {
-              FieldContainer<double> images(1, cellDim );
+              MDArray images("images", 1, cellDim );
               //Intrepid::CellTools<double>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3, whichCell);
-              Intrepid::CellTools<double>::mapToPhysicalFrame(images, found_parametric_coordinates, cellWorkset, topo, cellOrd);
+              Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, found_parametric_coordinates, cellWorkset, topo);
             }
         }
 #endif

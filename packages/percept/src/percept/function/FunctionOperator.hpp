@@ -9,8 +9,6 @@
 #ifndef stk_encr_FunctionOperator_hpp
 #define stk_encr_FunctionOperator_hpp
 
-//#define HAVE_INTREPID_DEBUG 1
-
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -19,12 +17,8 @@
 
 #include <percept/function/Function.hpp>
 
-using namespace Intrepid;
-
   namespace percept
   {
-    //class FunctionWithIntrepidRequest;
-
     /**
      */
     class FunctionOperator

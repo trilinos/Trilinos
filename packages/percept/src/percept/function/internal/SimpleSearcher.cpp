@@ -8,8 +8,8 @@
 
 #include <percept/Percept.hpp>
 
-#include <Intrepid_CellTools.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_CellTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 #include <percept/FieldTypes.hpp>
 
