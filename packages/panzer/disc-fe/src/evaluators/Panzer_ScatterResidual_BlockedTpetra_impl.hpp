@@ -193,11 +193,10 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
     const auto& worksetLIDs = worksetLIDs_;
     const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
-
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
-	      const int lid = worksetLIDs(cell,fieldOffsets(basis));
-	      Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
+          const int lid = worksetLIDs(cell,fieldOffsets(basis));
+          Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
       }
     });
   }
@@ -473,5 +472,161 @@ evaluateFields(typename TRAITS::EvalData workset)
 }
 
 // **********************************************************************
+
+// **********************************************************************
+// Specialization: Tangent
+// **********************************************************************
+
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
+                              const Teuchos::ParameterList& p)
+   : globalIndexer_(indexer)
+   , useTimeDerivativeSolutionVector_(false)
+   , globalDataKey_("Residual Scatter Container")
+{
+  std::string scatterName = p.get<std::string>("Scatter Name");
+
+  scatterHolder_ =
+    Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
+
+// MPL: Coming from GatherTangent
+  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+
+  // get names to be evaluated
+  const std::vector<std::string>& names =
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
+
+  // grab map from evaluated names to field names
+  fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
+
+  Teuchos::RCP<PHX::DataLayout> dl =
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
+
+  // build the vector of fields that this is dependent on
+  scatterFields_.resize(names.size());
+  for (std::size_t eq = 0; eq < names.size(); ++eq) {
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
+
+    // tell the field manager that we depend on this field
+    this->addDependentField(scatterFields_[eq]);
+  }
+
+  // this is what this evaluator provides
+  this->addEvaluatedField(*scatterHolder_);
+
+  // MPL: can be removed from here
+//  // this is what this evaluator provides
+//  this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<bool>("Use Time Derivative Solution Vector"))
+    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  this->setName(scatterName+" Scatter Residual (Tangent)");
+
+}
+
+// **********************************************************************
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+              PHX::FieldManager<TRAITS>& /* fm */)
+{
+    TEUCHOS_ASSERT(scatterFields_.size() == indexerNames_->size());
+
+    const Workset & workset_0 = (*d.worksets_)[0];
+    const std::string blockId = this->wda(workset_0).block_id;
+
+    fieldIds_.resize(scatterFields_.size());
+    fieldOffsets_.resize(scatterFields_.size());
+    fieldGlobalIndexers_.resize(scatterFields_.size());
+    productVectorBlockIndex_.resize(scatterFields_.size());
+    int maxElementBlockGIDCount = -1;
+
+    for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
+      // get field ID from DOF manager
+      const std::string& fieldName = (*indexerNames_)[fd];
+      const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+      productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+      fieldGlobalIndexers_[fd] = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+      fieldIds_[fd] = fieldGlobalIndexers_[fd]->getFieldNum(fieldName); // Field number in the sub-global-indexer
+
+      const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+      fieldOffsets_[fd] = PHX::View<int*>("ScatterResidual_BlockedTpetra(Residual):fieldOffsets",offsets.size());
+      auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+      for (std::size_t i=0; i < offsets.size(); ++i)
+        hostOffsets(i) = offsets[i];
+      Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+      maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+    }
+
+    indexerNames_ = Teuchos::null;  // Don't need this anymore
+
+    worksetLIDs_ = PHX::View<LO**>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
+                                                      scatterFields_[0].extent(0),
+                              maxElementBlockGIDCount);
+}
+
+// **********************************************************************
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   // extract linear object container
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_));
+
+   if(blockedContainer_==Teuchos::null) {
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true);
+     blockedContainer_ = rcp_dynamic_cast<const ContainerType>(gdata->getGhostedLOC());
+   }
+}
+
+// **********************************************************************
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
+{
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using Thyra::VectorBase;
+    using Thyra::ProductVectorBase;
+
+    const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+    const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
+
+    // Loop over scattered fields
+    int currentWorksetLIDSubBlock = -1;
+    for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+      // workset LIDs only change for different sub blocks
+      if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
+        fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_);
+        currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
+      }
+
+      auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+      const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+
+      // Class data fields for lambda capture
+      const auto& fieldOffsets = fieldOffsets_[fieldIndex];
+      const auto& worksetLIDs = worksetLIDs_;
+      const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+        for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+            const int lid = worksetLIDs(cell,fieldOffsets(basis));
+            Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis).val());
+        }
+      });
+    }
+}
+
+// **********************************************************************
+
 
 #endif
