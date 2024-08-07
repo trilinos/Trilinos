@@ -21,6 +21,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamationFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AmalgamationFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A");

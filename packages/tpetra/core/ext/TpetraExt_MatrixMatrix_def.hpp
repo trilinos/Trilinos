@@ -9,6 +9,7 @@
 
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
+#include "TpetraExt_MatrixMatrix_fwd.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "TpetraExt_MatrixMatrix_decl.hpp"
@@ -3180,6 +3181,8 @@ void import_and_extract_views(
   Aview.deleteContents();
 
   Aview.origMatrix   = rcp(&A, false);
+  // trigger creation of int-typed row pointer array for use in TPLs, but don't actually need it here
+  Aview.origMatrix->getApplyHelper(); 
   Aview.origRowMap   = A.getRowMap();
   Aview.rowMap       = targetMap;
   Aview.colMap       = A.getColMap();
@@ -3318,6 +3321,8 @@ void import_and_extract_views(
 
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
+    // trigger creation of int-typed row pointer array for use in TPLs, but don't actually need it here
+    Aview.importMatrix->getApplyHelper();
 
 #if 0
     // Disabled code for dumping input matrices
@@ -3382,6 +3387,8 @@ void import_and_extract_views(
   Mview.deleteContents();
 
   Mview.origMatrix   = rcp(&M, false);
+  // trigger creation of int-typed row pointer array for use in TPLs, but don't actually need it here
+  Mview.origMatrix->getApplyHelper();
   Mview.origRowMap   = M.getRowMap();
   Mview.rowMap       = targetMap;
   Mview.colMap       = M.getColMap();
@@ -3462,8 +3469,10 @@ void import_and_extract_views(
 
   if (importer != null) {
     // Get import matrix
+    // TODO: create the int-typed row-pointer here
     Mview.importMatrix = Tpetra::importAndFillCompleteBlockCrsMatrix<blockcrs_matrix_type>(rcpFromRef(M), *importer);
-
+    // trigger creation of int-typed row pointer array for use in TPLs, but don't actually need it here
+    Mview.importMatrix->getApplyHelper();
     // Save the column map of the imported matrix, so that we can convert indices
     // back to global for arithmetic later
     Mview.importColMap = Mview.importMatrix->getColMap();

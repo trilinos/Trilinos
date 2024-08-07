@@ -25,6 +25,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RebalanceAcFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RebalanceAcFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

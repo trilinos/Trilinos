@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
+
 //**************************************************************************
 //
 //                                 NOTICE
@@ -22,9 +23,6 @@
 // The distribution of this software follows also the rules defined in Trilinos.
 // This notice shall be marked on anY reproduction of this software, in whole or
 // in part.
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
 //
 // This program is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of

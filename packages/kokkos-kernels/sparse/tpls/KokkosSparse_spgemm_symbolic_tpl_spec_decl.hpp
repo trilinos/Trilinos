@@ -87,9 +87,20 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
         h->scalarType));
 
+#if CUDA_VERSION >= 12020
+    // at some point cusparseCreateCsr started to need a non-null row-pointer
+    // array, even if the operation that consumed the handle doesn't need to
+    // read it. This was observed on a system with CUDA 12.2, but it may have
+    // started earlier.
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &h->descr_C, m, k, 0, (void *)row_mapC.data(), nullptr, nullptr,
+        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
+        h->scalarType));
+#else
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
         &h->descr_C, m, k, 0, nullptr, nullptr, nullptr, CUSPARSE_INDEX_32I,
         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+#endif
 
     //----------------------------------------------------------------------
     // ask bufferSize1 bytes for external memory

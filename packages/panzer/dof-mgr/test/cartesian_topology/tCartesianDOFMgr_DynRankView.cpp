@@ -70,7 +70,6 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
   #endif
 
   int np = comm.getSize(); // number of processors
-  int rank = comm.getRank(); // processor rank
 
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
@@ -108,21 +107,13 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
   dofManager->addField("eblock-0_1_0","UY",pattern_U);
   dofManager->addField("eblock-0_1_0","UZ",pattern_U);
 
-  // int temp_num = dofManager->getFieldNum("TEMPERATURE");
-  int ux_num   = dofManager->getFieldNum("UX");
-  int uy_num   = dofManager->getFieldNum("UY");
-  // int uz_num   = dofManager->getFieldNum("UZ");
-  // int p_num    = dofManager->getFieldNum("PRESSURE");
-  // int b_num    = dofManager->getFieldNum("B");
-  // int e_num    = dofManager->getFieldNum("E");
-
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
- 
-  // print out some diagnostic information 
+
+  // print out some diagnostic information
   ///////////////////////////////////////////////////////////
 
-  dofManager->printFieldInformation(out); 
+  dofManager->printFieldInformation(out);
 
   out << std::endl << "Load balancing: " << printUGILoadBalancingInformation(*dofManager) << std::endl;
 
@@ -154,7 +145,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
       TEST_EQUALITY(hostOffsetsStdVector[i],hostKokkosOffsets(i));
     }
   }
-    
+
 }
 
 } // namespace panzer::unit test

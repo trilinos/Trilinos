@@ -62,6 +62,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <cmath>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -107,7 +108,7 @@ int main(int argc,char * argv[])
    clp.setOption("y-elements",&y_elements); // ignored if mesh file is supplied
    clp.setOption("basis-order",&basis_order);
    clp.setOption("mesh-filename",&mesh_name);
-   clp.setOption("problem",&problem_name);
+   clp.setOption("problem",&problem_name,"Problem type: rectangle or annulus. Defaults to rectangle.");
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -266,21 +267,15 @@ int main(int argc,char * argv[])
      builder.comm = MPI_COMM_WORLD;
      builder.cubatureDegree = integration_order;
      builder.requiresCellIntegral = true;
-     builder.quadPointField = "TEMPERATURE_L2_ERROR";
 
+     builder.quadPointField = "TEMPERATURE_L2_ERROR";
      exampleResponseLibrary->addResponse("L2 Error",eBlocks,builder);
 
-     builder.comm = MPI_COMM_WORLD;
-     builder.cubatureDegree = integration_order;
-     builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_H1_ERROR";
-
      exampleResponseLibrary->addResponse("H1 Error",eBlocks,builder);
 
      builder.quadPointField = "AREA";
-
      exampleResponseLibrary->addResponse("Area",eBlocks,builder);
-
    }
 
    // setup closure model
@@ -470,6 +465,7 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    if (true) {
+      stackedTimer->start("Compute Responses");
       Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
       lout.setOutputToRootOnly(0);
 
@@ -494,11 +490,13 @@ int main(int argc,char * argv[])
              Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
       h1_resp_func->setVector(h1_respVec);
-      double area_exact = 1.;
-      if (curvilinear) area_exact = M_PI * 1.0 * 1.0 - M_PI * .5 * .5;
 
       exampleResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       exampleResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+
+      double area_exact = 1.;
+      if (curvilinear)
+        area_exact = M_PI * 1.0 * 1.0 - M_PI * .5 * .5;
 
       lout << "This is the Basis Order" << std::endl;
       lout << "Basis Order = " << basis_order << std::endl;
@@ -507,7 +505,8 @@ int main(int argc,char * argv[])
       lout << "This is the H1 Error" << std::endl;
       lout << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
       lout << "This is the error in area" << std::endl;
-      lout << "Area Error = " << abs(area_resp_func->value - area_exact) << std::endl;
+      lout << "Area Error = " << std::abs(area_resp_func->value - area_exact) << std::endl;
+      stackedTimer->stop("Compute Responses");
    }
 
    stackedTimer->stop("Mixed Poisson");
@@ -520,8 +519,8 @@ int main(int argc,char * argv[])
      std::fstream timing_stream(filename.str().c_str(),std::fstream::out|std::fstream::trunc);
      Teuchos::StackedTimer::OutputOptions options;
      options.output_fraction = true;
-     options.output_minmax = true;
-     options.output_histogram = true;
+     options.output_minmax = false;
+     options.output_histogram = false;
      options.num_histogram = 5;
      stackedTimer->report(timing_stream, Teuchos::DefaultComm<int>::getComm(), options);
    }

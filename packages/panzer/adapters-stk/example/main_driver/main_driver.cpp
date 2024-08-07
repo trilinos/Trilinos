@@ -23,13 +23,13 @@
 #include "Teuchos_as.hpp"
 
 #include "Panzer_NodeType.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_String_Utilities.hpp"
-#include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 
 #ifdef Panzer_BUILD_PAPI_SUPPORT
 #include "Panzer_PAPI_Counter.hpp"
@@ -255,18 +255,17 @@ int main(int argc, char *argv[])
         user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
       
         fluxResponseLibrary->buildResponseEvaluators(physicsBlocks,
-                                          *eqset_factory,
-                                          cm_factory,
-                                          input_params->sublist("Closure Models"),
-                                          user_data);
+                                                     *eqset_factory,
+                                                     cm_factory,
+                                                     input_params->sublist("Closure Models"),
+                                                     user_data);
       }
   
       {
         Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp
             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(fluxResponseLibrary->getResponse<panzer::Traits::Residual>("HO-Flux"),true);
-  
-        // allocate a vector
-        Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp(new Epetra_Vector(*resp->getMap()));
+
+        const auto vec = Thyra::createMember(*resp->getVectorSpace(),"HO-Flux Vector");
         resp->setVector(vec);
       }
     }
@@ -334,9 +333,9 @@ int main(int argc, char *argv[])
         // initialize the ghosted container
         linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X,*ae_inargs.ghostedContainer_);
 
-        const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
-           = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-        epGlobalContainer->set_x_th(gx);
+        const Teuchos::RCP<panzer::ThyraObjContainer<double>> thGlobalContainer
+          = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double>>(ae_inargs.container_,true);
+        thGlobalContainer->set_x_th(gx);
 
         // evaluate current on contacts
         fluxResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);

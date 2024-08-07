@@ -15,6 +15,7 @@
 /// \brief Declaration of the Tpetra::CrsMatrix class
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "TpetraExt_MatrixMatrix_fwd.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #if KOKKOSKERNELS_VERSION >= 40299
@@ -30,6 +31,7 @@
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "Teuchos_DataAccess.hpp"
+
 
 #include <memory> // std::shared_ptr
 
@@ -3907,11 +3909,56 @@ public:
     typename values_dualv_type::t_dev
     getValuesViewDeviceNonConst (const RowInfo& rowinfo);
 
+#if KOKKOSKERNELS_VERSION >= 40299
+private:
+    // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
+    // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
+    //
+    // At that point the ApplyHelper can be replaced with just a SPMVHandle.
+    using local_matrix_int_rowptrs_device_type =
+      KokkosSparse::CrsMatrix<impl_scalar_type,
+                              local_ordinal_type,
+                              device_type,
+                              void,
+                              int>;
+
+    /// The specialization of Details::MatrixApplyHelper used by this class in apply().
+    using ApplyHelper = Details::MatrixApplyHelper<
+      local_matrix_device_type,
+      local_matrix_int_rowptrs_device_type, 
+      typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
+
+
+    std::shared_ptr<ApplyHelper> getApplyHelper() const {
+      if (!applyHelper) {
+        auto A_lcl = getLocalMatrixDevice();
+        applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
+      }
+      return applyHelper;
+    }
+#endif
 
   protected:
 
     // Friend the tester for CrsMatrix::swap
     friend class Tpetra::crsMatrix_Swap_Tester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // Friend the matrix multiply kernels so they can access internally-cached integer
+    // row pointers without making them part of the CrsMatrix interface
+    template<typename S, typename LO, typename GO, typename NODE, typename LOV> friend struct Tpetra::MMdetails::KernelWrappers;
+    template<typename S, typename LO, typename GO, typename NODE, typename LOV> friend struct Tpetra::MMdetails::KernelWrappers2;
+
+
+    // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
+    friend 
+    void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
+    bool                                                          userAssertsThereAreNoRemotes,
+    const std::string&                                            label,
+    const Teuchos::RCP<Teuchos::ParameterList>&                   params);
 
     /// \brief Swaps the data from *this with the data and maps from crsMatrix
     ///
@@ -4002,23 +4049,6 @@ protected:
 
   private:
 #if KOKKOSKERNELS_VERSION >= 40299
-    // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
-    // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
-    //
-    // At that point the ApplyHelper can be replaced with just a SPMVHandle.
-    using local_matrix_int_rowptrs_device_type =
-      KokkosSparse::CrsMatrix<impl_scalar_type,
-                              local_ordinal_type,
-                              device_type,
-                              void,
-                              int>;
-
-    /// The specialization of Details::MatrixApplyHelper used by this class in apply().
-    using ApplyHelper = Details::MatrixApplyHelper<
-      local_matrix_device_type,
-      local_matrix_int_rowptrs_device_type, 
-      typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
-
     /// The apply helper is lazily created in apply(), and reset when resumeFill is called.
     /// It performs 3 functions:
     /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs

@@ -216,7 +216,6 @@ namespace panzer_stk {
     }
   } // namespace
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   void  ModelEvaluatorFactory<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                                      const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -406,6 +405,7 @@ namespace panzer_stk {
 
     if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && !useTpetra) {
 
+#ifdef PANZER_HAVE_EPETRA_STACK
        // Can't yet handle interface conditions for this system
        TEUCHOS_TEST_FOR_EXCEPTION(has_interface_condition,
                                   Teuchos::Exceptions::InvalidParameter,
@@ -447,6 +447,9 @@ namespace panzer_stk {
 
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
+#else
+       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildObjects() - Epetra support is NOT enabled in this build!");
+#endif
     }
     else if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && useTpetra) {
 
@@ -519,6 +522,7 @@ namespace panzer_stk {
     }
     else {
 
+#ifdef PANZER_HAVE_EPETRA_STACK
        if (has_interface_condition)
          buildInterfaceConnections(bcs, conn_manager);
 
@@ -539,6 +543,9 @@ namespace panzer_stk {
 
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
+#else
+       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildObjects() - Epetra support is NOT enabled in this build!");
+#endif
     }
 
     TEUCHOS_ASSERT(globalIndexer!=Teuchos::null);
@@ -552,9 +559,9 @@ namespace panzer_stk {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-   
+
     // build up needs array for workset container
-    std::map<std::string,panzer::WorksetNeeds> needs;  
+    std::map<std::string,panzer::WorksetNeeds> needs;
     for(std::size_t i=0;i<physicsBlocks.size();i++)
       needs[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getWorksetNeeds();
 
@@ -574,7 +581,7 @@ namespace panzer_stk {
       max_wksets = std::max(max_wksets,works->size());
     }
     user_data_params.set<std::size_t>("Max Worksets",max_wksets);
-    wkstContainer->clear(); 
+    wkstContainer->clear();
 
     // Setup lagrangian type coordinates
     /////////////////////////////////////////////////////////////
@@ -727,7 +734,7 @@ namespace panzer_stk {
       // For now just remove Global MMS Parameters, if it exists
       const Teuchos::ParameterList& models = p.sublist("Closure Models");
       Teuchos::ParameterList cl_models(models.name());
-      for (Teuchos::ParameterList::ConstIterator model_it=models.begin(); 
+      for (Teuchos::ParameterList::ConstIterator model_it=models.begin();
            model_it!=models.end(); ++model_it) {
            std::string key = model_it->first;
            if (model_it->first != "Global MMS Parameters")
@@ -751,7 +758,6 @@ namespace panzer_stk {
 
     m_physics_me = thyra_me;
   }
-#endif // ifdef PANZER_HAVE_EPETRA_STACK
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
@@ -1303,11 +1309,10 @@ namespace panzer_stk {
       fmb->writeVolumeTextDependencyFiles(graphPrefix, physicsBlocks);
       fmb->writeBCTextDependencyFiles(field_manager_prefix);
     }
-    
+
     return fmb;
   }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<double> >
   ModelEvaluatorFactory<ScalarT>::
@@ -1403,11 +1408,14 @@ namespace panzer_stk {
       Thyra::ModelEvaluatorBase::InArgs<ScalarT> nomVals = physics_me->getNominalValues();
 
       // determine if this is a Epetra or Thyra ME
-      Teuchos::RCP<Thyra::EpetraModelEvaluator> ep_thyra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(physics_me);
       Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(physics_me);
+
       bool useThyra = true;
+#ifdef PANZER_HAVE_EPETRA_STACK
+      Teuchos::RCP<Thyra::EpetraModelEvaluator> ep_thyra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(physics_me);
       if(ep_thyra_me!=Teuchos::null)
         useThyra = false;
+#endif
 
       // get parameter names
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(physics_me->Np());
@@ -1442,9 +1450,7 @@ namespace panzer_stk {
       return thyra_me;
     }
   }
-#endif // ifdef PANZER_HAVE_EPETRA_STACK
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> >
   ModelEvaluatorFactory<ScalarT>::
@@ -1460,6 +1466,7 @@ namespace panzer_stk {
   {
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
     if(!buildThyraME) {
+#ifdef PANZER_HAVE_EPETRA_STACK
       Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me
           = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names,p_values, global_data, is_transient));
 
@@ -1468,6 +1475,9 @@ namespace panzer_stk {
 
       // Build Thyra Model Evaluator
       thyra_me = Thyra::epetraModelEvaluator(ep_me,solverFactory);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildPhysicsModelEvalautor() - Epetra stack is not enabled!");
+#endif
     }
     else {
       thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
@@ -1476,7 +1486,6 @@ namespace panzer_stk {
 
     return thyra_me;
   }
-#endif // ifdef PANZER_HAVE_EPETRA_STACK
 
   template<typename ScalarT>
   double ModelEvaluatorFactory<ScalarT>::
@@ -1579,48 +1588,49 @@ namespace panzer_stk {
                             );
   }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
   buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                  const bool write_graphviz_file,
                  const std::string& graphviz_file_prefix)
   {
-    typedef panzer::ModelEvaluator<double> PanzerME;
-
     Teuchos::ParameterList & p = *this->getNonconstParameterList();
     Teuchos::ParameterList & user_data = p.sublist("User Data");
     Teuchos::ParameterList & closure_models = p.sublist("Closure Models");
 
-    // uninitialize the thyra model evaluator, its respone counts are wrong!
-    Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
+    // uninitialize the thyra model evaluator, and rebuild the
+    // responses to get the correct response counts!
+
+    using PanzerME = panzer::ModelEvaluator<double>;
     Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
 
-    if(thyra_me!=Teuchos::null && panzer_me==Teuchos::null) {
-      Teuchos::RCP<const EpetraExt::ModelEvaluator> const_ep_me;
-      Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFactory;
-      thyra_me->uninitialize(&const_ep_me,&solveFactory); // this seems dangerous!
-
-      // I don't need no const-ness!
-      Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(const_ep_me);
-      Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
-
-      ep_panzer_me->buildResponses(m_physics_blocks,*m_eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
-
-      // reinitialize the thyra model evaluator, now with the correct responses
-      thyra_me->initialize(ep_me,solveFactory);
-
-      return;
-    }
-    else if(panzer_me!=Teuchos::null && thyra_me==Teuchos::null) {
+    if(nonnull(panzer_me)) {
       panzer_me->buildResponses(m_physics_blocks,*m_eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
-
       return;
     }
+#ifdef PANZER_HAVE_EPETRA_STACK
+    else {
+      Teuchos::RCP<Thyra::EpetraModelEvaluator> epetra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
 
-    TEUCHOS_ASSERT(false);
+      if(epetra_me!=Teuchos::null) {
+        Teuchos::RCP<const EpetraExt::ModelEvaluator> const_ep_me;
+        Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFactory;
+        epetra_me->uninitialize(&const_ep_me,&solveFactory);
+
+        Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(const_ep_me);
+        Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
+        ep_panzer_me->buildResponses(m_physics_blocks,*m_eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+
+        // reinitialize the thyra model evaluator, now with the correct responses
+        epetra_me->initialize(ep_me,solveFactory);
+
+        return;
+      }
+    }
+#endif
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildResponses() - could not cast Physics ME to PanzerME!");
   }
-#endif // ifdef PANZER_HAVE_EPETRA_STACK
 }
 
 #endif

@@ -85,10 +85,10 @@ class CoordinatesTransferFactory : public TwoLevelFactoryBase {
      The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
      <tt>vectorName</tt>.
   */
-  CoordinatesTransferFactory() {}
+  CoordinatesTransferFactory();
 
   //! Destructor.
-  virtual ~CoordinatesTransferFactory() {}
+  virtual ~CoordinatesTransferFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 
