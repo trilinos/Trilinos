@@ -9,6 +9,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Kokkos_KKGMRESEx
+  SOURCES ex_real_A.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Kokkos_BlockCGEx
   SOURCES BlockCGKokkosExFile.cpp
   ARGS "--verbose"
@@ -25,8 +31,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleMtxFiles
   SOURCE_DIR ${Belos_SOURCE_DIR}/kokkos/example
-  SOURCE_FILES bcsstk12.mtx
-  EXEDEPS Kokkos_BlockCGEx Kokkos_BlockGmresEx Kokkos_GCRODREx
+  SOURCE_FILES bcsstk12.mtx bcsstk09.mtx
+  EXEDEPS Kokkos_BlockCGEx Kokkos_BlockGmresEx Kokkos_GCRODREx Kokkos_KKGMRESEx
   )
 
 IF(Teuchos_ENABLE_COMPLEX)

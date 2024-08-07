@@ -70,16 +70,16 @@ namespace Belos {
 
   // Partial specialization for unsupported ScalarType types.
   // This contains a stub implementation.
-  template<class ScalarType, class MV, class OP,
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class PseudoBlockCGSolMgr :
-    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP,
+    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM,
                                                 Belos::Details::LapackSupportsScalar<ScalarType>::value>
   {
     static const bool scalarTypeIsSupported =
       Belos::Details::LapackSupportsScalar<ScalarType>::value;
-    typedef Details::SolverManagerRequiresLapack<ScalarType, MV, OP,
+    typedef Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM,
                                                  scalarTypeIsSupported> base_type;
 
   public:
@@ -97,12 +97,12 @@ namespace Belos {
   };
 
 
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockCGSolMgr<ScalarType, MV, OP, true> :
-    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, true>
+  template<class ScalarType, class MV, class OP, class DM>
+  class PseudoBlockCGSolMgr<ScalarType, MV, OP, DM, true> :
+    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM, true>
   {
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -142,8 +142,8 @@ namespace Belos {
     virtual ~PseudoBlockCGSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new PseudoBlockCGSolMgr<ScalarType,MV,OP>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new PseudoBlockCGSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
@@ -203,7 +203,7 @@ namespace Belos {
     Teuchos::ArrayRCP<MagnitudeType> getEigenEstimates() const {return eigenEstimates_;}
 
     //! Return the residual status test
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> >
     getResidualStatusTest() const { return convTest_; }
 
     //@}
@@ -276,10 +276,10 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -325,8 +325,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::PseudoBlockCGSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
@@ -346,8 +346,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
 {}
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
+template<class ScalarType, class MV, class OP, class DM>
+PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::
 PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
@@ -380,9 +380,8 @@ PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &probl
   }
 }
 
-template<class ScalarType, class MV, class OP>
-void
-PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::ParameterList;
@@ -523,8 +522,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP> StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM> StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM> StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {
@@ -609,7 +608,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_.is_null ()) {
-    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
+    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP,DM> (maxIters_));
   }
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
@@ -625,7 +624,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   if (outputTest_.is_null () || newResTest) {
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+    StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory (outputStyle_);
     outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
                                      Passed+Failed+Undefined);
 
@@ -648,9 +647,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
+PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -710,8 +709,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve ()
 {
   const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
@@ -755,15 +754,15 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block CG solver
-  Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
+  Teuchos::RCP<CGIteration<ScalarType,MV,OP,DM> > block_cg_iter;
   if (numRHS2Solve == 1) {
     plist.set("Fold Convergence Detection Into Allreduce",
               foldConvergenceDetectionIntoAllreduce_);
     block_cg_iter =
-      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, convTest_, plist));
+      Teuchos::rcp (new CGIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_, convTest_, plist));
   } else {
     block_cg_iter =
-      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
+      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_, plist));
   }
 
   // Setup condition estimate
@@ -812,7 +811,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
           if ( convTest_->getStatus() == Passed ) {
 
             // Figure out which linear systems converged.
-            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP,DM> >(convTest_)->convIndices();
  
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
@@ -972,8 +971,8 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
-template<class ScalarType, class MV, class OP>
-std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::PseudoBlockCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
@@ -983,9 +982,8 @@ std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::description() const
 }
 
 
-template<class ScalarType, class MV, class OP>
-void
-PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::
 compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
                              Teuchos::ArrayView<MagnitudeType> offdiag,
                              Teuchos::ArrayRCP<MagnitudeType>& lambdas,

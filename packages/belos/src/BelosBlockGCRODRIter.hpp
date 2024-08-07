@@ -319,8 +319,8 @@ namespace Belos{
        if ( (recycledBlocks_ != recycledBlocks) || (numBlocks_ != numBlocks) ) {
       	recycledBlocks_ = recycledBlocks;
        	numBlocks_ = numBlocks;
-        cs_.sizeUninitialized( numBlocks_ );
-        sn_.sizeUninitialized( numBlocks_ );
+        cs_.resize( numBlocks_ );
+        sn_.resize( numBlocks_ );
         Z_.shapeUninitialized( numBlocks_*blockSize_, blockSize_ );
       }
     }
@@ -358,9 +358,9 @@ namespace Belos{
       // recycledBlocks_ is the size of the allocated space for the recycled subspace, in vectors.
       int recycledBlocks_;    
 
-      //Storage for QR factorization of the least squares system if using plane rotations.
-      SDV sn_;
-      Teuchos::SerialDenseVector<int,MagnitudeType> cs_;
+      // Storage for QR factorization of the least squares system.
+      std::vector<ScalarType> sn_;
+      std::vector<MagnitudeType> cs_;
 
       //Storage for QR factorization of the least squares system if using Householder reflections
       //Per block Krylov vector, we actually construct a 2*blockSize_ by 2*blockSize_ matrix which
@@ -368,7 +368,6 @@ namespace Belos{
       //speed ups without losing accuracy because we can apply previous Householder transformations
       //with BLAS3 operations.
       std::vector< SDM >House_;
-      SDV beta_;
 
       //
       //Current Solver State
@@ -477,8 +476,8 @@ namespace Belos{
 
         //THIS MAKES SPACE FOR GIVENS ROTATIONS BUT IN REALITY WE NEED TO DO TESTING ON BLOCK SIZE
         //AND CHOOSE BETWEEN GIVENS ROTATIONS AND HOUSEHOLDER TRANSFORMATIONS.        
-        cs_.sizeUninitialized( numBlocks_+1 );
-    	sn_.sizeUninitialized( numBlocks_+1 );
+        cs_.resize( numBlocks_+1 );
+    	sn_.resize( numBlocks_+1 );
     	Z_.shapeUninitialized( (numBlocks_+1)*blockSize_,blockSize_ );
 
 	House_.resize(numBlocks_);
