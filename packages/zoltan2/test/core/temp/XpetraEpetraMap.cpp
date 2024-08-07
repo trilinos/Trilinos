@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // Program to debug segfaults being reported in CDASH when
 // -D KokkosClassic_DefaultNode:STRING=Tpetra::KokkosCompat::KokkosOpenMPWrapperNode 
 // -D Trilinos_ENABLE_OpenMP:BOOL=ON  
