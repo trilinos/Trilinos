@@ -854,6 +854,28 @@ namespace Ifpack2 {
       impl_scalar_type_2d_view_tpetra getRemoteMultiVectorLocalView() const { return remote_multivector; }
     };
 
+    template <typename ViewType1, typename ViewType2>
+    struct are_same_struct {
+      ViewType1 keys1;
+      ViewType2 keys2;
+
+      are_same_struct(ViewType1 keys1_, ViewType2 keys2_) : keys1(keys1_), keys2(keys2_) {}
+      KOKKOS_INLINE_FUNCTION
+      void operator()(int i, unsigned int& count) const {
+        if (keys1(i) != keys2(i)) count++;
+      }
+    };
+
+    template <typename ViewType1, typename ViewType2>
+    bool are_same (ViewType1 keys1, ViewType2 keys2) {
+      unsigned int are_same_ = 0;
+
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<typename ViewType1::execution_space>(0, keys1.extent(0)),
+                              are_same_struct(keys1, keys2),
+                              are_same_);
+      return are_same_==0;
+    }
+
     ///
     /// setup async importer
     ///
@@ -882,30 +904,45 @@ namespace Ifpack2 {
       const auto column_map = g.getColMap();
 
       std::vector<global_ordinal_type> gids;
+      Kokkos::View<const global_ordinal_type*> column_map_global_iD_last;
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
       {
         IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::loop_over_local_elements");
-        // This loop is relatively expensive
-        for (size_t i=0;i<column_map->getLocalNumElements();++i) {
-          const global_ordinal_type gid = column_map->getGlobalElement(i);
-          if (!domain_map->isNodeGlobalElement(gid)) {
-            found_first = true;
-            gids.push_back(gid);
-          } else if (found_first) {
-            separate_remotes = false;
-            break;
-          }
-          if (!need_owned_permutation &&
-              domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
-            // The owned part of the domain and column maps are different
-            // orderings. We *could* do a super efficient impl of this case in the
-            // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
-            // really, if a caller cares about speed, they wouldn't make different
-            // local permutations like this. So we punt on the best impl and go for
-            // a pretty good one: the permutation is done in place in
-            // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
-            // is the presumably worse memory access pattern of the input vector.
-            need_owned_permutation = true;
+
+        auto column_map_global_iD = column_map->getMyGlobalIndicesDevice();
+        auto domain_map_global_iD = domain_map->getMyGlobalIndicesDevice();
+        
+        if(are_same(domain_map_global_iD, column_map_global_iD)) {
+          // this should be the most likely path
+          separate_remotes = true;
+          need_owned_permutation = false;
+
+          column_map_global_iD_last = Kokkos::subview(column_map_global_iD, 
+            Kokkos::pair(domain_map_global_iD.extent(0), column_map_global_iD.extent(0)));
+        }
+        else {
+          // This loop is relatively expensive
+          for (size_t i=0;i<column_map->getLocalNumElements();++i) {
+            const global_ordinal_type gid = column_map->getGlobalElement(i);
+            if (!domain_map->isNodeGlobalElement(gid)) {
+              found_first = true;
+              gids.push_back(gid);
+            } else if (found_first) {
+              separate_remotes = false;
+              break;
+            }
+            if (!found_first && !need_owned_permutation &&
+                domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
+              // The owned part of the domain and column maps are different
+              // orderings. We *could* do a super efficient impl of this case in the
+              // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
+              // really, if a caller cares about speed, they wouldn't make different
+              // local permutations like this. So we punt on the best impl and go for
+              // a pretty good one: the permutation is done in place in
+              // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
+              // is the presumably worse memory access pattern of the input vector.
+              need_owned_permutation = true;
+            }
           }
         }
         IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -915,7 +952,9 @@ namespace Ifpack2 {
         IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::separate_remotes");
         const auto invalid = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
         const auto parsimonious_col_map
-          = Teuchos::rcp(new tpetra_map_type(invalid, gids.data(), gids.size(), 0, domain_map->getComm()));
+          = need_owned_permutation ? 
+            Teuchos::rcp(new tpetra_map_type(invalid, gids.data(), gids.size(), 0, domain_map->getComm())):
+            Teuchos::rcp(new tpetra_map_type(invalid, column_map_global_iD_last, 0, domain_map->getComm()));
         if (parsimonious_col_map->getGlobalNumElements() > 0) {
           // make the importer only if needed.
           local_ordinal_type_1d_view dm2cm;
