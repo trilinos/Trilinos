@@ -212,10 +212,21 @@ namespace {
         } else {
           expectedGlobalCount = 6 * iter_num;
         }
-        if (Tpetra::Details::Behavior::debug()) {
-          expectedInstanceCount = 5*iter_num;
-        } else {
-          expectedInstanceCount = 3*iter_num;
+#ifdef HAVE_TPETRA_INST_HIP
+        if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>) {
+          if (Tpetra::Details::Behavior::debug()) {
+            expectedInstanceCount = 4*iter_num;
+          } else {
+            expectedInstanceCount = 2*iter_num;
+          }
+        } else
+#endif
+        {
+          if (Tpetra::Details::Behavior::debug()) {
+            expectedInstanceCount = 5*iter_num;
+          } else {
+            expectedInstanceCount = 3*iter_num;
+          }
         }
       }
     }
