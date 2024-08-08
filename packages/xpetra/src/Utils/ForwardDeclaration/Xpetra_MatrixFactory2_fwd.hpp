@@ -7,17 +7,16 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef XPETRA_MATRIXFACTORY_FWD_HPP
-#define XPETRA_MATRIXFACTORY_FWD_HPP
+#ifndef XPETRA_MATRIXFACTORY2_FWD_HPP
+#define XPETRA_MATRIXFACTORY2_FWD_HPP
 
 namespace Xpetra {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class MatrixFactory;
-
+class MatrixFactory2;
 }  // namespace Xpetra
 
-#ifndef XPETRA_MATRIXFACTORY_SHORT
-#define XPETRA_MATRIXFACTORY_SHORT
+#ifndef XPETRA_MATRIXFACTORY2_SHORT
+#define XPETRA_MATRIXFACTORY2_SHORT
 #endif
 
-#endif  // XPETRA_MATRIXFACTORY_FWD_HPP
+#endif  // XPETRA_MATRIXFACTORY2_FWD_HPP
