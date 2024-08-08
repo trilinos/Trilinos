@@ -2056,11 +2056,12 @@ public:
         for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
           const ordinal_type pbeg = _h_level_ptr(lvl);
           // the first supernode in this lvl (where the CRS matrix is stored)
-          auto &s0 = _h_supernodes(_h_level_sids(pbeg));
 #if defined(KOKKOS_ENABLE_CUDA)
+          auto &s0 = _h_supernodes(_h_level_sids(pbeg));
           cusparseDestroySpMat(s0.U_cusparse);
           cusparseDestroySpMat(s0.L_cusparse);
 #elif defined(KOKKOS_ENABLE_HIP)
+          auto &s0 = _h_supernodes(_h_level_sids(pbeg));
           rocsparse_destroy_spmat_descr(s0.descrU);
           rocsparse_destroy_spmat_descr(s0.descrL);
 #endif
