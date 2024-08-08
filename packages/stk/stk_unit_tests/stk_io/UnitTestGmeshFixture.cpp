@@ -56,7 +56,7 @@ TEST(UnitTestGmeshFixture, testUnit)
   std::string config_mesh = std::to_string(num_x) + "x" +
                             std::to_string(num_y) + "x" +
                             std::to_string(num_z) + "|sideset:xXyYzZ";
-  stk::io::util::simple_fields::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
+  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
 
   fixture.commit();
 

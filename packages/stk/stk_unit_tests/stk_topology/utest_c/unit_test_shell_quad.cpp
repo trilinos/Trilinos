@@ -127,6 +127,7 @@ void check_shell_quad_4_on_device()
 
   stk::topology t = stk::topology::SHELL_QUAD_4;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_QUAD_4>::num_nodes;
+  EXPECT_EQ(4u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -265,6 +266,7 @@ void check_shell_quad_8_on_device()
 
   stk::topology t = stk::topology::SHELL_QUAD_8;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_QUAD_8>::num_nodes;
+  EXPECT_EQ(8u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -403,6 +405,7 @@ void check_shell_quad_9_on_device()
 
   stk::topology t = stk::topology::SHELL_QUAD_9;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_QUAD_9>::num_nodes;
+  EXPECT_EQ(9u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {

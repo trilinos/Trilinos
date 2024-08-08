@@ -19,14 +19,14 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 
-#include <cubit/pgeom/PGeom.hpp>
-#include <cubit/pgeom/PGeomAssoc.hpp>
+#include <PGeom.hpp>
+#include <PGeomAssoc.hpp>
 
 #ifdef HAVE_ACIS
-#include <cubit_acis/pgeom/PGeomACIS.hpp>
+#include <PGeomACIS.hpp>
 #endif
 
-#include <cubit/util/CubitVector.hpp>
+#include <CubitVector.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>

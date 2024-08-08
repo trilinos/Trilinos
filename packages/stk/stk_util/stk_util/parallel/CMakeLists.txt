@@ -71,7 +71,7 @@ ELSE()
   add_library(stk_util_parallel ${SOURCES})
 
   IF(STK_HAS_MPI)
-    target_link_libraries(stk_util_parallel PUBLIC ${MPI_LIBRARIES})
+    target_link_libraries(stk_util_parallel PUBLIC MPI::MPI_CXX)
     message("MPI_LIBRARIES: ${MPI_LIBRARIES}")
   ENDIF()
 
@@ -87,5 +87,5 @@ INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/parallel/)
 
 IF(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_util_parallel DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_util_parallel EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 ENDIF()

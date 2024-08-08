@@ -47,7 +47,7 @@ namespace
 
 using EntitySet = std::set<stk::mesh::Entity>;
 
-class VisitAura : public stk::unit_test_util::simple_fields::MeshFixture
+class VisitAura : public stk::unit_test_util::MeshFixture
 {
 public:
   VisitAura()

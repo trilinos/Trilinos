@@ -45,7 +45,7 @@ namespace unit_test {
 /**
  * TODO - Document what this does
  */
-void test_shift_ring( stk::mesh::fixtures::simple_fields::RingFixture& ring);
+void test_shift_ring( stk::mesh::fixtures::RingFixture& ring);
 
 } // namespace unit_test
 } // namespace stk

@@ -44,7 +44,6 @@
             }
 
           // see how many edges are already marked
-          int num_marked=0;
           std::vector<int> edge_marks(numSubDimNeededEntities,0);
           if (needed_entity_rank == m_eMesh.edge_rank())
             {
@@ -54,7 +53,6 @@
                   if (!is_empty)
                     {
                       edge_marks[iSubDimOrd] = 1;
-                      ++num_marked;
                     }
                 }
             }

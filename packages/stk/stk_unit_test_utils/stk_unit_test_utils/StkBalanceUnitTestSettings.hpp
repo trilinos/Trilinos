@@ -20,7 +20,8 @@ public:
 
 namespace simple_fields {
 
-class StkBalanceUnitTestSettings : public stk::unit_test_util::StkBalanceUnitTestSettings {};
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+StkBalanceUnitTestSettings : public stk::unit_test_util::StkBalanceUnitTestSettings {};
 
 } // namespace simple_fields
 

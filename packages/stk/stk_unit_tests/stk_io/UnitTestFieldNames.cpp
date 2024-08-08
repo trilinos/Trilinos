@@ -93,7 +93,6 @@ TEST(FieldNamesTest, FieldNameRenameTwice)
   std::vector<std::string> outputFieldNames;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
@@ -131,7 +130,6 @@ TEST(FieldNamesTest, FieldNameWithRestart)
   const std::string internalClientFieldName = "Field0";
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
@@ -168,7 +166,6 @@ TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
   const std::string internalClientFieldName = "Field0";
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);

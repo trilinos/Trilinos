@@ -106,15 +106,6 @@
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        unsigned num_edges_marked=0;
-        for (int iedge = 0; iedge < 6; iedge++)
-          {
-            unsigned num_nodes_on_edge = new_sub_entity_nodes[m_eMesh.edge_rank()][iedge].size();
-            if (num_nodes_on_edge)
-              {
-                ++num_edges_marked;
-              }
-          }
         m_transition_breaker->createNewElements(eMesh, nodeRegistry, element, new_sub_entity_nodes, element_pool, ft_element_pool, proc_rank_field);
       }
 

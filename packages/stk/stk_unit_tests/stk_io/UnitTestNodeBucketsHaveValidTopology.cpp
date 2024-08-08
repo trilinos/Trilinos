@@ -43,7 +43,6 @@ TEST(UnitTestNodeBucketsHaveValidTopology, testUnit)
 
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   stk::io::StkMeshIoBroker meshReader(comm);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(generated_mesh, stk::io::READ_MESH);
 
   meshReader.create_input_mesh();

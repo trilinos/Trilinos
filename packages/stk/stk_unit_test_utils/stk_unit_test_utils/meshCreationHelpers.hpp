@@ -46,7 +46,10 @@ void create_mesh_with__field_1__field_2__field_3(const std::string & filename, M
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void create_mesh_without_time_steps(const std::string & filename, MPI_Comm communicator);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void create_mesh_with__field_1__field_2__field_3(const std::string & filename, MPI_Comm communicator);
 
 } // namespace simple_fields

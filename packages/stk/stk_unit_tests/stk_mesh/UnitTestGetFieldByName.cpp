@@ -50,7 +50,6 @@ TEST(UnitTestGetFieldByName, test1)
 {
   size_t spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
 
   //declare fields on different ranks with names that are unique within a rank but not unique overall:
   //

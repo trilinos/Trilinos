@@ -94,7 +94,7 @@ TEST_F(RegularTriRefinementWithCDMesh, meshWithRebalancedElements_phaseChangedOn
   perform_iterations_of_uniform_refinement_with_uniform_marker(2);
 
   if (stk::parallel_machine_size(mComm) > 1)
-    move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor({1004, 1010, 1011, 1012, 1013}, 1);
+    move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor({1003, 1010, 1011, 1012, 1013}, 1);
 
   move_elements_to_phase({1010, 1011, 1012, 1013}, phaseB);
   update_adaptivity_parent_entities();

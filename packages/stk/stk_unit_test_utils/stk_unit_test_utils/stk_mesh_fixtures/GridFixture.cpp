@@ -65,12 +65,13 @@ namespace fixtures {
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2),
-    m_bulk_data_ptr(stk::unit_test_util::build_mesh_no_simple_fields(2, pm)),
+    m_bulk_data_ptr(stk::unit_test_util::build_mesh(2, pm)),
     m_bulk_data(*m_bulk_data_ptr),
     m_fem_meta(m_bulk_data.mesh_meta_data()),
     m_quad_part( m_fem_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4_2D) ),
     m_dead_part( m_fem_meta.declare_part("dead_part"))
-{}
+{
+}
 
 GridFixture::~GridFixture()
 { }
@@ -189,7 +190,6 @@ GridFixture::GridFixture(stk::ParallelMachine pm)
     m_quad_part( m_fem_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4_2D) ),
     m_dead_part( m_fem_meta.declare_part("dead_part"))
 {
-  m_fem_meta.use_simple_fields();
 }
 
 GridFixture::~GridFixture()
@@ -250,7 +250,7 @@ void GridFixture::generate_grid()
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
         Entity node = m_bulk_data.declare_node(node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
-        DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
+        stk::mesh::fixtures::DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
       }
     }
   }
@@ -293,7 +293,7 @@ void GridFixture::fill_node_map(unsigned num_nodes, unsigned num_quad_faces, int
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        AddToNodeProcsMMap(m_nodes_to_procs, node_id, p_rank);
+        stk::mesh::fixtures::AddToNodeProcsMMap(m_nodes_to_procs, node_id, p_rank);
       }
     }
   }

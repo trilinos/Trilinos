@@ -1443,7 +1443,7 @@ void field_amax(Scalar& result, const FieldBase& xField, const Selector& selecto
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar local_amax(-1.0);
+    Scalar local_amax(0.0);
 
     int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
@@ -1451,9 +1451,10 @@ void field_amax(Scalar& result, const FieldBase& xField, const Selector& selecto
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         BucketSpan<Scalar> x(xField, *buckets[i]);
+        if (x.length == 0) continue;
         priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(x.size(),x.data())]);
         if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
+          local_amax = priv_tmp;
         }
     }
 

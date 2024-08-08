@@ -20,7 +20,7 @@ stk::mesh::EntityProcVec get_only_valid_entity_proc_vec(stk::mesh::BulkData& stk
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class BasicLoadBalance : public stk::unit_test_util::simple_fields::MeshFixture {};
+class BasicLoadBalance : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(BasicLoadBalance, testWithAura)
 {

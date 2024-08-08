@@ -88,7 +88,6 @@ TEST(StkMeshIoBrokerHowTo, writeHeartbeatOverrideSeparator)
     // EXAMPLE USAGE...
     // Begin use of stk io heartbeat file...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     //-BEGIN
     //+ Use vertical bar as field separator

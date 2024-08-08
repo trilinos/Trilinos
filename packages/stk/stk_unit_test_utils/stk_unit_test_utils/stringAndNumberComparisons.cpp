@@ -51,6 +51,11 @@ bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, c
 
 namespace simple_fields {
 
+bool isNear(double a, double b, double tolerance)
+{
+  return stk::unit_test_util::isNear(a, b, tolerance);
+}
+
 bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol) {
   return stk::unit_test_util::approximatelyEqualAsNumbers(expectedWord, actualWord, tol);
 }

@@ -39,7 +39,6 @@ void EigenVerify::process_options()
 void EigenVerify::create_mesh_data(stk::io::StkMeshIoBroker * mesh_data,
 				   const std::string &filename)
 {
-  mesh_data->use_simple_fields();
   mesh_data->property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ""));
   mesh_data->add_mesh_database(filename, "exodus", stk::io::READ_MESH);
   mesh_data->create_input_mesh();

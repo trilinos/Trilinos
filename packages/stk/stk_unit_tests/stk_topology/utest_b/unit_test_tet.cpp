@@ -130,6 +130,7 @@ void check_tet_4_on_device()
 
   stk::topology t = stk::topology::TET_4;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TET_4>::num_nodes;
+  EXPECT_EQ(4u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -259,6 +260,7 @@ void check_tet_8_on_device()
 
   stk::topology t = stk::topology::TET_8;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TET_8>::num_nodes;
+  EXPECT_EQ(8u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -399,6 +401,7 @@ void check_tet_10_on_device()
 
   stk::topology t = stk::topology::TET_10;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TET_10>::num_nodes;
+  EXPECT_EQ(10u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -539,6 +542,7 @@ void check_tet_11_on_device()
 
   stk::topology t = stk::topology::TET_11;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TET_11>::num_nodes;
+  EXPECT_EQ(11u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {

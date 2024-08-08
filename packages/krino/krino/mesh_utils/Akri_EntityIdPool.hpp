@@ -21,6 +21,7 @@ public:
   EntityIdPool(stk::mesh::MetaData & meta_data);
   ~EntityIdPool() {}
 
+  // Like stk::mesh::generate_new_ids, this method has lowest ids at front of vector
   static void generate_new_ids(stk::mesh::BulkData & mesh, stk::mesh::EntityRank rank, size_t count, std::vector<stk::mesh::EntityId> & ids, bool assert_32bit_ids, bool make_64bit_ids);
 
   void reserve(stk::mesh::EntityRank rank, size_t count, bool assert_32bit_ids, bool make_64bit_ids);

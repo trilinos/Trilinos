@@ -127,7 +127,7 @@ static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
 
 void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord)
 {
-  static const char method[] = "stk_mesh::fixtures::heterogenous_mesh_bulk_data" ;
+  static const char method[] = "stk_mesh::fixtures::heterogenous_mesh_bulk_data";
 
   bulk_data.modification_begin();
 

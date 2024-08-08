@@ -40,6 +40,7 @@
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for _Rb_tree_const_iterator, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator&
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
@@ -263,7 +264,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
 
       // attach side to element
       Permutation permut =
-              mesh.find_permutation(element_topology, elem_nodes,
+              stk::mesh::find_permutation(mesh, element_topology, elem_nodes,
                                     side_topology, ordered_side_nodes.data(), side_ordinal);
       STK_ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
 

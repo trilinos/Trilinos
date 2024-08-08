@@ -47,7 +47,8 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_expreval-root-inc)
   : usage-requirements
     <include>$(stk_expreval-root-inc)

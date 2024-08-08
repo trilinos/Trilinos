@@ -42,6 +42,7 @@ namespace percept {
     bool m_avoidFixSideSetChecks;
     RefinerSelector *m_buildSideSetSelector;
     bool m_doProgress;
+    bool m_debug{false};
 
     FixSideSets(Refiner *ref, PerceptMesh& eMesh, stk::mesh::PartVector& excludeParts, SidePartMap& side_part_map, const std::string& geomFile, bool avoidFixSideSetChecks, RefinerSelector *sel = 0, bool doProgress=false);
 
@@ -63,6 +64,11 @@ namespace percept {
 
     void move_sides_to_correct_surfaces();
     void move_side_to_correct_surface(stk::mesh::Part& surface, stk::mesh::Entity side, stk::mesh::Entity volume);
+
+    std::pair<std::string, bool> get_new_sideset_part_name(const std::string& surfaceName, stk::mesh::Entity side, stk::mesh::Entity volume);
+    void fill_change_parts(stk::mesh::Part& surface,
+                           stk::mesh::Entity side, stk::mesh::Entity volume,
+                           std::vector<stk::mesh::Part*>& add_parts, std::vector<stk::mesh::Part*>& remove_parts);
 
     // fast reconnector
     void fix_side_sets_2(bool allow_not_found, SetOfEntities *avoid_elems, SetOfEntities *avoid_sides, const std::string& msg);

@@ -12,8 +12,6 @@
 
 #include <vector>
 
-using namespace std;
-
 #if 0
 template<typename T> void push_back( vector<T>& dst, const vector<T>& src)
 {
@@ -64,18 +62,18 @@ template<typename T> void push_back( vector<T>& dst, const vector<T>& src)
         virtual void operator()(const domain& x, codomain& y) { y = x; }
 
         // multiple values
-        virtual vector<codomain> operator()(const vector<domain>& x) 
+        virtual std::vector<codomain> operator()(const std::vector<domain>& x) 
         {
           // inefficient default impl
           int n = x.size();
-          vector<codomain> y(n);
+          std::vector<codomain> y(n);
           for(int i = 0; i < n; i++)
             {
               y[i] = (*this)(x[i]);
             }
           return y;
         };  // return value or reference?
-        virtual void operator()(const vector<domain>& x, vector<codomain>& y) 
+        virtual void operator()(const std::vector<domain>& x, std::vector<codomain>& y) 
         {
           // inefficient default impl
           int n = x.size();
@@ -98,7 +96,7 @@ template<typename T> void push_back( vector<T>& dst, const vector<T>& src)
       class GeneralFunctionWithGrad : public GeneralFunction<domain, codomain>
       {
         // return a function that computes the gradient of this
-        virtual GeneralFunction<domain, vector<codomain> > grad()=0;  // return GeneralFunction<domain, vector<codomain> >(); }
+        virtual GeneralFunction<domain, std::vector<codomain> > grad()=0;  // return GeneralFunction<domain, std::vector<codomain> >(); }
       };
 
       template<typename domain_f, typename codomain_f_and_domain_g, typename codomain_g> 

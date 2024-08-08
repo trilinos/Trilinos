@@ -22,7 +22,6 @@ TEST(StkIoHowTo, WriteMeshWithFaceBlock)
     builder.set_spatial_dimension(3);
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Part* part = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
     stk::io::put_face_block_io_part_attribute(*part);
@@ -40,8 +39,6 @@ TEST(StkIoHowTo, WriteMeshWithFaceBlock)
 
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
     stk::io::fill_mesh(filename, *bulk);
 
     std::vector<size_t> entityCounts;

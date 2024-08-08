@@ -31,7 +31,7 @@ private:
 class StkParticleRebalance : public StkRebalance
 {
 public:
-  StkParticleRebalance(stk::unit_test_util::simple_fields::ParticleManager & particleManager,
+  StkParticleRebalance(stk::unit_test_util::ParticleManager & particleManager,
                        stk::mesh::BulkData &stkMeshBulkData,
                        const stk::balance::DoubleFieldType &weightField,
                        const double defaultVertexWeight)
@@ -57,7 +57,7 @@ private:
 
   void set_particle_destination_from_owning_element(stk::balance::DecompositionChangeList & decomp, stk::mesh::Entity owner_element, const int destination) const
   {
-    stk::unit_test_util::simple_fields::ParticleVector & vec = m_particleManager.get_particle_vector(owner_element);
+    stk::unit_test_util::ParticleVector & vec = m_particleManager.get_particle_vector(owner_element);
     for (auto && particlePtr : vec) {
       set_particle_destination(decomp, particlePtr->spherical_element(), destination);
     }
@@ -94,10 +94,10 @@ private:
   StkParticleRebalance(const StkParticleRebalance&) = delete;
   StkParticleRebalance& operator=(const StkParticleRebalance&) = delete;
 
-  stk::unit_test_util::simple_fields::ParticleManager &m_particleManager;
+  stk::unit_test_util::ParticleManager &m_particleManager;
 };
 
-class RebalanceParticleMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class RebalanceParticleMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   RebalanceParticleMesh()
@@ -294,7 +294,7 @@ protected:
   }
 
 protected:
-  stk::unit_test_util::simple_fields::ParticleManager m_particleManager;
+  stk::unit_test_util::ParticleManager m_particleManager;
   stk::balance::DoubleFieldType * m_particleCountField;
   stk::mesh::Part * m_particlePart;
 };
@@ -362,7 +362,7 @@ protected:
 
 int get_num_local_elements_from_cmdline()
 {
-  return stk::unit_test_util::simple_fields::get_command_line_option<int>("-nLocal", 100);
+  return stk::unit_test_util::get_command_line_option<int>("-nLocal", 100);
 }
 
 TEST_F(RebalanceParticleMesh, UnevenParticles2ProcWithAura)

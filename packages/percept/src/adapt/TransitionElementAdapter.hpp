@@ -66,6 +66,12 @@
     public:
       typedef HangingNodeAdapter<RefinePredicate> Base;
 
+      ~TransitionElementAdapter() override {
+        if( m_adaptedMeshVerifier ) {
+          delete m_adaptedMeshVerifier;
+        }
+      }
+
       TransitionElementAdapter(RefinePredicate& predicate_refine,
                                percept::PerceptMesh& eMesh,
                                UniformRefinerPatternBase & bp,

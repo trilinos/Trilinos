@@ -122,7 +122,6 @@ TEST(UnitTestingOfBulkData, node_sharing)
   std::shared_ptr<BulkData> meshPtr = builder.create();
   BulkData& mesh = *meshPtr;
   MetaData& meta_data = mesh.mesh_meta_data();
-  meta_data.use_simple_fields();
   stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
   stk::mesh::Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
@@ -282,8 +281,6 @@ TEST(UnitTestingOfBulkData, sharedProcsIntersection)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk = *bulkPtr;
-  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::fill_mesh("generated:1x1x4", bulk);
 
   stk::mesh::Entity sharedNode9 = bulk.get_entity(stk::topology::NODE_RANK, 9);
@@ -391,7 +388,6 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
   std::shared_ptr<BulkData> meshPtr = builder.create();
   BulkData& mesh = *meshPtr;
   MetaData& meta_data = mesh.mesh_meta_data();
-  meta_data.use_simple_fields();
   stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
   stk::mesh::Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
@@ -621,7 +617,6 @@ TEST(UnitTestBulkData, resolveSharedModifiedFaceNextToUnmodifiedFaces)
   std::shared_ptr<BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk = *bulkPtr;
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
   stk::io::fill_mesh("generated:3x1x2", bulk);
   stk::mesh::Part& block1 = *meta.get_part("block_1");

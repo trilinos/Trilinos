@@ -62,7 +62,7 @@ TEST( CommMeshCounts, Serial )
     if ( numprocs == 1 )
     {
         const std::string generatedMeshSpec = getGeneratedMeshString(10,20,2);
-        stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         std::vector<size_t> comm_mesh_counts;
         stk::mesh::comm_mesh_counts(*stkMesh.getBulkData(), comm_mesh_counts);
@@ -78,7 +78,7 @@ TEST( CommMeshCounts, Parallel )
     int numprocs = stk::parallel_machine_size(communicator);
 
     const std::string generatedMeshSpec = getGeneratedMeshString(10,20,2*numprocs);
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     std::vector<size_t> comm_mesh_counts;
     stk::mesh::comm_mesh_counts(*stkMesh.getBulkData(), comm_mesh_counts);
@@ -93,7 +93,7 @@ TEST( CommMeshCountsWithStats, Parallel )
     int numprocs = stk::parallel_machine_size(communicator);
 
     const std::string generatedMeshSpec = getGeneratedMeshString(10,20,2*numprocs);
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     std::vector<size_t> comm_mesh_counts;
     std::vector<size_t> min_counts;

@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_search_CoarseSearch_hpp
 #define stk_search_CoarseSearch_hpp
@@ -47,6 +47,7 @@
 
 #include <stk_search/SearchMethod.hpp>
 #include <stk_search/CommonSearchUtil.hpp>
+#include <stk_search/HelperTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <vector>
 #include <utility>
@@ -75,7 +76,6 @@ namespace stk::search {
 // potentially swapping the domain and range vectors.  The final results should
 // be independent of this flag.
 //
-//BEGINcoarse_search_impl
 template <typename DomainBoxType, typename DomainIdentProcType, typename RangeBoxType, typename RangeIdentProcType>
 void coarse_search(std::vector<std::pair<DomainBoxType, DomainIdentProcType>> const & domain,
                    std::vector<std::pair<RangeBoxType, RangeIdentProcType>> const & range,
@@ -112,18 +112,20 @@ void coarse_search(std::vector<std::pair<DomainBoxType, DomainIdentProcType>> co
     }
   }
 }
-//ENDcoarse_search_impl
 
-template <typename DomainBoxType, typename DomainIdentProcType, typename RangeBoxType, typename RangeIdentProcType, typename ExecutionSpace>
-void coarse_search(Kokkos::View<BoxIdentProc<DomainBoxType, DomainIdentProcType>*, ExecutionSpace> const & domain,
-                   Kokkos::View<BoxIdentProc<RangeBoxType, RangeIdentProcType>*, ExecutionSpace> const & range,
+template <typename DomainView, typename RangeView, typename ResultView, typename ExecutionSpace = typename DomainView::execution_space>
+void coarse_search(DomainView const & domain,
+                   RangeView const & range,
                    SearchMethod method,
                    stk::ParallelMachine comm,
-                   Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>& intersections,
+                   ResultView& intersections,
                    ExecutionSpace const& execSpace = ExecutionSpace{},
                    bool enforceSearchResultSymmetry = true,
                    bool autoSwapDomainAndRange = true)
 {
+  check_coarse_search_types_parallel<DomainView, RangeView, ResultView, ExecutionSpace>();
+  Kokkos::Profiling::pushRegion("STK coarse search with Views");
+
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
@@ -145,6 +147,8 @@ void coarse_search(Kokkos::View<BoxIdentProc<DomainBoxType, DomainIdentProcType>
       STK_ThrowErrorMsg("Unsupported coarse_search method supplied. Choices are: KDTREE, MORTON_LBVH, or ARBORX.");
     }
   }
+
+  Kokkos::Profiling::popRegion();
 }
 
 } // namespace stk::search

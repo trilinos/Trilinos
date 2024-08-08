@@ -134,6 +134,7 @@ TEST(HostEvaluation, testFunctions)
   EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1/3, 0, 1)"),  0.25);
   EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1/3, 1)"),  0.25);
   EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1/3)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
   EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(1/6, 0, 1)"),  0.25);
   EXPECT_DOUBLE_EQ(evaluate("point2d(1, 0, 1, 1)"),   0.5);
   EXPECT_DOUBLE_EQ(evaluate("point3d(0, -1, 0, 1, 1)"),   0.5);
@@ -162,3 +163,4 @@ TEST(HostEvaluation, testPDFFunctions)
 //-END
 
 } // namespace <unnamed>
+

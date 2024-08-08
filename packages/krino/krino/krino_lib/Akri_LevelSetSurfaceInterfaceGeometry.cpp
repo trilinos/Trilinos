@@ -23,7 +23,7 @@ LevelSetSurfaceInterfaceGeometry::LevelSetSurfaceInterfaceGeometry(const int dim
   for (auto && lsField : myLSFields)
   {
     mySurfaceIdentifiers.push_back(lsField.identifier);
-    myLSSurfaces.emplace_back(std::move(FacetedSurfaceBase::build(dim)));
+    myLSSurfaces.emplace_back(FacetedSurfaceBase::build(dim));
   }
 
   for (size_t i=0; i<mySurfaceIdentifiers.size(); ++i)

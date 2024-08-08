@@ -133,7 +133,7 @@ public:
     m_meta = &(m_mesh->mesh_meta_data());
     std::ostringstream oss;
     oss << "generated:" << num_x << "x" << num_y << "x" << m_mesh->parallel_size() << "|sideset:xXyYzZ";
-    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", oss.str());
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", oss.str());
     stk::io::StkMeshIoBroker exodus_file_reader(communicator);
     exodus_file_reader.set_bulk_data(*m_mesh);
     exodus_file_reader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -700,7 +700,6 @@ TEST(MeshImplUtils, check_for_connected_nodes)
   unsigned spatialDim = 2;
   std::shared_ptr<BulkData> meshPtr = build_mesh(spatialDim, communicator);
   stk::mesh::MetaData& meta = meshPtr->mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::BulkData& mesh = *meshPtr;
   mesh.modification_begin();
@@ -741,7 +740,6 @@ TEST(MeshImplUtils, comm_mesh_very_parallel_consistency_nominal)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::unit_test_util::BulkDataTester mesh(meta, communicator);
   if (mesh.parallel_size() >= 1) {
@@ -831,7 +829,6 @@ TEST( MeshImplUtils, test_create_face_for_sideset)
     return;
   }
   stk::io::StkMeshIoBroker fixture(pm);
-  fixture.use_simple_fields();
 
   fixture.add_mesh_database("generated:1x1x2", stk::io::READ_MESH);
   fixture.create_input_mesh();
@@ -866,7 +863,6 @@ TEST( MeshImplUtils, test_connect_face_to_other_elements)
     return;
   }
   stk::io::StkMeshIoBroker fixture(pm);
-  fixture.use_simple_fields();
 
   fixture.add_mesh_database("generated:1x1x2", stk::io::READ_MESH);
   fixture.create_input_mesh();

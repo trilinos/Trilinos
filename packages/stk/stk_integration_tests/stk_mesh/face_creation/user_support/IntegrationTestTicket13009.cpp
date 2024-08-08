@@ -4,7 +4,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
-class Ticket13009 : public stk::unit_test_util::simple_fields::MeshFixture
+class Ticket13009 : public stk::unit_test_util::MeshFixture
 {
 protected:
   Ticket13009() : MeshFixture(2) {};

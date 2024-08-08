@@ -54,7 +54,6 @@ TEST(StkMeshHowTo, UseStkIO)
   if(stk::parallel_machine_size(communicator) == 1)
   {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
 
     stk::io::StkMeshIoBroker meshReader;
     meshReader.set_bulk_data(*bulkPtr);

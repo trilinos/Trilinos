@@ -53,10 +53,9 @@ namespace stk {
 namespace io {
 namespace util {
 
-  Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
-						, const std::string& gmesh_spec
-						, bool use_64bit_int_IO_api
-						)
+Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
+                                             const std::string& gmesh_spec,
+                                             bool use_64bit_int_IO_api)
   : m_mesh_data(comm)
 {
   if (use_64bit_int_IO_api) {
@@ -68,7 +67,7 @@ namespace util {
 
   auto iossRegion = m_mesh_data.get_input_ioss_region();
   const Iogn::DatabaseIO* database = dynamic_cast<const Iogn::DatabaseIO*>(iossRegion->get_database());
-//  database->set_int_byte_size_api(Ioss::USE_INT64_API);
+  //  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 
   // get face parts names; need to convert these to strings
   const std::vector<std::string> sideset_names = database->get_sideset_names();
@@ -92,7 +91,6 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
                                              bool use_64bit_int_IO_api)
   : m_mesh_data(comm)
 {
-  m_mesh_data.use_simple_fields();
   if (use_64bit_int_IO_api) {
     m_mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
   }

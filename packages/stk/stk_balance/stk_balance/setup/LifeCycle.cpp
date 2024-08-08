@@ -169,7 +169,6 @@ void LifeCycle::rebalance()
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(m_comm).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
 
   meta.set_coordinate_field_name(m_settings.getCoordinateFieldName());

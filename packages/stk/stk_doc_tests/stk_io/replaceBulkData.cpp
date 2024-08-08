@@ -69,7 +69,6 @@ TEST(StkMeshIoBrokerHowTo, replaceBulkData)
     //+ INITIALIZATION:
     //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
     size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -87,7 +86,6 @@ TEST(StkMeshIoBrokerHowTo, replaceBulkData)
     //+ EXAMPLE:
     //+ Read mesh data from the specified file.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
 
     //+ Creates meta data; creates parts

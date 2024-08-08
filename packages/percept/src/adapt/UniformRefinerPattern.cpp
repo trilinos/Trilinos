@@ -715,7 +715,7 @@
             if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
                 << " with topo= " << getToTopoPartName() << std::endl;
             stk::mesh::set_topology(*block_to, stk::mesh::get_topology(shards::CellTopology(getToTopology()), eMesh.get_fem_meta_data()->spatial_dimension()));
-
+            eMesh.get_fem_meta_data()->set_part_id(*block_to, part->id());
             if (!stk::io::is_part_io_part(block_to)) {
               stk::io::put_io_part_attribute(*block_to);
             }

@@ -1,6 +1,7 @@
 #ifndef EXAMPLEMESHES_H_
 #define EXAMPLEMESHES_H_
 
+#include "stk_util/stk_config.h"
 #include <generated/Iogn_DashSurfaceMesh.h>
 #include <vector>
 
@@ -105,18 +106,14 @@ Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes)
 
 namespace simple_fields {
 
-inline void fillDataForUnitCube(std::vector<double> &coordinates) {
-  unitTestUtils::exampleMeshes::fillDataForUnitCube(coordinates);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void fillDataForUnitCube(std::vector<double> &coordinates);
 
-inline void fillDataForRectangloid(std::vector<double> &coordinates) {
-  unitTestUtils::exampleMeshes::fillDataForRectangloid(coordinates);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void fillDataForRectangloid(std::vector<double> &coordinates);
 
-inline
-Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes) {
-  return unitTestUtils::exampleMeshes::createExodusDataForDisconnectedHex8s(numberOfHexes);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes);
 
 } // namespace simple_fields
 

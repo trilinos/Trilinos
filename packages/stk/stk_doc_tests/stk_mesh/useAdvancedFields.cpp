@@ -55,7 +55,6 @@ TEST(stkMeshHowTo, useAdvancedFields)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> DoubleField;

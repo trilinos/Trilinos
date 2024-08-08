@@ -84,7 +84,6 @@ void do_stk_test(bool with_ghosts=false)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk = *bulkPtr;
-  meta.use_simple_fields();
   if (parallel_rank == 0)
   {
       std::cerr << "Mesh: " << oss.str() << std::endl;

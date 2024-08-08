@@ -100,6 +100,7 @@ void check_spring2_on_device()
 
   stk::topology t = stk::topology::SPRING_2;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SPRING_2>::num_nodes;
+  EXPECT_EQ(2u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -206,6 +207,7 @@ void check_spring3_on_device()
 
   stk::topology t = stk::topology::SPRING_3;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SPRING_3>::num_nodes;
+  EXPECT_EQ(3u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {

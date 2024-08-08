@@ -40,7 +40,7 @@
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
-class FaceCreatorFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class FaceCreatorFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
 
@@ -106,7 +106,7 @@ protected:
   {
     unsigned id = get_bulk().parallel_rank()+1;
     stk::topology side_topology = get_bulk().bucket(element).topology().side_topology();
-    stk::mesh::Entity side = stk::unit_test_util::simple_fields::declare_element_side_with_nodes(get_bulk(), element, nodes_of_face, id, get_meta().get_topology_root_part(side_topology));
+    stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(get_bulk(), element, nodes_of_face, id, get_meta().get_topology_root_part(side_topology));
     EXPECT_TRUE(get_bulk().is_valid(side));
   }
 

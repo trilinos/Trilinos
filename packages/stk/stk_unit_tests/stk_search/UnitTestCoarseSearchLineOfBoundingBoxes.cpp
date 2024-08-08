@@ -69,13 +69,13 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
     switch(axis)
     {
     case xDim:
-      boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
+      boxVector1.push_back(stk::unit_test_util::generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
       break;
     case yDim:
-      boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
+      boxVector1.push_back(stk::unit_test_util::generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
       break;
     case zDim:
-      boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
+      boxVector1.push_back(stk::unit_test_util::generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
       break;
     }
   }
@@ -83,13 +83,13 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
     switch(axis)
     {
     case xDim:
-      boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
+      boxVector2.push_back(stk::unit_test_util::generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
       break;
     case yDim:
-      boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
+      boxVector2.push_back(stk::unit_test_util::generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
       break;
     case zDim:
-      boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
+      boxVector2.push_back(stk::unit_test_util::generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
       break;
     }
   }
@@ -137,13 +137,13 @@ void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum 
         switch(axis) 
         {
         case xDim:
-          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(paramCoord, 0, 0, radius, 1, procId);
+          domain[0] = stk::unit_test_util::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(paramCoord, 0, 0, radius, 1, procId);
           break;
         case yDim:
-          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, paramCoord, 0, radius, 1, procId);
+          domain[0] = stk::unit_test_util::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, paramCoord, 0, radius, 1, procId);
           break;
         case zDim:
-          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, 0, paramCoord, radius, 1, procId);
+          domain[0] = stk::unit_test_util::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, 0, paramCoord, radius, 1, procId);
           break;
         }
       });
@@ -155,13 +155,13 @@ void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum 
         switch(axis) 
         {
         case xDim:
-          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(paramCoord, 0, 0, radius, 1, procId);
+          range[0] = stk::unit_test_util::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(paramCoord, 0, 0, radius, 1, procId);
           break;
         case yDim:
-          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, paramCoord, 0, radius, 1, procId);
+          range[0] = stk::unit_test_util::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, paramCoord, 0, radius, 1, procId);
           break;
         case zDim:
-          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, 0, paramCoord, radius, 1, procId);
+          range[0] = stk::unit_test_util::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, 0, paramCoord, radius, 1, procId);
           break;
         }
       });

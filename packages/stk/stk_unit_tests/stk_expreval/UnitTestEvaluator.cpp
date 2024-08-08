@@ -1165,6 +1165,7 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isValidFunction("random(1)"));
   EXPECT_TRUE(isValidFunction("random(time())"));
   EXPECT_TRUE(isValidFunction("cosine_ramp(x,y)"));
+  EXPECT_TRUE(isValidFunction("linear_ramp(x,y,z)"));
   EXPECT_TRUE(isValidFunction("sign(x)"));
   EXPECT_TRUE(isValidFunction("weibull_pdf(x, alpha, beta)"));
   EXPECT_TRUE(isValidFunction("normal_pdf(x, alpha, beta)"));
@@ -2827,6 +2828,17 @@ TEST(UnitTestEvaluator, testFunction_cosine_ramp3)
   EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1.5, 0, 1)"),  1);
 }
 
+TEST(UnitTestEvaluator, testFunction_linear_ramp3)
+{
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(3/4, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1.5, 0, 1)"),  1);
+}
+
 TEST(UnitTestEvaluator, Ngp_testFunction_cosine_ramp3)
 {
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(-0.5, 0, 1)"), 0);
@@ -2836,6 +2848,17 @@ TEST(UnitTestEvaluator, Ngp_testFunction_cosine_ramp3)
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(2/3, 0, 1)"),  0.75);
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(1, 0, 1)"),    1);
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(1.5, 0, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_linear_ramp3)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(3/4, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1.5, 0, 1)"),  1);
 }
 
 TEST(UnitTestEvaluator, testFunction_cosine_ramp2)

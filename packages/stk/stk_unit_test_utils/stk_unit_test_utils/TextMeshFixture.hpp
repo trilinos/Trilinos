@@ -62,6 +62,7 @@ namespace stk
 {
 namespace unit_test_util
 {
+
 class TextMeshFixture : public stk::unit_test_util::MeshFixture
 {
  protected:
@@ -155,7 +156,8 @@ class TextMeshFixture : public stk::unit_test_util::MeshFixture
 
 namespace simple_fields {
 
-class TextMeshFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+TextMeshFixture : public stk::unit_test_util::MeshFixture
 {
  protected:
   TextMeshFixture(unsigned spatialDim);
@@ -243,7 +245,7 @@ class TextMeshFixture : public stk::unit_test_util::simple_fields::MeshFixture
     const std::vector<double>& goldCoordinates;
   };
 
-  StkTopologyMapping m_topologyMapping;
+  stk::unit_test_util::StkTopologyMapping m_topologyMapping;
 };
 
 } // namespace simple_fields

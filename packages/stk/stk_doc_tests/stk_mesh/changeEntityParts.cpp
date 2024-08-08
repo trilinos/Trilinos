@@ -70,7 +70,6 @@ TEST(StkMeshHowTo, changeEntityPartsUsingSelector)
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
 
   unsigned elementCount = 10;
   stk::io::fill_mesh("generated:1x1x" + std::to_string(elementCount), *bulkPtr);

@@ -55,7 +55,7 @@ stk::mesh::EntityVector get_faces_for_entity(const stk::mesh::BulkData &bulk, co
   return entityFaces;
 }
 
-class HexMesh : public stk::unit_test_util::simple_fields::MeshTestFixture
+class HexMesh : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   HexMesh()
@@ -69,7 +69,7 @@ protected:
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
         0,2,HEX_8,2,9,10,3,6,11,12,7";
-        stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -137,7 +137,7 @@ TEST_F(HexMesh, DeleteOnProcOneWithSharedNodes_NoAura)
   run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-class TetMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class TetMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   TetMesh()
@@ -157,7 +157,7 @@ protected:
       meshDesc =  "0,1,TET_4,1,2,3,4\n\
           1,2,TET_4,2,5,3,4";
     }
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 
@@ -360,7 +360,7 @@ TEST_F(TetMesh, DeleteGhostedElement)
   }
 }
 
-class BeamMesh : public stk::unit_test_util::simple_fields::MeshTestFixture
+class BeamMesh : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   BeamMesh()
@@ -374,7 +374,7 @@ protected:
     std::string meshDesc =
         "0,1,BEAM_2,1,2\n\
         0,2,BEAM_2,2,3";
-        stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -402,7 +402,7 @@ TEST_F(BeamMesh, DeleteOneElement)
   run_test_on_num_procs(1, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-class QuadMesh : public stk::unit_test_util::simple_fields::MeshTestFixture
+class QuadMesh : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   QuadMesh()
@@ -416,7 +416,7 @@ protected:
     std::string meshDesc =
         "0,1,QUAD_4_2D,1,2,3,4\n\
         1,2,QUAD_4_2D,2,5,6,3";
-        stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -469,7 +469,7 @@ TEST_F(QuadMesh, DeleteProcBoundaryElementWithAura)
   run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
 }
 
-class HexShellHex : public stk::unit_test_util::simple_fields::MeshFixture
+class HexShellHex : public stk::unit_test_util::MeshFixture
 {
 public:
   void make_hex_shell_hex_mesh()

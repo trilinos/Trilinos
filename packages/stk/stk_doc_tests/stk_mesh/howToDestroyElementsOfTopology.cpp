@@ -12,7 +12,6 @@ TEST(StkMeshHowTo, DestroyElementsOfTopology)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::io::fill_mesh("generated:1x1x4", *bulkPtr);
 

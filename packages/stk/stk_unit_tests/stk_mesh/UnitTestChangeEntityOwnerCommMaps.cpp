@@ -62,8 +62,8 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { namespace fixtures { namespace simple_fields { class BoxFixture; } } } }
-namespace stk { namespace mesh { namespace fixtures { namespace simple_fields { class RingFixture; } } } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
+namespace stk { namespace mesh { namespace fixtures { class RingFixture; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
 
 namespace stk
@@ -86,8 +86,8 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::simple_fields::RingFixture;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
 
 namespace
 {
@@ -106,7 +106,6 @@ public:
       m_auraCommMapElementFieldName("ElementCommInfo"),
       m_auraCommMapElementField(NULL)
   {
-    m_stkMeshMetaData.use_simple_fields();
   }
 
   ~FieldMgr() {}
@@ -184,7 +183,6 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
     std::string exodusFileName = "generated:1x1x6";
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
 
     stk::io::StkMeshIoBroker exodusFileReader(comm);

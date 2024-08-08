@@ -82,5 +82,5 @@ INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/stk_mesh_fixtures)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_mesh_fixtures DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_mesh_fixtures EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

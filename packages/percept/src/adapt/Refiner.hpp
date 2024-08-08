@@ -168,7 +168,7 @@
       void setRefinerSelector(RefinerSelector *sel) { m_refinerSelector = sel; }
       RefinerSelector *getRefinerSelector() { return m_refinerSelector; }
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
       void set_rbar_special_treatment(BlockNamesType& rbar_names) { m_rbar_names = rbar_names; }
 #endif
 
@@ -466,6 +466,8 @@
       void
       add_children_to_parts();
 
+      std::string get_parent_element_topology(const std::string& surfaceName);
+
     protected:
       percept::PerceptMesh& m_eMesh;
 
@@ -496,7 +498,7 @@
       SidePartMap m_side_part_map;
       bool m_fixAllBlockBoundaries;
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
       BlockNamesType m_rbar_names;
 #endif
       bool m_needsRemesh;

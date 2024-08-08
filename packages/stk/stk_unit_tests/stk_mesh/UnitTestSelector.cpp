@@ -60,7 +60,7 @@ namespace stk { namespace mesh { class Bucket; } }
 
 namespace {
 
-using stk::mesh::fixtures::simple_fields::SelectorFixture;
+using stk::mesh::fixtures::SelectorFixture;
 
 void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
 
@@ -182,7 +182,6 @@ TEST(Verify, selectorEmptyDuringMeshMod)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk = *bulkPtr;
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Part& block1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   meta.commit();
 
@@ -794,7 +793,6 @@ std::shared_ptr<stk::mesh::BulkData> create_mesh(stk::ParallelMachine comm,
   stk::mesh::MeshBuilder builder(comm);
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 

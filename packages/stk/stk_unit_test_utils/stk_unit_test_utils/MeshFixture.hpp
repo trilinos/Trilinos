@@ -55,36 +55,36 @@ protected:
     MeshFixtureNoTest()
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(3),
-      m_entityRankNames(),
-      metaData(nullptr), bulkData()
+      m_entityRankNames()
     {
     }
 
     MeshFixtureNoTest(unsigned spatial_dim)
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(spatial_dim),
-      m_entityRankNames(),
-      metaData(nullptr), bulkData()
+      m_entityRankNames()
     {
     }
 
     MeshFixtureNoTest(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(spatial_dim),
-      m_entityRankNames(entityRankNames),
-      metaData(nullptr), bulkData()
+      m_entityRankNames(entityRankNames)
     {
     }
 
-    MeshFixtureNoTest(
-        unsigned spatial_dim, stk::mesh::BulkData::AutomaticAuraOption auraOption, MPI_Comm comm = MPI_COMM_WORLD)
-        : communicator(comm), m_spatialDim(spatial_dim), m_entityRankNames(), metaData(nullptr), bulkData()
+    MeshFixtureNoTest(unsigned spatial_dim, stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                      MPI_Comm comm = MPI_COMM_WORLD)
+      : communicator(comm),
+        m_spatialDim(spatial_dim),
+        m_entityRankNames()
     {
       setup_empty_mesh(auraOption);
     }
 
     virtual ~MeshFixtureNoTest()
     {
+
     }
 
     void set_spatial_dimension(unsigned spatialDim)
@@ -125,7 +125,7 @@ protected:
     void reset_mesh()
     {
         bulkData.reset();
-        metaData = nullptr;
+        metaData.reset();
     }
 
     int get_parallel_rank() const
@@ -161,22 +161,51 @@ protected:
         builder.set_initial_bucket_capacity(initialBucketCapacity);
         builder.set_maximum_bucket_capacity(maximumBucketCapacity);
 
-        bulkData = builder.create();
-        metaData = &(bulkData->mesh_meta_data());
+        if(nullptr == metaData) {
+          metaData = builder.create_meta_data();
+        }
+
+        if(nullptr == bulkData) {
+          bulkData = builder.create(metaData);
+          m_auraOption = auraOption;
+          m_initialBucketCapacity = initialBucketCapacity;
+          m_maximumBucketCapacity = maximumBucketCapacity;
+        }
+
+        STK_ThrowRequireMsg((auraOption == m_auraOption) &&
+                            (initialBucketCapacity == m_initialBucketCapacity) &&
+                            (maximumBucketCapacity == m_maximumBucketCapacity),
+           "allocate_bulk() being called with different arguments from previous call:\n"
+           "    auraOption = " << auraOption << " (previously: " << m_auraOption << ")\n"
+           "    initialBucketCapacity = " << initialBucketCapacity << " (previously: " << m_initialBucketCapacity << ")\n"
+           "    maximumBucketCapacity = " << maximumBucketCapacity << " (previously: " << m_maximumBucketCapacity << ")");
+    }
+
+    void set_meta(std::shared_ptr<stk::mesh::MetaData> inMetaData)
+    {
+        STK_ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
+        metaData = inMetaData;
     }
 
     void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
     {
         STK_ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
+
+        STK_ThrowRequireMsg(metaData==nullptr || metaData==bulkData->mesh_meta_data_ptr(),
+                        "Unit test error. Trying to reset non NULL meta data.");
     }
 
 protected:
     MPI_Comm communicator;
     unsigned m_spatialDim;
     std::vector<std::string> m_entityRankNames;
-    stk::mesh::MetaData *metaData = nullptr;
+    std::shared_ptr<stk::mesh::MetaData> metaData;
     std::shared_ptr<stk::mesh::BulkData> bulkData;
+
+    stk::mesh::BulkData::AutomaticAuraOption m_auraOption{stk::mesh::BulkData::AUTO_AURA};
+    unsigned m_initialBucketCapacity = 0;
+    unsigned m_maximumBucketCapacity = 0;
 };
 
 class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
@@ -231,7 +260,8 @@ inline void delete_mesh(const std::string & baseFileName)
 
 namespace simple_fields {
 
-class MeshFixtureNoTest
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+MeshFixtureNoTest
 {
 protected:
     MeshFixtureNoTest()
@@ -296,7 +326,7 @@ protected:
                                        unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
         allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
-        stk::unit_test_util::simple_fields::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
+        stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 
     MPI_Comm get_comm() const
@@ -345,7 +375,6 @@ protected:
 
         if(nullptr == metaData) {
           metaData = builder.create_meta_data();
-          metaData->use_simple_fields();
         }
 
         if(nullptr == bulkData) {
@@ -391,7 +420,8 @@ protected:
     unsigned m_maximumBucketCapacity = 0;
 };
 
-class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
  protected:
   MeshFixture(){}
   MeshFixture(unsigned spatial_dim) : MeshFixtureNoTest(spatial_dim) {}
@@ -400,12 +430,14 @@ class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
 
 };
 
-class MeshFixture2D : public MeshFixtureNoTest, public ::ngp_testing::Test {
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+MeshFixture2D : public MeshFixtureNoTest, public ::ngp_testing::Test {
  protected:
   MeshFixture2D() : MeshFixtureNoTest(2) {}
 };
 
-class MeshTestFixture : public MeshFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+MeshTestFixture : public MeshFixture
 {
 protected:
     void run_test_on_num_procs(int numProcs, stk::mesh::BulkData::AutomaticAuraOption auraOption)

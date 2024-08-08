@@ -25,6 +25,8 @@ public:
     stk::mesh::BulkData & get_mesh() { return mMesh; }
     const stk::mesh::BulkData & get_mesh() const { return mMesh; }
     stk::ParallelMachine get_comm() const { return mComm; }
+    int parallel_size() const { return stk::parallel_machine_size(mComm); }
+    int parallel_rank() const { return stk::parallel_machine_rank(mComm); }
     AuxMetaData & get_aux_meta() { return mBuilder.get_aux_meta(); }
     const AuxMetaData & get_aux_meta() const { return mBuilder.get_aux_meta(); }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mBuilder.get_assigned_node_global_ids(); }
@@ -45,7 +47,6 @@ public:
     void build_mesh(const std::vector<stk::math::Vec<double,NUM_DIM>> &nodeLocs,
                     const std::vector<std::vector<std::array<unsigned,NPE>>> &elemConnPerProc)
     {
-      mMesh.mesh_meta_data().use_simple_fields();
       mBuilder.build_mesh(nodeLocs, elemConnPerProc, theBlockId);
     }
 
@@ -54,7 +55,6 @@ public:
                     const std::vector<unsigned> &elementBlockIDs,
                     const std::vector<int> &specifiedElementProcOwners = {})
     {
-      mMesh.mesh_meta_data().use_simple_fields();
       mBuilder.build_mesh(nodeLocs, elementConn, elementBlockIDs, specifiedElementProcOwners);
     }
 
@@ -74,10 +74,18 @@ protected:
 template<stk::topology::topology_t TOPO>
 class StkMeshFixture : public ::testing::Test, public StkMeshAndBuilder<TOPO>
 {
+public:
+  void set_valid_proc_sizes_for_test(const std::vector<int> & procSizes) { mTestProcSizes = procSizes; }
+  bool is_valid_proc_size_for_test() const { STK_ThrowRequireMsg(!mTestProcSizes.empty(), "Valid proc sizes not set for test."); return std::find(mTestProcSizes.begin(), mTestProcSizes.end(), this->parallel_size()) != mTestProcSizes.end(); }
+protected:
+    std::vector<int> mTestProcSizes;
 };
 
+typedef StkMeshFixture<stk::topology::BEAM_2> StkMeshBeamFixture;
 typedef StkMeshFixture<stk::topology::TETRAHEDRON_4> StkMeshTetFixture;
 typedef StkMeshFixture<stk::topology::TRIANGLE_3_2D> StkMeshTriFixture;
+typedef StkMeshFixture<stk::topology::QUADRILATERAL_4_2D> StkMeshQuadFixture;
+typedef StkMeshFixture<stk::topology::HEXAHEDRON_8> StkMeshHexFixture;
 typedef StkMeshAndBuilder<stk::topology::TETRAHEDRON_4> StkTetMeshAndBuilder;
 typedef StkMeshAndBuilder<stk::topology::TRIANGLE_3_2D> StkTriMeshAndBuilder;
 

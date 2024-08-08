@@ -74,4 +74,12 @@ String_Function_Expression::evaluate(const stk::math::Vector3d &coord) const
   return myEvaluator.evaluate();
 }
 
+void initialize_expression_vector(const std::vector<std::string> & stringVec, std::vector<String_Function_Expression> & exprVec)
+{
+  exprVec.clear();
+  exprVec.reserve(stringVec.size());
+  for (auto & component : stringVec)
+    exprVec.emplace_back(component);
+}
+
 }

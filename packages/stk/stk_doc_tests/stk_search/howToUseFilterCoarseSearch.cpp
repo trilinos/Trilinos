@@ -53,7 +53,6 @@ TEST(StkSearchHowTo, useFilterCoarseSearch)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::fill_mesh(meshSpec, *mesh);
 
   // Point in element 1

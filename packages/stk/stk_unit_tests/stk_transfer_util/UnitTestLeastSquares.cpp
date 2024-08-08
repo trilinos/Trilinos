@@ -75,14 +75,14 @@
 
 namespace {
 
-class LeastSquaresTester : public stk::unit_test_util::simple_fields::MeshFixtureNoTest, public ::testing::Test {
+class LeastSquaresTester : public stk::unit_test_util::MeshFixtureNoTest, public ::testing::Test {
  public:
   LeastSquaresTester()
-    : stk::unit_test_util::simple_fields::MeshFixtureNoTest(3)
+    : stk::unit_test_util::MeshFixtureNoTest(3)
   {
-    m_scaleFactorX = stk::unit_test_util::simple_fields::get_command_line_option("-sx", 1.0);
-    m_scaleFactorY = stk::unit_test_util::simple_fields::get_command_line_option("-sy", 1.0);
-    m_stretchFactorZ = stk::unit_test_util::simple_fields::get_command_line_option("-sz", 1.0);
+    m_scaleFactorX = stk::unit_test_util::get_command_line_option("-sx", 1.0);
+    m_scaleFactorY = stk::unit_test_util::get_command_line_option("-sy", 1.0);
+    m_stretchFactorZ = stk::unit_test_util::get_command_line_option("-sz", 1.0);
 
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   }
@@ -140,9 +140,9 @@ class LeastSquaresTester : public stk::unit_test_util::simple_fields::MeshFixtur
 
   void generate_stretched_mesh(stk::mesh::BulkData& bulk, unsigned numElemPerDim)
   {
-    double scaleFactorX = stk::unit_test_util::simple_fields::get_command_line_option("-sx", 1.0);
-    double scaleFactorY = stk::unit_test_util::simple_fields::get_command_line_option("-sy", 1.0);
-    double stretchFactorZ = stk::unit_test_util::simple_fields::get_command_line_option("-sz", 1.0);
+    double scaleFactorX = stk::unit_test_util::get_command_line_option("-sx", 1.0);
+    double scaleFactorY = stk::unit_test_util::get_command_line_option("-sy", 1.0);
+    double stretchFactorZ = stk::unit_test_util::get_command_line_option("-sz", 1.0);
 
     ASSERT_TRUE(scaleFactorX >= 0.0);
     ASSERT_TRUE(scaleFactorY >= 0.0);

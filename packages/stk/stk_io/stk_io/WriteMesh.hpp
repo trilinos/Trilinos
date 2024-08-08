@@ -38,6 +38,7 @@
 // clang-format off
 #include <stk_io/DatabasePurpose.hpp>  // for WRITE_RESULTS, DatabasePurpose
 #include <string>                      // for string
+#include <vector>
 namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }
@@ -75,8 +76,18 @@ void write_mesh_with_fields(const std::string& filename,
                             int step=0, double time=0.0,
                             stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 
+void write_mesh_with_specified_fields(const std::string& filename, stk::mesh::BulkData &bulkData,
+							const std::vector<std::string>& fieldNames,
+							int step, double time, stk::io::DatabasePurpose databasePurpose);
+
 void write_mesh_with_fields(const std::string& filename,
                             StkMeshIoBroker &broker,
+                            int step=0, double time=0.0,
+                            stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
+
+void write_mesh_with_specified_fields(const std::string& filename,
+                            StkMeshIoBroker &broker,
+							const std::vector<std::string>& fieldNames,
                             int step=0, double time=0.0,
                             stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 

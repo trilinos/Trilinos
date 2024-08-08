@@ -34,6 +34,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Relation.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
@@ -44,6 +45,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshCommImplUtils.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/check_comm_list.hpp>
 #include <stk_mesh/base/DumpMeshInfo.hpp>
 
 #include <vector>
@@ -719,6 +721,70 @@ bool unpack_not_owned_verify(const BulkData& mesh,
   }
 
   return result ;
+}
+
+bool verify_parallel_attributes(const BulkData& mesh,
+                                const EntityCommDatabase& commDB,
+                                const EntityCommListInfoVector& commList,
+                                const std::function<PairIterEntityComm(Entity)>& getEntityComm,
+                                std::ostream & error_log )
+{
+  bool result = true ;
+
+  const EntityRank entityRankEnd = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+
+  for ( EntityRank rank = stk::topology::NODE_RANK ; rank < entityRankEnd ; ++rank ) {
+    const BucketVector & all_buckets = mesh.buckets(rank);
+
+    for(const Bucket* bucketptr : all_buckets)
+    {    
+      result = result && impl::verify_parallel_attributes_for_bucket(*bucketptr,
+                               getEntityComm, error_log);
+    }
+  }
+
+  bool isGloballyConsistentCommList = impl::is_comm_list_globally_consistent(mesh, commDB, commList, error_log);
+  result = result && isGloballyConsistentCommList;
+
+  return result ;
+}
+
+bool comm_mesh_verify_parallel_consistency(const BulkData& mesh,
+                                           const EntityCommDatabase& commDB,
+                                           const EntityCommListInfoVector& commList,
+                                           const std::function<PairIterEntityComm(Entity)>& getEntityComm,
+                                           std::ostream & error_log )
+{
+  int verified_ok = 1 ;
+
+  // Verify consistency of parallel attributes
+
+  verified_ok = verify_parallel_attributes(mesh, commDB, commList, getEntityComm, error_log );
+  if (mesh.parallel_size() > 1) {
+    all_reduce( mesh.parallel() , ReduceMin<1>( & verified_ok ) );
+  }
+
+  // Verify entities against owner.
+
+  if ( verified_ok ) {
+    CommSparse comm( mesh.parallel() );
+
+    impl::pack_owned_verify(mesh, commDB, commList, comm);
+
+    comm.allocate_buffers();
+
+    impl::pack_owned_verify(mesh, commDB, commList, comm);
+
+    comm.communicate();
+
+    verified_ok = impl::unpack_not_owned_verify(mesh, commList, getEntityComm, comm , error_log );
+
+    if (mesh.parallel_size() > 1) {
+      all_reduce( mesh.parallel() , ReduceMin<1>( & verified_ok ) );
+    }      
+  }
+
+  return verified_ok == 1 ;
 }
 
 void check_matching_parts_count(unsigned partsCount, int rank, int commSize, MPI_Comm comm)

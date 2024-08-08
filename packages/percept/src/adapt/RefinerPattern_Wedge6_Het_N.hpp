@@ -147,7 +147,7 @@ namespace percept {
             }
         }
 
-      unsigned num_faces_marked = 0;
+      //unsigned num_faces_marked = 0;
       unsigned face_marks[DiscretizeWedge::nfaces] = {0,0,0,0,0};
       stk::mesh::EntityRank rank = m_eMesh.face_rank();
 
@@ -158,7 +158,7 @@ namespace percept {
               if (new_sub_entity_nodes[rank][iface].size())
                 {
                   face_marks[iface] = 1;
-                  ++num_faces_marked;
+                  //++num_faces_marked;
                 }
             }
         }
@@ -1001,17 +1001,17 @@ namespace percept {
               ++num_edges_marked;
             }
         }
-      unsigned num_faces_marked = 0;
-      stk::mesh::EntityRank rank = m_eMesh.face_rank();
+      //unsigned num_faces_marked = 0;
+      //stk::mesh::EntityRank rank = m_eMesh.face_rank();
 
-      for (int iface = 0; iface < 6; iface++)
-        {
-          if ( new_sub_entity_nodes[rank].size() )
-            {
-              if (new_sub_entity_nodes[rank][iface].size())
-                ++num_faces_marked;
-            }
-        }
+      //for (int iface = 0; iface < 6; iface++)
+      //  {
+      //    if ( new_sub_entity_nodes[rank].size() )
+      //      {
+      //        if (new_sub_entity_nodes[rank][iface].size())
+      //          ++num_faces_marked;
+      //      }
+      //  }
 
       if ( num_edges_marked == 9 )
         //if ( num_edges_marked == 9 && num_faces_marked == 5)

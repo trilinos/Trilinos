@@ -29,7 +29,7 @@ int get_other_proc(MPI_Comm comm)
 
 // void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto)
 
-class CoincidentElements: public stk::unit_test_util::simple_fields::MeshTestFixture
+class CoincidentElements: public stk::unit_test_util::MeshTestFixture
 {
 protected:
   void make_coincident_element_mesh(unsigned numElemsToCreate, const stk::mesh::EntityIdVector &nodes, stk::mesh::Part &part)

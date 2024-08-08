@@ -183,7 +183,6 @@ TEST(StkTransferHowTo, useNodeLinearLeastSquaresInterpolation)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Field<double> &transferField = meta.declare_field<double>(stk::topology::NODE_RANK, "transfer_field", 1);
   stk::mesh::put_field_on_mesh(transferField, meta.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *mesh);
@@ -238,7 +237,6 @@ TEST(StkTransferHowTo, useElementCentroidLinearLeastSquaresInterpolation)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Field<double> &transferField = meta.declare_field<double>(stk::topology::ELEM_RANK, "transfer_field", 1);
   stk::mesh::put_field_on_mesh(transferField, meta.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *mesh);
@@ -292,7 +290,6 @@ TEST(StkTransferHowTo, useElementCentroidLinearMovingLeastSquaresInterpolation)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Field<double> &transferField = meta.declare_field<double>(stk::topology::ELEM_RANK, "transfer_field", 1);
   stk::mesh::put_field_on_mesh(transferField, meta.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *mesh);
@@ -348,7 +345,6 @@ TEST(StkTransferHowTo, useElementCentroidQuadraticLeastSquaresInterpolation)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Field<double> &transferField = meta.declare_field<double>(stk::topology::ELEM_RANK, "transfer_field", 1);
   stk::mesh::put_field_on_mesh(transferField, meta.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *mesh);
@@ -401,7 +397,6 @@ TEST(StkTransferHowTo, useElementCentroidCubicLeastSquaresInterpolation)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Field<double> &transferField = meta.declare_field<double>(stk::topology::ELEM_RANK, "transfer_field", 1);
   stk::mesh::put_field_on_mesh(transferField, meta.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *mesh);

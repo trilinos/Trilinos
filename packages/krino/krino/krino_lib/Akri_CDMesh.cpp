@@ -1482,8 +1482,6 @@ CDMesh::find_prolongation_node(const SubElementNode & targetNode) const
 
   const std::vector<unsigned> requiredFields = targetNode.prolongation_node_fields(*this);
 
-  STK_ThrowRequire(need_facets_for_prolongation());
-
   const ProlongationFacet * nearestProlongFacet = nullptr;
   FacetDistanceQuery<Facet> nearestFacetQuery;
 

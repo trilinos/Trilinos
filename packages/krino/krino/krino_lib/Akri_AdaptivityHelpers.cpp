@@ -63,7 +63,7 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
 
   const auto & aux_meta = AuxMetaData::get(mesh.mesh_meta_data());
 
-  const FieldRef elem_marker = refinement.get_marker_field();
+  const FieldRef elem_marker = refinement.get_marker_field_and_sync_to_host();
 
   const stk::mesh::Selector active_selector = aux_meta.active_part();
   const stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();

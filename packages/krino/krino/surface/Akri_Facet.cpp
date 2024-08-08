@@ -115,7 +115,6 @@ stk::math::Vector3d FacetWithVelocity3d::velocity_at_closest_point( const stk::m
   stk::math::Vector3d closestPt;
   stk::math::Vector2d paramAtClosestPt;
   closest_point(queryPt, closestPt, paramAtClosestPt);
-  return myVelocity[0] * (1.-paramAtClosestPt[0]) + myVelocity[1] * paramAtClosestPt[0];
   return (1.0-paramAtClosestPt[0]-paramAtClosestPt[1]) * myVelocity[0] + paramAtClosestPt[0] * myVelocity[1] + paramAtClosestPt[1] * myVelocity[2];
 }
 

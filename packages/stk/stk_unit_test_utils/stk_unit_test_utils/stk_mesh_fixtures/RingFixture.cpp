@@ -67,6 +67,7 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
     m_element_ids(),
     m_beam_2_part( m_meta_data.declare_part_with_topology("beam_2_part", stk::topology::BEAM_2 ) )
 {
+
   if ( use_element_parts ) {
     m_element_parts.resize( num_element_per_proc );
     for ( unsigned i = 0 ; i < num_element_per_proc ; ++i ) {
@@ -196,7 +197,6 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
     m_element_ids(),
     m_beam_2_part( m_meta_data.declare_part_with_topology("beam_2_part", stk::topology::BEAM_2 ) )
 {
-  m_meta_data.use_simple_fields();
 
   if ( use_element_parts ) {
     m_element_parts.resize( num_element_per_proc );
@@ -253,8 +253,8 @@ void RingFixture::generate_mesh( )
       Entity e_element   = m_bulk_data.declare_element(m_element_ids[i], add_parts);
       m_bulk_data.declare_relation( e_element , e_node_0 , 0 );
       m_bulk_data.declare_relation( e_element , e_node_1 , 1 );
-      DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, m_node_ids[n0], e_node_0);
-      DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, m_node_ids[n1], e_node_1);
+      stk::mesh::fixtures::DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, m_node_ids[n0], e_node_0);
+      stk::mesh::fixtures::DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, m_node_ids[n1], e_node_1);
     }
   }
 }
@@ -283,8 +283,8 @@ void RingFixture::fill_node_map(int p_rank)
         add_parts[1] = m_element_parts[ i % m_element_parts.size() ];
       }
 
-      AddToNodeProcsMMap(m_nodes_to_procs, m_node_ids[n0] , p_rank);
-      AddToNodeProcsMMap(m_nodes_to_procs, m_node_ids[n1] , p_rank);
+      stk::mesh::fixtures::AddToNodeProcsMMap(m_nodes_to_procs, m_node_ids[n0] , p_rank);
+      stk::mesh::fixtures::AddToNodeProcsMMap(m_nodes_to_procs, m_node_ids[n1] , p_rank);
     }
   }
 }

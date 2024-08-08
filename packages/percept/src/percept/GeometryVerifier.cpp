@@ -37,7 +37,7 @@
 
 #include "GeometryVerifier.hpp"
 #include <percept/mesh/geometry/volume/VolumeUtil.hpp>
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
 #include <percept/mesh/geometry/volume/sierra_only/FiniteVolumeMesh.hpp>
 #endif
 
@@ -437,7 +437,7 @@ using namespace Intrepid;
                       jacobian_det(iCell, 0) = Jac;
                       //std::cout << "Jac= " << Jac << " vol= " << volume(iCell) << std::endl;
                     }
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
                   if (m_use_finite_volume)
                     {
                       FiniteVolumeMesh3D fvm(*eMesh.get_bulk_data());

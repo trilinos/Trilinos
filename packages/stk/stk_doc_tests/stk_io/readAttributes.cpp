@@ -52,7 +52,7 @@
 
 namespace {
 
-class ExodusFileWithAttributes : public stk::unit_test_util::simple_fields::MeshFixture { };
+class ExodusFileWithAttributes : public stk::unit_test_util::MeshFixture { };
 
 stk::mesh::FieldVector get_attribute_fields_for_part(const stk::mesh::MetaData &meta, const stk::mesh::Part *ioPart)
 {
@@ -115,7 +115,6 @@ TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute)
   allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
 
   stk::io::StkMeshIoBroker stkIo;
-  stkIo.use_simple_fields();
   stkIo.set_bulk_data(get_bulk());
   stkIo.add_mesh_database("hex_spider.exo", stk::io::READ_MESH);
   stkIo.create_input_mesh();

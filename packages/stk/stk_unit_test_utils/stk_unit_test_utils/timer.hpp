@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STK_PERFORMANCE_TIMER_HPP
 #define STK_PERFORMANCE_TIMER_HPP
@@ -100,7 +100,7 @@ public:
       minBatchTime(std::numeric_limits<double>::max()),
       batchBaselineHwm(0),
       batchBaselineGpuUsage(0),
-      maxBatchHwm(1)
+      minBatchHwm(std::numeric_limits<size_t>::max())
   { }
 
   void initialize_batch_timer()
@@ -131,13 +131,13 @@ public:
     }
     size_t batchCpuMemUsage = stk::get_max_hwm_across_procs(communicator) - batchBaselineHwm;
     size_t batchHwm = batchGpuMemUsage + batchCpuMemUsage;
-    maxBatchHwm = std::max(maxBatchHwm, batchHwm); 
+    minBatchHwm = std::min(minBatchHwm, batchHwm);
 
   }
 
   void print_batch_timing(unsigned iterationCount, size_t userProvidedHwm = 0)
   {
-    size_t hwmToPrint = userProvidedHwm > 0 ? userProvidedHwm : maxBatchHwm;
+    size_t hwmToPrint = userProvidedHwm > 0 ? userProvidedHwm : minBatchHwm;
     stk::print_stats_for_performance_compare(std::cout, minBatchTime, hwmToPrint, iterationCount, communicator);
   }
 
@@ -160,7 +160,7 @@ private:
   double minBatchTime;
   size_t batchBaselineHwm;
   size_t batchBaselineGpuUsage;
-  size_t maxBatchHwm;
+  size_t minBatchHwm;
   std::vector<double> batchBaselineMemBuffer;
 };
 

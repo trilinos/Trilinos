@@ -186,7 +186,6 @@ inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
   size_t index = stkIo.add_mesh_database(resultsFilename, stk::io::READ_RESTART);
   stkIo.set_active_mesh(index);
   stkIo.create_input_mesh();

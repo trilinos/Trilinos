@@ -8,7 +8,7 @@
 namespace
 {
 
-class BulkDataIdMapperTest : public stk::unit_test_util::simple_fields::MeshFixture
+class BulkDataIdMapperTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   BulkDataIdMapperTest()

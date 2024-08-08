@@ -73,7 +73,6 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
         s_elems_per_edge + "|shell:xyzXYZ";
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t index = stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
     stkIo.create_input_mesh();

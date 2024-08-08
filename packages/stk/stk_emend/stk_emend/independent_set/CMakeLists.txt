@@ -63,6 +63,7 @@ else()
     add_library(stk_emend ${SOURCES})
     target_link_libraries(stk_emend stk_util_util)
     target_link_libraries(stk_emend stk_util_parallel)
+    INSTALL(TARGETS stk_emend EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()
 
 target_include_directories(stk_emend PUBLIC

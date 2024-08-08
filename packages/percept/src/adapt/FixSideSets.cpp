@@ -10,6 +10,7 @@
 #include <fstream>
 #include <set>
 #include <typeinfo>
+#include <tuple>
 
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
@@ -28,6 +29,10 @@
 
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/util/human_bytes.hpp>
+#include <stk_util/util/string_case_compare.hpp>
+
+#include <stk_mesh/base/SideSetUtil.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 
 #define DEBUG_GSPR 0
 #define LTRACE 0
@@ -267,9 +272,12 @@ namespace percept {
       if (found)
         {
           disconnect_entity(side);
-          for (unsigned irel=0; irel < elems_to_connect_to.size(); ++irel)
-            {
-              m_eMesh.get_bulk_data()->declare_relation(elems_to_connect_to[irel], side, ordinals_to_connect_to[irel]);
+
+          stk::mesh::BulkData& bulk = *m_eMesh.get_bulk_data();
+
+          for (unsigned irel=0; irel < elems_to_connect_to.size(); ++irel) {
+              stk::mesh::Entity element = elems_to_connect_to[irel];
+              bulk.declare_relation(element, side, ordinals_to_connect_to[irel]);
             }
         }
 
@@ -650,6 +658,7 @@ namespace percept {
             ++count;
           }
         }
+      (void)count;
     }
 
     void FixSideSets::check_connect(SetOfEntities& side_set, SetOfEntities *avoid_elems)
@@ -745,8 +754,7 @@ namespace percept {
       const std::string& append_conv_string = UniformRefinerPatternBase::getAppendConvertString();
       (void)append_conv_string;
 
-      const bool debug = false;
-      if (debug)
+      if (m_debug)
         {
           print_surface_blocks_map(m_eMesh);
         }
@@ -754,7 +762,7 @@ namespace percept {
       stk::mesh::PartVector pv = m_eMesh.get_fem_meta_data()->get_mesh_parts();
       for (auto partp : pv)
         {
-          if (debug) std::cout << "move_sides_to_correct_surfaces: processing surface= " << partp->name()
+          if (m_debug) std::cout << "move_sides_to_correct_surfaces: processing surface= " << partp->name()
                                << " topo= " << partp->topology() << " primary_entity_rank= " << partp->primary_entity_rank() << std::endl;
 
           if (partp->topology() == stk::topology::INVALID_TOPOLOGY)
@@ -777,65 +785,129 @@ namespace percept {
         }
     }
 
-    void FixSideSets::move_side_to_correct_surface(stk::mesh::Part& surface, stk::mesh::Entity side, stk::mesh::Entity volume)
+    std::pair<std::string, bool>
+    FixSideSets::get_new_sideset_part_name(const std::string& surfaceName,
+                                           stk::mesh::Entity side, stk::mesh::Entity volume)
     {
-      const bool debug = false;
+      // If the sideset has a "canonical" name as in "surface_{id}",
+      // Then the sideblock name will be of the form:
+      //  * "surface_eltopo_sidetopo_id" or
+      //  * "surface_block_id_sidetopo_id"
+      // If the sideset does *not* have a canonical name, then
+      // the sideblock name will be of the form:
+      //  * "{sideset_name}_eltopo_sidetopo" or
+      //  * "{sideset_name}_block_id_sidetopo"
+      // Generated mesh will create sidesets of the form
+      //  * "surface_id_sidetopo
+
       const std::string& append_conv_string = UniformRefinerPatternBase::getAppendConvertString();
-      (void)append_conv_string;
+      bool isConvertedPart = ( surfaceName.find(append_conv_string) != std::string::npos);
+
+      std::vector<std::string> tokens;
+      stk::util::tokenize(surfaceName, "_", tokens);
+
+      if(isConvertedPart) {
+        return std::make_pair("", false);
+      }
+
+      size_t tokenSize = tokens.size();
+
+      std::string new_part_name;
+
+      const stk::mesh::BulkData& bulk = *m_eMesh.get_bulk_data();
+
+      stk::topology side_topo = bulk.bucket(side).topology();
+      stk::topology elem_topo = bulk.bucket(volume).topology();
+
+      if (m_debug) std::cout << "side,elem topo = " << side_topo << "," << elem_topo << " surface= " << surfaceName << std::endl;
+
+      std::string ioss_side_topo;
+      std::string ioss_elem_topo;
+
+      convert_stk_topology_to_ioss_name(elem_topo, ioss_elem_topo);
+      convert_stk_topology_to_ioss_name(side_topo, ioss_side_topo);
+
+      bool matching_volume_topologies = false;
+      if(tokenSize >= 4) {
+        matching_volume_topologies = stk::equal_case(tokens[1], ioss_elem_topo);
+
+        tokens[1] = ioss_elem_topo;
+        tokens[2] = ioss_side_topo;
+
+        // FIXME: substr usage - only works for single digit
+        const unsigned nl = (tokens[3].find(".") != std::string::npos) ? tokens[3].find(".") : tokens[3].length();
+        tokens[3] = tokens[3].substr(0, nl);
+
+        new_part_name = tokens[0];
+        for (unsigned i = 1; i < 4; i++)
+          new_part_name += "_" + tokens[i];
+      } else if(tokenSize == 3) {
+        const bool allDigits = tokens[1].find_first_not_of("0123456789") == std::string::npos;
+
+        std::string parentSurfaceName;
+
+        if (allDigits) {
+          // Generated mesh format
+          parentSurfaceName = tokens[0] + "_" + tokens[1];
+        } else {
+          // non-canonical format
+          parentSurfaceName = tokens[0];
+          matching_volume_topologies = stk::equal_case(tokens[1], ioss_elem_topo);
+        }
+
+        stk::mesh::Part* parentSurface = m_eMesh.get_fem_meta_data()->get_part(parentSurfaceName);
+
+        if(nullptr != parentSurface) {
+          new_part_name = "surface_" + ioss_elem_topo + "_"  + ioss_side_topo + "_" + std::to_string(parentSurface->id());
+        }
+      }
+
+      return std::make_pair(new_part_name, matching_volume_topologies);
+    }
+
+    void FixSideSets::fill_change_parts(stk::mesh::Part& surface,
+                                        stk::mesh::Entity side, stk::mesh::Entity volume,
+                                        std::vector<stk::mesh::Part*>& add_parts, std::vector<stk::mesh::Part*>& remove_parts)
+    {
+      add_parts.clear();
+      remove_parts.clear();
 
       stk::topology side_topo = m_eMesh.get_bulk_data()->bucket(side).topology();
       stk::topology elem_topo = m_eMesh.get_bulk_data()->bucket(volume).topology();
 
-      if (debug) std::cout << "side,elem topo = " << side_topo << "," << elem_topo << std::endl;
-
-      //std::string part_name = add_parts[0]->name(); // surface_hex8_quad4_1
-
-      std::vector<stk::mesh::Part*> add_parts(1, static_cast<stk::mesh::Part *>(0));
-      std::vector<stk::mesh::Part*> remove_parts(1, &surface);
-
       std::string new_part_name;
+      bool matching_volume_topologies;
+      std::tie(new_part_name, matching_volume_topologies) = get_new_sideset_part_name(surface.name(), side, volume);
+      stk::mesh::Part* new_part = m_eMesh.get_fem_meta_data()->get_part(new_part_name);
 
-      std::vector<std::string> tokens;
-      stk::util::tokenize(surface.name(), "_", tokens);
-
-      // this can happen, eg. for generated meshes - with a surface name like surface_1_quad4
-      if (tokens.size() <= 3)
-        return;
-
-      if (debug) {
-          std::cout << "tokens = ";
-          for (unsigned i=0; i<tokens.size(); i++)
-              std::cout << tokens[i] << " ";
-          std::cout << std::endl;
-      }
-      const unsigned nl = (tokens[3].find(".") != std::string::npos) ? tokens[3].find(".") : tokens[3].length();
-
-      // FIXME: substr usage - only works for single digit
-
-      convert_stk_topology_to_ioss_name(elem_topo, tokens[1]);
-      convert_stk_topology_to_ioss_name(side_topo, tokens[2]);
-
-      tokens[3] = tokens[3].substr(0, nl);
-      new_part_name = tokens[0];
-      for (unsigned i = 1; i < 4; i++)
-        new_part_name += "_" + tokens[i];
-
-      if (debug)
-          std::cout << "new_part_name=" << new_part_name << std::endl;
-
-      add_parts[0] = m_eMesh.get_fem_meta_data()->get_part(new_part_name);
-      if (!add_parts[0])
+      if (nullptr == new_part)
         {
-          if (debug) std::cout << " new part name not found, skipping" << std::endl;
+          if (m_debug) std::cout << " new part name not found, skipping" << std::endl;
           //std::cout << "add_parts[0] = null, new_part_name= " << new_part_name << " elem_topo= " << elem_topo << " side_topo= " << side_topo << std::endl;
           //VERIFY_MSG("bad add_parts");
           return;
         }
 
-      if (debug)
+      bool equivalent_parts = (new_part->id() == surface.id()) && (new_part->topology() == surface.topology()) && matching_volume_topologies;
+      if(equivalent_parts) {
+        if (m_debug) std::cout << " new surface part: " << new_part_name << " is equivalent to original: " << surface.name()  << " ... not moving" << std::endl;
+        return;
+      }
+
+      const std::string& append_conv_string = UniformRefinerPatternBase::getAppendConvertString();
+      (void)append_conv_string;
+
+      add_parts.push_back(new_part);
+      remove_parts.push_back(&surface);
+
+      if (m_debug)
+          std::cout << "new_part_name=" << new_part_name << std::endl;
+
+      if (m_debug)
         {
           std::cout << "moving side= " << m_eMesh.id(side) << " side_topo= " << side_topo << " attached to vol= " << m_eMesh.id(volume)
-                    << " of topo= " << elem_topo << " from surface= " << surface.name() << " to: " << add_parts[0]->name() << " remove_parts.size= " << remove_parts.size()
+                    << " of topo= " << elem_topo << " from surface= " << surface.name() << " (id " << surface.id() << ")"
+                    << " to: " << add_parts[0]->name() << " (id " << add_parts[0]->id() << ")" << " remove_parts.size= " << remove_parts.size()
                     << std::endl;
           std::cout << "before parts= " << m_eMesh.print_entity_parts_string(side, "\n") << std::endl;
         }
@@ -851,15 +923,26 @@ namespace percept {
             }
         }
 
-      if (add_parts[0] == remove_parts[0])
+      if (add_parts[0] == remove_parts[0]) {
+        if (m_debug) std::cout << "resizing: add = " << add_parts[0]->name() << " remove = " << remove_parts[0]->name() << std::endl;
         remove_parts.resize(0);
+      }
 
-      if (debug && remove_parts.size()) std::cout << "found remove_parts = " << remove_parts[0]->name() << std::endl;
+      if (m_debug && remove_parts.size()) std::cout << "found remove_parts = " << remove_parts[0]->name() << std::endl;
+    }
+
+    void FixSideSets::move_side_to_correct_surface(stk::mesh::Part& surface, stk::mesh::Entity side, stk::mesh::Entity volume)
+    {
+      std::vector<stk::mesh::Part*> add_parts;
+      std::vector<stk::mesh::Part*> remove_parts;
+
+      fill_change_parts(surface, side, volume, add_parts, remove_parts);
+
+      if(add_parts.empty() && remove_parts.empty()) return;
 
       m_eMesh.get_bulk_data()->change_entity_parts( side, add_parts, remove_parts );
 
-      if (debug) std::cout << "after parts= " << m_eMesh.print_entity_parts_string(side, "\n") << std::endl;
-
+      if (m_debug) std::cout << "after parts= " << m_eMesh.print_entity_parts_string(side, "\n") << std::endl;
     }
 
 

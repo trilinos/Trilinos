@@ -97,7 +97,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
@@ -172,7 +172,7 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
     stk::mesh::Part &line2_part = stkMeshMetaData.get_topology_root_part(stk::topology::LINE_2);
@@ -296,7 +296,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -423,7 +423,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -496,7 +496,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -564,7 +564,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -652,7 +652,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -744,7 +744,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -975,7 +975,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     int owningProc = 0;
     int ghostReceivingProc = 1;
@@ -1021,7 +1021,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     int owningProc = 0;
     int ghostReceivingProc = 1;

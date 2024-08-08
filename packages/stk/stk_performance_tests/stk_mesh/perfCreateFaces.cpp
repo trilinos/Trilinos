@@ -18,11 +18,11 @@ size_t get_num_global_faces(const stk::mesh::BulkData &bulk)
 }
 
 //==============================================================================
-class CreateFacesClassicPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class CreateFacesClassicPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
   CreateFacesClassicPerformance(stk::mesh::BulkData &bulk)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       bulkData(bulk),
       locallyOwnedElements(bulk.mesh_meta_data().locally_owned_part())
   {
@@ -44,11 +44,11 @@ protected:
 };
 
 //==============================================================================
-class CreateFacesPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class CreateFacesPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
   CreateFacesPerformance(stk::mesh::BulkData &bulk) :
-    stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    stk::unit_test_util::PerformanceTester(bulk.parallel()),
     bulkData(bulk),
     locallyOwnedElements(bulk.mesh_meta_data().locally_owned_part())
   {
@@ -70,7 +70,7 @@ protected:
 };
 
 //==============================================================================
-class CreateFacesClassicPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class CreateFacesClassicPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_create_faces_perf_test()
@@ -81,12 +81,12 @@ protected:
 
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+    return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
   }
 };
 
 //==============================================================================
-class CreateFacesPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class CreateFacesPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_create_faces_perf_test()
@@ -97,7 +97,7 @@ protected:
 
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+    return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
   }
 };
 
@@ -112,7 +112,7 @@ TEST_F(CreateFacesClassicPerformanceTest, read_mesh)
 TEST_F(CreateFacesPerformanceTest, read_mesh_with_auto_decomp)
 {
   allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
-  stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+  stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
   run_create_faces_perf_test();
 }

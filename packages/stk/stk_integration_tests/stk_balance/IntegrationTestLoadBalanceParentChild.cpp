@@ -421,7 +421,6 @@ protected:
     builder.set_aura_option(auraOption);
     m_bulkData = builder.create();
     m_metaData = &(m_bulkData->mesh_meta_data());
-    m_metaData->use_simple_fields();
   }
 
   void create_coarse_mesh()

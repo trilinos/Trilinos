@@ -14,7 +14,7 @@ namespace
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class VertexWeightSettings : public stk::unit_test_util::simple_fields::MeshFixture
+class VertexWeightSettings : public stk::unit_test_util::MeshFixture
 {
 public:
 

@@ -39,6 +39,7 @@
 #include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_PostProcess.hpp>
 #include <Akri_Surface_Manager.hpp>
 #include <Akri_RefinementInterface.hpp>
 #include <Akri_RefinementSupport.hpp>
@@ -99,6 +100,8 @@ void Region::commit()
   CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
   RefinementSupport & refinementSupport = RefinementSupport::get(meta);
 
+  myPostProcessors.commit(meta);
+
   if (krino::CDFEM_Support::is_active(meta))
   {
     if (cdfem_mesh_displacements_requested_in_results_fields(CDFEM_Support::cdfem_mesh_displacements_field_name(), my_results_options->get_nodal_fields()))
@@ -113,18 +116,17 @@ void Region::commit()
   auto & active_part = AuxMetaData::get(meta).active_part();
   stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
 
-  if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
-      (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
-  {
-    auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
-    RefinementInterface & refinement = KrinoRefinement::create(meta);
-    refinementSupport.set_non_interface_conforming_refinement(refinement);
-  }
-
   if (cdfem_support.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
   {
     auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
     cdfem_support.register_cdfem_snap_displacements_field();
+  }
+
+  if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
+      (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
+  {
+    RefinementInterface & refinement = KrinoRefinement::create(meta);
+    refinementSupport.set_non_interface_conforming_refinement(refinement);
   }
 
   if (krino::CDFEM_Support::is_active(meta))
@@ -329,7 +331,7 @@ void do_post_adapt_uniform_refinement(const Simulation & simulation, const Refin
       // the transition elements are handled.
       auto & refinement = refinementSupport.get_non_interface_conforming_refinement();
       const int num_levels = refinementSupport.get_post_adapt_refinement_levels();
-      FieldRef marker_field = refinement.get_marker_field();
+      FieldRef marker_field = refinement.get_marker_field_and_sync_to_host();
 
       std::function<void(int)> marker_function =
           [&mesh, marker_field, num_levels]
@@ -432,17 +434,10 @@ void Region::initialize()
     for(auto&& ls : surfaceManager.get_levelsets())
     {
       ls->initialize(0.);
-
       if (my_simulation.is_transient())
       {
         // initialize does not end with the facets constructed so manually construct them now
-        ls->build_facets_locally(mesh_meta_data().universal_part());
-
-        // debugging
-        if (krinolog.shouldPrint(LOG_FACETS))
-        {
-          ls->write_facets();
-        }
+        ls->build_initial_facets(0.);
       }
     }
   }
@@ -478,15 +473,16 @@ void Region::execute()
     mesh_topology_has_changed();
   }
 
-  const double deltaTime = time_step();
-  const double timeN = get_current_time();
-  const double timeNP1 = timeN + deltaTime;
+  const double timeN = get_old_time();
+  const double timeNp1 = get_current_time();
 
   const Surface_Manager & surfaceManager = Surface_Manager::get(mesh_meta_data());
   for(auto&& ls : surfaceManager.get_levelsets())
   {
-    ls->advance_semilagrangian(timeN, timeNP1);
+    ls->advance_semilagrangian(timeN, timeNp1);
   }
+
+  myPostProcessors.postprocess(mesh_bulk_data(), AuxMetaData::get(mesh_meta_data()).get_current_coordinates(), timeNp1);
 }
 
 unsigned Region::spatial_dimension() const { return mesh_meta_data().spatial_dimension(); }
@@ -496,6 +492,7 @@ const stk::mesh::MetaData& Region::mesh_meta_data() const { return myMesh->meta_
 stk::mesh::MetaData& Region::mesh_meta_data() { return myMesh->meta_data(); }
 double Region::time_step() const { return my_simulation.get_time_step(); }
 double Region::get_current_time() const { return my_simulation.get_current_time(); }
+double Region::get_old_time() const { return my_simulation.get_old_time(); }
 
 stk::io::StkMeshIoBroker & Region::stkOutput()
 {
@@ -528,7 +525,6 @@ void Region::create_output_mesh()
     fileProperties.add(Ioss::Property("state_offset", stateCount));
   }
 
-  stkOutput().use_simple_fields();
   const auto oldOutputFileIndex = myOutputFileIndex;
   myOutputFileIndex = stkOutput().create_output_mesh(filename, stk::io::WRITE_RESULTS, fileProperties);
 

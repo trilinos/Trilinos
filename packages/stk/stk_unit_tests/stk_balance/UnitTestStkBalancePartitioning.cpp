@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-class StkBalancePartitioning : public stk::unit_test_util::simple_fields::MeshFixture
+class StkBalancePartitioning : public stk::unit_test_util::MeshFixture
 {
 protected:
   StkBalancePartitioning()
@@ -40,8 +40,8 @@ protected:
       0,1,1, 1,1,1, 2,1,1, 0,2,1, 1,2,1, 2,2,1
     };
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void balance_mesh(const stk::ParallelMachine & decompCommunicator,
@@ -125,7 +125,7 @@ TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_OneElem)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}});
   balance_mesh(get_bulk().parallel(), 2, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({0, 1});
@@ -136,7 +136,7 @@ TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_TwoElems)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
   balance_mesh(get_bulk().parallel(), 2, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({1, 1});
@@ -147,7 +147,7 @@ TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_TwoElemsEachProc)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
   balance_mesh(get_bulk().parallel(), 2, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({2, 2});
@@ -158,7 +158,7 @@ TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_TwoElemsAcrossProcBoundary)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{3, "partA"}, {4, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{3, "partA"}, {4, "partA"}});
   balance_mesh(get_bulk().parallel(), 2, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({1, 1});
@@ -169,7 +169,7 @@ TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_TwoElemsEachProcWithOneAdjacentToP
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}, {4, "partA"}, {6, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}, {4, "partA"}, {6, "partA"}});
   balance_mesh(get_bulk().parallel(), 2, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({2, 2});
@@ -220,7 +220,7 @@ TEST_F(StkBalancePartitioning, 6Elem2to1ProcMesh_HalfDomain)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {3, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {3, "partA"}});
   balance_mesh(get_bulk().parallel(), 1, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({3});
@@ -241,8 +241,8 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMeshWithContact_EmptyOnOneProc)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_4hex_contact_perpendicular_to_proc_boundary();
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}});
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{2, "partB"}, {4, "partB"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{2, "partB"}, {4, "partB"}});
   balance_mesh(get_bulk().parallel(), 2, {*get_meta().get_part("partB")});
 
   test_partition_element_distribution({1, 1});
@@ -253,7 +253,7 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMesh_SeparateCommunicator)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x4");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {3, "partB"}, {4, "partB"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {3, "partB"}, {4, "partB"}});
   if (get_parallel_rank() == 0) {
     balance_mesh(MPI_COMM_SELF, 2, {*get_meta().get_part("partA")});
   }
@@ -269,7 +269,7 @@ TEST_F(StkBalancePartitioning, 4Elem2to1ProcMesh_SeparateCommunicator)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x4");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {3, "partB"}, {4, "partB"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {3, "partB"}, {4, "partB"}});
   if (get_parallel_rank() == 0) {
     balance_mesh(MPI_COMM_SELF, 1, {*get_meta().get_part("partA")});
   }
@@ -285,7 +285,7 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMesh_SeparateCommunicator_EmptyOnOnePro
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x4");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
   balance_mesh(MPI_COMM_SELF, 2, {*get_meta().get_part("partA")});
 
   test_partition_element_distribution({1, 1});
@@ -296,7 +296,7 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMesh_Geometric_SeparateCommunicator_Emp
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x4");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
   stk::balance::BasicGeometricSettings balanceSettings;
   balance_mesh(MPI_COMM_SELF, 2, {*get_meta().get_part("partA")}, balanceSettings);
 

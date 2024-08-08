@@ -33,9 +33,10 @@ BoundingBoxMesh::BoundingBoxMesh(stk::topology element_topology, stk::ParallelMa
       element_topology == stk::topology::TETRAHEDRON_4 ||
       element_topology == stk::topology::HEXAHEDRON_8);
 
+  myMeshStructureType = default_structure_type_for_topology(element_topology);
+
   m_meta = stk::mesh::MeshBuilder().set_spatial_dimension(element_topology.dimension())
                                    .create_meta_data();
-  m_meta->use_simple_fields();
 
   AuxMetaData & aux_meta = AuxMetaData::create(*m_meta);
   stk::mesh::Part & block_part = m_meta->declare_part_with_topology( "block_1", element_topology );
@@ -48,6 +49,18 @@ BoundingBoxMesh::BoundingBoxMesh(stk::topology element_topology, stk::ParallelMa
 
   stk::mesh::Field<double> & coordsField = m_meta->declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
   stk::mesh::put_field_on_mesh(coordsField, m_meta->universal_part(), m_meta->spatial_dimension(), nullptr);
+}
+
+BoundingBoxMeshStructureType BoundingBoxMesh::default_structure_type_for_topology(const stk::topology elementTopology)
+{
+  if (elementTopology == stk::topology::QUADRILATERAL_4_2D || elementTopology == stk::topology::HEXAHEDRON_8)
+    return CUBIC_BOUNDING_BOX_MESH;
+  else if (elementTopology == stk::topology::TETRAHEDRON_4)
+    return FLAT_WALLED_BCC_BOUNDING_BOX_MESH;
+  else if (elementTopology == stk::topology::TRIANGLE_3_2D)
+    return FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH;
+  STK_ThrowRequireMsg(false, "Unsupport topology " << elementTopology.name());
+  return CUBIC_BOUNDING_BOX_MESH;
 }
 
 void
@@ -396,7 +409,7 @@ BoundingBoxMesh::populate_cell_based_mesh()
   stk::mesh::FieldBase const* coord_field = m_meta->coordinate_field();
 
   std::vector<std::array<int,3>> hex_cell_node_locations = { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0}, {0,0,1}, {1,0,1}, {1,1,1}, {0,1,1} };
-  std::vector<std::vector<int>> hex_cell_elem_nodes = {{0, 1, 2, 3, 4, 6, 7}};
+  std::vector<std::vector<int>> hex_cell_elem_nodes = {{0, 1, 2, 3, 4, 5, 6, 7}};
 
   std::vector<std::vector<int>> tet_even_cell_elem_nodes = {{0, 1, 2, 5},
         {0, 2, 7, 5},
@@ -418,12 +431,12 @@ BoundingBoxMesh::populate_cell_based_mesh()
   const std::vector<std::array<int,3>> & cell_node_locations = (dim == 2) ? quad_cell_node_locations : hex_cell_node_locations;
   const std::vector<std::vector<int>> & even_cell_elem_nodes =
       (m_element_topology == stk::topology::TRIANGLE_3_2D) ? tri_even_cell_elem_nodes :
-      ((m_element_topology == stk::topology::QUADRILATERAL_4) ? quad_cell_elem_nodes :
+      ((m_element_topology == stk::topology::QUADRILATERAL_4_2D) ? quad_cell_elem_nodes :
       ((m_element_topology == stk::topology::TETRAHEDRON_4) ? tet_even_cell_elem_nodes :
       hex_cell_elem_nodes));
   const std::vector<std::vector<int>> & odd_cell_elem_nodes =
       (m_element_topology == stk::topology::TRIANGLE_3_2D) ? tri_odd_cell_elem_nodes :
-      ((m_element_topology == stk::topology::QUADRILATERAL_4) ? quad_cell_elem_nodes :
+      ((m_element_topology == stk::topology::QUADRILATERAL_4_2D) ? quad_cell_elem_nodes :
       ((m_element_topology == stk::topology::TETRAHEDRON_4) ? tet_odd_cell_elem_nodes :
       hex_cell_elem_nodes));
 
@@ -479,7 +492,7 @@ BoundingBoxMesh::populate_cell_based_mesh()
 
         for (auto && node_id : elem_nodes)
         {
-          stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK , node_id );
+          stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, node_id );
           m_mesh->change_entity_parts(node, m_node_parts);
 
           auto map_it = nodes_to_procs.find(node_id);

@@ -179,14 +179,14 @@ TEST(StkEdgeIo, ParallelWriteMesh)
 
   std::string filename = "output.exo";
   {
-    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(2, 2);
-    std::vector<double> coords = stk::unit_test_util::simple_fields::get_many_block_coordinates(2);
+    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(2, 2);
+    std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(2);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
     stk::mesh::BulkData& bulk = *bulkPtr;
     stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
     stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::io::put_edge_block_io_part_attribute(*part);
-    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coords));
+    stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
     stk::mesh::create_edges(bulk, meta.universal_part(), part);
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::EDGE_RANK);
 
@@ -227,8 +227,8 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
 
   std::string filename = "output.exo";
   {
-    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(2, 2);
-    std::vector<double> coords = stk::unit_test_util::simple_fields::get_many_block_coordinates(2);
+    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(2, 2);
+    std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(2);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
     stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
     stk::mesh::BulkData& bulk = *bulkPtr;
@@ -236,7 +236,7 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
     stk::mesh::Part* facePart = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
     stk::io::put_edge_block_io_part_attribute(*edgePart);
     stk::io::put_io_part_attribute(*facePart);
-    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coords));
+    stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
 
     stk::mesh::PartVector faceParts = {facePart};
     stk::mesh::create_interior_block_boundary_sides(bulk, meta.universal_part(), faceParts);

@@ -103,20 +103,21 @@ enum ReadMode { READ_SERIAL_AND_DECOMPOSE, READ_ALREADY_DECOMPOSED };
 class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 {
 public:
-    StkMeshIoBrokerTester() {}
+  StkMeshIoBrokerTester() {}
 
-    virtual void write_output_mesh(size_t output_file_index)
-    {
-      m_outputFiles[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
-    }
+  virtual void write_output_mesh(size_t output_file_index)
+  {
+    m_outputFiles[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
+  }
 };
 
 class BulkDataTester : public stk::mesh::BulkData
 {
 public:
-    BulkDataTester(std::shared_ptr<stk::mesh::MetaData> mesh_meta_data, stk::ParallelMachine parallel)
-      : stk::mesh::BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::AUTO_AURA)
-    { }
+  BulkDataTester(stk::mesh::MetaData & mesh_meta_data, stk::ParallelMachine parallel)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), parallel, stk::mesh::BulkData::AUTO_AURA)
+  {
+  }
 };
 
 stk::mesh::SideSet* get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss);
@@ -132,6 +133,7 @@ void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
 
 } // namespace simple_fields
@@ -172,15 +174,25 @@ public:
   }
 };
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 stk::mesh::SideSet* get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 SideSetData get_stk_side_set_data(stk::mesh::BulkData &bulk, const SideSetIdAndElemIdSidesVector &ssData);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void write_exo_file(BulkDataTester &bulkData, const std::string &filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void read_exo_file( stk::mesh::BulkData &bulkData, std::string filename, ReadMode read_mode);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void setup_io_broker_for_read(stk::io::StkMeshIoBroker &stkIo, stk::mesh::BulkData &bulkData, std::string filename, ReadMode readMode);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
 
 } // namespace simple_fields

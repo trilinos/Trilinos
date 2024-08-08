@@ -39,6 +39,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 #include <stk_mesh/base/EntitySorterBase.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
@@ -59,34 +60,81 @@ struct EntityGhostData;
 //stk-mesh capabilities.
 //----------------------------------------------------------------------
 
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
+inline
+bool is_in_list(Entity entity, const Entity* begin, const Entity* end) 
+{
+  return std::find(begin, end, entity) != end; 
+}
+
+template<typename VecType>
+void
+remove_entities_not_in_list(const Entity* beginList,
+                            const Entity* endList,
+                            VecType& entities)
+{
+  int numFound=0;
+  for(int j=0, initialSize=entities.size(); j<initialSize; ++j) {
+    if (is_in_list(entities[j], beginList, endList)) {
+      if (j > numFound) {
+        entities[numFound] = entities[j];
+      }
+      ++numFound;
+    }
+  }    
+  entities.resize(numFound);
+}
+
+template<typename VecType>
+void
+remove_entities_not_connected_to_other_nodes(const BulkData& mesh,
+                                             stk::mesh::EntityRank rank,
+                                             unsigned numNodes,
+                                             const Entity* nodes,
+                                             VecType& elementsInCommon)
+{
+  for(unsigned i = 1; i < numNodes; ++i) {
+    const ConnectedEntities conn = mesh.get_connected_entities(nodes[i], rank);
+    remove_entities_not_in_list(conn.data(), conn.data()+conn.size(), elementsInCommon);
+  }    
+}
+
+template<typename VecType>
+void
+find_entities_these_nodes_have_in_common(const BulkData& mesh,
+                                         stk::mesh::EntityRank rank,
+                                         unsigned numNodes,
+                                         const Entity* nodes,
+                                         VecType& entitiesInCommon)
+{
+  entitiesInCommon.clear();
+  if(numNodes > 0) {
+    const ConnectedEntities conn = mesh.get_connected_entities(nodes[0], rank);
+    entitiesInCommon.assign(conn.data(), conn.data()+conn.size());
+    remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, entitiesInCommon);
+  }
+}
 
 void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
 
-void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, EntityRank rank,
-                                                  unsigned numNodes, const Entity* nodes,
-                                                  std::vector<Entity>& elementsInCommon);
-
 template<class Pred>
-void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRank rank,
-                                                  unsigned numNodes, const Entity* nodes,
-                                                  std::vector<Entity>& elementsInCommon,
-                                                  const Pred& pred)
+void
+find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRank rank,
+                                             unsigned numNodes, const Entity* nodes,
+                                             std::vector<Entity>& entitiesInCommon,
+                                             const Pred& pred)
 {
-    elementsInCommon.clear();
-    if(numNodes > 0)
-    {
-        const Entity* begin = mesh.begin(nodes[0], rank);
-        const Entity* end = mesh.end(nodes[0], rank);
-        elementsInCommon.reserve(std::distance(begin,end));
-        for(const Entity* ent = begin; ent != end; ++ent) {
-          if (pred(*ent)) {
-            elementsInCommon.push_back(*ent);
-          }
-        }
-
-        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
+  entitiesInCommon.clear();
+  if(numNodes > 0) {
+    const ConnectedEntities conn = mesh.get_connected_entities(nodes[0], rank);
+    entitiesInCommon.reserve(conn.size());
+    for(unsigned i=0; i<conn.size(); ++i) {
+      if (pred(conn[i])) {
+        entitiesInCommon.push_back(conn[i]);
+      }
     }
+
+    remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, entitiesInCommon);
+  }
 }
 
 const EntityCommListInfo& find_entity(const BulkData& mesh,
@@ -118,7 +166,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 
 stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys);
 
-void internal_clean_and_verify_parallel_change(
+bool internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change );
 
@@ -133,31 +181,6 @@ stk::mesh::EntityId side_id_formula(stk::mesh::EntityId elemId, unsigned sideOrd
     //this is the side-id formula used by IO. the "+1" is because IO always uses one-based side ordinals
     return 10*elemId + sideOrdinal + 1;
 }
-
-class GlobalIdEntitySorter : public EntitySorterBase
-{
-public:
-    GlobalIdEntitySorter(bool mustSortFacesByNodeIds=false)
-     : m_mustSortFacesByNodeIds(mustSortFacesByNodeIds)
-    {}
-
-    virtual void sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const
-    {
-        auto fastEntityLess = [&bulk](const Entity lhs, const Entity rhs)->bool
-                              {return (bulk.entity_key(lhs) < bulk.entity_key(rhs));};
-
-        const bool useSlowEntityLess = m_mustSortFacesByNodeIds;
-
-        if (useSlowEntityLess) {
-          std::sort(entityVector.begin(), entityVector.end(), EntityLess(bulk));
-        }
-        else {
-          std::sort(entityVector.begin(), entityVector.end(), fastEntityLess);
-        }
-    }
-private:
-  bool m_mustSortFacesByNodeIds;
-};
 
 stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 

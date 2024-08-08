@@ -45,7 +45,6 @@ TEST(stkMeshHowTo, checkCreatedStateAfterMeshCreation)
   if (parallel_size != 1) { return; }
   const std::string fileName = "generated:1x1x1";
   stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -70,7 +69,6 @@ TEST(stkMeshHowTo, checkDeletedState)
   if (parallel_size != 1) { return; }
   const std::string fileName = "generated:1x1x1";
   stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -101,7 +99,6 @@ TEST(stkMeshHowTo, checkModifiedState)
   if (parallel_size != 1) { return; }
   const std::string fileName = "generated:1x1x1";
   stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -128,7 +125,6 @@ TEST(stkMeshHowTo, checkAuraCreatedState)
   if (parallel_size != 2) { GTEST_SKIP(); }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -155,7 +151,6 @@ TEST(stkMeshHowTo, checkCEOModifiedState)
   if (parallel_size != 2) { GTEST_SKIP(); }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -187,7 +182,6 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
   if (parallel_size != 2) { GTEST_SKIP(); }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();

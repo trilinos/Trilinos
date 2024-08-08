@@ -114,7 +114,6 @@ TEST(StkMeshIoBroker, useExternalBulkData)
 {
   stk::mesh::MeshBuilder meshBuilder(MPI_COMM_WORLD);
   std::shared_ptr<stk::mesh::BulkData> bulk = meshBuilder.set_spatial_dimension(3).create();
-  bulk->mesh_meta_data().use_simple_fields();
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
   stkMeshIoBroker.set_bulk_data(bulk);
@@ -128,7 +127,6 @@ TEST(StkMeshIoBroker, useExternalBulkData)
 TEST(StkMeshIoBroker, useDefaultMeshBuilder)
 {
   stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-  stkMeshIoBroker.use_simple_fields();
   stkMeshIoBroker.add_mesh_database("generated:1x1x8", stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
   stkMeshIoBroker.populate_bulk_data();
@@ -141,7 +139,6 @@ TEST(StkMeshIoBroker, useCustomMeshBuilder)
 {
   stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
   stkMeshIoBroker.set_mesh_builder(std::make_shared<CustomMeshBuilder>(MPI_COMM_WORLD));
-  stkMeshIoBroker.use_simple_fields();
   stkMeshIoBroker.add_mesh_database("generated:1x1x8", stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
   stkMeshIoBroker.populate_bulk_data();
@@ -157,14 +154,12 @@ TEST(StkMeshIoBroker, useCustomMeshBuilder_afterInternalAlreadyGenerated)
 {
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("generated:1x1x8", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     EXPECT_ANY_THROW(stkMeshIoBroker.set_mesh_builder(std::make_shared<CustomMeshBuilder>(MPI_COMM_WORLD)));
   }
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("generated:1x1x8", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -176,7 +171,6 @@ TEST(StkMeshIoBroker, useCustomMeshBuilder_afterSetExternal)
 {
   stk::mesh::MeshBuilder meshBuilder(MPI_COMM_WORLD);
   std::shared_ptr<stk::mesh::BulkData> bulk = meshBuilder.set_spatial_dimension(3).create();
-  bulk->mesh_meta_data().use_simple_fields();
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
   stkMeshIoBroker.set_bulk_data(bulk);

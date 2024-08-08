@@ -34,10 +34,7 @@
 #ifndef UNITTEST_MESHFILEFIXTURE_HPP
 #define UNITTEST_MESHFILEFIXTURE_HPP
 
-#include "mpi.h"
-
 #include <gtest/gtest.h>
-
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -47,7 +44,6 @@
 
 namespace stk
 {
-
 namespace unit_test_util
 {
 
@@ -73,7 +69,8 @@ protected:
 
 namespace simple_fields {
 
-class MeshFileFixture : public MeshFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+MeshFileFixture : public MeshFixture
 {
 protected:
     MeshFileFixture()

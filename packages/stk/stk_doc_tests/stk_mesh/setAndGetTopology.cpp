@@ -67,7 +67,6 @@ TEST(stkMeshHowTo, setAndGetTopology)
   builder.set_spatial_dimension(spatialDimension);
   builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tet part", stk::topology::TET_4);
 

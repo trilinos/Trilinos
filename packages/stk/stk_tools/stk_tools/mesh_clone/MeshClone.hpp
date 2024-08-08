@@ -45,8 +45,10 @@ namespace tools {
 
 void copy_meta_with_io_attributes(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta);
 void copy_bulk(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector selector, stk::mesh::BulkData &outputBulk);
-
+void copy_fields(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta);
 void copy_mesh(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector selector, stk::mesh::BulkData &outputBulk);
+
+void copy_meta(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta);
 
 }
 }

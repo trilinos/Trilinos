@@ -73,7 +73,6 @@ TEST(UnitTestGhostParts, Aura)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x3";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -122,7 +121,6 @@ TEST(UnitTestGhostParts, Custom1)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -176,7 +174,6 @@ TEST(UnitTestAura, test_num_communicated_entities)
   int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs == 2) {
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.use_simple_fields();
     const std::string generatedMeshSpecification = "generated:1x1x4";
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();

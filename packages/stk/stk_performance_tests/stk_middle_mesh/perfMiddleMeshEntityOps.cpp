@@ -53,14 +53,12 @@ TEST(MiddleMeshOps, GetAndDeleteDown)
   if (stk::middle_mesh::utils::impl::comm_size(comm) > 1)
     GTEST_SKIP();
 
-  const int NUM_RUNS  = 2000;
+  const int NUM_RUNS  = 40;
   const int NUM_ITERS = 1;
 
-  stk::middle_mesh::mesh::impl::MeshSpec spec{100, 100, 0, 1, 0, 1};
+  stk::middle_mesh::mesh::impl::MeshSpec spec{1000, 1000, 0, 1, 0, 1};
   auto func = [&](stk::middle_mesh::utils::Point const& pt) { return pt; };
-  //auto mesh = stk::middle_mesh::mesh::impl::create_mesh(spec, func);
 
-  std::cout << "finished creating mesh" << std::endl;
   stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
   for (unsigned i = 0; i < NUM_RUNS; ++i) {
@@ -101,10 +99,10 @@ TEST(MiddleMeshOps, GetAndDeleteUp)
   if (stk::middle_mesh::utils::impl::comm_size(comm) > 1)
     GTEST_SKIP();
 
-  const int NUM_RUNS  = 2000;
+  const int NUM_RUNS  = 40;
   const int NUM_ITERS = 1;
 
-  stk::middle_mesh::mesh::impl::MeshSpec spec{100, 100, 0, 1, 0, 1};
+  stk::middle_mesh::mesh::impl::MeshSpec spec{1000, 1000, 0, 1, 0, 1};
   auto func = [&](stk::middle_mesh::utils::Point const& pt) { return pt; };
 
   stk::unit_test_util::BatchTimer batchTimer(comm);

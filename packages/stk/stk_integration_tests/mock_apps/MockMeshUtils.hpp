@@ -31,7 +31,6 @@ void read_mesh(MPI_Comm comm,
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   stk::io::StkMeshIoBroker ioBroker(comm);
   ioBroker.set_bulk_data(bulk);

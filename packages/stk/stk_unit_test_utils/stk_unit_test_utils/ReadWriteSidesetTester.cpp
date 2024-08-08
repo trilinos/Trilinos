@@ -118,18 +118,17 @@ void compare_sidesets(const std::string& input_file_name,
 
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& input_file_name, const std::string& output_file_name)
 {
-    auto meta1 = std::make_shared<stk::mesh::MetaData>();
+    stk::mesh::MetaData meta1;
     BulkDataTester bulk1(meta1, comm);
     read_exo_file( bulk1, input_file_name, READ_SERIAL_AND_DECOMPOSE);
     write_exo_file( bulk1, output_file_name);
 
-    auto meta2 = std::make_shared<stk::mesh::MetaData>();
+    stk::mesh::MetaData meta2;
     BulkDataTester bulk2(meta2, comm);
     read_exo_file( bulk2, output_file_name, READ_ALREADY_DECOMPOSED);
     compare_sidesets(input_file_name, bulk1, bulk2);
     unlink(output_file_name.c_str());
 }
-
 
 namespace simple_fields {
 
@@ -149,7 +148,7 @@ stk::unit_test_util::sideset::SideSetData get_stk_side_set_data(stk::mesh::BulkD
     for(size_t i=0; i<ssData.size(); i++)
     {
         sideSetData[i].id = ssData[i].id;
-        sideSetData[i].sideSet = simple_fields::get_stk_side_set(bulk, ssData[i].sideSet);
+        sideSetData[i].sideSet = stk::unit_test_util::sideset::get_stk_side_set(bulk, ssData[i].sideSet);
     }
     return sideSetData;
 }
@@ -195,7 +194,7 @@ void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo)
 void read_exo_file( stk::mesh::BulkData &bulkData, std::string filename, ReadMode read_mode)
 {
     StkMeshIoBrokerTester stkIo;
-    simple_fields::setup_io_broker_for_read(stkIo, bulkData, filename, read_mode);
+    stk::unit_test_util::sideset::setup_io_broker_for_read(stkIo, bulkData, filename, read_mode);
     stkIo.populate_bulk_data();
 }
 
@@ -233,16 +232,14 @@ void compare_sidesets(const std::string& input_file_name,
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& input_file_name, const std::string& output_file_name)
 {
     stk::mesh::MetaData meta1;
-    meta1.use_simple_fields();
-    BulkDataTester bulk1(meta1, comm);
-    simple_fields::read_exo_file( bulk1, input_file_name, READ_SERIAL_AND_DECOMPOSE);
-    write_exo_file( bulk1, output_file_name);
+    stk::unit_test_util::sideset::BulkDataTester bulk1(meta1, comm);
+    stk::unit_test_util::sideset::read_exo_file( bulk1, input_file_name, READ_SERIAL_AND_DECOMPOSE);
+    stk::unit_test_util::sideset::write_exo_file( bulk1, output_file_name);
 
     stk::mesh::MetaData meta2;
-    meta2.use_simple_fields();
-    BulkDataTester bulk2(meta2, comm);
-    simple_fields::read_exo_file( bulk2, output_file_name, READ_ALREADY_DECOMPOSED);
-    compare_sidesets(input_file_name, bulk1, bulk2);
+    stk::unit_test_util::sideset::BulkDataTester bulk2(meta2, comm);
+    stk::unit_test_util::sideset::read_exo_file( bulk2, output_file_name, READ_ALREADY_DECOMPOSED);
+    stk::unit_test_util::sideset::compare_sidesets(input_file_name, bulk1, bulk2);
     unlink(output_file_name.c_str());
 }
 

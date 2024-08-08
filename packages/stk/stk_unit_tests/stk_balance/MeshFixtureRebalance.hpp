@@ -62,7 +62,7 @@ struct AssemblyGrouping {
 };
 
 
-class MeshFixtureRebalance : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshFixtureRebalance : public stk::unit_test_util::MeshFixture
 {
 protected:
   MeshFixtureRebalance()
@@ -85,7 +85,7 @@ protected:
 
   void setup_initial_mesh(const std::string & inputMeshSpec)
   {
-    stk::unit_test_util::simple_fields::generated_mesh_to_file_in_serial(inputMeshSpec, get_input_file_name());
+    stk::unit_test_util::generated_mesh_to_file_in_serial(inputMeshSpec, get_input_file_name());
     read_serial_mesh_with_auto_decomp();
   }
 
@@ -105,7 +105,7 @@ protected:
                                                      const std::vector<OriginalTopology>& originalTopologies)
   {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::simple_fields::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
+      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       tMesh.setup_mesh(inputMeshDesc, get_input_file_name());
 
       for (const OriginalTopology & ot : originalTopologies) {
@@ -122,7 +122,7 @@ protected:
                                                   const std::vector<AssemblyGrouping>& assemblies)
   {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::simple_fields::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
+      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       tMesh.setup_mesh(inputMeshDesc, get_input_file_name());
 
       for (const AssemblyGrouping & ag : assemblies) {
@@ -145,7 +145,7 @@ protected:
 
   void setup_initial_mesh_textmesh(const std::string & inputMeshDesc)
   {
-    stk::unit_test_util::simple_fields::text_mesh_to_file_in_serial(inputMeshDesc, get_input_file_name());
+    stk::unit_test_util::text_mesh_to_file_in_serial(inputMeshDesc, get_input_file_name());
 
     allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
@@ -157,7 +157,7 @@ protected:
     m_transientTimeSteps = {0.0, 1.0, 2.0};
     m_transientFieldName = "transient_field";
     m_globalVariableName = "global_variable";
-    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
                                                                                              get_input_file_name(),
                                                                                              m_transientFieldName,
                                                                                              stk::topology::NODE_RANK,
@@ -204,10 +204,10 @@ protected:
 
     if (get_parallel_rank() == 0) {
       for (size_t i = 0; i < elemsPerProc.size(); ++i) {
-        stk::unit_test_util::simple_fields::MeshFromFile finalMesh(MPI_COMM_SELF);
+        stk::unit_test_util::MeshFromFile finalMesh(MPI_COMM_SELF);
         finalMesh.fill_from_serial(get_subdomain_filename(elemsPerProc.size(), i));
 
-        stk::unit_test_util::simple_fields::TransientVerifier verifier(MPI_COMM_SELF);
+        stk::unit_test_util::TransientVerifier verifier(MPI_COMM_SELF);
         verifier.verify_time_steps(finalMesh, m_transientTimeSteps);
         verifier.verify_global_variables_at_each_time_step(finalMesh, m_globalVariableName, m_transientTimeSteps);
         verifier.verify_num_transient_fields(finalMesh, 2);
@@ -243,7 +243,7 @@ protected:
   {
     if (get_parallel_rank() == 0) {
       for (size_t subdomain = 0; subdomain < m_balanceSettings.get_num_output_processors(); ++subdomain) {
-        stk::unit_test_util::simple_fields::MeshFromFile finalMesh(MPI_COMM_SELF);
+        stk::unit_test_util::MeshFromFile finalMesh(MPI_COMM_SELF);
         finalMesh.fill_from_serial(get_subdomain_filename(m_balanceSettings.get_num_output_processors(), subdomain));
 
         for (const AssemblyGrouping & ag : expectedAssemblies) {

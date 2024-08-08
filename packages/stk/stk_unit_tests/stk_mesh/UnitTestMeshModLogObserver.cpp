@@ -27,7 +27,6 @@ protected:
       bulk(*bulkPtr),
       ostrm()
   {
-    meta.use_simple_fields();
   }
 
   void setup(const stk::mesh::EntityKey& key,

@@ -49,6 +49,13 @@ enum Redistance_Method
   MAX_REDISTANCE_METHOD_TYPE
 };
 
+enum SemiLagrangianAlgorithm
+{
+  NON_ADAPTIVE_SINGLE_STEP=0,
+  ADAPTIVE_PREDICTOR_CORRECTOR,
+  MAX_SEMILAGRANGIAN_ALGORITM_TYPE
+};
+
 /// Return true if field-data exists for the specified meshobj and field.
 bool all_nodes_have_field_data(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity entity, const stk::mesh::FieldBase& field);
 
@@ -148,7 +155,10 @@ public:
 
   Redistance_Method get_redistance_method() const { return my_redistance_method; }
   void set_redistance_method( const Redistance_Method type ) { my_redistance_method = type; }
+  SemiLagrangianAlgorithm get_semilagrangian_algorithm() const { return mySemiLagrangianAlg; }
+  void set_semilagrangian_algorithm( const SemiLagrangianAlgorithm type ) { mySemiLagrangianAlg = type; }
   void set_time_of_arrival_element_speed_field_name( const std::string & time_of_arrival_speed_field_name) { my_time_of_arrival_element_speed_field_name = time_of_arrival_speed_field_name; }
+  FieldRef get_time_of_arrival_element_speed_field() const {return myTimeOfArrivalElementSpeedField;}
   void set_time_of_arrival_block_speed(const std::string & blockName, const double blockSpeed);
   FacetedSurfaceBase & get_facets() { return *facets; }
   const FacetedSurfaceBase & get_facets() const { return *facets; }
@@ -194,6 +204,8 @@ public:
   void compute_surface_distance(const double narrowBandSize=0.0, const double farFieldValue=0.0);
   static void initialize(stk::mesh::MetaData & meta);
   void initialize(const double time = 0.0);
+  bool can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces() const;
+  void build_initial_facets(const double time);
   static void clear_initialization_data(stk::mesh::MetaData & meta);
   void clear_initialization_data();
   void redistance();
@@ -272,6 +284,7 @@ private:
 
   double my_threshold;
   Redistance_Method my_redistance_method;
+  SemiLagrangianAlgorithm mySemiLagrangianAlg{NON_ADAPTIVE_SINGLE_STEP};
   std::string my_time_of_arrival_element_speed_field_name;
   std::map<std::string, double> myTimeOfArrivalBlockSpeedsByName;
   std::vector<double> myTimeOfArrivalBlockSpeeds;
@@ -310,7 +323,6 @@ private:
   void prepare_to_compute_distance_to_stationary_facets( const stk::mesh::Selector & selector );
 
   void compute_signed_distance_at_selected_nodes( const stk::mesh::Selector & selector );
-  void compute_distance_semilagrangian( const double & timeN, const double & timeNp1, const stk::mesh::Selector & selector );
 
   double distance( const stk::math::Vector3d & x,
 		 const int previous_sign,

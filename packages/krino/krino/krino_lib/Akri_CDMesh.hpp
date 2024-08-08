@@ -111,7 +111,7 @@ public:
   const CDFEM_Support & get_cdfem_support() const { return my_cdfem_support; }
   CDFEM_Support & get_cdfem_support() { return my_cdfem_support; }
   bool need_nodes_for_prolongation() const { return INTERPOLATION != get_prolongation_model() && was_mesh_previously_decomposed(); }
-  bool need_facets_for_prolongation() const { return ALE_NEAREST_POINT == get_prolongation_model() && was_mesh_previously_decomposed(); }
+  bool need_facets_for_prolongation() const { return ALE_CLOSEST_POINT == get_prolongation_model() && was_mesh_previously_decomposed(); }
   Prolongation_Model get_prolongation_model() const { return my_cdfem_support.get_prolongation_model(); }
   Edge_Interpolation_Model get_edge_interpolation_model() const { return my_cdfem_support.get_edge_interpolation_model(); }
   const std::vector<InterfaceID> & all_interface_ids(const std::vector<Surface_Identifier> & surfaceIdentifiers) const;

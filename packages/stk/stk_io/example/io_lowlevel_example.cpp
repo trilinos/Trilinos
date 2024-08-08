@@ -269,7 +269,6 @@ void io_example( const std::string& in_filename,
   std::shared_ptr<stk::mesh::BulkData> bulk_data = builder.create();
 
   stk::mesh::MetaData& fem_meta_data = bulk_data->mesh_meta_data();
-  fem_meta_data.use_simple_fields();
   process_elementblocks(in_region, fem_meta_data);
   process_nodeblocks(in_region,    fem_meta_data);
   process_sidesets(in_region,      fem_meta_data);

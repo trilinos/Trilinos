@@ -28,6 +28,24 @@
 
 namespace krino{
 
+void populate_stk_local_ids(stk::mesh::BulkData & mesh)
+{
+  stk::mesh::Selector selector = mesh.mesh_meta_data().universal_part();
+  for (auto rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; ++rank)
+  {
+    unsigned localId = 0;
+    auto buckets = mesh.get_buckets(rank, selector);
+    for (auto && b : buckets)
+    {
+      for (unsigned i = 0; i < b->size(); ++i)
+      {
+        mesh.set_local_id((*b)[i], localId);
+        localId++;
+      }
+    }
+  }
+}
+
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds)
 {
   parentNodeIds.clear();
@@ -45,6 +63,42 @@ stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta)
         !stk::mesh::is_auto_declared_part(*part))
       blockParts.push_back(part);
   return blockParts;
+}
+
+size_t get_size_of_vector_indexable_by_entity_offset(const stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank)
+{
+  stk::mesh::Entity::entity_value_type maxEntity(0);
+  for ( auto && bucket : mesh.buckets(entityRank) )
+    for ( auto && entity : *bucket )
+      maxEntity = std::max(maxEntity, entity.local_offset());
+  return maxEntity + 1;
+}
+
+std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh,
+  const stk::mesh::Selector & elementSelector,
+  const stk::mesh::Entity elem)
+{
+  std::vector<stk::mesh::Entity> nbrs;
+
+  std::vector<stk::mesh::Entity> elemNbrs;
+  std::vector<stk::mesh::Entity> elemSideNodes;
+
+  const stk::mesh::Entity* elemNodes = mesh.begin_nodes(elem);
+  const stk::topology elemTopology = mesh.bucket(elem).topology();
+  const unsigned numSides = elemTopology.num_sides();
+  nbrs.reserve(numSides);
+  for (unsigned iside=0; iside<numSides; ++iside)
+  {
+    stk::topology sideTopology = elemTopology.side_topology(iside);
+    elemSideNodes.resize(sideTopology.num_nodes());
+    elemTopology.side_nodes(elemNodes, iside, elemSideNodes.data());
+
+    stk::mesh::get_entities_through_relations(mesh, elemSideNodes, stk::topology::ELEMENT_RANK, elemNbrs);
+    for (auto nbr : elemNbrs)
+      if (nbr != elem && elementSelector(mesh.bucket(nbr)))
+        nbrs.push_back(nbr);
+  }
+  return nbrs;
 }
 
 double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
@@ -103,7 +157,7 @@ size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::Entit
   return numEntities;
 }
 
-size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::Part & part)
+size_t get_global_num_entities(const stk::mesh::BulkData& mesh, const stk::mesh::Part & part)
 {
   size_t numEntities = stk::mesh::count_selected_entities(mesh.mesh_meta_data().locally_owned_part() & part, mesh.buckets(part.primary_entity_rank()));
   const size_t localNumEntities = numEntities;
@@ -2616,7 +2670,7 @@ void pack_owned_entities_for_ghosting_procs(const stk::mesh::BulkData & mesh,
 }
 
 static
-void unpack_ghosted_entities_from_owners(const stk::mesh::BulkData & mesh,
+void unpack_entities(const stk::mesh::BulkData & mesh,
     std::vector<stk::mesh::Entity> & entities,
     stk::CommSparse &commSparse)
 {
@@ -2639,7 +2693,33 @@ void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & me
 {
   stk::CommSparse commSparse(mesh.parallel());
   pack_owned_entities_for_ghosting_procs(mesh, entities, commSparse);
-  unpack_ghosted_entities_from_owners(mesh, entities, commSparse);
+  unpack_entities(mesh, entities, commSparse);
+}
+
+static
+void pack_for_owning_procs(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & entities,
+    stk::CommSparse &commSparse)
+{
+  std::vector<int> elemCommProcs;
+  stk::pack_and_communicate(commSparse,[&]()
+  {
+    for (auto entity : entities)
+    {
+      if (!mesh.bucket(entity).owned())
+      {
+        commSparse.send_buffer(mesh.parallel_owner_rank(entity)).pack(mesh.entity_key(entity));
+      }
+    }
+  });
+}
+
+void communicate_entities_to_owning_proc(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entitiesToSend, std::vector<stk::mesh::Entity> & entitiesReceived)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_for_owning_procs(mesh, entitiesToSend, commSparse);
+  entitiesReceived.clear();
+  unpack_entities(mesh, entitiesReceived, commSparse);
 }
 
 template<typename NODE_CONTAINER>
@@ -2716,6 +2796,65 @@ void communicate_shared_nodes_to_sharing_procs_and_sort_and_unique(const stk::me
   unpack_shared_nodes(mesh, nodes, commSparse);
 
   stk::util::sort_and_unique(nodes, stk::mesh::EntityLess(mesh));
+}
+
+static void fill_part_changes_to_convert_entity(const stk::mesh::BulkData & mesh,
+    const std::map<int,int> & partOrdinalMapping,
+    const stk::mesh::Entity entity,
+    stk::mesh::PartVector & addParts,
+    stk::mesh::PartVector & removeParts)
+{
+  addParts.clear();
+  removeParts.clear();
+  for (auto * part : mesh.bucket(entity).supersets())
+  {
+    const auto iter = partOrdinalMapping.find(part->mesh_meta_data_ordinal());
+    if (iter != partOrdinalMapping.end())
+    {
+      removeParts.push_back(part);
+      if (iter->second >= 0) // Negative part ordinal used to indicate invalid mapping
+        addParts.push_back(&mesh.mesh_meta_data().get_part(iter->second));
+    }
+  }
+}
+
+static void append_part_changes_to_convert_entity(const stk::mesh::BulkData & mesh,
+    const std::map<int,int> & partOrdinalMapping,
+    const stk::mesh::Entity entity,
+    std::vector<stk::mesh::Entity> & entitiesToChange,
+    std::vector<stk::mesh::PartVector> & addParts,
+    std::vector<stk::mesh::PartVector> & removeParts)
+{
+  stk::mesh::PartVector entityAddParts;
+  stk::mesh::PartVector entityRemoveParts;
+  fill_part_changes_to_convert_entity(mesh, partOrdinalMapping, entity, entityAddParts, entityRemoveParts);
+  entitiesToChange.push_back(entity);
+  addParts.push_back(entityAddParts);
+  removeParts.push_back(entityRemoveParts);
+}
+
+static void append_part_changes_to_convert_element_and_sides(const stk::mesh::BulkData & mesh,
+    const std::map<int,int> & partOrdinalMapping,
+    const stk::mesh::Entity elem,
+    std::vector<stk::mesh::Entity> & entitiesToChange,
+    std::vector<stk::mesh::PartVector> & addParts,
+    std::vector<stk::mesh::PartVector> & removeParts)
+{
+  const stk::mesh::EntityRank sideRank = mesh.mesh_meta_data().side_rank();
+  append_part_changes_to_convert_entity(mesh, partOrdinalMapping, elem, entitiesToChange, addParts, removeParts);
+  for (auto side : StkMeshEntities{mesh.begin(elem, sideRank), mesh.end(elem, sideRank)})
+    append_part_changes_to_convert_entity(mesh, partOrdinalMapping, side, entitiesToChange, addParts, removeParts);
+}
+
+void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const std::map<int,int> & partOrdinalMapping, const std::vector<stk::mesh::Entity> & elements)
+{
+  std::vector<stk::mesh::Entity> entitiesToChange;
+  std::vector<stk::mesh::PartVector> addParts;
+  std::vector<stk::mesh::PartVector> removeParts;
+  for (auto elem : elements)
+    append_part_changes_to_convert_element_and_sides(mesh, partOrdinalMapping, elem, entitiesToChange, addParts, removeParts);
+
+  mesh.batch_change_entity_parts(entitiesToChange, addParts, removeParts);
 }
 
 } // namespace krino

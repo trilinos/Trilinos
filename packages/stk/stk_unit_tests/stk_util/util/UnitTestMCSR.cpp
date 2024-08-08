@@ -55,6 +55,14 @@ TEST( MCSR, basic)
 #endif
 }
 
+TEST(MCSR, find_sorted_insertion_index_empty)
+{
+  std::vector<int> items;
+  stk::util::IndexRange indices(0,0);
+  const int item = 42;
+  EXPECT_EQ(0, stk::util::find_sorted_insertion_index(items, indices, item));
+}
+
 TEST(MCSR, addItem)
 {
   constexpr unsigned numRows = 3;

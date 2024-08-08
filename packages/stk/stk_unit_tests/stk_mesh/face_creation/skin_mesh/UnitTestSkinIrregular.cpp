@@ -69,7 +69,6 @@ TEST( UnitTestSkin, SkinPocket)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk_data = *bulkPtr;
   stk::mesh::MetaData& fem_meta = bulk_data.mesh_meta_data();
-  fem_meta.use_simple_fields();
   stk::mesh::Part & hex_part = fem_meta.declare_part_with_topology( "hex_part", stk::topology::HEX_8 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();

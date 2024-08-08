@@ -127,7 +127,7 @@ void fill_small_mesh_with_big_ids(stk::mesh::BulkData& bulkData)
   bulkData.modification_end();
 }
 
-class StkPerfComm : public stk::unit_test_util::simple_fields::MeshFixture
+class StkPerfComm : public stk::unit_test_util::MeshFixture
 {
   typedef stk::mesh::Field<double> ScalarField;
   typedef stk::mesh::Field<double> VectorField;
@@ -408,7 +408,7 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("Before rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
 
     rebalance(get_bulk());
 
@@ -416,7 +416,7 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("After rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
   }
 
   void generate_and_rebalance_small_mesh_with_big_ids()
@@ -433,7 +433,7 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("Before rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
 
     rebalance(get_bulk());
 
@@ -441,12 +441,12 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("After rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
   }
 
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-mesh", "NO_MESH_SPECIFIED");
+    return stk::unit_test_util::get_option("-mesh", "NO_MESH_SPECIFIED");
   }
 
   ScalarField& nodeFieldScalar;
