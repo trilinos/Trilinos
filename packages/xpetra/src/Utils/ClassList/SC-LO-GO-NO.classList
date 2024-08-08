@@ -12,6 +12,7 @@ IO
 Matrix
 MatrixUtils
 MatrixFactory
+MatrixFactory2
 MatrixMatrix
 #MultiVectorFactory
 #Operator

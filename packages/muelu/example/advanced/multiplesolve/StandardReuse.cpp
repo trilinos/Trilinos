@@ -18,6 +18,8 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
+#include <Xpetra_MatrixFactory2.hpp>
+
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_Factory.hpp>
