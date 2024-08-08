@@ -11,6 +11,7 @@
 #define MUELU_CGSOLVER_DEF_HPP
 
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MatrixFactory2.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu_Utilities.hpp"

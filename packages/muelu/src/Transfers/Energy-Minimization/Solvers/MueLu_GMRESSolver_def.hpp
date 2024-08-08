@@ -13,6 +13,7 @@
 #include <Teuchos_LAPACK.hpp>
 
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MatrixFactory2.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_IO.hpp>
 

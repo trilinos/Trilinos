@@ -17,6 +17,7 @@
 #include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MatrixFactory2.hpp>
 
 #include "MueLu_RAPShiftFactory_decl.hpp"
 #include "MueLu_MasterList.hpp"
