@@ -102,10 +102,9 @@ void run_volume_to_volume_test_with_views(const std::string& meshFileName,
     Kokkos::View<BoxIdentProcType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentProcType>(*bulkPtr,
                                                                                               stk::topology::ELEM_RANK);
 
-    Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
       stk::search::coarse_search(elemBoxes, elemBoxes, searchMethod, comm, searchResults,
                                  ExecSpace{}, enforceSearchResultSymmetry);
     }
@@ -185,10 +184,9 @@ void run_volume_to_volume_test_local(const std::string& meshFileName,
     BoxVectorType elemBoxes;
     createBoundingBoxesForEntities(*bulkPtr, stk::topology::ELEM_RANK, elemBoxes);
 
-    LocalSearchResults searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      LocalSearchResults searchResults;
       stk::search::local_coarse_search(elemBoxes, elemBoxes, searchMethod, searchResults);
     }
     batchTimer.stop_batch_timer();
@@ -219,10 +217,10 @@ void run_volume_to_volume_test_local_with_views(const std::string& meshFileName,
     Kokkos::View<BoxIdentProcType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentProcType>(*bulkPtr,
                                                                                               stk::topology::ELEM_RANK);
 
-    Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
 
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
       stk::search::local_coarse_search(elemBoxes, elemBoxes, searchMethod, searchResults, ExecSpace{});
     }
     batchTimer.stop_batch_timer();

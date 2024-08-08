@@ -13,7 +13,7 @@ namespace
 
 void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, stk::mesh::BulkData& bulkData)
 {
-  stk::mesh::fixtures::simple_fields::QuadFixture fixture(bulkData.parallel(), numX, numY, false);
+  stk::mesh::fixtures::QuadFixture fixture(bulkData.parallel(), numX, numY, false);
 
   stk::mesh::Field<double> &coordField = fixture.m_meta.declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
   stk::mesh::put_field_on_mesh(coordField, fixture.m_meta.universal_part(), fixture.m_meta.spatial_dimension(), nullptr);

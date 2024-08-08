@@ -59,12 +59,16 @@ void extract_warning(std::string & stdoutString, int numExpectedOccurrences, con
 {
   std::vector<std::string> warningLines = split_lines(stdoutString);
   std::string newStdoutString;
+#if defined(STK_USE_DEVICE_MESH)
   int numFound = 0;
+#endif
 
   for (const std::string & line : warningLines) {
     const size_t loc = line.find(warningString);
     if (loc != std::string::npos) {
+#if defined(STK_USE_DEVICE_MESH)
       ++numFound;
+#endif
     }
     else {
       newStdoutString += line + "\n";

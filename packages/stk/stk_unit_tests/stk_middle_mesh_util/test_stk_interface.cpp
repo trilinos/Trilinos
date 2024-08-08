@@ -1,4 +1,4 @@
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 
 #include "stk_middle_mesh_util/constants.hpp"
 #include "stk_middle_mesh_util/stk_interface.hpp"
@@ -59,8 +59,6 @@ TEST(StkInterface, twoToThree)
 
   auto& metaData  = bulkDataPtr->mesh_meta_data();
   auto& metaData2 = bulkData2Ptr->mesh_meta_data();
-  metaData.use_simple_fields();
-  metaData2.use_simple_fields();
 
   read_stk_mesh(fnameOut, bulkData);
   read_stk_mesh(fnameOut2, bulkData2);

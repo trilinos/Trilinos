@@ -41,7 +41,6 @@ bool GeometryKernelGregoryPatch::read_file
  )
 {
   m_geometryMesh = new percept::PerceptMesh();
-  m_geometryMesh->use_simple_fields();
   std::string options = "";
   bool auto_decomp = get_property("auto_decomp") == "true";
   bool exo_large = get_property("exo_large") == "true";

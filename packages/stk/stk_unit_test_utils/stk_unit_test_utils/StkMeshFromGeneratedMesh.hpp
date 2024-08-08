@@ -46,7 +46,8 @@ private:
 
 namespace simple_fields {
 
-class StkMeshCreator
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+StkMeshCreator
 {
 public:
   StkMeshCreator(const std::string& generatedMeshSpec, MPI_Comm communicator)
@@ -55,7 +56,6 @@ public:
   {
     const int spatialDim = 3;
     m_stkMeshMetaData = new stk::mesh::MetaData(spatialDim);
-    m_stkMeshMetaData->use_simple_fields();
     m_stkMeshBulkData = new stk::unit_test_util::BulkDataTester(*m_stkMeshMetaData, communicator);
 
     readExodusFileIntoStkMesh(generatedMeshSpec, *m_stkMeshBulkData, communicator);

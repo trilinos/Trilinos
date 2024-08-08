@@ -58,7 +58,7 @@ static const size_t spatial_dimension = 3;
 /**
  * A fixture that creates a "box" mesh of hexes
  */
-class  BoxFixture {
+class BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              stk::mesh::BulkData::AutomaticAuraOption autoAuraOption = stk::mesh::BulkData::AUTO_AURA,
@@ -127,7 +127,8 @@ static const size_t spatial_dimension = 3;
 /**
  * A fixture that creates a "box" mesh of hexes
  */
-class BoxFixture {
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              stk::mesh::BulkData::AutomaticAuraOption autoAuraOption = stk::mesh::BulkData::AUTO_AURA,

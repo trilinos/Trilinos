@@ -25,7 +25,7 @@ bool are_edges_equal(const Edge &edge, const stk::balance::GraphEdge &graphEdge)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class GraphCrossProc : public stk::unit_test_util::simple_fields::MeshFixture {};
+class GraphCrossProc : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(GraphCrossProc, checkEdgeWithAura)
 {

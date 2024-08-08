@@ -12,7 +12,7 @@
 namespace
 {
 
-class QueryExoVars : public stk::unit_test_util::simple_fields::MeshFixture
+class QueryExoVars : public stk::unit_test_util::MeshFixture
 {
 protected:
   void read_meta(stk::io::StkMeshIoBroker &stkIo, const std::string &filename)
@@ -40,7 +40,6 @@ TEST_F(QueryExoVars, nodeVars_getNames)
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     read_meta(stkIo, "allTypesOfData.exo");
     expect_names({{"dispx","{UNIVERSAL}"},
                   {"dispy","{UNIVERSAL}"},
@@ -56,7 +55,6 @@ TEST_F(QueryExoVars, elemVars_getNames)
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     read_meta(stkIo, "elemData.exo");
     expect_names({{"vonmises","block_1"},
                   {"vonmises","block_11"}}, stkIo.get_elem_var_names());
@@ -68,7 +66,6 @@ TEST_F(QueryExoVars, nodesetVars_getNames)
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     read_meta(stkIo, "nodesetData.exo");
     expect_names({{"apressure","nodelist_2"},
                   {"dispx","nodelist_1"},
@@ -82,7 +79,6 @@ TEST_F(QueryExoVars, sidesetVars_getNames)
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     read_meta(stkIo, "allTypesOfData.exo");
     expect_names({{"appliedpressure_sideset_30","surface_hex8_quad4_30"},
                   {"appliedpressure_sideset_31","surface_hex8_quad4_31"},

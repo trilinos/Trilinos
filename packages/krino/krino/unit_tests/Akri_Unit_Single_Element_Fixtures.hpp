@@ -27,7 +27,6 @@ public:
                .create();
     
     meta = bulk->mesh_meta_data_ptr();
-    meta->use_simple_fields();
     AuxMetaData::create(*meta);
   }
   void commit() { meta->commit(); }

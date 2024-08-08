@@ -31,6 +31,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <stk_util/stk_config.h>
 #include <iostream>
 #ifdef __GNUG__
 #include <cstdlib>
@@ -61,6 +62,7 @@ void print_type(T& t)
 namespace simple_fields {
 
 template <typename T>
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void print_type(T& t)
 {
   stk::unit_test_util::print_type(t);

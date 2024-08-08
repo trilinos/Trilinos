@@ -371,7 +371,6 @@ public:
     if (commOwnsMesh[0])
     {
       metaA = stk::mesh::MeshBuilder().set_spatial_dimension(spatial_dimension).create_meta_data();
-      metaA->use_simple_fields();
       meshA = stk::mesh::MeshBuilder(pmSub).create(metaA);
       build_mesh(*metaA, *meshA, info.num_elements, info.num_nodes, info.element_ids, element_ownerA, &info.elem_node_ids[0], info.node_sharingA, info.coordinates, create_faces);
     }
@@ -381,7 +380,6 @@ public:
     if (commOwnsMesh[1])
     {
       metaB = stk::mesh::MeshBuilder().set_spatial_dimension(spatial_dimension).create_meta_data();
-      metaB->use_simple_fields();
       meshB = stk::mesh::MeshBuilder(pmSub).create(metaB);
       build_mesh(*metaB, *meshB, info.num_elements, info.num_nodes, info.element_ids, element_ownerB, &info.elem_node_ids[0], info.node_sharingB, info.coordinates, create_faces);
     }
@@ -2418,7 +2416,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   stk::mesh::put_field_on_mesh(*fieldBaseA, metaA.universal_part(), &intInitVals);
 
   std::string meshDescA = "0,1,QUAD_4_2D,1,2,4,3,block_1";
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkA, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDescA, coords));
+  stk::unit_test_util::setup_text_mesh(bulkA, stk::unit_test_util::get_full_text_mesh_desc(meshDescA, coords));
 
   std::shared_ptr<stk::mesh::BulkData> bulkBPtr = build_mesh(2, MPI_COMM_WORLD);
   stk::mesh::MetaData& metaB = bulkBPtr->mesh_meta_data();
@@ -2433,7 +2431,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   } else {
     meshDescB = "1,1,QUAD_4_2D,1,2,4,3,block_1";
   }
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkB, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDescB, coords));
+  stk::unit_test_util::setup_text_mesh(bulkB, stk::unit_test_util::get_full_text_mesh_desc(meshDescB, coords));
 
   // Set up CopyTransfer
   stk::mesh::EntityVector entitiesA;

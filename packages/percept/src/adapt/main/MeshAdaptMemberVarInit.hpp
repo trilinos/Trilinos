@@ -31,14 +31,14 @@ std::string next_adapted_mesh  = "";
 std::string memory_logfile_name  = "";
 
 // for Salinas
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
 std::string rbar_blocks = ""; 
 #endif
 // for Salinas and other codes
 //std::string ignore_blocks = "";
 // just use block_name_inc to exclude....
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
 std::string version_prefix = "Sierra_";
 #else
 std::string version_prefix = "NonSierra_";

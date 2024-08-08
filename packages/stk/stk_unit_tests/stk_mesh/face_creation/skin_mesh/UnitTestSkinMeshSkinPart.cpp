@@ -215,7 +215,7 @@ TEST(ElementGraph, skin_part_3_blocks_2D)
   {
     const unsigned X = 4, Y = 1;
     bool auraOn = true;
-    stk::mesh::fixtures::simple_fields::QuadFixture fixture(comm, X, Y, auraOn);
+    stk::mesh::fixtures::QuadFixture fixture(comm, X, Y, auraOn);
 
     stk::mesh::MetaData & meta = fixture.m_meta;
     stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::LINE_2);

@@ -68,10 +68,9 @@ class Gmesh_STKmesh_Fixture
    * @param gmesh_spec The specification for the mesh. See Iogn::GeneratedMesh
    * for documentation on how to specify meshes.
    */
-  Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
-                         , const std::string& gmesh_spec
-                         , bool use_64bit_int_IO_api=false
-                       );
+  Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
+                        const std::string& gmesh_spec,
+                        bool use_64bit_int_IO_api=false);
 
   /**
    * Commits the meta-data of the mesh and populates the bulk-data. Don't call
@@ -127,7 +126,8 @@ namespace simple_fields {
  * This class implements a Stk-mesh based fixture that uses a generated
  * mesh as the basis of the fixture.
  */
-class Gmesh_STKmesh_Fixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+Gmesh_STKmesh_Fixture
 {
  public:
 

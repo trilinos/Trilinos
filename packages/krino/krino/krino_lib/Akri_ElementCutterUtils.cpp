@@ -12,6 +12,7 @@
 #include <Akri_MasterElement.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Relation.hpp>
 #include <vector>
 
 namespace krino {

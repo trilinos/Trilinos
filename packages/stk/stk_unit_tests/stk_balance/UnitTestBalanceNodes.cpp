@@ -7,7 +7,7 @@
 
 namespace {
 
-class TestBalanceNodes : public stk::unit_test_util::simple_fields::MeshFixture
+class TestBalanceNodes : public stk::unit_test_util::MeshFixture
 {
 protected:
 };

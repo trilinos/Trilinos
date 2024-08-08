@@ -62,7 +62,7 @@ using stk::mesh::Entity;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
 using stk::mesh::EntityId;
-using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::mesh::fixtures::RingFixture;
 using stk::unit_test_util::build_mesh;
 
 //----------------------------------------------------------------------
@@ -169,7 +169,6 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
   const int spatial_dimension = 3;
   MetaData meta( spatial_dimension );
-  meta.use_simple_fields();
 
   meta.commit();
 

@@ -63,7 +63,7 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace {
 
 using namespace stk::mesh;
-using stk::mesh::fixtures::simple_fields::HexFixture;
+using stk::mesh::fixtures::HexFixture;
 
 template <typename T>
 T do_operation(Operation Op, T lhs, T rhs)

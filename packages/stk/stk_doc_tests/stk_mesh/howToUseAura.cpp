@@ -56,7 +56,6 @@ void expectNumElementsInAura(stk::mesh::BulkData::AutomaticAuraOption autoAuraOp
     stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
     builder.set_aura_option(autoAuraOption);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
     stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
     stk::mesh::BulkData& bulk = *bulkPtr;
     stk::io::fill_mesh("generated:1x1x2", bulk);

@@ -90,7 +90,6 @@ namespace percept
       builder.set_entity_rank_names(get_entity_rank_names(3u));
       m_bulkData = builder.create();
       m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(), [](auto ptrWeWontDelete){});
-      m_metaData->use_simple_fields();
 
       m_parts.resize(NUM_ELEM_TYPES);
 

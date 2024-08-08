@@ -61,7 +61,6 @@ TEST(StkMeshIoBrokerHowTo, readMesh)
     // ============================================================
     //BeginBasicReadWrite
     std::shared_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(communicator).create();
-    stkMesh->mesh_meta_data().use_simple_fields();
 
     //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
     const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
@@ -76,7 +75,6 @@ TEST(StkMeshIoBrokerHowTo, readMesh)
     //+ EXAMPLE:
     //+ Read mesh data from the specified file.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(mesh_file_name, stk::io::READ_MESH);
 
     //+ Creates meta data; creates parts

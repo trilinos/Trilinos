@@ -76,7 +76,7 @@ public:
 };
 
 
-class EntitySortingFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class EntitySortingFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
 

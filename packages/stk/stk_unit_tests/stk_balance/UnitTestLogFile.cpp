@@ -42,7 +42,7 @@
 
 namespace {
 
-class TestLogFile : public stk::unit_test_util::simple_fields::MeshFixture
+class TestLogFile : public stk::unit_test_util::MeshFixture
 {
 protected:
   void clean_up_file(const std::string & fileName)
@@ -55,7 +55,7 @@ protected:
 
   void make_dummy_mesh(const std::string & meshFileName) {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::simple_fields::TextMeshToFile mesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
+      stk::unit_test_util::TextMeshToFile mesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       mesh.setup_mesh("0,1,HEX_8,1,2,3,4,5,6,7,8,block_1", meshFileName);
       mesh.write_mesh();
     }

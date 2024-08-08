@@ -78,7 +78,6 @@ TEST(stkMeshHowTo, createSharedNodes)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::mesh::Part &triPart = metaData.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3_2D);
@@ -122,7 +121,6 @@ TEST(stkMeshHowTo, createIndependentSharedNodes)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   metaData.commit();
@@ -158,7 +156,6 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::Part &triPart = metaData.declare_part_with_topology("triPart", stk::topology::TRIANGLE_3_2D);

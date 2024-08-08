@@ -70,8 +70,10 @@ namespace fixtures {
 class TetFixture
 {
 public:
-  typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
+  static std::string name() { return "TetFixture"; }
+
+  typedef double        Scalar;
+  typedef Field<Scalar> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -115,15 +117,15 @@ public:
     return 6*(m_nx)*(m_ny)*(m_nz);
   }
 
- private:
+private:
   std::shared_ptr<BulkData> m_bulk_p;
 
- public:
+public:
   MetaData&         m_meta;
   BulkData&         m_bulk_data;
   PartVector        m_elem_parts;
   PartVector        m_node_parts;
-  CoordFieldType &  m_coord_field ;
+  CoordFieldType *  m_coord_field ;
   bool owns_mesh = true;
   stk::topology     m_elem_topology = stk::topology::TET_4;
   stk::topology     m_face_topology = stk::topology::TRI_3;
@@ -181,8 +183,7 @@ public:
   //  m_node_parts.insert(m_node_parts.end(), itr, itr + num);
   //}
 
- private:
-
+private:
   typedef std::multimap<EntityId, int> NodeToProcsMMap;
 
   NodeToProcsMMap m_nodes_to_procs;
@@ -196,7 +197,8 @@ public:
 
 namespace simple_fields {
 
-class TetFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+TetFixture
 {
 public:
   static std::string name() { return "TetFixture"; }

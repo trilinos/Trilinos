@@ -67,7 +67,6 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
 
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
@@ -104,7 +103,6 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
     //+ EXAMPLE
     //+ Read parameters from file...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(file_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();

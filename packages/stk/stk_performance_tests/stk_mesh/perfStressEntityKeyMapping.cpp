@@ -44,7 +44,7 @@
 
 using EntityIdPair = std::pair<stk::mesh::EntityId,stk::mesh::EntityId>;
 
-class StressEntityKeyMapping : public stk::unit_test_util::simple_fields::MeshFixture
+class StressEntityKeyMapping : public stk::unit_test_util::MeshFixture
 {
 public:
   StressEntityKeyMapping()

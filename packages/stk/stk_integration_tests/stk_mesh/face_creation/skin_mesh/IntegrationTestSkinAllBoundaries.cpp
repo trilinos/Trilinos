@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <init/Ionit_Initializer.h>     // for Initializer
+#include <Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <string>                       // for string

@@ -110,7 +110,7 @@ bool are_bulk_data_equivalent(const stk::mesh::BulkData& bulk1, const stk::mesh:
     return false;
   }
 
-  stk::mesh::EntityIdVector entityCountVec1, entityCountVec2;
+  std::vector<size_t> entityCountVec1, entityCountVec2;
   stk::mesh::count_entities(meta1.locally_owned_part(), bulk1, entityCountVec1);
   stk::mesh::count_entities(meta2.locally_owned_part(), bulk2, entityCountVec2);
 

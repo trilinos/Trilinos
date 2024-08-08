@@ -746,7 +746,6 @@ namespace percept {
     typedef std::vector<FitGregoryPatches::Edge> VecEdge;
     VecEdge vecEdge;
 
-    stk::mesh::EntityId nedges_topo=0, nedges_geom=0;
     if (1)
       {
         for (unsigned ii=0; ii < vecFaces.size(); ++ii)
@@ -764,7 +763,6 @@ namespace percept {
                     if (m_edgeSet.find(edge) == m_edgeSet.end())
                       {
                         m_edgeSet.insert(edge);
-                        ++nedges_topo;
                       }
                   }
               }
@@ -835,7 +833,6 @@ namespace percept {
                     if (m_edgeSet.find(edge) == m_edgeSet.end())
                       {
                         m_edgeSet.insert(edge);
-                        ++nedges_geom;
                       }
                   }
               }

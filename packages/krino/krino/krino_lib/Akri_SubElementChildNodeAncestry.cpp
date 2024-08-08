@@ -9,6 +9,7 @@
 #include <Akri_CDMesh.hpp>
 #include <Akri_SubElement.hpp>
 #include <Akri_SubElementChildNodeAncestry.hpp>
+#include <stk_mesh/base/Relation.hpp>
 
 namespace krino {
 

@@ -40,7 +40,7 @@
 
 namespace {
 
-class DistributionFactor : public stk::unit_test_util::simple_fields::MeshFixture
+class DistributionFactor : public stk::unit_test_util::MeshFixture
 {
 public:
   DistributionFactor()
@@ -76,7 +76,6 @@ public:
       builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
       auto bulk = builder.create();
       stk::mesh::MetaData & meta = bulk->mesh_meta_data();
-      meta.use_simple_fields();
 
       for (const auto & dfFieldInfo : dfFieldMapping) {
         stk::mesh::FieldBase & dfField = meta.declare_field<double>(stk::topology::FACE_RANK, dfFieldInfo.first);

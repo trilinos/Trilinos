@@ -17,7 +17,6 @@ void applyRotation(stk::mesh::FieldBase *vectorField,
   const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   stk::mesh::EntityRank rank = vectorField->entity_rank();
 
-  // TODO support 2D?
   const unsigned nDim = meta.spatial_dimension();
 
   const double xtheta = M_PI*xrot/180.0;
@@ -66,19 +65,36 @@ void applyRotation(stk::mesh::FieldBase *vectorField,
     stk::mesh::Bucket & b = **ib ;
 
     double * v = static_cast<double*>(stk::mesh::field_data(*vectorField, b));
-    double tmp[3];
 
-    const stk::mesh::Bucket::size_type length = b.size();
-    for (unsigned ie=0; ie<length; ie++) {
-      tmp[0] = zyxrot_mat[0][0]*v[0]+zyxrot_mat[0][1]*v[1]+zyxrot_mat[0][2]*v[2];
-      tmp[1] = zyxrot_mat[1][0]*v[0]+zyxrot_mat[1][1]*v[1]+zyxrot_mat[1][2]*v[2];
-      tmp[2] = zyxrot_mat[2][0]*v[0]+zyxrot_mat[2][1]*v[1]+zyxrot_mat[2][2]*v[2];
+    if (nDim == 3) {
+      double tmp[3];
+      const stk::mesh::Bucket::size_type length = b.size();
 
-      v[0] = tmp[0];
-      v[1] = tmp[1];
-      v[2] = tmp[2];
-      
-      v += nDim;
+      for (unsigned ie=0; ie<length; ie++) {
+        tmp[0] = zyxrot_mat[0][0]*v[0]+zyxrot_mat[0][1]*v[1]+zyxrot_mat[0][2]*v[2];
+        tmp[1] = zyxrot_mat[1][0]*v[0]+zyxrot_mat[1][1]*v[1]+zyxrot_mat[1][2]*v[2];
+        tmp[2] = zyxrot_mat[2][0]*v[0]+zyxrot_mat[2][1]*v[1]+zyxrot_mat[2][2]*v[2];
+
+        v[0] = tmp[0];
+        v[1] = tmp[1];
+        v[2] = tmp[2];
+
+        v += nDim;
+      }
+    }
+    else if (nDim == 2) {
+      double tmp[2];
+      const stk::mesh::Bucket::size_type length = b.size();
+
+      for (unsigned ie=0; ie<length; ie++) {
+        tmp[0] = zyxrot_mat[0][0]*v[0]+zyxrot_mat[0][1]*v[1];
+        tmp[1] = zyxrot_mat[1][0]*v[0]+zyxrot_mat[1][1]*v[1];
+
+        v[0] = tmp[0];
+        v[1] = tmp[1];
+
+        v += nDim;
+      }
     }
   }
 }
@@ -97,7 +113,6 @@ void applyTranslation(stk::mesh::FieldBase *vectorField,
   stk::mesh::BucketVector const& entity_buckets =
     bulkdata.get_buckets( rank, select_used );
 
-  // TODO support 2D?
   const unsigned nDim = meta.spatial_dimension();
 
   for ( stk::mesh::BucketVector::const_iterator ib = entity_buckets.begin();
@@ -111,7 +126,9 @@ void applyTranslation(stk::mesh::FieldBase *vectorField,
     for (unsigned ie=0; ie<length; ie++) {
       v[0] += xtrans;
       v[1] += ytrans;
-      v[2] += ztrans;
+      if (nDim == 3) {
+        v[2] += ztrans;
+      }
       
       v += nDim;
     }

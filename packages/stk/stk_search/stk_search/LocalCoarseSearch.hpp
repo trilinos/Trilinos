@@ -79,15 +79,18 @@ void local_coarse_search(
 
 }
 
-template <typename DomainBoxType, typename DomainIdentType, typename RangeBoxType, typename RangeIdentType,
-          typename ExecutionSpace>
+
+template <typename DomainView, typename RangeView, typename ResultView, typename ExecutionSpace = typename DomainView::execution_space>
 void local_coarse_search(
-    Kokkos::View<BoxIdent<DomainBoxType, DomainIdentType>*, ExecutionSpace> const & domain,
-    Kokkos::View<BoxIdent<RangeBoxType, RangeIdentType>*, ExecutionSpace> const & range,
+    DomainView const & domain,
+    RangeView const & range,
     SearchMethod method,
-    Kokkos::View<IdentIntersection<DomainIdentType, RangeIdentType>*, ExecutionSpace> & intersections,
+    ResultView & intersections,
     ExecutionSpace const& execSpace = ExecutionSpace{})
+
 {
+  check_coarse_search_types_local<DomainView, RangeView, ResultView, ExecutionSpace>();
+
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX

@@ -163,7 +163,7 @@ void verify_nodesetField_in_file(stk::mesh::BulkData& input_bulk, stk::mesh::Ent
   verify_field_in_file(input_bulk, node, nodesetName, fieldName, filename);
 }
 
-class MeshWithNodeset : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithNodeset : public stk::unit_test_util::MeshFixture
 {
 };
 
@@ -211,7 +211,7 @@ void verify_sidesetField_in_file(stk::mesh::BulkData& input_bulk, stk::mesh::Ent
   verify_field_in_file(input_bulk, side, sidesetName, fieldName, filename);
 }
 
-class MeshWithSideset : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithSideset : public stk::unit_test_util::MeshFixture
 {
 };
 

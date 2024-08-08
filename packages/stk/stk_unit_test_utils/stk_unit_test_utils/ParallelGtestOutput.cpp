@@ -56,7 +56,7 @@ private:
     {
         if(mProcId == 0)
         {
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
             printf("*** Starting test %s.%s from %s:%d\n",
                    test_info.test_case_name(),
                    test_info.name(),
@@ -126,7 +126,7 @@ private:
         {
             if(numTotalFailures == 0)
             {
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
               ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[       OK ] ");
 #else
 //newer versions of gtest don't allow external access to ColoredPrintf
@@ -142,7 +142,7 @@ private:
             printf("%s.%s", test_info.test_case_name(), test_info.name());
             if ( should_print_time() )
             {
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
                 size_t millis = test_info.result() != nullptr ? test_info.result()->elapsed_time() : 0;
 #else
                 size_t millis = 0;
@@ -214,7 +214,7 @@ private:
 
     void print_failed(const std::string &message)
     {
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
       ::testing::internal::ColoredPrintf(::testing::internal::COLOR_RED, "[  FAILED  ] ");
 #else
 //newer versions of gtest don't allow external access to ColoredPrintf
@@ -225,7 +225,7 @@ private:
 
     void print_passed(const std::string &message)
     {
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
       ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[  PASSED  ] ");
 #else
 //newer versions of gtest don't allow external access to ColoredPrintf

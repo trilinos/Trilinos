@@ -34,13 +34,6 @@ PointGeometry::PointGeometry(const stk::math::Vector3d & n)
     m_nodeData(n)
 {}
 
-const stk::math::Vector3d &
-PointGeometry::node(int index) const
-{
-  STK_ThrowAssert(index==0);
-  return m_nodeData;
-}
-
 stk::math::Vector3d
 PointGeometry::centroid() const
 {
@@ -59,25 +52,6 @@ LineGeometry::LineGeometry(const stk::math::Vector3d & n0,
     m_nodeData{n0, n1}
 {}
  
-#ifdef __GNUC__
-# if (__GNUC__ == 11)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Warray-bounds"
-#   define SIERRA_GCC_POP_DIAG
-# endif
-#endif
-
-const stk::math::Vector3d &
-LineGeometry::node(int index) const
-{
-  STK_ThrowAssert(index>=0 && index < 2);
-  return m_nodeData[index];
-}
- 
-#ifdef SIERRA_GCC_POP_DIAG
-#pragma GCC diagnostic pop
-#endif
-
 stk::math::Vector3d
 LineGeometry::centroid() const
 {
@@ -124,13 +98,6 @@ TriGeometry::TriGeometry(const stk::math::Vector3d & n0,
   : SideGeometry(3),
     m_nodeData{n0, n1, n2}
 {}
-
-const stk::math::Vector3d &
-TriGeometry::node(int index) const
-{
-  STK_ThrowAssert(index>=0 && index < 3);
-  return m_nodeData[index];
-}
 
 stk::math::Vector3d
 TriGeometry::centroid() const
@@ -207,13 +174,6 @@ QuadGeometry::QuadGeometry(const stk::math::Vector3d & n0,
   : SideGeometry(4),
     m_nodeData{n0, n1, n2, n3}
 {
-}
-
-const stk::math::Vector3d &
-QuadGeometry::node(int index) const
-{
-  STK_ThrowAssert(index>=0 && index < 4);
-  return m_nodeData[index];
 }
 
 stk::math::Vector3d

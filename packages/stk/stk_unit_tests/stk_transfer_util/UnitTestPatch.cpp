@@ -71,10 +71,10 @@
 
 namespace {
 
-class PatchTester : public stk::unit_test_util::simple_fields::MeshFixtureNoTest, public ::testing::Test {
+class PatchTester : public stk::unit_test_util::MeshFixtureNoTest, public ::testing::Test {
  public:
   PatchTester()
-    : stk::unit_test_util::simple_fields::MeshFixtureNoTest(3)
+    : stk::unit_test_util::MeshFixtureNoTest(3)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   }

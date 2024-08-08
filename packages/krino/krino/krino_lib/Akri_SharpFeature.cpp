@@ -6,6 +6,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Relation.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include "Akri_AuxMetaData.hpp"
@@ -283,7 +284,7 @@ bool SharpFeatureInfo::edge_has_sharp_feature_3D(const stk::mesh::BulkData & mes
 {
   const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
   std::vector<stk::mesh::Entity> sidesOfEdge;
-  stk::mesh::get_entities_through_relations(mesh, {edgeNodes[0], edgeNodes[1]}, stk::topology::FACE_RANK, sidesOfEdge);
+  stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edgeNodes[0], edgeNodes[1]}, stk::topology::FACE_RANK, sidesOfEdge);
   if (sidesOfEdge.size() > 1)
     filter_sides_based_on_attached_element_and_side_parts(mesh, elementSelector, sideSelector, sidesOfEdge);
   return angle_is_sharp_between_any_two_sides_3D(mesh, coordsField, cosFeatureAngle, edgeNodes, sidesOfEdge);

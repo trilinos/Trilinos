@@ -178,11 +178,9 @@
         add_parts = m_toParts;
 
         unsigned edge_marks[6] = {0,0,0,0,0,0};
-        unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 6; iedge++)
           {
             edge_marks[iedge] = 1;
-            ++num_edges_marked;
           }
 
         stk::mesh::Entity elem_nodes_local[4] = {stk::mesh::Entity()};

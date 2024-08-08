@@ -56,12 +56,12 @@ void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double dist
 
   std::vector<std::pair<Sphere, IdentProc>> boxVector1;
   if (procId == 0) {
-    boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
+    boxVector1.push_back(stk::unit_test_util::generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
   }
 
   std::vector<std::pair<Sphere, IdentProc>> boxVector2;
   if (procId == numProcs-1) {
-    boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
+    boxVector2.push_back(stk::unit_test_util::generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
   }
 
   SearchResults boxIdPairResults;
@@ -89,7 +89,7 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(const unsigned & i) {
         domain[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<Sphere, IdentProc>(0, 0, 0, radius, 1, procId);
+            stk::unit_test_util::device_generateBoxIdentProc<Sphere, IdentProc>(0, 0, 0, radius, 1, procId);
     });
   }
 
@@ -98,7 +98,7 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
       KOKKOS_LAMBDA(const unsigned & i) {
         const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
         range[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<Sphere, IdentProc>(axisOffset, axisOffset, 0,
+            stk::unit_test_util::device_generateBoxIdentProc<Sphere, IdentProc>(axisOffset, axisOffset, 0,
                                                                                                     radius, 2, procId);
     });
   }
@@ -244,12 +244,12 @@ void host_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod,
   std::vector<SphereIdentPair> domain;
   std::vector<SphereIdentPair> range;
 
-  domain.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1)));
+  domain.emplace_back(stk::unit_test_util::box_ident_to_pair(
+      stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1)));
 
   const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
-  range.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(
+  range.emplace_back(stk::unit_test_util::box_ident_to_pair(
+      stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(
           axisOffset, axisOffset, 0, radius, 2)));
 
   LocalSearchResults intersections;
@@ -273,11 +273,11 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
     KOKKOS_LAMBDA(const unsigned & i) {
       domain[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1);
+          stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1);
 
       const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
       range[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(axisOffset, axisOffset, 0,
+          stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(axisOffset, axisOffset, 0,
                                                                                           radius, 2);
     });
 

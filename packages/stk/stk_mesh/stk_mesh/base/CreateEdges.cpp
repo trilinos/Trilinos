@@ -39,7 +39,9 @@
 #include <functional>                   // for equal_to
 #include <iterator>                     // for back_insert_iterator, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
@@ -155,7 +157,7 @@ struct create_single_edge_impl
     else {
       side = iedge->second;
     }
-    perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
+    perm = stk::mesh::find_permutation(mesh, elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
     STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, side, m_edge_ordinal, perm, scratch1, scratch2, scratch3);
   }
@@ -268,7 +270,7 @@ struct create_edge_impl
         else {
           side = iedge->second;
         }
-        perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
+        perm = stk::mesh::find_permutation(mesh, elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
         STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], side, e, perm, scratch1, scratch2, scratch3);
       }

@@ -77,6 +77,7 @@ void Simulation::execute()
   while ( my_current_time < my_stop_time )
   {
     static const double sqrt_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
+    my_old_time = my_current_time;
     if (my_current_time+my_time_step_size > my_stop_time*(1.-sqrt_epsilon))
     {
       my_time_step_size = my_stop_time - my_current_time;

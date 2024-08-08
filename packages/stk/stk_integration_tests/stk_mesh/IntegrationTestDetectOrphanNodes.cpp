@@ -6,7 +6,7 @@
 namespace
 {
 
-class OrphanedNodeMesh : public stk::unit_test_util::simple_fields::MeshFixture {};
+class OrphanedNodeMesh : public stk::unit_test_util::MeshFixture {};
 
 bool doOrphanededNodesExist(const stk::mesh::BulkData& bulk)
 {
@@ -32,7 +32,7 @@ bool doOrphanededNodesExist(const stk::mesh::BulkData& bulk)
 
 TEST_F(OrphanedNodeMesh, detectOrphanedNodes)
 {
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x100");
+  std::string filename = stk::unit_test_util::get_option("-i", "generated:1x1x100");
   setup_mesh(filename, stk::mesh::BulkData::NO_AUTO_AURA);
 
   EXPECT_TRUE(!doOrphanededNodesExist(get_bulk()));

@@ -25,7 +25,7 @@ void make_mesh_non_spider_no_volume_elements(stk::mesh::BulkData & bulk)
     1,1,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -58,7 +58,7 @@ void make_mesh_non_spider_not_enough_legs(stk::mesh::BulkData & bulk)
     2,2,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -92,7 +92,7 @@ void make_mesh_one_spider_no_body_element(stk::mesh::BulkData & bulk)
     2,2,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -127,7 +127,7 @@ void make_mesh_one_spider_particle_body(stk::mesh::BulkData & bulk)
     2,2,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -163,7 +163,7 @@ void make_mesh_one_spider_beam_body(stk::mesh::BulkData & bulk)
     2,3,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -205,7 +205,7 @@ void make_mesh_compound_spider_beam_body(stk::mesh::BulkData & bulk)
     6,2,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -248,7 +248,7 @@ void make_mesh_two_spiders_particle_body(stk::mesh::BulkData & bulk)
     6,2,0.5
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 inline
@@ -260,7 +260,6 @@ void write_serial_cube_mesh_with_spider(unsigned meshSize, bool addParticleBody,
     builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
     auto bulk = builder.create();
     stk::mesh::MetaData & meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Part & block2Part = meta.declare_part_with_topology("block_2", stk::topology::BEAM_2);
     stk::mesh::Part & block3Part = meta.declare_part_with_topology("block_3", stk::topology::PARTICLE);

@@ -65,7 +65,7 @@ CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
     myFlagUseVelocityToEvaluateInterfaceCFL(false),
     my_timer_cdfem("CDFEM", sierra::Diag::sierraTimer())
 {
-  my_prolongation_model = ALE_NEAREST_POINT;
+  my_prolongation_model = ALE_CLOSEST_POINT;
 
   if (3 == my_meta.spatial_dimension())
     my_simplex_generation_method = CUT_QUADS_BY_NEAREST_EDGE_CUT;
@@ -217,6 +217,8 @@ CDFEM_Support::set_snap_fields()
           const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
           if (state != stk::mesh::StateNew)
             mySnapFields.erase(lsField.field_state(state));
+          else
+            mySnapFields.insert(lsField.field_state(state));
         }
       }
     }
@@ -231,6 +233,9 @@ CDFEM_Support::set_snap_fields()
       mySnapFields.erase(cdfemSnapField.field_state(state));
     }
   }
+
+  for (auto & field : mySnapFields)
+    krinolog << "Snap field " << field.name()  << " (" << state_string(field.state()) << ")" << stk::diag::dendl;
 }
 
 void

@@ -59,15 +59,15 @@ TEST(ElementGraph, degenerate_mesh)
     {
       std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
       stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
-      stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+      stk::mesh::fixtures::VectorFieldType & node_coord =
           meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
       stk::mesh::put_field_on_mesh(node_coord, meta_data.universal_part(), 3, nullptr);
 
-      stk::mesh::fixtures::simple_fields::degenerate_mesh_meta_data(meta_data, node_coord);
+      stk::mesh::fixtures::degenerate_mesh_meta_data(meta_data, node_coord);
       meta_data.commit();
 
       stk::mesh::BulkData& bulk_data = *bulkPtr;
-      stk::mesh::fixtures::simple_fields::degenerate_mesh_bulk_data(bulk_data, node_coord);
+      stk::mesh::fixtures::degenerate_mesh_bulk_data(bulk_data, node_coord);
       if(stk::parallel_machine_rank(comm) == 0)
       {
         stk::io::write_mesh(fileName, bulk_data);
@@ -78,7 +78,7 @@ TEST(ElementGraph, degenerate_mesh)
     stk::mesh::BulkData& bulk_data = *bulkPtr;
     stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
     stk::io::put_io_part_attribute(skin);
-    stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+    stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
     unlink(fileName.c_str());
     EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
     std::vector<size_t> mesh_counts;

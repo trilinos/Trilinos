@@ -67,7 +67,7 @@ class QuadShellFixture
 {
 public:
   typedef double Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
+  typedef Field<Scalar> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -99,7 +99,7 @@ public:
   Part &                        m_quad_part ;
   PartVector                    m_elem_parts;
   PartVector                    m_node_parts;
-  CoordFieldType &              m_coord_field ;
+  CoordFieldType *              m_coord_field ;
   const unsigned                m_node_id_start = 1;
   const unsigned                m_elem_id_start = 1;
   bool                          owns_mesh = true;
@@ -185,7 +185,8 @@ namespace simple_fields {
  * A coordinate field will be added to all nodes, a coordinate-gather field
  * will be added to all elements.
  */
-class QuadShellFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+QuadShellFixture
 {
 public:
   typedef double Scalar;

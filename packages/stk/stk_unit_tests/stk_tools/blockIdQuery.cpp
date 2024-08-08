@@ -7,17 +7,17 @@
 namespace
 {
 
-class StkToolsB : public stk::unit_test_util::simple_fields::MeshFixture {};
+class StkToolsB : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(StkToolsB, GetBlockIdsForSpecifiedSideset)
 {
   const std::string unNamed = "mesh not specified";
-  const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
+  const std::string meshName = stk::unit_test_util::get_option("-i", unNamed);
   STK_ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
   int invalidSideset = -1;
-  int sideset = stk::unit_test_util::simple_fields::get_command_line_option("-s", invalidSideset);
+  int sideset = stk::unit_test_util::get_command_line_option("-s", invalidSideset);
   STK_ThrowRequireMsg(sideset!=invalidSideset, "Please specify sideset with -s.");
 
   std::string sidesetName = "surface_" + std::to_string(sideset);

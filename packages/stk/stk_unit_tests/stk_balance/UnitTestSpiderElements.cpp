@@ -11,7 +11,7 @@
 
 namespace {
 
-class SpiderElement : public stk::unit_test_util::simple_fields::MeshFixture
+class SpiderElement : public stk::unit_test_util::MeshFixture
 {
 protected:
   SpiderElement()
@@ -603,7 +603,7 @@ void compare_identical_volume_decompositions(stk::balance::BalanceMesh & meshNod
 
 TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
 {
-  const unsigned meshSize = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("--size", 2);
+  const unsigned meshSize = stk::unit_test_util::get_command_line_option<unsigned>("--size", 2);
 
   bool addParticleBody = false;
   const std::string fileNameNode = "cube_spider_node.g";

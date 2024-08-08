@@ -34,7 +34,9 @@
 #ifndef STK_ENTITYLESS_HPP
 #define STK_ENTITYLESS_HPP
 
+#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -60,7 +62,93 @@ private:
 #endif
 }; //struct EntityLess
 
+#ifdef SIERRA_MIGRATION
+inline bool 
+EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  bool result = false;
+  if (m_shouldSortFacesByNodeIds &&
+      m_mesh->entity_rank(lhs) == m_sideRank &&
+      m_mesh->entity_rank(rhs) == m_sideRank)
+  {
+    unsigned num_nodes_lhs = m_mesh->count_valid_connectivity(lhs, stk::topology::NODE_RANK);
+    unsigned num_nodes_rhs = m_mesh->count_valid_connectivity(rhs, stk::topology::NODE_RANK);
+    if (num_nodes_lhs != num_nodes_rhs)
+    {    
+      result = num_nodes_lhs < num_nodes_rhs;
+    }    
+    else if (num_nodes_lhs == 0) { 
+      result = m_mesh->identifier(lhs) < m_mesh->identifier(rhs);
+    }    
+    else 
+    {    
+      const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
+      const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
+      unsigned i=0; 
+      while(i<num_nodes_lhs &&
+            (m_mesh->identifier(nodes_lhs_ptr[i]) == m_mesh->identifier(nodes_rhs_ptr[i])))
+      {    
+        ++i;
+      }    
+      result = (i<num_nodes_lhs) ?
+            (m_mesh->identifier(nodes_lhs_ptr[i]) < m_mesh->identifier(nodes_rhs_ptr[i]))
+          : false;
+    }    
+  }
+  else 
+  {
+    const EntityKey lhs_key = m_mesh->entity_key(lhs);
+    const EntityKey rhs_key = m_mesh->entity_key(rhs);
+    result = lhs_key < rhs_key;
+  }
+  return result;
 }
+
+#else
+
+inline
+EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
+
+inline bool 
+EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
+  return (lhs_key < rhs_key);
 }
+#endif
+
+inline bool 
+EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
+{
+  const EntityKey lhs_key = m_mesh->entity_key(lhs);
+  return lhs_key < rhs; 
+}
+
+inline bool 
+EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
+{
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs.first);
+  return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
+}
+
+inline bool 
+EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
+{
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  const EntityKey rhs_key = m_mesh->entity_key(rhs);
+  return lhs_key < rhs_key;
+}
+
+inline bool 
+EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
+{
+  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
+  return lhs_key < rhs ;
+}
+
+} // namespace mesh
+} // namespace stk
 
 #endif

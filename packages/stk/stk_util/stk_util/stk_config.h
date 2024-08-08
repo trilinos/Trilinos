@@ -35,7 +35,7 @@
 #ifndef stk_util_config_h
 #define stk_util_config_h
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_WITH_BJAM
 
 #define STK_HAS_MPI
 #define STK_HAS_ARBORX

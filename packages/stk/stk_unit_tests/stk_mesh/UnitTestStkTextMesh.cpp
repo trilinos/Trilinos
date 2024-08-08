@@ -230,7 +230,7 @@ void test_get_mesh_spec(unsigned blockCountToDist, const std::vector<unsigned>& 
   for(unsigned i = 0; i < numProcs.size(); i++) {
     unsigned procCount = numProcs[i];
     std::vector<unsigned> procs;
-    stk::unit_test_util::simple_fields::get_block_proc_distribution(blockCountToDist, procCount, procs);
+    stk::unit_test_util::get_block_proc_distribution(blockCountToDist, procCount, procs);
 
     EXPECT_EQ(expectedDist[i].size(), procs.size());
     for(unsigned j = 0; j < procs.size(); j++) {

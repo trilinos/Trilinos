@@ -55,7 +55,7 @@ namespace io
 namespace unit_test
 {
 
-class IOMeshFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class IOMeshFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
   stk::mesh::Part& create_io_part(const std::string& partName,

@@ -15,7 +15,6 @@ void test_stk_io(stk::ParallelMachine comm, const std::string& meshSource, bool 
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   if (bulk->parallel_rank() == 0) {
     std::cout << "test_stk_io: meshSource="<<meshSource<<std::endl;

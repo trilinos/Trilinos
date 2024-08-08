@@ -55,7 +55,6 @@ TEST(stkMeshHowTo, useMultistateField)
   builder.set_spatial_dimension(spatialDimension);
   builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> ScalarField;

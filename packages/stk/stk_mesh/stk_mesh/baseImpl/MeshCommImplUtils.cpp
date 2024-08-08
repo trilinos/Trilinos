@@ -34,6 +34,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Relation.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CommSparse.hpp>

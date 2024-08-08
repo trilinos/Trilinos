@@ -42,6 +42,7 @@
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/DestroyRelations.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -62,7 +63,7 @@
 
 namespace ngp_field_test {
 
-class NgpFieldFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpFieldFixture : public stk::unit_test_util::MeshFixture
 {
 public:
   template <typename T>
@@ -87,7 +88,7 @@ public:
     stk::mesh::put_field_on_mesh(stkField, block, 1, &init1);
 
     const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,5,6,block_1\n";
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_two_field_two_element_mesh()
@@ -110,7 +111,7 @@ public:
 
     const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,5,6,block_1\n"
                                  "0,2,SHELL_QUAD_4,2,3,4,5,block_2\n";
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_two_variable_fields_two_element_mesh()
@@ -136,7 +137,7 @@ public:
 
     const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,5,6,block_1\n"
                                  "0,2,SHELL_QUAD_4,2,3,4,5,block_2\n";
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   template<typename T>
@@ -169,7 +170,47 @@ public:
                                  "0,3,HEX_8,9,13,14,15,16,17,18,19,block_2\n"
                                  "0,4,HEX_8,9,20,21,22,23,24,25,26,block_2\n"
                                  "0,5,HEX_8,9,27,28,29,30,31,32,33,block_3";
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  }
+
+  template<typename T>
+  void setup_three_fields_five_hex_three_block_mesh(const int numComponent1, const int numComponent2, const int numStates = 1)
+  {
+    const unsigned bucketCapacity = 2;
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
+
+    stk::mesh::Field<T>& stkField1 = get_meta().declare_field<T>(stk::topology::NODE_RANK, "variableLengthField1", numStates);
+    stk::mesh::Field<T>& stkField2 = get_meta().declare_field<T>(stk::topology::NODE_RANK, "variableLengthField2", numStates);
+    stk::mesh::Field<T>& stkField3 = get_meta().declare_field<T>(stk::topology::NODE_RANK, "variableLengthField3", numStates);
+
+    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
+    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+    get_meta().declare_part_with_topology("block_3", stk::topology::HEX_8);
+
+    const std::vector<T> init1(numComponent1, -1);
+    stk::mesh::put_field_on_mesh(stkField1, block1, numComponent1, init1.data());
+
+    const std::vector<T> init2(numComponent2, -2);
+    stk::mesh::put_field_on_mesh(stkField1, block2, numComponent2, init2.data());
+
+    const std::vector<T> init3(numComponent1, -1);
+    stk::mesh::put_field_on_mesh(stkField2, block1, numComponent1, init3.data());
+
+    const std::vector<T> init4(numComponent2, -2);
+    stk::mesh::put_field_on_mesh(stkField2, block2, numComponent2, init4.data());
+
+    const std::vector<T> init5(numComponent1, 0);
+    stk::mesh::put_field_on_mesh(stkField3, block1, numComponent1, init5.data());
+
+    const std::vector<T> init6(numComponent2, 0);
+    stk::mesh::put_field_on_mesh(stkField3, block2, numComponent2, init6.data());
+
+    const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                                 "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n"
+                                 "0,3,HEX_8,9,13,14,15,16,17,18,19,block_2\n"
+                                 "0,4,HEX_8,9,20,21,22,23,24,25,26,block_2\n"
+                                 "0,5,HEX_8,9,27,28,29,30,31,32,33,block_3";
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_two_element_mesh_field_on_each_element(stk::mesh::Field<int>& intField, stk::mesh::Field<double>& doubleField)
@@ -184,7 +225,7 @@ public:
 
     const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,4,3,block_1\n"
                                  "0,2,SHELL_QUAD_4,2,5,6,4,block_2\n";
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void add_3rd_element_to_2hex_3block_mesh()
@@ -660,15 +701,8 @@ public:
   {
     add_element_and_place_in_block(newBlockName);
 
-    stk::mesh::EntityVector nodes;
     stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1);
-    unsigned numNodes = get_bulk().num_nodes(element);
-
-    fill_nodes(element, numNodes, nodes);
-
-    for(unsigned i = 0; i < numNodes; i++) {
-      get_bulk().destroy_relation(element, nodes[i], i);
-    }
+    stk::mesh::destroy_relations(get_bulk(), element, stk::topology::NODE_RANK);
     get_bulk().destroy_entity(element);
   }
 
@@ -1017,11 +1051,11 @@ TEST_F(NgpFieldFixture, noFieldDataTest)
   const unsigned bucketCapacity = 1;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
-  std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(numBlocks);
-  std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(numBlocks);
+  std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(numBlocks);
+  std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(numBlocks);
 
   stk::mesh::Field<int>& field = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "", 1);
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   EXPECT_NO_THROW(stk::mesh::get_updated_ngp_field<int>(field));
 }
 
@@ -1140,7 +1174,7 @@ TEST_F(NgpFieldFixture, DeviceField_set_all_after_modified_on_host)
   auto stkField1 = get_meta().get_field<double>(stk::topology::ELEM_RANK, "variableLengthField1");
 
   EXPECT_FALSE(stkField1->need_sync_to_host());
-  EXPECT_TRUE(stkField1->need_sync_to_device());
+  EXPECT_FALSE(stkField1->need_sync_to_device());
 
   stk::mesh::NgpField<double> ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
  
@@ -1166,8 +1200,8 @@ TEST_F(NgpFieldFixture, blas_field_copy_device_to_device)
 
   EXPECT_FALSE(stkField1->need_sync_to_host());
   EXPECT_FALSE(stkField2->need_sync_to_host());
-  EXPECT_TRUE(stkField1->need_sync_to_device());
-  EXPECT_TRUE(stkField2->need_sync_to_device());
+  EXPECT_FALSE(stkField1->need_sync_to_device());
+  EXPECT_FALSE(stkField2->need_sync_to_device());
 
  
   const double myConstantValue = 97.9;

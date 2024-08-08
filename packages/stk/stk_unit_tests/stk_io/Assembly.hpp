@@ -245,7 +245,6 @@ protected:
   {
     stk::mesh::Selector meshSubsetSelector = !stk::mesh::Selector(stk::mesh::selectUnion(outputPartsToExclude));
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
     stkIo.set_output_selector(outputFileIndex, rank, meshSubsetSelector);

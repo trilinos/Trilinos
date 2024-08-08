@@ -34,6 +34,7 @@
 #ifndef TextMesh_hpp
 #define TextMesh_hpp
 
+#include "stk_util/stk_config.h"
 #include <string>
 #include <vector>
 namespace stk { namespace mesh { class BulkData; }}
@@ -48,7 +49,10 @@ void setup_text_mesh(stk::mesh::BulkData& bulkData, const std::string& meshDesc)
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 std::string get_full_text_mesh_desc(const std::string& textMeshConnectivityDesc, const std::vector<double>& coordVec);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void setup_text_mesh(stk::mesh::BulkData& bulkData, const std::string& meshDesc);
 
 }

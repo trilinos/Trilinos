@@ -5,7 +5,7 @@
 
 namespace {
 
-class M2NBalanceCommandLine : public stk::unit_test_util::simple_fields::MeshFixture
+class M2NBalanceCommandLine : public stk::unit_test_util::MeshFixture
 {
 protected:
   M2NBalanceCommandLine()

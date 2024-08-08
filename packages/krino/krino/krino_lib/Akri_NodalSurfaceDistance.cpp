@@ -1,3 +1,4 @@
+#include <Akri_AnalyticSurf.hpp>
 #include <Akri_NodalSurfaceDistance.hpp>
 
 #include <Akri_Composite_Surface.hpp>
@@ -36,6 +37,31 @@ void compute_nodal_surface_distance(const stk::mesh::BulkData & mesh, const Fiel
   }
 
   stk::mesh::communicate_field_data(mesh, {&distanceField.field()});
+}
+
+void compute_nodal_distance_from_spheres(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const FieldRef distanceField,
+    const std::vector<std::pair<stk::math::Vector3d,double>> & spheres,
+    const int sign)
+{
+  Composite_Surface initializationSurfaces("initialization surfaces");
+  if (sign < 0)
+    initializationSurfaces.set_composition_method(Composite_Surface::MAXIMUM_SIGNED_DISTANCE);
+  for (auto & sphere : spheres)
+    initializationSurfaces.add(new Sphere(sphere.first, sphere.second, sign));
+  compute_nodal_surface_distance(mesh, coordsField, distanceField, initializationSurfaces);
+}
+
+void compute_nodal_distance_from_plane(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const FieldRef distanceField,
+    const stk::math::Vector3d & normal,
+    const double offset)
+{
+  Composite_Surface initializationSurfaces("initialization surfaces");
+  initializationSurfaces.add(new Plane(normal, offset, 1.0));
+  compute_nodal_surface_distance(mesh, coordsField, distanceField, initializationSurfaces);
 }
 
 }

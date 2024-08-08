@@ -23,7 +23,7 @@ namespace unit_test_util
 
 GeneratedMeshToFile::GeneratedMeshToFile(stk::ParallelMachine comm,
                                          stk::mesh::BulkData::AutomaticAuraOption auraOption)
-  : bulkPtr(build_mesh_no_simple_fields(3, comm, auraOption)),
+  : bulkPtr(build_mesh(3, comm, auraOption)),
     bulk(*bulkPtr),
     meta(bulk.mesh_meta_data())
 {
@@ -55,11 +55,13 @@ GeneratedMeshToFileWithTransientFields::GeneratedMeshToFileWithTransientFields(s
                                                                                stk::topology::rank_t rank)
   : GeneratedMeshToFile(comm, auraOption),
     fieldRank(rank),
-    scalarField(stk::mesh::legacy::declare_field<stk::mesh::Field<double                      > >(meta, fieldRank, fieldBaseName+"_scalar", 1)),
-    vectorField(stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(meta, fieldRank, fieldBaseName+"_vector", 1))
+    scalarField(meta.declare_field<double>(fieldRank, fieldBaseName+"_scalar", 1)),
+    vectorField(meta.declare_field<double>(fieldRank, fieldBaseName+"_vector", 1))
 {
   stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(), nullptr);
   stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3, nullptr);
+
+  stk::io::set_field_output_type(vectorField, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 void GeneratedMeshToFileWithTransientFields::write_mesh_with_field(const std::vector<double>& timeSteps,
@@ -98,7 +100,6 @@ GeneratedMeshToFile::GeneratedMeshToFile(stk::ParallelMachine comm,
     bulk(*bulkPtr),
     meta(bulk.mesh_meta_data())
 {
-  meta.use_simple_fields();
 }
 
 void GeneratedMeshToFile::write_mesh()

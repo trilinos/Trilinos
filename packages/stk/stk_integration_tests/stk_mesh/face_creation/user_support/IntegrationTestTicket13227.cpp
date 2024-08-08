@@ -10,7 +10,7 @@
  */
 
 
-class Ticket13227 : public stk::unit_test_util::simple_fields::MeshFixture
+class Ticket13227 : public stk::unit_test_util::MeshFixture
 {
 };
 

@@ -45,5 +45,6 @@ cmake \
 -Dyamlcpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
 -DTPL_ENABLE_HDF5:BOOL=ON \
+-DTPL_HDF5_LIBRARIES="-lhdf5" \
 ${trilinos_src_dir}/
 

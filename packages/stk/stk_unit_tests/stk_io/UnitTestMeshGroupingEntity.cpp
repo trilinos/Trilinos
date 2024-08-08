@@ -79,7 +79,6 @@ TEST(MeshGroupingEntity, universalSideset_get_entity_rank)
   Ioss::SideBlock* usideblk = new Ioss::SideBlock(db_io, "universal_sideset", "unknown", "unknown", 1);
   usideset->add(usideblk);
   stk::mesh::MetaData meta(3);
-  meta.use_simple_fields();
   EXPECT_EQ(stk::topology::FACE_RANK, stk::io::get_entity_rank(usideset, meta));
   EXPECT_EQ(stk::topology::FACE_RANK, stk::io::get_entity_rank(usideblk, meta));
   delete usideset;
@@ -230,7 +229,6 @@ TEST(MeshGroupingEntity, matchhingNameAndType)
 TEST(MeshGroupingEntity, iossEntityTypesForElementRank)
 {
   stk::mesh::MetaData meta(2);
-  meta.use_simple_fields();
 
   std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta, stk::topology::ELEMENT_RANK);
 
@@ -242,9 +240,7 @@ TEST(MeshGroupingEntity, iossEntityTypesForElementRank)
 TEST(MeshGroupingEntity, iossEntityTypesForFaceRank)
 {
   stk::mesh::MetaData meta2D(2);
-  meta2D.use_simple_fields();
   stk::mesh::MetaData meta3D(3);
-  meta3D.use_simple_fields();
 
   std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta2D, stk::topology::FACE_RANK);
 
@@ -269,7 +265,6 @@ TEST(MeshGroupingEntity, iossEntityTypesForFaceRank)
 TEST(MeshGroupingEntity, iossEntityTypesForConstraintRank)
 {
   stk::mesh::MetaData meta(2);
-  meta.use_simple_fields();
 
   std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta, stk::topology::CONSTRAINT_RANK);
 
@@ -279,7 +274,6 @@ TEST(MeshGroupingEntity, iossEntityTypesForConstraintRank)
 TEST(MeshGroupingEntity, iossEntityTypesForNodeRank)
 {
   stk::mesh::MetaData meta;
-  meta.use_simple_fields();
 
   std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta, stk::topology::NODE_RANK);
 

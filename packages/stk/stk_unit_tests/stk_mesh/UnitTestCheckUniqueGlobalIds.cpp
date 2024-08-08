@@ -9,7 +9,7 @@
 namespace
 {
 
-class MeshChecker : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshChecker : public stk::unit_test_util::MeshFixture
 {
 public:
 };

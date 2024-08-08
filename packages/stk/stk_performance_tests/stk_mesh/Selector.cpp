@@ -49,7 +49,7 @@
 
 namespace {
 
-using stk::mesh::fixtures::simple_fields::VariableSelectorFixture;
+using stk::mesh::fixtures::VariableSelectorFixture;
 
 }
 
@@ -105,7 +105,7 @@ TEST(Verify, selectorAlgorithmicComplexity)
   //  and the complexity is not meaningful.
   //
 
-  stk::mesh::fixtures::simple_fields::SelectorFixture fix;
+  stk::mesh::fixtures::SelectorFixture fix;
   fix.m_meta_data.commit();
   fix.m_bulk_data.modification_begin();
   fix.generate_mesh();

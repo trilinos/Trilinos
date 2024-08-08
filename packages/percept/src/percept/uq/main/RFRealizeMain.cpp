@@ -92,7 +92,6 @@ int main(int argc,  char **argv)
   const unsigned numCoeffs = xi.size();
 
   stk::io::StkMeshIoBroker mesh_data(comm);
-  mesh_data.use_simple_fields();
 
   mesh_data.add_mesh_database(input_file, "exodus", stk::io::READ_MESH);
   mesh_data.create_input_mesh();

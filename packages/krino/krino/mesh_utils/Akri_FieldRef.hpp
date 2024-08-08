@@ -119,6 +119,11 @@ public:
     return my_field->max_size();
   }
 
+  void sync_to_host() const
+  {
+    my_field->sync_to_host();
+  }
+
   // testing
   bool operator ==(const FieldRef & rhs) const { return my_field == rhs.my_field; }
   bool operator !=(const FieldRef & rhs) const { return my_field != rhs.my_field; }

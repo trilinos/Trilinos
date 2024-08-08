@@ -44,7 +44,7 @@ class MetaData;
 class BulkData;
 
 namespace fixtures {
-typedef mesh::Field<double,mesh::Cartesian> VectorFieldType ;
+typedef mesh::Field<double> VectorFieldType;
 
 void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord);
 
@@ -54,8 +54,10 @@ namespace simple_fields {
 
 typedef mesh::Field<double> VectorFieldType;
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
 
 }

@@ -77,7 +77,6 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
     //+ INITIALIZATION
     const std::string exodusFileName = "generated:1x1x8";
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
     stkIo.create_input_mesh();

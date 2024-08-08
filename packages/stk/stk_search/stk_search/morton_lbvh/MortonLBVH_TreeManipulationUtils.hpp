@@ -80,8 +80,15 @@
 #include <stk_search/morton_lbvh/MortonLBVH_BoundingBoxes.hpp>
 #include <stk_search/morton_lbvh/MortonLBVH_CollisionList.hpp>
 #include <stk_search/morton_lbvh/MortonLBVH_Tree.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <Kokkos_Core.hpp>
 #include "Kokkos_Sort.hpp"
+//#if KOKKOS_VERSION < 40300
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCTHRUST)
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#endif
+//#endif
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -105,8 +112,6 @@
 #endif
 
 namespace stk::search {
-
-constexpr size_t COLLISION_SCALE_FACTOR = 16;
 
 template <typename RealType, typename ExecutionSpace>
 struct TotalBoundsFunctor
@@ -427,7 +432,21 @@ struct SortByCode
       SortByCodeIdPair<RealType, ExecutionSpace>::apply(tree);
     }
     else {
-      Kokkos::Experimental::sort_by_key(execSpace, tree.m_leafCodes, tree.m_leafIds);
+//#if KOKKOS_VERSION >= 40300
+//      Kokkos::Experimental::sort_by_key(execSpace, tree.m_leafCodes, tree.m_leafIds);
+//#elif defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCTHRUST)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCTHRUST)
+      const int n = tree.m_leafIds.extent(0);
+
+      morton_code_t *rawLeafCodes = tree.m_leafCodes.data();
+      thrust::device_ptr<morton_code_t> rawLeafCodesThr = thrust::device_pointer_cast(rawLeafCodes);
+      LocalOrdinal *rawLeafIds = tree.m_leafIds.data();
+      thrust::device_ptr<LocalOrdinal> rawLeafIdsThr = thrust::device_pointer_cast(rawLeafIds);
+      //thrust::stable_sort_by_key(rawLeafCodesThr, rawLeafCodesThr + n, rawLeafIdsThr);
+      thrust::sort_by_key(rawLeafCodesThr, rawLeafCodesThr + n, rawLeafIdsThr);
+#else
+      STK_ThrowErrorMsg("shouldn't be able to get here"); // SortByCodeIdPair<RealType, ExecutionSpace>::apply(tree);
+#endif
     }
   }
 };
@@ -692,10 +711,42 @@ void UpdateInteriorNodeBVs<RealType, ExecutionSpace>::get_box(RealType bvMinMax[
 }
 
 
-template <typename RealType, typename ExecutionSpace>
+template <typename ExecutionSpace>
+class CollisionListCallback
+{
+  public:
+    CollisionListCallback(CollisionList<ExecutionSpace>& collisionList) :
+      m_collisionList(collisionList)
+    {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(int domainIdx, int rangeIdx) const
+    {
+      m_collisionList.push_back(domainIdx, rangeIdx);
+    }
+
+    bool resize_for_second_pass()
+    {
+      int numActualCollisions = m_collisionList.get_num_collisions();
+      bool needSecondPass = numActualCollisions > m_collisionList.get_capacity();
+      if (needSecondPass)
+      {
+        m_collisionList.reset(numActualCollisions);
+      }
+
+      return needSecondPass;
+    }
+
+    CollisionList<ExecutionSpace> get_collision_list() const { return m_collisionList; }
+
+  private:
+    CollisionList<ExecutionSpace> m_collisionList;
+};
+
+
+template <typename RealType, typename ExecutionSpace, typename Callback>
 struct Traverse_MASTB_BVH_Functor
 {
-  using value_type = int;
   using LBVH_types = MortonLbvhTypes<ExecutionSpace>;
   using kokkos_aabb_types      = MortonAabbTypes<RealType, ExecutionSpace>;
   using local_ordinals_tmt     = typename LBVH_types::local_ordinals_tmt;
@@ -706,20 +757,11 @@ struct Traverse_MASTB_BVH_Functor
   Traverse_MASTB_BVH_Functor(bboxes_3d_view_t domainMinMaxs,
                              local_ordinals_tmt domainIds,
                              const MortonAabbTree<RealType, ExecutionSpace> &rangeTree,
-                             collision_list_type &collisions,
+                             Callback& callback,
                              bool flippedResults = false);
 
   KOKKOS_INLINE_FUNCTION
-  void init(value_type &update) const { update = 0; }
-
-  static void apply_tree(const MortonAabbTree<RealType, ExecutionSpace> &domainTree,
-                         const MortonAabbTree<RealType, ExecutionSpace> &rangeTree,
-                         collision_list_type &collisions,
-                         ExecutionSpace const& execSpace,
-                         bool flipOutputPairs = false);
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(unsigned domainIdx, value_type &update) const;
+  void operator()(unsigned domainIdx) const;
 
   KOKKOS_FORCEINLINE_FUNCTION
   bool overlaps_range(RealType bvMinMax[6], LocalOrdinal rangeIdx) const;
@@ -730,10 +772,15 @@ struct Traverse_MASTB_BVH_Functor
   KOKKOS_FORCEINLINE_FUNCTION
   void get_box(RealType bvMinMax[6], LocalOrdinal idx, const bboxes_const_3d_view_t &boxMinMaxs) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void join(value_type &update, const value_type &input) const { update = (input < update ? input : update); }
-
   std::ostream &stream_pair(LocalOrdinal domainIdx, bool overlap, LocalOrdinal rangeIdx, std::ostream &os) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void record_result(LocalOrdinal domainIdx, LocalOrdinal rangeIdx, bool flip) const
+  {
+    LocalOrdinal domainIdxFlipped = flip ? rangeIdx : domainIdx;
+    LocalOrdinal rangeIdxFlipped  = flip ? domainIdx : rangeIdx;
+    m_callback(domainIdxFlipped, rangeIdxFlipped);
+  }
 
   bboxes_const_3d_view_t m_domainMinMaxs;
   typename LBVH_types::local_ordinals_tmt tm_domainIds;
@@ -744,15 +791,15 @@ struct Traverse_MASTB_BVH_Functor
   typename LBVH_types::local_ordinals_tmt tm_rangeLeafIds;
 
   const bool m_flippedResults;
-  collision_list_type m_results;
+  Callback m_callback;
 };
 
-template <typename RealType, typename ExecutionSpace>
-Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::Traverse_MASTB_BVH_Functor(
+template <typename RealType, typename ExecutionSpace, typename Callback>
+Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace, Callback>::Traverse_MASTB_BVH_Functor(
     bboxes_3d_view_t domainMinMaxs,
     local_ordinals_tmt domainIds,
     const MortonAabbTree<RealType, ExecutionSpace> &rangeTree,
-    collision_list_type &collisions,
+    Callback& callback,
     bool flippedResults)
   : m_domainMinMaxs(domainMinMaxs),
     tm_domainIds(domainIds),
@@ -761,49 +808,42 @@ Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::Traverse_MASTB_BVH_Functor
     tm_rangeNodeChildren(rangeTree.m_nodeChildren),
     tm_rangeLeafIds(rangeTree.m_leafIds),
     m_flippedResults(flippedResults),
-    m_results(collisions)
+    m_callback(callback)
 {}
 
-template <typename RealType, typename ExecutionSpace>
-void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(
+
+template <typename RealType, typename ExecutionSpace, typename Callback>
+void search_tree(
     const MortonAabbTree<RealType, ExecutionSpace> &domainTree,
     const MortonAabbTree<RealType, ExecutionSpace> &rangeTree,
-    collision_list_type &collisions,
+    Callback& callback,
     ExecutionSpace const& execSpace,
-    bool flipOutputPairs)
+    bool flipOutputPairs = false)
 {
+  Kokkos::Profiling::pushRegion("search_tree");
   if ((domainTree.hm_numLeaves() == 0) || (rangeTree.hm_numLeaves() == 0)) {
+    callback.resize_for_second_pass();
     return;
   }
 
-  int retCode = 0;
-  const int numDomainLeaves = domainTree.hm_numLeaves();
-  const int numRangeLeaves = rangeTree.hm_numLeaves();
+  const Traverse_MASTB_BVH_Functor<RealType,ExecutionSpace,Callback> op(domainTree.m_minMaxs, domainTree.m_leafIds, rangeTree,
+                                      callback, flipOutputPairs);
+  auto policy = Kokkos::RangePolicy<ExecutionSpace>(execSpace, 0, domainTree.hm_numLeaves());
+  Kokkos::parallel_for("Traverse_MASTB_BVH_Functor", policy, op);
+  execSpace.fence();
 
-  if (collisions.get_capacity() == 0) {
-    const int collisionEstimate = std::max(numDomainLeaves, numRangeLeaves) * COLLISION_SCALE_FACTOR;
-    collisions.reset(collisionEstimate);
+  if (callback.resize_for_second_pass()) {
+    const Traverse_MASTB_BVH_Functor<RealType,ExecutionSpace,Callback> op2(domainTree.m_minMaxs, domainTree.m_leafIds, rangeTree,
+                                         callback, flipOutputPairs);
+    Kokkos::parallel_for("Traverse_MASTB_BVH_Functor - pass2", policy, op2);
   }
 
-  const Traverse_MASTB_BVH_Functor op(domainTree.m_minMaxs, domainTree.m_leafIds, rangeTree,
-                                      collisions, flipOutputPairs);
-  auto policy = Kokkos::RangePolicy<ExecutionSpace>(execSpace, 0, numDomainLeaves);
-  Kokkos::parallel_reduce(policy, op, retCode);
-
-  int numActualCollisions = collisions.get_num_collisions();
-
-  if ((retCode < 0) && (numActualCollisions > collisions.get_capacity())) {
-    collisions.reset(numActualCollisions);
-    retCode = 0;
-    const Traverse_MASTB_BVH_Functor op2(domainTree.m_minMaxs, domainTree.m_leafIds, rangeTree,
-                                         collisions, flipOutputPairs);
-    Kokkos::parallel_reduce(policy, op2, retCode);
-  }
+  execSpace.fence();
+  Kokkos::Profiling::popRegion();
 }
 
-template <typename RealType, typename ExecutionSpace>
-KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::operator()(unsigned argDomainIdx,
-                                                                                             value_type& update) const
+template <typename RealType, typename ExecutionSpace, typename Callback>
+KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace, Callback>::operator()(unsigned argDomainIdx) const
 {
   LocalOrdinal domainIdx = tm_domainIds(argDomainIdx);
 
@@ -815,7 +855,6 @@ KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>
     int* stackPtr = ridxStack;
     *stackPtr++ = -1;
 
-    int result = 0;
     int nodeIdx = m_rangeRoot;
     do {
       // Check each child node for overlap.
@@ -829,7 +868,7 @@ KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>
       // Query overlaps a leaf node => report collision.
       if (overlapL) {
         if (is_range_leaf(childL)) {
-          result = m_results.push_back(domainIdx, childL, m_flippedResults) ? result : -1;
+           record_result(domainIdx, childL, m_flippedResults);
         }
         else {
           traverseL = true;
@@ -840,7 +879,7 @@ KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>
       // Query overlaps and internal node => traverse.
       if (overlapR) {
         if (is_range_leaf(childR)) {
-          result = m_results.push_back(domainIdx, childR, m_flippedResults) ? result : -1;
+          record_result(domainIdx, childR, m_flippedResults);
           if (!traverseL) {
             nodeIdx = *--stackPtr; // pop
           }
@@ -858,30 +897,20 @@ KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>
         nodeIdx = *--stackPtr; // pop
       }
     } while (nodeIdx >= 0);
-
-    if (result < update) {
-      update = result;
-    }
   }
   else {
     // Degenerate case of only one leaf node
-    int result = 0;
     bool overlap = overlaps_range(bvMinMax, 0);
     if (overlap) {
-      bool ok = m_results.push_back(domainIdx, 0, m_flippedResults);
-      result = (ok ? result : -1);
-    }
-
-    if (result < update) {
-      update = result;
+      record_result(domainIdx, 0, m_flippedResults);
     }
   }
 }
 
-template <typename RealType, typename ExecutionSpace>
+template <typename RealType, typename ExecutionSpace, typename Callback>
 KOKKOS_FORCEINLINE_FUNCTION
-bool Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::overlaps_range(RealType bvMinMax[6],
-                                                                          LocalOrdinal rangeIdx) const
+bool Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace, Callback>::overlaps_range(RealType bvMinMax[6],
+                                                                                    LocalOrdinal rangeIdx) const
 {
   return (bvMinMax[3] < tm_rangeMinMaxs(rangeIdx, 0) ||
           bvMinMax[4] < tm_rangeMinMaxs(rangeIdx, 1) ||
@@ -891,10 +920,10 @@ bool Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::overlaps_range(RealTy
           bvMinMax[2] > tm_rangeMinMaxs(rangeIdx, 5)) ? false : true;
 }
 
-template <typename RealType, typename ExecutionSpace>
+template <typename RealType, typename ExecutionSpace, typename Callback>
 KOKKOS_FORCEINLINE_FUNCTION
-void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::get_box(RealType bvMinMax[6], LocalOrdinal idx,
-                                                                   const bboxes_const_3d_view_t &boxMinMaxs) const
+void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace, Callback>::get_box(RealType bvMinMax[6], LocalOrdinal idx,
+                                                                       const bboxes_const_3d_view_t &boxMinMaxs) const
 {
   bvMinMax[0] = boxMinMaxs(idx, 0);
   bvMinMax[1] = boxMinMaxs(idx, 1);
@@ -904,8 +933,8 @@ void Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::get_box(RealType bvMi
   bvMinMax[5] = boxMinMaxs(idx, 5);
 }
 
-template <typename RealType, typename ExecutionSpace>
-std::ostream &Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::stream_pair(LocalOrdinal domainIdx, bool overlap,
+template <typename RealType, typename ExecutionSpace, typename Callback>
+std::ostream &Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace, Callback>::stream_pair(LocalOrdinal domainIdx, bool overlap,
                                                                                 LocalOrdinal rangeIdx, std::ostream &os) const
 {
   os << " {(" << m_domainMinMaxs(domainIdx, 0) << "," << m_domainMinMaxs(domainIdx, 1) << "," << m_domainMinMaxs(domainIdx, 2)

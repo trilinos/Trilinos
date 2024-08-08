@@ -88,6 +88,7 @@ void check_particle_on_device()
 
   stk::topology t = stk::topology::PARTICLE;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PARTICLE>::num_nodes;
+  EXPECT_EQ(1u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {

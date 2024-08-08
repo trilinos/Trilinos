@@ -84,7 +84,7 @@ TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -164,7 +164,7 @@ TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();

@@ -15,9 +15,6 @@
 #include <array>
 
 #define DEBUG_PRINT 0
-namespace std {
-
-}
 
   namespace percept {
 

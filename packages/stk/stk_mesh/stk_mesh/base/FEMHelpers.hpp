@@ -120,13 +120,13 @@ EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh
 EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes);
 
 /**
- * Given an entity, subcell_rank, and subcell_id, return the nodes
- * that make up the subcell in a correct order for the given polarity.
+ * Given an entity, subcell_rank, and subcell_ordinal, return the nodes
+ * that make up the subcell
  */
 stk::topology get_subcell_nodes(const BulkData& mesh,
     const Entity entity ,
     EntityRank         subcell_rank ,
-    unsigned           subcell_identifier ,
+    unsigned           subcell_ordinal ,
     EntityVector     & subcell_nodes
     );
 

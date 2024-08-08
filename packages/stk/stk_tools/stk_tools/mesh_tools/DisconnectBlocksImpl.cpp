@@ -1,5 +1,6 @@
 #include "stk_io/IossBridge.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/DestroyRelations.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Types.hpp"
@@ -344,8 +345,9 @@ bool update_disconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::E
   stk::mesh::ConnectivityOrdinal const * nodeOrdinals = bulk.begin_ordinals(entity, stk::topology::NODE_RANK);
   for (unsigned iNode = 0; iNode < numNodes; ++iNode) {
     if (entityNodes[iNode] == node) {
-      bulk.destroy_relation(entity, node, nodeOrdinals[iNode]);
-      bulk.declare_relation(entity, newNode, nodeOrdinals[iNode]);
+      stk::mesh::ConnectivityOrdinal nodeOrd = nodeOrdinals[iNode];
+      bulk.destroy_relation(entity, node, nodeOrd);
+      bulk.declare_relation(entity, newNode, nodeOrd);
       updatedNode = true;
     }
   }
@@ -506,19 +508,8 @@ void connect_element_side_to_internal_face(stk::mesh::BulkData& bulk,
                                            stk::mesh::ConstPartVector& addSurfaces,
                                            stk::mesh::ConstPartVector& removeSurfaces)
 {
-  auto numElems = bulk.num_elements(face);
-  auto elems = bulk.begin_elements(face);
-  auto elemOrdinals = bulk.begin_ordinals(face, stk::topology::ELEM_RANK);
-  for(unsigned i=0; i<numElems; i++) {
-    bulk.destroy_relation(elems[i], face, elemOrdinals[i]);
-  }
-
-  auto numNodes = bulk.num_nodes(face);
-  auto nodes = bulk.begin_nodes(face);
-  auto nodeOrdinals = bulk.begin_ordinals(face, stk::topology::NODE_RANK);
-  for(unsigned i=0; i<numNodes; i++) {
-    bulk.destroy_relation(face, nodes[i], nodeOrdinals[i]);
-  }
+  stk::mesh::destroy_relations(bulk, face, stk::topology::ELEM_RANK);
+  stk::mesh::destroy_relations(bulk, face, stk::topology::NODE_RANK);
 
   auto elemTopology = bulk.bucket(elem).topology();
   auto sideTopology = elemTopology.side_topology(sideOrdinal);
@@ -764,8 +755,9 @@ void update_reconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::En
   stk::mesh::ConnectivityOrdinal const * nodeOrdinals = bulk.begin_ordinals(entity, stk::topology::NODE_RANK);
   for (unsigned iNode = 0; iNode < numNodes; ++iNode) {
     if (elemNodes[iNode] == newNode) {
-      bulk.destroy_relation(entity, newNode, nodeOrdinals[iNode]);
-      bulk.declare_relation(entity, reconnectNode, nodeOrdinals[iNode]);
+      stk::mesh::ConnectivityOrdinal nodeOrd = nodeOrdinals[iNode];
+      bulk.destroy_relation(entity, newNode, nodeOrd);
+      bulk.declare_relation(entity, reconnectNode, nodeOrd);
     }
   }
 }
@@ -1271,25 +1263,22 @@ void update_node_id(stk::mesh::EntityId newNodeId, int proc, LinkInfo& info, con
 void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info)
 {
   stk::mesh::EntityVector allNodes;
-  stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), allNodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().locally_owned_part(), allNodes);
 
   for(stk::mesh::Entity node : allNodes) {
-    unsigned numElems = bulk.num_connectivity(node, stk::topology::ELEMENT_RANK);
+    const int numElems = bulk.num_connectivity(node, stk::topology::ELEMENT_RANK);
     const stk::mesh::Entity* elems = bulk.begin(node, stk::topology::ELEMENT_RANK);
-    int numLocallyOwnedElems = 0;
+    int numDestroyedElems = 0;
 
-    for(unsigned i = 0; i < numElems; i++) {
+    for(int i = numElems-1; i >= 0; --i) {
       stk::mesh::Entity elem = elems[i];
-      if(bulk.bucket(elem).owned()) {
-        numLocallyOwnedElems++;
+      if(!bulk.bucket(elem).owned()) {
+        bulk.destroy_entity(elem);
+        ++numDestroyedElems;
       }
     }
 
-    if(numLocallyOwnedElems == 0) {
-      for(unsigned j = 0; j < numElems; j++) {
-        stk::mesh::Entity elem = elems[j];
-        bulk.destroy_entity(elem);
-      }
+    if(numDestroyedElems == numElems) {
       bulk.destroy_entity(node);
     }
   }

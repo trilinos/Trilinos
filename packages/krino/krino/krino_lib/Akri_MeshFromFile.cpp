@@ -22,7 +22,6 @@ MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine co
   myIOBroker->add_mesh_database(fileName, stk::io::READ_MESH);
   myIOBroker->create_input_mesh();
   myMeta = &myIOBroker->meta_data();
-  myMeta->use_simple_fields();
 
   AuxMetaData::create(*myMeta);
 }

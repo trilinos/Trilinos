@@ -41,11 +41,11 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/timer.hpp>
 
-class BalanceHexesEdgesNodes : public stk::unit_test_util::simple_fields::MeshFixture
+class BalanceHexesEdgesNodes : public stk::unit_test_util::MeshFixture
 {
 public:
   BalanceHexesEdgesNodes()
-    : stk::unit_test_util::simple_fields::MeshFixture()
+    : stk::unit_test_util::MeshFixture()
   { }
 
   void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)

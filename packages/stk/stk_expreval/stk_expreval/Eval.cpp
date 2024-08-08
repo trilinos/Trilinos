@@ -369,6 +369,7 @@ Eval::initialize_function_map()
   m_functionMap["cycloidal_ramp"] = FunctionType::CYCLOIDAL_RAMP;
   m_functionMap["cos_ramp"] = FunctionType::COS_RAMP;
   m_functionMap["cosine_ramp"] = FunctionType::COS_RAMP;
+  m_functionMap["linear_ramp"] = FunctionType::LINEAR_RAMP;
   m_functionMap["haversine_pulse"] = FunctionType::HAVERSINE_PULSE;
   m_functionMap["point2d"] = FunctionType::POINT2D;
   m_functionMap["point3d"] = FunctionType::POINT3D;

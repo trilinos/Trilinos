@@ -15,7 +15,7 @@ public:
   }
 };
 
-class HowToSortEntities : public stk::unit_test_util::simple_fields::MeshFixture
+class HowToSortEntities : public stk::unit_test_util::MeshFixture
 {
 protected:
   void sort_and_check()

@@ -28,8 +28,8 @@ class RefinementInterface;
 
 enum Prolongation_Model
 {
-  ALE_NEAREST_NODE=0,
-  ALE_NEAREST_POINT,
+  ALE_CLOSEST_POINT=0,
+  ALE_CLOSEST_NODE,
   INTERPOLATION,
   MAX_PROLONGATION_MODEL
 };

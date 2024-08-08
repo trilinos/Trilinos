@@ -25,7 +25,7 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
   for(;iter!=goldSideset.end();++iter)
   {
     int id = iter->first;
-    stk::mesh::Part *part = stk::unit_test_util::simple_fields::get_surface_part_with_id(bulkData.mesh_meta_data(), id);
+    stk::mesh::Part *part = stk::unit_test_util::get_surface_part_with_id(bulkData.mesh_meta_data(), id);
     stk::mesh::SideSet &sset = bulkData.get_sideset(*part);
     ElementSidePairs goldSet = iter->second;
     ASSERT_EQ(goldSet.size(), sset.size());
@@ -83,7 +83,6 @@ void testSidesetCreation(TestData &testData)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkData = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
   stk::mesh::MetaData& meta = bulkData->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::StkMeshIoBroker stkIo;
   stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
   stkIo.set_bulk_data(bulkData);

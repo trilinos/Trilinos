@@ -56,7 +56,6 @@ TEST(StkMeshHowTo, CreateSelectedFacesHex)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
 
   // Generate a mesh containing 1 hex part and 6 shell parts
   const std::string generatedFileName = "generated:8x8x8|shell:xyzXYZ";

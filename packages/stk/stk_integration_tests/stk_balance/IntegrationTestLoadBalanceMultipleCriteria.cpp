@@ -37,7 +37,7 @@ void write_mesh_and_results(stk::mesh::BulkData& bulkData, const std::string& fi
   broker.end_output_step(fh);
 }
 
-class MultipleCriteria : public stk::unit_test_util::simple_fields::MeshFixture
+class MultipleCriteria : public stk::unit_test_util::MeshFixture
 {
 public:
 

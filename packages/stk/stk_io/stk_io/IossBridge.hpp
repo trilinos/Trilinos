@@ -670,8 +670,7 @@ namespace impl {
 const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta,
                                                        stk::mesh::EntityRank type,
                                                        stk::mesh::Part &part,
-                                                       const Ioss::Field &io_field,
-                                                       bool use_cartesian_for_scalar);
+                                                       const Ioss::Field &io_field);
 }//namespace impl
 
 }//namespace io

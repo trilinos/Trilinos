@@ -25,7 +25,6 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     builder.set_spatial_dimension(3);
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Part* part = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
     stk::mesh::Field<double>& faceField = meta.declare_field<double>(stk::topology::FACE_RANK, "faceField", numStates);
@@ -52,7 +51,6 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Field<double>& faceField = meta.declare_field<double>(stk::topology::FACE_RANK, "faceField", numStates);
     stk::mesh::put_field_on_mesh(faceField, meta.universal_part(), nullptr);

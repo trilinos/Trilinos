@@ -53,7 +53,6 @@ TEST(StkMeshHowTo, CreateFacesHex)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
 
   const std::string generatedFileName = "generated:8x8x8";
   stk::io::fill_mesh(generatedFileName, *bulkPtr);

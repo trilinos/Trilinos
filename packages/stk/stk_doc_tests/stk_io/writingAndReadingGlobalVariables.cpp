@@ -61,7 +61,6 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
   //+ Write restart file with time step size as a global variable
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -78,7 +77,6 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
   //+ Read restart file with time step size as a global variable
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();

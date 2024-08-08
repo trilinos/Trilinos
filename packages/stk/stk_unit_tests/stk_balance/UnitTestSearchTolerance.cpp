@@ -14,7 +14,7 @@
 namespace
 {
 
-class SearchToleranceTest : public stk::unit_test_util::simple_fields::MeshFixture {};
+class SearchToleranceTest : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(SearchToleranceTest, faceOfCube)
 {
@@ -69,7 +69,7 @@ TEST_F(SearchToleranceTest, faceWithDifferentEdgeLengths)
   }
 }
 
-class SearchToleranceTester : public stk::unit_test_util::simple_fields::MeshFixture
+class SearchToleranceTester : public stk::unit_test_util::MeshFixture
 {
 protected:
 
@@ -99,8 +99,8 @@ protected:
           1,eps+2,1,
           0,eps+2,1,
     };
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   unsigned get_num_search_results_with_app_settings(const stk::balance::GraphCreationSettings &balanceSettings)

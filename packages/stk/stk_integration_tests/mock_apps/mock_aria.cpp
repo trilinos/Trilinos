@@ -41,7 +41,6 @@ public:
     m_finalTime(),
     m_iWasToldToStop(),
     m_iWantToStop(false),
-    m_step(),
     m_sendTransfer(),
     m_recvTransfer1(),
     m_recvTransfer2(),
@@ -357,7 +356,6 @@ private:
   double m_finalTime;
   bool m_iWasToldToStop;
   bool m_iWantToStop;
-  int m_step;
   std::shared_ptr<SendTransfer> m_sendTransfer;
   std::shared_ptr<RecvTransfer> m_recvTransfer1;
   std::shared_ptr<RecvTransfer> m_recvTransfer2;

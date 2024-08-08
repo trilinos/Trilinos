@@ -54,7 +54,6 @@ TEST(BucketRepositoryTest, createBuckets)
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   size_t spatialDim = 3;
   stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  stkMeshMetaData.use_simple_fields();
 
   stk::mesh::OrdinalVector parts, scratch;
   parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());

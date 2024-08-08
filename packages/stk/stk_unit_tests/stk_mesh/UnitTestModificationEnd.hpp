@@ -137,7 +137,6 @@ void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm commun
 // The order of the following lines in {} are important
 {
   stk::io::StkMeshIoBroker exodusFileReader(communicator);
-  exodusFileReader.use_simple_fields();
 
   // Inform STK IO which STK Mesh objects to populate later
   exodusFileReader.set_bulk_data(bulkData);

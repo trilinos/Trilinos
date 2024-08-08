@@ -46,7 +46,7 @@
 namespace
 {
 
-class StkIoHowToAppend : public stk::unit_test_util::simple_fields::MeshFixture
+class StkIoHowToAppend : public stk::unit_test_util::MeshFixture
 {
 protected:
   void initialize_mesh_and_field()
@@ -61,7 +61,6 @@ protected:
                                 stk::io::DatabasePurpose purpose)
   {
     stk::io::StkMeshIoBroker stkIo(get_comm());
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(ouputName, purpose);
     stkIo.add_field(outputFileIndex, *nodeField);
@@ -81,7 +80,6 @@ protected:
   void expect_ten_steps_in_file(const std::string& ouputName)
   {
     stk::io::StkMeshIoBroker stkIo(get_comm());
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(ouputName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     EXPECT_EQ(10, stkIo.get_num_time_steps());

@@ -12,7 +12,6 @@ namespace
 TEST(StkMeshHowTo, DestroyElementsInList)
 {
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::io::fill_mesh("generated:1x1x4", bulkData);
   EXPECT_GT(stk::mesh::count_entities(*bulkPtr, stk::topology::ELEM_RANK, bulkPtr->mesh_meta_data().universal_part()), 0u);

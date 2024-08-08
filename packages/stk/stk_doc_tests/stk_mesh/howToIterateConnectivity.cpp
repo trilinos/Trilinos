@@ -57,7 +57,6 @@ TEST(StkMeshHowTo, iterateElemNodeConnectivity_ForEachEntityWithNodes)
   MPI_Comm comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(comm).create();
-  stkMesh->mesh_meta_data().use_simple_fields();
   // Generate a mesh of unit-cube hexes with a sideset
   const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
   stk::io::fill_mesh(generatedMeshSpecification, *stkMesh);
@@ -98,7 +97,6 @@ TEST(StkMeshHowTo, iterateConnectivity_General_BulkData)
   MPI_Comm comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(comm).create();
-  stkMesh->mesh_meta_data().use_simple_fields();
   // Generate a mesh of unit-cube hexes with a sideset
   const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
   stk::io::fill_mesh(generatedMeshSpecification, *stkMesh);
@@ -139,7 +137,6 @@ TEST(StkMeshHowTo, iterateConnectivity_Buckets)
   MPI_Comm comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 1) { return; }
   std::unique_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(comm).create();
-  stkMesh->mesh_meta_data().use_simple_fields();
   // Generate a mesh of unit-cube hexes with a sideset
   const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
   stk::io::fill_mesh(generatedMeshSpecification, *stkMesh);

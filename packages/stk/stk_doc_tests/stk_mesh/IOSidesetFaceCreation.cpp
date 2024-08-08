@@ -67,7 +67,6 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
     //                                                   from Hex1 face5
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("ALA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -143,7 +142,6 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("ALefLRA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -245,7 +243,7 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 }
 //END2hex2shell3sideset
 
-class SideCreationExplanation : public stk::unit_test_util::simple_fields::MeshFixture
+class SideCreationExplanation : public stk::unit_test_util::MeshFixture
 {
 protected:
   void test_face_created_on_elem_side_gets_id_16(stk::mesh::EntityId elemId, int sideOrdinal)
