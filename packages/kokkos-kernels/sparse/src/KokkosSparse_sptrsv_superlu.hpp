@@ -24,8 +24,7 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
-    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
 #include "slu_ddefs.h"
 
@@ -58,17 +57,15 @@ graph_t read_superlu_graphL(KernelHandle *kernelHandle, SuperMatrix *L) {
   int *rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  int nnzA = colptr[n] - colptr[0];  // overestimated if not block_diag
-  return read_supernodal_graphL<graph_t>(kernelHandle, n, nsuper, nnzA,
-                                         ptr_by_column, mb, nb, rowind);
+  int nnzA           = colptr[n] - colptr[0];  // overestimated if not block_diag
+  return read_supernodal_graphL<graph_t>(kernelHandle, n, nsuper, nnzA, ptr_by_column, mb, nb, rowind);
 }
 
 /* =========================================================================================
  */
 // read SuperLU U factor into CSR
 template <typename graph_t, typename KernelHandle>
-graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,
-                            SuperMatrix *U) {
+graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L, SuperMatrix *U) {
   using row_map_view_t      = typename graph_t::row_map_type::non_const_type;
   using cols_view_t         = typename graph_t::entries_type::non_const_type;
   using host_cols_view_t    = typename cols_view_t::HostMirror;
@@ -249,8 +246,7 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr(n) << std::endl;
   std::cout << "    * nnz / n     = " << hr(n) / n << std::endl;
-  std::cout << "    * time        = " << time_count << " + " << time1 << " + "
-            << time2 << " + " << time3 << std::endl;
+  std::cout << "    * time        = " << time_count << " + " << time1 << " + " << time2 << " + " << time3 << std::endl;
 #endif
 
   // deepcopy
@@ -266,8 +262,7 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,
  */
 /* Symbolic analysis */
 template <typename KernelHandle>
-void sptrsv_symbolic(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
-                     SuperMatrix &L, SuperMatrix &U) {
+void sptrsv_symbolic(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU, SuperMatrix &L, SuperMatrix &U) {
   Kokkos::Timer timer;
   Kokkos::Timer tic;
   timer.reset();
@@ -301,9 +296,8 @@ void sptrsv_symbolic(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   double time_read_U = tic.seconds();
   int nrows(graphL_host.row_map.extent(0));
-  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_read_L
-            << " + " << time_read_U << ", nnz = " << graphL_host.row_map(nrows)
-            << " + " << graphU_host.row_map(nrows) << std::endl;
+  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_read_L << " + " << time_read_U
+            << ", nnz = " << graphL_host.row_map(nrows) << " + " << graphU_host.row_map(nrows) << std::endl;
   tic.reset();
 #endif
 
@@ -319,12 +313,10 @@ void sptrsv_symbolic(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
 
   // ===================================================================
   // call supnodal symbolic
-  sptrsv_supernodal_symbolic(nsuper, supercols, etree, graphL_host,
-                             kernelHandleL, graphU_host, kernelHandleU);
+  sptrsv_supernodal_symbolic(nsuper, supercols, etree, graphL_host, kernelHandleL, graphU_host, kernelHandleU);
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   double time_seconds = tic.seconds();
-  std::cout << "   SpTRSV Supernodal Symbolic Time      : " << time_seconds
-            << std::endl;
+  std::cout << "   SpTRSV Supernodal Symbolic Time      : " << time_seconds << std::endl;
 #endif
 }
 
@@ -335,8 +327,7 @@ void sptrsv_symbolic(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
 /* =========================================================================================
  */
 template <typename crsmat_t, typename graph_t, typename KernelHandle>
-crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L,
-                              graph_t &static_graph) {
+crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L, graph_t &static_graph) {
   using values_view_t = typename crsmat_t::values_type::non_const_type;
   using scalar_t      = typename values_view_t::value_type;
 
@@ -354,17 +345,15 @@ crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L,
   int *rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  return read_supernodal_values<crsmat_t>(kernelHandle, n, nsuper,
-                                          ptr_by_column, mb, nb, colptr, rowind,
-                                          Lx, static_graph);
+  return read_supernodal_values<crsmat_t>(kernelHandle, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx,
+                                          static_graph);
 }
 
 /* =========================================================================================
  */
 // store numerical values of SuperLU U-factor into CSR
 template <typename crsmat_t, typename graph_t, typename KernelHandle>
-crsmat_t read_superlu_valuesU(KernelHandle *kernelHandle, SuperMatrix *L,
-                              SuperMatrix *U, graph_t &static_graph) {
+crsmat_t read_superlu_valuesU(KernelHandle *kernelHandle, SuperMatrix *L, SuperMatrix *U, graph_t &static_graph) {
   using values_view_t       = typename crsmat_t::values_type::non_const_type;
   using scalar_t            = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int *, Kokkos::HostSpace>;
@@ -525,8 +514,7 @@ crsmat_t read_superlu_valuesU(KernelHandle *kernelHandle, SuperMatrix *L,
  */
 /* For numeric computation */
 template <typename KernelHandle>
-void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
-                    SuperMatrix &L, SuperMatrix &U) {
+void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU, SuperMatrix &L, SuperMatrix &U) {
   using crsmat_t      = typename KernelHandle::SPTRSVHandleType::crsmat_t;
   using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
 
@@ -537,22 +525,18 @@ void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
   auto *handleL = kernelHandleL->get_sptrsv_handle();
   auto *handleU = kernelHandleU->get_sptrsv_handle();
 
-  if (!(handleL->is_symbolic_complete()) ||
-      !(handleU->is_symbolic_complete())) {
-    std::cout
-        << std::endl
-        << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
-        << std::endl
-        << std::endl;
+  if (!(handleL->is_symbolic_complete()) || !(handleU->is_symbolic_complete())) {
+    std::cout << std::endl
+              << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **" << std::endl
+              << std::endl;
     return;
   }
 
   // ===================================================================
   // load options
-  bool merge = handleL->get_merge_supernodes();
-  bool useSpMV =
-      (handleL->get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-       handleL->get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+  bool merge   = handleL->get_merge_supernodes();
+  bool useSpMV = (handleL->get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                  handleL->get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   double time_seconds = 0.0;
   bool invert_offdiag = handleL->get_invert_offdiagonal();
@@ -581,19 +565,16 @@ void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
     bool invert_diag = handleL->get_invert_diagonal();
     kernelHandleL->set_sptrsv_invert_diagonal(false);  // invert after merge
     auto original_graphL_host = handleL->get_original_graph_host();
-    superluL_host = read_superlu_valuesL<host_crsmat_t>(kernelHandleL, &L,
-                                                        original_graphL_host);
+    superluL_host             = read_superlu_valuesL<host_crsmat_t>(kernelHandleL, &L, original_graphL_host);
     // 2) re-load L into merged crs
     bool unit_diag = true;
     // reset invert option
     kernelHandleL->set_sptrsv_invert_diagonal(invert_diag);
     if (useSpMV) {
-      superluL_host = read_merged_supernodes<host_crsmat_t>(
-          kernelHandleL, nsuper, supercols, unit_diag, superluL_host,
-          graphL_host);
+      superluL_host = read_merged_supernodes<host_crsmat_t>(kernelHandleL, nsuper, supercols, unit_diag, superluL_host,
+                                                            graphL_host);
     } else {
-      superluL = read_merged_supernodes<crsmat_t>(
-          kernelHandleL, nsuper, supercols, unit_diag, superluL_host, graphL);
+      superluL = read_merged_supernodes<crsmat_t>(kernelHandleL, nsuper, supercols, unit_diag, superluL_host, graphL);
     }
 
     // ========================================================
@@ -602,24 +583,20 @@ void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
     invert_diag = handleU->get_invert_diagonal();
     kernelHandleU->set_sptrsv_invert_diagonal(false);  // invert after merge
     auto original_graphU_host = handleU->get_original_graph_host();
-    superluU_host = read_superlu_valuesU<host_crsmat_t>(kernelHandleU, &L, &U,
-                                                        original_graphU_host);
+    superluU_host             = read_superlu_valuesU<host_crsmat_t>(kernelHandleU, &L, &U, original_graphU_host);
     // 2) re-load U into merged crs
     unit_diag = false;
     // reset invert option
     kernelHandleU->set_sptrsv_invert_diagonal(invert_diag);
     if (useSpMV) {
-      superluU_host = read_merged_supernodes<host_crsmat_t>(
-          kernelHandleU, nsuper, supercols, unit_diag, superluU_host,
-          graphU_host);
+      superluU_host = read_merged_supernodes<host_crsmat_t>(kernelHandleU, nsuper, supercols, unit_diag, superluU_host,
+                                                            graphU_host);
     } else {
-      superluU = read_merged_supernodes<crsmat_t>(
-          kernelHandleU, nsuper, supercols, unit_diag, superluU_host, graphU);
+      superluU = read_merged_supernodes<crsmat_t>(kernelHandleU, nsuper, supercols, unit_diag, superluU_host, graphU);
     }
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     time_seconds = tic.seconds();
-    std::cout << "   Time to Merge and Copy to device: " << time_seconds
-              << std::endl;
+    std::cout << "   Time to Merge and Copy to device: " << time_seconds << std::endl;
 #endif
   } else {
     // ========================================================
@@ -628,8 +605,7 @@ void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
     // supported for now
     tic.reset();
     if (useSpMV) {
-      superluL_host =
-          read_superlu_valuesL<host_crsmat_t>(kernelHandleL, &L, graphL_host);
+      superluL_host = read_superlu_valuesL<host_crsmat_t>(kernelHandleL, &L, graphL_host);
     } else {
       superluL = read_superlu_valuesL<crsmat_t>(kernelHandleL, &L, graphL);
     }
@@ -643,8 +619,7 @@ void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
     // kernelHandleU->set_sptrsv_invert_diagonal (true); // only, invert diag is
     // supported for now
     if (useSpMV) {
-      superluU_host = read_superlu_valuesU<host_crsmat_t>(kernelHandleU, &L, &U,
-                                                          graphU_host);
+      superluU_host = read_superlu_valuesU<host_crsmat_t>(kernelHandleU, &L, &U, graphU_host);
     } else {
       superluU = read_superlu_valuesU<crsmat_t>(kernelHandleU, &L, &U, graphU);
     }
@@ -679,8 +654,7 @@ void sptrsv_compute(KernelHandle *kernelHandleL, KernelHandle *kernelHandleU,
   handleU->set_numeric_complete();
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = timer.seconds();
-  std::cout << "   Total Compute Time: " << time_seconds << std::endl
-            << std::endl;
+  std::cout << "   Total Compute Time: " << time_seconds << std::endl << std::endl;
 #endif
 }  // sptrsv_compute
 

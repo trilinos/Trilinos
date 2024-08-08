@@ -60,29 +60,19 @@ namespace KokkosBlas {
 ///                   On entry, M-by-N matrix of multile RHS
 ///                   On exit, overwritten with the solution X
 template <class execution_space, class AViewType, class BViewType>
-void trsm(const execution_space& space, const char side[], const char uplo[],
-          const char trans[], const char diag[],
-          typename BViewType::const_value_type& alpha, const AViewType& A,
-          const BViewType& B) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<BViewType>::value,
-                "BViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(AViewType::rank) == 2,
-                "AViewType must have rank 2.");
-  static_assert(static_cast<int>(BViewType::rank) == 2,
-                "BViewType must have rank 2.");
+void trsm(const execution_space& space, const char side[], const char uplo[], const char trans[], const char diag[],
+          typename BViewType::const_value_type& alpha, const AViewType& A, const BViewType& B) {
+  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<BViewType>::value, "BViewType must be a Kokkos::View.");
+  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
+  static_assert(static_cast<int>(BViewType::rank) == 2, "BViewType must have rank 2.");
 
   // Check validity of indicator argument
-  bool valid_side = (side[0] == 'L') || (side[0] == 'l') || (side[0] == 'R') ||
-                    (side[0] == 'r');
-  bool valid_uplo = (uplo[0] == 'U') || (uplo[0] == 'u') || (uplo[0] == 'L') ||
-                    (uplo[0] == 'l');
-  bool valid_trans = (trans[0] == 'N') || (trans[0] == 'n') ||
-                     (trans[0] == 'T') || (trans[0] == 't') ||
+  bool valid_side  = (side[0] == 'L') || (side[0] == 'l') || (side[0] == 'R') || (side[0] == 'r');
+  bool valid_uplo  = (uplo[0] == 'U') || (uplo[0] == 'u') || (uplo[0] == 'L') || (uplo[0] == 'l');
+  bool valid_trans = (trans[0] == 'N') || (trans[0] == 'n') || (trans[0] == 'T') || (trans[0] == 't') ||
                      (trans[0] == 'C') || (trans[0] == 'c');
-  bool valid_diag = (diag[0] == 'U') || (diag[0] == 'u') || (diag[0] == 'N') ||
-                    (diag[0] == 'n');
+  bool valid_diag = (diag[0] == 'U') || (diag[0] == 'u') || (diag[0] == 'N') || (diag[0] == 'n');
   if (!valid_side) {
     std::ostringstream os;
     os << "KokkosBlas::trsm: side = '" << side[0] << "'. "
@@ -125,30 +115,23 @@ void trsm(const execution_space& space, const char side[], const char uplo[],
   if ((A0 != A1) || ((A_s ? B0 : B1) != A1)) {
     std::ostringstream os;
     os << "KokkosBlas::trsm: Dimensions of A and B do not match: "
-       << "side: " << side[0] << " A: " << A.extent(0) << " x " << A.extent(1)
-       << " B: " << B.extent(0) << " x " << B.extent(1);
+       << "side: " << side[0] << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0) << " x "
+       << B.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Return if degenerated matrices are provided
-  if ((A.extent(0) == 0) || (A.extent(1) == 0) || (B.extent(0) == 0) ||
-      (B.extent(1) == 0))
-    return;
+  if ((A.extent(0) == 0) || (A.extent(1) == 0) || (B.extent(0) == 0) || (B.extent(1) == 0)) return;
 
   // Minimize the number of Impl::TRSM instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
-  using AVT = Kokkos::View<typename AViewType::const_value_type**,
-                           typename AViewType::array_layout,
-                           typename AViewType::device_type,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using BVT = Kokkos::View<typename BViewType::non_const_value_type**,
-                           typename BViewType::array_layout,
-                           typename BViewType::device_type,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using AVT = Kokkos::View<typename AViewType::const_value_type**, typename AViewType::array_layout,
+                           typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using BVT = Kokkos::View<typename BViewType::non_const_value_type**, typename BViewType::array_layout,
+                           typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  KokkosBlas::Impl::TRSM<execution_space, AVT, BVT>::trsm(
-      space, side, uplo, trans, diag, alpha, A, B);
+  KokkosBlas::Impl::TRSM<execution_space, AVT, BVT>::trsm(space, side, uplo, trans, diag, alpha, A, B);
 }
 
 /// \brief Solve triangular linear system with multiple RHSs:
@@ -179,11 +162,9 @@ void trsm(const execution_space& space, const char side[], const char uplo[],
 ///                   On entry, M-by-N matrix of multile RHS
 ///                   On exit, overwritten with the solution X
 template <class AViewType, class BViewType>
-void trsm(const char side[], const char uplo[], const char trans[],
-          const char diag[], typename BViewType::const_value_type& alpha,
-          const AViewType& A, const BViewType& B) {
-  trsm(typename AViewType::execution_space{}, side, uplo, trans, diag, alpha, A,
-       B);
+void trsm(const char side[], const char uplo[], const char trans[], const char diag[],
+          typename BViewType::const_value_type& alpha, const AViewType& A, const BViewType& B) {
+  trsm(typename AViewType::execution_space{}, side, uplo, trans, diag, alpha, A, B);
 }
 }  // namespace KokkosBlas
 

@@ -16,8 +16,7 @@
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, batched_scalar_serial_axpy_nt_dcomplex_dcomplex) {
-  test_batched_axpy<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>>();
+  test_batched_axpy<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>>();
 }
 
 TEST_F(TestCategory, batched_scalar_serial_axpy_nt_dcomplex_double) {

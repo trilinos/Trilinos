@@ -24,8 +24,7 @@ namespace Impl {
 
 CudaBlasSingleton::CudaBlasSingleton() {
   cublasStatus_t stat = cublasCreate(&handle);
-  if (stat != CUBLAS_STATUS_SUCCESS)
-    Kokkos::abort("CUBLAS initialization failed\n");
+  if (stat != CUBLAS_STATUS_SUCCESS) Kokkos::abort("CUBLAS initialization failed\n");
 
   Kokkos::push_finalize_hook([&]() { cublasDestroy(handle); });
 }

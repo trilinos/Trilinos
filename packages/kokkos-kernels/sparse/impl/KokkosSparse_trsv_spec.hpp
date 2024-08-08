@@ -30,8 +30,7 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class CrsMatrixType, class DomainMultiVectorType,
-          class RangeMultiVectorType>
+template <class CrsMatrixType, class DomainMultiVectorType, class RangeMultiVectorType>
 struct trsv_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -39,39 +38,29 @@ struct trsv_eti_spec_avail {
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#define KOKKOSSPARSE_TRSV_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE,            \
-                                         OFFSET_TYPE, LAYOUT_TYPE,             \
-                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE)      \
-  template <>                                                                  \
-  struct trsv_eti_spec_avail<                                                  \
-      KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
-                              Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
-                              const OFFSET_TYPE>,                              \
-      Kokkos::View<                                                            \
-          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
-    enum : bool { value = true };                                              \
-  };                                                                           \
-                                                                               \
-  template <>                                                                  \
-  struct trsv_eti_spec_avail<                                                  \
-      KokkosSparse::Experimental::BsrMatrix<                                   \
-          const SCALAR_TYPE, const ORDINAL_TYPE,                               \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,         \
-      Kokkos::View<                                                            \
-          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
-    enum : bool { value = true };                                              \
+#define KOKKOSSPARSE_TRSV_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,        \
+                                         MEM_SPACE_TYPE)                                                              \
+  template <>                                                                                                         \
+  struct trsv_eti_spec_avail<                                                                                         \
+      KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,                            \
+      Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                                      \
+    enum : bool { value = true };                                                                                     \
+  };                                                                                                                  \
+                                                                                                                      \
+  template <>                                                                                                         \
+  struct trsv_eti_spec_avail<                                                                                         \
+      KokkosSparse::Experimental::BsrMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                                    \
+                                            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                          \
+                                            Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,              \
+      Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                                      \
+    enum : bool { value = true };                                                                                     \
   };
 
 // Include the actual specialization declarations
@@ -85,33 +74,24 @@ namespace Impl {
 /// \brief Implementation of KokkosSparse::trsv (sparse matrix - dense
 ///   vector multiply) for single vectors (1-D Views).
 
-template <class CrsMatrixType, class DomainMultiVectorType,
-          class RangeMultiVectorType,
-          bool tpl_spec_avail =
-              trsv_tpl_spec_avail<CrsMatrixType, DomainMultiVectorType,
-                                  RangeMultiVectorType>::value,
-          bool eti_spec_avail =
-              trsv_eti_spec_avail<CrsMatrixType, DomainMultiVectorType,
-                                  RangeMultiVectorType>::value>
+template <class CrsMatrixType, class DomainMultiVectorType, class RangeMultiVectorType,
+          bool tpl_spec_avail = trsv_tpl_spec_avail<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType>::value,
+          bool eti_spec_avail = trsv_eti_spec_avail<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType>::value>
 struct TRSV {
-  static void trsv(const char uplo[], const char trans[], const char diag[],
-                   const CrsMatrixType &A, DomainMultiVectorType B,
-                   RangeMultiVectorType X);
+  static void trsv(const char uplo[], const char trans[], const char diag[], const CrsMatrixType &A,
+                   DomainMultiVectorType B, RangeMultiVectorType X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of trsv for multi vectors.
 // Unification layer
-template <class CrsMatrixType, class DomainMultiVectorType,
-          class RangeMultiVectorType>
-struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false,
-            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void trsv(const char uplo[], const char trans[], const char diag[],
-                   const CrsMatrixType &A, DomainMultiVectorType B,
+template <class CrsMatrixType, class DomainMultiVectorType, class RangeMultiVectorType>
+struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void trsv(const char uplo[], const char trans[], const char diag[], const CrsMatrixType &A,
+                   DomainMultiVectorType B,
                    RangeMultiVectorType X)  // X is the output MV
   {
-    using Wrap = Sequential::TrsvWrap<CrsMatrixType, DomainMultiVectorType,
-                                      RangeMultiVectorType>;
+    using Wrap = Sequential::TrsvWrap<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType>;
     if (trans[0] == 'N' || trans[0] == 'n') {    // no transpose
       if (uplo[0] == 'L' || uplo[0] == 'l') {    // lower triangular
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
@@ -173,66 +153,46 @@ struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSSPARSE_TRSV_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE,             \
-                                        OFFSET_TYPE, LAYOUT_TYPE,              \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE)       \
-  extern template struct TRSV<                                                 \
-      KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
-                              Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
-                              const OFFSET_TYPE>,                              \
-      Kokkos::View<                                                            \
-          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      false, true>;                                                            \
-                                                                               \
-  extern template struct TRSV<                                                 \
-      KokkosSparse::Experimental::BsrMatrix<                                   \
-          const SCALAR_TYPE, const ORDINAL_TYPE,                               \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,         \
-      Kokkos::View<                                                            \
-          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+#define KOKKOSSPARSE_TRSV_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,         \
+                                        MEM_SPACE_TYPE)                                                               \
+  extern template struct TRSV<                                                                                        \
+      KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,                            \
+      Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      false, true>;                                                                                                   \
+                                                                                                                      \
+  extern template struct TRSV<                                                                                        \
+      KokkosSparse::Experimental::BsrMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                                    \
+                                            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                          \
+                                            Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,              \
+      Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       false, true>;
 
-#define KOKKOSSPARSE_TRSV_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE,             \
-                                        OFFSET_TYPE, LAYOUT_TYPE,              \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE)       \
-  template struct TRSV<                                                        \
-      KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
-                              Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
-                              const OFFSET_TYPE>,                              \
-      Kokkos::View<                                                            \
-          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      false, true>;                                                            \
-                                                                               \
-  template struct TRSV<                                                        \
-      KokkosSparse::Experimental::BsrMatrix<                                   \
-          const SCALAR_TYPE, const ORDINAL_TYPE,                               \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,         \
-      Kokkos::View<                                                            \
-          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+#define KOKKOSSPARSE_TRSV_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,         \
+                                        MEM_SPACE_TYPE)                                                               \
+  template struct TRSV<                                                                                               \
+      KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,                            \
+      Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      false, true>;                                                                                                   \
+                                                                                                                      \
+  template struct TRSV<                                                                                               \
+      KokkosSparse::Experimental::BsrMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                                    \
+                                            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                          \
+                                            Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,              \
+      Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       false, true>;
 
 #include <KokkosSparse_trsv_tpl_spec_decl.hpp>

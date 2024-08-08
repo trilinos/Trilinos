@@ -16,28 +16,19 @@
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_nt_u_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_nt_n_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose,
-                                 Diag::NonUnit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_nt_u_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::NoTranspose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 // TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_n_dcomplex_dcomplex )
 // {
@@ -47,45 +38,30 @@ TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_nt_u_dcomplex_dcomplex) {
 //   test_batched_trsm<TestDevice,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 // }
 TEST_F(TestCategory, batched_scalar_serial_trsm_r_u_nt_u_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_r_u_nt_n_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose,
-                                 Diag::NonUnit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 //
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_t_u_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_t_n_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose,
-                                 Diag::NonUnit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_t_u_dcomplex_dcomplex) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::Transpose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::Transpose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>,
-                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 // TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_t_n_dcomplex_dcomplex )
 // {
@@ -96,28 +72,19 @@ TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_t_u_dcomplex_dcomplex) {
 // }
 
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_nt_u_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_nt_n_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose,
-                                 Diag::NonUnit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_nt_u_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::NoTranspose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 // TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_n_dcomplex_double ) {
 //   typedef
@@ -126,45 +93,30 @@ TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_nt_u_dcomplex_double) {
 //   test_batched_trsm<TestDevice,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 // }
 TEST_F(TestCategory, batched_scalar_serial_trsm_r_u_nt_u_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_r_u_nt_n_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose,
-                                 Diag::NonUnit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 //
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_t_u_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_l_t_n_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose,
-                                 Diag::NonUnit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_serial_trsm_l_u_t_u_dcomplex_double) {
-  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::Transpose,
-                                 Diag::Unit>
-      param_tag_type;
+  typedef ::Test::Trmm::ParamTag<Side::Left, Uplo::Upper, Trans::Transpose, Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type,
-                    algo_tag_type>();
+  test_batched_trsm<TestDevice, Kokkos::complex<double>, double, param_tag_type, algo_tag_type>();
 }
 // TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_t_n_dcomplex_double ) {
 //   typedef

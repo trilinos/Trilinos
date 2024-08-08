@@ -44,31 +44,27 @@ struct BDF_table<2> {
 template <>
 struct BDF_table<3> {
   static constexpr int order = 3;
-  Kokkos::Array<double, 4> coefficients{
-      {-18.0 / 11.0, 9.0 / 11.0, -2.0 / 11.0, 6.0 / 11.0}};
+  Kokkos::Array<double, 4> coefficients{{-18.0 / 11.0, 9.0 / 11.0, -2.0 / 11.0, 6.0 / 11.0}};
 };
 
 template <>
 struct BDF_table<4> {
   static constexpr int order = 4;
-  Kokkos::Array<double, 5> coefficients{
-      {-48.0 / 25.0, 36.0 / 25.0, -16.0 / 25.0, 3.0 / 25.0, 12.0 / 25.0}};
+  Kokkos::Array<double, 5> coefficients{{-48.0 / 25.0, 36.0 / 25.0, -16.0 / 25.0, 3.0 / 25.0, 12.0 / 25.0}};
 };
 
 template <>
 struct BDF_table<5> {
   static constexpr int order = 5;
-  Kokkos::Array<double, 6> coefficients{{-300.0 / 137.0, 300.0 / 137.0,
-                                         -200.0 / 137.0, 75.0 / 137.0,
-                                         -12.0 / 137.0, 60.0 / 137.0}};
+  Kokkos::Array<double, 6> coefficients{
+      {-300.0 / 137.0, 300.0 / 137.0, -200.0 / 137.0, 75.0 / 137.0, -12.0 / 137.0, 60.0 / 137.0}};
 };
 
 template <>
 struct BDF_table<6> {
   static constexpr int order = 6;
   Kokkos::Array<double, 7> coefficients{
-      {-360.0 / 147.0, 450.0 / 147.0, -400.0 / 147.0, 225.0 / 147.0,
-       -72.0 / 147.0, 10.0 / 147.0, 60.0 / 147.0}};
+      {-360.0 / 147.0, 450.0 / 147.0, -400.0 / 147.0, 225.0 / 147.0, -72.0 / 147.0, 10.0 / 147.0, 60.0 / 147.0}};
 };
 
 template <class system_type, class table_type, class mv_type>
@@ -82,14 +78,9 @@ struct BDF_system_wrapper {
   mv_type yn;
 
   KOKKOS_FUNCTION
-  BDF_system_wrapper(const system_type& mySys_, const table_type& table_,
-                     const double t_, const double dt_, const mv_type& yn_)
-      : mySys(mySys_),
-        neqs(mySys_.neqs),
-        table(table_),
-        t(t_),
-        dt(dt_),
-        yn(yn_) {}
+  BDF_system_wrapper(const system_type& mySys_, const table_type& table_, const double t_, const double dt_,
+                     const mv_type& yn_)
+      : mySys(mySys_), neqs(mySys_.neqs), table(table_), t(t_), dt(dt_), yn(yn_) {}
 
   template <class vec_type>
   KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
@@ -99,8 +90,7 @@ struct BDF_system_wrapper {
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
       f(eqIdx) = y(eqIdx) - table.coefficients[order] * dt * f(eqIdx);
       for (int orderIdx = 0; orderIdx < order; ++orderIdx) {
-        f(eqIdx) +=
-            table.coefficients[order - 1 - orderIdx] * yn(eqIdx, orderIdx);
+        f(eqIdx) += table.coefficients[order - 1 - orderIdx] * yn(eqIdx, orderIdx);
       }
     }
   }
@@ -111,8 +101,7 @@ struct BDF_system_wrapper {
 
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
-        jac(rowIdx, colIdx) =
-            -table.coefficients[order] * dt * jac(rowIdx, colIdx);
+        jac(rowIdx, colIdx) = -table.coefficients[order] * dt * jac(rowIdx, colIdx);
       }
       jac(rowIdx, rowIdx) += 1.0;
     }
@@ -130,13 +119,12 @@ struct BDF_system_wrapper2 {
   double t, dt, c = 0;
 
   KOKKOS_FUNCTION
-  BDF_system_wrapper2(const system_type& mySys_, const subview_type& psi_,
-                      const d_vec_type& d_, const double t_, const double dt_)
+  BDF_system_wrapper2(const system_type& mySys_, const subview_type& psi_, const d_vec_type& d_, const double t_,
+                      const double dt_)
       : mySys(mySys_), neqs(mySys_.neqs), psi(psi_), d(d_), t(t_), dt(dt_) {}
 
   template <class YVectorType, class FVectorType>
-  KOKKOS_FUNCTION void residual(const YVectorType& y,
-                                const FVectorType& f) const {
+  KOKKOS_FUNCTION void residual(const YVectorType& y, const FVectorType& f) const {
     // f = f(t+dt, y)
     mySys.evaluate_function(t, dt, y, f);
 
@@ -165,14 +153,10 @@ struct BDF_system_wrapper2 {
   }
 };
 
-template <class ode_type, class table_type, class vec_type, class mv_type,
-          class mat_type, class scalar_type>
-KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table,
-                             scalar_type t, scalar_type dt,
-                             const vec_type& y_old, const vec_type& y_new,
-                             const vec_type& rhs, const vec_type& update,
-                             const vec_type& scale, const mv_type& y_vecs,
-                             const mat_type& temp, const mat_type& jac) {
+template <class ode_type, class table_type, class vec_type, class mv_type, class mat_type, class scalar_type>
+KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table, scalar_type t, scalar_type dt,
+                             const vec_type& y_old, const vec_type& y_new, const vec_type& rhs, const vec_type& update,
+                             const vec_type& scale, const mv_type& y_vecs, const mat_type& temp, const mat_type& jac) {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
   BDF_system_wrapper sys(ode, table, t, dt, y_vecs);
@@ -184,57 +168,43 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table,
   }
 
   // solver the nonlinear problem
-  {
-    KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs,
-                                           update, scale);
-  }
+  { KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale); }
 
 }  // BDFStep
 
 template <class mat_type, class scalar_type>
-KOKKOS_FUNCTION void compute_coeffs(const int order, const scalar_type factor,
-                                    const mat_type& coeffs) {
+KOKKOS_FUNCTION void compute_coeffs(const int order, const scalar_type factor, const mat_type& coeffs) {
   coeffs(0, 0) = 1.0;
   for (int colIdx = 0; colIdx < order; ++colIdx) {
     coeffs(0, colIdx + 1) = 1.0;
     for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
       coeffs(rowIdx + 1, colIdx + 1) =
-          ((rowIdx - factor * (colIdx + 1.0)) / (rowIdx + 1.0)) *
-          coeffs(rowIdx, colIdx + 1);
+          ((rowIdx - factor * (colIdx + 1.0)) / (rowIdx + 1.0)) * coeffs(rowIdx, colIdx + 1);
     }
   }
 }
 
 template <class mat_type, class scalar_type>
-KOKKOS_FUNCTION void update_D(const int order, const scalar_type factor,
-                              const mat_type& coeffs, const mat_type& tempD,
+KOKKOS_FUNCTION void update_D(const int order, const scalar_type factor, const mat_type& coeffs, const mat_type& tempD,
                               const mat_type& D) {
-  auto subD =
-      Kokkos::subview(D, Kokkos::ALL(), Kokkos::pair<int, int>(0, order + 1));
-  auto subTempD = Kokkos::subview(tempD, Kokkos::ALL(),
-                                  Kokkos::pair<int, int>(0, order + 1));
+  auto subD     = Kokkos::subview(D, Kokkos::ALL(), Kokkos::pair<int, int>(0, order + 1));
+  auto subTempD = Kokkos::subview(tempD, Kokkos::ALL(), Kokkos::pair<int, int>(0, order + 1));
 
   compute_coeffs(order, factor, coeffs);
-  auto R = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1),
-                           Kokkos::pair<int, int>(0, order + 1));
-  KokkosBatched::SerialGemm<
-      KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
-      KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subD, R, 0.0, subTempD);
+  auto R = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
+  KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
+                            KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subD, R, 0.0, subTempD);
 
   compute_coeffs(order, 1.0, coeffs);
-  auto U = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1),
-                           Kokkos::pair<int, int>(0, order + 1));
-  KokkosBatched::SerialGemm<
-      KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
-      KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subTempD, U, 0.0, subD);
+  auto U = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
+  KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
+                            KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subTempD, U, 0.0, subD);
 }
 
-template <class ode_type, class mat_type, class vec_type, class res_type,
-          class scalar_type>
-KOKKOS_FUNCTION void initial_step_size(
-    const ode_type ode, const int order, const scalar_type t0,
-    const scalar_type atol, const scalar_type rtol, const vec_type& y0,
-    const res_type& f0, const mat_type& temp, scalar_type& dt_ini) {
+template <class ode_type, class mat_type, class vec_type, class res_type, class scalar_type>
+KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, const scalar_type t0,
+                                       const scalar_type atol, const scalar_type rtol, const vec_type& y0,
+                                       const res_type& f0, const mat_type& temp, scalar_type& dt_ini) {
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
   // Extract subviews to store intermediate data
@@ -290,16 +260,12 @@ KOKKOS_FUNCTION void initial_step_size(
   }
 }  // initial_step_size
 
-template <class ode_type, class vec_type, class res_type, class mat_type,
-          class scalar_type>
-KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
-                             scalar_type t_end, int& order,
-                             int& num_equal_steps, const int max_newton_iters,
-                             const scalar_type atol, const scalar_type rtol,
-                             const scalar_type min_factor,
-                             const vec_type& y_old, const vec_type& y_new,
-                             const res_type& rhs, const res_type& update,
-                             const mat_type& temp, const mat_type& temp2) {
+template <class ode_type, class vec_type, class res_type, class mat_type, class scalar_type>
+KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end, int& order,
+                             int& num_equal_steps, const int max_newton_iters, const scalar_type atol,
+                             const scalar_type rtol, const scalar_type min_factor, const vec_type& y_old,
+                             const vec_type& y_new, const res_type& rhs, const res_type& update, const mat_type& temp,
+                             const mat_type& temp2) {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
   constexpr int max_order = 5;
@@ -310,10 +276,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
   // kappa gamma(i) = sum_{k=1}^i(1.0 / k); gamma(0) = 0; // NDF coefficients
   // gamma_k alpha(i) = (1 - kappa(i)) * gamma(i) error_const(i) = kappa(i) *
   // gamma(i) + 1 / (i + 1)
-  const Kokkos::Array<const double, 6> alpha{
-      {0., 1.185, 1.66666667, 1.98421667, 2.16979167, 2.28333333}};
-  const Kokkos::Array<const double, 6> error_const{
-      {1., 0.315, 0.16666667, 0.09911667, 0.11354167, 0.16666667}};
+  const Kokkos::Array<const double, 6> alpha{{0., 1.185, 1.66666667, 1.98421667, 2.16979167, 2.28333333}};
+  const Kokkos::Array<const double, 6> error_const{{1., 0.315, 0.16666667, 0.09911667, 0.11354167, 0.16666667}};
 
   // Extract columns of temp to form temporary
   // subviews to operate on.
@@ -322,12 +286,9 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
   // numCols << std::endl; std::cout << "Extract subview from temp" <<
   // std::endl;
   int offset = 2;
-  auto D     = Kokkos::subview(
-      temp, Kokkos::ALL(),
-      Kokkos::pair<int, int>(offset, offset + 8));  // y and its derivatives
+  auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));  // y and its derivatives
   offset += 8;
-  auto tempD = Kokkos::subview(temp, Kokkos::ALL(),
-                               Kokkos::pair<int, int>(offset, offset + 8));
+  auto tempD = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));
   offset += 8;
   auto scale = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
   ++offset;  // Scaling coefficients for error calculation
@@ -337,31 +298,26 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
   ++offset;  // Higher order terms contribution to rhs
   auto error = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
   ++offset;  // Error estimate
-  auto jac = Kokkos::subview(
-      temp, Kokkos::ALL(),
-      Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
+  auto jac =
+      Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
   offset += ode.neqs;
   auto tmp_gesv = Kokkos::subview(
-      temp, Kokkos::ALL(),
-      Kokkos::pair<int, int>(
-          offset, offset + ode.neqs + 4));  // Buffer space for gesv calculation
+      temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs + 4));  // Buffer space for gesv calculation
   offset += ode.neqs + 4;
 
-  auto coeffs =
-      Kokkos::subview(temp2, Kokkos::ALL(), Kokkos::pair<int, int>(0, 6));
-  auto gamma = Kokkos::subview(temp2, Kokkos::ALL(), 6);
-  gamma(0)   = 0.0;
-  gamma(1)   = 1.0;
-  gamma(2)   = 1.5;
-  gamma(3)   = 1.83333333;
-  gamma(4)   = 2.08333333;
-  gamma(5)   = 2.28333333;
+  auto coeffs = Kokkos::subview(temp2, Kokkos::ALL(), Kokkos::pair<int, int>(0, 6));
+  auto gamma  = Kokkos::subview(temp2, Kokkos::ALL(), 6);
+  gamma(0)    = 0.0;
+  gamma(1)    = 1.0;
+  gamma(2)    = 1.5;
+  gamma(3)    = 1.83333333;
+  gamma(4)    = 2.08333333;
+  gamma(5)    = 2.28333333;
 
   BDF_system_wrapper2 sys(ode, psi, update, t, dt);
   const newton_params param(
       max_newton_iters, atol,
-      Kokkos::max(10 * Kokkos::ArithTraits<scalar_type>::eps() / rtol,
-                  Kokkos::min(0.03, Kokkos::sqrt(rtol))));
+      Kokkos::max(10 * Kokkos::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
 
   scalar_type max_step = Kokkos::ArithTraits<scalar_type>::max();
   scalar_type min_step = Kokkos::ArithTraits<scalar_type>::min();
@@ -406,12 +362,9 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 
     // Compute psi, the sum of the higher order
     // contribution to the residual
-    auto subD =
-        Kokkos::subview(D, Kokkos::ALL(), Kokkos::pair<int, int>(1, order + 1));
-    auto subGamma =
-        Kokkos::subview(gamma, Kokkos::pair<int, int>(1, order + 1));
-    KokkosBlas::Experimental::serial_gemv('N', 1.0 / alpha[order], subD,
-                                          subGamma, 0.0, psi);
+    auto subD     = Kokkos::subview(D, Kokkos::ALL(), Kokkos::pair<int, int>(1, order + 1));
+    auto subGamma = Kokkos::subview(gamma, Kokkos::pair<int, int>(1, order + 1));
+    KokkosBlas::Experimental::serial_gemv('N', 1.0 / alpha[order], subD, subGamma, 0.0, psi);
 
     sys.compute_jac = true;
     sys.c           = dt / alpha[order];
@@ -420,23 +373,20 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     Kokkos::Experimental::local_deep_copy(y_new, y_predict);
     Kokkos::Experimental::local_deep_copy(update, 0);
     KokkosODE::Experimental::newton_solver_status newton_status =
-        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new,
-                                               rhs, update, scale);
+        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale);
 
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
     }
 
-    if (newton_status ==
-        KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
+    if (newton_status == KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
       dt = 0.5 * dt;
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;
 
     } else {
       // Estimate the solution error
-      safety = 0.9 * (2 * max_newton_iters + 1) /
-               (2 * max_newton_iters + param.iters);
+      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + param.iters);
       error_norm = 0;
       for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
         scale(eqIdx) = atol + rtol * Kokkos::abs(y_new(eqIdx));
@@ -447,9 +397,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 
       // Check error norm and adapt step size or accept step
       if (error_norm > 1) {
-        scalar_type factor = Kokkos::max(
-            min_factor, safety * Kokkos::pow(error_norm, -1.0 / (order + 1)));
-        dt = factor * dt;
+        scalar_type factor = Kokkos::max(min_factor, safety * Kokkos::pow(error_norm, -1.0 / (order + 1)));
+        dt                 = factor * dt;
         update_D(order, factor, coeffs, tempD, D);
         num_equal_steps = 0;
       } else {
@@ -483,8 +432,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 
   if (1 < order) {
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
-      error_low += Kokkos::pow(
-          error_const[order - 1] * D(eqIdx, order) / scale(eqIdx), 2);
+      error_low += Kokkos::pow(error_const[order - 1] * D(eqIdx, order) / scale(eqIdx), 2);
     }
     error_low = Kokkos::sqrt(error_low) / Kokkos::sqrt(sys.neqs);
   } else {
@@ -493,8 +441,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 
   if (order < max_order) {
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
-      error_high += Kokkos::pow(
-          error_const[order + 1] * D(eqIdx, order + 2) / scale(eqIdx), 2);
+      error_high += Kokkos::pow(error_const[order + 1] * D(eqIdx, order + 2) / scale(eqIdx), 2);
     }
     error_high = Kokkos::sqrt(error_high) / Kokkos::sqrt(sys.neqs);
   } else {

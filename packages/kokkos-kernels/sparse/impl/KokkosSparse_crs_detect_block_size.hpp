@@ -71,9 +71,8 @@ class BlockPopulations {
   }
 
  private:
-  std::map<std::pair<size_t, size_t>, size_t>
-      blocks_; /**< A map of block coordinates to their population counts */
-  size_t sz_;  /**< The block size */
+  std::map<std::pair<size_t, size_t>, size_t> blocks_; /**< A map of block coordinates to their population counts */
+  size_t sz_;                                          /**< The block size */
 };
 
 /**
@@ -99,10 +98,8 @@ size_t detect_block_size(const Crs &crs) {
   using ordinal_type = typename Crs::ordinal_type;
 
   // copy matrix data to host
-  auto rs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                crs.graph.row_map);
-  auto cs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                crs.graph.entries);
+  auto rs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crs.graph.row_map);
+  auto cs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crs.graph.entries);
 
   // upper bound is minimum of sqrt(nnz), numRows, numCols,
   // and smallest non-empty row
@@ -128,8 +125,7 @@ size_t detect_block_size(const Crs &crs) {
     }
 
     // trial size must not be a multiple of previously-rejected size
-    if (std::any_of(rejectedSizes.begin(), rejectedSizes.end(),
-                    [&](size_t f) { return trialSize % f == 0; })) {
+    if (std::any_of(rejectedSizes.begin(), rejectedSizes.end(), [&](size_t f) { return trialSize % f == 0; })) {
       rejectedSizes.push_back(trialSize);
       continue;
     }

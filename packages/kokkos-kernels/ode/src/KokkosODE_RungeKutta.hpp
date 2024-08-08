@@ -31,8 +31,8 @@ namespace Experimental {
 /// \brief RK_type is an enum tye that conveniently
 /// describes the Runge-Kutta methods implemented.
 enum RK_type : int {
-  RKFE = 0,  ///< Forward Euler method (no adaptivity available for this method)
-  RKEH = 1,  ///< Euler-Heun method
+  RKFE  = 0,  ///< Forward Euler method (no adaptivity available for this method)
+  RKEH  = 1,  ///< Euler-Heun method
   RKF12 = 2,  ///< Fehlberg order 2 method
   RKBS  = 3,  ///< Bogacki-Shampine method
   RK4   = 4,  ///< Runge-Kutta classic order 4 method
@@ -126,13 +126,11 @@ struct RungeKutta {
   /// \return ode_solver_status an enum that describes success of failure
   /// of the integration method once it at terminated.
   template <class ode_type, class vec_type, class mv_type, class scalar_type>
-  KOKKOS_FUNCTION static ode_solver_status Solve(
-      const ode_type& ode, const KokkosODE::Experimental::ODE_params& params,
-      const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
-      const vec_type& y, const vec_type& temp, const mv_type& k_vecs) {
+  KOKKOS_FUNCTION static ode_solver_status Solve(const ode_type& ode, const KokkosODE::Experimental::ODE_params& params,
+                                                 const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
+                                                 const vec_type& y, const vec_type& temp, const mv_type& k_vecs) {
     table_type table;
-    return KokkosODE::Impl::RKSolve(ode, table, params, t_start, t_end, y0, y,
-                                    temp, k_vecs);
+    return KokkosODE::Impl::RKSolve(ode, table, params, t_start, t_end, y0, y, temp, k_vecs);
   }
 };
 

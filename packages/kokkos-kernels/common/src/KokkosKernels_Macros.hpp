@@ -34,15 +34,13 @@
 // is enabled, since in that case, Kokkos::ThreadVectorRange should be used
 // instead for SIMD parallel loops.
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
-    defined(KOKKOS_ENABLE_OPENMP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ENABLE_OPENMP)
 // For clang OpenMP support, see
 // https://clang.llvm.org/docs/OpenMPSupport.html#id1
 #if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
 // GCC 4.8.5 and older do not support #pragma omp simd
 // Do not enable when using GCC 7.2.0 or 7.3.0 + C++17 due to a bug in gcc
-#if (KOKKOS_COMPILER_GNU > 485) &&                                   \
-    !(KOKKOS_COMPILER_GNU == 720 && defined(KOKKOS_ENABLE_CXX17)) && \
+#if (KOKKOS_COMPILER_GNU > 485) && !(KOKKOS_COMPILER_GNU == 720 && defined(KOKKOS_ENABLE_CXX17)) && \
     !(KOKKOS_COMPILER_GNU == 730 && defined(KOKKOS_ENABLE_CXX17))
 #define KOKKOSKERNELS_ENABLE_OMP_SIMD
 #endif
@@ -99,9 +97,8 @@
 // define KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS if we are targeting a CUDA
 // architecture with "independent thread scheduling" (Volta70 and up). This
 // requires some extra logic in HashmapAccumulator to avoid data races.
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_ADA89) ||   \
-    defined(KOKKOS_ARCH_HOPPER)
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE) || \
+    defined(KOKKOS_ARCH_ADA89) || defined(KOKKOS_ARCH_HOPPER)
 #define KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
 #endif
 

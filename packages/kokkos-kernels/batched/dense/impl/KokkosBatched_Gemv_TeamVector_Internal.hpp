@@ -30,30 +30,24 @@ namespace KokkosBatched {
 /// ====================
 template <typename ArgAlgo>
 struct TeamVectorGemvInternal {
-  template <typename MemberType, typename ScalarType, typename layout,
-            typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType & /*member*/, const int /*N*/, const int /*m*/,
-      const int /*n*/, const ScalarType /*alpha*/,
-      const ValueType *KOKKOS_RESTRICT /*A*/, const int /*as0*/,
-      const int /*as1*/, const int /*as2*/,
-      const ValueType *KOKKOS_RESTRICT /*x*/, const int /*xs0*/,
-      const int /*xs1*/, const ScalarType /*beta*/,
-      /**/ ValueType *KOKKOS_RESTRICT /*y*/, const int /*ys0*/,
-      const int /*ys1*/) {
+  template <typename MemberType, typename ScalarType, typename layout, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType & /*member*/, const int /*N*/, const int /*m*/,
+                                           const int /*n*/, const ScalarType /*alpha*/,
+                                           const ValueType *KOKKOS_RESTRICT /*A*/, const int /*as0*/, const int /*as1*/,
+                                           const int /*as2*/, const ValueType *KOKKOS_RESTRICT /*x*/, const int /*xs0*/,
+                                           const int /*xs1*/, const ScalarType /*beta*/,
+                                           /**/ ValueType *KOKKOS_RESTRICT /*y*/, const int /*ys0*/,
+                                           const int /*ys1*/) {
     assert(false && "Error: encounter dummy impl");
     return 0;
   }
 };
 
 template <>
-template <typename MemberType, typename ScalarType, typename layout,
-          typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
-    const MemberType &member, const int N, const int m, const int n,
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1, const int as2, const ValueType *KOKKOS_RESTRICT X,
+template <typename MemberType, typename ScalarType, typename layout, typename ValueType>
+KOKKOS_INLINE_FUNCTION int TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+    const MemberType &member, const int N, const int m, const int n, const ScalarType alpha,
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1, const int as2, const ValueType *KOKKOS_RESTRICT X,
     const int xs0, const int xs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT Y, const int ys0, const int ys1) {
   const ScalarType one(1.0), zero(0.0);
@@ -64,37 +58,32 @@ TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
   if (beta == zero)
     // TODO: KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, zero, y,
     // ys0);
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, N * m),
-                         [&](const int &iTemp) {
-                           int iRow, iMatrix;
-                           getIndices<int, layout>(iTemp, m, N, iRow, iMatrix);
-                           Y[ys0 * iMatrix + ys1 * iRow] = zero;
-                         });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, N * m), [&](const int &iTemp) {
+      int iRow, iMatrix;
+      getIndices<int, layout>(iTemp, m, N, iRow, iMatrix);
+      Y[ys0 * iMatrix + ys1 * iRow] = zero;
+    });
   else if (beta != one)
     // TODO: KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, beta,
     // y, ys0);
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, N * m),
-                         [&](const int &iTemp) {
-                           int iRow, iMatrix;
-                           getIndices<int, layout>(iTemp, m, N, iRow, iMatrix);
-                           Y[ys0 * iMatrix + ys1 * iRow] *= beta;
-                         });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, N * m), [&](const int &iTemp) {
+      int iRow, iMatrix;
+      getIndices<int, layout>(iTemp, m, N, iRow, iMatrix);
+      Y[ys0 * iMatrix + ys1 * iRow] *= beta;
+    });
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0) return 0;
 
     if (beta != one) member.team_barrier();
 
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, N * m),
-                         [&](const int &iTemp) {
-                           int iRow, iMatrix;
-                           ValueType t(0);
-                           getIndices<int, layout>(iTemp, m, N, iRow, iMatrix);
-                           for (int i = 0; i < n; ++i)
-                             t += A[as0 * iMatrix + as1 * iRow + as2 * i] *
-                                  X[xs0 * iMatrix + xs1 * i];
-                           Y[ys0 * iMatrix + ys1 * iRow] += alpha * t;
-                         });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, N * m), [&](const int &iTemp) {
+      int iRow, iMatrix;
+      ValueType t(0);
+      getIndices<int, layout>(iTemp, m, N, iRow, iMatrix);
+      for (int i = 0; i < n; ++i) t += A[as0 * iMatrix + as1 * iRow + as2 * i] * X[xs0 * iMatrix + xs1 * i];
+      Y[ys0 * iMatrix + ys1 * iRow] += alpha * t;
+    });
   }
   return 0;
 }

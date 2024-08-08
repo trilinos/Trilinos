@@ -40,8 +40,7 @@ typedef double FLOAT;
 typedef MultiVectorDynamic<FLOAT, execution_space>::type mv_type;
 typedef mv_type::HostMirror h_mv_type;
 typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, execution_space> vector_type;
-typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, Kokkos::Threads>
-    h2_vector_type;
+typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, Kokkos::Threads> h2_vector_type;
 typedef vector_type::HostMirror h_vector_type;
 typedef mv_type::size_type size_type;
 
@@ -59,18 +58,11 @@ void test_mv_dot(int size, int numVecs, int loop) {
 
   srand(17231);
   for (int k = 0; k < numVecs; k++) {
-    h_a2(k) =
-        0;  //(1.0*(1.0*rand()/std::numeric_limits<unsigned int>::max())-0.5)*1;
-    h_a(k) = 0;
+    h_a2(k) = 0;  //(1.0*(1.0*rand()/std::numeric_limits<unsigned int>::max())-0.5)*1;
+    h_a(k)  = 0;
     for (int i = 0; i < size; i++) {
-      h_x(i, k) =
-          (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-           0.5) *
-          1;
-      h_y(i, k) =
-          (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-           0.5) *
-          1;
+      h_x(i, k) = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
+      h_y(i, k) = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
       h_a2(k) += h_y(i, k) * h_x(i, k);
     }
   }
@@ -96,12 +88,10 @@ void test_mv_dot(int size, int numVecs, int loop) {
   for (int i = 0; i < loop; i++) MV_Dot(a, x, y);
   execution_space().fence();
   clock_gettime(CLOCK_REALTIME, &endtime);
-  double time = endtime.tv_sec - starttime.tv_sec +
-                1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+  double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
   printf("MV_Dot:       %6.2lf GB/s %8i Elements %3i Vectors %s\n",
-         2 * size * numVecs * sizeof(FLOAT) * loop / time * 1e-9, size, numVecs,
-         errors == 0 ? "PASSED" : "FAILED");
+         2 * size * numVecs * sizeof(FLOAT) * loop / time * 1e-9, size, numVecs, errors == 0 ? "PASSED" : "FAILED");
 }
 
 void test_mv_add(int size, int numVecs, int loop) {
@@ -118,18 +108,10 @@ void test_mv_add(int size, int numVecs, int loop) {
 
   srand(17231);
   for (int k = 0; k < numVecs; k++) {
-    h_a(k) = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-              0.5) *
-             1;
+    h_a(k) = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
     for (int i = 0; i < size; i++) {
-      h_x(i, k) =
-          (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-           0.5) *
-          1;
-      h_y(i, k) =
-          (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-           0.5) *
-          1;
+      h_x(i, k)  = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
+      h_y(i, k)  = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
       h_rh(i, k) = h_a(k) * h_y(i, k) + h_a(k) * h_x(i, k);
     }
   }
@@ -162,12 +144,10 @@ void test_mv_add(int size, int numVecs, int loop) {
   for (int i = 0; i < loop; i++) MV_Add(r, a, x, a, y);
   execution_space().fence();
   clock_gettime(CLOCK_REALTIME, &endtime);
-  double time = endtime.tv_sec - starttime.tv_sec +
-                1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+  double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
   printf("MV_Add:       %6.2lf GB/s %8i Elements %3i Vectors %s\n",
-         3 * size * numVecs * sizeof(FLOAT) * loop / time * 1e-9, size, numVecs,
-         errors == 0 ? "PASSED" : "FAILED");
+         3 * size * numVecs * sizeof(FLOAT) * loop / time * 1e-9, size, numVecs, errors == 0 ? "PASSED" : "FAILED");
 }
 
 void test_mv_mulscalar(int size, int numVecs, int loop) {
@@ -182,14 +162,9 @@ void test_mv_mulscalar(int size, int numVecs, int loop) {
 
   srand(17231);
   for (int k = 0; k < numVecs; k++) {
-    h_a(k) = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-              0.5) *
-             1;
+    h_a(k) = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
     for (int i = 0; i < size; i++) {
-      h_x(i, k) =
-          (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) -
-           0.5) *
-          1;
+      h_x(i, k)  = (1.0 * (1.0 * rand() / std::numeric_limits<unsigned int>::max()) - 0.5) * 1;
       h_rh(i, k) = h_a(k) * h_x(i, k);
     }
   }
@@ -221,12 +196,10 @@ void test_mv_mulscalar(int size, int numVecs, int loop) {
   for (int i = 0; i < loop; i++) MV_MulScalar(r, a, x);
   execution_space().fence();
   clock_gettime(CLOCK_REALTIME, &endtime);
-  double time = endtime.tv_sec - starttime.tv_sec +
-                1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+  double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
   printf("MV_MulScalar: %6.2lf GB/s %8i Elements %3i Vectors %s\n",
-         2 * size * numVecs * sizeof(FLOAT) * loop / time * 1e-9, size, numVecs,
-         errors == 0 ? "PASSED" : "FAILED");
+         2 * size * numVecs * sizeof(FLOAT) * loop / time * 1e-9, size, numVecs, errors == 0 ? "PASSED" : "FAILED");
 }
 
 int main(int argc, char** argv) {

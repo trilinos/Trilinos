@@ -27,13 +27,11 @@ template <typename in_lno_view_t, typename out_lno_view_t>
 struct Histogram {
   in_lno_view_t inview;
   out_lno_view_t outview;
-  Histogram(in_lno_view_t inview_, out_lno_view_t outview_)
-      : inview(inview_), outview(outview_) {}
+  Histogram(in_lno_view_t inview_, out_lno_view_t outview_) : inview(inview_), outview(outview_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t& ii) const {
-    typedef typename std::remove_reference<decltype(outview(0))>::type
-        atomic_incr_type;
+    typedef typename std::remove_reference<decltype(outview(0))>::type atomic_incr_type;
     Kokkos::atomic_fetch_add(&(outview(inview(ii))), atomic_incr_type(1));
   }
 };
@@ -47,13 +45,11 @@ struct Histogram {
  * them with 0, and size must be big enough to hold all values in input view.
  */
 template <typename in_lno_view_t, typename out_lno_view_t, typename MyExecSpace>
-inline void kk_get_histogram(
-    typename in_lno_view_t::size_type in_elements, in_lno_view_t in_view,
-    out_lno_view_t histogram /*must be initialized with 0s*/) {
+inline void kk_get_histogram(typename in_lno_view_t::size_type in_elements, in_lno_view_t in_view,
+                             out_lno_view_t histogram /*must be initialized with 0s*/) {
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for(
-      "KokkosKernels::Common::GetHistogram", my_exec_space(0, in_elements),
-      Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
+  Kokkos::parallel_for("KokkosKernels::Common::GetHistogram", my_exec_space(0, in_elements),
+                       Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
   MyExecSpace().fence();
 }
 
@@ -68,9 +64,9 @@ inline void kk_get_histogram(
  * pritned. This parameter is not used if print_all is set to true.
  */
 template <typename idx_array_type>
-inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(
-    std::ostream& os, idx_array_type view, bool print_all = false,
-    const char* sep = " ", size_t print_size = 40) {
+inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(std::ostream& os, idx_array_type view,
+                                                                   bool print_all = false, const char* sep = " ",
+                                                                   size_t print_size = 40) {
   typedef typename idx_array_type::HostMirror host_type;
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
@@ -95,12 +91,11 @@ inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(
  * rank-2 vectors same like rank-1 vectors and prints multi-vector dimensions.
  */
 template <typename idx_array_type>
-inline std::enable_if_t<idx_array_type::rank >= 2> kk_print_1Dview(
-    std::ostream& os, idx_array_type view, bool print_all = false,
-    const char* sep = " ", size_t print_size = 40) {
+inline std::enable_if_t<idx_array_type::rank >= 2> kk_print_1Dview(std::ostream& os, idx_array_type view,
+                                                                   bool print_all = false, const char* sep = " ",
+                                                                   size_t print_size = 40) {
   if (idx_array_type::rank == 2 && view.extent(1) == 1) {
-    kk_print_1Dview(os, subview(view, Kokkos::ALL, 0), print_all, sep,
-                    print_size);
+    kk_print_1Dview(os, subview(view, Kokkos::ALL, 0), print_all, sep, print_size);
     return;
   }
   os << "[" << view.extent(0);
@@ -120,8 +115,7 @@ inline std::enable_if_t<idx_array_type::rank >= 2> kk_print_1Dview(
  * This interface is provided for backwards compatiblity.
  */
 template <typename idx_array_type>
-inline void kk_print_1Dview(idx_array_type view, bool print_all = false,
-                            size_t print_size = 40) {
+inline void kk_print_1Dview(idx_array_type view, bool print_all = false, size_t print_size = 40) {
   kk_print_1Dview(std::cout, view, print_all, " ", print_size);
 }
 

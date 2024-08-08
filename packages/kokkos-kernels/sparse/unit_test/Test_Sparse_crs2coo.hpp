@@ -20,8 +20,7 @@
 
 namespace Test {
 template <class CrsType, class RowType, class ColType, class DataType>
-void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col,
-                      DataType data) {
+void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col, DataType data) {
   // Copy coo to host
   typename RowType::HostMirror row_h = Kokkos::create_mirror_view(row);
   Kokkos::deep_copy(row_h, row);
@@ -43,14 +42,11 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col,
   using ViewTypeCrsValsRef   = decltype(crs_vals_ref_d);
 
   // Copy crs to host
-  typename ViewTypeCrsColIdsRef::HostMirror crs_col_ids_ref =
-      Kokkos::create_mirror_view(crs_col_ids_ref_d);
+  typename ViewTypeCrsColIdsRef::HostMirror crs_col_ids_ref = Kokkos::create_mirror_view(crs_col_ids_ref_d);
   Kokkos::deep_copy(crs_col_ids_ref, crs_col_ids_ref_d);
-  typename ViewTypeCrsRowMapRef::HostMirror crs_row_map_ref =
-      Kokkos::create_mirror_view(crs_row_map_ref_d);
+  typename ViewTypeCrsRowMapRef::HostMirror crs_row_map_ref = Kokkos::create_mirror_view(crs_row_map_ref_d);
   Kokkos::deep_copy(crs_row_map_ref, crs_row_map_ref_d);
-  typename ViewTypeCrsValsRef::HostMirror crs_vals_ref =
-      Kokkos::create_mirror_view(crs_vals_ref_d);
+  typename ViewTypeCrsValsRef::HostMirror crs_vals_ref = Kokkos::create_mirror_view(crs_vals_ref_d);
   Kokkos::deep_copy(crs_vals_ref, crs_vals_ref_d);
 
   Kokkos::fence();
@@ -60,12 +56,11 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col,
   ASSERT_EQ(crsMatRef.nnz(), data.extent(0));
 
   for (decltype(row.extent(0)) idx = 0; idx < row.extent(0); ++idx) {
-    auto row_id          = row_h(idx);
-    auto col_id          = col_h(idx);
-    auto val             = data_h(idx);
-    std::string fail_msg = "idx - " + std::to_string(idx) +
-                           " row: " + std::to_string(row_id) +
-                           ", col: " + std::to_string(col_id);
+    auto row_id = row_h(idx);
+    auto col_id = col_h(idx);
+    auto val    = data_h(idx);
+    std::string fail_msg =
+        "idx - " + std::to_string(idx) + " row: " + std::to_string(row_id) + ", col: " + std::to_string(col_id);
 
     auto row_start_ref = crs_row_map_ref(row_id);
     auto row_stop_ref  = crs_row_map_ref(row_id + 1);
@@ -77,8 +72,7 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col,
         if (crs_vals_ref(crs_idx) == val) break;
       }
     }
-    if (crs_idx == row_stop_ref)
-      FAIL() << fail_msg << " not found in crsMatRef!";
+    if (crs_idx == row_stop_ref) FAIL() << fail_msg << " not found in crsMatRef!";
   }
 }
 
@@ -87,13 +81,11 @@ void doCrs2Coo(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   using RandCrsMatType = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
   RandCrsMatType crsMat(m, n, min_val, max_val, m == 0 || n == 0);
 
-  using CrsOT = typename RandCrsMatType::IdViewTypeD::value_type;
-  using CrsType =
-      typename KokkosSparse::CrsMatrix<ScalarType, CrsOT, ExeSpaceType>;
-  auto map = crsMat.get_map();
-  auto ids = crsMat.get_ids();
-  CrsType crsMatrix("doCrs2Coo", crsMat.get_dim1(), crsMat.get_dim2(),
-                    crsMat.get_nnz(), crsMat.get_vals(), map, ids);
+  using CrsOT   = typename RandCrsMatType::IdViewTypeD::value_type;
+  using CrsType = typename KokkosSparse::CrsMatrix<ScalarType, CrsOT, ExeSpaceType>;
+  auto map      = crsMat.get_map();
+  auto ids      = crsMat.get_ids();
+  CrsType crsMatrix("doCrs2Coo", crsMat.get_dim1(), crsMat.get_dim2(), crsMat.get_nnz(), crsMat.get_vals(), map, ids);
 
   auto cooMat = KokkosSparse::crs2coo(crsMatrix);
   check_coo_matrix(crsMatrix, cooMat.row(), cooMat.col(), cooMat.data());
@@ -120,9 +112,7 @@ void doAllCrs2Coo(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_crs2coo) {
-  uint64_t ticks =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count() %
-      UINT32_MAX;
+  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
   std::srand(ticks);
 
   // Square cases

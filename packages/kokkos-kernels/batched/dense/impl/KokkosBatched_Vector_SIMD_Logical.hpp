@@ -22,16 +22,13 @@
 
 namespace KokkosBatched {
 
-#define KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) \
-  typename std::enable_if<std::is_integral<T0>::value &&       \
-                              std::is_integral<T1>::value,     \
+#define KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l)                        \
+  typename std::enable_if<std::is_integral<T0>::value && std::is_integral<T1>::value, \
                           const Vector<SIMD<bool>, l> >::type
 
 template <typename T, int l>
-KOKKOS_INLINE_FUNCTION static
-    typename std::enable_if<std::is_integral<T>::value,
-                            const Vector<SIMD<bool>, l> >::type
-    operator!(const Vector<SIMD<T>, l> &a) {
+KOKKOS_INLINE_FUNCTION static typename std::enable_if<std::is_integral<T>::value, const Vector<SIMD<bool>, l> >::type
+operator!(const Vector<SIMD<T>, l> &a) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -44,9 +41,8 @@ KOKKOS_INLINE_FUNCTION static
 }
 
 template <typename T0, typename T1, int l>
-KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,
-                                                                          T1, l)
-operator||(const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
+KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) operator||(
+    const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -59,9 +55,8 @@ operator||(const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
 }
 
 template <typename T0, typename T1, int l>
-KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,
-                                                                          T1, l)
-operator&&(const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
+KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) operator&&(
+    const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -74,9 +69,8 @@ operator&&(const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
 }
 
 template <typename T0, typename T1, int l>
-KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,
-                                                                          T1, l)
-operator||(const Vector<SIMD<T0>, l> &a, const T1 &b) {
+KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) operator||(
+    const Vector<SIMD<T0>, l> &a, const T1 &b) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -89,9 +83,8 @@ operator||(const Vector<SIMD<T0>, l> &a, const T1 &b) {
 }
 
 template <typename T0, typename T1, int l>
-KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,
-                                                                          T1, l)
-operator&&(const Vector<SIMD<T0>, l> &a, const T1 &b) {
+KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) operator&&(
+    const Vector<SIMD<T0>, l> &a, const T1 &b) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -104,9 +97,8 @@ operator&&(const Vector<SIMD<T0>, l> &a, const T1 &b) {
 }
 
 template <typename T0, typename T1, int l>
-KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,
-                                                                          T1, l)
-operator||(const T0 &a, const Vector<SIMD<T1>, l> &b) {
+KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) operator||(
+    const T0 &a, const Vector<SIMD<T1>, l> &b) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -119,9 +111,8 @@ operator||(const T0 &a, const Vector<SIMD<T1>, l> &b) {
 }
 
 template <typename T0, typename T1, int l>
-KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,
-                                                                          T1, l)
-operator&&(const T0 &a, const Vector<SIMD<T1>, l> &b) {
+KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0, T1, l) operator&&(
+    const T0 &a, const Vector<SIMD<T1>, l> &b) {
   Vector<SIMD<bool>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep

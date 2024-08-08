@@ -22,8 +22,7 @@
 #define _KOKKOSSPARSE_CCS2CRS_HPP
 namespace KokkosSparse {
 namespace Impl {
-template <class OrdinalType, class SizeType, class ValViewType,
-          class ColMapViewType, class RowIdViewType>
+template <class OrdinalType, class SizeType, class ValViewType, class ColMapViewType, class RowIdViewType>
 class Ccs2Crs {
  private:
   using CrsST             = typename ValViewType::value_type;
@@ -50,32 +49,19 @@ class Ccs2Crs {
   CrsColIdViewType __crs_col_ids;
 
  public:
-  Ccs2Crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals,
-          ColMapViewType col_map, RowIdViewType row_ids)
-      : __nrows(nrows),
-        __ncols(ncols),
-        __nnz(nnz),
-        __vals(vals),
-        __col_map(col_map),
-        __row_ids(row_ids) {
-    __crs_vals = CrsValsViewType(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), nnz);
-    __crs_row_map =
-        CrsRowMapViewType(Kokkos::view_alloc("__crs_row_map"), nrows + 1);
-    __crs_col_ids = CrsColIdViewType(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"), nnz);
+  Ccs2Crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, ColMapViewType col_map,
+          RowIdViewType row_ids)
+      : __nrows(nrows), __ncols(ncols), __nnz(nnz), __vals(vals), __col_map(col_map), __row_ids(row_ids) {
+    __crs_vals    = CrsValsViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), nnz);
+    __crs_row_map = CrsRowMapViewType(Kokkos::view_alloc("__crs_row_map"), nrows + 1);
+    __crs_col_ids = CrsColIdViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"), nnz);
 
-    KokkosSparse::Impl::transpose_matrix<
-        ColMapViewType, RowIdViewType, ValViewType, CrsRowMapViewType,
-        CrsColIdViewType, CrsValsViewType, CrsRowMapViewType, CrsET>(
-        __ncols, __nrows, __col_map, __row_ids, __vals, __crs_row_map,
-        __crs_col_ids, __crs_vals);
+    KokkosSparse::Impl::transpose_matrix<ColMapViewType, RowIdViewType, ValViewType, CrsRowMapViewType,
+                                         CrsColIdViewType, CrsValsViewType, CrsRowMapViewType, CrsET>(
+        __ncols, __nrows, __col_map, __row_ids, __vals, __crs_row_map, __crs_col_ids, __crs_vals);
   }
 
-  CrsType get_crsMat() {
-    return CrsType("ccs2crs", __nrows, __ncols, __nnz, __crs_vals,
-                   __crs_row_map, __crs_col_ids);
-  }
+  CrsType get_crsMat() { return CrsType("ccs2crs", __nrows, __ncols, __nnz, __crs_vals, __crs_row_map, __crs_col_ids); }
 };
 }  // namespace Impl
 // clang-format off
@@ -98,12 +84,16 @@ class Ccs2Crs {
 /// \note In KokkosKernels sparse code, adj stands for adjacency list
 ///   and here we're passing in a ccs matrix with xadj=col_map and adj=row_ids.
 // clang-format on
-template <class OrdinalType, class SizeType, class ValViewType,
-          class ColMapViewType, class RowIdViewType>
-auto ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
-             ValViewType vals, ColMapViewType col_map, RowIdViewType row_ids) {
-  using Ccs2crsType = Impl::Ccs2Crs<OrdinalType, SizeType, ValViewType,
-                                    ColMapViewType, RowIdViewType>;
+template <class OrdinalType, class SizeType, class ValViewType, class ColMapViewType, class RowIdViewType>
+auto ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, ColMapViewType col_map,
+             RowIdViewType row_ids) {
+  static_assert(std::is_same_v<SizeType, typename ColMapViewType::non_const_value_type>,
+                "ccs2crs: SizeType (type of nnz) must match the element type of "
+                "ColMapViewType");
+  static_assert(std::is_same_v<OrdinalType, typename RowIdViewType::non_const_value_type>,
+                "ccs2crs: OrdinalType (type of nrows, ncols) must match the element type "
+                "of RowIdViewType");
+  using Ccs2crsType = Impl::Ccs2Crs<OrdinalType, SizeType, ValViewType, ColMapViewType, RowIdViewType>;
   Ccs2crsType ccs2Crs(nrows, ncols, nnz, vals, col_map, row_ids);
   return ccs2Crs.get_crsMat();
 }
@@ -120,12 +110,9 @@ auto ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
 /// \tparam SizeType     The ccsMatrix::size_type
 /// \param ccsMatrix The KokkosSparse::CcsMatrix.
 /// \return A KokkosSparse::CrsMatrix.
-template <typename ScalarType, typename OrdinalType, class DeviceType,
-          class MemoryTraitsType, typename SizeType>
-auto ccs2crs(KokkosSparse::CcsMatrix<ScalarType, OrdinalType, DeviceType,
-                                     MemoryTraitsType, SizeType> &ccsMatrix) {
-  return ccs2crs(ccsMatrix.numRows(), ccsMatrix.numCols(), ccsMatrix.nnz(),
-                 ccsMatrix.values, ccsMatrix.graph.col_map,
+template <typename ScalarType, typename OrdinalType, class DeviceType, class MemoryTraitsType, typename SizeType>
+auto ccs2crs(KokkosSparse::CcsMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &ccsMatrix) {
+  return ccs2crs(ccsMatrix.numRows(), ccsMatrix.numCols(), ccsMatrix.nnz(), ccsMatrix.values, ccsMatrix.graph.col_map,
                  ccsMatrix.graph.entries);
 }
 }  // namespace KokkosSparse

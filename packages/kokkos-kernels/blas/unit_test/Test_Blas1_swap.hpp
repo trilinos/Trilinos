@@ -55,8 +55,7 @@ int test_swap() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_float");
   test_swap<float, TestDevice>();
@@ -65,8 +64,7 @@ TEST_F(TestCategory, swap_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_double");
   test_swap<double, TestDevice>();
@@ -75,8 +73,7 @@ TEST_F(TestCategory, swap_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_complex_float");
   test_swap<Kokkos::complex<float>, TestDevice>();
@@ -85,8 +82,7 @@ TEST_F(TestCategory, swap_complex_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_complex_double");
   test_swap<Kokkos::complex<double>, TestDevice>();

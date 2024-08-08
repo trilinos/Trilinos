@@ -62,12 +62,8 @@
 ///
 
 template <typename MatrixViewType, typename VectorViewType>
-void create_saddle_point_matrices(const MatrixViewType &A,
-                                  const VectorViewType &Y,
-                                  const int n_dim = 3) {
-  Kokkos::Random_XorShift64_Pool<
-      typename MatrixViewType::device_type::execution_space>
-      random(13718);
+void create_saddle_point_matrices(const MatrixViewType &A, const VectorViewType &Y, const int n_dim = 3) {
+  Kokkos::Random_XorShift64_Pool<typename MatrixViewType::device_type::execution_space> random(13718);
   const int N   = A.extent(0);
   const int n   = A.extent(1);
   const int n_2 = n_dim + 1;
@@ -76,12 +72,8 @@ void create_saddle_point_matrices(const MatrixViewType &A,
   MatrixViewType xs("xs", N, n_1, n_dim);
   VectorViewType ys("ys", N, n_1);
 
-  Kokkos::fill_random(
-      xs, random,
-      Kokkos::reduction_identity<typename MatrixViewType::value_type>::prod());
-  Kokkos::fill_random(
-      ys, random,
-      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(xs, random, Kokkos::reduction_identity<typename MatrixViewType::value_type>::prod());
+  Kokkos::fill_random(ys, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
 
   auto xs_host = Kokkos::create_mirror_view(xs);
   auto ys_host = Kokkos::create_mirror_view(ys);
@@ -94,8 +86,8 @@ void create_saddle_point_matrices(const MatrixViewType &A,
   for (int i = 0; i < n_1; ++i) {
     for (int j = 0; j < n_1; ++j) {
       for (int l = 0; l < N; ++l) {
-        auto xs_i = Kokkos::subview(xs_host, l, i, Kokkos::ALL);
-        auto xs_j = Kokkos::subview(xs_host, l, j, Kokkos::ALL);
+        auto xs_i                             = Kokkos::subview(xs_host, l, i, Kokkos::ALL);
+        auto xs_j                             = Kokkos::subview(xs_host, l, j, Kokkos::ALL);
         typename MatrixViewType::value_type d = 0;
         for (int k = 0; k < n_dim; ++k) d += Kokkos::pow(xs_i(k) - xs_j(k), 2);
         d               = Kokkos::sqrt(d);
@@ -125,21 +117,12 @@ void create_saddle_point_matrices(const MatrixViewType &A,
 }
 
 template <typename IntView, typename VectorViewType>
-void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize,
-                                         const int N, const IntView &r,
-                                         const IntView &c,
-                                         const VectorViewType &D,
-                                         const VectorViewType &X,
+void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize, const int N, const IntView &r,
+                                         const IntView &c, const VectorViewType &D, const VectorViewType &X,
                                          const VectorViewType &B) {
-  Kokkos::Random_XorShift64_Pool<
-      typename VectorViewType::device_type::execution_space>
-      random(13718);
-  Kokkos::fill_random(
-      X, random,
-      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
-  Kokkos::fill_random(
-      B, random,
-      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::Random_XorShift64_Pool<typename VectorViewType::device_type::execution_space> random(13718);
+  Kokkos::fill_random(X, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(B, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
 
   auto D_host = Kokkos::create_mirror_view(D);
   auto r_host = Kokkos::create_mirror_view(r);
@@ -181,8 +164,7 @@ void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize,
 }
 
 template <class VType, class IntType>
-void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
-                       const VType &diag) {
+void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c, const VType &diag) {
   auto diag_values_host = Kokkos::create_mirror_view(diag);
   auto values_host      = Kokkos::create_mirror_view(V);
   auto row_ptr_host     = Kokkos::create_mirror_view(r);
@@ -197,8 +179,7 @@ void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
   int BlkSize = diag.extent(1);
 
   for (int i = 0; i < BlkSize; ++i) {
-    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1);
-         ++current_index) {
+    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1); ++current_index) {
       if (colIndices_host(current_index) == i) break;
     }
     for (int j = 0; j < N; ++j) {

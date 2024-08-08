@@ -29,10 +29,9 @@ namespace KokkosBatched {
 
 template <>
 template <typename AViewType, typename tViewType, typename wViewType>
-KOKKOS_INLINE_FUNCTION int SerialQR<Algo::QR::Unblocked>::invoke(
-    const AViewType &A, const tViewType &t, const wViewType &w) {
-  return SerialQR_Internal::invoke(A.extent(0), A.extent(1), A.data(),
-                                   A.stride_0(), A.stride_1(), t.data(),
+KOKKOS_INLINE_FUNCTION int SerialQR<Algo::QR::Unblocked>::invoke(const AViewType &A, const tViewType &t,
+                                                                 const wViewType &w) {
+  return SerialQR_Internal::invoke(A.extent(0), A.extent(1), A.data(), A.stride_0(), A.stride_1(), t.data(),
                                    t.stride_0(), w.data());
 }
 

@@ -26,10 +26,8 @@
 namespace Test {
 
 template <class AMatrix, class SVector, class UMatrix, class VMatrix>
-void check_triple_product(
-    const AMatrix& A, const SVector& S, const UMatrix& U, const VMatrix& Vt,
-    typename Kokkos::ArithTraits<
-        typename AMatrix::non_const_value_type>::mag_type tol) {
+void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, const VMatrix& Vt,
+                          typename Kokkos::ArithTraits<typename AMatrix::non_const_value_type>::mag_type tol) {
   // After a successful SVD decomposition we have A=U*S*V
   // So using gemm we should be able to compare the above
   // triple product to the original matrix A.
@@ -40,8 +38,7 @@ void check_triple_product(
 
   // First compute the left side of the product: temp = U*S
   Kokkos::parallel_for(
-      Kokkos::RangePolicy<execution_space, int>(0, U.extent_int(0)),
-      KOKKOS_LAMBDA(const int& rowIdx) {
+      Kokkos::RangePolicy<execution_space, int>(0, U.extent_int(0)), KOKKOS_LAMBDA(const int& rowIdx) {
         for (int colIdx = 0; colIdx < U.extent_int(1); ++colIdx) {
           if (colIdx < S.extent_int(0)) {
             temp(rowIdx, colIdx) = U(rowIdx, colIdx) * S(colIdx);
@@ -69,8 +66,7 @@ void check_triple_product(
 
 template <class Matrix>
 void check_unitary_orthogonal_matrix(
-    const Matrix& M, typename Kokkos::ArithTraits<
-                         typename Matrix::non_const_value_type>::mag_type tol) {
+    const Matrix& M, typename Kokkos::ArithTraits<typename Matrix::non_const_value_type>::mag_type tol) {
   // After a successful SVD decomposition the matrices
   // U and V are unitary matrices. Thus we can check
   // the property UUt=UtU=I and VVt=VtV=I using gemm.
@@ -83,11 +79,9 @@ void check_unitary_orthogonal_matrix(
   for (int rowIdx = 0; rowIdx < M.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(0); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx),
-                           Kokkos::ArithTraits<scalar_type>::one(), tol);
+        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::one(), tol);
       } else {
-        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx),
-                       Kokkos::ArithTraits<scalar_type>::zero(), tol);
+        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::zero(), tol);
       }
     }
   }
@@ -99,11 +93,9 @@ void check_unitary_orthogonal_matrix(
   for (int rowIdx = 0; rowIdx < M.extent_int(1); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(1); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx),
-                           Kokkos::ArithTraits<scalar_type>::one(), tol);
+        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::one(), tol);
       } else {
-        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx),
-                       Kokkos::ArithTraits<scalar_type>::zero(), tol);
+        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::zero(), tol);
       }
     }
   }
@@ -113,9 +105,8 @@ template <class AMatrix, class Device>
 int impl_analytic_2x2_svd() {
   using scalar_type = typename AMatrix::value_type;
   using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
-  using vector_type =
-      Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S = Kokkos::ArithTraits<scalar_type>;
+  using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
+  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
 
   const mag_type eps = KAT_S::eps();
 
@@ -147,8 +138,7 @@ int impl_analytic_2x2_svd() {
 
   // The singular values for this problem
   // are known: sqrt(45) and sqrt(5)
-  EXPECT_NEAR_KK_REL(S_h(0), static_cast<mag_type>(Kokkos::sqrt(45)),
-                     100 * eps);
+  EXPECT_NEAR_KK_REL(S_h(0), static_cast<mag_type>(Kokkos::sqrt(45)), 100 * eps);
   EXPECT_NEAR_KK_REL(S_h(1), static_cast<mag_type>(Kokkos::sqrt(5)), 100 * eps);
 
   // The singular vectors should be identical
@@ -156,21 +146,16 @@ int impl_analytic_2x2_svd() {
   // component of the vectors to determine
   // the proper signed comparison.
   std::vector<scalar_type> Uref = {
-      static_cast<scalar_type>(1 / Kokkos::sqrt(10)),
-      static_cast<scalar_type>(3 / Kokkos::sqrt(10)),
-      static_cast<scalar_type>(-3 / Kokkos::sqrt(10)),
-      static_cast<scalar_type>(1 / Kokkos::sqrt(10))};
+      static_cast<scalar_type>(1 / Kokkos::sqrt(10)), static_cast<scalar_type>(3 / Kokkos::sqrt(10)),
+      static_cast<scalar_type>(-3 / Kokkos::sqrt(10)), static_cast<scalar_type>(1 / Kokkos::sqrt(10))};
   std::vector<scalar_type> Vtref = {
-      static_cast<scalar_type>(1 / Kokkos::sqrt(2)),
-      static_cast<scalar_type>(-1 / Kokkos::sqrt(2)),
-      static_cast<scalar_type>(1 / Kokkos::sqrt(2)),
-      static_cast<scalar_type>(1 / Kokkos::sqrt(2))};
+      static_cast<scalar_type>(1 / Kokkos::sqrt(2)), static_cast<scalar_type>(-1 / Kokkos::sqrt(2)),
+      static_cast<scalar_type>(1 / Kokkos::sqrt(2)), static_cast<scalar_type>(1 / Kokkos::sqrt(2))};
 
   // Both rotations and reflections are valid
   // vector basis so we need to check both signs
   // to confirm proper SVD was achieved.
-  Kokkos::View<mag_type**, Kokkos::HostSpace> U_real("U real", 2, 2),
-      Vt_real("Vt real", 2, 2);
+  Kokkos::View<mag_type**, Kokkos::HostSpace> U_real("U real", 2, 2), Vt_real("Vt real", 2, 2);
   if constexpr (KAT_S::is_complex) {
     U_real(0, 0) = U_h(0, 0).real();
     U_real(0, 1) = U_h(0, 1).real();
@@ -219,9 +204,8 @@ template <class AMatrix, class Device>
 int impl_analytic_2x3_svd() {
   using scalar_type = typename AMatrix::value_type;
   using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
-  using vector_type =
-      Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S = Kokkos::ArithTraits<scalar_type>;
+  using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
+  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
 
   const mag_type tol = 100 * KAT_S::eps();
 
@@ -277,8 +261,7 @@ int impl_analytic_2x3_svd() {
   // Both rotations and reflections are valid
   // vector basis so we need to check both signs
   // to confirm proper SVD was achieved.
-  Kokkos::View<mag_type**, Kokkos::HostSpace> U_real("U real", 2, 2),
-      Vt_real("Vt real", 3, 3);
+  Kokkos::View<mag_type**, Kokkos::HostSpace> U_real("U real", 2, 2), Vt_real("Vt real", 3, 3);
   if constexpr (KAT_S::is_complex) {
     U_real(0, 0) = U_h(0, 0).real();
     U_real(0, 1) = U_h(0, 1).real();
@@ -350,9 +333,8 @@ template <class AMatrix, class Device>
 int impl_analytic_3x2_svd() {
   using scalar_type = typename AMatrix::value_type;
   using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
-  using vector_type =
-      Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S = Kokkos::ArithTraits<scalar_type>;
+  using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
+  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
 
   const mag_type tol = 100 * KAT_S::eps();
 
@@ -396,8 +378,7 @@ int impl_analytic_3x2_svd() {
   // Both rotations and reflections are valid
   // vector basis so we need to check both signs
   // to confirm proper SVD was achieved.
-  Kokkos::View<mag_type**, Kokkos::HostSpace> U_real("U real", 3, 3),
-      Vt_real("Vt real", 2, 2);
+  Kokkos::View<mag_type**, Kokkos::HostSpace> U_real("U real", 3, 3), Vt_real("Vt real", 2, 2);
   if constexpr (KAT_S::is_complex) {
     U_real(0, 0) = U_h(0, 0).real();
     U_real(0, 1) = U_h(0, 1).real();
@@ -471,8 +452,7 @@ int impl_test_svd(const int m, const int n) {
   using scalar_type     = typename AMatrix::value_type;
   using KAT_S           = Kokkos::ArithTraits<scalar_type>;
   using mag_type        = typename KAT_S::mag_type;
-  using vector_type =
-      Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
+  using vector_type     = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
 
   const mag_type max_val = 10;
   const mag_type tol     = 2000 * max_val * KAT_S::eps();
@@ -480,8 +460,7 @@ int impl_test_svd(const int m, const int n) {
   AMatrix A("A", m, n), U("U", m, m), Vt("Vt", n, n), Aref("A ref", m, n);
   vector_type S("S", Kokkos::min(m, n));
 
-  const uint64_t seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  const uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // Initialize A with random numbers
@@ -492,8 +471,7 @@ int impl_test_svd(const int m, const int n) {
 
   // Working around CUSOLVER constraint for m >= n
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-  if constexpr (std::is_same_v<typename Device::execution_space,
-                               Kokkos::Cuda>) {
+  if constexpr (std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
     if (m >= n) {
       KokkosLapack::svd("A", "A", A, S, U, Vt);
     } else {
@@ -523,10 +501,8 @@ int test_svd() {
   int ret;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_layout_left =
-      Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_layout_left = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
 
   ret = Test::impl_analytic_2x2_svd<view_type_a_layout_left, Device>();
   EXPECT_EQ(ret, 0);
@@ -554,10 +530,8 @@ int test_svd() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_layout_right =
-      Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_layout_right = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
 
   ret = Test::impl_analytic_2x2_svd<view_type_a_layout_right, Device>();
   EXPECT_EQ(ret, 0);
@@ -589,18 +563,15 @@ int test_svd() {
 
 template <class Scalar, class Device>
 int test_svd_wrapper() {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-  if constexpr (std::is_same_v<typename Device::memory_space,
-                               Kokkos::HostSpace>) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  if constexpr (std::is_same_v<typename Device::memory_space, Kokkos::HostSpace>) {
     // Using a device side space with LAPACK/MKL
     return test_svd<Scalar, Device>();
   }
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-  if constexpr (std::is_same_v<typename Device::execution_space,
-                               Kokkos::Cuda>) {
+  if constexpr (std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
     // Using a Cuda device with CUSOLVER
     return test_svd<Scalar, Device>();
   }
@@ -618,8 +589,7 @@ int test_svd_wrapper() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, svd_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::svd_float");
   test_svd_wrapper<float, TestDevice>();
@@ -628,8 +598,7 @@ TEST_F(TestCategory, svd_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, svd_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::svd_double");
   test_svd_wrapper<double, TestDevice>();
@@ -638,8 +607,7 @@ TEST_F(TestCategory, svd_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, svd_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::svd_complex_float");
   test_svd_wrapper<Kokkos::complex<float>, TestDevice>();
@@ -648,8 +616,7 @@ TEST_F(TestCategory, svd_complex_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, svd_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::svd_complex_double");
   test_svd_wrapper<Kokkos::complex<double>, TestDevice>();

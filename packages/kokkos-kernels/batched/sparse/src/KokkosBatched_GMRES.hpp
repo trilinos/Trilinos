@@ -44,25 +44,16 @@ namespace KokkosBatched {
 
 template <typename MemberType, typename ArgMode>
 struct GMRES {
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const OperatorType &A,
-                                           const VectorViewType &B,
-                                           const VectorViewType &X,
-                                           const KrylovHandleType &handle) {
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const OperatorType &A, const VectorViewType &B,
+                                           const VectorViewType &X, const KrylovHandleType &handle) {
     int status = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
-      status = SerialGMRES::template invoke<OperatorType, VectorViewType>(
-          A, B, X, handle);
+      status = SerialGMRES::template invoke<OperatorType, VectorViewType>(A, B, X, handle);
     } else if (std::is_same<ArgMode, Mode::Team>::value) {
-      status =
-          TeamGMRES<MemberType>::template invoke<OperatorType, VectorViewType>(
-              member, A, B, X, handle);
+      status = TeamGMRES<MemberType>::template invoke<OperatorType, VectorViewType>(member, A, B, X, handle);
     } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
-      status = TeamVectorGMRES<MemberType>::template invoke<OperatorType,
-                                                            VectorViewType>(
-          member, A, B, X, handle);
+      status = TeamVectorGMRES<MemberType>::template invoke<OperatorType, VectorViewType>(member, A, B, X, handle);
     }
     return status;
   }
