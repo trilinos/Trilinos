@@ -24,8 +24,7 @@
 #endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
 template <class ExecSpace, class Layout>
-testData_rps_team_dot<ExecSpace, Layout> setup_test(int m, int repeat,
-                                                    const int numberOfTeams) {
+testData_rps_team_dot<ExecSpace, Layout> setup_test(int m, int repeat, const int numberOfTeams) {
   // use constructor to generate testData_object
   testData_rps_team_dot<ExecSpace, Layout> testData_rps_team_dot_obj(m);
 
@@ -47,9 +46,8 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
   // https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1::team-dot
   /////////////////////////////////////////////////////////////////////////////
 
-  using test_data_type = decltype(
-      setup_test<Kokkos::DefaultExecutionSpace,
-                 Kokkos::DefaultExecutionSpace::array_layout>(1, 1, 1));
+  using test_data_type =
+      decltype(setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(1, 1, 1));
 
   kernel_base_vector.push_back(rajaperf::make_kernel_base(
       "BLAS_TEAM_DOT ", run_params,
@@ -58,14 +56,11 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
         return std::make_tuple(
             // TODO: Discuss decltype
             // TODO: Ask KK what values they want tested?
-            setup_test<Kokkos::DefaultExecutionSpace,
-                       Kokkos::DefaultExecutionSpace::array_layout>(m, repeat,
-                                                                    1));
+            setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, repeat, 1));
       },
       [&](const int, const int, test_data_type& data) {
         Kokkos::parallel_for(
-            "TeamDotUsage_RPS",
-            test_data_type::policy(data.numberOfTeams, Kokkos::AUTO),
+            "TeamDotUsage_RPS", test_data_type::policy(data.numberOfTeams, Kokkos::AUTO),
             KOKKOS_LAMBDA(const test_data_type::member_type& team) {
               // loop body
               KokkosBlas::Experimental::dot(team, data.x, data.y);

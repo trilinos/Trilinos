@@ -45,8 +45,7 @@ void print_help() {
   printf(
       "  --compare       : Compare results efficiency of spmv_struct and "
       "spmv.\n");
-  printf(
-      "  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
+  printf("  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
   printf("  -nx             : How many nodes in x direction. \n");
   printf("  -ny             : How many nodes in y direction. \n");
   printf("  -nz             : How many nodes in z direction. \n");
@@ -155,22 +154,17 @@ int main(int argc, char **argv) {
     typedef default_size_type size_type;
     typedef default_lno_t lno_t;
     typedef default_scalar Scalar;
-    typedef KokkosSparse::CrsMatrix<
-        Scalar, lno_t, Kokkos::DefaultExecutionSpace, void, size_type>
-        matrix_type;
+    typedef KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace, void, size_type> matrix_type;
     typedef typename Kokkos::View<Scalar **, Kokkos::LayoutLeft> mv_type;
     // typedef typename
     // Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess >
     // mv_random_read_type;
     typedef typename mv_type::HostMirror h_mv_type;
 
-    int leftBC = 1, rightBC = 1, frontBC = 1, backBC = 1, bottomBC = 1,
-        topBC = 1;
+    int leftBC = 1, rightBC = 1, frontBC = 1, backBC = 1, bottomBC = 1, topBC = 1;
 
-    Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure",
-                                                       numDimensions);
-    Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure(
-        "Matrix Structure", numDimensions);
+    Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", numDimensions);
+    Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure", numDimensions);
     if (numDimensions == 1) {
       structure(0)        = nx;
       mat_structure(0, 0) = nx;
@@ -229,11 +223,9 @@ int main(int argc, char **argv) {
     if (numDimensions == 1) {
       A = Test::generate_structured_matrix1D<matrix_type>(mat_structure);
     } else if (numDimensions == 2) {
-      A = Test::generate_structured_matrix2D<matrix_type>(
-          discrectization_stencil, mat_structure);
+      A = Test::generate_structured_matrix2D<matrix_type>(discrectization_stencil, mat_structure);
     } else if (numDimensions == 3) {
-      A = Test::generate_structured_matrix3D<matrix_type>(
-          discrectization_stencil, mat_structure);
+      A = Test::generate_structured_matrix3D<matrix_type>(discrectization_stencil, mat_structure);
     }
 
     mv_type x("X", A.numCols(), numVecs);
@@ -251,11 +243,9 @@ int main(int argc, char **argv) {
     }
 
     if (check_errors) {
-      h_y_compare = Kokkos::create_mirror(y);
-      typename matrix_type::StaticCrsGraphType::HostMirror h_graph =
-          Kokkos::create_mirror(A.graph);
-      typename matrix_type::values_type::HostMirror h_values =
-          Kokkos::create_mirror_view(A.values);
+      h_y_compare                                                  = Kokkos::create_mirror(y);
+      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+      typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
 
       // Error Check Gold Values
       for (int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {
@@ -270,8 +260,7 @@ int main(int argc, char **argv) {
           // Scalar tmp_val = h_graph.entries(entryIdx) + i;
           int colIdx = h_graph.entries(entryIdx);
           for (int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
-            h_y_compare(rowIdx, vecIdx) +=
-                h_values(entryIdx) * h_x(colIdx, vecIdx);
+            h_y_compare(rowIdx, vecIdx) += h_values(entryIdx) * h_x(colIdx, vecIdx);
           }
         }
       }
@@ -279,10 +268,8 @@ int main(int argc, char **argv) {
 
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
-    Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace>
-        x1("X1", A.numCols(), numVecs);
-    Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace>
-        y1("Y1", A.numRows(), numVecs);
+    Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x1("X1", A.numCols(), numVecs);
+    Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y1("Y1", A.numRows(), numVecs);
     Kokkos::deep_copy(x1, h_x);
 
     {
@@ -293,8 +280,7 @@ int main(int argc, char **argv) {
       double ave_time = 0.0;
       for (int i = 0; i < loop; i++) {
         Kokkos::Timer timer;
-        KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
-                                                1.0, A, x1, 1.0, y1);
+        KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x1, 1.0, y1);
         Kokkos::fence();
         double time = timer.seconds();
         ave_time += time;
@@ -303,13 +289,9 @@ int main(int argc, char **argv) {
       }
 
       // Performance Output
-      double matrix_size = 1.0 *
-                           ((A.nnz() * (sizeof(Scalar) + sizeof(int)) +
-                             A.numRows() * sizeof(int))) /
-                           1024 / 1024;
+      double matrix_size = 1.0 * ((A.nnz() * (sizeof(Scalar) + sizeof(int)) + A.numRows() * sizeof(int))) / 1024 / 1024;
       double vector_size = 2.0 * A.numRows() * sizeof(Scalar) / 1024 / 1024;
-      double vector_readwrite =
-          (A.nnz() + A.numCols()) * sizeof(Scalar) / 1024 / 1024;
+      double vector_readwrite = (A.nnz() + A.numCols()) * sizeof(Scalar) / 1024 / 1024;
 
       double problem_size = matrix_size + vector_size;
       printf(
@@ -319,14 +301,11 @@ int main(int argc, char **argv) {
       printf(
           "Struct %zu %zu %zu %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf "
           "%6.3lf ) ( %6.3lf %6.3lf %6.3lf )\n",
-          (size_t)A.nnz(), (size_t)A.numRows(), (size_t)A.numCols(),
-          problem_size,
-          (matrix_size + vector_readwrite) / ave_time * loop / 1024,
-          (matrix_size + vector_readwrite) / max_time / 1024,
-          (matrix_size + vector_readwrite) / min_time / 1024,
-          2.0 * A.nnz() * loop / ave_time / 1e9, 2.0 * A.nnz() / max_time / 1e9,
-          2.0 * A.nnz() / min_time / 1e9, ave_time / loop * 1000,
-          max_time * 1000, min_time * 1000);
+          (size_t)A.nnz(), (size_t)A.numRows(), (size_t)A.numCols(), problem_size,
+          (matrix_size + vector_readwrite) / ave_time * loop / 1024, (matrix_size + vector_readwrite) / max_time / 1024,
+          (matrix_size + vector_readwrite) / min_time / 1024, 2.0 * A.nnz() * loop / ave_time / 1e9,
+          2.0 * A.nnz() / max_time / 1e9, 2.0 * A.nnz() / min_time / 1e9, ave_time / loop * 1000, max_time * 1000,
+          min_time * 1000);
       Kokkos::Profiling::popRegion();
     }
 
@@ -347,46 +326,38 @@ int main(int argc, char **argv) {
       }
 
       // Performance Output
-      double matrix_size = 1.0 *
-                           ((A.nnz() * (sizeof(Scalar) + sizeof(int)) +
-                             A.numRows() * sizeof(int))) /
-                           1024 / 1024;
+      double matrix_size = 1.0 * ((A.nnz() * (sizeof(Scalar) + sizeof(int)) + A.numRows() * sizeof(int))) / 1024 / 1024;
       double vector_size = 2.0 * A.numRows() * sizeof(Scalar) / 1024 / 1024;
-      double vector_readwrite =
-          (A.nnz() + A.numCols()) * sizeof(Scalar) / 1024 / 1024;
+      double vector_readwrite = (A.nnz() + A.numCols()) * sizeof(Scalar) / 1024 / 1024;
 
       double problem_size = matrix_size + vector_size;
       printf(
           "Unstr %zu %zu %zu %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf "
           "%6.3lf ) ( %6.3lf %6.3lf %6.3lf )\n",
-          (size_t)A.nnz(), (size_t)A.numRows(), (size_t)A.numCols(),
-          problem_size,
-          (matrix_size + vector_readwrite) / ave_time * loop / 1024,
-          (matrix_size + vector_readwrite) / max_time / 1024,
-          (matrix_size + vector_readwrite) / min_time / 1024,
-          2.0 * A.nnz() * loop / ave_time / 1e9, 2.0 * A.nnz() / max_time / 1e9,
-          2.0 * A.nnz() / min_time / 1e9, ave_time / loop * 1000,
-          max_time * 1000, min_time * 1000);
+          (size_t)A.nnz(), (size_t)A.numRows(), (size_t)A.numCols(), problem_size,
+          (matrix_size + vector_readwrite) / ave_time * loop / 1024, (matrix_size + vector_readwrite) / max_time / 1024,
+          (matrix_size + vector_readwrite) / min_time / 1024, 2.0 * A.nnz() * loop / ave_time / 1e9,
+          2.0 * A.nnz() / max_time / 1e9, 2.0 * A.nnz() / min_time / 1e9, ave_time / loop * 1000, max_time * 1000,
+          min_time * 1000);
       Kokkos::Profiling::popRegion();
     }
 
     if (check_errors) {
       // Error Check
-      Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace>
-          x_check("X_check", A.numCols(), numVecs);
-      Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace>
-          y_check("Y_check", A.numRows(), numVecs);
+      Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x_check("X_check", A.numCols(),
+                                                                                         numVecs);
+      Kokkos::View<Scalar **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y_check("Y_check", A.numRows(),
+                                                                                         numVecs);
       Kokkos::deep_copy(x_check, h_x);
-      KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0,
-                                              A, x_check, 1.0, y_check);
+      KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x_check, 1.0, y_check);
       Kokkos::fence();
 
       Kokkos::deep_copy(h_y, y_check);
       Scalar error = 0;
       for (int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {
         for (int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
-          error += (h_y_compare(rowIdx, vecIdx) - h_y(rowIdx, vecIdx)) *
-                   (h_y_compare(rowIdx, vecIdx) - h_y(rowIdx, vecIdx));
+          error +=
+              (h_y_compare(rowIdx, vecIdx) - h_y(rowIdx, vecIdx)) * (h_y_compare(rowIdx, vecIdx) - h_y(rowIdx, vecIdx));
         }
       }
 

@@ -41,75 +41,56 @@ namespace KokkosBlas {
 /// \param A [in]     The vector to apply to X.
 /// \param X [in]     The X vector.
 template <class execution_space, class YMV, class AV, class XMV>
-void mult(const execution_space& space, typename YMV::const_value_type& gamma,
-          const YMV& Y, typename AV::const_value_type& alpha, const AV& A,
-          const XMV& X) {
+void mult(const execution_space& space, typename YMV::const_value_type& gamma, const YMV& Y,
+          typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::mult: execution_space must be a valid Kokkos "
                 "execution space.");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::mult: "
                 "Y is not a Kokkos::View.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename YMV::memory_space>::accessible,
-      "KokkosBlas::mult: YMV must be accessible from execution_space.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible,
+                "KokkosBlas::mult: YMV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<AV>::value,
                 "KokkosBlas::mult: "
                 "A is not a Kokkos::View.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename AV::memory_space>::accessible,
-      "KokkosBlas::mult: AV must be accessible from execution_space.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible,
+                "KokkosBlas::mult: AV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::mult: "
                 "X is not a Kokkos::View.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename XMV::memory_space>::accessible,
-      "KokkosBlas::mult: AV must be accessible from execution_space.");
-  static_assert(std::is_same<typename YMV::value_type,
-                             typename YMV::non_const_value_type>::value,
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
+                "KokkosBlas::mult: AV must be accessible from execution_space.");
+  static_assert(std::is_same<typename YMV::value_type, typename YMV::non_const_value_type>::value,
                 "KokkosBlas::mult: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert(
-      (XMV::rank == 1 && YMV::rank == 1) || (XMV::rank == 2 && YMV::rank == 2),
-      "KokkosBlas::mult: Y and X must be either both rank 1, "
-      "or both rank 2.");
+  static_assert((XMV::rank == 1 && YMV::rank == 1) || (XMV::rank == 2 && YMV::rank == 2),
+                "KokkosBlas::mult: Y and X must be either both rank 1, "
+                "or both rank 2.");
   static_assert(AV::rank == 1, "KokkosBlas::mult: A must have rank 1.");
 
   // Check compatibility of dimensions at run time.
-  if (Y.extent(0) != A.extent(0) || Y.extent(0) != X.extent(0) ||
-      Y.extent(1) != X.extent(1)) {
+  if (Y.extent(0) != A.extent(0) || Y.extent(0) != X.extent(0) || Y.extent(1) != X.extent(1)) {
     std::ostringstream os;
     os << "KokkosBlas::mult: Dimensions do not match: "
-       << "Y: " << Y.extent(0) << " x " << Y.extent(1) << ", A: " << A.extent(0)
-       << " x " << A.extent(0) << ", X: " << X.extent(0) << " x "
-       << X.extent(1);
+       << "Y: " << Y.extent(0) << " x " << Y.extent(1) << ", A: " << A.extent(0) << " x " << A.extent(0)
+       << ", X: " << X.extent(0) << " x " << X.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  using YUnifiedLayout =
-      typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout;
-  using AUnifiedLayout =
-      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-          AV, YUnifiedLayout>::array_layout;
-  using XUnifiedLayout =
-      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-          XMV, YUnifiedLayout>::array_layout;
+  using YUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout;
+  using AUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<AV, YUnifiedLayout>::array_layout;
+  using XUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XMV, YUnifiedLayout>::array_layout;
 
   // Create unmanaged versions of the input Views.
-  typedef Kokkos::View<typename YMV::non_const_data_type, YUnifiedLayout,
-                       typename YMV::device_type,
+  typedef Kokkos::View<typename YMV::non_const_data_type, YUnifiedLayout, typename YMV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       YMV_Internal;
-  typedef Kokkos::View<typename AV::const_value_type*, AUnifiedLayout,
-                       typename AV::device_type,
+  typedef Kokkos::View<typename AV::const_value_type*, AUnifiedLayout, typename AV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, XUnifiedLayout,
-                       typename XMV::device_type,
+  typedef Kokkos::View<typename XMV::const_data_type, XUnifiedLayout, typename XMV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;
 
@@ -117,8 +98,8 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma,
   AV_Internal A_internal  = A;
   XMV_Internal X_internal = X;
 
-  Impl::Mult<execution_space, YMV_Internal, AV_Internal, XMV_Internal>::mult(
-      space, gamma, Y_internal, alpha, A_internal, X_internal);
+  Impl::Mult<execution_space, YMV_Internal, AV_Internal, XMV_Internal>::mult(space, gamma, Y_internal, alpha,
+                                                                             A_internal, X_internal);
 }
 
 /// \brief Element wise multiplication of two vectors:
@@ -138,8 +119,8 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma,
 /// \param A [in]     The vector to apply to X.
 /// \param X [in]     The X vector.
 template <class YMV, class AV, class XMV>
-void mult(typename YMV::const_value_type& gamma, const YMV& Y,
-          typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
+void mult(typename YMV::const_value_type& gamma, const YMV& Y, typename AV::const_value_type& alpha, const AV& A,
+          const XMV& X) {
   mult(typename YMV::execution_space{}, gamma, Y, alpha, A, X);
 }
 

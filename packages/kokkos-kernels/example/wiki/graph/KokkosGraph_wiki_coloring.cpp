@@ -42,10 +42,9 @@ int main() {
       // Use the default algorithm (chosen based on ExecSpace)
       handle.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
       // Run coloring (graph is square and symmetric)
-      KokkosGraph::Experimental::graph_color(&handle, numVertices, numVertices,
-                                             rowmapDevice, colindsDevice);
+      KokkosGraph::Experimental::graph_color(&handle, numVertices, numVertices, rowmapDevice, colindsDevice);
       // Get the colors array, and the number of colors used from the handle.
-      auto colors = handle.get_graph_coloring_handle()->get_vertex_colors();
+      auto colors       = handle.get_graph_coloring_handle()->get_vertex_colors();
       Ordinal numColors = handle.get_graph_coloring_handle()->get_num_colors();
       printf("9-pt stencil: Distance-1 Colors (used %d):\n", (int)numColors);
       GraphDemo::printColoring(colors, numColors);
@@ -57,16 +56,12 @@ int main() {
     {
       Handle handle;
       // Use the default algorithm (chosen based on ExecSpace)
-      handle.create_distance2_graph_coloring_handle(
-          KokkosGraph::COLORING_D2_DEFAULT);
+      handle.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_DEFAULT);
       // Run coloring
-      KokkosGraph::Experimental::graph_color_distance2(
-          &handle, numVertices, rowmapDevice, colindsDevice);
+      KokkosGraph::Experimental::graph_color_distance2(&handle, numVertices, rowmapDevice, colindsDevice);
       // Get the colors array, and the number of colors used from the handle.
-      auto colors =
-          handle.get_distance2_graph_coloring_handle()->get_vertex_colors();
-      Ordinal numColors =
-          handle.get_distance2_graph_coloring_handle()->get_num_colors();
+      auto colors       = handle.get_distance2_graph_coloring_handle()->get_vertex_colors();
+      Ordinal numColors = handle.get_distance2_graph_coloring_handle()->get_num_colors();
       printf("9-pt stencil: Distance-2 Colors (used %d):\n", (int)numColors);
       GraphDemo::printColoring(colors, numColors);
       putchar('\n');

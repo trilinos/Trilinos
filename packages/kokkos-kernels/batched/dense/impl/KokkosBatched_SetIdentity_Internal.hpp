@@ -28,8 +28,7 @@ namespace KokkosBatched {
 struct SerialSetIdentityInternal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1) {
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
     const ValueType one(1), zero(0);
     for (int j = 0; j < n; ++j) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -49,10 +48,8 @@ struct SerialSetIdentityInternal {
 /// ==================
 struct TeamSetIdentityInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int m, const int n,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n,
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
     const ValueType one(1), zero(0);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -70,15 +67,12 @@ struct TeamSetIdentityInternal {
 /// ========================
 struct TeamVectorSetIdentityInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int m, const int n,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n,
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
     const ValueType one(1), zero(0);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(member, n),
-          [&](const int &j) { A[i * as0 + j * as1] = i == j ? one : zero; });
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
+                           [&](const int &j) { A[i * as0 + j * as1] = i == j ? one : zero; });
     });
 
     return 0;

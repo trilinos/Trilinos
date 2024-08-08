@@ -58,8 +58,7 @@ void test_rocblas_safe_call() {
 // fails it throws an error with the
 // KOKKOS_ROCBLAS_SAFE_CALL_IMPL macro
 void test_rocblas_singleton() {
-  KokkosBlas::Impl::RocBlasSingleton& s =
-      KokkosBlas::Impl::RocBlasSingleton::singleton();
+  KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
   (void)s;
 }
 

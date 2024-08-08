@@ -74,8 +74,7 @@ class coarsen_heuristics {
     int t_buckets = 2 * n;
     vtx_view_t buckets("buckets", t_buckets);
     Kokkos::parallel_for(
-        "init buckets", policy_t(0, t_buckets),
-        KOKKOS_LAMBDA(ordinal_t i) { buckets(i) = ORD_MAX; });
+        "init buckets", policy_t(0, t_buckets), KOKKOS_LAMBDA(ordinal_t i) { buckets(i) = ORD_MAX; });
 
     uint64_t max         = std::numeric_limits<uint64_t>::max();
     uint64_t bucket_size = max / t_buckets;
@@ -87,8 +86,7 @@ class coarsen_heuristics {
             if (bucket >= t_buckets) bucket -= t_buckets;
             if (buckets(bucket) == ORD_MAX) {
               // attempt to insert into bucket
-              if (Kokkos::atomic_compare_exchange_strong(&buckets(bucket),
-                                                         ORD_MAX, i)) {
+              if (Kokkos::atomic_compare_exchange_strong(&buckets(bucket), ORD_MAX, i)) {
                 break;
               }
             }
@@ -113,9 +111,9 @@ class coarsen_heuristics {
   // create a mapping when some vertices are already mapped
   // hn is a list of vertices such that vertex i wants to aggregate with vertex
   // hn(i)
-  static ordinal_t parallel_map_construct_prefilled(
-      vtx_view_t vcmap, const ordinal_t n, const vtx_view_t vperm,
-      const vtx_view_t hn, Kokkos::View<ordinal_t, Device> nvertices_coarse) {
+  static ordinal_t parallel_map_construct_prefilled(vtx_view_t vcmap, const ordinal_t n, const vtx_view_t vperm,
+                                                    const vtx_view_t hn,
+                                                    Kokkos::View<ordinal_t, Device> nvertices_coarse) {
     vtx_view_t match("match", n);
     Kokkos::parallel_for(
         policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) {
@@ -142,14 +140,11 @@ class coarsen_heuristics {
             // need to enforce an ordering condition to allow hard-stall
             // conditions to be broken
             if (condition ^ swap) {
-              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX,
-                                                         v)) {
-                if (u == v || Kokkos::atomic_compare_exchange_strong(
-                                  &match(v), ORD_MAX, u)) {
-                  ordinal_t cv =
-                      Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
-                  vcmap(u) = cv;
-                  vcmap(v) = cv;
+              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
+                if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+                  ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
+                  vcmap(u)     = cv;
+                  vcmap(v)     = cv;
                 } else {
                   if (vcmap(v) != ORD_MAX) {
                     vcmap(u) = vcmap(v);
@@ -183,10 +178,8 @@ class coarsen_heuristics {
 
   // hn is a list of vertices such that vertex i wants to aggregate with vertex
   // hn(i)
-  static ordinal_t parallel_map_construct(vtx_view_t vcmap, const ordinal_t n,
-                                          const vtx_view_t vperm,
-                                          const vtx_view_t hn,
-                                          const vtx_view_t ordering) {
+  static ordinal_t parallel_map_construct(vtx_view_t vcmap, const ordinal_t n, const vtx_view_t vperm,
+                                          const vtx_view_t hn, const vtx_view_t ordering) {
     vtx_view_t match("match", n);
     Kokkos::parallel_for(
         policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) { match(i) = ORD_MAX; });
@@ -208,10 +201,8 @@ class coarsen_heuristics {
             // need to enforce an ordering condition to allow hard-stall
             // conditions to be broken
             if (condition ^ swap) {
-              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX,
-                                                         v)) {
-                if (u == v || Kokkos::atomic_compare_exchange_strong(
-                                  &match(v), ORD_MAX, u)) {
+              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
+                if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
                   ordinal_t cv = u;
                   if (v < u) {
                     cv = v;
@@ -232,9 +223,7 @@ class coarsen_heuristics {
       // add the ones that failed to be reprocessed next round
       // maybe count these then create next_perm to save memory?
       Kokkos::parallel_scan(
-          policy_t(0, perm_length),
-          KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update,
-                        const bool final) {
+          policy_t(0, perm_length), KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
             ordinal_t u = curr_perm(i);
             if (vcmap(u) == ORD_MAX) {
               if (final) {
@@ -252,8 +241,7 @@ class coarsen_heuristics {
       curr_perm = next_perm;
     }
     Kokkos::parallel_scan(
-        "assign aggregates", policy_t(0, n),
-        KOKKOS_LAMBDA(const ordinal_t u, ordinal_t& update, const bool final) {
+        "assign aggregates", policy_t(0, n), KOKKOS_LAMBDA(const ordinal_t u, ordinal_t& update, const bool final) {
           if (vcmap(u) == u) {
             if (final) {
               vcmap(u) = update;
@@ -325,8 +313,7 @@ class coarsen_heuristics {
             edge_offset_t max_degree = tuple_degree(u);
             ordinal_t max_idx        = tuple_idx(u);
 
-            for (edge_offset_t j = g.graph.row_map(u);
-                 j < g.graph.row_map(u + 1); j++) {
+            for (edge_offset_t j = g.graph.row_map(u); j < g.graph.row_map(u + 1); j++) {
               ordinal_t v = g.graph.entries(j);
               bool is_max = false;
               if (tuple_state(v) > max_state) {
@@ -375,8 +362,7 @@ class coarsen_heuristics {
               }
               // check if at least one of neighbors are in the IS or will be
               // placed into the IS
-              else if (tuple_state(u) == 1 ||
-                       tuple_idx(tuple_idx(u)) == tuple_idx(u)) {
+              else if (tuple_state(u) == 1 || tuple_idx(tuple_idx(u)) == tuple_idx(u)) {
                 state(u) = -1;
               }
             }
@@ -389,8 +375,7 @@ class coarsen_heuristics {
       vtx_view_t next_unassigned("next unassigned", next_unassigned_total);
       Kokkos::parallel_scan(
           "create next unassigned", policy_t(0, unassigned_total),
-          KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update,
-                        const bool final) {
+          KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
             ordinal_t u = unassigned(i);
             if (state(u) == 0) {
               if (final) {
@@ -408,12 +393,11 @@ class coarsen_heuristics {
   static matrix_t coarsen_mis_2(const matrix_t& g) {
     ordinal_t n = g.numRows();
 
-    typename matrix_t::staticcrsgraph_type::entries_type::non_const_value_type
-        nc           = 0;
-    vtx_view_t vcmap = KokkosGraph::graph_mis2_aggregate<
-        Device, typename matrix_t::staticcrsgraph_type::row_map_type,
-        typename matrix_t::staticcrsgraph_type::entries_type, vtx_view_t>(
-        g.graph.row_map, g.graph.entries, nc);
+    typename matrix_t::staticcrsgraph_type::entries_type::non_const_value_type nc = 0;
+    vtx_view_t vcmap =
+        KokkosGraph::graph_mis2_aggregate<Device, typename matrix_t::staticcrsgraph_type::row_map_type,
+                                          typename matrix_t::staticcrsgraph_type::entries_type, vtx_view_t>(
+            g.graph.row_map, g.graph.entries, nc);
 
     edge_view_t row_map("interpolate row map", n + 1);
 
@@ -461,11 +445,9 @@ class coarsen_heuristics {
           if (colors(i) != first_color) {
             // could use a thread team here
             edge_offset_t max_degree = 0;
-            for (edge_offset_t j = g.graph.row_map(i);
-                 j < g.graph.row_map(i + 1); j++) {
-              ordinal_t v = g.graph.entries(j);
-              edge_offset_t degree =
-                  g.graph.row_map(v + 1) - g.graph.row_map(v);
+            for (edge_offset_t j = g.graph.row_map(i); j < g.graph.row_map(i + 1); j++) {
+              ordinal_t v          = g.graph.entries(j);
+              edge_offset_t degree = g.graph.row_map(v + 1) - g.graph.row_map(v);
               if (colors(v) == first_color && degree > max_degree) {
                 max_degree = degree;
                 vcmap(i)   = vcmap(v);
@@ -524,8 +506,7 @@ class coarsen_heuristics {
           if (vcmap(i) == ORD_MAX) {
             ordinal_t argmax = ORD_MAX;
             scalar_t max_w   = 0;
-            for (edge_offset_t j = g.graph.row_map(i);
-                 j < g.graph.row_map(i + 1); j++) {
+            for (edge_offset_t j = g.graph.row_map(i); j < g.graph.row_map(i + 1); j++) {
               ordinal_t v   = g.graph.entries(j);
               ordinal_t wgt = g.values(j);
               if (vcmap(v) != ORD_MAX) {
@@ -547,11 +528,9 @@ class coarsen_heuristics {
           if (vcmap(i) == ORD_MAX) {
             ordinal_t argmax    = ORD_MAX;
             edge_offset_t max_d = 0;
-            for (edge_offset_t j = g.graph.row_map(i);
-                 j < g.graph.row_map(i + 1); j++) {
-              ordinal_t v = g.graph.entries(j);
-              edge_offset_t degree =
-                  g.graph.row_map(v + 1) - g.graph.row_map(v);
+            for (edge_offset_t j = g.graph.row_map(i); j < g.graph.row_map(i + 1); j++) {
+              ordinal_t v          = g.graph.entries(j);
+              edge_offset_t degree = g.graph.row_map(v + 1) - g.graph.row_map(v);
               if (vcmap(v) != ORD_MAX) {
                 if (degree >= max_d) {
                   max_d  = degree;
@@ -569,8 +548,7 @@ class coarsen_heuristics {
     Kokkos::parallel_for(
         policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) {
           if (vcmap(i) != ORD_MAX) {
-            for (edge_offset_t j = g.graph.row_map(i);
-                 j < g.graph.row_map(i + 1); j++) {
+            for (edge_offset_t j = g.graph.row_map(i); j < g.graph.row_map(i + 1); j++) {
               ordinal_t v = g.graph.entries(j);
               if (vcmap(v) == ORD_MAX) {
                 vcmap(v) = vcmap(i);
@@ -593,8 +571,7 @@ class coarsen_heuristics {
     vtx_view_t remaining("remaining vtx", remaining_total);
 
     Kokkos::parallel_scan(
-        "count remaining", policy_t(0, n),
-        KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
+        "count remaining", policy_t(0, n), KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
           if (vcmap(i) == ORD_MAX) {
             if (final) {
               remaining(update) = i;
@@ -608,8 +585,7 @@ class coarsen_heuristics {
     pool_t rand_pool(std::time(nullptr));
 
     Kokkos::parallel_for(
-        "fill hn", policy_t(0, remaining_total),
-        KOKKOS_LAMBDA(ordinal_t r_idx) {
+        "fill hn", policy_t(0, remaining_total), KOKKOS_LAMBDA(ordinal_t r_idx) {
           // select heaviest neighbor with ties randomly broken
           ordinal_t i       = remaining(r_idx);
           ordinal_t hn_i    = ORD_MAX;
@@ -639,8 +615,7 @@ class coarsen_heuristics {
           hn(i) = hn_i;
         });
 
-    ordinal_t nc =
-        parallel_map_construct_prefilled(vcmap, n, remaining, hn, nvc);
+    ordinal_t nc = parallel_map_construct_prefilled(vcmap, n, remaining, hn, nvc);
     Kokkos::deep_copy(nc, nvc);
 
     edge_view_t row_map("interpolate row map", n + 1);
@@ -671,8 +646,7 @@ class coarsen_heuristics {
     vtx_view_t vcmap("vcmap", n);
 
     Kokkos::parallel_for(
-        "initialize vcmap", policy_t(0, n),
-        KOKKOS_LAMBDA(ordinal_t i) { vcmap(i) = ORD_MAX; });
+        "initialize vcmap", policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) { vcmap(i) = ORD_MAX; });
 
     pool_t rand_pool(std::time(nullptr));
 
@@ -680,8 +654,7 @@ class coarsen_heuristics {
 
     vtx_view_t reverse_map("reversed", n);
     Kokkos::parallel_for(
-        "construct reverse map", policy_t(0, n),
-        KOKKOS_LAMBDA(ordinal_t i) { reverse_map(vperm(i)) = i; });
+        "construct reverse map", policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) { reverse_map(vperm(i)) = i; });
 
     if (uniform_weights) {
       // all weights equal at this level so choose heaviest edge randomly
@@ -690,9 +663,8 @@ class coarsen_heuristics {
             gen_t generator    = rand_pool.get_state();
             ordinal_t adj_size = g.graph.row_map(i + 1) - g.graph.row_map(i);
             if (adj_size > 0) {
-              ordinal_t offset =
-                  g.graph.row_map(i) + (generator.urand64() % adj_size);
-              hn(i) = g.graph.entries(offset);
+              ordinal_t offset = g.graph.row_map(i) + (generator.urand64() % adj_size);
+              hn(i)            = g.graph.entries(offset);
             } else {
               hn(i) = generator.urand64() % n;
             }
@@ -700,18 +672,15 @@ class coarsen_heuristics {
           });
     } else {
       Kokkos::parallel_for(
-          "Heaviest HN", team_policy_t(n, Kokkos::AUTO),
-          KOKKOS_LAMBDA(const member& thread) {
+          "Heaviest HN", team_policy_t(n, Kokkos::AUTO), KOKKOS_LAMBDA(const member& thread) {
             ordinal_t i        = thread.league_rank();
             ordinal_t adj_size = g.graph.row_map(i + 1) - g.graph.row_map(i);
             if (adj_size > 0) {
               edge_offset_t end = g.graph.row_map(i + 1);
-              typename Kokkos::MaxLoc<scalar_t, edge_offset_t,
-                                      Device>::value_type argmax{};
+              typename Kokkos::MaxLoc<scalar_t, edge_offset_t, Device>::value_type argmax{};
               Kokkos::parallel_reduce(
                   Kokkos::TeamThreadRange(thread, g.graph.row_map(i), end),
-                  [=](const edge_offset_t idx,
-                      Kokkos::ValLocScalar<scalar_t, edge_offset_t>& local) {
+                  [=](const edge_offset_t idx, Kokkos::ValLocScalar<scalar_t, edge_offset_t>& local) {
                     scalar_t wgt = g.values(idx);
                     if (wgt >= local.val) {
                       local.val = wgt;
@@ -773,10 +742,8 @@ class coarsen_heuristics {
     Kokkos::View<uint32_t*, Device> hashes;
     ordinal_t unmapped_total;
     Kokkos::View<ordinal_t, Device> nvertices_coarse;
-    MatchByHashSorted(vtx_view_t _vcmap, vtx_view_t _unmapped,
-                      Kokkos::View<uint32_t*, Device> _hashes,
-                      ordinal_t _unmapped_total,
-                      Kokkos::View<ordinal_t, Device> _nvertices_coarse)
+    MatchByHashSorted(vtx_view_t _vcmap, vtx_view_t _unmapped, Kokkos::View<uint32_t*, Device> _hashes,
+                      ordinal_t _unmapped_total, Kokkos::View<ordinal_t, Device> _nvertices_coarse)
         : vcmap(_vcmap),
           unmapped(_unmapped),
           hashes(_hashes),
@@ -784,8 +751,7 @@ class coarsen_heuristics {
           nvertices_coarse(_nvertices_coarse) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const ordinal_t i, ordinal_t& update,
-                    const bool final) const {
+    void operator()(const ordinal_t i, ordinal_t& update, const bool final) const {
       ordinal_t u         = unmapped(i);
       ordinal_t tentative = 0;
       if (i == 0) {
@@ -823,8 +789,7 @@ class coarsen_heuristics {
     }
   };
 
-  static matrix_t coarsen_match(const matrix_t& g, bool uniform_weights,
-                                int match_choice) {
+  static matrix_t coarsen_match(const matrix_t& g, bool uniform_weights, int match_choice) {
     ordinal_t n = g.numRows();
 
     vtx_view_t hn("heavies", n);
@@ -832,8 +797,7 @@ class coarsen_heuristics {
     vtx_view_t vcmap("vcmap", n);
 
     Kokkos::parallel_for(
-        "initialize vcmap", policy_t(0, n),
-        KOKKOS_LAMBDA(ordinal_t i) { vcmap(i) = ORD_MAX; });
+        "initialize vcmap", policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) { vcmap(i) = ORD_MAX; });
 
     rand_view_t randoms("randoms", n);
 
@@ -843,8 +807,7 @@ class coarsen_heuristics {
 
     vtx_view_t reverse_map("reversed", n);
     Kokkos::parallel_for(
-        "construct reverse map", policy_t(0, n),
-        KOKKOS_LAMBDA(ordinal_t i) { reverse_map(vperm(i)) = i; });
+        "construct reverse map", policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) { reverse_map(vperm(i)) = i; });
 
     if (uniform_weights) {
       // all weights equal at this level so choose heaviest edge randomly
@@ -852,9 +815,8 @@ class coarsen_heuristics {
           "Random HN", policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) {
             gen_t generator    = rand_pool.get_state();
             ordinal_t adj_size = g.graph.row_map(i + 1) - g.graph.row_map(i);
-            ordinal_t offset =
-                g.graph.row_map(i) + (generator.urand64() % adj_size);
-            hn(i) = g.graph.entries(offset);
+            ordinal_t offset   = g.graph.row_map(i) + (generator.urand64() % adj_size);
+            hn(i)              = g.graph.entries(offset);
             rand_pool.free_state(generator);
           });
     } else {
@@ -863,11 +825,9 @@ class coarsen_heuristics {
             ordinal_t hn_i   = g.graph.entries(g.graph.row_map(i));
             scalar_t max_ewt = g.values(g.graph.row_map(i));
 
-            edge_offset_t end_offset =
-                g.graph.row_map(i + 1);  // +g.edges_per_source[i];
+            edge_offset_t end_offset = g.graph.row_map(i + 1);  // +g.edges_per_source[i];
 
-            for (edge_offset_t j = g.graph.row_map(i) + 1; j < end_offset;
-                 j++) {
+            for (edge_offset_t j = g.graph.row_map(i) + 1; j < end_offset; j++) {
               if (max_ewt < g.values(j)) {
                 max_ewt = g.values(j);
                 hn_i    = g.graph.entries(j);
@@ -899,15 +859,12 @@ class coarsen_heuristics {
             // need to enforce an ordering condition to allow hard-stall
             // conditions to be broken
             if (condition ^ swap) {
-              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX,
-                                                         v)) {
-                if (u == v || Kokkos::atomic_compare_exchange_strong(
-                                  &match(v), ORD_MAX, u)) {
+              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
+                if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
                   // u == v avoids problems if there is a self-loop edge
-                  ordinal_t cv =
-                      Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
-                  vcmap(u) = cv;
-                  vcmap(v) = cv;
+                  ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
+                  vcmap(u)     = cv;
+                  vcmap(v)     = cv;
                 } else {
                   match(u) = ORD_MAX;
                 }
@@ -930,8 +887,7 @@ class coarsen_heuristics {
                 // check if any are unmatched! so instead of randomly choosing a
                 // heaviest edge, we instead use the reverse permutation order
                 // as the weight
-                for (edge_offset_t j = g.graph.row_map(u);
-                     j < g.graph.row_map(u + 1); j++) {
+                for (edge_offset_t j = g.graph.row_map(u); j < g.graph.row_map(u + 1); j++) {
                   ordinal_t v = g.graph.entries(j);
                   // v must be unmatched to be considered
                   if (vcmap(v) == ORD_MAX) {
@@ -944,8 +900,7 @@ class coarsen_heuristics {
                 }
               } else {
                 scalar_t max_ewt = 0;
-                for (edge_offset_t j = g.graph.row_map(u);
-                     j < g.graph.row_map(u + 1); j++) {
+                for (edge_offset_t j = g.graph.row_map(u); j < g.graph.row_map(u + 1); j++) {
                   ordinal_t v = g.graph.entries(j);
                   // v must be unmatched to be considered
                   if (vcmap(v) == ORD_MAX) {
@@ -959,8 +914,7 @@ class coarsen_heuristics {
               }
 
               if (h != ORD_MAX) {
-                ordinal_t add_next =
-                    Kokkos::atomic_fetch_add(&next_length(), 1);
+                ordinal_t add_next  = Kokkos::atomic_fetch_add(&next_length(), 1);
                 next_perm(add_next) = u;
                 hn(u)               = h;
               }
@@ -973,9 +927,8 @@ class coarsen_heuristics {
     }
 
     if (match_choice == 1) {
-      ordinal_t unmapped = countInf(vcmap);
-      double unmappedRatio =
-          static_cast<double>(unmapped) / static_cast<double>(n);
+      ordinal_t unmapped   = countInf(vcmap);
+      double unmappedRatio = static_cast<double>(unmapped) / static_cast<double>(n);
 
       // leaf matches
       if (unmappedRatio > 0.25) {
@@ -983,8 +936,7 @@ class coarsen_heuristics {
             policy_t(0, n), KOKKOS_LAMBDA(ordinal_t u) {
               if (vcmap(u) != ORD_MAX) {
                 ordinal_t lastLeaf = ORD_MAX;
-                for (edge_offset_t j = g.graph.row_map(u);
-                     j < g.graph.row_map(u + 1); j++) {
+                for (edge_offset_t j = g.graph.row_map(u); j < g.graph.row_map(u + 1); j++) {
                   ordinal_t v = g.graph.entries(j);
                   // v must be unmatched to be considered
                   if (vcmap(v) == ORD_MAX) {
@@ -993,10 +945,9 @@ class coarsen_heuristics {
                       if (lastLeaf == ORD_MAX) {
                         lastLeaf = v;
                       } else {
-                        vcmap(lastLeaf) =
-                            Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
-                        vcmap(v) = vcmap(lastLeaf);
-                        lastLeaf = ORD_MAX;
+                        vcmap(lastLeaf) = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
+                        vcmap(v)        = vcmap(lastLeaf);
+                        lastLeaf        = ORD_MAX;
                       }
                     }
                   }
@@ -1017,20 +968,16 @@ class coarsen_heuristics {
         hasher_t hasher;
         // compute digests of adjacency lists
         Kokkos::parallel_for(
-            "create digests", team_policy_t(n, Kokkos::AUTO),
-            KOKKOS_LAMBDA(const member& thread) {
+            "create digests", team_policy_t(n, Kokkos::AUTO), KOKKOS_LAMBDA(const member& thread) {
               ordinal_t u = thread.league_rank();
               if (vcmap(u) == ORD_MAX) {
                 uint32_t hash = 0;
                 Kokkos::parallel_reduce(
-                    Kokkos::TeamThreadRange(thread, g.graph.row_map(u),
-                                            g.graph.row_map(u + 1)),
-                    [=](const edge_offset_t j, uint32_t& thread_sum) {
-                      thread_sum += hasher(g.graph.entries(j));
-                    },
+                    Kokkos::TeamThreadRange(thread, g.graph.row_map(u), g.graph.row_map(u + 1)),
+                    [=](const edge_offset_t j, uint32_t& thread_sum) { thread_sum += hasher(g.graph.entries(j)); },
                     hash);
                 Kokkos::single(Kokkos::PerTeam(thread), [=]() {
-                  ordinal_t idx = Kokkos::atomic_fetch_add(&unmappedIdx(), 1);
+                  ordinal_t idx    = Kokkos::atomic_fetch_add(&unmappedIdx(), 1);
                   unmappedVtx(idx) = u;
                   hashes(idx)      = hash;
                 });
@@ -1040,17 +987,13 @@ class coarsen_heuristics {
         typedef Kokkos::BinOp1D<Kokkos::View<uint32_t*, Device> > BinOp;
         BinOp bin_op(unmapped, 0, max);
         // VERY important that final parameter is true
-        Kokkos::BinSort<Kokkos::View<uint32_t*, Device>, BinOp, exec_space,
-                        ordinal_t>
-            sorter(hashes, bin_op, true);
+        Kokkos::BinSort<Kokkos::View<uint32_t*, Device>, BinOp, exec_space, ordinal_t> sorter(hashes, bin_op, true);
         sorter.create_permute_vector();
         sorter.template sort<Kokkos::View<uint32_t*, Device> >(hashes);
         sorter.template sort<vtx_view_t>(unmappedVtx);
 
-        MatchByHashSorted matchTwinFunctor(vcmap, unmappedVtx, hashes, unmapped,
-                                           nvertices_coarse);
-        Kokkos::parallel_scan("match twins", policy_t(0, unmapped),
-                              matchTwinFunctor);
+        MatchByHashSorted matchTwinFunctor(vcmap, unmappedVtx, hashes, unmapped, nvertices_coarse);
+        Kokkos::parallel_scan("match twins", policy_t(0, unmapped), matchTwinFunctor);
       }
 
       unmapped      = countInf(vcmap);
@@ -1061,9 +1004,7 @@ class coarsen_heuristics {
         // get possibly mappable vertices of unmapped
         vtx_view_t mappableVtx("mappable vertices", unmapped);
         Kokkos::parallel_scan(
-            "get unmapped", policy_t(0, n),
-            KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update,
-                          const bool final) {
+            "get unmapped", policy_t(0, n), KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
               if (vcmap(i) == ORD_MAX) {
                 if (final) {
                   mappableVtx(update) = i;
@@ -1076,8 +1017,7 @@ class coarsen_heuristics {
         ordinal_t mappable_count = unmapped;
         do {
           Kokkos::parallel_for(
-              "reset hn", policy_t(0, mappable_count),
-              KOKKOS_LAMBDA(ordinal_t i) {
+              "reset hn", policy_t(0, mappable_count), KOKKOS_LAMBDA(ordinal_t i) {
                 ordinal_t u = mappableVtx(i);
                 hn(u)       = ORD_MAX;
               });
@@ -1087,8 +1027,7 @@ class coarsen_heuristics {
               "assign relatives", policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) {
                 if (vcmap(i) != ORD_MAX) {
                   ordinal_t last_free = ORD_MAX;
-                  for (edge_offset_t j = g.graph.row_map(i);
-                       j < g.graph.row_map(i + 1); j++) {
+                  for (edge_offset_t j = g.graph.row_map(i); j < g.graph.row_map(i + 1); j++) {
                     ordinal_t v = g.graph.entries(j);
                     if (vcmap(v) == ORD_MAX) {
                       if (last_free != ORD_MAX) {
@@ -1123,8 +1062,7 @@ class coarsen_heuristics {
 
           Kokkos::parallel_scan(
               "get next mappable", policy_t(0, old_mappable),
-              KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update,
-                            const bool final) {
+              KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
                 ordinal_t u = mappableVtx(i);
                 if (hn(u) != ORD_MAX) {
                   if (final) {
@@ -1146,14 +1084,11 @@ class coarsen_heuristics {
                   // need to enforce an ordering condition to allow hard-stall
                   // conditions to be broken
                   if (condition ^ swap) {
-                    if (Kokkos::atomic_compare_exchange_strong(&match(u),
-                                                               ORD_MAX, v)) {
-                      if (Kokkos::atomic_compare_exchange_strong(&match(v),
-                                                                 ORD_MAX, u)) {
-                        ordinal_t cv =
-                            Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
-                        vcmap(u) = cv;
-                        vcmap(v) = cv;
+                    if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
+                      if (Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+                        ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
+                        vcmap(u)     = cv;
+                        vcmap(v)     = cv;
                       } else {
                         match(u) = ORD_MAX;
                       }

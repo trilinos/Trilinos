@@ -28,8 +28,7 @@ namespace KokkosBatched {
 struct SerialNormalizeInternal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m,
-                                           /* */ ValueType *KOKKOS_RESTRICT v,
-                                           const int vs) {
+                                           /* */ ValueType *KOKKOS_RESTRICT v, const int vs) {
     typedef ValueType value_type;
     typedef Kokkos::ArithTraits<value_type> ats;
     typedef typename ats::mag_type mag_type;
@@ -53,10 +52,8 @@ struct SerialNormalizeInternal {
 
   template <typename RealType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m,
-                                           /* */ RealType *KOKKOS_RESTRICT vr,
-                                           const int vrs,
-                                           /* */ RealType *KOKKOS_RESTRICT vi,
-                                           const int vis) {
+                                           /* */ RealType *KOKKOS_RESTRICT vr, const int vrs,
+                                           /* */ RealType *KOKKOS_RESTRICT vi, const int vis) {
     typedef RealType real_type;
     typedef Kokkos::ArithTraits<real_type> ats;
     typedef typename ats::mag_type mag_type;

@@ -27,39 +27,31 @@ namespace KokkosSparse {
 
 template <typename MemberType>
 struct TeamSpmv {
-  template <typename ScalarType, typename ValuesViewType, typename IntView,
-            typename xViewType, typename yViewType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const ScalarType alpha,
-      const ValuesViewType& values, const IntView& row_ptr,
-      const IntView& colIndices, const xViewType& x, const ScalarType beta,
-      const yViewType& y) {
-    return Impl::TeamSpmvInternal::invoke<
-        MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
-        typename IntView::non_const_value_type, dobeta>(
-        member, x.extent(0), alpha, values.data(), values.stride_0(),
-        row_ptr.data(), row_ptr.stride_0(), colIndices.data(),
-        colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(),
-        y.stride_0());
+  template <typename ScalarType, typename ValuesViewType, typename IntView, typename xViewType, typename yViewType,
+            int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const ScalarType alpha,
+                                           const ValuesViewType& values, const IntView& row_ptr,
+                                           const IntView& colIndices, const xViewType& x, const ScalarType beta,
+                                           const yViewType& y) {
+    return Impl::TeamSpmvInternal::invoke<MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
+                                          typename IntView::non_const_value_type, dobeta>(
+        member, y.extent(0), alpha, values.data(), values.stride_0(), row_ptr.data(), row_ptr.stride_0(),
+        colIndices.data(), colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
   }
 };
 
 template <typename MemberType>
 struct TeamVectorSpmv {
-  template <typename ScalarType, typename ValuesViewType, typename IntView,
-            typename xViewType, typename yViewType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const ScalarType alpha,
-      const ValuesViewType& values, const IntView& row_ptr,
-      const IntView& colIndices, const xViewType& x, const ScalarType beta,
-      const yViewType& y) {
-    return Impl::TeamVectorSpmvInternal::invoke<
-        MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
-        typename IntView::non_const_value_type, dobeta>(
-        member, x.extent(0), alpha, values.data(), values.stride_0(),
-        row_ptr.data(), row_ptr.stride_0(), colIndices.data(),
-        colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(),
-        y.stride_0());
+  template <typename ScalarType, typename ValuesViewType, typename IntView, typename xViewType, typename yViewType,
+            int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const ScalarType alpha,
+                                           const ValuesViewType& values, const IntView& row_ptr,
+                                           const IntView& colIndices, const xViewType& x, const ScalarType beta,
+                                           const yViewType& y) {
+    return Impl::TeamVectorSpmvInternal::invoke<MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
+                                                typename IntView::non_const_value_type, dobeta>(
+        member, y.extent(0), alpha, values.data(), values.stride_0(), row_ptr.data(), row_ptr.stride_0(),
+        colIndices.data(), colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
   }
 };
 

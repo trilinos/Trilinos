@@ -22,30 +22,29 @@
 #include <unistd.h>
 #include <getopt.h>
 
-static struct option long_options[] = {
-    {"help", no_argument, 0, 'h'},
-    {"test", required_argument, 0, 't'},
-    {"warm_up_loop", required_argument, 0, 'w'},
-    {"trmm_options", required_argument, 0, 'o'},
-    {"trmm_alpha", required_argument, 0, 'a'},
-    {"gemm_options", required_argument, 0, 'g'},
-    {"gemm_scalars", required_argument, 0, 'p'},
-    {"team_size", required_argument, 0, 'z'},
-    {"vector_len", required_argument, 0, 'n'},
-    {"use_auto", required_argument, 0, 'u'},
-    {"batch_size", required_argument, 0, 'k'},
-    {"batch_size_last_dim", required_argument, 0, 'd'},
-    {"loop_type", required_argument, 0, 'l'},
-    {"matrix_size_start", required_argument, 0, 'b'},
-    {"matrix_size_stop", required_argument, 0, 'e'},
-    {"matrix_size_step", required_argument, 0, 's'},
-    {"iter", required_argument, 0, 'i'},
-    {"csv", required_argument, 0, 'c'},
-    {"routines", required_argument, 0, 'r'},
-    {"verify", required_argument, 0, 'v'},
-    {"ninter", required_argument, 0, 'j'},
-    {"use_simd", required_argument, 0, 'f'},
-    {0, 0, 0, 0}};
+static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+                                       {"test", required_argument, 0, 't'},
+                                       {"warm_up_loop", required_argument, 0, 'w'},
+                                       {"trmm_options", required_argument, 0, 'o'},
+                                       {"trmm_alpha", required_argument, 0, 'a'},
+                                       {"gemm_options", required_argument, 0, 'g'},
+                                       {"gemm_scalars", required_argument, 0, 'p'},
+                                       {"team_size", required_argument, 0, 'z'},
+                                       {"vector_len", required_argument, 0, 'n'},
+                                       {"use_auto", required_argument, 0, 'u'},
+                                       {"batch_size", required_argument, 0, 'k'},
+                                       {"batch_size_last_dim", required_argument, 0, 'd'},
+                                       {"loop_type", required_argument, 0, 'l'},
+                                       {"matrix_size_start", required_argument, 0, 'b'},
+                                       {"matrix_size_stop", required_argument, 0, 'e'},
+                                       {"matrix_size_step", required_argument, 0, 's'},
+                                       {"iter", required_argument, 0, 'i'},
+                                       {"csv", required_argument, 0, 'c'},
+                                       {"routines", required_argument, 0, 'r'},
+                                       {"verify", required_argument, 0, 'v'},
+                                       {"ninter", required_argument, 0, 'j'},
+                                       {"use_simd", required_argument, 0, 'f'},
+                                       {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
   printf("Options:\n");
@@ -72,8 +71,7 @@ static void __print_help_blas3_perf_test() {
 
   printf("\t-a, --trmm_alpha=SCALAR_VALUE\n");
   printf("\t\tTRMM alpha value.\n");
-  printf("\t\t\tThe value of alpha in floating point. (default: %lf)\n",
-         DEFAULT_TRMM_ALPHA);
+  printf("\t\t\tThe value of alpha in floating point. (default: %lf)\n", DEFAULT_TRMM_ALPHA);
 
   printf("\t-g, --gemm_options=OPTION_STRING\n");
   printf("\t\tGEMM transA, and transB options.\n");
@@ -91,13 +89,11 @@ static void __print_help_blas3_perf_test() {
 
   printf("\t-z, --team_size=SIZE\n");
   printf("\t\tKokkos team size.\n");
-  printf("\t\t\tThe value of SIZE as an integer. (default: %d)\n",
-         DEFAULT_TEAM_SIZE);
+  printf("\t\t\tThe value of SIZE as an integer. (default: %d)\n", DEFAULT_TEAM_SIZE);
 
   printf("\t-n, --vector_len=LEN\n");
   printf("\t\tKokkos vector length (Heirarchical parallelism).\n");
-  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
-         DEFAULT_VECTOR_LEN);
+  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n", DEFAULT_VECTOR_LEN);
 
   printf("\t-u, --use_auto=AUTO\n");
   printf(
@@ -140,8 +136,8 @@ static void __print_help_blas3_perf_test() {
   printf(
       "\t\t\tValid values for M and N are any non-negative 32-bit integers. "
       "(default: %dx%d,%dx%d,%dx%d)\n",
-      DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START,
-      DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START);
+      DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START,
+      DEFAULT_MATRIX_START);
 
   printf("\t-e, --matrix_size_stop=SxT,LxK,OxR\n");
   printf(
@@ -150,8 +146,8 @@ static void __print_help_blas3_perf_test() {
   printf(
       "\t\t\tValid dimension values are any non-negative 32-bit integers. "
       "(default: %dx%d,%dx%d,%dx%d)\n",
-      DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP,
-      DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP);
+      DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP,
+      DEFAULT_MATRIX_STOP);
 
   printf("\t-s, --matrix_size_step=K\n");
   printf("\t\tMatrix step selection.\n");
@@ -212,10 +208,8 @@ static void __print_help_blas3_perf_test() {
       DEFAULT_USE_SIMD);
 }
 
-static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt,
-                                          char *getopt_optarg) {
-  fprintf(stderr, "ERROR: invalid option \"-%c %s\". Try --help.\n", short_opt,
-          getopt_optarg);
+static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt, char *getopt_optarg) {
+  fprintf(stderr, "ERROR: invalid option \"-%c %s\". Try --help.\n", short_opt, getopt_optarg);
   exit(-EINVAL);
 }
 
@@ -273,9 +267,8 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while ((ret = getopt_long(argc, argv,
-                            "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:f:",
-                            long_options, &option_idx)) != -1) {
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:f:", long_options, &option_idx)) !=
+         -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
       case 't':
@@ -306,8 +299,7 @@ int main(int argc, char **argv) {
       case 'p':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         double alpha, beta;
-        if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2)
-          __blas3_perf_test_input_error(argv, ret, optarg);
+        if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2) __blas3_perf_test_input_error(argv, ret, optarg);
 
         options.blas_args.gemm.alpha = static_cast<default_scalar>(alpha);
         options.blas_args.gemm.beta  = static_cast<default_scalar>(beta);
@@ -391,9 +383,8 @@ int main(int argc, char **argv) {
       case 'w': options.warm_up_n = atoi(optarg); break;
       case 'i': options.n = atoi(optarg); break;
       case 'k':
-        options.start.a.k = options.start.b.k = options.start.c.k =
-            options.stop.a.k = options.stop.b.k = options.stop.c.k =
-                atoi(optarg);
+        options.start.a.k = options.start.b.k = options.start.c.k = options.stop.a.k = options.stop.b.k =
+            options.stop.c.k                                                         = atoi(optarg);
         break;
       case 'd': options.blas_args.batch_size_last_dim = atoi(optarg); break;
       case 'v': options.verify = atoi(optarg); break;
@@ -418,8 +409,7 @@ int main(int argc, char **argv) {
   }
 
   if (options.warm_up_n > options.n) {
-    fprintf(stderr, "ERROR: warm_up_n=%d > n=%d. Try --help.\n",
-            options.warm_up_n, options.n);
+    fprintf(stderr, "ERROR: warm_up_n=%d > n=%d. Try --help.\n", options.warm_up_n, options.n);
     exit(-EINVAL);
   }
 
@@ -428,8 +418,7 @@ int main(int argc, char **argv) {
 
   int err = 0;
   for (i = 0; i < BLAS_ROUTINES_N; i++) {
-    if (options.blas_routines.find(blas_routines_e_str[i]) !=
-        std::string::npos) {
+    if (options.blas_routines.find(blas_routines_e_str[i]) != std::string::npos) {
       std::cout << "Testing " << blas_routines_e_str[i] << "..." << std::endl;
 
       auto routine = routine_table[i];
@@ -444,8 +433,7 @@ int main(int argc, char **argv) {
   }
 
   if (err) {
-    std::cerr << loop_e_str[options.loop] << "][" << test_e_str[options.test]
-              << "] not yet implemented!" << std::endl;
+    std::cerr << loop_e_str[options.loop] << "][" << test_e_str[options.test] << "] not yet implemented!" << std::endl;
     exit(-EINVAL);
   }
 

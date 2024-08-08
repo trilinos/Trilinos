@@ -43,19 +43,15 @@ struct nrm1_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM1_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template <>                                                                  \
-  struct nrm1_eti_spec_avail<                                                  \
-      EXEC_SPACE,                                                              \
-      Kokkos::View<                                                            \
-          typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
-          LAYOUT, Kokkos::HostSpace,                                           \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                           \
-      Kokkos::View<const SCALAR*, LAYOUT,                                      \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1> {                                                                     \
-    enum : bool { value = true };                                              \
+#define KOKKOSBLAS1_NRM1_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
+  template <>                                                                                                          \
+  struct nrm1_eti_spec_avail<EXEC_SPACE,                                                                               \
+                             Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                                          Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+                             Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
+                             1> {                                                                                      \
+    enum : bool { value = true };                                                                                      \
   };
 
 //
@@ -65,22 +61,17 @@ struct nrm1_eti_spec_avail {
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, \
-                                           MEM_SPACE)                  \
-  template <>                                                          \
-  struct nrm1_eti_spec_avail<                                          \
-      EXEC_SPACE,                                                      \
-      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<  \
-                       SCALAR>::mag_type*,                             \
-                   LAYOUT,                                             \
-                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,   \
-                                  Kokkos::HostSpace>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-      Kokkos::View<const SCALAR**, LAYOUT,                             \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,              \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-      2> {                                                             \
-    enum : bool { value = true };                                      \
+#define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                \
+  template <>                                                                                    \
+  struct nrm1_eti_spec_avail<                                                                    \
+      EXEC_SPACE,                                                                                \
+      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
+      2> {                                                                                       \
+    enum : bool { value = true };                                                                \
   };
 
 // Include the actual specialization declarations
@@ -92,10 +83,9 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <
-    class execution_space, class RMV, class XMV, int rank = XMV::rank,
-    bool tpl_spec_avail = nrm1_tpl_spec_avail<execution_space, RMV, XMV>::value,
-    bool eti_spec_avail = nrm1_eti_spec_avail<execution_space, RMV, XMV>::value>
+template <class execution_space, class RMV, class XMV, int rank = XMV::rank,
+          bool tpl_spec_avail = nrm1_tpl_spec_avail<execution_space, RMV, XMV>::value,
+          bool eti_spec_avail = nrm1_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct Nrm1 {
   static void nrm1(const execution_space& space, const RMV& R, const XMV& X);
 };
@@ -103,8 +93,7 @@ struct Nrm1 {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Nrm1 for single vectors (1-D Views).
 template <class execution_space, class RMV, class XMV>
-struct Nrm1<execution_space, RMV, XMV, 1, false,
-            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Nrm1<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using size_type = typename XMV::size_type;
 
   static void nrm1(const execution_space& space, const RMV& R, const XMV& X) {
@@ -120,16 +109,13 @@ struct Nrm1<execution_space, RMV, XMV, 1, false,
     static_assert(XMV::rank == 1,
                   "KokkosBlas::Impl::Nrm1<1-D>: "
                   "XMV is not rank 1.");
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::nrm1[ETI]"
-                                      : "KokkosBlas::nrm1[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::nrm1[ETI]"
+                                                                     : "KokkosBlas::nrm1[noETI]");
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::nrm1<> ETI specialization for < %s , %s >\n",
-             typeid(RMV).name(), typeid(XMV).name());
+      printf("KokkosBlas1::nrm1<> ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
     else {
-      printf("KokkosBlas1::nrm1<> non-ETI specialization for < %s , %s >\n",
-             typeid(RMV).name(), typeid(XMV).name());
+      printf("KokkosBlas1::nrm1<> non-ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
     }
 #endif
     const size_type numRows = X.extent(0);
@@ -145,8 +131,7 @@ struct Nrm1<execution_space, RMV, XMV, 1, false,
 };
 
 template <class execution_space, class RV, class XMV>
-struct Nrm1<execution_space, RV, XMV, 2, false,
-            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Nrm1<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using size_type = typename XMV::size_type;
 
   static void nrm1(const execution_space& space, const RV& R, const XMV& X) {
@@ -165,32 +150,26 @@ struct Nrm1<execution_space, RV, XMV, 2, false,
 
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::nrm1<> ETI specialization for < %s , %s >\n",
-             typeid(RV).name(), typeid(XMV).name());
+      printf("KokkosBlas1::nrm1<> ETI specialization for < %s , %s >\n", typeid(RV).name(), typeid(XMV).name());
     else {
-      printf("KokkosBlas1::nrm1<> non-ETI specialization for < %s , %s >\n",
-             typeid(RV).name(), typeid(XMV).name());
+      printf("KokkosBlas1::nrm1<> non-ETI specialization for < %s , %s >\n", typeid(RV).name(), typeid(XMV).name());
     }
 #endif
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::nrm1[ETI]"
-                                      : "KokkosBlas::nrm1[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::nrm1[ETI]"
+                                                                     : "KokkosBlas::nrm1[noETI]");
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
     if (numCols == Kokkos::ArithTraits<size_type>::one()) {
       auto R0 = Kokkos::subview(R, 0);
       auto X0 = Kokkos::subview(X, Kokkos::ALL(), 0);
       if (numRows < static_cast<size_type>(INT_MAX)) {
-        V_Nrm1_Invoke<execution_space, decltype(R0), decltype(X0), int>(space,
-                                                                        R0, X0);
+        V_Nrm1_Invoke<execution_space, decltype(R0), decltype(X0), int>(space, R0, X0);
       } else {
         typedef std::int64_t index_type;
-        V_Nrm1_Invoke<execution_space, decltype(R0), decltype(X0), index_type>(
-            space, R0, X0);
+        V_Nrm1_Invoke<execution_space, decltype(R0), decltype(X0), index_type>(space, R0, X0);
       }
     } else {
-      if (numRows < static_cast<size_type>(INT_MAX) &&
-          numRows * numCols < static_cast<size_type>(INT_MAX)) {
+      if (numRows < static_cast<size_type>(INT_MAX) && numRows * numCols < static_cast<size_type>(INT_MAX)) {
         MV_Nrm1_Invoke<execution_space, RV, XMV, int>(space, R, X);
       } else {
         using index_type = std::int64_t;
@@ -212,34 +191,26 @@ struct Nrm1<execution_space, RV, XMV, 2, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM1_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)  \
-  extern template struct Nrm1<                                                 \
-      EXEC_SPACE,                                                              \
-      Kokkos::View<                                                            \
-          typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
-          LAYOUT, Kokkos::HostSpace,                                           \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                           \
-      Kokkos::View<const SCALAR*, LAYOUT,                                      \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, false, true>;
+#define KOKKOSBLAS1_NRM1_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
+  extern template struct Nrm1<EXEC_SPACE,                                                                        \
+                              Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
+                                           LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,         \
+                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \
+                              1, false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Nrm1 for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_NRM1_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)  \
-  template struct Nrm1<                                                        \
-      EXEC_SPACE,                                                              \
-      Kokkos::View<                                                            \
-          typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
-          LAYOUT, Kokkos::HostSpace,                                           \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                           \
-      Kokkos::View<const SCALAR*, LAYOUT,                                      \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, false, true>;
+#define KOKKOSBLAS1_NRM1_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
+  template struct Nrm1<EXEC_SPACE,                                                                               \
+                       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                                    Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+                       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
+                       1, false, true>;
 
 //
 // Macro for declaration of full specialization of
@@ -248,19 +219,14 @@ struct Nrm1<execution_space, RV, XMV, 2, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, \
-                                          MEM_SPACE)                  \
-  extern template struct Nrm1<                                        \
-      EXEC_SPACE,                                                     \
-      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits< \
-                       SCALAR>::mag_type*,                            \
-                   LAYOUT,                                            \
-                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,  \
-                                  Kokkos::HostSpace>,                 \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-      Kokkos::View<const SCALAR*, LAYOUT,                             \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+#define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                 \
+  extern template struct Nrm1<                                                                   \
+      EXEC_SPACE,                                                                                \
+      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
       2, false, true>;
 
 //
@@ -268,20 +234,14 @@ struct Nrm1<execution_space, RV, XMV, 2, false,
 // KokkosBlas::Impl::Nrm1 for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, \
-                                          MEM_SPACE)                  \
-  template struct Nrm1<                                               \
-      EXEC_SPACE,                                                     \
-      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits< \
-                       SCALAR>::mag_type*,                            \
-                   LAYOUT,                                            \
-                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,  \
-                                  Kokkos::HostSpace>,                 \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-      Kokkos::View<const SCALAR**, LAYOUT,                            \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-      2, false, true>;
+#define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                  \
+  template struct Nrm1<EXEC_SPACE,                                                                                \
+                       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
+                                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,         \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
+                       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
+                       2, false, true>;
 
 #include <KokkosBlas1_nrm1_tpl_spec_decl.hpp>
 

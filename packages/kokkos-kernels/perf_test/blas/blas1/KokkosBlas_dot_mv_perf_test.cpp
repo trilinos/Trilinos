@@ -46,14 +46,12 @@ void print_options() {
   std::cerr << "\t[Optional] --m      :: desired length of test vectors; test "
                "vectors will have the same length"
             << std::endl;
-  std::cerr << "\t[Optional] --n      :: number of test vectors (columns)"
-            << std::endl;
+  std::cerr << "\t[Optional] --n      :: number of test vectors (columns)" << std::endl;
 }
 
 int parse_inputs(Params& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == Test::string_compare_no_case(argv[i], "--help") ||
-        0 == Test::string_compare_no_case(argv[i], "-h")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--help") || 0 == Test::string_compare_no_case(argv[i], "-h")) {
       print_options();
       exit(0);  // note: this is before Kokkos::initialize
     } else if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
@@ -75,8 +73,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
       // has to have ".bin", or ".crs" extension.
       params.repeat = atoi(argv[++i]);
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -116,19 +113,15 @@ void run(int m, int n, int repeat) {
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  std::cout << "Running BLAS Level 1 DOT performance experiment ("
-            << ExecSpace::name() << ")\n";
+  std::cout << "Running BLAS Level 1 DOT performance experiment (" << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
 
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
 
-  Kokkos::View<Scalar*, Device> result(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
+  Kokkos::View<Scalar*, Device> result(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -166,14 +159,11 @@ int main(int argc, char** argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  const int device_id =
-      std::max(std::max(params.use_cuda, params.use_hip), params.use_sycl) - 1;
+  const int device_id = std::max(std::max(params.use_cuda, params.use_hip), params.use_sycl) - 1;
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
 
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;

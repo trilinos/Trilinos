@@ -29,12 +29,10 @@ namespace KokkosBatched {
 ///
 struct SerialWilkinsonShiftInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const ValueType a, const ValueType b, const ValueType c,
-      const ValueType d,
-      /* */ Kokkos::complex<ValueType>* lambda1,
-      /* */ Kokkos::complex<ValueType>* lambda2,
-      /* */ bool* is_complex) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const ValueType a, const ValueType b, const ValueType c, const ValueType d,
+                                           /* */ Kokkos::complex<ValueType>* lambda1,
+                                           /* */ Kokkos::complex<ValueType>* lambda2,
+                                           /* */ bool* is_complex) {
     /// compute eigenvalues of 2x2 system [a b;
     ///                                    c d]
     /// when the system has a real complex values,

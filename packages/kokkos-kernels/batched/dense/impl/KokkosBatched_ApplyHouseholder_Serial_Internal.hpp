@@ -30,12 +30,10 @@ namespace KokkosBatched {
 ///
 struct SerialApplyLeftHouseholderInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const ValueType* tau,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const ValueType* tau,
                                            /* */ ValueType* u2, const int u2s,
                                            /* */ ValueType* a1t, const int a1ts,
-                                           /* */ ValueType* A2, const int as0,
-                                           const int as1,
+                                           /* */ ValueType* A2, const int as0, const int as1,
                                            /* */ ValueType* w1t) {
     typedef ValueType value_type;
 
@@ -55,9 +53,7 @@ struct SerialApplyLeftHouseholderInternal {
     // w1t /= tau
     for (int j = 0; j < n; ++j) {
       value_type tmp = a1t[j * a1ts];
-      for (int i = 0; i < m; ++i)
-        tmp += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) *
-               A2[i * as0 + j * as1];
+      for (int i = 0; i < m; ++i) tmp += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
       w1t[j] = tmp * inv_tau;  // /= (*tau);
     }
 
@@ -74,12 +70,10 @@ struct SerialApplyLeftHouseholderInternal {
 
 struct SerialApplyRightHouseholderInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const ValueType* tau,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const ValueType* tau,
                                            /* */ ValueType* u2, const int u2s,
                                            /* */ ValueType* a1, const int a1s,
-                                           /* */ ValueType* A2, const int as0,
-                                           const int as1,
+                                           /* */ ValueType* A2, const int as0, const int as1,
                                            /* */ ValueType* w1) {
     typedef ValueType value_type;
     /// u2 n x 1
@@ -107,9 +101,7 @@ struct SerialApplyRightHouseholderInternal {
 
     // A2 -= w1 * u2' (ger with conjugate)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i)
-        A2[i * as0 + j * as1] -=
-            w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
+      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
 
     return 0;
   }

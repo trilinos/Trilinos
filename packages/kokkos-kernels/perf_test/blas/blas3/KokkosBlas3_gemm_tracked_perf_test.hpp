@@ -35,8 +35,7 @@ struct gemmConfig {
   int k;
 };
 
-test_list construct_gemm_kernel_base(const rajaperf::RunParams& run_params,
-                                     const std::vector<gemmConfig>& n_k_vect);
+test_list construct_gemm_kernel_base(const rajaperf::RunParams& run_params, const std::vector<gemmConfig>& n_k_vect);
 
 #endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
@@ -80,15 +79,11 @@ struct testData_gemm {
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> C;
 
   // class Constructor:
-  testData_gemm(int m_in, int n_in, int k_in, int repeat_in)
-      : m(m_in), n(n_in), k(k_in), repeat(repeat_in) {
+  testData_gemm(int m_in, int n_in, int k_in, int repeat_in) : m(m_in), n(n_in), k(k_in), repeat(repeat_in) {
     // You must set A, B and C equal to its intended value
-    A = Kokkos::View<Scalar**, ALayout, Device>(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
-    B = Kokkos::View<Scalar**, BLayout, Device>(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"), n, k);
-    C = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "C"), m, k);
+    A = Kokkos::View<Scalar**, ALayout, Device>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+    B = Kokkos::View<Scalar**, BLayout, Device>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"), n, k);
+    C = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C"), m, k);
     // Seed random number generation
     Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
     // Fill input matrices A and x with 10 random values from pool
@@ -99,7 +94,6 @@ struct testData_gemm {
 
 // Declare setup_test
 template <typename ExecSpace, typename ALayout, typename BLayout>
-testData_gemm<ExecSpace, ALayout, BLayout> setup_test(int m, int n, int k,
-                                                      int repeat);
+testData_gemm<ExecSpace, ALayout, BLayout> setup_test(int m, int n, int k, int repeat);
 
 #endif  // KOKKOSKERNELS_KOKKOSBLAS_GEMM_TEST_RPS_HPP

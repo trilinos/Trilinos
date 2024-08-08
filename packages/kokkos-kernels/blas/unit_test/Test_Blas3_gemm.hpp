@@ -23,8 +23,7 @@
 
 namespace Test {
 
-template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
-          class ExecutionSpace>
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
 struct gemm_VanillaGEMM {
   bool A_t, B_t, A_c, B_c;
   int N, K;
@@ -41,12 +40,9 @@ struct gemm_VanillaGEMM {
   ScalarC beta;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(
-      const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team)
-      const {
+  void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && \
-    !defined(__HIP_DEVICE_COMPILE__)
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
     int i = team.league_rank();
 #else
     const int i = team.league_rank();
@@ -77,10 +73,8 @@ struct gemm_VanillaGEMM {
 };
 
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC>
-void build_matrices(const int M, const int N, const int K,
-                    const typename ViewTypeA::value_type alpha, ViewTypeA& A,
-                    ViewTypeB& B, const typename ViewTypeA::value_type beta,
-                    ViewTypeC& C, ViewTypeC& Cref) {
+void build_matrices(const int M, const int N, const int K, const typename ViewTypeA::value_type alpha, ViewTypeA& A,
+                    ViewTypeB& B, const typename ViewTypeA::value_type beta, ViewTypeC& C, ViewTypeC& Cref) {
   using execution_space = typename TestDevice::execution_space;
   using ScalarA         = typename ViewTypeA::non_const_value_type;
   using ScalarB         = typename ViewTypeB::non_const_value_type;
@@ -93,28 +87,22 @@ void build_matrices(const int M, const int N, const int K,
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
   // Trilinos issue #6418
-  const uint64_t seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  const uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
-  Kokkos::fill_random(A, rand_pool,
-                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
-                                       execution_space>::generator_type,
-                                   ScalarA>::max());
-  Kokkos::fill_random(B, rand_pool,
-                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
-                                       execution_space>::generator_type,
-                                   ScalarB>::max());
-  Kokkos::fill_random(C, rand_pool,
-                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
-                                       execution_space>::generator_type,
-                                   ScalarC>::max());
+  Kokkos::fill_random(
+      A, rand_pool,
+      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type, ScalarA>::max());
+  Kokkos::fill_random(
+      B, rand_pool,
+      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type, ScalarB>::max());
+  Kokkos::fill_random(
+      C, rand_pool,
+      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type, ScalarC>::max());
 
   Kokkos::deep_copy(Cref, C);
   Kokkos::fence();
 
-  struct Test::gemm_VanillaGEMM<ViewTypeA, ViewTypeB, ViewTypeC,
-                                execution_space>
-      vgemm;
+  struct Test::gemm_VanillaGEMM<ViewTypeA, ViewTypeB, ViewTypeC, execution_space> vgemm;
   vgemm.A_t   = false;
   vgemm.B_t   = false;
   vgemm.A_c   = false;
@@ -127,12 +115,10 @@ void build_matrices(const int M, const int N, const int K,
   vgemm.alpha = alpha;
   vgemm.beta  = beta;
 
-  Kokkos::parallel_for(
-      "KokkosBlas::Test::gemm_VanillaGEMM",
-      Kokkos::TeamPolicy<execution_space>(
-          M, Kokkos::AUTO,
-          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
-      vgemm);
+  Kokkos::parallel_for("KokkosBlas::Test::gemm_VanillaGEMM",
+                       Kokkos::TeamPolicy<execution_space>(
+                           M, Kokkos::AUTO, KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+                       vgemm);
   Kokkos::fence();
 }
 
@@ -146,9 +132,7 @@ struct DiffGEMM {
   typedef typename APT::mag_type mag_type;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(
-      const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team,
-      mag_type& diff) const {
+  void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team, mag_type& diff) const {
     const int i       = team.league_rank();
     mag_type diff_row = 0;
     Kokkos::parallel_reduce(
@@ -166,8 +150,7 @@ struct DiffGEMM {
 };
 
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class Device>
-void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
-                    typename ViewTypeA::value_type alpha,
+void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K, typename ViewTypeA::value_type alpha,
                     typename ViewTypeC::value_type beta) {
   bool A_t = (TA[0] != 'N') && (TA[0] != 'n');
   bool B_t = (TB[0] != 'N') && (TB[0] != 'n');
@@ -187,30 +170,25 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   ViewTypeC C("C", M, N);
   ViewTypeC C2("C", M, N);
 
-  const uint64_t seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  const uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
   // Trilinos issue #6418
-  Kokkos::fill_random(A, rand_pool,
-                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
-                                       execution_space>::generator_type,
-                                   ScalarA>::max());
-  Kokkos::fill_random(B, rand_pool,
-                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
-                                       execution_space>::generator_type,
-                                   ScalarB>::max());
-  Kokkos::fill_random(C, rand_pool,
-                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
-                                       execution_space>::generator_type,
-                                   ScalarC>::max());
+  Kokkos::fill_random(
+      A, rand_pool,
+      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type, ScalarA>::max());
+  Kokkos::fill_random(
+      B, rand_pool,
+      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type, ScalarB>::max());
+  Kokkos::fill_random(
+      C, rand_pool,
+      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type, ScalarC>::max());
 
   Kokkos::deep_copy(C2, C);
   Kokkos::fence();
 
-  struct gemm_VanillaGEMM<ViewTypeA, ViewTypeB, ViewTypeC, execution_space>
-      vgemm;
+  struct gemm_VanillaGEMM<ViewTypeA, ViewTypeB, ViewTypeC, execution_space> vgemm;
   vgemm.A_t   = A_t;
   vgemm.B_t   = B_t;
   vgemm.A_c   = A_c;
@@ -223,12 +201,10 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   vgemm.alpha = alpha;
   vgemm.beta  = beta;
 
-  Kokkos::parallel_for(
-      "KokkosBlas::Test::gemm_VanillaGEMM",
-      Kokkos::TeamPolicy<execution_space>(
-          M, Kokkos::AUTO,
-          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
-      vgemm);
+  Kokkos::parallel_for("KokkosBlas::Test::gemm_VanillaGEMM",
+                       Kokkos::TeamPolicy<execution_space>(
+                           M, Kokkos::AUTO, KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+                       vgemm);
 
   KokkosBlas::gemm(TA, TB, alpha, A, B, beta, C);
 
@@ -238,9 +214,8 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   diffgemm.C  = C;
   diffgemm.C2 = C2;
 
-  Kokkos::parallel_reduce("KokkosBlas::Test::DiffGEMM",
-                          Kokkos::TeamPolicy<execution_space>(M, Kokkos::AUTO),
-                          diffgemm, diff_C);
+  Kokkos::parallel_reduce("KokkosBlas::Test::DiffGEMM", Kokkos::TeamPolicy<execution_space>(M, Kokkos::AUTO), diffgemm,
+                          diff_C);
 
   if (N != 0 && M != 0) {
     int K_eff             = (K == 0) ? 1 : K;
@@ -258,8 +233,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
 }
 
 template <typename Scalar, typename Layout, typename Device>
-void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
-                                 const Scalar alpha, const Scalar beta) {
+void impl_test_stream_gemm_psge2(const int M, const int N, const int K, const Scalar alpha, const Scalar beta) {
   using execution_space = typename Device::execution_space;
   using ViewTypeA       = Kokkos::View<Scalar**, Layout, Device>;
   using ViewTypeB       = Kokkos::View<Scalar**, Layout, Device>;
@@ -279,8 +253,7 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
   Test::build_matrices(M, N, K, alpha, A1, B1, beta, C1, C1ref);
   Test::build_matrices(N, M, K, alpha, A2, B2, beta, C2, C2ref);
 
-  auto instances =
-      Kokkos::Experimental::partition_space(execution_space(), 1, 1);
+  auto instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
   KokkosBlas::gemm(instances[0], tA, tB, alpha, A1, B1, beta, C1);
   KokkosBlas::gemm(instances[1], tA, tB, alpha, A2, B2, beta, C2);
   Kokkos::fence();
@@ -291,12 +264,10 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
   diffgemm1.C  = C1;
   diffgemm1.C2 = C1ref;
 
-  Kokkos::parallel_reduce(
-      "KokkosBlas::Test::DiffGEMM1",
-      Kokkos::TeamPolicy<execution_space>(
-          M, Kokkos::AUTO,
-          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
-      diffgemm1, diff_C1);
+  Kokkos::parallel_reduce("KokkosBlas::Test::DiffGEMM1",
+                          Kokkos::TeamPolicy<execution_space>(
+                              M, Kokkos::AUTO, KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+                          diffgemm1, diff_C1);
 
   mag_type diff_C2 = 0;
   struct Test::DiffGEMM<ViewTypeC, execution_space> diffgemm2;
@@ -304,12 +275,10 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
   diffgemm2.C  = C2;
   diffgemm2.C2 = C2ref;
 
-  Kokkos::parallel_reduce(
-      "KokkosBlas::Test::DiffGEMM2",
-      Kokkos::TeamPolicy<execution_space>(
-          N, Kokkos::AUTO,
-          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
-      diffgemm2, diff_C2);
+  Kokkos::parallel_reduce("KokkosBlas::Test::DiffGEMM2",
+                          Kokkos::TeamPolicy<execution_space>(
+                              N, Kokkos::AUTO, KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+                          diffgemm2, diff_C2);
   Kokkos::fence();
 
   if (N != 0 && M != 0) {
@@ -317,8 +286,7 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
     // Expected Result: Random Walk in the least significant bit (i.e. ~
     // sqrt(K)*eps eps scales with the total sum and has a factor in it for the
     // accuracy of the operations -> eps = K * 75 * machine_eps * 7
-    const double diff_C_expected =
-        1.0 * sqrt(K_eff) * K_eff * 75 * machine_eps * 7;
+    const double diff_C_expected = 1.0 * sqrt(K_eff) * K_eff * 75 * machine_eps * 7;
 
     const double diff_C1_average = diff_C1 / (N * M);
     if ((diff_C1_average >= 1.05 * diff_C_expected)) {
@@ -342,55 +310,45 @@ void test_gemm() {
   typedef Kokkos::View<Scalar**, Layout, TestDevice> view_type_b;
   typedef Kokkos::View<Scalar**, Layout, TestDevice> view_type_c;
   std::vector<const char*> modes = {"N", "T"};
-  if (std::is_same<Scalar, Kokkos::complex<float>>::value ||
-      std::is_same<Scalar, Kokkos::complex<double>>::value)
+  if (std::is_same<Scalar, Kokkos::complex<float>>::value || std::is_same<Scalar, Kokkos::complex<double>>::value)
     modes.push_back("C");
   Scalar alpha              = 4.5;
   std::vector<Scalar> betas = {0.0, 3.0};
   for (Scalar beta : betas) {
     for (auto amode : modes) {
       for (auto bmode : modes) {
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
-            amode, bmode, 0, 0, 0, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 0, 0, 0, alpha, beta);
         // BMK: N = 1 exercises the special GEMV code path in GEMM (currently,
         // only for modes N/N)
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
-            amode, bmode, 50, 1, 40, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 50, 1, 40, alpha, beta);
         // LBV: K = 0 exercise the quick return code path in GEMM
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
-            amode, bmode, 20, 14, 0, alpha, beta);
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
-            amode, bmode, 13, 15, 17, alpha, beta);
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
-            amode, bmode, 179, 15, 211, alpha, beta);
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
-            amode, bmode, 12, 3071, 517, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 20, 14, 0, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 13, 15, 17, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 179, 15, 211, alpha,
+                                                                                beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 12, 3071, 517, alpha,
+                                                                                beta);
       }
     }
   }
   auto pool_size = execution_space().concurrency();
   if (pool_size >= 2) {
-    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(
-        53, 42, 17, 4.5,
-        3.0);  // General code path
-    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(
-        13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
-    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(
-        7, 13, 17, 4.5,
-        3.0);  // dot based gemm code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(53, 42, 17, 4.5,
+                                                                  3.0);                  // General code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(7, 13, 17, 4.5,
+                                                                  3.0);  // dot based gemm code path
   }
 }
 
 template <typename Scalar>
 void test_gemm_enabled_layouts() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   test_gemm<Scalar, Kokkos::LayoutLeft>();
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   test_gemm<Scalar, Kokkos::LayoutRight>();
 #endif
 }
@@ -416,8 +374,7 @@ void test_gemm_mixed_scalars() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_float");
   test_gemm_enabled_layouts<float>();
@@ -426,8 +383,7 @@ TEST_F(TestCategory, gemm_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_double");
   test_gemm_enabled_layouts<double>();
@@ -436,8 +392,7 @@ TEST_F(TestCategory, gemm_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_complex_double");
   test_gemm_enabled_layouts<Kokkos::complex<double>>();
@@ -446,8 +401,7 @@ TEST_F(TestCategory, gemm_complex_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_complex_float");
   test_gemm_enabled_layouts<Kokkos::complex<float>>();
@@ -455,21 +409,17 @@ TEST_F(TestCategory, gemm_complex_float) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) && \
-    !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) && !defined(KOKKOSKERNELS_ETI_ONLY)
 TEST_F(TestCategory, gemm_mixed_scalars_complex_double_double) {
-  Kokkos::Profiling::pushRegion(
-      "KokkosBlas::Test::gemm_mixed_complex_double_double");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_mixed_complex_double_double");
   test_gemm_mixed_scalars<Kokkos::complex<double>, double>();
   Kokkos::Profiling::popRegion();
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) && \
-    !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) && !defined(KOKKOSKERNELS_ETI_ONLY)
 TEST_F(TestCategory, gemm_mixed_scalar_complex_float_float) {
-  Kokkos::Profiling::pushRegion(
-      "KokkosBlas::Test::gemm_mixed_complex_float_float");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_mixed_complex_float_float");
   test_gemm_mixed_scalars<Kokkos::complex<float>, float>();
   Kokkos::Profiling::popRegion();
 }

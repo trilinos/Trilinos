@@ -32,7 +32,7 @@
 
 #include <iostream>
 #include <sstream>
-//#include <cstdlib>
+// #include <cstdlib>
 #include <quadmath.h>
 #include <stdexcept>
 
@@ -55,9 +55,8 @@ std::ostream& operator<<(std::ostream& out, const __float128& x) {
   const int numCharPrinted = quadmath_snprintf(buf, bufSize, "%.30Qe", x);
   if (static_cast<size_t>(numCharPrinted) >= bufSize) {
     std::ostringstream os;
-    os << "Failed to print __float128 value: buffer has " << bufSize
-       << " characters, but quadmath_snprintf wanted " << numCharPrinted
-       << " characters!";
+    os << "Failed to print __float128 value: buffer has " << bufSize << " characters, but quadmath_snprintf wanted "
+       << numCharPrinted << " characters!";
     throw std::runtime_error(os.str());
   }
   out << buf;
@@ -79,8 +78,7 @@ void testfloat128() {
        << "y = " << y << endl
        << "z = " << z << endl
        << "(double) z = " << static_cast<double>(z) << endl
-       << "z - (double) z = "
-       << (z - static_cast<__float128>(static_cast<double>(z))) << endl;
+       << "z - (double) z = " << (z - static_cast<__float128>(static_cast<double>(z))) << endl;
 
   // FIXME (mfh 04 Sep 2015) The results of printing could depend on
   // the locale.  This works fine for the default locale on my system.
@@ -89,8 +87,7 @@ void testfloat128() {
     os << x;
     if (os.str() != "1.000000000000000000000000000000e+00") {
       success = false;
-      cout << "'_float128 x = 1.0' does not print correctly!  It prints as "
-           << os.str() << "." << endl;
+      cout << "'_float128 x = 1.0' does not print correctly!  It prints as " << os.str() << "." << endl;
     }
   }
   {

@@ -29,21 +29,16 @@ namespace KokkosBatched {
 // level 1 operation
 template <typename ArgSide>
 struct SerialApplyHouseholder {
-  template <typename uViewType, typename tauViewType, typename AViewType,
-            typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const uViewType &u2,
-                                           const tauViewType &tau,
+  template <typename uViewType, typename tauViewType, typename AViewType, typename wViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const uViewType &u2, const tauViewType &tau,
                                            const AViewType const wViewType &w);
 };
 
 // level 1 operation
 template <typename MemberType, typename ArgSide>
 struct TeamVectorApplyHouseholder {
-  template <typename uViewType, typename tauViewType, typename AViewType,
-            typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const uViewType &u2,
-                                           const tauViewType &tau,
+  template <typename uViewType, typename tauViewType, typename AViewType, typename wViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const uViewType &u2, const tauViewType &tau,
                                            const AViewType const wViewType &w);
 };
 

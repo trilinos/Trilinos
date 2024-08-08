@@ -43,8 +43,7 @@ struct NonUnitDiagTRTRI {
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& i) const { A_(i, i) = A_(i, i) + 10; }
 };
-template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
-          class ExecutionSpace>
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
 struct VanillaGEMM {
   bool A_t, B_t, A_c, B_c;
   int N, K;
@@ -61,12 +60,9 @@ struct VanillaGEMM {
   ScalarC beta;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(
-      const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team)
-      const {
+  void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && \
-    !defined(__HIP_DEVICE_COMPILE__)
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
     int i = team.league_rank();
 #else
     const int i = team.league_rank();
@@ -97,8 +93,7 @@ struct VanillaGEMM {
 };
 
 template <class ViewTypeA, class Device>
-int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
-                    const int M, const int N) {
+int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag, const int M, const int N) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
   using APT             = Kokkos::ArithTraits<ScalarA>;
@@ -111,9 +106,8 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   ViewTypeA A("A", M, N);
   ViewTypeA A_original("A_original", M, N);
   ViewTypeA A_I("A_I", M, N);  // is I taken...?
-  uint64_t seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  ScalarA beta = ScalarA(0);
+  uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  ScalarA beta  = ScalarA(0);
   ScalarA cur_check_val;  // Either 1 or 0, to check A_I
 
   // const int As0 = A.stride(0), As1 = A.stride(1);
@@ -137,8 +131,7 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
         }
       }
       // Set just 1 value in the diagonal to 0.
-      if (M > 0 && N > 0)
-        host_A(bad_diag_idx - 1, bad_diag_idx - 1) = ScalarA(0);
+      if (M > 0 && N > 0) host_A(bad_diag_idx - 1, bad_diag_idx - 1) = ScalarA(0);
       Kokkos::deep_copy(A, host_A);
     }
     return KokkosLapack::trtri(uplo, diag, A);
@@ -151,21 +144,17 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // Initialize A with deterministic random numbers
-  Kokkos::fill_random(
-      A, rand_pool,
-      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
   if ((diag[0] == 'U') || (diag[0] == 'u')) {
     using functor_type = UnitDiagTRTRI<ViewTypeA, execution_space>;
     functor_type udtrtri(A);
     // Initialize As diag with 1s
-    Kokkos::parallel_for("KokkosLapack::Test::UnitDiagTRTRI",
-                         Kokkos::RangePolicy<execution_space>(0, M), udtrtri);
+    Kokkos::parallel_for("KokkosLapack::Test::UnitDiagTRTRI", Kokkos::RangePolicy<execution_space>(0, M), udtrtri);
   } else {  //(diag[0]=='N')||(diag[0]=='n')
     using functor_type = NonUnitDiagTRTRI<ViewTypeA, execution_space>;
     functor_type nudtrtri(A);
     // Initialize As diag with A(i,i)+10
-    Kokkos::parallel_for("KokkosLapack::Test::NonUnitDiagTRTRI",
-                         Kokkos::RangePolicy<execution_space>(0, M), nudtrtri);
+    Kokkos::parallel_for("KokkosLapack::Test::NonUnitDiagTRTRI", Kokkos::RangePolicy<execution_space>(0, M), nudtrtri);
   }
   Kokkos::fence();
   Kokkos::deep_copy(host_A, A);
@@ -199,8 +188,7 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   Kokkos::fence();
 
   if (ret) {
-    printf("KokkosLapack::trtri(%c, %c, %s) returned %d\n", uplo[0], diag[0],
-           typeid(ViewTypeA).name(), ret);
+    printf("KokkosLapack::trtri(%c, %c, %s) returned %d\n", uplo[0], diag[0], typeid(ViewTypeA).name(), ret);
     return ret;
   }
 
@@ -228,12 +216,10 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   vgemm.C     = A_I;  // out
   vgemm.alpha = ScalarA(1);
   vgemm.beta  = beta;
-  Kokkos::parallel_for(
-      "KokkosLapack::Test::VanillaGEMM",
-      Kokkos::TeamPolicy<execution_space>(
-          M, Kokkos::AUTO,
-          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
-      vgemm);
+  Kokkos::parallel_for("KokkosLapack::Test::VanillaGEMM",
+                       Kokkos::TeamPolicy<execution_space>(
+                           M, Kokkos::AUTO, KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+                       vgemm);
   Kokkos::fence();
   Kokkos::deep_copy(host_I, A_I);
 
@@ -251,8 +237,7 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
       // Set check value
-      cur_check_val =
-          (i == j) ? ScalarA(1) : ScalarA(0);  // APT::abs(host_A(i,j));
+      cur_check_val = (i == j) ? ScalarA(1) : ScalarA(0);  // APT::abs(host_A(i,j));
 
       // Check how close |A_I - cur_check_val| is to 0.
       if (APT::abs(APT::abs(host_I(i, j)) - cur_check_val) > eps) {
@@ -276,38 +261,30 @@ int test_trtri(const char* mode) {
   int ret;
   int bad_diag_idx = -1;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_layout_left =
-      Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_layout_left = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
 
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 0, 0);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 0, 0);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 1, 1);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 1, 1);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 15, 15);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 15, 15);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 100, 100);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 100, 100);
   EXPECT_EQ(ret, 0);
 
   // Rounding errors with randomly generated matrices begin here where M>100, so
   // we pass in A=I
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 273, 273);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 273, 273);
   EXPECT_EQ(ret, 0);
 
   // Only non-unit matrices could be singular.
   if (mode[1] == 'N' || mode[1] == 'n') {
     bad_diag_idx = 2;  // 1-index based
-    ret          = Test::impl_test_trtri<view_type_a_layout_left, Device>(
-        bad_diag_idx, &mode[0], &mode[1], 2, 2);
+    ret          = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 2, 2);
     EXPECT_EQ(ret, bad_diag_idx);
     bad_diag_idx = -1;
   }
@@ -318,38 +295,30 @@ int test_trtri(const char* mode) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_layout_right =
-      Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_layout_right = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
 
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 0, 0);
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 0, 0);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 1, 1);
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 1, 1);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 15, 15);
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 15, 15);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 100, 100);
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 100, 100);
   EXPECT_EQ(ret, 0);
 
   // Rounding errors with randomly generated matrices begin here where M>100, so
   // we pass in A=I
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(
-      bad_diag_idx, &mode[0], &mode[1], 273, 273);
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 273, 273);
   EXPECT_EQ(ret, 0);
 
   // Only non-unit matrices could be singular.
   if (mode[1] == 'N' || mode[1] == 'n') {
     bad_diag_idx = 2;  // 1-index based
-    ret          = Test::impl_test_trtri<view_type_a_layout_right, Device>(
-        bad_diag_idx, &mode[0], &mode[1], 2, 2);
+    ret          = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 2, 2);
     EXPECT_EQ(ret, bad_diag_idx);
     bad_diag_idx = -1;
   }
@@ -359,8 +328,7 @@ int test_trtri(const char* mode) {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_float");
   test_trtri<float, TestDevice>("UN");
@@ -372,8 +340,7 @@ TEST_F(TestCategory, trtri_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_double");
   test_trtri<double, TestDevice>("UN");
@@ -385,8 +352,7 @@ TEST_F(TestCategory, trtri_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_complex_double");
   test_trtri<Kokkos::complex<double>, TestDevice>("UN");
@@ -398,8 +364,7 @@ TEST_F(TestCategory, trtri_complex_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_complex_float");
   test_trtri<Kokkos::complex<float>, TestDevice>("UN");

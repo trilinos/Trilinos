@@ -64,15 +64,12 @@ struct Gesv {
 template <typename ArgAlgo>
 struct SerialGesv {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
-                                           const XVectorType X,
-                                           const YVectorType Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType tmp);
 
   template <typename MatrixType, typename VectorType>
-  [[deprecated]] KOKKOS_INLINE_FUNCTION static int invoke(
-      const MatrixType A, const VectorType X, const VectorType Y,
-      const MatrixType tmp) {
+  [[deprecated]] KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const VectorType X, const VectorType Y,
+                                                          const MatrixType tmp) {
     return invoke(A, X, Y, tmp);
   }
 };
@@ -109,9 +106,7 @@ struct SerialGesv {
 template <typename MemberType, typename ArgAlgo>
 struct TeamGesv {
   template <typename MatrixType, typename VectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const MatrixType A,
-                                           const VectorType X,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y);
 };
 
@@ -148,9 +143,7 @@ struct TeamGesv {
 template <typename MemberType, typename ArgAlgo>
 struct TeamVectorGesv {
   template <typename MatrixType, typename VectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const MatrixType A,
-                                           const VectorType X,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y);
 };
 

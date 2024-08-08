@@ -62,60 +62,42 @@ void impl_test_team_scal(int N) {
   }
 
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamScal", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::scal(
             teamMember,
-            Kokkos::subview(
-                y.d_view,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+            Kokkos::subview(y.d_view, Kokkos::make_pair(teamId * team_data_siz,
+                                                        (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
-            Kokkos::subview(
-                x.d_view,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+            Kokkos::subview(x.d_view, Kokkos::make_pair(teamId * team_data_siz,
+                                                        (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
 
   {
     ScalarB nonconst_nonconst_result = KokkosBlas::dot(y.d_view, y.d_view);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
-    typename AT::mag_type diff =
-        AT::abs(nonconst_nonconst_result - expected_result) / divisor;
+    typename AT::mag_type divisor    = AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
+    typename AT::mag_type diff       = AT::abs(nonconst_nonconst_result - expected_result) / divisor;
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
   Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamScal", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::scal(
             teamMember,
-            Kokkos::subview(
-                y.d_view,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+            Kokkos::subview(y.d_view, Kokkos::make_pair(teamId * team_data_siz,
+                                                        (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
-            Kokkos::subview(
-                x.d_view_const,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+            Kokkos::subview(x.d_view_const, Kokkos::make_pair(teamId * team_data_siz,
+                                                              (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
 
   {
     ScalarB const_nonconst_result = KokkosBlas::dot(y.d_view, y.d_view);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
-    typename AT::mag_type diff =
-        AT::abs(const_nonconst_result - expected_result) / divisor;
+    typename AT::mag_type divisor = AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
+    typename AT::mag_type diff    = AT::abs(const_nonconst_result - expected_result) / divisor;
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 }
@@ -147,8 +129,7 @@ void impl_test_team_scal_mv(int N, int K) {
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
     for (int i = 0; i < N; i++) {
-      expected_result[j] +=
-          ScalarB(a * x.h_view(i, j)) * ScalarB(a * x.h_view(i, j));
+      expected_result[j] += ScalarB(a * x.h_view(i, j)) * ScalarB(a * x.h_view(i, j));
     }
   }
 
@@ -159,21 +140,17 @@ void impl_test_team_scal_mv(int N, int K) {
   Kokkos::View<ScalarB *, Kokkos::HostSpace> r("Dot::Result", K);
 
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamScal", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
-        KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), a,
-            Kokkos::subview(x.d_view, Kokkos::ALL(), teamId));
+        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), a,
+                                       Kokkos::subview(x.d_view, Kokkos::ALL(), teamId));
       });
 
   KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_scalar_result = r(k);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
-    typename AT::mag_type diff =
-        AT::abs(nonconst_scalar_result - expected_result[k]) / divisor;
+    typename AT::mag_type divisor  = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+    typename AT::mag_type diff     = AT::abs(nonconst_scalar_result - expected_result[k]) / divisor;
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
@@ -181,21 +158,17 @@ void impl_test_team_scal_mv(int N, int K) {
   Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamScal", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
-        KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), a,
-            Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId));
+        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), a,
+                                       Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId));
       });
 
   KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
-    ScalarA const_scalar_result = r(k);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
-    typename AT::mag_type diff =
-        AT::abs(const_scalar_result - expected_result[k]) / divisor;
+    ScalarA const_scalar_result   = r(k);
+    typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+    typename AT::mag_type diff    = AT::abs(const_scalar_result - expected_result[k]) / divisor;
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
@@ -211,8 +184,7 @@ void impl_test_team_scal_mv(int N, int K) {
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
     for (int i = 0; i < N; i++) {
-      expected_result[j] += ScalarB((3.0 + j) * x.h_view(i, j)) *
-                            ScalarB((3.0 + j) * x.h_view(i, j));
+      expected_result[j] += ScalarB((3.0 + j) * x.h_view(i, j)) * ScalarB((3.0 + j) * x.h_view(i, j));
     }
   }
 
@@ -220,21 +192,17 @@ void impl_test_team_scal_mv(int N, int K) {
   Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamScal", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
-        KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId),
-            params(teamId), Kokkos::subview(x.d_view, Kokkos::ALL(), teamId));
+        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), params(teamId),
+                                       Kokkos::subview(x.d_view, Kokkos::ALL(), teamId));
       });
 
   KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_vector_result = r(k);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
-    typename AT::mag_type diff =
-        AT::abs(nonconst_vector_result - expected_result[k]) / divisor;
+    typename AT::mag_type divisor  = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+    typename AT::mag_type diff     = AT::abs(nonconst_vector_result - expected_result[k]) / divisor;
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
@@ -242,22 +210,17 @@ void impl_test_team_scal_mv(int N, int K) {
   Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamScal", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
-        KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId),
-            params(teamId),
-            Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId));
+        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), params(teamId),
+                                       Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId));
       });
 
   KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
-    ScalarA const_vector_result = r(k);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
-    typename AT::mag_type diff =
-        AT::abs(const_vector_result - expected_result[k]) / divisor;
+    ScalarA const_vector_result   = r(k);
+    typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+    typename AT::mag_type diff    = AT::abs(const_vector_result - expected_result[k]) / divisor;
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
@@ -268,8 +231,7 @@ void impl_test_team_scal_mv(int N, int K) {
 template <class ScalarA, class ScalarB, class Device>
 int test_team_scal() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(0);
@@ -279,8 +241,7 @@ int test_team_scal() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(0);
@@ -289,8 +250,7 @@ int test_team_scal() {
   // Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(0);
@@ -299,8 +259,7 @@ int test_team_scal() {
   // Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_team_scal<view_type_a_ls, view_type_b_ll, Device>(124);
   Test::impl_test_team_scal<view_type_a_ll, view_type_b_ls, Device>(124);
 #endif
@@ -311,8 +270,7 @@ int test_team_scal() {
 template <class ScalarA, class ScalarB, class Device>
 int test_team_scal_mv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(0, 5);
@@ -323,8 +281,7 @@ int test_team_scal_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(0, 5);
@@ -334,8 +291,7 @@ int test_team_scal_mv() {
   // Device>(132231,5);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
@@ -345,8 +301,7 @@ int test_team_scal_mv() {
   // Device>(132231,5);
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ll, Device>(124, 5);
   Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ls, Device>(124, 5);
 #endif
@@ -355,57 +310,36 @@ int test_team_scal_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_scal_float) {
-  test_team_scal<float, float, TestDevice>();
-}
-TEST_F(TestCategory, team_scal_mv_float) {
-  test_team_scal_mv<float, float, TestDevice>();
-}
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_scal_float) { test_team_scal<float, float, TestDevice>(); }
+TEST_F(TestCategory, team_scal_mv_float) { test_team_scal_mv<float, float, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_scal_double) {
-  test_team_scal<double, double, TestDevice>();
-}
-TEST_F(TestCategory, team_scal_mv_double) {
-  test_team_scal_mv<double, double, TestDevice>();
-}
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_scal_double) { test_team_scal<double, double, TestDevice>(); }
+TEST_F(TestCategory, team_scal_mv_double) { test_team_scal_mv<double, double, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_scal_complex_double) {
-  test_team_scal<Kokkos::complex<double>, Kokkos::complex<double>,
-                 TestDevice>();
+  test_team_scal<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
 }
 TEST_F(TestCategory, team_scal_mv_complex_double) {
-  test_team_scal_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                    TestDevice>();
+  test_team_scal_mv<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_INT) ||   \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_INT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_scal_int) { test_team_scal<int, int, TestDevice>(); }
-TEST_F(TestCategory, team_scal_mv_int) {
-  test_team_scal_mv<int, int, TestDevice>();
-}
+TEST_F(TestCategory, team_scal_mv_int) { test_team_scal_mv<int, int, TestDevice>(); }
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-TEST_F(TestCategory, team_scal_double_int) {
-  test_team_scal<double, int, TestDevice>();
-}
-TEST_F(TestCategory, team_scal_double_mv_int) {
-  test_team_scal_mv<double, int, TestDevice>();
-}
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+TEST_F(TestCategory, team_scal_double_int) { test_team_scal<double, int, TestDevice>(); }
+TEST_F(TestCategory, team_scal_double_mv_int) { test_team_scal_mv<double, int, TestDevice>(); }
 #endif
 
 #endif  // Check for lambda availability in CUDA backend

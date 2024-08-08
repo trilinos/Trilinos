@@ -25,13 +25,11 @@
 namespace KokkosSparse {
 namespace Impl {
 
-inline void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus,
-                                          const char* name, const char* file,
+inline void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus, const char* name, const char* file,
                                           const int line) {
   std::ostringstream out;
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-  out << name << " error( " << cusparseGetErrorName(cusparseStatus)
-      << "): " << cusparseGetErrorString(cusparseStatus);
+  out << name << " error( " << cusparseGetErrorName(cusparseStatus) << "): " << cusparseGetErrorString(cusparseStatus);
 #else
   out << name << " error( ";
   switch (cusparseStatus) {
@@ -43,27 +41,13 @@ inline void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus,
       out << "CUSPARSE_STATUS_ALLOC_FAILED): you might tried to allocate too "
              "much memory";
       break;
-    case CUSPARSE_STATUS_INVALID_VALUE:
-      out << "CUSPARSE_STATUS_INVALID_VALUE)";
-      break;
-    case CUSPARSE_STATUS_ARCH_MISMATCH:
-      out << "CUSPARSE_STATUS_ARCH_MISMATCH)";
-      break;
-    case CUSPARSE_STATUS_MAPPING_ERROR:
-      out << "CUSPARSE_STATUS_MAPPING_ERROR)";
-      break;
-    case CUSPARSE_STATUS_EXECUTION_FAILED:
-      out << "CUSPARSE_STATUS_EXECUTION_FAILED)";
-      break;
-    case CUSPARSE_STATUS_INTERNAL_ERROR:
-      out << "CUSPARSE_STATUS_INTERNAL_ERROR)";
-      break;
-    case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
-      out << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED)";
-      break;
-    case CUSPARSE_STATUS_ZERO_PIVOT:
-      out << "CUSPARSE_STATUS_ZERO_PIVOT)";
-      break;
+    case CUSPARSE_STATUS_INVALID_VALUE: out << "CUSPARSE_STATUS_INVALID_VALUE)"; break;
+    case CUSPARSE_STATUS_ARCH_MISMATCH: out << "CUSPARSE_STATUS_ARCH_MISMATCH)"; break;
+    case CUSPARSE_STATUS_MAPPING_ERROR: out << "CUSPARSE_STATUS_MAPPING_ERROR)"; break;
+    case CUSPARSE_STATUS_EXECUTION_FAILED: out << "CUSPARSE_STATUS_EXECUTION_FAILED)"; break;
+    case CUSPARSE_STATUS_INTERNAL_ERROR: out << "CUSPARSE_STATUS_INTERNAL_ERROR)"; break;
+    case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED: out << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED)"; break;
+    case CUSPARSE_STATUS_ZERO_PIVOT: out << "CUSPARSE_STATUS_ZERO_PIVOT)"; break;
     default: out << "unrecognized error code): this is bad!"; break;
   }
 #endif  // CUSPARSE_VERSION
@@ -73,10 +57,8 @@ inline void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus,
   throw std::runtime_error(out.str());
 }
 
-inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus,
-                                        const char* name,
-                                        const char* file = nullptr,
-                                        const int line   = 0) {
+inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus, const char* name, const char* file = nullptr,
+                                        const int line = 0) {
   if (CUSPARSE_STATUS_SUCCESS != cusparseStatus) {
     cusparse_internal_error_throw(cusparseStatus, name, file, line);
   }
@@ -84,9 +66,7 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus,
 
 // The macro below defines is the public interface for the safe cusparse calls.
 // The functions themselves are protected by impl namespace.
-#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                  \
-  KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, \
-                                                  __LINE__)
+#define KOKKOS_CUSPARSE_SAFE_CALL(call) KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
 
 template <typename T>
 cudaDataType cuda_data_type_from() {
@@ -138,8 +118,7 @@ cusparseIndexType_t cusparse_index_type_t_from() {
 #define AS_STR_LITERAL_IMPL_(x) #x
 #define AS_STR_LITERAL(x) AS_STR_LITERAL_IMPL_(x)
   static_assert(!std::is_same<T, T>::value,
-                "cuSparse " AS_STR_LITERAL(
-                    CUSPARSE_VERSION) " TPL does not support index type");
+                "cuSparse " AS_STR_LITERAL(CUSPARSE_VERSION) " TPL does not support index type");
   // static_assert(false, ...) is allowed to error even if the code is not
   // instantiated. obfuscate the predicate Despite this function being
   // uncompilable, the compiler may decide that a return statement is missing,
@@ -172,15 +151,11 @@ inline cusparseIndexType_t cusparse_index_type_t_from<unsigned short>() {
 // is constructed, and reset to the default stream when this object is
 // destructed.
 struct TemporarySetCusparseStream {
-  TemporarySetCusparseStream(cusparseHandle_t handle_,
-                             const Kokkos::Cuda& exec_)
-      : handle(handle_) {
+  TemporarySetCusparseStream(cusparseHandle_t handle_, const Kokkos::Cuda& exec_) : handle(handle_) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, exec_.cuda_stream()));
   }
 
-  ~TemporarySetCusparseStream() {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, NULL));
-  }
+  ~TemporarySetCusparseStream() { KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, NULL)); }
 
   cusparseHandle_t handle;
 };

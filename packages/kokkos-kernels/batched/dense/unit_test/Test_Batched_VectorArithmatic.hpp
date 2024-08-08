@@ -21,10 +21,8 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && \
-    !defined(TEST_HIP_BATCHED_DENSE_CPP) &&  \
-    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
+#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && !defined(TEST_HIP_BATCHED_DENSE_CPP) && \
+    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
@@ -95,132 +93,91 @@ void impl_test_batched_vector_arithmatic() {
     {
       /// test : vec + vec
       c = a + b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] + b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] + b[k]), eps * ats::abs(c[k]));
 
       /// test : value + vec
       c = alpha + b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha + b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha + b[k]), eps * ats::abs(c[k]));
 
       /// test : vec + value
       c = b + alpha;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] + alpha),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] + alpha), eps * ats::abs(c[k]));
 
       /// test : vec + mag
       c = a + beta;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] + beta),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] + beta), eps * ats::abs(c[k]));
 
       /// test : mag + vec
       c = beta + a;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta + a[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta + a[k]), eps * ats::abs(c[k]));
     }
     {
       /// test : vec - vec
       c = a - b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] - b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] - b[k]), eps * ats::abs(c[k]));
 
       /// test : value - vec
       c = alpha - b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha - b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha - b[k]), eps * ats::abs(c[k]));
 
       /// test : vec + value
       c = b - alpha;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] - alpha),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] - alpha), eps * ats::abs(c[k]));
 
       /// test : vec - mag
       c = a - beta;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] - beta),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] - beta), eps * ats::abs(c[k]));
 
       /// test : mag - vec
       c = beta - a;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta - a[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta - a[k]), eps * ats::abs(c[k]));
     }
     {
       /// test : vec * vec
       c = a * b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] * b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] * b[k]), eps * ats::abs(c[k]));
 
       /// test : value * vec
       c = alpha * b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha * b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha * b[k]), eps * ats::abs(c[k]));
 
       /// test : vec + value
       c = b * alpha;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] * alpha),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] * alpha), eps * ats::abs(c[k]));
 
       /// test : vec * mag
       c = a * beta;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] * beta),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] * beta), eps * ats::abs(c[k]));
 
       /// test : mag * vec
       c = beta * a;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta * a[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta * a[k]), eps * ats::abs(c[k]));
     }
     {
       /// test : vec / vec
       c = a / b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] / b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] / b[k]), eps * ats::abs(c[k]));
 
       /// test : value / vec
       c = alpha / b;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha / b[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(alpha / b[k]), eps * ats::abs(c[k]));
 
       /// test : vec / value
       c = b / alpha;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] / alpha),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(b[k] / alpha), eps * ats::abs(c[k]));
 
       /// test : mag / vec
       c = beta / a;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta / a[k]),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(beta / a[k]), eps * ats::abs(c[k]));
 
       /// test : vec / value
       c = a / beta;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] / beta),
-                    eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] / beta), eps * ats::abs(c[k]));
     }
     {
       /// test : vec  -vec
       c = -a;
-      for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(-a[k]), eps * ats::abs(c[k]));
+      for (int k = 0; k < vector_length; ++k) EXPECT_NEAR(ats::abs(c[k]), ats::abs(-a[k]), eps * ats::abs(c[k]));
     }
 #if defined(__DO_NOT_TEST__)
     {
@@ -232,8 +189,7 @@ void impl_test_batched_vector_arithmatic() {
       c += vector_type(tiny) * vector_type(a >= 0);
 
       for (int k = 0; k < vector_length; ++k)
-        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] < 0 ? -tiny : tiny),
-                    eps * ats::abs(c[k]));
+        EXPECT_NEAR(ats::abs(c[k]), ats::abs(a[k] < 0 ? -tiny : tiny), eps * ats::abs(c[k]));
     }
 #endif
   }
@@ -242,18 +198,16 @@ void impl_test_batched_vector_arithmatic() {
 
 template <typename DeviceType, typename VectorTagType, int VectorLength>
 int test_batched_vector_arithmatic() {
-  static_assert(
-      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
-      "vector datatype is only tested on host space");
+  static_assert(Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+                "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_arithmatic<VectorTagType, VectorLength>();
 
   return 0;
 }
 template <typename DeviceType, typename VectorTagType, int VectorLength>
 int test_batched_complex_real_imag_value() {
-  static_assert(
-      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
-      "vector datatype is only tested on host space");
+  static_assert(Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+                "vector datatype is only tested on host space");
   Test::impl_test_complex_real_imag_value<VectorTagType, VectorLength>();
 
   return 0;
@@ -297,65 +251,53 @@ TEST_F(TestCategory, batched_vector_arithmatic_simd_double8) {
 #define __DO_NOT_TEST__
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, batched_vector_arithmatic_simd_scomplex3) {
-  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >,
-                                 3>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_arithmatic_simd_scomplex4) {
-  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >,
-                                 4>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >, 4>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_arithmatic_simd_scomplex8) {
-  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >,
-                                 8>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >, 8>();
 }
 
 TEST_F(TestCategory, batched_vector_scomplex_real_imag_value3) {
-  test_batched_complex_real_imag_value<TestDevice,
-                                       SIMD<Kokkos::complex<float> >, 3>();
+  test_batched_complex_real_imag_value<TestDevice, SIMD<Kokkos::complex<float> >, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_scomplex_real_imag_value2) {
-  test_batched_complex_real_imag_value<TestDevice,
-                                       SIMD<Kokkos::complex<float> >, 2>();
+  test_batched_complex_real_imag_value<TestDevice, SIMD<Kokkos::complex<float> >, 2>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_scomplex_real_imag_value4) {
-  test_batched_complex_real_imag_value<TestDevice,
-                                       SIMD<Kokkos::complex<float> >, 4>();
+  test_batched_complex_real_imag_value<TestDevice, SIMD<Kokkos::complex<float> >, 4>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, batched_vector_arithmatic_simd_dcomplex3) {
-  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >,
-                                 3>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_arithmatic_simd_dcomplex2) {
-  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >,
-                                 2>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >, 2>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_arithmatic_simd_dcomplex4) {
-  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >,
-                                 4>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >, 4>();
 }
 
 TEST_F(TestCategory, batched_vector_dcomplex_real_imag_value3) {
-  test_batched_complex_real_imag_value<TestDevice,
-                                       SIMD<Kokkos::complex<double> >, 3>();
+  test_batched_complex_real_imag_value<TestDevice, SIMD<Kokkos::complex<double> >, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_dcomplex_real_imag_value2) {
-  test_batched_complex_real_imag_value<TestDevice,
-                                       SIMD<Kokkos::complex<double> >, 2>();
+  test_batched_complex_real_imag_value<TestDevice, SIMD<Kokkos::complex<double> >, 2>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_dcomplex_real_imag_value4) {
-  test_batched_complex_real_imag_value<TestDevice,
-                                       SIMD<Kokkos::complex<double> >, 4>();
+  test_batched_complex_real_imag_value<TestDevice, SIMD<Kokkos::complex<double> >, 4>();
 }
 #endif
 #undef __DO_NOT_TEST__

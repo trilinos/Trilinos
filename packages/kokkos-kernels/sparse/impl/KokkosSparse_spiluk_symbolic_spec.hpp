@@ -30,9 +30,8 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class LEntriesType, class URowMapType,
-          class UEntriesType>
+template <class KernelHandle, class ARowMapType, class AEntriesType, class LRowMapType, class LEntriesType,
+          class URowMapType, class UEntriesType>
 struct spiluk_symbolic_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -40,39 +39,25 @@ struct spiluk_symbolic_eti_spec_avail {
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_AVAIL(                           \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,      \
-    MEM_SPACE_TYPE)                                                            \
-  template <>                                                                  \
-  struct spiluk_symbolic_eti_spec_avail<                                       \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                        \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,            \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::View<                                                            \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                    \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<                                                            \
-          const ORDINAL_TYPE *, LAYOUT_TYPE,                                   \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<                                                            \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                          \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<                                                            \
-          ORDINAL_TYPE *, LAYOUT_TYPE,                                         \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<                                                            \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                          \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<                                                            \
-          ORDINAL_TYPE *, LAYOUT_TYPE,                                         \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> > > { \
-    enum : bool { value = true };                                              \
+#define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,         \
+                                                    EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                             \
+  template <>                                                                                                    \
+  struct spiluk_symbolic_eti_spec_avail<                                                                         \
+      KokkosKernels::Experimental::KokkosKernelsHandle<const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE, \
+                                                       EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,         \
+      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> > > {                          \
+    enum : bool { value = true };                                                                                \
   };
 
 // Include the actual specialization declarations
@@ -85,44 +70,34 @@ namespace Impl {
 // Unification layer
 /// \brief Implementation of KokkosSparse::spiluk_symbolic
 
-template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class LEntriesType, class URowMapType,
-          class UEntriesType,
-          bool tpl_spec_avail = spiluk_symbolic_tpl_spec_avail<
-              KernelHandle, ARowMapType, AEntriesType, LRowMapType,
-              LEntriesType, URowMapType, UEntriesType>::value,
-          bool eti_spec_avail = spiluk_symbolic_eti_spec_avail<
-              KernelHandle, ARowMapType, AEntriesType, LRowMapType,
-              LEntriesType, URowMapType, UEntriesType>::value>
+template <class KernelHandle, class ARowMapType, class AEntriesType, class LRowMapType, class LEntriesType,
+          class URowMapType, class UEntriesType,
+          bool tpl_spec_avail = spiluk_symbolic_tpl_spec_avail<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
+                                                               LEntriesType, URowMapType, UEntriesType>::value,
+          bool eti_spec_avail = spiluk_symbolic_eti_spec_avail<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
+                                                               LEntriesType, URowMapType, UEntriesType>::value>
 struct SPILUK_SYMBOLIC {
-  static void spiluk_symbolic(
-      KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t &fill_lev,
-      const ARowMapType &A_row_map, const AEntriesType &A_entries,
-      LRowMapType &L_row_map, LEntriesType &L_entries, URowMapType &U_row_map,
-      UEntriesType &U_entries, int nstreams = 1);
+  static void spiluk_symbolic(KernelHandle *handle, const typename KernelHandle::const_nnz_lno_t &fill_lev,
+                              const ARowMapType &A_row_map, const AEntriesType &A_entries, LRowMapType &L_row_map,
+                              LEntriesType &L_entries, URowMapType &U_row_map, UEntriesType &U_entries,
+                              int nstreams = 1);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of spiluk_symbolic
 // Unification layer
-template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class LEntriesType, class URowMapType,
-          class UEntriesType>
-struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
-                       LEntriesType, URowMapType, UEntriesType, false,
-                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void spiluk_symbolic(
-      KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t &fill_lev,
-      const ARowMapType &A_row_map, const AEntriesType &A_entries,
-      LRowMapType &L_row_map, LEntriesType &L_entries, URowMapType &U_row_map,
-      UEntriesType &U_entries, int nstreams = 1) {
+template <class KernelHandle, class ARowMapType, class AEntriesType, class LRowMapType, class LEntriesType,
+          class URowMapType, class UEntriesType>
+struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType, LEntriesType, URowMapType, UEntriesType,
+                       false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void spiluk_symbolic(KernelHandle *handle, const typename KernelHandle::const_nnz_lno_t &fill_lev,
+                              const ARowMapType &A_row_map, const AEntriesType &A_entries, LRowMapType &L_row_map,
+                              LEntriesType &L_entries, URowMapType &U_row_map, UEntriesType &U_entries,
+                              int nstreams = 1) {
     auto spiluk_handle = handle->get_spiluk_handle();
 
-    Experimental::iluk_symbolic(*spiluk_handle, fill_lev, A_row_map, A_entries,
-                                L_row_map, L_entries, U_row_map, U_entries,
-                                nstreams);
+    Experimental::iluk_symbolic(*spiluk_handle, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map,
+                                U_entries, nstreams);
     spiluk_handle->set_symbolic_complete();
   }
 };
@@ -137,70 +112,42 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_DECL(                         \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
-    MEM_SPACE_TYPE)                                                         \
-  extern template struct SPILUK_SYMBOLIC<                                   \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                     \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
-      Kokkos::View<                                                         \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                 \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          const ORDINAL_TYPE *, LAYOUT_TYPE,                                \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+#define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,          \
+                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                              \
+  extern template struct SPILUK_SYMBOLIC<                                                                        \
+      KokkosKernels::Experimental::KokkosKernelsHandle<const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE, \
+                                                       EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,         \
+      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
       false, true>;
 
-#define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_INST(                         \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
-    MEM_SPACE_TYPE)                                                         \
-  template struct SPILUK_SYMBOLIC<                                          \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                     \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
-      Kokkos::View<                                                         \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                 \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          const ORDINAL_TYPE *, LAYOUT_TYPE,                                \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+#define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,          \
+                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                              \
+  template struct SPILUK_SYMBOLIC<                                                                               \
+      KokkosKernels::Experimental::KokkosKernelsHandle<const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE, \
+                                                       EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,         \
+      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
+      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
       false, true>;
 
 #include <KokkosSparse_spiluk_symbolic_tpl_spec_decl.hpp>

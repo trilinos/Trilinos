@@ -24,8 +24,7 @@
 
 namespace test {
 namespace sparse {
-void build_executor(rajaperf::Executor& exec, int, char*[],
-                    const rajaperf::RunParams& params) {
+void build_executor(rajaperf::Executor& exec, int, char*[], const rajaperf::RunParams& params) {
   exec.registerGroup("Sparse");
   for (auto* kernel : make_spmv_kernel_base(params)) {
     exec.registerKernel("Sparse", kernel);

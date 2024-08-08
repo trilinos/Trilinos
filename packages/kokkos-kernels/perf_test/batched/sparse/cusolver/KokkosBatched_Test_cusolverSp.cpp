@@ -26,7 +26,7 @@
 #include "Kokkos_Sort.hpp"
 
 //
-//#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+// #define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
@@ -66,8 +66,7 @@ typedef typename exec_space::memory_space memory_space;
 typedef Kokkos::DefaultHostExecutionSpace host_space;
 typedef typename Kokkos::Device<exec_space, memory_space> device;
 
-template <typename DeviceType, typename MatrixViewType, typename IntView,
-          typename VectorViewType>
+template <typename DeviceType, typename MatrixViewType, typename IntView, typename VectorViewType>
 struct Functor_Test_SparseCuSolveQR {
   const MatrixViewType _A;
   const IntView _r;
@@ -76,8 +75,7 @@ struct Functor_Test_SparseCuSolveQR {
   const VectorViewType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_Test_SparseCuSolveQR(const MatrixViewType &A, const IntView &r,
-                               const IntView &c, const VectorViewType &X,
+  Functor_Test_SparseCuSolveQR(const MatrixViewType &A, const IntView &r, const IntView &c, const VectorViewType &X,
                                const VectorViewType &B)
       : _A(A), _r(r), _c(c), _X(X), _B(B) {}
 
@@ -94,10 +92,8 @@ struct Functor_Test_SparseCuSolveQR {
 
     cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -110,10 +106,8 @@ struct Functor_Test_SparseCuSolveQR {
       auto b       = Kokkos::subview(_B, i, Kokkos::ALL).data();
       auto x       = Kokkos::subview(_X, i, Kokkos::ALL).data();
 
-      cusolverSpDcsrlsvqr(handle, m, nnz, descrA, csrValA, _r.data(), _c.data(),
-                          b, tol, reorder, x, singularity);
-      if (singularity[0] != -1)
-        std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
+      cusolverSpDcsrlsvqr(handle, m, nnz, descrA, csrValA, _r.data(), _c.data(), b, tol, reorder, x, singularity);
+      if (singularity[0] != -1) std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
     }
 
     exec_space().fence();
@@ -124,8 +118,7 @@ struct Functor_Test_SparseCuSolveQR {
   }
 };
 
-template <typename DeviceType, typename MatrixViewType, typename IntView,
-          typename VectorViewType>
+template <typename DeviceType, typename MatrixViewType, typename IntView, typename VectorViewType>
 struct Functor_Test_Block_SparseCuSolveQR {
   const MatrixViewType _A;
   const IntView _r;
@@ -134,9 +127,8 @@ struct Functor_Test_Block_SparseCuSolveQR {
   const VectorViewType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_Test_Block_SparseCuSolveQR(const MatrixViewType &A, const IntView &r,
-                                     const IntView &c, const VectorViewType &X,
-                                     const VectorViewType &B)
+  Functor_Test_Block_SparseCuSolveQR(const MatrixViewType &A, const IntView &r, const IntView &c,
+                                     const VectorViewType &X, const VectorViewType &B)
       : _A(A), _r(r), _c(c), _X(X), _B(B) {}
 
   inline double run() {
@@ -155,10 +147,8 @@ struct Functor_Test_Block_SparseCuSolveQR {
 
     cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -180,15 +170,12 @@ struct Functor_Test_Block_SparseCuSolveQR {
     rowOffsets_host(0) = 0;
     for (size_t i = 0; i < N; ++i) {
       for (size_t row = 0; row < m; ++row) {
-        const size_t current_row_index = i * m + row;
-        const size_t row_length        = _r_host(row + 1) - _r_host(row);
-        rowOffsets_host(current_row_index + 1) =
-            rowOffsets_host(current_row_index) + row_length;
+        const size_t current_row_index         = i * m + row;
+        const size_t row_length                = _r_host(row + 1) - _r_host(row);
+        rowOffsets_host(current_row_index + 1) = rowOffsets_host(current_row_index) + row_length;
         for (size_t nnz_row = 0; nnz_row < row_length; ++nnz_row) {
-          const size_t current_block_nnz_index =
-              rowOffsets_host(current_row_index) + nnz_row;
-          const size_t current_block_col_index =
-              _c_host(_r_host(row) + nnz_row) + i * m;
+          const size_t current_block_nnz_index     = rowOffsets_host(current_row_index) + nnz_row;
+          const size_t current_block_col_index     = _c_host(_r_host(row) + nnz_row) + i * m;
           colIndices_host(current_block_nnz_index) = current_block_col_index;
         }
       }
@@ -204,12 +191,10 @@ struct Functor_Test_Block_SparseCuSolveQR {
     auto b       = _B.data();
     auto x       = _X.data();
 
-    cusolverSpDcsrlsvqr(handle, block_m, block_nnz, descrA, csrValA,
-                        rowOffsets.data(), colIndices.data(), b, tol, reorder,
-                        x, singularity);
+    cusolverSpDcsrlsvqr(handle, block_m, block_nnz, descrA, csrValA, rowOffsets.data(), colIndices.data(), b, tol,
+                        reorder, x, singularity);
 
-    if (singularity[0] != -1)
-      std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
+    if (singularity[0] != -1) std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
 
     exec_space().fence();
     double sec = timer.seconds();
@@ -219,8 +204,7 @@ struct Functor_Test_Block_SparseCuSolveQR {
   }
 };
 
-template <typename DeviceType, typename MatrixViewType, typename IntView,
-          typename VectorViewType>
+template <typename DeviceType, typename MatrixViewType, typename IntView, typename VectorViewType>
 struct Functor_Test_SparseCuSolveChol {
   const MatrixViewType _A;
   const IntView _r;
@@ -229,8 +213,7 @@ struct Functor_Test_SparseCuSolveChol {
   const VectorViewType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_Test_SparseCuSolveChol(const MatrixViewType &A, const IntView &r,
-                                 const IntView &c, const VectorViewType &X,
+  Functor_Test_SparseCuSolveChol(const MatrixViewType &A, const IntView &r, const IntView &c, const VectorViewType &X,
                                  const VectorViewType &B)
       : _A(A), _r(r), _c(c), _X(X), _B(B) {}
 
@@ -247,10 +230,8 @@ struct Functor_Test_SparseCuSolveChol {
 
     cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -263,10 +244,8 @@ struct Functor_Test_SparseCuSolveChol {
       auto b       = Kokkos::subview(_B, i, Kokkos::ALL).data();
       auto x       = Kokkos::subview(_X, i, Kokkos::ALL).data();
 
-      cusolverSpDcsrlsvchol(handle, m, nnz, descrA, csrValA, _r.data(),
-                            _c.data(), b, tol, reorder, x, singularity);
-      if (singularity[0] != -1)
-        std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
+      cusolverSpDcsrlsvchol(handle, m, nnz, descrA, csrValA, _r.data(), _c.data(), b, tol, reorder, x, singularity);
+      if (singularity[0] != -1) std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
     }
 
     exec_space().fence();
@@ -277,8 +256,7 @@ struct Functor_Test_SparseCuSolveChol {
   }
 };
 
-template <typename DeviceType, typename MatrixViewType, typename IntView,
-          typename VectorViewType>
+template <typename DeviceType, typename MatrixViewType, typename IntView, typename VectorViewType>
 struct Functor_Test_Block_SparseCuSolveChol {
   const MatrixViewType _A;
   const IntView _r;
@@ -287,10 +265,8 @@ struct Functor_Test_Block_SparseCuSolveChol {
   const VectorViewType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_Test_Block_SparseCuSolveChol(const MatrixViewType &A,
-                                       const IntView &r, const IntView &c,
-                                       const VectorViewType &X,
-                                       const VectorViewType &B)
+  Functor_Test_Block_SparseCuSolveChol(const MatrixViewType &A, const IntView &r, const IntView &c,
+                                       const VectorViewType &X, const VectorViewType &B)
       : _A(A), _r(r), _c(c), _X(X), _B(B) {}
 
   inline double run() {
@@ -309,10 +285,8 @@ struct Functor_Test_Block_SparseCuSolveChol {
 
     cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -334,15 +308,12 @@ struct Functor_Test_Block_SparseCuSolveChol {
     rowOffsets_host(0) = 0;
     for (size_t i = 0; i < N; ++i) {
       for (size_t row = 0; row < m; ++row) {
-        const size_t current_row_index = i * m + row;
-        const size_t row_length        = _r_host(row + 1) - _r_host(row);
-        rowOffsets_host(current_row_index + 1) =
-            rowOffsets_host(current_row_index) + row_length;
+        const size_t current_row_index         = i * m + row;
+        const size_t row_length                = _r_host(row + 1) - _r_host(row);
+        rowOffsets_host(current_row_index + 1) = rowOffsets_host(current_row_index) + row_length;
         for (size_t nnz_row = 0; nnz_row < row_length; ++nnz_row) {
-          const size_t current_block_nnz_index =
-              rowOffsets_host(current_row_index) + nnz_row;
-          const size_t current_block_col_index =
-              _c_host(_r_host(row) + nnz_row) + i * m;
+          const size_t current_block_nnz_index     = rowOffsets_host(current_row_index) + nnz_row;
+          const size_t current_block_col_index     = _c_host(_r_host(row) + nnz_row) + i * m;
           colIndices_host(current_block_nnz_index) = current_block_col_index;
         }
       }
@@ -358,11 +329,9 @@ struct Functor_Test_Block_SparseCuSolveChol {
     auto b       = _B.data();
     auto x       = _X.data();
 
-    cusolverSpDcsrlsvchol(handle, block_m, block_nnz, descrA, csrValA,
-                          rowOffsets.data(), colIndices.data(), b, tol, reorder,
-                          x, singularity);
-    if (singularity[0] != -1)
-      std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
+    cusolverSpDcsrlsvchol(handle, block_m, block_nnz, descrA, csrValA, rowOffsets.data(), colIndices.data(), b, tol,
+                          reorder, x, singularity);
+    if (singularity[0] != -1) std::cout << " Error ! " << singularity[0] << " " << m << std::endl;
 
     exec_space().fence();
     double sec = timer.seconds();
@@ -407,12 +376,9 @@ int main(int argc, char *argv[]) {
       if (token == std::string("-X")) name_X = argv[++i];
       if (token == std::string("-timers")) name_timer = argv[++i];
       if (token == std::string("-team_size")) team_size = std::atoi(argv[++i]);
-      if (token == std::string("-vector_length"))
-        vector_length = std::atoi(argv[++i]);
-      if (token == std::string("-n_implementations"))
-        n_impl = std::atoi(argv[++i]);
-      if (token == std::string("-implementation"))
-        impls.push_back(std::atoi(argv[++i]));
+      if (token == std::string("-vector_length")) vector_length = std::atoi(argv[++i]);
+      if (token == std::string("-n_implementations")) n_impl = std::atoi(argv[++i]);
+      if (token == std::string("-implementation")) impls.push_back(std::atoi(argv[++i]));
       if (token == std::string("-l")) {
         layout_left  = true;
         layout_right = false;
@@ -437,8 +403,7 @@ int main(int argc, char *argv[]) {
     constexpr size_t LLC_CAPACITY = 80 * 6 * 1024 * 1024;
     KokkosBatched::Flush<LLC_CAPACITY, exec_space> flush;
 
-    printf(" :::: CusolverSp Testing (N = %d, Blk = %d, vl = %d, n = %d)\n", N,
-           Blk, vector_length, n_rep_1);
+    printf(" :::: CusolverSp Testing (N = %d, Blk = %d, vl = %d, n = %d)\n", N, Blk, vector_length, n_rep_1);
 
     typedef Kokkos::LayoutRight LR;
     typedef Kokkos::LayoutLeft LL;
@@ -460,10 +425,8 @@ int main(int argc, char *argv[]) {
     XYTypeLL xLL("values", N, Blk);
     XYTypeLL yLL("values", N, Blk);
 
-    if (layout_left)
-      printf(" :::: Testing left layout (team_size = %d)\n", team_size);
-    if (layout_right)
-      printf(" :::: Testing right layout (team_size = %d)\n", team_size);
+    if (layout_left) printf(" :::: Testing left layout (team_size = %d)\n", team_size);
+    if (layout_right) printf(" :::: Testing right layout (team_size = %d)\n", team_size);
 
     if (layout_left) {
       readCRSFromMM(name_A, valuesLL, rowOffsets, colIndices);
@@ -490,34 +453,28 @@ int main(int argc, char *argv[]) {
 
       if (i_impl == 0) {
         if (layout_right) {
-          t_spmv = Functor_Test_SparseCuSolveQR<exec_space, AMatrixValueViewLR,
-                                                IntView, XYTypeLR>(
-                       valuesLR, rowOffsets, colIndices, xLR, yLR)
+          t_spmv = Functor_Test_SparseCuSolveQR<exec_space, AMatrixValueViewLR, IntView, XYTypeLR>(valuesLR, rowOffsets,
+                                                                                                   colIndices, xLR, yLR)
                        .run();
         }
       }
       if (i_impl == 1) {
         if (layout_right) {
-          t_spmv =
-              Functor_Test_SparseCuSolveChol<exec_space, AMatrixValueViewLR,
-                                             IntView, XYTypeLR>(
-                  valuesLR, rowOffsets, colIndices, xLR, yLR)
-                  .run();
+          t_spmv = Functor_Test_SparseCuSolveChol<exec_space, AMatrixValueViewLR, IntView, XYTypeLR>(
+                       valuesLR, rowOffsets, colIndices, xLR, yLR)
+                       .run();
         }
       }
       if (i_impl == 2) {
         if (layout_right) {
-          t_spmv =
-              Functor_Test_Block_SparseCuSolveQR<exec_space, AMatrixValueViewLR,
-                                                 IntView, XYTypeLR>(
-                  valuesLR, rowOffsets, colIndices, xLR, yLR)
-                  .run();
+          t_spmv = Functor_Test_Block_SparseCuSolveQR<exec_space, AMatrixValueViewLR, IntView, XYTypeLR>(
+                       valuesLR, rowOffsets, colIndices, xLR, yLR)
+                       .run();
         }
       }
       if (i_impl == 3) {
         if (layout_right) {
-          t_spmv = Functor_Test_Block_SparseCuSolveChol<
-                       exec_space, AMatrixValueViewLR, IntView, XYTypeLR>(
+          t_spmv = Functor_Test_Block_SparseCuSolveChol<exec_space, AMatrixValueViewLR, IntView, XYTypeLR>(
                        valuesLR, rowOffsets, colIndices, xLR, yLR)
                        .run();
         }
@@ -533,10 +490,8 @@ int main(int argc, char *argv[]) {
       {
         std::ofstream myfile;
         std::string name;
-        if (layout_left)
-          name = name_timer + "_" + std::to_string(i_impl) + "_left.txt";
-        if (layout_right)
-          name = name_timer + "_" + std::to_string(i_impl) + "_right.txt";
+        if (layout_left) name = name_timer + "_" + std::to_string(i_impl) + "_left.txt";
+        if (layout_right) name = name_timer + "_" + std::to_string(i_impl) + "_right.txt";
 
         myfile.open(name);
 
@@ -549,15 +504,10 @@ int main(int argc, char *argv[]) {
 
       double average_time = 0.;
 
-      for (size_t i = 0; i < timers.size(); ++i)
-        average_time += timers[i] / timers.size();
+      for (size_t i = 0; i < timers.size(); ++i) average_time += timers[i] / timers.size();
 
-      if (layout_left)
-        printf("Left layout: Implementation %d: solve time = %f\n", i_impl,
-               average_time);
-      if (layout_right)
-        printf("Right layout: Implementation %d: solve time = %f\n", i_impl,
-               average_time);
+      if (layout_left) printf("Left layout: Implementation %d: solve time = %f\n", i_impl, average_time);
+      if (layout_right) printf("Right layout: Implementation %d: solve time = %f\n", i_impl, average_time);
 
       if (layout_left) {
         writeArrayToMM(name_X + std::to_string(i_impl) + "_l.mm", xLL);

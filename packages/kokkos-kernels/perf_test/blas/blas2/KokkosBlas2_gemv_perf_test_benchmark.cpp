@@ -39,8 +39,7 @@ struct blas2_gemv_params : public perf_test::CommonInputParams {
         ++i;
       } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
         ++i;
-      } else if (std::string layout;
-                 perf_test::check_arg_str(i, argc, argv, "--layout", layout)) {
+      } else if (std::string layout; perf_test::check_arg_str(i, argc, argv, "--layout", layout)) {
         if (0 == Test::string_compare_no_case(layout, "left"))
           params.layoutLeft = true;
         else if (0 == Test::string_compare_no_case(layout, "right"))
@@ -51,8 +50,7 @@ struct blas2_gemv_params : public perf_test::CommonInputParams {
         }
         ++i;
       } else {
-        std::cerr << "Unrecognized command line argument #" << i << ": "
-                  << argv[i] << std::endl;
+        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
         print_options();
         exit(1);
       }
@@ -64,12 +62,8 @@ struct blas2_gemv_params : public perf_test::CommonInputParams {
     std::cerr << "Options\n" << std::endl;
     std::cerr << perf_test::list_common_options();
 
-    std::cerr
-        << "\t[Optional] --m      :: number of rows to generate (default 5000)"
-        << std::endl;
-    std::cerr
-        << "\t[Optional] --n      :: number of cols to generate (default 5000)"
-        << std::endl;
+    std::cerr << "\t[Optional] --m      :: number of rows to generate (default 5000)" << std::endl;
+    std::cerr << "\t[Optional] --n      :: number of cols to generate (default 5000)" << std::endl;
     std::cerr << "\t[Optional] --layout :: matrix layout ('left' or 'right', "
                  "default 'left')"
               << std::endl;
@@ -87,14 +81,11 @@ static void KokkosBlas2_GEMV(benchmark::State& state) {
 
   // Create a View containing a 2D matrix; allocate KokkosView with template
   // args of Scalar**, a layout, and
-  Kokkos::View<Scalar**, Layout, Device> A(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+  Kokkos::View<Scalar**, Layout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
   // Create Views containing 1D matrix; allocate (without) matrix "x" of size n
-  Kokkos::View<Scalar*, Device> x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), n);
+  Kokkos::View<Scalar*, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), n);
   // Create Views containing 1D matrix; allocate (without) matrix "y" of size m
-  Kokkos::View<Scalar*, Device> y(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
+  Kokkos::View<Scalar*, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
 
   // Declaring variable pool w/ a number seed;
   // a parallel random number generator, so you
@@ -123,12 +114,10 @@ static void KokkosBlas2_GEMV(benchmark::State& state) {
     state.SetIterationTime(time);
   }
 
-  state.counters[ExecSpace::name()] = 1;
-  state.counters["Avg GEMV time (s):"] =
-      benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
-  size_t flopsPerRun                 = (size_t)2 * m * n;
-  state.counters["Avg GEMV FLOP/s:"] = benchmark::Counter(
-      flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
+  state.counters[ExecSpace::name()]    = 1;
+  state.counters["Avg GEMV time (s):"] = benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
+  size_t flopsPerRun                   = (size_t)2 * m * n;
+  state.counters["Avg GEMV FLOP/s:"]   = benchmark::Counter(flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 }
 
 template <typename ExecSpace>
@@ -136,18 +125,15 @@ void run(const blas2_gemv_params& params) {
   using Scalar = double;
 
   const auto name      = "KokkosBlas2_GEMV";
-  const auto arg_names = std::vector<std::string>{
-      "m", "n", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
-  const auto args = std::vector<int64_t>{params.m, params.n, 1};
+  const auto arg_names = std::vector<std::string>{"m", "n", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
+  const auto args      = std::vector<int64_t>{params.m, params.n, 1};
 
   if (params.layoutLeft) {
-    KokkosKernelsBenchmark::register_benchmark(
-        name, KokkosBlas2_GEMV<Scalar, Kokkos::LayoutLeft, ExecSpace>,
-        arg_names, args, params.repeat);
+    KokkosKernelsBenchmark::register_benchmark(name, KokkosBlas2_GEMV<Scalar, Kokkos::LayoutLeft, ExecSpace>, arg_names,
+                                               args, params.repeat);
   } else {
-    KokkosKernelsBenchmark::register_benchmark(
-        name, KokkosBlas2_GEMV<Scalar, Kokkos::LayoutRight, ExecSpace>,
-        arg_names, args, params.repeat);
+    KokkosKernelsBenchmark::register_benchmark(name, KokkosBlas2_GEMV<Scalar, Kokkos::LayoutRight, ExecSpace>,
+                                               arg_names, args, params.repeat);
   }
 }
 
@@ -205,8 +191,7 @@ int main(int argc, char** argv) {
   }
 
   // use serial if no backend is specified
-  if (!params.use_cuda and !params.use_hip and !params.use_openmp and
-      !params.use_sycl and !params.use_threads) {
+  if (!params.use_cuda and !params.use_hip and !params.use_openmp and !params.use_sycl and !params.use_threads) {
 #if defined(KOKKOS_ENABLE_SERIAL)
     run<Kokkos::Serial>(params);
 #else

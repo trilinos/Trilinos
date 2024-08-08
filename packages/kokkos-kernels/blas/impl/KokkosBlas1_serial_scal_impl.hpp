@@ -28,8 +28,7 @@ namespace Impl {
 struct SerialScaleInternal {
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType alpha,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0) {
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as0) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -39,10 +38,8 @@ struct SerialScaleInternal {
   }
 
   template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const ScalarType alpha,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const ScalarType alpha,
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
     if (as0 > as1)
       for (int i = 0; i < m; ++i) invoke(n, alpha, A + i * as0, as1);
     else

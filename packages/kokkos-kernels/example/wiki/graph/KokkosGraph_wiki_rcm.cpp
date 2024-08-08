@@ -17,19 +17,14 @@
 #include "KokkosGraph_RCM.hpp"
 
 template <typename rowmap_t, typename entries_t, typename labels_t>
-void printReorderedMatrix(const rowmap_t& rowmapIn, const entries_t& entriesIn,
-                          const labels_t& invPermIn) {
+void printReorderedMatrix(const rowmap_t& rowmapIn, const entries_t& entriesIn, const labels_t& invPermIn) {
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t     = typename entries_t::non_const_value_type;
-  auto rowmap =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowmapIn);
-  auto entries =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesIn);
-  auto invPerm =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), invPermIn);
-  lno_t numVerts = rowmap.extent(0) - 1;
-  decltype(invPerm) perm(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Perm"), numVerts);
+  auto rowmap     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowmapIn);
+  auto entries    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesIn);
+  auto invPerm    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), invPermIn);
+  lno_t numVerts  = rowmap.extent(0) - 1;
+  decltype(invPerm) perm(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Perm"), numVerts);
   for (lno_t i = 0; i < numVerts; i++) perm(invPerm(i)) = i;
   std::vector<lno_t> neighbors;
   for (lno_t i = 0; i < numVerts; i++) {
@@ -68,9 +63,7 @@ int main() {
     // Step 2: Run RCM and print the reordered matrix
     {
       auto rcmDevice =
-          KokkosGraph::Experimental::graph_rcm<ExecSpace, RowmapType,
-                                               ColindsType>(rowmapDevice,
-                                                            colindsDevice);
+          KokkosGraph::Experimental::graph_rcm<ExecSpace, RowmapType, ColindsType>(rowmapDevice, colindsDevice);
       std::cout << "Graph reordered by reverse Cuthill-McKee:\n";
       printReorderedMatrix(rowmapDevice, colindsDevice, rcmDevice);
     }

@@ -26,8 +26,7 @@ void impl_test_sum(int N) {
 
   view_stride_adapter<ViewTypeA> a("A", N);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
@@ -53,8 +52,7 @@ void impl_test_sum_mv(int N, int K) {
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
@@ -76,8 +74,7 @@ void impl_test_sum_mv(int N, int K) {
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_result = r(k);
-    EXPECT_NEAR_KK(nonconst_result, expected_result[k],
-                   eps * expected_result[k]);
+    EXPECT_NEAR_KK(nonconst_result, expected_result[k], eps * expected_result[k]);
   }
 
   KokkosBlas::sum(r, a.d_view_const);
@@ -94,8 +91,7 @@ void impl_test_sum_mv(int N, int K) {
 template <class ScalarA, class Device>
 int test_sum() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_sum<view_type_a_ll, Device>(0);
   Test::impl_test_sum<view_type_a_ll, Device>(13);
@@ -104,8 +100,7 @@ int test_sum() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_sum<view_type_a_lr, Device>(0);
   Test::impl_test_sum<view_type_a_lr, Device>(13);
@@ -113,8 +108,7 @@ int test_sum() {
   // Test::impl_test_sum<view_type_a_lr, Device>(132231);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_sum<view_type_a_ls, Device>(0);
   Test::impl_test_sum<view_type_a_ls, Device>(13);
@@ -128,8 +122,7 @@ int test_sum() {
 template <class ScalarA, class Device>
 int test_sum_mv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_sum_mv<view_type_a_ll, Device>(0, 5);
   Test::impl_test_sum_mv<view_type_a_ll, Device>(13, 5);
@@ -139,8 +132,7 @@ int test_sum_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_sum_mv<view_type_a_lr, Device>(0, 5);
   Test::impl_test_sum_mv<view_type_a_lr, Device>(13, 5);
@@ -149,8 +141,7 @@ int test_sum_mv() {
   // Test::impl_test_sum_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_sum_mv<view_type_a_ls, Device>(0, 5);
   Test::impl_test_sum_mv<view_type_a_ls, Device>(13, 5);
@@ -163,8 +154,7 @@ int test_sum_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_float");
   test_sum<float, TestDevice>();
@@ -178,8 +168,7 @@ TEST_F(TestCategory, sum_mv_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_double");
   test_sum<double, TestDevice>();
@@ -193,8 +182,7 @@ TEST_F(TestCategory, sum_mv_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_complex_double");
   test_sum<Kokkos::complex<double>, TestDevice>();
@@ -207,9 +195,8 @@ TEST_F(TestCategory, sum_mv_complex_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_INT) ||   \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_INT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_int");
   test_sum<int, TestDevice>();

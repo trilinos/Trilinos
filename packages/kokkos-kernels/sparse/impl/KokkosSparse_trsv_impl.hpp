@@ -33,19 +33,16 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Sequential {
 
-template <class CrsMatrixType, class DomainMultiVectorType,
-          class RangeMultiVectorType>
+template <class CrsMatrixType, class DomainMultiVectorType, class RangeMultiVectorType>
 struct TrsvWrap {
-  using offset_type =
-      typename CrsMatrixType::row_map_type::non_const_value_type;
-  using lno_t    = typename CrsMatrixType::index_type::non_const_value_type;
-  using scalar_t = typename CrsMatrixType::values_type::non_const_value_type;
-  using device_t = typename CrsMatrixType::device_type;
-  using sview_1d = typename Kokkos::View<scalar_t*, device_t>;
-  using STS      = Kokkos::ArithTraits<scalar_t>;
+  using offset_type = typename CrsMatrixType::row_map_type::non_const_value_type;
+  using lno_t       = typename CrsMatrixType::index_type::non_const_value_type;
+  using scalar_t    = typename CrsMatrixType::values_type::non_const_value_type;
+  using device_t    = typename CrsMatrixType::device_type;
+  using sview_1d    = typename Kokkos::View<scalar_t*, device_t>;
+  using STS         = Kokkos::ArithTraits<scalar_t>;
 
-  static inline void manual_copy(RangeMultiVectorType X,
-                                 DomainMultiVectorType Y) {
+  static inline void manual_copy(RangeMultiVectorType X, DomainMultiVectorType Y) {
     auto numRows = X.extent(0);
     auto numVecs = X.extent(1);
     for (decltype(numRows) i = 0; i < numRows; ++i) {
@@ -57,8 +54,7 @@ struct TrsvWrap {
 
   struct CommonUnblocked {
     CommonUnblocked(const lno_t block_size) {
-      KK_REQUIRE_MSG(block_size == 1,
-                     "Tried to use block_size>1 for non-block-enabled Common");
+      KK_REQUIRE_MSG(block_size == 1, "Tried to use block_size>1 for non-block-enabled Common");
     }
 
     scalar_t zero() { return STS::zero(); }
@@ -70,14 +66,13 @@ struct TrsvWrap {
 
     void pluseq(scalar_t& lhs, const scalar_t& rhs) { lhs += rhs; }
 
-    void gemv(RangeMultiVectorType X, const scalar_t& A, const lno_t r,
-              const lno_t c, const lno_t j, const char = 'N') {
+    void gemv(RangeMultiVectorType X, const scalar_t& A, const lno_t r, const lno_t c, const lno_t j,
+              const char = 'N') {
       X(r, j) -= A * X(c, j);
     }
 
     template <bool IsLower, bool Transpose = false>
-    void divide(RangeMultiVectorType X, const scalar_t& A, const lno_t r,
-                const lno_t j) {
+    void divide(RangeMultiVectorType X, const scalar_t& A, const lno_t r, const lno_t j) {
       X(r, j) /= A;
     }
   };
@@ -86,20 +81,17 @@ struct TrsvWrap {
     // BSR data is in LayoutRight!
     using Layout = Kokkos::LayoutRight;
 
-    using UBlock = Kokkos::View<
-        scalar_t**, Layout, typename CrsMatrixType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+    using UBlock = Kokkos::View<scalar_t**, Layout, typename CrsMatrixType::device_type,
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using Block =
-        Kokkos::View<scalar_t**, Layout, typename CrsMatrixType::device_type,
-                     Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+    using Block = Kokkos::View<scalar_t**, Layout, typename CrsMatrixType::device_type,
+                               Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-    using Vector = Kokkos::View<scalar_t*, typename CrsMatrixType::device_type,
-                                Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+    using Vector =
+        Kokkos::View<scalar_t*, typename CrsMatrixType::device_type, Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-    using UVector = Kokkos::View<
-        scalar_t*, typename CrsMatrixType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+    using UVector = Kokkos::View<scalar_t*, typename CrsMatrixType::device_type,
+                                 Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     lno_t m_block_size;
     lno_t m_block_items;
@@ -135,12 +127,10 @@ struct TrsvWrap {
       return rv;
     }
 
-    void pluseq(UBlock& lhs, const UBlock& rhs) {
-      KokkosBatched::SerialAxpy::invoke(m_ones, rhs, lhs);
-    }
+    void pluseq(UBlock& lhs, const UBlock& rhs) { KokkosBatched::SerialAxpy::invoke(m_ones, rhs, lhs); }
 
-    void gemv(RangeMultiVectorType X, const UBlock& A, const lno_t r,
-              const lno_t c, const lno_t j, const char transpose = 'N') {
+    void gemv(RangeMultiVectorType X, const UBlock& A, const lno_t r, const lno_t c, const lno_t j,
+              const char transpose = 'N') {
       // Create and populate x and y
       UVector x(m_vec_data1.data(), m_block_size);
       UVector y(m_vec_data2.data(), m_block_size);
@@ -157,8 +147,7 @@ struct TrsvWrap {
     }
 
     template <bool IsLower, bool Transpose = false>
-    void divide(RangeMultiVectorType X, const UBlock& A, const lno_t r,
-                const lno_t j) {
+    void divide(RangeMultiVectorType X, const UBlock& A, const lno_t r, const lno_t j) {
       UVector x(m_vec_data1.data(), m_block_size);
       UVector y(m_vec_data2.data(), m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
@@ -177,13 +166,10 @@ struct TrsvWrap {
     }
   };
 
-  using CommonOps = std::conditional_t<
-      KokkosSparse::Experimental::is_bsr_matrix<CrsMatrixType>::value,
-      CommonBlocked, CommonUnblocked>;
+  using CommonOps = std::conditional_t<KokkosSparse::Experimental::is_bsr_matrix<CrsMatrixType>::value, CommonBlocked,
+                                       CommonUnblocked>;
 
-  static void lowerTriSolveCsrUnitDiag(RangeMultiVectorType X,
-                                       const CrsMatrixType& A,
-                                       DomainMultiVectorType Y) {
+  static void lowerTriSolveCsrUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -211,8 +197,7 @@ struct TrsvWrap {
     }    // for each row r
   }
 
-  static void lowerTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
-                               DomainMultiVectorType Y) {
+  static void lowerTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -255,9 +240,7 @@ struct TrsvWrap {
     }  // for each row r
   }
 
-  static void upperTriSolveCsrUnitDiag(RangeMultiVectorType X,
-                                       const CrsMatrixType& A,
-                                       DomainMultiVectorType Y) {
+  static void upperTriSolveCsrUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -308,8 +291,7 @@ struct TrsvWrap {
     }    // last iteration: r = 0
   }
 
-  static void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
-                               DomainMultiVectorType Y) {
+  static void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -376,9 +358,7 @@ struct TrsvWrap {
     }  // last iteration: r = 0
   }
 
-  static void upperTriSolveCscUnitDiag(RangeMultiVectorType X,
-                                       const CrsMatrixType& A,
-                                       DomainMultiVectorType Y) {
+  static void upperTriSolveCscUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -430,8 +410,7 @@ struct TrsvWrap {
     }
   }
 
-  static void upperTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A,
-                               DomainMultiVectorType Y) {
+  static void upperTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -490,9 +469,7 @@ struct TrsvWrap {
     }
   }
 
-  static void lowerTriSolveCscUnitDiag(RangeMultiVectorType X,
-                                       const CrsMatrixType& A,
-                                       DomainMultiVectorType Y) {
+  static void lowerTriSolveCscUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -521,9 +498,7 @@ struct TrsvWrap {
     }    // for each column c
   }
 
-  static void upperTriSolveCscUnitDiagConj(RangeMultiVectorType X,
-                                           const CrsMatrixType& A,
-                                           DomainMultiVectorType Y) {
+  static void upperTriSolveCscUnitDiagConj(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -575,9 +550,7 @@ struct TrsvWrap {
     }
   }
 
-  static void upperTriSolveCscConj(RangeMultiVectorType X,
-                                   const CrsMatrixType& A,
-                                   DomainMultiVectorType Y) {
+  static void upperTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -636,8 +609,7 @@ struct TrsvWrap {
     }
   }
 
-  static void lowerTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A,
-                               DomainMultiVectorType Y) {
+  static void lowerTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -674,9 +646,7 @@ struct TrsvWrap {
     }    // for each column c
   }
 
-  static void lowerTriSolveCscUnitDiagConj(RangeMultiVectorType X,
-                                           const CrsMatrixType& A,
-                                           DomainMultiVectorType Y) {
+  static void lowerTriSolveCscUnitDiagConj(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 
@@ -705,9 +675,7 @@ struct TrsvWrap {
     }    // for each column c
   }
 
-  static void lowerTriSolveCscConj(RangeMultiVectorType X,
-                                   const CrsMatrixType& A,
-                                   DomainMultiVectorType Y) {
+  static void lowerTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
     const lno_t numRows = A.numRows();
     if (numRows == 0) return;
 

@@ -35,8 +35,8 @@ void test_rocsparse_version() {
   rocsparse_get_version(handle, &ver);
   rocsparse_get_git_rev(handle, rev);
 
-  std::cout << "rocSPARSE version: " << ver / 100000 << "." << ver / 100 % 1000
-            << "." << ver % 100 << "-" << rev << std::endl;
+  std::cout << "rocSPARSE version: " << ver / 100000 << "." << ver / 100 % 1000 << "." << ver % 100 << "-" << rev
+            << std::endl;
 
   rocsparse_destroy_handle(handle);
 }
@@ -64,8 +64,7 @@ void test_rocsparse_safe_call() {
 // fails it throws an error with the
 // KOKKOS_ROCBLAS_SAFE_CALL_IMPL macro
 void test_rocsparse_singleton() {
-  KokkosKernels::Impl::RocsparseSingleton& s =
-      KokkosKernels::Impl::RocsparseSingleton::singleton();
+  KokkosKernels::Impl::RocsparseSingleton& s = KokkosKernels::Impl::RocsparseSingleton::singleton();
   (void)s;
 }
 

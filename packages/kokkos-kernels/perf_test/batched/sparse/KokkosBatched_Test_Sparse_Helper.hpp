@@ -36,11 +36,9 @@ void writeArrayToMM(std::string name, const XType x) {
   myfile.close();
 }
 
-void readSizesFromMM(std::string name, int &nrows, int &ncols, int &nnz,
-                     int &N) {
+void readSizesFromMM(std::string name, int &nrows, int &ncols, int &nnz, int &N) {
   std::ifstream input(name);
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   std::string line_sizes;
 
@@ -67,8 +65,7 @@ template <class XType>
 void readArrayFromMM(std::string name, const XType &x) {
   std::ifstream input(name);
 
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   typename XType::HostMirror x_h = Kokkos::create_mirror_view(x);
@@ -85,8 +82,7 @@ template <class AType>
 void readDenseFromMM(std::string name, const AType &A) {
   std::ifstream input(name);
 
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   typename AType::HostMirror A_h = Kokkos::create_mirror_view(A);
@@ -113,12 +109,10 @@ void readDenseFromMM(std::string name, const AType &A) {
 }
 
 template <class VType, class IntType>
-void readCRSFromMM(std::string name, const VType &V, const IntType &r,
-                   const IntType &c) {
+void readCRSFromMM(std::string name, const VType &V, const IntType &r, const IntType &c) {
   std::ifstream input(name);
 
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   typename VType::HostMirror V_h   = Kokkos::create_mirror_view(V);
@@ -137,8 +131,7 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r,
     input >> read_row >> c_h(i);
     --read_row;
     --c_h(i);
-    for (int tmp_row = current_row + 1; tmp_row <= read_row; ++tmp_row)
-      r_h(tmp_row) = i;
+    for (int tmp_row = current_row + 1; tmp_row <= read_row; ++tmp_row) r_h(tmp_row) = i;
     current_row = read_row;
 
     // if (VType::rank == 1)
@@ -157,8 +150,7 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r,
 }
 
 template <class VType, class IntType>
-void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
-                       const VType &diag) {
+void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c, const VType &diag) {
   auto diag_values_host = Kokkos::create_mirror_view(diag);
   auto values_host      = Kokkos::create_mirror_view(V);
   auto row_ptr_host     = Kokkos::create_mirror_view(r);
@@ -173,12 +165,10 @@ void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
   int BlkSize = diag.extent(1);
 
   for (int i = 0; i < BlkSize; ++i) {
-    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1);
-         ++current_index) {
+    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1); ++current_index) {
       if (colIndices_host(current_index) == i) break;
     }
-    for (int j = 0; j < N; ++j)
-      diag_values_host(j, i) = 1. / values_host(j, current_index);
+    for (int j = 0; j < N; ++j) diag_values_host(j, i) = 1. / values_host(j, current_index);
   }
 
   Kokkos::deep_copy(diag, diag_values_host);

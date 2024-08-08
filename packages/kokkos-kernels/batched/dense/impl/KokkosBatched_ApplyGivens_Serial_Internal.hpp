@@ -30,10 +30,9 @@ namespace KokkosBatched {
 ///
 struct SerialApplyLeftGivensInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const Kokkos::pair<ValueType, ValueType> G, const int n,
-      /* */ ValueType *a1t, const int a1ts,
-      /* */ ValueType *a2t, const int a2ts) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const Kokkos::pair<ValueType, ValueType> G, const int n,
+                                           /* */ ValueType *a1t, const int a1ts,
+                                           /* */ ValueType *a2t, const int a2ts) {
     typedef ValueType value_type;
     if (n == 0) return 0;  // quick return
     if (G.first == value_type(1) && G.second == value_type(0)) return 0;
@@ -59,10 +58,9 @@ struct SerialApplyLeftGivensInternal {
 
 struct SerialApplyRightGivensInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const Kokkos::pair<ValueType, ValueType> G, const int m,
-      /* */ ValueType *a1, const int a1s,
-      /* */ ValueType *a2, const int a2s) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const Kokkos::pair<ValueType, ValueType> G, const int m,
+                                           /* */ ValueType *a1, const int a1s,
+                                           /* */ ValueType *a2, const int a2s) {
     typedef ValueType value_type;
     if (m == 0) return 0;  // quick return
     if (G.first == value_type(1) && G.second == value_type(0)) return 0;
@@ -88,12 +86,11 @@ struct SerialApplyRightGivensInternal {
 
 struct SerialApplyLeftRightGivensInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const Kokkos::pair<ValueType, ValueType> &G12, const int &m, const int &n,
-      /* */ ValueType *KOKKOS_RESTRICT a1t,
-      /* */ ValueType *KOKKOS_RESTRICT a2t,
-      /* */ ValueType *KOKKOS_RESTRICT a1,
-      /* */ ValueType *KOKKOS_RESTRICT a2, const int &as0, const int &as1) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const Kokkos::pair<ValueType, ValueType> &G12, const int &m, const int &n,
+                                           /* */ ValueType *KOKKOS_RESTRICT a1t,
+                                           /* */ ValueType *KOKKOS_RESTRICT a2t,
+                                           /* */ ValueType *KOKKOS_RESTRICT a1,
+                                           /* */ ValueType *KOKKOS_RESTRICT a2, const int &as0, const int &as1) {
     typedef ValueType value_type;
     if (G12.first == value_type(1) && G12.second == value_type(0)) return 0;
     if (m == 0 && n == 0) return 0;  // quick return
@@ -124,15 +121,14 @@ struct SerialApplyLeftRightGivensInternal {
   }
 
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const Kokkos::pair<ValueType, ValueType> &G12,
-      const Kokkos::pair<ValueType, ValueType> &G13, const int &m, const int &n,
-      /* */ ValueType *KOKKOS_RESTRICT a1t,
-      /* */ ValueType *KOKKOS_RESTRICT a2t,
-      /* */ ValueType *KOKKOS_RESTRICT a3t,
-      /* */ ValueType *KOKKOS_RESTRICT a1,
-      /* */ ValueType *KOKKOS_RESTRICT a2,
-      /* */ ValueType *KOKKOS_RESTRICT a3, const int &as0, const int &as1) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const Kokkos::pair<ValueType, ValueType> &G12,
+                                           const Kokkos::pair<ValueType, ValueType> &G13, const int &m, const int &n,
+                                           /* */ ValueType *KOKKOS_RESTRICT a1t,
+                                           /* */ ValueType *KOKKOS_RESTRICT a2t,
+                                           /* */ ValueType *KOKKOS_RESTRICT a3t,
+                                           /* */ ValueType *KOKKOS_RESTRICT a1,
+                                           /* */ ValueType *KOKKOS_RESTRICT a2,
+                                           /* */ ValueType *KOKKOS_RESTRICT a3, const int &as0, const int &as1) {
     typedef ValueType value_type;
     if (m == 0 && n == 0) return 0;  // quick return
 

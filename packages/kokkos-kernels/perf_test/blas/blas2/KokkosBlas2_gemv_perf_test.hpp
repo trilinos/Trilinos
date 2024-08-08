@@ -63,14 +63,10 @@ struct testData_gemv {
   // A function with no return type whose name is the name of the class is a
   // constructor or a destructor;
   // Constructor -- create function:
-  testData_gemv(int m_in, int n_in, int repeat_in)
-      : m(m_in), n(n_in), repeat(repeat_in) {
-    A = Kokkos::View<Scalar**, Layout, Device>(
-        Kokkos::ViewAllocateWithoutInitializing("A"), m, n);
-    x = Kokkos::View<Scalar*, Device>(
-        Kokkos::ViewAllocateWithoutInitializing("x"), n);
-    y = Kokkos::View<Scalar*, Device>(
-        Kokkos::ViewAllocateWithoutInitializing("y"), m);
+  testData_gemv(int m_in, int n_in, int repeat_in) : m(m_in), n(n_in), repeat(repeat_in) {
+    A = Kokkos::View<Scalar**, Layout, Device>(Kokkos::ViewAllocateWithoutInitializing("A"), m, n);
+    x = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("x"), n);
+    y = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("y"), m);
 
     Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
 
@@ -81,7 +77,6 @@ struct testData_gemv {
 };
 
 template <typename ExecSpace, typename Layout>
-testData_gemv<ExecSpace, Layout> setup_test(int m, int n, int repeat,
-                                            bool layoutLeft);
+testData_gemv<ExecSpace, Layout> setup_test(int m, int n, int repeat, bool layoutLeft);
 
 #endif  // KOKKOSKERNELS_KOKKOSBLAS_GEMV_TEST_RPS_HPP

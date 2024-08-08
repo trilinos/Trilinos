@@ -27,30 +27,23 @@
 
 namespace Test {
 
-template <class AType, class XType, class YType, class ScalarType,
-          class AlgoTag>
+template <class AType, class XType, class YType, class ScalarType, class AlgoTag>
 struct TeamVectorGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
   using params = GemvOpBase<AType, XType, YType, ScalarType>;
 
-  TeamVectorGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
-                   ScalarType beta_, YType y_)
+  TeamVectorGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_, ScalarType beta_, YType y_)
       : params(trans_, alpha_, A_, x_, beta_, y_) {}
 
   template <typename TeamMember>
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
-    KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::TeamVector,
-                                   AlgoTag>::invoke(member, params::trans,
-                                                    params::alpha, params::A,
-                                                    params::x, params::beta,
-                                                    params::y);
+    KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::TeamVector, AlgoTag>::invoke(
+        member, params::trans, params::alpha, params::A, params::x, params::beta, params::y);
   }
 };
 
 struct TeamVectorGemvFactory {
-  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
-            class Device, class ScalarType>
-  using functor_type =
-      TeamVectorGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
+  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device, class ScalarType>
+  using functor_type = TeamVectorGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
 
   // no Blocked implementation
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked>;
@@ -58,12 +51,9 @@ struct TeamVectorGemvFactory {
 
 }  // namespace Test
 
-#define TEST_TEAMVECTOR_CASE4(N, A, X, Y, SC) \
-  TEST_CASE4(teamvector, TeamVectorGemvFactory, N, A, X, Y, SC)
-#define TEST_TEAMVECTOR_CASE2(N, S, SC) \
-  TEST_CASE2(teamvector, TeamVectorGemvFactory, N, S, SC)
-#define TEST_TEAMVECTOR_CASE(N, S) \
-  TEST_CASE(teamvector, TeamVectorGemvFactory, N, S)
+#define TEST_TEAMVECTOR_CASE4(N, A, X, Y, SC) TEST_CASE4(teamvector, TeamVectorGemvFactory, N, A, X, Y, SC)
+#define TEST_TEAMVECTOR_CASE2(N, S, SC) TEST_CASE2(teamvector, TeamVectorGemvFactory, N, S, SC)
+#define TEST_TEAMVECTOR_CASE(N, S) TEST_CASE(teamvector, TeamVectorGemvFactory, N, S)
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
 TEST_TEAMVECTOR_CASE(float, float)

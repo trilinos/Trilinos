@@ -44,20 +44,16 @@ namespace Experimental {
 /// num_rows</tt> submatrix of A is structurally symmetric
 /// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
 ///
-template <typename ExecutionSpace, typename KernelHandle,
-          typename lno_row_view_t_, typename lno_nnz_view_t_>
+template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
 void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
                            typename KernelHandle::const_nnz_lno_t num_rows,
-                           typename KernelHandle::const_nnz_lno_t num_cols,
-                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
-                           bool is_graph_symmetric = true) {
-  static_assert(std::is_same<typename KernelHandle::const_size_type,
-                             typename lno_row_view_t_::const_value_type>::value,
+                           typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                           lno_nnz_view_t_ entries, bool is_graph_symmetric = true) {
+  static_assert(std::is_same<typename KernelHandle::const_size_type, typename lno_row_view_t_::const_value_type>::value,
                 "KokkosSparse::gauss_seidel_symbolic: Size type of the matrix "
                 "should be same as kernelHandle sizetype.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t,
-                             typename lno_nnz_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t, typename lno_nnz_view_t_::const_value_type>::value,
                 "KokkosSparse::gauss_seidel_symbolic: lno type of the matrix "
                 "should be same as kernelHandle lno_t.");
 
@@ -69,24 +65,20 @@ void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t,
+                                                                    c_persist_t>
       const_handle_type;
   // const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle(*handle);
 
   typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_row_view_t_>::array_layout,
-                       typename lno_row_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+                       typename lno_row_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_row_view_t_;
 
   typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_nnz_view_t_>::array_layout,
-                       typename lno_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+                       typename lno_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_nnz_view_t_;
 
   // Internal_alno_row_view_t_ const_a_r  = row_map;
@@ -96,12 +88,9 @@ void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_SYMBOLIC<
-      ExecutionSpace, const_handle_type, Internal_alno_row_view_t_,
-      Internal_alno_nnz_view_t_>::gauss_seidel_symbolic(space, &tmp_handle,
-                                                        num_rows, num_cols,
-                                                        const_a_r, const_a_l,
-                                                        is_graph_symmetric);
+  GAUSS_SEIDEL_SYMBOLIC<ExecutionSpace, const_handle_type, Internal_alno_row_view_t_,
+                        Internal_alno_nnz_view_t_>::gauss_seidel_symbolic(space, &tmp_handle, num_rows, num_cols,
+                                                                          const_a_r, const_a_l, is_graph_symmetric);
 }
 
 ///
@@ -121,16 +110,12 @@ void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
 /// num_rows</tt> submatrix of A is structurally symmetric
 /// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
 ///
-template <typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_>
-void gauss_seidel_symbolic(KernelHandle *handle,
-                           typename KernelHandle::const_nnz_lno_t num_rows,
-                           typename KernelHandle::const_nnz_lno_t num_cols,
-                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
-                           bool is_graph_symmetric = true) {
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+void gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                           typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                           lno_nnz_view_t_ entries, bool is_graph_symmetric = true) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  gauss_seidel_symbolic(my_exec_space, handle, num_rows, num_cols, row_map,
-                        entries, is_graph_symmetric);
+  gauss_seidel_symbolic(my_exec_space, handle, num_rows, num_cols, row_map, entries, is_graph_symmetric);
 }
 
 ///
@@ -150,13 +135,11 @@ void gauss_seidel_symbolic(KernelHandle *handle,
 /// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
 /// num_rows</tt> submatrix of A is structurally symmetric
 /// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
-template <typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_>
-void block_gauss_seidel_symbolic(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, bool is_graph_symmetric = true) {
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+void block_gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                 typename KernelHandle::const_nnz_lno_t num_cols,
+                                 typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
+                                 lno_nnz_view_t_ entries, bool is_graph_symmetric = true) {
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
     throw std::runtime_error(
@@ -165,8 +148,7 @@ void block_gauss_seidel_symbolic(
   }
   gsHandle->set_block_size(block_size);
 
-  gauss_seidel_symbolic(handle, num_rows, num_cols, row_map, entries,
-                        is_graph_symmetric);
+  gauss_seidel_symbolic(handle, num_rows, num_cols, row_map, entries, is_graph_symmetric);
 }
 
 ///
@@ -190,30 +172,22 @@ void block_gauss_seidel_symbolic(
 /// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
 /// num_rows</tt> submatrix of A is structurally symmetric
 ///
-template <class ExecutionSpace,
-          KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
-                          typename KernelHandle::const_nnz_lno_t num_cols,
-                          lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
-                          scalar_nnz_view_t_ values,
-                          bool is_graph_symmetric = true) {
-  static_assert(std::is_same<typename KernelHandle::const_size_type,
-                             typename lno_row_view_t_::const_value_type>::value,
+                          typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                          lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric = true) {
+  static_assert(std::is_same<typename KernelHandle::const_size_type, typename lno_row_view_t_::const_value_type>::value,
                 "KokkosSparse::gauss_seidel_symbolic: Size type of the matrix "
                 "should be same as kernelHandle sizetype.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t,
-                             typename lno_nnz_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t, typename lno_nnz_view_t_::const_value_type>::value,
                 "KokkosSparse::gauss_seidel_symbolic: lno type of the matrix "
                 "should be same as kernelHandle lno_t.");
 
   static_assert(
-      std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                   typename scalar_nnz_view_t_::const_value_type>::value,
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename scalar_nnz_view_t_::const_value_type>::value,
       "KokkosSparse::gauss_seidel_symbolic: scalar type of the matrix should "
       "be same as kernelHandle scalar_t.");
 
@@ -225,31 +199,25 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t,
+                                                                    c_persist_t>
       const_handle_type;
   // const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle(*handle);
 
   typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_row_view_t_>::array_layout,
-                       typename lno_row_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+                       typename lno_row_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_row_view_t_;
 
   typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_nnz_view_t_>::array_layout,
-                       typename lno_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+                       typename lno_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_nnz_view_t_;
 
   typedef Kokkos::View<typename scalar_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           scalar_nnz_view_t_>::array_layout,
-                       typename scalar_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
+                       typename scalar_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_ascalar_nnz_view_t_;
 
   Internal_alno_row_view_t_ const_a_r(row_map.data(), row_map.extent(0));
@@ -258,14 +226,10 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_NUMERIC<
-      ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_,
-      Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(space, &tmp_handle,
-                                                          num_rows, num_cols,
-                                                          const_a_r, const_a_l,
-                                                          const_a_v,
-                                                          is_graph_symmetric);
+  GAUSS_SEIDEL_NUMERIC<ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                       Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(space, &tmp_handle, num_rows, num_cols,
+                                                                           const_a_r, const_a_l, const_a_v,
+                                                                           is_graph_symmetric);
 }
 
 ///
@@ -292,20 +256,14 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
 /// the version of <tt>gauss_seidel_numeric</tt> that
 ///         doesn't take it as an argument. The inverse diagonal will be
 ///         computed internally.
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void gauss_seidel_numeric(KernelHandle *handle,
-                          typename KernelHandle::const_nnz_lno_t num_rows,
-                          typename KernelHandle::const_nnz_lno_t num_cols,
-                          lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
-                          scalar_nnz_view_t_ values,
-                          bool is_graph_symmetric = true) {
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+void gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                          typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                          lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric = true) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  gauss_seidel_numeric<decltype(my_exec_space), format>(
-      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
-      is_graph_symmetric);
+  gauss_seidel_numeric<decltype(my_exec_space), format>(my_exec_space, handle, num_rows, num_cols, row_map, entries,
+                                                        values, is_graph_symmetric);
 }
 
 ///
@@ -335,31 +293,23 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// the version of <tt>gauss_seidel_numeric</tt> that
 ///         doesn't take it as an argument. The inverse diagonal will be
 ///         computed internally.
-template <class ExecutionSpace,
-          KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
-                          typename KernelHandle::const_nnz_lno_t num_cols,
-                          lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
-                          scalar_nnz_view_t_ values,
-                          scalar_nnz_view_t_ given_inverse_diagonal,
+                          typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                          lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal,
                           bool is_graph_symmetric = true) {
-  static_assert(std::is_same<typename KernelHandle::const_size_type,
-                             typename lno_row_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_size_type, typename lno_row_view_t_::const_value_type>::value,
                 "KokkosSparse::gauss_seidel_symbolic: Size type of the matrix "
                 "should be same as kernelHandle sizetype.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t,
-                             typename lno_nnz_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t, typename lno_nnz_view_t_::const_value_type>::value,
                 "KokkosSparse::gauss_seidel_symbolic: lno type of the matrix "
                 "should be same as kernelHandle lno_t.");
 
   static_assert(
-      std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                   typename scalar_nnz_view_t_::const_value_type>::value,
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename scalar_nnz_view_t_::const_value_type>::value,
       "KokkosSparse::gauss_seidel_symbolic: scalar type of the matrix should "
       "be same as kernelHandle scalar_t.");
 
@@ -371,49 +321,38 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t,
+                                                                    c_persist_t>
       const_handle_type;
   // const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle(*handle);
 
   typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_row_view_t_>::array_layout,
-                       typename lno_row_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+                       typename lno_row_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_row_view_t_;
 
   typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_nnz_view_t_>::array_layout,
-                       typename lno_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+                       typename lno_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_nnz_view_t_;
 
   typedef Kokkos::View<typename scalar_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           scalar_nnz_view_t_>::array_layout,
-                       typename scalar_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
+                       typename scalar_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_ascalar_nnz_view_t_;
 
   Internal_alno_row_view_t_ const_a_r(row_map.data(), row_map.extent(0));
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
-  Internal_ascalar_nnz_view_t_ const_a_d(given_inverse_diagonal.data(),
-                                         given_inverse_diagonal.extent(0));
+  Internal_ascalar_nnz_view_t_ const_a_d(given_inverse_diagonal.data(), given_inverse_diagonal.extent(0));
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_NUMERIC<
-      ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_,
-      Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(space, &tmp_handle,
-                                                          num_rows, num_cols,
-                                                          const_a_r, const_a_l,
-                                                          const_a_v, const_a_d,
-                                                          is_graph_symmetric);
+  GAUSS_SEIDEL_NUMERIC<ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                       Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(space, &tmp_handle, num_rows, num_cols,
+                                                                           const_a_r, const_a_l, const_a_v, const_a_d,
+                                                                           is_graph_symmetric);
 }
 
 ///
@@ -441,21 +380,15 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
 /// the version of <tt>gauss_seidel_numeric</tt> that
 ///         doesn't take it as an argument. The inverse diagonal will be
 ///         computed internally.
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void gauss_seidel_numeric(KernelHandle *handle,
-                          typename KernelHandle::const_nnz_lno_t num_rows,
-                          typename KernelHandle::const_nnz_lno_t num_cols,
-                          lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
-                          scalar_nnz_view_t_ values,
-                          scalar_nnz_view_t_ given_inverse_diagonal,
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+void gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                          typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                          lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal,
                           bool is_graph_symmetric = true) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  gauss_seidel_numeric<decltype(my_exec_space), format>(
-      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
-      given_inverse_diagonal, is_graph_symmetric);
+  gauss_seidel_numeric<decltype(my_exec_space), format>(my_exec_space, handle, num_rows, num_cols, row_map, entries,
+                                                        values, given_inverse_diagonal, is_graph_symmetric);
 }
 
 ///
@@ -478,16 +411,12 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
 /// num_rows</tt> submatrix of A is structurally symmetric
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::BSR,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void block_gauss_seidel_numeric(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    bool is_graph_symmetric = true) {
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+void block_gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                typename KernelHandle::const_nnz_lno_t num_cols,
+                                typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
+                                lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric = true) {
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
     throw std::runtime_error(
@@ -496,8 +425,7 @@ void block_gauss_seidel_numeric(
   }
   gsHandle->set_block_size(block_size);
 
-  gauss_seidel_numeric<format>(handle, num_rows, num_cols, row_map, entries,
-                               values, is_graph_symmetric);
+  gauss_seidel_numeric<format>(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
 }
 
 ///
@@ -533,57 +461,44 @@ void block_gauss_seidel_numeric(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <class ExecutionSpace,
-          KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
-void symmetric_gauss_seidel_apply(
-    const ExecutionSpace &space, KernelHandle *handle,
-    typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
-  static_assert(std::is_same<typename KernelHandle::const_size_type,
-                             typename lno_row_view_t_::const_value_type>::value,
+void symmetric_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle,
+                                  typename KernelHandle::const_nnz_lno_t num_rows,
+                                  typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                  lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                  y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                                  typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  static_assert(std::is_same<typename KernelHandle::const_size_type, typename lno_row_view_t_::const_value_type>::value,
                 "KokkosSparse::symmetric_gauss_seidel_apply: Size type of the "
                 "matrix should be same as kernelHandle sizetype.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t,
-                             typename lno_nnz_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t, typename lno_nnz_view_t_::const_value_type>::value,
                 "KokkosSparse::symmetric_gauss_seidel_apply: lno type of the "
                 "matrix should be same as kernelHandle lno_t.");
 
   static_assert(
-      std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                   typename scalar_nnz_view_t_::const_value_type>::value,
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename scalar_nnz_view_t_::const_value_type>::value,
       "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the matrix "
       "should be same as kernelHandle scalar_t.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                             typename y_scalar_view_t::const_value_type>::value,
-                "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of "
-                "the y-vector should be same as kernelHandle scalar_t.");
-
   static_assert(
-      std::is_same<typename KernelHandle::nnz_scalar_t,
-                   typename x_scalar_view_t::value_type>::value,
-      "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the x-vector "
-      "should be same as kernelHandle non-const scalar_t.");
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename y_scalar_view_t::const_value_type>::value,
+      "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of "
+      "the y-vector should be same as kernelHandle scalar_t.");
 
-  static_assert(!std::is_same<typename lno_row_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(std::is_same<typename KernelHandle::nnz_scalar_t, typename x_scalar_view_t::value_type>::value,
+                "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the x-vector "
+                "should be same as kernelHandle non-const scalar_t.");
+
+  static_assert(!std::is_same<typename lno_row_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::symmetric_gauss_seidel_apply: row_map must have "
                 "a contiguous layout (Left or Right, not Stride)");
-  static_assert(!std::is_same<typename lno_nnz_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(!std::is_same<typename lno_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::symmetric_gauss_seidel_apply: entries must have "
                 "a contiguous layout (Left or Right, not Stride)");
-  static_assert(!std::is_same<typename scalar_nnz_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(!std::is_same<typename scalar_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::symmetric_gauss_seidel_apply: values must have "
                 "a contiguous layout (Left or Right, not Stride)");
 
@@ -591,8 +506,7 @@ void symmetric_gauss_seidel_apply(
   if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
     std::ostringstream os;
     os << "KokkosSparse::symmetric_gauss_seidel_apply: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
-       << y_rhs_input_vec.extent(1) << " columns.";
+       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -604,67 +518,52 @@ void symmetric_gauss_seidel_apply(
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t,
+                                                                    c_persist_t>
       const_handle_type;
   const_handle_type tmp_handle(*handle);
 
   typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_row_view_t_>::array_layout,
-                       typename lno_row_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+                       typename lno_row_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_row_view_t_;
 
   typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_nnz_view_t_>::array_layout,
-                       typename lno_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+                       typename lno_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_nnz_view_t_;
 
   typedef Kokkos::View<typename scalar_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           scalar_nnz_view_t_>::array_layout,
-                       typename scalar_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
+                       typename scalar_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_ascalar_nnz_view_t_;
 
   typedef Kokkos::View<typename y_scalar_view_t::const_value_type **,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           y_scalar_view_t>::array_layout,
-                       typename y_scalar_view_t::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<y_scalar_view_t>::array_layout,
+                       typename y_scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_yscalar_nnz_view_t_;
 
   typedef Kokkos::View<typename x_scalar_view_t::non_const_value_type **,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           x_scalar_view_t>::array_layout,
-                       typename x_scalar_view_t::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
+                       typename x_scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_xscalar_nnz_view_t_;
 
   Internal_alno_row_view_t_ const_a_r(row_map.data(), row_map.extent(0));
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(),
-                                            x_lhs_output_vec.extent(0),
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
                                             x_lhs_output_vec.extent(1));
-  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(),
-                                         y_rhs_input_vec.extent(0),
-                                         y_rhs_input_vec.extent(1));
+  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format,
-                     Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
                      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
-                     Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols, const_a_r,
-                         const_a_l, const_a_v, nonconst_x_v, const_y_v,
-                         init_zero_x_vector, update_y_vector, omega, numIter,
-                         true, true);
+                     Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols,
+                                                                       const_a_r, const_a_l, const_a_v, nonconst_x_v,
+                                                                       const_y_v, init_zero_x_vector, update_y_vector,
+                                                                       omega, numIter, true, true);
 }
 
 ///
@@ -697,23 +596,18 @@ void symmetric_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          typename x_scalar_view_t, typename y_scalar_view_t>
-void symmetric_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+void symmetric_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                  typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                  lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                  y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                                  typename KernelHandle::nnz_scalar_t omega, int numIter) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  symmetric_gauss_seidel_apply<decltype(my_exec_space), format>(
-      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
-      x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
-      omega, numIter);
+  symmetric_gauss_seidel_apply<decltype(my_exec_space), format>(my_exec_space, handle, num_rows, num_cols, row_map,
+                                                                entries, values, x_lhs_output_vec, y_rhs_input_vec,
+                                                                init_zero_x_vector, update_y_vector, omega, numIter);
 }
 
 ///
@@ -747,27 +641,23 @@ void symmetric_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::BSR,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          typename x_scalar_view_t, typename y_scalar_view_t>
-void symmetric_block_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    typename KernelHandle::const_nnz_lno_t block_size,
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+void symmetric_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                        typename KernelHandle::const_nnz_lno_t num_cols,
+                                        typename KernelHandle::const_nnz_lno_t block_size,
 
-    lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+                                        lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                        x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                        bool init_zero_x_vector, bool update_y_vector,
+                                        typename KernelHandle::nnz_scalar_t omega, int numIter) {
   // Check compatibility of dimensions at run time.
   if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
     std::ostringstream os;
     os << "KokkosSparse::symmetric_block_gauss_seidel_apply: Dimensions of X "
           "and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
-       << y_rhs_input_vec.extent(1) << " columns.";
+       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   auto gsHandle = handle->get_point_gs_handle();
@@ -778,9 +668,8 @@ void symmetric_block_gauss_seidel_apply(
   }
 
   gsHandle->set_block_size(block_size);
-  symmetric_gauss_seidel_apply<format>(
-      handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
-      y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
+  symmetric_gauss_seidel_apply<format>(handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
+                                       y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
 
 ///
@@ -814,57 +703,45 @@ void symmetric_block_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <class ExecutionSpace,
-          KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          class KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
-void forward_sweep_gauss_seidel_apply(
-    const ExecutionSpace &space, KernelHandle *handle,
-    typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
-  static_assert(std::is_same<typename KernelHandle::const_size_type,
-                             typename lno_row_view_t_::const_value_type>::value,
+void forward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle,
+                                      typename KernelHandle::const_nnz_lno_t num_rows,
+                                      typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                      lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                      x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                      bool init_zero_x_vector, bool update_y_vector,
+                                      typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  static_assert(std::is_same<typename KernelHandle::const_size_type, typename lno_row_view_t_::const_value_type>::value,
                 "KokkosSparse::forward_sweep_gauss_seidel_apply: Size type of "
                 "the matrix should be same as kernelHandle sizetype.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t,
-                             typename lno_nnz_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t, typename lno_nnz_view_t_::const_value_type>::value,
                 "KokkosSparse::forward_sweep_gauss_seidel_apply: lno type of "
                 "the matrix should be same as kernelHandle lno_t.");
 
   static_assert(
-      std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                   typename scalar_nnz_view_t_::const_value_type>::value,
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename scalar_nnz_view_t_::const_value_type>::value,
       "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type of the "
       "matrix should be same as kernelHandle scalar_t.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                             typename y_scalar_view_t::const_value_type>::value,
-                "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type "
-                "of the y-vector should be same as kernelHandle scalar_t.");
-
   static_assert(
-      std::is_same<typename KernelHandle::nnz_scalar_t,
-                   typename x_scalar_view_t::value_type>::value,
-      "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type of the "
-      "x-vector should be same as kernelHandle non-const scalar_t.");
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename y_scalar_view_t::const_value_type>::value,
+      "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type "
+      "of the y-vector should be same as kernelHandle scalar_t.");
 
-  static_assert(!std::is_same<typename lno_row_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(std::is_same<typename KernelHandle::nnz_scalar_t, typename x_scalar_view_t::value_type>::value,
+                "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type of the "
+                "x-vector should be same as kernelHandle non-const scalar_t.");
+
+  static_assert(!std::is_same<typename lno_row_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::forward_sweep_gauss_seidel_apply: row_map must "
                 "have a contiguous layout (Left or Right, not Stride)");
-  static_assert(!std::is_same<typename lno_nnz_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(!std::is_same<typename lno_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::forward_sweep_gauss_seidel_apply: entries must "
                 "have a contiguous layout (Left or Right, not Stride)");
-  static_assert(!std::is_same<typename scalar_nnz_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(!std::is_same<typename scalar_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::forward_sweep_gauss_seidel_apply: values must "
                 "have a contiguous layout (Left or Right, not Stride)");
 
@@ -873,8 +750,7 @@ void forward_sweep_gauss_seidel_apply(
     std::ostringstream os;
     os << "KokkosSparse::forward_sweep_gauss_seidel_apply: Dimensions of X and "
           "Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
-       << y_rhs_input_vec.extent(1) << " columns.";
+       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -886,68 +762,53 @@ void forward_sweep_gauss_seidel_apply(
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t,
+                                                                    c_persist_t>
       const_handle_type;
   // const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle(*handle);
 
   typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_row_view_t_>::array_layout,
-                       typename lno_row_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+                       typename lno_row_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_row_view_t_;
 
   typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_nnz_view_t_>::array_layout,
-                       typename lno_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+                       typename lno_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_nnz_view_t_;
 
   typedef Kokkos::View<typename scalar_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           scalar_nnz_view_t_>::array_layout,
-                       typename scalar_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
+                       typename scalar_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_ascalar_nnz_view_t_;
 
   typedef Kokkos::View<typename y_scalar_view_t::const_value_type **,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           y_scalar_view_t>::array_layout,
-                       typename y_scalar_view_t::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<y_scalar_view_t>::array_layout,
+                       typename y_scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_yscalar_nnz_view_t_;
 
   typedef Kokkos::View<typename x_scalar_view_t::non_const_value_type **,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           x_scalar_view_t>::array_layout,
-                       typename x_scalar_view_t::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
+                       typename x_scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_xscalar_nnz_view_t_;
 
   Internal_alno_row_view_t_ const_a_r(row_map.data(), row_map.extent(0));
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(),
-                                            x_lhs_output_vec.extent(0),
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
                                             x_lhs_output_vec.extent(1));
-  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(),
-                                         y_rhs_input_vec.extent(0),
-                                         y_rhs_input_vec.extent(1));
+  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format,
-                     Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
                      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
-                     Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols, const_a_r,
-                         const_a_l, const_a_v, nonconst_x_v, const_y_v,
-                         init_zero_x_vector, update_y_vector, omega, numIter,
-                         true, false);
+                     Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols,
+                                                                       const_a_r, const_a_l, const_a_v, nonconst_x_v,
+                                                                       const_y_v, init_zero_x_vector, update_y_vector,
+                                                                       omega, numIter, true, false);
 }
 
 ///
@@ -979,23 +840,19 @@ void forward_sweep_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          class KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          typename x_scalar_view_t, typename y_scalar_view_t>
-void forward_sweep_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, class KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+void forward_sweep_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                      typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                      lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                      x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                      bool init_zero_x_vector, bool update_y_vector,
+                                      typename KernelHandle::nnz_scalar_t omega, int numIter) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
   forward_sweep_gauss_seidel_apply<decltype(my_exec_space), format>(
-      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
-      x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
-      omega, numIter);
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec, y_rhs_input_vec,
+      init_zero_x_vector, update_y_vector, omega, numIter);
 }
 
 ///
@@ -1028,27 +885,23 @@ void forward_sweep_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::BSR,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          typename x_scalar_view_t, typename y_scalar_view_t>
-void forward_sweep_block_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    typename KernelHandle::const_nnz_lno_t block_size,
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+void forward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                            typename KernelHandle::const_nnz_lno_t num_cols,
+                                            typename KernelHandle::const_nnz_lno_t block_size,
 
-    lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+                                            lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                            x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                            bool init_zero_x_vector, bool update_y_vector,
+                                            typename KernelHandle::nnz_scalar_t omega, int numIter) {
   // Check compatibility of dimensions at run time.
   if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
     std::ostringstream os;
     os << "KokkosSparse::forward_sweep_block_gauss_seidel_apply: Dimensions of "
           "X and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
-       << y_rhs_input_vec.extent(1) << " columns.";
+       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -1059,9 +912,8 @@ void forward_sweep_block_gauss_seidel_apply(
         "GS_CLUSTER");
   }
   gsHandle->set_block_size(block_size);
-  forward_sweep_gauss_seidel_apply<format>(
-      handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
-      y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
+  forward_sweep_gauss_seidel_apply<format>(handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
+                                           y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
 
 ///
@@ -1096,57 +948,45 @@ void forward_sweep_block_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <class ExecutionSpace,
-          KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          class KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
-void backward_sweep_gauss_seidel_apply(
-    const ExecutionSpace &space, KernelHandle *handle,
-    typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
-  static_assert(std::is_same<typename KernelHandle::const_size_type,
-                             typename lno_row_view_t_::const_value_type>::value,
+void backward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle,
+                                       typename KernelHandle::const_nnz_lno_t num_rows,
+                                       typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                       lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                       x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                       bool init_zero_x_vector, bool update_y_vector,
+                                       typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  static_assert(std::is_same<typename KernelHandle::const_size_type, typename lno_row_view_t_::const_value_type>::value,
                 "KokkosSparse::backward_sweep_gauss_seidel_apply: Size type of "
                 "the matrix should be same as kernelHandle sizetype.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t,
-                             typename lno_nnz_view_t_::const_value_type>::value,
+  static_assert(std::is_same<typename KernelHandle::const_nnz_lno_t, typename lno_nnz_view_t_::const_value_type>::value,
                 "KokkosSparse::backward_sweep_gauss_seidel_apply: lno type of "
                 "the matrix should be same as kernelHandle lno_t.");
 
   static_assert(
-      std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                   typename scalar_nnz_view_t_::const_value_type>::value,
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename scalar_nnz_view_t_::const_value_type>::value,
       "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type of the "
       "matrix should be same as kernelHandle scalar_t.");
 
-  static_assert(std::is_same<typename KernelHandle::const_nnz_scalar_t,
-                             typename y_scalar_view_t::const_value_type>::value,
-                "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type "
-                "of the y-vector should be same as kernelHandle scalar_t.");
-
   static_assert(
-      std::is_same<typename KernelHandle::nnz_scalar_t,
-                   typename x_scalar_view_t::value_type>::value,
-      "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type of the "
-      "x-vector should be same as kernelHandle non-const scalar_t.");
+      std::is_same<typename KernelHandle::const_nnz_scalar_t, typename y_scalar_view_t::const_value_type>::value,
+      "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type "
+      "of the y-vector should be same as kernelHandle scalar_t.");
 
-  static_assert(!std::is_same<typename lno_row_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(std::is_same<typename KernelHandle::nnz_scalar_t, typename x_scalar_view_t::value_type>::value,
+                "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type of the "
+                "x-vector should be same as kernelHandle non-const scalar_t.");
+
+  static_assert(!std::is_same<typename lno_row_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::backward_sweep_gauss_seidel_apply: row_map must "
                 "have a contiguous layout (Left or Right, not Stride)");
-  static_assert(!std::is_same<typename lno_nnz_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(!std::is_same<typename lno_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::backward_sweep_gauss_seidel_apply: entries must "
                 "have a contiguous layout (Left or Right, not Stride)");
-  static_assert(!std::is_same<typename scalar_nnz_view_t_::array_layout,
-                              Kokkos::LayoutStride>::value,
+  static_assert(!std::is_same<typename scalar_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
                 "KokkosSparse::backward_sweep_gauss_seidel_apply: values must "
                 "have a contiguous layout (Left or Right, not Stride)");
 
@@ -1155,8 +995,7 @@ void backward_sweep_gauss_seidel_apply(
     std::ostringstream os;
     os << "KokkosSparse::backward_sweep_gauss_seidel_apply: Dimensions of X "
           "and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
-       << y_rhs_input_vec.extent(1) << " columns.";
+       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -1168,68 +1007,53 @@ void backward_sweep_gauss_seidel_apply(
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t,
+                                                                    c_persist_t>
       const_handle_type;
   // const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle(*handle);
 
   typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_row_view_t_>::array_layout,
-                       typename lno_row_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+                       typename lno_row_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_row_view_t_;
 
   typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           lno_nnz_view_t_>::array_layout,
-                       typename lno_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+                       typename lno_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_alno_nnz_view_t_;
 
   typedef Kokkos::View<typename scalar_nnz_view_t_::const_value_type *,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           scalar_nnz_view_t_>::array_layout,
-                       typename scalar_nnz_view_t_::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
+                       typename scalar_nnz_view_t_::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_ascalar_nnz_view_t_;
 
   typedef Kokkos::View<typename y_scalar_view_t::const_value_type **,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           y_scalar_view_t>::array_layout,
-                       typename y_scalar_view_t::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<y_scalar_view_t>::array_layout,
+                       typename y_scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_yscalar_nnz_view_t_;
 
   typedef Kokkos::View<typename x_scalar_view_t::non_const_value_type **,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<
-                           x_scalar_view_t>::array_layout,
-                       typename x_scalar_view_t::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
+                       typename x_scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_xscalar_nnz_view_t_;
 
   Internal_alno_row_view_t_ const_a_r(row_map.data(), row_map.extent(0));
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(),
-                                            x_lhs_output_vec.extent(0),
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
                                             x_lhs_output_vec.extent(1));
-  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(),
-                                         y_rhs_input_vec.extent(0),
-                                         y_rhs_input_vec.extent(1));
+  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format,
-                     Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
                      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
-                     Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols, const_a_r,
-                         const_a_l, const_a_v, nonconst_x_v, const_y_v,
-                         init_zero_x_vector, update_y_vector, omega, numIter,
-                         false, true);
+                     Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols,
+                                                                       const_a_r, const_a_l, const_a_v, nonconst_x_v,
+                                                                       const_y_v, init_zero_x_vector, update_y_vector,
+                                                                       omega, numIter, false, true);
 }
 
 ///
@@ -1261,23 +1085,19 @@ void backward_sweep_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::CRS,
-          class KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          typename x_scalar_view_t, typename y_scalar_view_t>
-void backward_sweep_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, class KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+void backward_sweep_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                       typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                       lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                       x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                       bool init_zero_x_vector, bool update_y_vector,
+                                       typename KernelHandle::nnz_scalar_t omega, int numIter) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
   backward_sweep_gauss_seidel_apply<decltype(my_exec_space), format>(
-      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
-      x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
-      omega, numIter);
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec, y_rhs_input_vec,
+      init_zero_x_vector, update_y_vector, omega, numIter);
 }
 
 ///
@@ -1310,27 +1130,24 @@ void backward_sweep_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
-              KokkosSparse::SparseMatrixFormat::BSR,
-          typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          typename x_scalar_view_t, typename y_scalar_view_t>
-void backward_sweep_block_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    typename KernelHandle::const_nnz_lno_t block_size,
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+void backward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                             typename KernelHandle::const_nnz_lno_t num_cols,
+                                             typename KernelHandle::const_nnz_lno_t block_size,
 
-    lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector, bool update_y_vector,
-    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+                                             lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                                             scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                             y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector,
+                                             bool update_y_vector, typename KernelHandle::nnz_scalar_t omega,
+                                             int numIter) {
   // Check compatibility of dimensions at run time.
   if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
     std::ostringstream os;
     os << "KokkosSparse::backward_sweep_block_gauss_seidel_apply: Dimensions "
           "of X and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
-       << y_rhs_input_vec.extent(1) << " columns.";
+       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   auto gsHandle = handle->get_point_gs_handle();
@@ -1340,9 +1157,8 @@ void backward_sweep_block_gauss_seidel_apply(
         "GS_CLUSTER");
   }
   gsHandle->set_block_size(block_size);
-  backward_sweep_gauss_seidel_apply<format>(
-      handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
-      y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
+  backward_sweep_gauss_seidel_apply<format>(handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
+                                            y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
 }  // namespace Experimental
 }  // namespace KokkosSparse

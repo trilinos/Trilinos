@@ -67,9 +67,8 @@ namespace Impl {
 ///                     ScalarType, AViewType, BViewType, CViewType>
 ///                     (handle, alpha, A, B, beta, C).invoke();
 // clang-format on
-template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
-          class HandleType, class ScalarType, class AViewType, class BViewType,
-          class CViewType>
+template <class ArgTransA, class ArgTransB, class ArgBatchSzDim, class HandleType, class ScalarType, class AViewType,
+          class BViewType, class CViewType>
 class BatchedArmplGemm {
  private:
   HandleType *const __handle;
@@ -107,26 +106,21 @@ class BatchedArmplGemm {
     for (int ib = 0; ib < __nbatch; ++ib) {
       for (int i = 0; i < __ninter; ++i) {
         auto svA =
-            subview_wrapper(__A, ib * __ninter + i, Kokkos::ALL(),
-                            Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
+            subview_wrapper(__A, ib * __ninter + i, Kokkos::ALL(), Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
         auto svB =
-            subview_wrapper(__B, ib * __ninter + i, Kokkos::ALL(),
-                            Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
+            subview_wrapper(__B, ib * __ninter + i, Kokkos::ALL(), Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
         auto svC =
-            subview_wrapper(__C, ib * __ninter + i, Kokkos::ALL(),
-                            Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
+            subview_wrapper(__C, ib * __ninter + i, Kokkos::ALL(), Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
 
-        auto info = armpl_dge_interleave(
-            __ninter, i, __Am, __An, svA.data(), svA.stride(0), svA.stride(1),
-            &__Adp[__Abstrd * ib], __Aistrd, __Ajstrd);
+        auto info = armpl_dge_interleave(__ninter, i, __Am, __An, svA.data(), svA.stride(0), svA.stride(1),
+                                         &__Adp[__Abstrd * ib], __Aistrd, __Ajstrd);
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
           os << "armpl_dge_interleave(A) returned:" << info << std::endl;
           KokkosKernels::Impl::throw_runtime_exception(os.str());
         }
 
-        info = armpl_dge_interleave(__ninter, i, __Bm, __Bn, svB.data(),
-                                    svB.stride(0), svB.stride(1),
+        info = armpl_dge_interleave(__ninter, i, __Bm, __Bn, svB.data(), svB.stride(0), svB.stride(1),
                                     &__Bdp[__Bbstrd * ib], __Bistrd, __Bjstrd);
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
@@ -134,8 +128,7 @@ class BatchedArmplGemm {
           KokkosKernels::Impl::throw_runtime_exception(os.str());
         }
 
-        info = armpl_dge_interleave(__ninter, i, __Cm, __Cn, svC.data(),
-                                    svC.stride(0), svC.stride(1),
+        info = armpl_dge_interleave(__ninter, i, __Cm, __Cn, svC.data(), svC.stride(0), svC.stride(1),
                                     &__Cdp[__Cbstrd * ib], __Cistrd, __Cjstrd);
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
@@ -152,12 +145,10 @@ class BatchedArmplGemm {
     for (int ib = 0; ib < __nbatch; ++ib) {
       for (int i = 0; i < __ninter; ++i) {
         auto svC =
-            subview_wrapper(__C, ib * __ninter + i, Kokkos::ALL(),
-                            Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
+            subview_wrapper(__C, ib * __ninter + i, Kokkos::ALL(), Kokkos::ALL(), __batch_layout_tag, __no_trans_tag);
 
-        auto info = armpl_dge_deinterleave(
-            __ninter, i, __Cm, __Cn, svC.data(), svC.stride(0), svC.stride(1),
-            &__Cdp[__Cbstrd * ib], __Cistrd, __Cjstrd);
+        auto info = armpl_dge_deinterleave(__ninter, i, __Cm, __Cn, svC.data(), svC.stride(0), svC.stride(1),
+                                           &__Cdp[__Cbstrd * ib], __Cistrd, __Cjstrd);
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
           os << "armpl_dge_deinterleave returned:" << info << std::endl;
@@ -170,11 +161,10 @@ class BatchedArmplGemm {
 
   template <class T>
   std::enable_if_t<std::is_same<T, double>::value, void> __run(T &) {
-    auto info = armpl_dgemm_interleave_batch(
-        __ninter, __nbatch, __transa, __transb, __Cm, __Cn,
-        std::is_same<ArgTransA, Trans::NoTranspose>::value ? __An : __Am,
-        __alpha, __Adp, __Abstrd, __Aistrd, __Ajstrd, __Bdp, __Bbstrd, __Bistrd,
-        __Bjstrd, __beta, __Cdp, __Cbstrd, __Cistrd, __Cjstrd);
+    auto info = armpl_dgemm_interleave_batch(__ninter, __nbatch, __transa, __transb, __Cm, __Cn,
+                                             std::is_same<ArgTransA, Trans::NoTranspose>::value ? __An : __Am, __alpha,
+                                             __Adp, __Abstrd, __Aistrd, __Ajstrd, __Bdp, __Bbstrd, __Bistrd, __Bjstrd,
+                                             __beta, __Cdp, __Cbstrd, __Cistrd, __Cjstrd);
     if (info != ARMPL_STATUS_SUCCESS) {
       std::ostringstream os;
       os << "armpl_dgemm_interleave_batch returned :" << info << std::endl;
@@ -193,8 +183,7 @@ class BatchedArmplGemm {
   std::enable_if_t<!std::is_same<T, double>::value, void> __run(T &) {}
 
  public:
-  BatchedArmplGemm(HandleType *const handle, ScalarType alpha, AViewType A,
-                   BViewType B, ScalarType beta, CViewType C)
+  BatchedArmplGemm(HandleType *const handle, ScalarType alpha, AViewType A, BViewType B, ScalarType beta, CViewType C)
       : __handle(handle), __A(A), __B(B), __C(C), __alpha(alpha), __beta(beta) {
     __ninter = __handle->get_tpl_params()[0];
 
@@ -234,15 +223,11 @@ class BatchedArmplGemm {
 
   int invoke() {
     if (__handle->enableDebug) {
-      std::cerr << "__nbatch:" << std::to_string(__nbatch)
-                << ", __ninter:" << std::to_string(__ninter)
-                << ", __Am:" << std::to_string(__Am)
-                << ", __An:" << std::to_string(__An) << std::endl;
+      std::cerr << "__nbatch:" << std::to_string(__nbatch) << ", __ninter:" << std::to_string(__ninter)
+                << ", __Am:" << std::to_string(__Am) << ", __An:" << std::to_string(__An) << std::endl;
     }
 
-    if (!std::is_same<avt, double>::value ||
-        !std::is_same<bvt, double>::value ||
-        !std::is_same<cvt, double>::value ||
+    if (!std::is_same<avt, double>::value || !std::is_same<bvt, double>::value || !std::is_same<cvt, double>::value ||
         !std::is_same<ScalarType, double>::value) {
       std::ostringstream os;
       os << "KokkosBatched::Impl::BatchedArmplGemm only supports 'double' "
@@ -254,8 +239,7 @@ class BatchedArmplGemm {
     if (__nbatch != 0) {
       if (__ninter == 0 || __nbatch % __ninter) {
         std::ostringstream os;
-        os << "batch size must be evenly divisible by ninter. __nbatch: "
-           << std::to_string(__nbatch)
+        os << "batch size must be evenly divisible by ninter. __nbatch: " << std::to_string(__nbatch)
            << ", __ninter: " << std::to_string(__ninter) << std::endl;
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }

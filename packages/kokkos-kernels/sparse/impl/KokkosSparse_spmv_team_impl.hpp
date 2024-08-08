@@ -26,105 +26,83 @@ namespace KokkosSparse {
 namespace Impl {
 
 struct TeamSpmvInternal {
-  template <typename MemberType, typename ScalarType, typename ValueType,
-            typename OrdinalType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OrdinalType numRows,
-      const ScalarType alpha, const ValueType* KOKKOS_RESTRICT values,
-      const OrdinalType valuess0, const OrdinalType* KOKKOS_RESTRICT row_ptr,
-      const OrdinalType row_ptrs0,
-      const OrdinalType* KOKKOS_RESTRICT colIndices,
-      const OrdinalType colIndicess0, const ValueType* KOKKOS_RESTRICT x,
-      const OrdinalType xs0, const ScalarType beta,
-      /**/ ValueType* KOKKOS_RESTRICT y, const OrdinalType ys0);
+  template <typename MemberType, typename ScalarType, typename ValueType, typename OrdinalType, int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OrdinalType numRows, const ScalarType alpha,
+                                           const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0,
+                                           const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
+                                           const OrdinalType* KOKKOS_RESTRICT colIndices,
+                                           const OrdinalType colIndicess0, const ValueType* KOKKOS_RESTRICT x,
+                                           const OrdinalType xs0, const ScalarType beta,
+                                           /**/ ValueType* KOKKOS_RESTRICT y, const OrdinalType ys0);
 };
 
 struct TeamVectorSpmvInternal {
-  template <typename MemberType, typename ScalarType, typename ValueType,
-            typename OrdinalType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OrdinalType numRows,
-      const ScalarType alpha, const ValueType* KOKKOS_RESTRICT values,
-      const OrdinalType valuess0, const OrdinalType* KOKKOS_RESTRICT row_ptr,
-      const OrdinalType row_ptrs0,
-      const OrdinalType* KOKKOS_RESTRICT colIndices,
-      const OrdinalType colIndicess0, const ValueType* KOKKOS_RESTRICT x,
-      const OrdinalType xs0, const ScalarType beta,
-      /**/ ValueType* KOKKOS_RESTRICT y, const OrdinalType ys0);
+  template <typename MemberType, typename ScalarType, typename ValueType, typename OrdinalType, int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OrdinalType numRows, const ScalarType alpha,
+                                           const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0,
+                                           const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
+                                           const OrdinalType* KOKKOS_RESTRICT colIndices,
+                                           const OrdinalType colIndicess0, const ValueType* KOKKOS_RESTRICT x,
+                                           const OrdinalType xs0, const ScalarType beta,
+                                           /**/ ValueType* KOKKOS_RESTRICT y, const OrdinalType ys0);
 };
 
-template <typename MemberType, typename ScalarType, typename ValueType,
-          typename OrdinalType, int dobeta>
+template <typename MemberType, typename ScalarType, typename ValueType, typename OrdinalType, int dobeta>
 KOKKOS_INLINE_FUNCTION int TeamSpmvInternal::invoke(
     const MemberType& member, const OrdinalType numRows, const ScalarType alpha,
-    const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0,
-    const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
-    const OrdinalType* KOKKOS_RESTRICT colIndices,
-    const OrdinalType colIndicess0, const ValueType* KOKKOS_RESTRICT x,
-    const OrdinalType xs0, const ScalarType beta,
+    const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0, const OrdinalType* KOKKOS_RESTRICT row_ptr,
+    const OrdinalType row_ptrs0, const OrdinalType* KOKKOS_RESTRICT colIndices, const OrdinalType colIndicess0,
+    const ValueType* KOKKOS_RESTRICT x, const OrdinalType xs0, const ScalarType beta,
     /**/ ValueType* KOKKOS_RESTRICT y, const OrdinalType ys0) {
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(member, 0, numRows),
-      [&](const OrdinalType& iRow) {
-        const OrdinalType rowLength =
-            row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
-        ValueType sum = 0;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, numRows), [&](const OrdinalType& iRow) {
+    const OrdinalType rowLength = row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
+    ValueType sum               = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
-          sum += values[(row_ptr[iRow * row_ptrs0] + iEntry) * valuess0] *
-                 x[colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
-                              colIndicess0] *
-                   xs0];
-        }
+    for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
+      sum += values[(row_ptr[iRow * row_ptrs0] + iEntry) * valuess0] *
+             x[colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) * colIndicess0] * xs0];
+    }
 
-        sum *= alpha;
+    sum *= alpha;
 
-        if (dobeta == 0) {
-          y[iRow * ys0] = sum;
-        } else {
-          y[iRow * ys0] = beta * y[iRow * ys0] + sum;
-        }
-      });
+    if (dobeta == 0) {
+      y[iRow * ys0] = sum;
+    } else {
+      y[iRow * ys0] = beta * y[iRow * ys0] + sum;
+    }
+  });
   return 0;
 }
 
-template <typename MemberType, typename ScalarType, typename ValueType,
-          typename OrdinalType, int dobeta>
+template <typename MemberType, typename ScalarType, typename ValueType, typename OrdinalType, int dobeta>
 KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const MemberType& member, const OrdinalType numRows, const ScalarType alpha,
-    const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0,
-    const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
-    const OrdinalType* KOKKOS_RESTRICT colIndices,
-    const OrdinalType colIndicess0, const ValueType* KOKKOS_RESTRICT x,
-    const OrdinalType xs0, const ScalarType beta,
+    const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0, const OrdinalType* KOKKOS_RESTRICT row_ptr,
+    const OrdinalType row_ptrs0, const OrdinalType* KOKKOS_RESTRICT colIndices, const OrdinalType colIndicess0,
+    const ValueType* KOKKOS_RESTRICT x, const OrdinalType xs0, const ScalarType beta,
     /**/ ValueType* KOKKOS_RESTRICT y, const OrdinalType ys0) {
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(member, 0, numRows),
-      [&](const OrdinalType& iRow) {
-        const OrdinalType rowLength =
-            row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, numRows), [&](const OrdinalType& iRow) {
+    const OrdinalType rowLength = row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
 
-        ValueType sum = 0;
-        Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(member, rowLength),
-            [&](const OrdinalType& iEntry, ValueType& val) {
-              val += values[(row_ptr[iRow * row_ptrs0] + iEntry) * valuess0] *
-                     x[colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
-                                  colIndicess0] *
-                       xs0];
-            },
-            sum);
+    ValueType sum = 0;
+    Kokkos::parallel_reduce(
+        Kokkos::ThreadVectorRange(member, rowLength),
+        [&](const OrdinalType& iEntry, ValueType& val) {
+          val += values[(row_ptr[iRow * row_ptrs0] + iEntry) * valuess0] *
+                 x[colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) * colIndicess0] * xs0];
+        },
+        sum);
 
-        sum *= alpha;
+    sum *= alpha;
 
-        if (dobeta == 0) {
-          y[iRow * ys0] = sum;
-        } else {
-          y[iRow * ys0] = beta * y[iRow * ys0] + sum;
-        }
-      });
+    if (dobeta == 0) {
+      y[iRow * ys0] = sum;
+    } else {
+      y[iRow * ys0] = beta * y[iRow * ys0] + sum;
+    }
+  });
   return 0;
 }
 

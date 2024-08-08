@@ -80,11 +80,9 @@ class Performance {
    * \param tolerance_low [in] Lower bound of tolerance.
    * \param tolerance_high [in] Upper bound of tolerance.
    */
-  void set_result(const std::string& name, double val, double tolerance_low,
-                  double tolerance_high) {
+  void set_result(const std::string& name, double val, double tolerance_low, double tolerance_high) {
     validate_input_result_name(name);
-    results_node[name] =
-        Performance::Tolerance(val, tolerance_low, tolerance_high).as_string();
+    results_node[name] = Performance::Tolerance(val, tolerance_low, tolerance_high).as_string();
   }
 
   /**
@@ -113,16 +111,7 @@ class Performance {
   /**
    * \brief Result codes after creating/comparing a test entry
    */
-  enum Result {
-    Failed,
-    Passed,
-    NewMachine,
-    NewConfiguration,
-    NewTest,
-    NewTestConfiguration,
-    UpdatedTest,
-    Unknown
-  };
+  enum Result { Failed, Passed, NewMachine, NewConfiguration, NewTest, NewTestConfiguration, UpdatedTest, Unknown };
 
   /**
    * \brief Processes the test and update the yaml archive
@@ -162,8 +151,7 @@ class Performance {
    *     This will only happen if all the old result values are present in
    *     the new ones, and are within their respective tolerances.
    */
-  Result run(const std::string& archive_name, const std::string& test_name,
-             const std::string& host_name = "") const;
+  Result run(const std::string& archive_name, const std::string& test_name, const std::string& host_name = "") const;
 
   /**
    * \brief print_archive will std::cout the yaml archive for inspection.
@@ -246,8 +234,7 @@ Performance::node_t Performance::get_machine_configuration() const {
     }
     if (line.find("physical id") < line.size()) {
       unsigned int socketid = atoi(line.substr(line.find(":") + 2).c_str());
-      highest_socketid =
-          highest_socketid > socketid ? highest_socketid : socketid;
+      highest_socketid      = highest_socketid > socketid ? highest_socketid : socketid;
     }
     if (line.find("cpu cores") < line.size()) {
       cores_per_socket = atoi(line.substr(line.find(":") + 2).c_str());
@@ -258,9 +245,8 @@ Performance::node_t Performance::get_machine_configuration() const {
   int compiler_version      = 0;
 
 #if defined __clang__
-  compiler_name = "Clang";
-  compiler_version =
-      __clang_major__ * 100 + __clang_minor__ * 10 + __clang_patchlevel__;
+  compiler_name    = "Clang";
+  compiler_version = __clang_major__ * 100 + __clang_minor__ * 10 + __clang_patchlevel__;
 #endif
 
 #if defined __GNUC__ && !defined KOKKOS_COMPILER_NAME && !defined __clang__
@@ -283,8 +269,7 @@ Performance::node_t Performance::get_machine_configuration() const {
   return machine_config;
 }
 
-Performance::Result Performance::run(const std::string& archive_name,
-                                     const std::string& test_name,
+Performance::Result Performance::run(const std::string& archive_name, const std::string& test_name,
                                      const std::string& host_name) const {
   // These are abitrary category names used in the yaml
   const std::string test_configuration_string    = "TestConfiguration";
@@ -293,8 +278,7 @@ Performance::Result Performance::run(const std::string& archive_name,
   const std::string tests_string                 = "Tests";
 
   // Now create the test entry - combincation of configuration and times/results
-  Performance::node_t
-      new_test_entry;  // the entry will have two bits added below
+  Performance::node_t new_test_entry;  // the entry will have two bits added below
   new_test_entry[test_configuration_string] = test_configuration_node;
   new_test_entry[test_results_string]       = results_node;
 
@@ -325,19 +309,16 @@ Performance::Result Performance::run(const std::string& archive_name,
     Performance::node_t machine = database[host_setting];
 
     // Find matching machine configuration
-    for (size_t machine_index = 0; machine_index < machine.size();
-         ++machine_index) {
+    for (size_t machine_index = 0; machine_index < machine.size(); ++machine_index) {
       Performance::node_t configuration = machine[machine_index];
-      if (!configuration[machine_configuration_string] ||
-          !configuration[tests_string]) {
+      if (!configuration[machine_configuration_string] || !configuration[tests_string]) {
         throw std::logic_error(
             "Configuration must has child MachineConfiguration and a child "
             "\"Tests\".");
       }
 
-      Performance::node_t machine_configuration =
-          configuration[machine_configuration_string];
-      Performance::node_t old_tests = configuration[tests_string];
+      Performance::node_t machine_configuration = configuration[machine_configuration_string];
+      Performance::node_t old_tests             = configuration[tests_string];
       if (hasSameElements(machine_configuration, machine_configuration_node)) {
         is_new_config = false;
 
@@ -345,29 +326,22 @@ Performance::Result Performance::run(const std::string& archive_name,
         if (old_tests[test_name]) {
           Performance::node_t old_test_array = old_tests[test_name];
           int match_test_index               = -1;
-          for (size_t entry_index = 0; entry_index < old_test_array.size();
-               ++entry_index) {
+          for (size_t entry_index = 0; entry_index < old_test_array.size(); ++entry_index) {
             Performance::node_t old_test_entry = old_test_array[entry_index];
-            if (hasSameElements(old_test_entry[test_configuration_string],
-                                new_test_entry[test_configuration_string])) {
+            if (hasSameElements(old_test_entry[test_configuration_string], new_test_entry[test_configuration_string])) {
               match_test_index = static_cast<int>(entry_index);
             }
           }
           if (match_test_index == -1) {
-            database[host_setting][machine_index][tests_string][test_name]
-                .push_back(new_test_entry);
+            database[host_setting][machine_index][tests_string][test_name].push_back(new_test_entry);
             return_value = Performance::NewTestConfiguration;
           } else {
-            bool deviation = false;
-            Performance::node_t old_test_entry =
-                old_test_array[match_test_index];
-            Performance::node_t old_results =
-                old_test_entry[test_results_string];
-            Performance::node_t new_results =
-                new_test_entry[test_results_string];
+            bool deviation                     = false;
+            Performance::node_t old_test_entry = old_test_array[match_test_index];
+            Performance::node_t old_results    = old_test_entry[test_results_string];
+            Performance::node_t new_results    = new_test_entry[test_results_string];
             // Compare all entries
-            for (YAML::const_iterator old_r = old_results.begin();
-                 old_r != old_results.end(); ++old_r) {
+            for (YAML::const_iterator old_r = old_results.begin(); old_r != old_results.end(); ++old_r) {
               Performance::node_t result_entry = old_r->second;
               // Finding entry with same name
               std::string result_name = old_r->first.Scalar();
@@ -377,50 +351,37 @@ Performance::Result Performance::run(const std::string& archive_name,
                 std::string old_test_name = test_name;
                 std::ostringstream new_result_entry_name_stream;
                 new_result_entry_name_stream << new_results[result_name];
-                std::string new_result_data =
-                    new_result_entry_name_stream.str();
+                std::string new_result_data = new_result_entry_name_stream.str();
 
                 // based on name does result use tolerance?
                 // if it has the '*' key character appended it means it's an
                 // exact
                 if (!string_includes_exact_code(result_name)) {
                   Performance::Tolerance old_valtol(oldv_str);
-                  Performance::Tolerance new_valtol(
-                      new_results[result_name].Scalar());
+                  Performance::Tolerance new_valtol(new_results[result_name].Scalar());
                   if (old_valtol.use_tolerance) {
                     double diff = old_valtol.value - new_valtol.value;
                     diff *= diff;
 
                     double normalization = old_valtol.value;
                     normalization *= normalization;
-                    if (normalization == 0
-                            ? diff > 0
-                            : diff / normalization >
-                                  old_valtol.tolerance * old_valtol.tolerance) {
+                    if (normalization == 0 ? diff > 0
+                                           : diff / normalization > old_valtol.tolerance * old_valtol.tolerance) {
                       deviation = true;
                       std::cout << std::endl
-                                << "  DeviationA in Test: \"" << old_test_name
-                                << "\" for entry \"" << result_name << "\""
-                                << std::endl;
-                      std::cout << "    Existing Value: \"" << oldv_str << "\""
-                                << std::endl;
-                      std::cout << "    New Value:      \"" << new_result_data
-                                << "\"" << std::endl
-                                << std::endl;
+                                << "  DeviationA in Test: \"" << old_test_name << "\" for entry \"" << result_name
+                                << "\"" << std::endl;
+                      std::cout << "    Existing Value: \"" << oldv_str << "\"" << std::endl;
+                      std::cout << "    New Value:      \"" << new_result_data << "\"" << std::endl << std::endl;
                     }
                   } else {
-                    if ((old_valtol.lower > new_valtol.value) ||
-                        (old_valtol.upper < new_valtol.value)) {
+                    if ((old_valtol.lower > new_valtol.value) || (old_valtol.upper < new_valtol.value)) {
                       deviation = true;
                       std::cout << std::endl
-                                << "  DeviationB in Test: \"" << old_test_name
-                                << "\" for entry \"" << result_name << "\""
-                                << std::endl;
-                      std::cout << "    Existing Value: \"" << oldv_str << "\""
-                                << std::endl;
-                      std::cout << "    New Value:      \"" << new_result_data
-                                << "\"" << std::endl
-                                << std::endl;
+                                << "  DeviationB in Test: \"" << old_test_name << "\" for entry \"" << result_name
+                                << "\"" << std::endl;
+                      std::cout << "    Existing Value: \"" << oldv_str << "\"" << std::endl;
+                      std::cout << "    New Value:      \"" << new_result_data << "\"" << std::endl << std::endl;
                     }
                   }
                 } else {
@@ -428,14 +389,10 @@ Performance::Result Performance::run(const std::string& archive_name,
                   if (oldv_str.compare(new_result_data) != 0) {
                     deviation = true;
                     std::cout << std::endl
-                              << "  DeviationC in Test: \"" << old_test_name
-                              << "\" for entry \"" << result_name << "\""
+                              << "  DeviationC in Test: \"" << old_test_name << "\" for entry \"" << result_name << "\""
                               << std::endl;
-                    std::cout << "    Existing Value: \"" << oldv_str << "\""
-                              << std::endl;
-                    std::cout << "    New Value:      \"" << new_result_data
-                              << "\"" << std::endl
-                              << std::endl;
+                    std::cout << "    Existing Value: \"" << oldv_str << "\"" << std::endl;
+                    std::cout << "    New Value:      \"" << new_result_data << "\"" << std::endl << std::endl;
                   }
                 }
               }
@@ -452,8 +409,7 @@ Performance::Result Performance::run(const std::string& archive_name,
             } else {
               // Did someone add new values to the test?
               if (new_results.size() != old_results.size()) {
-                for (YAML::const_iterator new_r = new_results.begin();
-                     new_r != new_results.end(); ++new_r) {
+                for (YAML::const_iterator new_r = new_results.begin(); new_r != new_results.end(); ++new_r) {
                   if (!old_results[new_r->first.Scalar()]) {
                     old_results[new_r->first.Scalar()] = (new_r->second);
                   }
@@ -464,8 +420,7 @@ Performance::Result Performance::run(const std::string& archive_name,
           }
         } else {  // End Test Exists
           // Add new test if no match was found
-          database[host_setting][machine_index][tests_string][test_name]
-              .push_back(new_test_entry);
+          database[host_setting][machine_index][tests_string][test_name].push_back(new_test_entry);
           return_value = Performance::NewTest;
         }
       }  // End MachineConfiguration Exists
@@ -495,8 +450,7 @@ Performance::Result Performance::run(const std::string& archive_name,
   return return_value;
 }
 
-bool Performance::hasSameElements(const Performance::node_t& a,
-                                  const Performance::node_t& b) const {
+bool Performance::hasSameElements(const Performance::node_t& a, const Performance::node_t& b) const {
   if (a.size() != b.size()) {
     return false;
   }
@@ -525,10 +479,7 @@ bool Performance::string_includes_exact_code(const std::string& name) const {
   return (name.length() != 0 && name[name.length() - 1] == '*');
 }
 
-std::string Performance::mark_name_with_exact_code(
-    const std::string& name) const {
-  return name + "*";
-}
+std::string Performance::mark_name_with_exact_code(const std::string& name) const { return name + "*"; }
 
 void Performance::validate_input_result_name(const std::string& name) const {
   if (string_includes_exact_code(name)) {
@@ -544,9 +495,7 @@ void Performance::print_archive(const std::string& archiveName) {
   std::cout << YAML::LoadFile(archiveName) << std::endl;
 }
 
-void Performance::erase_archive(const std::string& yamlArchive) {
-  std::ofstream(yamlArchive) << std::endl;
-}
+void Performance::erase_archive(const std::string& yamlArchive) { std::ofstream(yamlArchive) << std::endl; }
 
 Performance::Tolerance::Tolerance() {
   value         = 0;
@@ -575,8 +524,7 @@ Performance::Tolerance::Tolerance(double val, double low, double up) {
 Performance::Tolerance::Tolerance(std::string str) { from_string(str); }
 
 bool Performance::Tolerance::operator==(const Tolerance& rhs) {
-  return (value == rhs.value) && (tolerance == rhs.tolerance) &&
-         (lower == rhs.lower) && (upper == rhs.upper) &&
+  return (value == rhs.value) && (tolerance == rhs.tolerance) && (lower == rhs.lower) && (upper == rhs.upper) &&
          (use_tolerance == rhs.use_tolerance);
 }
 

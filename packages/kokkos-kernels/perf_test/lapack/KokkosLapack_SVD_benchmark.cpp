@@ -35,11 +35,9 @@ void print_options() {
 
   std::cerr << perf_test::list_common_options();
 
-  std::cerr << "\t[Optional] --verbose     :: enable verbose output"
-            << std::endl;
+  std::cerr << "\t[Optional] --verbose     :: enable verbose output" << std::endl;
   std::cerr << "\t[Optional] --m           :: number of rows of A" << std::endl;
-  std::cerr << "\t[Optional] --n           :: number of columns of A"
-            << std::endl;
+  std::cerr << "\t[Optional] --n           :: number of columns of A" << std::endl;
 }  // print_options
 
 int parse_inputs(svd_parameters& params, int argc, char** argv) {
@@ -48,11 +46,9 @@ int parse_inputs(svd_parameters& params, int argc, char** argv) {
       ++i;
     } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.numCols)) {
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
-                                         params.verbose)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose", params.verbose)) {
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -61,8 +57,7 @@ int parse_inputs(svd_parameters& params, int argc, char** argv) {
 }  // parse_inputs
 
 template <class ExecutionSpace>
-void run_svd_benchmark(benchmark::State& state,
-                       const svd_parameters& svd_params) {
+void run_svd_benchmark(benchmark::State& state, const svd_parameters& svd_params) {
   using mat_type = Kokkos::View<double**, Kokkos::LayoutLeft, ExecutionSpace>;
   using vec_type = Kokkos::View<double*, Kokkos::LayoutLeft, ExecutionSpace>;
 
@@ -72,8 +67,7 @@ void run_svd_benchmark(benchmark::State& state,
   mat_type A("A", m, n), U("U", m, m), Vt("Vt", n, n);
   vec_type S("S", Kokkos::min(m, n));
 
-  const uint64_t seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  const uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<ExecutionSpace> rand_pool(seed);
 
   // Initialize A with random numbers
@@ -103,15 +97,11 @@ int main(int argc, char** argv) {
   std::string bench_name = "KokkosLapack_SVD";
 
   if (0 < common_params.repeat) {
-    benchmark::RegisterBenchmark(
-        bench_name.c_str(), run_svd_benchmark<Kokkos::DefaultExecutionSpace>,
-        svd_params)
+    benchmark::RegisterBenchmark(bench_name.c_str(), run_svd_benchmark<Kokkos::DefaultExecutionSpace>, svd_params)
         ->UseRealTime()
         ->Iterations(common_params.repeat);
   } else {
-    benchmark::RegisterBenchmark(
-        bench_name.c_str(), run_svd_benchmark<Kokkos::DefaultExecutionSpace>,
-        svd_params)
+    benchmark::RegisterBenchmark(bench_name.c_str(), run_svd_benchmark<Kokkos::DefaultExecutionSpace>, svd_params)
         ->UseRealTime();
   }
 

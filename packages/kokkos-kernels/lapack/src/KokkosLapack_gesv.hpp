@@ -53,44 +53,29 @@ namespace KokkosLapack {
 /// used.
 ///
 template <class ExecutionSpace, class AMatrix, class BXMV, class IPIVV>
-void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
-          const IPIVV& IPIV) {
+void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
   // NOTE: Currently, KokkosLapack::gesv only supports LAPACK, MAGMA and
   // rocSOLVER TPLs.
   //       MAGMA/rocSOLVER TPL should be enabled to call the MAGMA/rocSOLVER GPU
   //       interface for device views LAPACK TPL should be enabled to call the
   //       LAPACK interface for host views
 
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename AMatrix::memory_space>::accessible);
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename BXMV::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename BXMV::memory_space>::accessible);
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
   if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
-    static_assert(
-        Kokkos::SpaceAccessibility<ExecutionSpace,
-                                   typename IPIVV::memory_space>::accessible);
+    static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename IPIVV::memory_space>::accessible);
   }
 #else
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename IPIVV::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename IPIVV::memory_space>::accessible);
 #endif
-  static_assert(Kokkos::is_view<AMatrix>::value,
-                "KokkosLapack::gesv: A must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<BXMV>::value,
-                "KokkosLapack::gesv: B must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<IPIVV>::value,
-                "KokkosLapack::gesv: IPIV must be a Kokkos::View.");
-  static_assert(static_cast<int>(AMatrix::rank) == 2,
-                "KokkosLapack::gesv: A must have rank 2.");
-  static_assert(
-      static_cast<int>(BXMV::rank) == 1 || static_cast<int>(BXMV::rank) == 2,
-      "KokkosLapack::gesv: B must have either rank 1 or rank 2.");
-  static_assert(static_cast<int>(IPIVV::rank) == 1,
-                "KokkosLapack::gesv: IPIV must have rank 1.");
+  static_assert(Kokkos::is_view<AMatrix>::value, "KokkosLapack::gesv: A must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<BXMV>::value, "KokkosLapack::gesv: B must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<IPIVV>::value, "KokkosLapack::gesv: IPIV must be a Kokkos::View.");
+  static_assert(static_cast<int>(AMatrix::rank) == 2, "KokkosLapack::gesv: A must have rank 2.");
+  static_assert(static_cast<int>(BXMV::rank) == 1 || static_cast<int>(BXMV::rank) == 2,
+                "KokkosLapack::gesv: B must have either rank 1 or rank 2.");
+  static_assert(static_cast<int>(IPIVV::rank) == 1, "KokkosLapack::gesv: IPIV must have rank 1.");
 
   int64_t IPIV0 = IPIV.extent(0);
   int64_t A0    = A.extent(0);
@@ -98,8 +83,7 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
   int64_t B0    = B.extent(0);
 
   // Check validity of pivot argument
-  bool valid_pivot =
-      (IPIV0 == A1) || ((IPIV0 == 0) && (IPIV.data() == nullptr));
+  bool valid_pivot = (IPIV0 == A1) || ((IPIV0 == 0) && (IPIV.data() == nullptr));
   if (!(valid_pivot)) {
     std::ostringstream os;
     os << "KokkosLapack::gesv: IPIV: " << IPIV0 << ". "
@@ -112,9 +96,8 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
   // Check for no pivoting case. Only MAGMA supports no pivoting interface
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
-  if ((!std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::CudaSpace>::value) &&
-      (IPIV0 == 0) && (IPIV.data() == nullptr)) {
+  if ((!std::is_same<typename AMatrix::device_type::memory_space, Kokkos::CudaSpace>::value) && (IPIV0 == 0) &&
+      (IPIV.data() == nullptr)) {
     std::ostringstream os;
     os << "KokkosLapack::gesv: IPIV: " << IPIV0 << ". "
        << "LAPACK TPL does not support no pivoting.";
@@ -136,22 +119,18 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
   if ((A0 < A1) || (A0 != B0)) {
     std::ostringstream os;
     os << "KokkosLapack::gesv: Dimensions of A, and B do not match: "
-       << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0)
-       << " x " << B.extent(1);
+       << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0) << " x " << B.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  typedef Kokkos::View<
-      typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
-      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
+                       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AMatrix_Internal;
-  typedef Kokkos::View<typename BXMV::non_const_value_type**,
-                       typename BXMV::array_layout, typename BXMV::device_type,
+  typedef Kokkos::View<typename BXMV::non_const_value_type**, typename BXMV::array_layout, typename BXMV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       BXMV_Internal;
-  typedef Kokkos::View<
-      typename IPIVV::non_const_value_type*, typename IPIVV::array_layout,
-      typename IPIVV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<typename IPIVV::non_const_value_type*, typename IPIVV::array_layout, typename IPIVV::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       IPIVV_Internal;
   AMatrix_Internal A_i = A;
   // BXMV_Internal B_i = B;
@@ -159,12 +138,12 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
 
   if (BXMV::rank == 1) {
     auto B_i = BXMV_Internal(B.data(), B.extent(0), 1);
-    KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
-                             IPIVV_Internal>::gesv(space, A_i, B_i, IPIV_i);
+    KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal, IPIVV_Internal>::gesv(space, A_i, B_i,
+                                                                                                    IPIV_i);
   } else {  // BXMV::rank == 2
     auto B_i = BXMV_Internal(B.data(), B.extent(0), B.extent(1));
-    KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
-                             IPIVV_Internal>::gesv(space, A_i, B_i, IPIV_i);
+    KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal, IPIVV_Internal>::gesv(space, A_i, B_i,
+                                                                                                    IPIV_i);
   }
 }
 

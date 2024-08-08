@@ -49,9 +49,7 @@ struct Functor_TeamTestStaticPivoting {
   const XYViewType _Y;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TeamTestStaticPivoting(const AViewType &A, const XYViewType &X,
-                                 const XYViewType &Y)
-      : _A(A), _X(X), _Y(Y) {}
+  Functor_TeamTestStaticPivoting(const AViewType &A, const XYViewType &X, const XYViewType &Y) : _A(A), _X(X), _Y(Y) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
@@ -61,22 +59,16 @@ struct Functor_TeamTestStaticPivoting {
     auto X = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
     auto Y = Kokkos::subview(_Y, matrix_id, Kokkos::ALL);
     member.team_barrier();
-    KokkosBatched::TeamGesv<MemberType,
-                            KokkosBatched::Gesv::StaticPivoting>::invoke(member,
-                                                                         A, X,
-                                                                         Y);
+    KokkosBatched::TeamGesv<MemberType, KokkosBatched::Gesv::StaticPivoting>::invoke(member, A, X, Y);
     member.team_barrier();
   }
 
   inline void run() {
     std::string name("KokkosBatched::Test::StaticPivoting");
-    Kokkos::TeamPolicy<DeviceType> policy(_A.extent(0), Kokkos::AUTO(),
-                                          Kokkos::AUTO());
+    Kokkos::TeamPolicy<DeviceType> policy(_A.extent(0), Kokkos::AUTO(), Kokkos::AUTO());
 
-    using MatrixViewType =
-        Kokkos::View<typename AViewType::non_const_value_type **,
-                     typename AViewType::array_layout,
-                     typename AViewType::execution_space>;
+    using MatrixViewType = Kokkos::View<typename AViewType::non_const_value_type **, typename AViewType::array_layout,
+                                        typename AViewType::execution_space>;
 
     const int n    = _A.extent(1);
     size_t bytes_0 = MatrixViewType::shmem_size(n, n + 4);
@@ -95,8 +87,7 @@ struct Functor_SerialTestStaticPivoting {
   const XYViewType _Y;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_SerialTestStaticPivoting(const AViewType &A, const AViewType &tmp,
-                                   const XYViewType &X, const XYViewType &Y)
+  Functor_SerialTestStaticPivoting(const AViewType &A, const AViewType &tmp, const XYViewType &X, const XYViewType &Y)
       : _A(A), _tmp(tmp), _X(X), _Y(Y) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const int &matrix_id) const {
@@ -104,8 +95,7 @@ struct Functor_SerialTestStaticPivoting {
     auto tmp = Kokkos::subview(_tmp, matrix_id, Kokkos::ALL, Kokkos::ALL);
     auto X   = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
     auto Y   = Kokkos::subview(_Y, matrix_id, Kokkos::ALL);
-    KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(
-        A, X, Y, tmp);
+    KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(A, X, Y, tmp);
   }
 
   inline void run() {
@@ -144,12 +134,9 @@ int main(int /*argc*/, char ** /*argv[]*/) {
     KokkosKernels::Impl::kk_write_3Dview_to_file(A, "A.txt");
     KokkosKernels::Impl::kk_write_2Dview_to_file(Y, "Y.txt");
 
-    Functor_SerialTestStaticPivoting<exec_space, AViewType, XYViewType>(A, tmp,
-                                                                        X, Y)
-        .run();
+    Functor_SerialTestStaticPivoting<exec_space, AViewType, XYViewType>(A, tmp, X, Y).run();
     KokkosKernels::Impl::kk_write_2Dview_to_file(X, "X_serial.txt");
-    Functor_TeamTestStaticPivoting<exec_space, AViewType, XYViewType>(A2, X, Y2)
-        .run();
+    Functor_TeamTestStaticPivoting<exec_space, AViewType, XYViewType>(A2, X, Y2).run();
     KokkosKernels::Impl::kk_write_2Dview_to_file(X, "X_team.txt");
   }
   Kokkos::finalize();

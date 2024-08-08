@@ -30,8 +30,7 @@ struct rot_functor {
   VectorView X, Y;
   ScalarView c, s;
 
-  rot_functor(VectorView const& X_, VectorView const& Y_, ScalarView const& c_,
-              ScalarView const& s_)
+  rot_functor(VectorView const& X_, VectorView const& Y_, ScalarView const& c_, ScalarView const& s_)
       : X(X_), Y(Y_), c(c_), s(s_) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -43,8 +42,8 @@ struct rot_functor {
 };
 
 template <class ExecutionSpace, class VectorView, class ScalarView>
-void Rot_Invoke(ExecutionSpace const& space, VectorView const& X,
-                VectorView const& Y, ScalarView const& c, ScalarView const& s) {
+void Rot_Invoke(ExecutionSpace const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,
+                ScalarView const& s) {
   Kokkos::RangePolicy<ExecutionSpace> rot_policy(space, 0, X.extent(0));
   rot_functor rot_func(X, Y, c, s);
   Kokkos::parallel_for("KokkosBlas::rot", rot_policy, rot_func);

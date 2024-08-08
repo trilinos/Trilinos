@@ -61,8 +61,7 @@ struct SerialLeftHouseholderInternal {
     const mag_type norm_chi1 = Kokkos::ArithTraits<value_type>::abs(*chi1);
 
     /// compute 2 norm of x using norm_chi1 and norm_x2
-    const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(
-        norm_x2_square + norm_chi1 * norm_chi1);
+    const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
 
     /// compute alpha
     const mag_type alpha = (*chi1 < 0 ? one : minus_one) * norm_x;
@@ -76,9 +75,8 @@ struct SerialLeftHouseholderInternal {
     // SerialScaleInternal::invoke(m_x2, inv_chi1_minus_alpha, x2, x2s);
 
     /// compute tau
-    const mag_type chi1_minus_alpha_square =
-        chi1_minus_alpha * chi1_minus_alpha;
-    *tau = half + half * (norm_x2_square / chi1_minus_alpha_square);
+    const mag_type chi1_minus_alpha_square = chi1_minus_alpha * chi1_minus_alpha;
+    *tau                                   = half + half * (norm_x2_square / chi1_minus_alpha_square);
 
     /// overwrite chi1 with alpha
     *chi1 = alpha;

@@ -46,13 +46,11 @@ namespace KokkosBatched {
 
 template <typename MemberType, typename ArgAlgo>
 struct TeamVectorSolveUTV {
-  template <typename UViewType, typename TViewType, typename VViewType,
-            typename pViewType, typename XViewType, typename BViewType,
-            typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const int matrix_rank, const UViewType &U,
-      const TViewType &T, const VViewType &V, const pViewType &p,
-      const XViewType &X, const BViewType &B, const wViewType &w);
+  template <typename UViewType, typename TViewType, typename VViewType, typename pViewType, typename XViewType,
+            typename BViewType, typename wViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int matrix_rank, const UViewType &U,
+                                           const TViewType &T, const VViewType &V, const pViewType &p,
+                                           const XViewType &X, const BViewType &B, const wViewType &w);
 };
 
 }  // namespace KokkosBatched

@@ -222,8 +222,7 @@ int least_set_bit( long long i ){
 }
 */
 
-#elif defined(__INTEL_COMPILER) || defined(KOKKOS_COMPILER_IBM) || \
-    defined(__GNUC__) || defined(__GNUG__)
+#elif defined(__INTEL_COMPILER) || defined(KOKKOS_COMPILER_IBM) || defined(__GNUC__) || defined(__GNUG__)
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit(unsigned i) { return __builtin_ffs(i); }
 KOKKOS_FORCEINLINE_FUNCTION

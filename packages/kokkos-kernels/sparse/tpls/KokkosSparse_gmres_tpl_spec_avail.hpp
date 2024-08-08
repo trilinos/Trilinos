@@ -22,8 +22,7 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
-          class BType, class XType>
+template <class KernelHandle, class AT, class AO, class AD, class AM, class AS, class BType, class XType>
 struct gmres_tpl_spec_avail {
   enum : bool { value = false };
 };

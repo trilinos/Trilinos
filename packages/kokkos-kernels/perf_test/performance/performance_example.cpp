@@ -41,8 +41,8 @@ bool run_example() {
   // set up some user options
   std::string archiveName("performance_example.yaml");  //  name of the archive
   std::string testName = "performance_example";         // name of test
-  std::string hostName;    // optional hostname - auto detected if blank
-  double tolerance = 0.1;  // for residual and times
+  std::string hostName;                                 // optional hostname - auto detected if blank
+  double tolerance = 0.1;                               // for residual and times
 
   using KokkosKernels::Performance;
 
@@ -74,29 +74,17 @@ bool run_example() {
 
   // Print results
   switch (result) {
-    case Performance::Passed:
-      std::cout << "Archiver Passed" << std::endl;
-      break;
-    case Performance::Failed:
-      std::cout << "Archiver Failed" << std::endl;
-      break;
-    case Performance::NewMachine:
-      std::cout << "Archiver Passed. Adding new machine entry." << std::endl;
-      break;
+    case Performance::Passed: std::cout << "Archiver Passed" << std::endl; break;
+    case Performance::Failed: std::cout << "Archiver Failed" << std::endl; break;
+    case Performance::NewMachine: std::cout << "Archiver Passed. Adding new machine entry." << std::endl; break;
     case Performance::NewConfiguration:
-      std::cout << "Archiver Passed. Adding new machine configuration."
-                << std::endl;
+      std::cout << "Archiver Passed. Adding new machine configuration." << std::endl;
       break;
-    case Performance::NewTest:
-      std::cout << "Archiver Passed. Adding new test entry." << std::endl;
-      break;
+    case Performance::NewTest: std::cout << "Archiver Passed. Adding new test entry." << std::endl; break;
     case Performance::NewTestConfiguration:
-      std::cout << "Archiver Passed. Adding new test entry configuration."
-                << std::endl;
+      std::cout << "Archiver Passed. Adding new test entry configuration." << std::endl;
       break;
-    case Performance::UpdatedTest:
-      std::cout << "Archiver Passed. Updating test entry." << std::endl;
-      break;
+    case Performance::UpdatedTest: std::cout << "Archiver Passed. Updating test entry." << std::endl; break;
     default: throw std::logic_error("Unexpected result code."); break;
   }
 

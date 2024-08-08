@@ -50,8 +50,7 @@ struct V_NrmInf_Functor {
     static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::V_NrmInf_Functor: "
                   "X is not a Kokkos::View.");
-    static_assert(std::is_same<typename RV::value_type,
-                               typename RV::non_const_value_type>::value,
+    static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
                   "KokkosBlas::Impl::V_NrmInf_Functor: R is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
@@ -85,8 +84,7 @@ void V_NrmInf_Invoke(const execution_space& space, const RV& r, const XV& X) {
 
   typedef V_NrmInf_Functor<RV, XV, SizeType> functor_type;
   functor_type op(X);
-  Kokkos::parallel_reduce("KokkosBlas::NrmInf::S0", policy, op,
-                          Kokkos::Max<typename RV::non_const_value_type>(r()));
+  Kokkos::parallel_reduce("KokkosBlas::NrmInf::S0", policy, op, Kokkos::Max<typename RV::non_const_value_type>(r()));
 }
 
 /// \brief Compute the 2-norms (or their square) of the columns of the
@@ -96,8 +94,7 @@ void MV_NrmInf_Invoke(const execution_space& space, const RV& r, const XMV& X) {
   for (size_t i = 0; i < X.extent(1); i++) {
     auto ri = Kokkos::subview(r, i);
     auto Xi = Kokkos::subview(X, Kokkos::ALL(), i);
-    V_NrmInf_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(
-        space, ri, Xi);
+    V_NrmInf_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(space, ri, Xi);
   }
 }
 

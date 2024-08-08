@@ -42,8 +42,7 @@ struct swap_functor {
 };
 
 template <class ExecutionSpace, class XVector, class YVector>
-void Swap_Invoke(ExecutionSpace const& space, XVector const& X,
-                 YVector const& Y) {
+void Swap_Invoke(ExecutionSpace const& space, XVector const& X, YVector const& Y) {
   Kokkos::RangePolicy<ExecutionSpace> swap_policy(space, 0, X.extent(0));
   swap_functor swap_func(X, Y);
   Kokkos::parallel_for("KokkosBlas::swap", swap_policy, swap_func);

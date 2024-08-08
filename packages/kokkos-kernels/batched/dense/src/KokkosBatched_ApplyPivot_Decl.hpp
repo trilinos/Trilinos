@@ -28,13 +28,10 @@ namespace KokkosBatched {
 template <typename MemberType, typename ArgSide, typename ArgDirect>
 struct TeamVectorApplyPivot {
   template <typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int piv, const AViewType &A);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int piv, const AViewType &A);
 
   template <typename PivViewType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const PivViewType piv,
-                                           const AViewType &A);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const PivViewType piv, const AViewType &A);
 };
 
 }  // namespace KokkosBatched

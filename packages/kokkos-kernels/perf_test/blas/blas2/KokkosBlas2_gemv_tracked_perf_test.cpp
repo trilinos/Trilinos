@@ -43,9 +43,7 @@ test_list construct_gemv_kernel_base(const rajaperf::RunParams& run_params)
       [=](const int repeat, const int m) {
         // returns a tuple of testData_obj
         return std::make_tuple(
-            setup_test<Kokkos::DefaultExecutionSpace,
-                       Kokkos::DefaultExecutionSpace::array_layout>(m, m / 10,
-                                                                    repeat));
+            setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, m / 10, repeat));
       },
       // run lambda will take the returned setup tuple
       [&](const int iteration, const int runsize, auto& data) {

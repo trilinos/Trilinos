@@ -25,8 +25,7 @@ namespace Impl {
 RocBlasSingleton::RocBlasSingleton() {
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_create_handle(&handle));
 
-  Kokkos::push_finalize_hook(
-      [&]() { KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_destroy_handle(handle)); });
+  Kokkos::push_finalize_hook([&]() { KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_destroy_handle(handle)); });
 }
 
 RocBlasSingleton& RocBlasSingleton::singleton() {

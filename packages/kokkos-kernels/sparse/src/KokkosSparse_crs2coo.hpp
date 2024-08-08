@@ -22,8 +22,7 @@
 #define _KOKKOSSPARSE_CRS2COO_HPP
 namespace KokkosSparse {
 namespace Impl {
-template <class OrdinalType, class SizeType, class ValViewType,
-          class RowMapViewType, class ColIdViewType,
+template <class OrdinalType, class SizeType, class ValViewType, class RowMapViewType, class ColIdViewType,
           class DeviceType = typename ValViewType::execution_space>
 class Crs2Coo {
  private:
@@ -41,10 +40,10 @@ class Crs2Coo {
 
   using device_type = DeviceType;
 
-  using row_view = typename Kokkos::View<ordinal_type *, device_type>;
-  using col_view = row_view;
+  using row_view                = typename Kokkos::View<ordinal_type *, device_type>;
+  using col_view                = row_view;
   using non_const_coo_data_view = typename ValViewType::non_const_type;
-  using coo_type = CooMatrix<scalar_type, ordinal_type, device_type>;
+  using coo_type                = CooMatrix<scalar_type, ordinal_type, device_type>;
 
   non_const_ordinal_type m_nrows;
   non_const_ordinal_type m_ncols;
@@ -62,29 +61,18 @@ class Crs2Coo {
   using copy_tp1_member_type = typename copy_tp1_pt::member_type;
 
  public:
-  Crs2Coo(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals,
-          RowMapViewType row_map, ColIdViewType col_ids)
-      : m_nrows(nrows),
-        m_ncols(ncols),
-        m_nnz(nnz),
-        m_vals(vals),
-        m_row_map(row_map),
-        m_col_ids(col_ids) {
-    m_data = non_const_coo_data_view(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_data"), nnz);
-    m_col =
-        col_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_col"), nnz);
-    m_row =
-        row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_row"), nnz);
+  Crs2Coo(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, RowMapViewType row_map,
+          ColIdViewType col_ids)
+      : m_nrows(nrows), m_ncols(ncols), m_nnz(nnz), m_vals(vals), m_row_map(row_map), m_col_ids(col_ids) {
+    m_data = non_const_coo_data_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_data"), nnz);
+    m_col  = col_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_col"), nnz);
+    m_row  = row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_row"), nnz);
 
     copy_tp1_pt policy(m_nrows, 1, 1);
     {
       auto vec_len_max = policy.vector_length_max();
       copy_tp1_pt query_policy(m_nrows, 1, vec_len_max);
-      policy = copy_tp1_pt(
-          m_nrows,
-          query_policy.team_size_recommended(*this, Kokkos::ParallelForTag()),
-          vec_len_max);
+      policy = copy_tp1_pt(m_nrows, query_policy.team_size_recommended(*this, Kokkos::ParallelForTag()), vec_len_max);
     }
 
     Kokkos::parallel_for("Crs2Coo", policy, *this);
@@ -98,17 +86,14 @@ class Crs2Coo {
     auto row_len   = m_row_map(i + 1) - row_start;
     auto row_end   = row_start + row_len;
 
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, row_start, row_end),
-                         [&](const size_type &id) {
-                           m_data(id) = m_vals(id);
-                           m_col(id)  = m_col_ids(id);
-                           m_row(id)  = i;
-                         });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, row_start, row_end), [&](const size_type &id) {
+      m_data(id) = m_vals(id);
+      m_col(id)  = m_col_ids(id);
+      m_row(id)  = i;
+    });
   }
 
-  coo_type get_cooMat() {
-    return coo_type(m_nrows, m_ncols, m_row, m_col, m_data);
-  }
+  coo_type get_cooMat() { return coo_type(m_nrows, m_ncols, m_row, m_col, m_data); }
 };
 }  // namespace Impl
 // clang-format off
@@ -130,12 +115,16 @@ class Crs2Coo {
 /// \return A KokkosSparse::CooMatrix.
 ///
 // clang-format on
-template <class OrdinalType, class SizeType, class ValViewType,
-          class RowMapViewType, class ColIdViewType>
-auto crs2coo(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
-             ValViewType vals, RowMapViewType row_map, ColIdViewType col_ids) {
-  using Crs2cooType = Impl::Crs2Coo<OrdinalType, SizeType, ValViewType,
-                                    RowMapViewType, ColIdViewType>;
+template <class OrdinalType, class SizeType, class ValViewType, class RowMapViewType, class ColIdViewType>
+auto crs2coo(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, RowMapViewType row_map,
+             ColIdViewType col_ids) {
+  static_assert(std::is_same_v<SizeType, typename RowMapViewType::non_const_value_type>,
+                "crs2coo: SizeType (type of nnz) must match the element type of "
+                "RowMapViewType");
+  static_assert(std::is_same_v<OrdinalType, typename ColIdViewType::non_const_value_type>,
+                "crs2coo: OrdinalType (type of nrows, ncols) must match the element type "
+                "of ColIdViewType");
+  using Crs2cooType = Impl::Crs2Coo<OrdinalType, SizeType, ValViewType, RowMapViewType, ColIdViewType>;
   Crs2cooType crs2Coo(nrows, ncols, nnz, vals, row_map, col_ids);
   return crs2Coo.get_cooMat();
 }
@@ -152,12 +141,9 @@ auto crs2coo(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
 /// \tparam SizeType     The crsMatrix::size_type
 /// \param crsMatrix The KokkosSparse::CrsMatrix.
 /// \return A KokkosSparse::CooMatrix.
-template <typename ScalarType, typename OrdinalType, class DeviceType,
-          class MemoryTraitsType, typename SizeType>
-auto crs2coo(KokkosSparse::CrsMatrix<ScalarType, OrdinalType, DeviceType,
-                                     MemoryTraitsType, SizeType> &crsMatrix) {
-  return crs2coo(crsMatrix.numRows(), crsMatrix.numCols(), crsMatrix.nnz(),
-                 crsMatrix.values, crsMatrix.graph.row_map,
+template <typename ScalarType, typename OrdinalType, class DeviceType, class MemoryTraitsType, typename SizeType>
+auto crs2coo(KokkosSparse::CrsMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &crsMatrix) {
+  return crs2coo(crsMatrix.numRows(), crsMatrix.numCols(), crsMatrix.nnz(), crsMatrix.values, crsMatrix.graph.row_map,
                  crsMatrix.graph.entries);
 }
 }  // namespace KokkosSparse

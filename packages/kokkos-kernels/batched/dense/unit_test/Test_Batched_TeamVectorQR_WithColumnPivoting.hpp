@@ -32,8 +32,8 @@ using namespace KokkosBatched;
 
 namespace Test {
 
-template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
-          typename PivotViewType, typename WorkViewType, typename AlgoTagType>
+template <typename DeviceType, typename MatrixViewType, typename VectorViewType, typename PivotViewType,
+          typename WorkViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
   using execution_space = typename DeviceType::execution_space;
   MatrixViewType _a;
@@ -42,9 +42,9 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
   WorkViewType _w;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamVectorQR_WithColumnPivoting(
-      const MatrixViewType &a, const VectorViewType &x, const VectorViewType &b,
-      const VectorViewType &t, const PivotViewType &p, const WorkViewType &w)
+  Functor_TestBatchedTeamVectorQR_WithColumnPivoting(const MatrixViewType &a, const VectorViewType &x,
+                                                     const VectorViewType &b, const VectorViewType &t,
+                                                     const PivotViewType &p, const WorkViewType &w)
       : _a(a), _x(x), _b(b), _t(t), _p(p), _w(w) {}
 
   template <typename MemberType>
@@ -69,15 +69,13 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     member.team_barrier();
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
-                               Algo::Gemv::Unblocked>::invoke(member, one, aa,
-                                                              xx, zero, bb);
+    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(member, one, aa, xx, zero,
+                                                                                              bb);
     member.team_barrier();
 
     /// AA P^T = QR
     int matrix_rank(0);
-    TeamVectorQR_WithColumnPivoting<MemberType, AlgoTagType>::invoke(
-        member, aa, tt, pp, ww, matrix_rank);
+    TeamVectorQR_WithColumnPivoting<MemberType, AlgoTagType>::invoke(member, aa, tt, pp, ww, matrix_rank);
     member.team_barrier();
 
     /// xx = bb;
@@ -85,25 +83,22 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     member.team_barrier();
 
     /// xx = Q^{T} xx;
-    TeamVectorApplyQ<MemberType, Side::Left, Trans::Transpose,
-                     Algo::ApplyQ::Unblocked>::invoke(member, aa, tt, xx, ww);
+    TeamVectorApplyQ<MemberType, Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(member, aa, tt, xx, ww);
     member.team_barrier();
 
     /// xx = R^{-1} xx
-    TeamVectorTrsv<MemberType, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-                   Algo::Trsv::Unblocked>::invoke(member, one, aa, xx);
+    TeamVectorTrsv<MemberType, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(
+        member, one, aa, xx);
     member.team_barrier();
 
     /// xx = P xx
-    TeamVectorApplyPivot<MemberType, Side::Left, Direct::Backward>::invoke(
-        member, pp, xx);
+    TeamVectorApplyPivot<MemberType, Side::Left, Direct::Backward>::invoke(member, pp, xx);
     member.team_barrier();
   }
 
   inline void run() {
     typedef typename MatrixViewType::non_const_value_type value_type;
-    std::string name_region(
-        "KokkosBatched::Test::TeamVectorQR_WithColumnPivoting");
+    std::string name_region("KokkosBatched::Test::TeamVectorQR_WithColumnPivoting");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -116,8 +111,8 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
   }
 };
 
-template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
-          typename PivotViewType, typename WorkViewType, typename AlgoTagType>
+template <typename DeviceType, typename MatrixViewType, typename VectorViewType, typename PivotViewType,
+          typename WorkViewType, typename AlgoTagType>
 void impl_test_batched_qr_with_columnpivoting(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
@@ -132,15 +127,13 @@ void impl_test_batched_qr_with_columnpivoting(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a, random, value_type(1.0));
 
   Kokkos::fence();
 
-  Functor_TestBatchedTeamVectorQR_WithColumnPivoting<
-      DeviceType, MatrixViewType, VectorViewType, PivotViewType, WorkViewType,
-      AlgoTagType>(a, x, b, t, p, w)
+  Functor_TestBatchedTeamVectorQR_WithColumnPivoting<DeviceType, MatrixViewType, VectorViewType, PivotViewType,
+                                                     WorkViewType, AlgoTagType>(a, x, b, t, p, w)
       .run();
 
   Kokkos::fence();
@@ -164,48 +157,35 @@ void impl_test_batched_qr_with_columnpivoting(const int N, const int BlkSize) {
 }
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType, typename IntType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ValueType, typename IntType, typename AlgoTagType>
 int test_batched_qr_with_columnpivoting() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        MatrixViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType>
-        VectorViewType;
-    typedef Kokkos::View<IntType **, Kokkos::LayoutLeft, DeviceType>
-        PivotViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        WorkViewType;
-    Test::impl_test_batched_qr_with_columnpivoting<
-        DeviceType, MatrixViewType, VectorViewType, PivotViewType, WorkViewType,
-        AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> MatrixViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> VectorViewType;
+    typedef Kokkos::View<IntType **, Kokkos::LayoutLeft, DeviceType> PivotViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> WorkViewType;
+    Test::impl_test_batched_qr_with_columnpivoting<DeviceType, MatrixViewType, VectorViewType, PivotViewType,
+                                                   WorkViewType, AlgoTagType>(0, 10);
     for (int i = 1; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::impl_test_batched_qr_with_columnpivoting<
-          DeviceType, MatrixViewType, VectorViewType, PivotViewType,
-          WorkViewType, AlgoTagType>(1024, i);
+      Test::impl_test_batched_qr_with_columnpivoting<DeviceType, MatrixViewType, VectorViewType, PivotViewType,
+                                                     WorkViewType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        MatrixViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        VectorViewType;
-    typedef Kokkos::View<IntType **, Kokkos::LayoutRight, DeviceType>
-        PivotViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        WorkViewType;
-    Test::impl_test_batched_qr_with_columnpivoting<
-        DeviceType, MatrixViewType, VectorViewType, PivotViewType, WorkViewType,
-        AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> MatrixViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> VectorViewType;
+    typedef Kokkos::View<IntType **, Kokkos::LayoutRight, DeviceType> PivotViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> WorkViewType;
+    Test::impl_test_batched_qr_with_columnpivoting<DeviceType, MatrixViewType, VectorViewType, PivotViewType,
+                                                   WorkViewType, AlgoTagType>(0, 10);
     for (int i = 1; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::impl_test_batched_qr_with_columnpivoting<
-          DeviceType, MatrixViewType, VectorViewType, PivotViewType,
-          WorkViewType, AlgoTagType>(1024, i);
+      Test::impl_test_batched_qr_with_columnpivoting<DeviceType, MatrixViewType, VectorViewType, PivotViewType,
+                                                     WorkViewType, AlgoTagType>(1024, i);
     }
   }
 #endif
