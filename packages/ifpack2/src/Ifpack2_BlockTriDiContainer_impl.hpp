@@ -860,6 +860,7 @@ namespace Ifpack2 {
     template<typename MatrixType>
     Teuchos::RCP<AsyncableImport<MatrixType> >
     createBlockCrsAsyncImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
+      IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter");
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
@@ -882,30 +883,36 @@ namespace Ifpack2 {
 
       std::vector<global_ordinal_type> gids;
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
-      for (size_t i=0;i<column_map->getLocalNumElements();++i) {
-        const global_ordinal_type gid = column_map->getGlobalElement(i);
-        if (!domain_map->isNodeGlobalElement(gid)) {
-          found_first = true;
-          gids.push_back(gid);
-        } else if (found_first) {
-          separate_remotes = false;
-          break;
+      {
+        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::loop_over_local_elements");
+        // This loop is relatively expensive
+        for (size_t i=0;i<column_map->getLocalNumElements();++i) {
+          const global_ordinal_type gid = column_map->getGlobalElement(i);
+          if (!domain_map->isNodeGlobalElement(gid)) {
+            found_first = true;
+            gids.push_back(gid);
+          } else if (found_first) {
+            separate_remotes = false;
+            break;
+          }
+          if (!need_owned_permutation &&
+              domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
+            // The owned part of the domain and column maps are different
+            // orderings. We *could* do a super efficient impl of this case in the
+            // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
+            // really, if a caller cares about speed, they wouldn't make different
+            // local permutations like this. So we punt on the best impl and go for
+            // a pretty good one: the permutation is done in place in
+            // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
+            // is the presumably worse memory access pattern of the input vector.
+            need_owned_permutation = true;
+          }
         }
-        if (!need_owned_permutation &&
-            domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
-          // The owned part of the domain and column maps are different
-          // orderings. We *could* do a super efficient impl of this case in the
-          // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
-          // really, if a caller cares about speed, they wouldn't make different
-          // local permutations like this. So we punt on the best impl and go for
-          // a pretty good one: the permutation is done in place in
-          // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
-          // is the presumably worse memory access pattern of the input vector.
-          need_owned_permutation = true;
-        }
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       }
 
       if (separate_remotes) {
+        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::separate_remotes");
         const auto invalid = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
         const auto parsimonious_col_map
           = Teuchos::rcp(new tpetra_map_type(invalid, gids.data(), gids.size(), 0, domain_map->getComm()));
@@ -919,9 +926,11 @@ namespace Ifpack2 {
               dm2cm_host(i) = domain_map->getLocalElement(column_map->getGlobalElement(i));
             Kokkos::deep_copy(dm2cm, dm2cm_host);
           }
+          IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
           return Teuchos::rcp(new AsyncableImport<MatrixType>(domain_map, parsimonious_col_map, blocksize, dm2cm));
         }
       }
+      IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       return Teuchos::null;
     }
 

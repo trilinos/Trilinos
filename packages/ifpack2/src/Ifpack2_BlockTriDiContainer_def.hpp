@@ -53,7 +53,7 @@ namespace Ifpack2 {
                   const int block_size,
                   const bool explicitConversion) 
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initInternal");
+    IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDiContainer::initInternal", typename BlockHelperDetails::ImplType<MatrixType>::execution_space);
 
     // create pointer of impl
     {
