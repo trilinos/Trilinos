@@ -37,8 +37,7 @@ struct MV_Abs_Functor {
   RMV R_;
   XMV X_;
 
-  MV_Abs_Functor(const RMV& R, const XMV& X)
-      : numCols(X.extent(1)), R_(R), X_(X) {
+  MV_Abs_Functor(const RMV& R, const XMV& X) : numCols(X.extent(1)), R_(R), X_(X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Abs_Functor: RMV is not a Kokkos::View.");
@@ -163,8 +162,7 @@ void MV_Abs_Generic(const execution_space& space, const RMV& R, const XMV& X) {
   const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
-  if ((void*)(R.data()) ==
-      (void*)(X.data())) {  // if R and X are the same (alias one another)
+  if ((void*)(R.data()) == (void*)(X.data())) {  // if R and X are the same (alias one another)
     MV_AbsSelf_Functor<RMV, SizeType> op(R);
     Kokkos::parallel_for("KokkosBlas::Abs::S0", policy, op);
   } else {
@@ -192,8 +190,7 @@ void V_Abs_Generic(const execution_space& space, const RV& R, const XV& X) {
   const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
-  if ((void*)(R.data()) ==
-      (void*)(X.data())) {  // if R and X are the same (alias one another)
+  if ((void*)(R.data()) == (void*)(X.data())) {  // if R and X are the same (alias one another)
     V_AbsSelf_Functor<RV, SizeType> op(R);
     Kokkos::parallel_for("KokkosBlas::Abs::S2", policy, op);
   } else {

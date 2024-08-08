@@ -30,8 +30,7 @@ namespace Impl {
 /// \tparam YVector Type of the second vector y; 1-D View
 /// \tparam SizeType Type of the row index used in the dot product.
 ///   For best performance, use int instead of size_t here.
-template <class execution_space, class AV, class XVector, class YVector,
-          typename SizeType>
+template <class execution_space, class AV, class XVector, class YVector, typename SizeType>
 struct DotFunctor {
   typedef SizeType size_type;
   typedef typename AV::non_const_value_type avalue_type;
@@ -44,26 +43,19 @@ struct DotFunctor {
   DotFunctor(const XVector& x, const YVector& y) : m_x(x), m_y(y) {}
 
   void run(const char* label, const execution_space& space, AV result) {
-    Kokkos::RangePolicy<execution_space, size_type> policy(space, 0,
-                                                           m_x.extent(0));
+    Kokkos::RangePolicy<execution_space, size_type> policy(space, 0, m_x.extent(0));
     Kokkos::parallel_reduce(label, policy, *this, result);
   }
 
   // Prefer const size_type& to const size_type or size_type,
   // since the compiler has an easier time inlining the former.
-  KOKKOS_FORCEINLINE_FUNCTION void operator()(const size_type& i,
-                                              value_type& sum) const {
+  KOKKOS_FORCEINLINE_FUNCTION void operator()(const size_type& i, value_type& sum) const {
     Kokkos::Details::updateDot(sum, m_x(i), m_y(i));  // sum += m_x(i) * m_y(i)
   }
 
-  KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
-    update = Kokkos::ArithTraits<value_type>::zero();
-  }
+  KOKKOS_INLINE_FUNCTION void init(value_type& update) const { update = Kokkos::ArithTraits<value_type>::zero(); }
 
-  KOKKOS_INLINE_FUNCTION void join(value_type& update,
-                                   const value_type& source) const {
-    update += source;
-  }
+  KOKKOS_INLINE_FUNCTION void join(value_type& update, const value_type& source) const { update += source; }
 };
 
 }  // namespace Impl

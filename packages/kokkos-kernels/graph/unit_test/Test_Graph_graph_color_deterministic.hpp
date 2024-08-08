@@ -32,11 +32,8 @@ using namespace KokkosGraph::Experimental;
 
 namespace Test {
 template <typename crsMat_t, typename device>
-int run_graphcolor_deter(
-    crsMat_t input_mat, ColoringAlgorithm coloring_algorithm,
-    size_t &num_colors,
-    typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
-        &vertex_colors) {
+int run_graphcolor_deter(crsMat_t input_mat, ColoringAlgorithm coloring_algorithm, size_t &num_colors,
+                         typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type &vertex_colors) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type lno_nnz_view_t;
@@ -46,9 +43,8 @@ int run_graphcolor_deter(
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  typedef KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
+  typedef KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                              typename device::memory_space, typename device::memory_space>
       KernelHandle;
 
   KernelHandle kh;
@@ -60,9 +56,8 @@ int run_graphcolor_deter(
   const size_t num_rows_1 = input_mat.numRows();
   const size_t num_cols_1 = input_mat.numCols();
 
-  graph_color<KernelHandle, lno_view_t, lno_nnz_view_t>(
-      &kh, num_rows_1, num_cols_1, input_mat.graph.row_map,
-      input_mat.graph.entries);
+  graph_color<KernelHandle, lno_view_t, lno_nnz_view_t>(&kh, num_rows_1, num_cols_1, input_mat.graph.row_map,
+                                                        input_mat.graph.entries);
 
   num_colors    = kh.get_graph_coloring_handle()->get_num_colors();
   vertex_colors = kh.get_graph_coloring_handle()->get_vertex_colors();
@@ -72,13 +67,10 @@ int run_graphcolor_deter(
 
 }  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   using namespace Test;
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-          crsMat_t;
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type lno_nnz_view_t;
@@ -89,11 +81,9 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   lno_t numCols = numRows;
 
   typename lno_view_t::non_const_type xadj("xadj", numRows + 1);
-  typename lno_view_t::non_const_type::HostMirror h_xadj =
-      Kokkos::create_mirror_view(xadj);
+  typename lno_view_t::non_const_type::HostMirror h_xadj = Kokkos::create_mirror_view(xadj);
   typename lno_nnz_view_t::non_const_type adj("adj", nnz);
-  typename lno_nnz_view_t::non_const_type::HostMirror h_adj =
-      Kokkos::create_mirror_view(adj);
+  typename lno_nnz_view_t::non_const_type::HostMirror h_adj = Kokkos::create_mirror_view(adj);
 
   // Fill up the rowPtr array
   h_xadj(0)  = 0;
@@ -211,18 +201,15 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
     size_t num_colors;
 
     Kokkos::Timer timer1;
-    int res = run_graphcolor_deter<crsMat_t, device>(
-        input_mat, coloring_algorithm, num_colors, vector_colors);
+    int res = run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     EXPECT_TRUE((res == 0));
 
     EXPECT_TRUE((num_colors == 2));
 
-    size_type num_conflict = 0;
-    typename color_view_t::HostMirror h_vector_colors =
-        Kokkos::create_mirror_view(vector_colors);
+    size_type num_conflict                            = 0;
+    typename color_view_t::HostMirror h_vector_colors = Kokkos::create_mirror_view(vector_colors);
     Kokkos::deep_copy(h_vector_colors, vector_colors);
-    int exact_colors[18] = {2, 1, 2, 1, 1, 2, 1, 2, 2,
-                            1, 2, 1, 2, 1, 2, 1, 2, 1};
+    int exact_colors[18] = {2, 1, 2, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1};
 
     for (lno_t vertexIdx = 0; vertexIdx < numRows; ++vertexIdx) {
       if (h_vector_colors(vertexIdx) != exact_colors[vertexIdx]) {
@@ -235,39 +222,29 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   }
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                     \
-  TEST_F(                                                                                 \
-      TestCategory,                                                                       \
-      graph##_##graph_color_deterministic##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_coloring_deterministic<SCALAR, ORDINAL, OFFSET, DEVICE>(18, 74);                 \
-    test_coloring_deterministic<SCALAR, ORDINAL, OFFSET, DEVICE>(18, 74);                 \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                                      \
+  TEST_F(TestCategory, graph##_##graph_color_deterministic##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_coloring_deterministic<SCALAR, ORDINAL, OFFSET, DEVICE>(18, 74);                                  \
+    test_coloring_deterministic<SCALAR, ORDINAL, OFFSET, DEVICE>(18, 74);                                  \
   }
 
-#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(default_scalar, int, int, TestDevice)
 #endif
 
-#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(default_scalar, int64_t, int, TestDevice)
 #endif
 
-#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(default_scalar, int, size_t, TestDevice)
 #endif
 
-#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(default_scalar, int64_t, size_t, TestDevice)
 #endif
 

@@ -47,58 +47,52 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
   size_t nvals2    = output_mat_reference.values.extent(0);
 
   if (nrows1 != nrows2 || ncols1 != ncols2) {
-    std::cerr << "Wrong dimensions: is " << nrows1 << 'x' << ncols1
-              << " but should be " << nrows2 << 'x' << ncols2 << '\n';
+    std::cerr << "Wrong dimensions: is " << nrows1 << 'x' << ncols1 << " but should be " << nrows2 << 'x' << ncols2
+              << '\n';
     return false;
   }
   if (nentries1 != nentries2) {
-    std::cerr << "Wrong number of entries: " << nentries1
-              << ", but should have " << nentries2 << '\n';
+    std::cerr << "Wrong number of entries: " << nentries1 << ", but should have " << nentries2 << '\n';
     return false;
   }
   if (nvals1 != nvals2) {
-    std::cerr << "Wrong number of values: " << nvals1 << ", but should have "
-              << nvals2 << '\n';
+    std::cerr << "Wrong number of values: " << nvals1 << ", but should have " << nvals2 << '\n';
     return false;
   }
 
   bool is_identical = true;
-  is_identical      = KokkosKernels::Impl::kk_is_identical_view<
-      typename graph_t::row_map_type, typename graph_t::row_map_type,
-      typename lno_view_t::value_type, typename device::execution_space>(
-      output_mat_actual.graph.row_map, output_mat_reference.graph.row_map, 0);
+  is_identical =
+      KokkosKernels::Impl::kk_is_identical_view<typename graph_t::row_map_type, typename graph_t::row_map_type,
+                                                typename lno_view_t::value_type, typename device::execution_space>(
+          output_mat_actual.graph.row_map, output_mat_reference.graph.row_map, 0);
   if (!is_identical) {
     std::cerr << "Wrong rowmap:\n";
-    KokkosKernels::Impl::print_1Dview(std::cerr,
-                                      output_mat_actual.graph.row_map);
+    KokkosKernels::Impl::print_1Dview(std::cerr, output_mat_actual.graph.row_map);
     std::cerr << "but should be:\n";
-    KokkosKernels::Impl::print_1Dview(std::cerr,
-                                      output_mat_reference.graph.row_map);
+    KokkosKernels::Impl::print_1Dview(std::cerr, output_mat_reference.graph.row_map);
     return false;
   }
 
-  is_identical = KokkosKernels::Impl::kk_is_identical_view<
-      lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(output_mat_actual.graph.entries,
-                                        output_mat_reference.graph.entries, 0);
+  is_identical =
+      KokkosKernels::Impl::kk_is_identical_view<lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
+                                                typename device::execution_space>(
+          output_mat_actual.graph.entries, output_mat_reference.graph.entries, 0);
   if (!is_identical) {
     for (size_t i = 0; i < nrows1; ++i) {
       size_t rb      = output_mat_actual.graph.row_map(i);
       size_t re      = output_mat_actual.graph.row_map(i + 1);
       bool incorrect = false;
       for (size_t j = rb; j < re; ++j) {
-        if (output_mat_actual.graph.entries(j) !=
-            output_mat_reference.graph.entries(j)) {
+        if (output_mat_actual.graph.entries(j) != output_mat_reference.graph.entries(j)) {
           incorrect = true;
           break;
         }
       }
       if (incorrect) {
         for (size_t j = rb; j < re; ++j) {
-          std::cerr << "row:" << i << " j:" << j
-                    << " h_ent1(j):" << output_mat_actual.graph.entries(j)
-                    << " h_ent2(j):" << output_mat_reference.graph.entries(j)
-                    << " rb:" << rb << " re:" << re << std::endl;
+          std::cerr << "row:" << i << " j:" << j << " h_ent1(j):" << output_mat_actual.graph.entries(j)
+                    << " h_ent2(j):" << output_mat_reference.graph.entries(j) << " rb:" << rb << " re:" << re
+                    << std::endl;
         }
       }
     }
@@ -106,16 +100,13 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
     return false;
   }
 
-  scalar_view_t valueDiff(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "spgemm values diff"),
-      output_mat_actual.values.extent(0));
+  scalar_view_t valueDiff(Kokkos::view_alloc(Kokkos::WithoutInitializing, "spgemm values diff"),
+                          output_mat_actual.values.extent(0));
   Kokkos::deep_copy(valueDiff, output_mat_actual.values);
   KokkosBlas::axpy(-1.0, output_mat_reference.values, valueDiff);
   auto maxDiff = KokkosBlas::nrminf(valueDiff);
 
-  std::cout
-      << "Absolute maximum difference between actual and reference C values: "
-      << maxDiff << '\n';
+  std::cout << "Absolute maximum difference between actual and reference C values: " << maxDiff << '\n';
 
   return true;
 }
@@ -125,17 +116,13 @@ void print_options() {
 
   std::cerr << perf_test::list_common_options();
 
-  std::cerr
-      << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA"
-      << std::endl;
+  std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
 
-  std::cerr
-      << "\t[Optional] '--algorithm "
-         "[DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE]' --> to choose algorithm. "
-         "KKMEM is outdated, use KKSPGEMM instead."
-      << std::endl;
-  std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB"
+  std::cerr << "\t[Optional] '--algorithm "
+               "[DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE]' --> to choose algorithm. "
+               "KKMEM is outdated, use KKSPGEMM instead."
             << std::endl;
+  std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> "
                "to write output C=AxB"
             << std::endl;
@@ -155,87 +142,66 @@ void print_options() {
             << std::endl;
 }
 
-int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
-                 char** argv) {
+int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc, char** argv) {
   std::string algoStr;
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "--repeat", params.repeat)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--hashscale",
-                                        params.minhashscale)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--hashscale", params.minhashscale)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--chunksize",
-                                        params.chunk_size)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--chunksize", params.chunk_size)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--teamsize",
-                                        params.team_size)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--teamsize", params.team_size)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--vectorsize",
-                                        params.vector_size)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--vectorsize", params.vector_size)) {
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--compression2step",
-                                         params.compression2step)) {
-    } else if (perf_test::check_arg_int(i, argc, argv, "--shmem",
-                                        params.shmemsize)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--compression2step", params.compression2step)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--shmem", params.shmemsize)) {
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--CRWC",
-                                         params.calculate_read_write_cost)) {
-    } else if (perf_test::check_arg_str(i, argc, argv, "--CIF",
-                                        params.coloring_input_file)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--CRWC", params.calculate_read_write_cost)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--CIF", params.coloring_input_file)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--COF",
-                                        params.coloring_output_file)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--COF", params.coloring_output_file)) {
       ++i;
-    } else if (perf_test::check_arg_double(i, argc, argv, "--CCO",
-                                           params.compression_cut_off)) {
+    } else if (perf_test::check_arg_double(i, argc, argv, "--CCO", params.compression_cut_off)) {
       // if 0.85 set, if compression does not reduce flops by at least 15%
       // symbolic will run on original matrix. otherwise, it will compress the
       // graph and run symbolic on compressed one.
       ++i;
-    } else if (perf_test::check_arg_double(i, argc, argv, "--FLHCO",
-                                           params.first_level_hash_cut_off)) {
+    } else if (perf_test::check_arg_double(i, argc, argv, "--FLHCO", params.first_level_hash_cut_off)) {
       // if linear probing is used as hash, what is the max occupancy percantage
       // we allow in the hash.
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--flop",
-                                         params.calculate_read_write_cost)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--flop", params.calculate_read_write_cost)) {
       // print flop statistics. only for the first repeat.
       // note: if either --CRWC or --flop is passed, this parameter is set to
       // true
-    } else if (perf_test::check_arg_int(i, argc, argv, "--mklsort",
-                                        params.mkl_sort_option)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--mklsort", params.mkl_sort_option)) {
       // when mkl2 is run, the sort option to use.
       // 7:not to sort the output
       // 8:to sort the output
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--mklkeepout",
-                                        params.mkl_keep_output)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--mklkeepout", params.mkl_keep_output)) {
       // mkl output is not kept.
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--checkoutput",
-                                         params.check_output)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--checkoutput", params.check_output)) {
       // check correctness
-    } else if (perf_test::check_arg_str(i, argc, argv, "--amtx",
-                                        params.a_mtx_bin_file)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--amtx", params.a_mtx_bin_file)) {
       // A at C=AxB
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--bmtx",
-                                        params.b_mtx_bin_file)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--bmtx", params.b_mtx_bin_file)) {
       // B at C=AxB.
       // if not provided, C = AxA will be performed.
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--cmtx",
-                                        params.c_mtx_bin_file)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--cmtx", params.c_mtx_bin_file)) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--dynamic",
-                                         params.use_dynamic_scheduling)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--dynamic", params.use_dynamic_scheduling)) {
       // dynamic scheduling will be used for loops.
       // currently it is default already.
       // so has to use the dynamic schedulin.
-    } else if (perf_test::check_arg_int(i, argc, argv, "--DENSEACCMAX",
-                                        params.MaxColDenseAcc)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--DENSEACCMAX", params.MaxColDenseAcc)) {
       // on CPUs and KNLs if DEFAULT algorithm or KKSPGEMM is chosen,
       // it uses dense accumulators for smaller matrices based on the size of
       // column (k) in B. Max column size is 250,000 for k to use dense
@@ -243,13 +209,11 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       // with smaller thread count, where memory bandwidth is not an issue, this
       // cut-off can be increased to be more than 250,000
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
-                                         params.verbose)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose", params.verbose)) {
       // print the timing and information about the inner steps.
       // if you are timing TPL libraries, for correct timing use verbose option,
       // because there are pre- post processing in these TPL kernel wraps.
-    } else if (perf_test::check_arg_str(i, argc, argv, "--algorithm",
-                                        algoStr)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--algorithm", algoStr)) {
       if (0 == Test::string_compare_no_case(algoStr, "DEFAULT")) {
         params.algorithm = KokkosSparse::SPGEMM_KK;
       } else if (0 == Test::string_compare_no_case(algoStr, "KKDEFAULT")) {
@@ -269,15 +233,13 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       }
 
       else {
-        std::cerr << "Unrecognized value for --algorithm (argument #" << i
-                  << "): " << argv[i] << std::endl;
+        std::cerr << "Unrecognized value for --algorithm (argument #" << i << "): " << argv[i] << std::endl;
         print_options();
         return 1;
       }
       ++i;
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -295,10 +257,9 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
   using lno_t     = default_lno_t;
   using scalar_t  = default_scalar;
   using device_t  = Kokkos::Device<ExecSpace, MemSpace>;
-  using crsMat_t  = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t,
-                                                    void, size_type>;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, ExecSpace, MemSpace, MemSpace>;
+  using crsMat_t  = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, ExecSpace, MemSpace, MemSpace>;
 
   KokkosKernels::Experiment::Parameters params;
 
@@ -315,17 +276,13 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
 
   // read a and b matrices
 
-  A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
-      params.a_mtx_bin_file.c_str());
+  A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(params.a_mtx_bin_file.c_str());
 
-  if ((params.b_mtx_bin_file == "" ||
-       params.a_mtx_bin_file == params.b_mtx_bin_file)) {
-    std::cout << "B is not provided or is the same as A. Multiplying AxA."
-              << std::endl;
+  if ((params.b_mtx_bin_file == "" || params.a_mtx_bin_file == params.b_mtx_bin_file)) {
+    std::cout << "B is not provided or is the same as A. Multiplying AxA." << std::endl;
     B = A;
   } else {
-    B = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
-        params.b_mtx_bin_file.c_str());
+    B = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(params.b_mtx_bin_file.c_str());
   }
 
   int algorithm  = params.algorithm;
@@ -369,8 +326,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
 
   if (verbose) std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
   if (n < A.numCols()) {
-    std::cerr << "left.numCols():" << A.numCols()
-              << " right.numRows():" << B.numRows() << std::endl;
+    std::cerr << "left.numCols():" << A.numCols() << " right.numRows():" << B.numRows() << std::endl;
     exit(1);
   }
 
@@ -395,28 +351,22 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
       sequential_kh.set_dynamic_scheduling(true);
     }
 
-    spgemm_symbolic(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries,
-                    TRANSPOSEFIRST, B.graph.row_map, B.graph.entries,
-                    TRANSPOSESECOND, row_mapC_ref);
+    spgemm_symbolic(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries, TRANSPOSEFIRST, B.graph.row_map,
+                    B.graph.entries, TRANSPOSESECOND, row_mapC_ref);
 
     ExecSpace().fence();
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    entriesC_ref         = lno_nnz_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-        c_nnz_size);
-    valuesC_ref = scalar_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
+    entriesC_ref         = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC_ref          = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
-    spgemm_numeric(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries,
-                   A.values, TRANSPOSEFIRST,
+    spgemm_numeric(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, TRANSPOSEFIRST,
 
-                   B.graph.row_map, B.graph.entries, B.values, TRANSPOSESECOND,
-                   row_mapC_ref, entriesC_ref, valuesC_ref);
+                   B.graph.row_map, B.graph.entries, B.values, TRANSPOSESECOND, row_mapC_ref, entriesC_ref,
+                   valuesC_ref);
     ExecSpace().fence();
 
-    C_ref = crsMat_t("CorrectC", m, k, valuesC_ref.extent(0), valuesC_ref,
-                     row_mapC_ref, entriesC_ref);
+    C_ref = crsMat_t("CorrectC", m, k, valuesC_ref.extent(0), valuesC_ref, row_mapC_ref, entriesC_ref);
   }
 
   for (int i = 0; i < repeat; ++i) {
@@ -432,16 +382,14 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
     kh.get_spgemm_handle()->MaxColDenseAcc = params.MaxColDenseAcc;
 
     if (i == 0) {
-      kh.get_spgemm_handle()->set_read_write_cost_calc(
-          calculate_read_write_cost);
+      kh.get_spgemm_handle()->set_read_write_cost_calc(calculate_read_write_cost);
     }
     // do the compression whether in 2 step, or 1 step.
     kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
     // whether to scale the hash more. default is 1, so no scale.
     kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
     // max occupancy in 1-level LP hashes. LL hashes can be 100%
-    kh.get_spgemm_handle()->set_first_level_hash_cut_off(
-        params.first_level_hash_cut_off);
+    kh.get_spgemm_handle()->set_first_level_hash_cut_off(params.first_level_hash_cut_off);
     // min reduction on FLOPs to run compression
     kh.get_spgemm_handle()->set_compression_cut_off(params.compression_cut_off);
 
@@ -450,8 +398,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
     valuesC  = scalar_view_t("valuesC (empty)", 0);
 
     Kokkos::Timer timer1;
-    spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries,
-                    TRANSPOSEFIRST, B.graph.row_map, B.graph.entries,
+    spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, TRANSPOSEFIRST, B.graph.row_map, B.graph.entries,
                     TRANSPOSESECOND, row_mapC);
 
     ExecSpace().fence();
@@ -461,22 +408,16 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
     size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (verbose) std::cout << "C SIZE:" << c_nnz_size << std::endl;
     if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-          c_nnz_size);
-      valuesC = scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"),
-          c_nnz_size);
+      entriesC = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
     }
-    spgemm_numeric(&kh, m, n, k, A.graph.row_map, A.graph.entries, A.values,
-                   TRANSPOSEFIRST, B.graph.row_map, B.graph.entries, B.values,
-                   TRANSPOSESECOND, row_mapC, entriesC, valuesC);
+    spgemm_numeric(&kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, TRANSPOSEFIRST, B.graph.row_map,
+                   B.graph.entries, B.values, TRANSPOSESECOND, row_mapC, entriesC, valuesC);
 
     ExecSpace().fence();
     double numeric_time = timer3.seconds();
 
-    std::cout << "mm_time:" << symbolic_time + numeric_time
-              << " symbolic_time:" << symbolic_time
+    std::cout << "mm_time:" << symbolic_time + numeric_time << " symbolic_time:" << symbolic_time
               << " numeric_time:" << numeric_time << std::endl;
   }
   if (verbose) {
@@ -487,8 +428,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
     KokkosKernels::Impl::print_1Dview(entriesC);
     KokkosKernels::Impl::print_1Dview(row_mapC);
   }
-  crsMat_t C_result("CrsMatrixC", m, k, valuesC.extent(0), valuesC, row_mapC,
-                    entriesC);
+  crsMat_t C_result("CrsMatrixC", m, k, valuesC.extent(0), valuesC, row_mapC, entriesC);
   if (check_output) {
     bool is_identical = is_same_matrix<crsMat_t, device_t>(C_result, C_ref);
     if (!is_identical) {
@@ -502,15 +442,12 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
   if (params.c_mtx_bin_file != "") {
     KokkosSparse::sort_crs_matrix(C_result);
 
-    KokkosSparse::Impl::write_graph_bin(
-        (lno_t)(C_result.numRows()), (size_type)(C_result.nnz()),
-        C_result.graph.row_map.data(), C_result.graph.entries.data(),
-        C_result.values.data(), params.c_mtx_bin_file.c_str());
+    KokkosSparse::Impl::write_graph_bin((lno_t)(C_result.numRows()), (size_type)(C_result.nnz()),
+                                        C_result.graph.row_map.data(), C_result.graph.entries.data(),
+                                        C_result.values.data(), params.c_mtx_bin_file.c_str());
   }
 }
 
 #define KOKKOSKERNELS_PERF_TEST_NAME run_spgemm
 #include "KokkosKernels_perf_test_instantiation.hpp"
-int main(int argc, char** argv) {
-  return main_instantiation(argc, argv);
-}  // main
+int main(int argc, char** argv) { return main_instantiation(argc, argv); }  // main

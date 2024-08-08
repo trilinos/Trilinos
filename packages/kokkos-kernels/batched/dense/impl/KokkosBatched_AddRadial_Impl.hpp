@@ -28,11 +28,9 @@ namespace KokkosBatched {
 /// ===========
 
 template <typename ScalarType, typename AViewType>
-KOKKOS_INLINE_FUNCTION int SerialAddRadial::invoke(const ScalarType tiny,
-                                                   const AViewType &A) {
-  return SerialAddRadialInternal::invoke(
-      (A.extent(0) < A.extent(1) ? A.extent(0) : A.extent(1)), tiny, A.data(),
-      (A.stride_0() + A.stride_1()));
+KOKKOS_INLINE_FUNCTION int SerialAddRadial::invoke(const ScalarType tiny, const AViewType &A) {
+  return SerialAddRadialInternal::invoke((A.extent(0) < A.extent(1) ? A.extent(0) : A.extent(1)), tiny, A.data(),
+                                         (A.stride_0() + A.stride_1()));
 }
 
 ///
@@ -41,11 +39,10 @@ KOKKOS_INLINE_FUNCTION int SerialAddRadial::invoke(const ScalarType tiny,
 
 template <typename MemberType>
 template <typename ScalarType, typename AViewType>
-KOKKOS_INLINE_FUNCTION int TeamAddRadial<MemberType>::invoke(
-    const MemberType &member, const ScalarType tiny, const AViewType &A) {
-  return TeamAddRadialInternal::invoke(
-      member, (A.extent(0) < A.extent(1) ? A.extent(0) : A.extent(1)), tiny,
-      A.data(), (A.stride_0() + A.stride_1()));
+KOKKOS_INLINE_FUNCTION int TeamAddRadial<MemberType>::invoke(const MemberType &member, const ScalarType tiny,
+                                                             const AViewType &A) {
+  return TeamAddRadialInternal::invoke(member, (A.extent(0) < A.extent(1) ? A.extent(0) : A.extent(1)), tiny, A.data(),
+                                       (A.stride_0() + A.stride_1()));
 }
 
 }  // end namespace KokkosBatched

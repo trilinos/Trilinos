@@ -21,9 +21,8 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
   using bsr_index_type = typename Bsr::index_type;
 
   using crs_row_map_type = typename Crs::row_map_type;
-  using bsr_row_map_type =
-      Kokkos::View<typename Bsr::row_map_type::non_const_data_type,
-                   bsr_device_type>;  // need non-const version
+  using bsr_row_map_type = Kokkos::View<typename Bsr::row_map_type::non_const_data_type,
+                                        bsr_device_type>;  // need non-const version
 
   using bsr_size_type = typename Bsr::non_const_size_type;
 
@@ -31,10 +30,8 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
     size_t nnz = crs.nnz() * blockSize * blockSize;
     if (nnz > size_t(Kokkos::ArithTraits<bsr_size_type>::max())) {
       std::stringstream ss;
-      ss << "expanding " << crs.nnz()
-         << " non-zeros of CrsMatrix into blocks of " << blockSize
-         << " would overflow size_type of requested BsrMatrix "
-         << Kokkos::ArithTraits<bsr_size_type>::name();
+      ss << "expanding " << crs.nnz() << " non-zeros of CrsMatrix into blocks of " << blockSize
+         << " would overflow size_type of requested BsrMatrix " << Kokkos::ArithTraits<bsr_size_type>::name();
       throw std::runtime_error(ss.str());
     }
   }
@@ -43,14 +40,12 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
   bsr_row_map_type bsrRowMap("bsrRowMap", crs.graph.row_map.size());
   {
     // clone Crs row map in Bsr memory space
-    Kokkos::View<typename crs_row_map_type::non_const_data_type,
-                 bsr_device_type>
-        crows("crows", crs.graph.row_map.size());
+    Kokkos::View<typename crs_row_map_type::non_const_data_type, bsr_device_type> crows("crows",
+                                                                                        crs.graph.row_map.size());
     Kokkos::deep_copy(crows, crs.graph.row_map);
 
     // copy to actual row map
-    Kokkos::RangePolicy<bsr_execution_space> policy(0,
-                                                    crs.graph.row_map.size());
+    Kokkos::RangePolicy<bsr_execution_space> policy(0, crs.graph.row_map.size());
     Kokkos::parallel_for(
         policy, KOKKOS_LAMBDA(size_t i) { bsrRowMap(i) = crows(i); });
   }
@@ -59,13 +54,12 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
   bsr_index_type bsrIndices("bsrIndices", crs.graph.entries.size());
   {
     // clone Crs row map in Bsr memory space
-    Kokkos::View<typename crs_index_type::non_const_data_type, bsr_device_type>
-        cinds("cinds", crs.graph.entries.size());
+    Kokkos::View<typename crs_index_type::non_const_data_type, bsr_device_type> cinds("cinds",
+                                                                                      crs.graph.entries.size());
     Kokkos::deep_copy(cinds, crs.graph.entries);
 
     // copy to actual row map
-    Kokkos::RangePolicy<bsr_execution_space> policy(0,
-                                                    crs.graph.entries.size());
+    Kokkos::RangePolicy<bsr_execution_space> policy(0, crs.graph.entries.size());
     Kokkos::parallel_for(
         policy, KOKKOS_LAMBDA(size_t i) { bsrIndices(i) = cinds(i); });
   }
@@ -74,8 +68,7 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
   bsr_values_type bsrVals("bsrVals", crs.nnz() * blockSize * blockSize);
   {
     // clone Crs values in Bsr memory space
-    Kokkos::View<typename crs_values_type::non_const_data_type, bsr_device_type>
-        cvals("cvals", crs.values.size());
+    Kokkos::View<typename crs_values_type::non_const_data_type, bsr_device_type> cvals("cvals", crs.values.size());
     Kokkos::deep_copy(cvals, crs.values);
 
     // copy to actual values
@@ -88,8 +81,7 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
         });
   }
 
-  Bsr bsr("", crs.numRows(), crs.numCols(), crs.nnz(), bsrVals, bsrRowMap,
-          bsrIndices, blockSize);
+  Bsr bsr("", crs.numRows(), crs.numCols(), crs.nnz(), bsrVals, bsrRowMap, bsrIndices, blockSize);
   return bsr;
 }  // expand_crs_to_bsr
 
@@ -99,14 +91,12 @@ template <typename Bsr, typename Crs>
 Bsr blocked_crs_to_bsr(const Crs &crs, size_t blockSize) {
   using bsr_value_type   = typename Bsr::value_type;
   using bsr_ordinal_type = typename Bsr::ordinal_type;
+  using crs_size_type    = typename Crs::non_const_size_type;
 
   // copy matrix data to host
-  auto hRowMap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                     crs.graph.row_map);
-  auto hColInds = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                      crs.graph.entries);
-  auto hVals =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crs.values);
+  auto hRowMap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crs.graph.row_map);
+  auto hColInds = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crs.graph.entries);
+  auto hVals    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crs.values);
   Kokkos::fence();
 
   // construct COO data on host
@@ -117,9 +107,8 @@ Bsr blocked_crs_to_bsr(const Crs &crs, size_t blockSize) {
   rows.reserve(crs.nnz());
   cols.reserve(crs.nnz());
 
-  for (bsr_ordinal_type row = 0; row < bsr_ordinal_type(hRowMap.size()) - 1;
-       ++row) {
-    for (size_t ci = hRowMap(row); ci < hRowMap(row + 1); ++ci) {
+  for (bsr_ordinal_type row = 0; row < bsr_ordinal_type(hRowMap.size()) - 1; ++row) {
+    for (crs_size_type ci = hRowMap(row); ci < hRowMap(row + 1); ++ci) {
       bsr_ordinal_type col = hColInds(ci);
       bsr_value_type val   = hVals(ci);
 
@@ -129,8 +118,7 @@ Bsr blocked_crs_to_bsr(const Crs &crs, size_t blockSize) {
     }
   }
 
-  Bsr bsr("", crs.numRows(), crs.numCols(), crs.nnz(), vals.data(), rows.data(),
-          cols.data(), blockSize);
+  Bsr bsr("", crs.numRows(), crs.numCols(), crs.nnz(), vals.data(), rows.data(), cols.data(), blockSize);
   return bsr;
 }  // expand_crs_to_bsr
 

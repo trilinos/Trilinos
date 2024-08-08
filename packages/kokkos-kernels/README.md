@@ -1,3 +1,4 @@
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/kokkos/kokkos-kernels/badge)](https://securityscorecards.dev/viewer/?uri=github.com/kokkos/kokkos-kernels)
 [![Generic badge](https://readthedocs.org/projects/kokkos-kernels/badge/?version=latest)](https://kokkos-kernels.readthedocs.io/en/latest/)
 
 ![KokkosKernels](https://avatars2.githubusercontent.com/u/10199860?s=200&v=4)

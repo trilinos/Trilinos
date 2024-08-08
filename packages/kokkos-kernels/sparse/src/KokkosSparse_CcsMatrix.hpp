@@ -66,10 +66,8 @@ namespace Kokkos {
 /// <li> <tt> entries( entry ,            i2 , i3 , ... ); </tt> </li>
 /// <li> <tt> entries( col_map[i0] + i1 , i2 , i3 , ... ); </tt> </li>
 /// </ul>
-template <class DataType, class Arg1Type, class Arg2Type = void,
-          class Arg3Type    = void,
-          typename SizeType = typename ViewTraits<DataType*, Arg1Type, Arg2Type,
-                                                  Arg3Type>::size_type>
+template <class DataType, class Arg1Type, class Arg2Type = void, class Arg3Type = void,
+          typename SizeType = typename ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type>::size_type>
 class StaticCcsGraph {
  private:
   using traits = ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type>;
@@ -82,12 +80,9 @@ class StaticCcsGraph {
   using memory_traits   = typename traits::memory_traits;
   using size_type       = SizeType;
 
-  using col_map_type =
-      View<const size_type*, array_layout, device_type, memory_traits>;
-  using entries_type =
-      View<data_type*, array_layout, device_type, memory_traits>;
-  using row_block_type =
-      View<const size_type*, array_layout, device_type, memory_traits>;
+  using col_map_type   = View<const size_type*, array_layout, device_type, memory_traits>;
+  using entries_type   = View<data_type*, array_layout, device_type, memory_traits>;
+  using row_block_type = View<const size_type*, array_layout, device_type, memory_traits>;
 
   entries_type entries;
   col_map_type col_map;
@@ -98,21 +93,17 @@ class StaticCcsGraph {
 
   //! Copy constructor (shallow copy).
   KOKKOS_INLINE_FUNCTION
-  StaticCcsGraph(const StaticCcsGraph& rhs)
-      : entries(rhs.entries), col_map(rhs.col_map) {}
+  StaticCcsGraph(const StaticCcsGraph& rhs) : entries(rhs.entries), col_map(rhs.col_map) {}
 
   template <class EntriesType, class ColMapType>
-  KOKKOS_INLINE_FUNCTION StaticCcsGraph(const EntriesType& entries_,
-                                        const ColMapType& col_map_)
+  KOKKOS_INLINE_FUNCTION StaticCcsGraph(const EntriesType& entries_, const ColMapType& col_map_)
       : entries(entries_), col_map(col_map_) {}
 
   /**  \brief  Return number of columns in the graph
    */
   KOKKOS_INLINE_FUNCTION
   size_type numCols() const {
-    return (col_map.extent(0) != 0)
-               ? col_map.extent(0) - static_cast<size_type>(1)
-               : static_cast<size_type>(0);
+    return (col_map.extent(0) != 0) ? col_map.extent(0) - static_cast<size_type>(1) : static_cast<size_type>(0);
   }
 };
 }  // namespace Kokkos
@@ -127,14 +118,10 @@ namespace KokkosSparse {
 ///   accesses data.  The default parameter suffices for most users.
 ///
 /// "Ccs" stands for "compressed column sparse."
-template <class ScalarType, class OrdinalType, class Device,
-          class MemoryTraits = void,
-          class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
-                                                       void, void>::size_type>
+template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
+          class SizeType = typename Kokkos::ViewTraits<OrdinalType*, Device, void, void>::size_type>
 class CcsMatrix {
-  static_assert(
-      std::is_signed<OrdinalType>::value,
-      "CcsMatrix requires that OrdinalType is a signed integer type.");
+  static_assert(std::is_signed<OrdinalType>::value, "CcsMatrix requires that OrdinalType is a signed integer type.");
 
  public:
   //! Type of the matrix's execution space.
@@ -155,15 +142,12 @@ class CcsMatrix {
   //! Type of each (column) index in the matrix.
   typedef OrdinalType ordinal_type;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCcsGraph<ordinal_type, default_layout, device_type,
-                                 memory_traits, size_type>
+  typedef Kokkos::StaticCcsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
       staticccsgraph_type;
   //! Type of the "column map" (which contains the offset for each column's
   //! data).
   typedef typename staticccsgraph_type::col_map_type col_map_type;
-  typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type,
-                       MemoryTraits>
-      values_type;
+  typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
   //! Type of column indices in the sparse matrix.
   typedef typename staticccsgraph_type::entries_type index_type;
 
@@ -202,16 +186,12 @@ class CcsMatrix {
   /// each column).
   /// \param rows [in] The row indices.
   // clang-format on
-  CcsMatrix(const std::string& /* label */, const OrdinalType nrows,
-            const OrdinalType ncols, const size_type annz,
-            const values_type& vals, const col_map_type& colmap,
-            const index_type& rows)
+  CcsMatrix(const std::string& /* label */, const OrdinalType nrows, const OrdinalType ncols, const size_type annz,
+            const values_type& vals, const col_map_type& colmap, const index_type& rows)
       : graph(rows, colmap), values(vals), numRows_(nrows) {
-    const ordinal_type actualNumRows =
-        (colmap.extent(0) != 0)
-            ? static_cast<ordinal_type>(colmap.extent(0) -
-                                        static_cast<size_type>(1))
-            : static_cast<ordinal_type>(0);
+    const ordinal_type actualNumRows = (colmap.extent(0) != 0)
+                                           ? static_cast<ordinal_type>(colmap.extent(0) - static_cast<size_type>(1))
+                                           : static_cast<ordinal_type>(0);
     if (ncols != actualNumRows) {
       std::ostringstream os;
       os << "Input argument ncols = " << ncols
@@ -222,16 +202,13 @@ class CcsMatrix {
     }
     if (annz != nnz()) {
       std::ostringstream os;
-      os << "Input argument annz = " << annz << " != this->nnz () = " << nnz()
-         << ".";
+      os << "Input argument annz = " << annz << " != this->nnz () = " << nnz() << ".";
       throw std::invalid_argument(os.str());
     }
   }
 
   //! The number of rows in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION ordinal_type numCols() const {
-    return graph.numCols();
-  }
+  KOKKOS_INLINE_FUNCTION ordinal_type numCols() const { return graph.numCols(); }
 
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type numRows() const { return numRows_; }
@@ -245,9 +222,7 @@ class CcsMatrix {
   KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const { return numCols(); }
 
   //! The number of stored entries in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION size_type nnz() const {
-    return graph.entries.extent(0);
-  }
+  KOKKOS_INLINE_FUNCTION size_type nnz() const { return graph.entries.extent(0); }
 };
 
 /// \class is_ccs_matrix

@@ -30,7 +30,7 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-//#define KK_TICTOCPRINT
+// #define KK_TICTOCPRINT
 namespace KokkosKernels {
 namespace Experimental {
 namespace Example {
@@ -44,15 +44,12 @@ struct CGSolveResult {
   double precond_init_time;
 };
 
-template <typename KernelHandle_t, typename crsMatrix_t, typename y_vector_t,
-          typename x_vector_t>
-void block_pcgsolve(
-    KernelHandle_t &kh, const crsMatrix_t &point_crsMat,
-    const crsMatrix_t &_block_crsMat, int block_size,
-    const y_vector_t &y_vector, x_vector_t x_vector,
-    const size_t maximum_iteration = 200,
-    const double tolerance         = std::numeric_limits<double>::epsilon(),
-    CGSolveResult *result = 0, bool use_sgs = true) {
+template <typename KernelHandle_t, typename crsMatrix_t, typename y_vector_t, typename x_vector_t>
+void block_pcgsolve(KernelHandle_t &kh, const crsMatrix_t &point_crsMat, const crsMatrix_t &_block_crsMat,
+                    int block_size, const y_vector_t &y_vector, x_vector_t x_vector,
+                    const size_t maximum_iteration = 200,
+                    const double tolerance = std::numeric_limits<double>::epsilon(), CGSolveResult *result = 0,
+                    bool use_sgs = true) {
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
   typedef typename KernelHandle_t::HandleExecSpace Space;
@@ -72,8 +69,7 @@ void block_pcgsolve(
   // Need input vector to matvec to be owned + received
   y_vector_t pAll("cg::p", count_total);
 
-  y_vector_t p =
-      Kokkos::subview(pAll, std::pair<size_t, size_t>(0, count_total));
+  y_vector_t p = Kokkos::subview(pAll, std::pair<size_t, size_t>(0, count_total));
   y_vector_t r("cg::r", count_total);
   y_vector_t Ap("cg::Ap", count_total);
 
@@ -124,20 +120,17 @@ void block_pcgsolve(
     // timer.reset();
 
     // block_kh.set_verbose(true);
-    block_gauss_seidel_numeric(
-        &block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
-        _block_crsMat.graph.row_map, _block_crsMat.graph.entries,
-        _block_crsMat.values);
+    block_gauss_seidel_numeric(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
+                               _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values);
 
     precond_init_time += timer.seconds();
 
     z = y_vector_t("pcg::z", count_total);
     Space().fence();
     timer.reset();
-    symmetric_block_gauss_seidel_apply(
-        &block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
-        _block_crsMat.graph.row_map, _block_crsMat.graph.entries,
-        _block_crsMat.values, z, r, true, true, 1.0, apply_count);
+    symmetric_block_gauss_seidel_apply(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
+                                       _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
+                                       z, r, true, true, 1.0, apply_count);
 
     // symmetric_gauss_seidel_apply
     //    (&kh, count_total, count_total, point_crsMat.graph.row_map,
@@ -192,10 +185,9 @@ void block_pcgsolve(
     if (use_sgs) {
       Space().fence();
       timer.reset();
-      symmetric_block_gauss_seidel_apply(
-          &block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(),
-          block_size, _block_crsMat.graph.row_map, _block_crsMat.graph.entries,
-          _block_crsMat.values, z, r, true, true, 1.0, apply_count);
+      symmetric_block_gauss_seidel_apply(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
+                                         _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
+                                         z, r, true, true, 1.0, apply_count);
 
       // symmetric_gauss_seidel_apply(
       //    &kh,
@@ -231,8 +223,7 @@ void block_pcgsolve(
     precond_old_rdot = precond_r_dot;
 
 #ifdef KK_TICTOCPRINT
-    std::cout << "\tnorm_res:" << norm_res << " old_rdot:" << old_rdot
-              << std::endl;
+    std::cout << "\tnorm_res:" << norm_res << " old_rdot:" << old_rdot << std::endl;
 #endif
     ++iteration;
   }
@@ -254,22 +245,18 @@ void block_pcgsolve(
   }
 }
 
-template <typename KernelHandle_t, typename crsMatrix_t, typename y_vector_t,
-          typename x_vector_t>
-void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
-              const y_vector_t &y_vector, x_vector_t x_vector,
-              const size_t maximum_iteration = 200,
-              const double tolerance = std::numeric_limits<double>::epsilon(),
-              CGSolveResult *result = 0, bool use_sgs = true,
-              int /*clusterSize*/ = 1, bool use_sequential_sgs = false) {
+template <typename KernelHandle_t, typename crsMatrix_t, typename y_vector_t, typename x_vector_t>
+void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat, const y_vector_t &y_vector, x_vector_t x_vector,
+              const size_t maximum_iteration = 200, const double tolerance = std::numeric_limits<double>::epsilon(),
+              CGSolveResult *result = 0, bool use_sgs = true, int /*clusterSize*/ = 1,
+              bool use_sequential_sgs = false) {
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
   using size_type = typename KernelHandle_t::size_type;
   using nnz_lno_t = typename KernelHandle_t::nnz_lno_t;
   using Space     = typename KernelHandle_t::HandleExecSpace;
-  static_assert(
-      std::is_same<double, typename KernelHandle_t::nnz_scalar_t>::value,
-      "The PCG performance test only works with scalar = double.");
+  static_assert(std::is_same<double, typename KernelHandle_t::nnz_scalar_t>::value,
+                "The PCG performance test only works with scalar = double.");
 
   const nnz_lno_t count_total = crsMat.numRows();
 
@@ -286,8 +273,7 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
   // Need input vector to matvec to be owned + received
   y_vector_t pAll("cg::p", count_total);
 
-  y_vector_t p =
-      Kokkos::subview(pAll, std::pair<size_t, size_t>(0, count_total));
+  y_vector_t p = Kokkos::subview(pAll, std::pair<size_t, size_t>(0, count_total));
   y_vector_t r("cg::r", count_total);
   y_vector_t Ap("cg::Ap", count_total);
 
@@ -313,33 +299,26 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
 
   bool use_par_sgs = use_sgs && !use_sequential_sgs;
 
-  auto ptrHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                     crsMat.graph.row_map);
-  auto indHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                     crsMat.graph.entries);
-  auto valHost =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crsMat.values);
+  auto ptrHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crsMat.graph.row_map);
+  auto indHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crsMat.graph.entries);
+  auto valHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), crsMat.values);
   Kokkos::View<double *, Kokkos::HostSpace> diagHost;
   if (use_sequential_sgs) {
-    diagHost = Kokkos::View<double *, Kokkos::HostSpace>("Diag for Seq SOR",
-                                                         count_total);
+    diagHost = Kokkos::View<double *, Kokkos::HostSpace>("Diag for Seq SOR", count_total);
     for (int i = 0; i < count_total; i++) {
       for (size_type j = ptrHost(i); j < ptrHost(i + 1); j++) {
         if (indHost(j) == i) diagHost(i) = 1.0 / valHost(j);
       }
     }
   }
-  auto xHost =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_vector);
-  auto yHost =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_vector);
+  auto xHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_vector);
+  auto yHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_vector);
 
   if (use_sgs) {
     timer.reset();
     z = y_vector_t("pcg::z", count_total);
     if (use_par_sgs) {
-      gauss_seidel_numeric(&kh, count_total, count_total, crsMat.graph.row_map,
-                           crsMat.graph.entries, crsMat.values);
+      gauss_seidel_numeric(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
 
       Space().fence();
 
@@ -347,10 +326,8 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
       Space().fence();
       timer.reset();
 
-      symmetric_gauss_seidel_apply(&kh, count_total, count_total,
-                                   crsMat.graph.row_map, crsMat.graph.entries,
-                                   crsMat.values, z, r, true, true, 1.0,
-                                   apply_count);
+      symmetric_gauss_seidel_apply(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries,
+                                   crsMat.values, z, r, true, true, 1.0, apply_count);
 
       Space().fence();
     } else if (use_sequential_sgs) {
@@ -361,8 +338,7 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
       // as with par_sgs, init unknown to 0
       timer.reset();
       for (int sweep = 0; sweep < apply_count; sweep++) {
-        KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type,
-                                                    double, double, double>(
+        KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>(
             count_total,  // rows = cols of the matrix
             1,            // number of vectors in X and B
             ptrHost.data(), indHost.data(), valHost.data(), rhost.data(),
@@ -371,11 +347,9 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
             zhost.data(),
             count_total,  // raw ptr to X vector, and X column stride
             diagHost.data(), 1.0, "F");
-        KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type,
-                                                    double, double, double>(
-            count_total, 1, ptrHost.data(), indHost.data(), valHost.data(),
-            rhost.data(), count_total, zhost.data(), count_total,
-            diagHost.data(), 1.0, "B");
+        KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>(
+            count_total, 1, ptrHost.data(), indHost.data(), valHost.data(), rhost.data(), count_total, zhost.data(),
+            count_total, diagHost.data(), 1.0, "B");
       }
       // result is in z (but r doesn't change)
       Kokkos::deep_copy(z, zhost);
@@ -394,8 +368,7 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
 
 #endif
   while (tolerance < norm_res && iteration < maximum_iteration) {
-    std::cout << "Running CG iteration " << iteration
-              << ", current resnorm = " << norm_res << '\n';
+    std::cout << "Running CG iteration " << iteration << ", current resnorm = " << norm_res << '\n';
 
     timer.reset();
     /* Ap = A * p   */ KokkosSparse::spmv("N", 1, crsMat, pAll, 0, Ap);
@@ -429,29 +402,21 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
       Space().fence();
       timer.reset();
       if (use_par_sgs) {
-        symmetric_gauss_seidel_apply(&kh, count_total, count_total,
-                                     crsMat.graph.row_map, crsMat.graph.entries,
-                                     crsMat.values, z, r, true, true, 1.0,
-                                     apply_count);
+        symmetric_gauss_seidel_apply(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries,
+                                     crsMat.values, z, r, true, true, 1.0, apply_count);
       } else if (use_sequential_sgs) {
         // z = LHS (aka x), r RHS (aka y or b)
         Kokkos::deep_copy(z, 0.0);
-        auto zhost =
-            Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), z);
-        auto rhost =
-            Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), r);
+        auto zhost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), z);
+        auto rhost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), r);
         // as with the par_sgs version, init unknown (here, zhost) to 0
         for (int sweep = 0; sweep < apply_count; sweep++) {
-          KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type,
-                                                      double, double, double>(
-              count_total, 1, ptrHost.data(), indHost.data(), valHost.data(),
-              rhost.data(), count_total, zhost.data(), count_total,
-              diagHost.data(), 1.0, "F");
-          KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type,
-                                                      double, double, double>(
-              count_total, 1, ptrHost.data(), indHost.data(), valHost.data(),
-              rhost.data(), count_total, zhost.data(), count_total,
-              diagHost.data(), 1.0, "B");
+          KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>(
+              count_total, 1, ptrHost.data(), indHost.data(), valHost.data(), rhost.data(), count_total, zhost.data(),
+              count_total, diagHost.data(), 1.0, "F");
+          KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>(
+              count_total, 1, ptrHost.data(), indHost.data(), valHost.data(), rhost.data(), count_total, zhost.data(),
+              count_total, diagHost.data(), 1.0, "B");
         }
         Kokkos::deep_copy(z, zhost);
         Kokkos::deep_copy(r, rhost);
@@ -479,8 +444,7 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
     precond_old_rdot = precond_r_dot;
 
 #ifdef KK_TICTOCPRINT
-    std::cout << "\tnorm_res:" << norm_res << " old_rdot:" << old_rdot
-              << std::endl;
+    std::cout << "\tnorm_res:" << norm_res << " old_rdot:" << old_rdot << std::endl;
 #endif
     ++iteration;
   }

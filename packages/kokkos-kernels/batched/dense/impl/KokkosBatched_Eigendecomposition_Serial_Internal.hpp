@@ -61,11 +61,10 @@ struct SerialEigendecompositionInternal {
   ///   [out]w, [in]wlen
   ///     Workspace
   template <typename RealType>
-  KOKKOS_INLINE_FUNCTION static int device_invoke(
-      const int m, RealType* A, const int as0, const int as1, RealType* er,
-      const int ers, RealType* ei, const int eis, RealType* UL, const int uls0,
-      const int uls1, RealType* UR, const int urs0, const int urs1, RealType* w,
-      const int wlen) {
+  KOKKOS_INLINE_FUNCTION static int device_invoke(const int m, RealType* A, const int as0, const int as1, RealType* er,
+                                                  const int ers, RealType* ei, const int eis, RealType* UL,
+                                                  const int uls0, const int uls1, RealType* UR, const int urs0,
+                                                  const int urs1, RealType* w, const int wlen) {
     /// until debugging is done, comment out the code
     /// testing happens only for TPLs on host.
     static_assert(false,
@@ -336,14 +335,10 @@ struct SerialEigendecompositionInternal {
   }
 
   template <typename RealType>
-  inline static int host_invoke(const int m, RealType* A, const int as0,
-                                const int as1, RealType* er, const int ers,
-                                RealType* ei, const int eis, RealType* UL,
-                                const int uls0, const int uls1, RealType* UR,
-                                const int urs0, const int urs1, RealType* w,
-                                const int wlen) {
-#if defined(__KOKKOSBATCHED_ENABLE_LAPACKE__) || \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
+  inline static int host_invoke(const int m, RealType* A, const int as0, const int as1, RealType* er, const int ers,
+                                RealType* ei, const int eis, RealType* UL, const int uls0, const int uls1, RealType* UR,
+                                const int urs0, const int urs1, RealType* w, const int wlen) {
+#if defined(__KOKKOSBATCHED_ENABLE_LAPACKE__) || defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
     int matrix_layout(0), lda(0), uls(0), urs(0);
     if (as0 == 1) {
       assert(uls0 == 1 && "UL is not column major");
@@ -365,33 +360,29 @@ struct SerialEigendecompositionInternal {
     }
     assert(matrix_layout != 0 && "Either stride of A is not unit");
     if (std::is_same<RealType, float>::value) {
-      LAPACKE_sgeev(matrix_layout, 'V', 'V', m, (float*)A, lda, (float*)er,
-                    (float*)ei, (float*)UL, uls, (float*)UR, urs);
+      LAPACKE_sgeev(matrix_layout, 'V', 'V', m, (float*)A, lda, (float*)er, (float*)ei, (float*)UL, uls, (float*)UR,
+                    urs);
     } else if (std::is_same<RealType, double>::value) {
-      LAPACKE_dgeev(matrix_layout, 'V', 'V', m, (double*)A, lda, (double*)er,
-                    (double*)ei, (double*)UL, uls, (double*)UR, urs);
+      LAPACKE_dgeev(matrix_layout, 'V', 'V', m, (double*)A, lda, (double*)er, (double*)ei, (double*)UL, uls,
+                    (double*)UR, urs);
     } else {
       // no complex is needed for this moment
       assert(false && "complex type is not supported");
     }
 #else
-    device_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0, uls1, UR, urs0,
-                  urs1, w, wlen);
+    device_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0, uls1, UR, urs0, urs1, w, wlen);
 
 #endif
     return 0;
   }
 
   template <typename RealType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const int m, RealType* A, const int as0, const int as1, RealType* er,
-      const int ers, RealType* ei, const int eis, RealType* UL, const int uls0,
-      const int uls1, RealType* UR, const int urs0, const int urs1, RealType* w,
-      const int wlen) {
-    KOKKOS_IF_ON_HOST((host_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0,
-                                   uls1, UR, urs0, urs1, w, wlen);))
-    KOKKOS_IF_ON_DEVICE((device_invoke(m, A, as0, as1, er, ers, ei, eis, UL,
-                                       uls0, uls1, UR, urs0, urs1, w, wlen);))
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, RealType* A, const int as0, const int as1, RealType* er,
+                                           const int ers, RealType* ei, const int eis, RealType* UL, const int uls0,
+                                           const int uls1, RealType* UR, const int urs0, const int urs1, RealType* w,
+                                           const int wlen) {
+    KOKKOS_IF_ON_HOST((host_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0, uls1, UR, urs0, urs1, w, wlen);))
+    KOKKOS_IF_ON_DEVICE((device_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0, uls1, UR, urs0, urs1, w, wlen);))
     return 0;
   }
 };

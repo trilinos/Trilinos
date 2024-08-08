@@ -40,10 +40,8 @@ namespace KokkosSparse {
 /// \tparam MemoryTraits Traits describing how Kokkos manages and
 ///   accesses data.  The default parameter suffices for most users.
 /// "Coo" stands for "coordinate format".
-template <class ScalarType, class OrdinalType, class Device,
-          class MemoryTraits = void,
-          class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
-                                                       void, void>::size_type>
+template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
+          class SizeType = typename Kokkos::ViewTraits<OrdinalType*, Device, void, void>::size_type>
 class CooMatrix {
  public:
   //! Type of each value in the matrix
@@ -73,21 +71,16 @@ class CooMatrix {
   //! Type of all integral class members
   using size_type = SizeType;
 
-  static_assert(std::is_integral_v<OrdinalType>,
-                "OrdinalType must be an integral.");
+  static_assert(std::is_integral_v<OrdinalType>, "OrdinalType must be an integral.");
 
   //! The type of the row index view in the matrix
-  using row_view =
-      Kokkos::View<row_type*, Kokkos::LayoutRight, device_type, memory_traits>;
+  using row_view = Kokkos::View<row_type*, Kokkos::LayoutRight, device_type, memory_traits>;
   //! The type of the column index view in the matrix
-  using column_view = Kokkos::View<column_type*, Kokkos::LayoutRight,
-                                   device_type, memory_traits>;
+  using column_view = Kokkos::View<column_type*, Kokkos::LayoutRight, device_type, memory_traits>;
   //! The type of the scalar values view in the matrix
-  using scalar_view = Kokkos::View<scalar_type*, Kokkos::LayoutRight,
-                                   device_type, memory_traits>;
+  using scalar_view = Kokkos::View<scalar_type*, Kokkos::LayoutRight, device_type, memory_traits>;
   //! The type of a constant CooMatrix
-  using const_type = CooMatrix<const_scalar_type, const_ordinal_type,
-                               device_type, memory_traits, size_type>;
+  using const_type = CooMatrix<const_scalar_type, const_ordinal_type, device_type, memory_traits, size_type>;
 
  private:
   size_type m_num_rows, m_num_cols;
@@ -113,15 +106,9 @@ class CooMatrix {
   /// \param col_in  [in] The column indexes.
   /// \param data_in [in] The values.
   // clang-format on
-  CooMatrix(size_type nrows, size_type ncols, row_view row_in,
-            column_view col_in, scalar_view data_in)
-      : m_num_rows(nrows),
-        m_num_cols(ncols),
-        m_row(row_in),
-        m_col(col_in),
-        m_data(data_in) {
-    if (m_data.extent(0) != m_row.extent(0) ||
-        m_row.extent(0) != m_col.extent(0)) {
+  CooMatrix(size_type nrows, size_type ncols, row_view row_in, column_view col_in, scalar_view data_in)
+      : m_num_rows(nrows), m_num_cols(ncols), m_row(row_in), m_col(col_in), m_data(data_in) {
+    if (m_data.extent(0) != m_row.extent(0) || m_row.extent(0) != m_col.extent(0)) {
       std::ostringstream os;
       os << "data.extent(0): " << m_data.extent(0) << " != "
          << "row.extent(0): " << m_row.extent(0) << " != "

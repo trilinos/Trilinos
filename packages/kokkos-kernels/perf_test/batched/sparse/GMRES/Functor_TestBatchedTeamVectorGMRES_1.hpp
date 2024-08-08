@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-template <typename DeviceType, typename ValuesViewType, typename IntView,
-          typename VectorViewType, typename KrylovHandleType, bool UsePrec>
+template <typename DeviceType, typename ValuesViewType, typename IntView, typename VectorViewType,
+          typename KrylovHandleType, bool UsePrec>
 struct Functor_TestBatchedTeamVectorGMRES_1 {
   const ValuesViewType _D;
   const ValuesViewType _diag;
@@ -32,12 +32,11 @@ struct Functor_TestBatchedTeamVectorGMRES_1 {
   KrylovHandleType _handle;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamVectorGMRES_1(
-      const ValuesViewType &D, const IntView &r, const IntView &c,
-      const VectorViewType &X, const VectorViewType &B, const int N_team,
-      const int team_size, const int vector_length, const int N_iteration,
-      const double tol, const int ortho_strategy, const int arnoldi_level,
-      const int other_level, KrylovHandleType &handle)
+  Functor_TestBatchedTeamVectorGMRES_1(const ValuesViewType &D, const IntView &r, const IntView &c,
+                                       const VectorViewType &X, const VectorViewType &B, const int N_team,
+                                       const int team_size, const int vector_length, const int N_iteration,
+                                       const double tol, const int ortho_strategy, const int arnoldi_level,
+                                       const int other_level, KrylovHandleType &handle)
       : _D(D),
         _r(r),
         _c(c),
@@ -54,12 +53,11 @@ struct Functor_TestBatchedTeamVectorGMRES_1 {
         _handle(handle) {}
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamVectorGMRES_1(
-      const ValuesViewType &D, const ValuesViewType &diag, const IntView &r,
-      const IntView &c, const VectorViewType &X, const VectorViewType &B,
-      const int N_team, const int team_size, const int vector_length,
-      const int N_iteration, const double tol, int ortho_strategy,
-      const int arnoldi_level, const int other_level, KrylovHandleType &handle)
+  Functor_TestBatchedTeamVectorGMRES_1(const ValuesViewType &D, const ValuesViewType &diag, const IntView &r,
+                                       const IntView &c, const VectorViewType &X, const VectorViewType &B,
+                                       const int N_team, const int team_size, const int vector_length,
+                                       const int N_iteration, const double tol, int ortho_strategy,
+                                       const int arnoldi_level, const int other_level, KrylovHandleType &handle)
       : _D(D),
         _diag(diag),
         _r(r),
@@ -81,31 +79,25 @@ struct Functor_TestBatchedTeamVectorGMRES_1 {
     const int first_matrix = _handle.first_index(member.league_rank());
     const int last_matrix  = _handle.last_index(member.league_rank());
 
-    auto d = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
-    auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
-    auto b = Kokkos::subview(_B, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
+    auto d = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto b = Kokkos::subview(_B, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     using Operator = KokkosBatched::CrsMatrix<ValuesViewType, IntView>;
 
     Operator A(d, _r, _c);
 
     if (UsePrec) {
-      auto diag = Kokkos::subview(
-          _diag, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+      auto diag          = Kokkos::subview(_diag, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
       using PrecOperator = KokkosBatched::JacobiPrec<VectorViewType>;
 
       PrecOperator P(diag);
       P.setComputedInverse();
 
-      KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<
-          Operator, VectorViewType, PrecOperator, KrylovHandleType>(
-          member, A, b, x, P, _handle);
+      KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<Operator, VectorViewType, PrecOperator,
+                                                                  KrylovHandleType>(member, A, b, x, P, _handle);
     } else {
-      KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<
-          Operator, VectorViewType>(member, A, b, x, _handle);
+      KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<Operator, VectorViewType>(member, A, b, x, _handle);
     }
   }
 
@@ -118,13 +110,11 @@ struct Functor_TestBatchedTeamVectorGMRES_1 {
 
     _handle.set_memory_strategy(1);
 
-    _handle.tmp_view = typename KrylovHandleType::TemporaryViewType(
-        "", _X.extent(0), _X.extent(1) + maximum_iteration + 3);
+    _handle.tmp_view =
+        typename KrylovHandleType::TemporaryViewType("", _X.extent(0), _X.extent(1) + maximum_iteration + 3);
 
-    Kokkos::TeamPolicy<DeviceType> auto_policy(_handle.get_number_of_teams(),
-                                               Kokkos::AUTO(), Kokkos::AUTO());
-    Kokkos::TeamPolicy<DeviceType> tuned_policy(_handle.get_number_of_teams(),
-                                                _team_size, _vector_length);
+    Kokkos::TeamPolicy<DeviceType> auto_policy(_handle.get_number_of_teams(), Kokkos::AUTO(), Kokkos::AUTO());
+    Kokkos::TeamPolicy<DeviceType> tuned_policy(_handle.get_number_of_teams(), _team_size, _vector_length);
     Kokkos::TeamPolicy<DeviceType> policy;
 
     if (_team_size < 1)

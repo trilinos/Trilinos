@@ -32,8 +32,7 @@ using namespace KokkosBatched;
 namespace Test {
 namespace Gesv {
 
-template <typename DeviceType, typename MatrixType, typename VectorType,
-          typename AlgoTagType>
+template <typename DeviceType, typename MatrixType, typename VectorType, typename AlgoTagType>
 struct Functor_TestBatchedSerialGesv {
   using execution_space = typename DeviceType::execution_space;
   const MatrixType _A;
@@ -42,8 +41,7 @@ struct Functor_TestBatchedSerialGesv {
   const VectorType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedSerialGesv(const MatrixType &A, const MatrixType &tmp,
-                                const VectorType &X, const VectorType &B)
+  Functor_TestBatchedSerialGesv(const MatrixType &A, const MatrixType &tmp, const VectorType &X, const VectorType &B)
       : _A(A), _tmp(tmp), _X(X), _B(B) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -68,21 +66,18 @@ struct Functor_TestBatchedSerialGesv {
   }
 };
 
-template <typename DeviceType, typename MatrixType, typename VectorType,
-          typename AlgoTagType>
+template <typename DeviceType, typename MatrixType, typename VectorType, typename AlgoTagType>
 void impl_test_batched_gesv(const int N, const int BlkSize) {
   typedef typename MatrixType::value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
 
   using MagnitudeType = typename Kokkos::ArithTraits<value_type>::mag_type;
-  using NormViewType =
-      Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
+  using NormViewType  = Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
 
   NormViewType sqr_norm_j("sqr_norm_j", N);
   auto sqr_norm_j_host = Kokkos::create_mirror_view(sqr_norm_j);
 
-  MatrixType A("A", N, BlkSize, BlkSize), A2("A", N, BlkSize, BlkSize),
-      tmp("tmp", N, BlkSize, BlkSize + 4);
+  MatrixType A("A", N, BlkSize, BlkSize), A2("A", N, BlkSize, BlkSize), tmp("tmp", N, BlkSize, BlkSize + 4);
   VectorType B("b", N, BlkSize), B2("b", N, BlkSize), X("x", N, BlkSize);
 
   create_tridiagonal_batched_matrices(A, B);
@@ -98,23 +93,18 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Functor_TestBatchedSerialGesv<DeviceType, MatrixType, VectorType,
-                                AlgoTagType>(A, tmp, X, B)
-      .run();
+  Functor_TestBatchedSerialGesv<DeviceType, MatrixType, VectorType, AlgoTagType>(A, tmp, X, B).run();
 
   Kokkos::fence();
 
   Kokkos::deep_copy(X_host, X);
 
   for (int l = 0; l < N; ++l)
-    KokkosBlas::SerialGemv<Trans::NoTranspose,
-                           KokkosBlas::Algo::Gemv::Unblocked>::
-        invoke(-1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL),
-               Kokkos::subview(X_host, l, Kokkos::ALL), 1,
-               Kokkos::subview(B_host, l, Kokkos::ALL));
+    KokkosBlas::SerialGemv<Trans::NoTranspose, KokkosBlas::Algo::Gemv::Unblocked>::invoke(
+        -1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL), Kokkos::subview(X_host, l, Kokkos::ALL), 1,
+        Kokkos::subview(B_host, l, Kokkos::ALL));
 
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(B_host, B_host,
-                                                       sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(B_host, B_host, sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e3 * ats::epsilon();
 
@@ -127,27 +117,21 @@ template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_gesv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        MatrixType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType>
-        VectorType;
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> MatrixType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> VectorType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType,
-                                         AlgoTagType>(1024, i);
+      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        MatrixType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        VectorType;
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> MatrixType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> VectorType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType,
-                                         AlgoTagType>(1024, i);
+      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType, AlgoTagType>(1024, i);
     }
   }
 #endif

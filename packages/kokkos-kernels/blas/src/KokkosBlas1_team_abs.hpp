@@ -23,8 +23,7 @@ namespace KokkosBlas {
 namespace Experimental {
 
 template <class TeamType, class RVector, class XVector>
-void KOKKOS_INLINE_FUNCTION abs(const TeamType& team, const RVector& r,
-                                const XVector& x) {
+void KOKKOS_INLINE_FUNCTION abs(const TeamType& team, const RVector& r, const XVector& x) {
   Impl::TeamAbs<TeamType, RVector, XVector>::team_abs(team, r, x);
 }
 

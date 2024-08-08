@@ -33,27 +33,24 @@ struct team_update_tpl_spec_avail {
 
 // Unification and Specialization layer
 template <class TeamType, class XVector, class YVector, class ZVector,
-          bool tpl_spec_avail =
-              team_update_tpl_spec_avail<XVector, YVector, ZVector>::value>
+          bool tpl_spec_avail = team_update_tpl_spec_avail<XVector, YVector, ZVector>::value>
 struct TeamUpdate {
-  static KOKKOS_INLINE_FUNCTION void team_update(
-      const TeamType& team, const typename XVector::non_const_value_type& alpha,
-      const XVector& x, const typename YVector::non_const_value_type& beta,
-      const YVector& y, const typename ZVector::non_const_value_type& gamma,
-      const ZVector& z);
+  static KOKKOS_INLINE_FUNCTION void team_update(const TeamType& team,
+                                                 const typename XVector::non_const_value_type& alpha, const XVector& x,
+                                                 const typename YVector::non_const_value_type& beta, const YVector& y,
+                                                 const typename ZVector::non_const_value_type& gamma, const ZVector& z);
 };
 
 template <class TeamType, class XVector, class YVector, class ZVector>
 struct TeamUpdate<TeamType, XVector, YVector, ZVector, false> {
-  static KOKKOS_INLINE_FUNCTION void team_update(
-      const TeamType& team, const typename XVector::non_const_value_type& alpha,
-      const XVector& x, const typename YVector::non_const_value_type& beta,
-      const YVector& y, const typename ZVector::non_const_value_type& gamma,
-      const ZVector& z) {
+  static KOKKOS_INLINE_FUNCTION void team_update(const TeamType& team,
+                                                 const typename XVector::non_const_value_type& alpha, const XVector& x,
+                                                 const typename YVector::non_const_value_type& beta, const YVector& y,
+                                                 const typename ZVector::non_const_value_type& gamma,
+                                                 const ZVector& z) {
     const int N = x.extent(0);
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
-      z(i) = gamma * z(i) + alpha * x(i) + beta * y(i);
-    });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N),
+                         [&](const int& i) { z(i) = gamma * z(i) + alpha * x(i) + beta * y(i); });
   }
 };
 

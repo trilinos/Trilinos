@@ -21,8 +21,7 @@
 #include <KokkosKernels_ExecSpaceUtils.hpp>
 
 template <typename Ordinal>
-size_t std_upper_bound(const std::vector<Ordinal> &haystack,
-                       const Ordinal needle) {
+size_t std_upper_bound(const std::vector<Ordinal> &haystack, const Ordinal needle) {
   const auto it = std::upper_bound(haystack.begin(), haystack.end(), needle);
   return it - haystack.begin();
 }
@@ -33,9 +32,7 @@ struct ThreadUpperBoundFunctor {
   using hv_value_type = typename HaystackView::non_const_value_type;
   using hv_size_type  = typename HaystackView::size_type;
 
-  ThreadUpperBoundFunctor(const hv_size_type &expected,
-                          const HaystackView &haystack,
-                          const hv_value_type &needle)
+  ThreadUpperBoundFunctor(const hv_size_type &expected, const HaystackView &haystack, const hv_value_type &needle)
       : expected_(expected), haystack_(haystack), needle_(needle) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -43,14 +40,7 @@ struct ThreadUpperBoundFunctor {
     if (0 == i) {
       hv_size_type idx = KokkosKernels::upper_bound_thread(haystack_, needle_);
       if (idx != expected_) {
-#if KOKKOS_VERSION < 40199
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%d thread %d expected %d got %d\n",
-                                      __FILE__, __LINE__, int(i),
-                                      int(expected_), int(idx));
-#else
-        Kokkos::printf("%s:%d thread %d expected %d got %d\n", __FILE__,
-                       __LINE__, int(i), int(expected_), int(idx));
-#endif
+        Kokkos::printf("%s:%d thread %d expected %d got %d\n", __FILE__, __LINE__, int(i), int(expected_), int(idx));
         ++lerrCount;
       }
     }
@@ -62,13 +52,11 @@ struct ThreadUpperBoundFunctor {
 };
 
 template <typename T, typename Device>
-void test_upper_bound_thread(const std::vector<T> &_haystack,
-                             const T &_needle) {
+void test_upper_bound_thread(const std::vector<T> &_haystack, const T &_needle) {
   using execution_space = typename Device::execution_space;
   using Policy          = Kokkos::RangePolicy<execution_space>;
   using view_t          = Kokkos::View<T *, Device>;
-  using u_const_view_t  = Kokkos::View<const T *, Kokkos::HostSpace,
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using u_const_view_t  = Kokkos::View<const T *, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using hv_size_type    = typename u_const_view_t::size_type;
 
   // get expected value
@@ -82,9 +70,7 @@ void test_upper_bound_thread(const std::vector<T> &_haystack,
   // test upper_bound search
   int errCount;
   // run a single thread
-  Kokkos::parallel_reduce(Policy(0, 1),
-                          ThreadUpperBoundFunctor(expected, haystack, _needle),
-                          errCount);
+  Kokkos::parallel_reduce(Policy(0, 1), ThreadUpperBoundFunctor(expected, haystack, _needle), errCount);
 
   EXPECT_EQ(0, errCount);
 }
@@ -95,24 +81,14 @@ struct TeamUpperBoundFunctor {
   using hv_value_type = typename HaystackView::non_const_value_type;
   using hv_size_type  = typename HaystackView::size_type;
 
-  TeamUpperBoundFunctor(const hv_size_type &expected,
-                        const HaystackView &haystack,
-                        const hv_value_type &needle)
+  TeamUpperBoundFunctor(const hv_size_type &expected, const HaystackView &haystack, const hv_value_type &needle)
       : expected_(expected), haystack_(haystack), needle_(needle) {}
 
-  KOKKOS_INLINE_FUNCTION void operator()(const Member &handle,
-                                         int &lerrCount) const {
-    hv_size_type idx =
-        KokkosKernels::upper_bound_team(handle, haystack_, needle_);
+  KOKKOS_INLINE_FUNCTION void operator()(const Member &handle, int &lerrCount) const {
+    hv_size_type idx = KokkosKernels::upper_bound_team(handle, haystack_, needle_);
     if (idx != expected_) {
-#if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%d thread %d expected %d got %d\n",
-                                    __FILE__, __LINE__, int(handle.team_rank()),
-                                    int(expected_), int(idx));
-#else
-      Kokkos::printf("%s:%d thread %d expected %d got %d\n", __FILE__, __LINE__,
-                     int(handle.team_rank()), int(expected_), int(idx));
-#endif
+      Kokkos::printf("%s:%d thread %d expected %d got %d\n", __FILE__, __LINE__, int(handle.team_rank()),
+                     int(expected_), int(idx));
       ++lerrCount;
     }
   }
@@ -128,8 +104,7 @@ void test_upper_bound_team(const std::vector<T> &_haystack, const T _needle) {
   using Policy          = Kokkos::TeamPolicy<execution_space>;
   using Member          = typename Policy::member_type;
   using view_t          = Kokkos::View<T *, Device>;
-  using u_const_view_t  = Kokkos::View<const T *, Kokkos::HostSpace,
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using u_const_view_t  = Kokkos::View<const T *, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using hv_size_type    = typename u_const_view_t::size_type;
 
   // get expected value
@@ -142,13 +117,10 @@ void test_upper_bound_team(const std::vector<T> &_haystack, const T _needle) {
 
   // test upper_bound search
   const int leagueSize = 1;
-  const int teamSize =
-      KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>() ? 64 : 1;
+  const int teamSize   = KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>() ? 64 : 1;
   int errCount;
-  Kokkos::parallel_reduce(
-      Policy(leagueSize, teamSize),
-      TeamUpperBoundFunctor<Member, view_t>(expected, haystack, _needle),
-      errCount);
+  Kokkos::parallel_reduce(Policy(leagueSize, teamSize),
+                          TeamUpperBoundFunctor<Member, view_t>(expected, haystack, _needle), errCount);
 
   EXPECT_EQ(0, errCount);
 }
@@ -221,38 +193,31 @@ void test_upper_bound() {
   }
 }
 
-#define EXECUTE_TEST(T, DEVICE)                                   \
-  TEST_F(TestCategory, common##_##upper_bound##_##T##_##DEVICE) { \
-    test_upper_bound<T, DEVICE>();                                \
-  }
+#define EXECUTE_TEST(T, DEVICE) \
+  TEST_F(TestCategory, common##_##upper_bound##_##T##_##DEVICE) { test_upper_bound<T, DEVICE>(); }
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&             \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(int64_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(float, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&    \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(double, TestDevice)
 #endif
 

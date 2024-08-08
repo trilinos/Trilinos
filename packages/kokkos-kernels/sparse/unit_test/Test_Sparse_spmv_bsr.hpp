@@ -41,6 +41,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include <KokkosKernels_NaN.hpp>
 
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
@@ -79,9 +80,7 @@ constexpr T max_y() {
 }
 
 /*! \brief whether the mode transposes the matrix*/
-inline bool mode_is_transpose(const char *mode) {
-  return mode[0] == 'T' || mode[0] == 'H';
-}
+inline bool mode_is_transpose(const char *mode) { return mode[0] == 'T' || mode[0] == 'H'; }
 
 /*! \brief Get the max nonzeros (not max nonzero _blocks_) per row of Op(A) */
 template <typename Bsr>
@@ -89,13 +88,11 @@ inline size_t opMaxNnzPerRow(const Bsr &A, bool trans) {
   if (trans) {
     auto At = KokkosSparse::Impl::transpose_bsr_matrix(A);
     return At.blockDim() *
-           (size_t)KokkosSparse::Impl::graph_max_degree<
-               typename Bsr::execution_space, typename Bsr::ordinal_type>(
+           (size_t)KokkosSparse::Impl::graph_max_degree<typename Bsr::execution_space, typename Bsr::ordinal_type>(
                At.graph.row_map);
   } else {
     return A.blockDim() *
-           (size_t)KokkosSparse::Impl::graph_max_degree<
-               typename Bsr::execution_space, typename Bsr::ordinal_type>(
+           (size_t)KokkosSparse::Impl::graph_max_degree<typename Bsr::execution_space, typename Bsr::ordinal_type>(
                A.graph.row_map);
   }
 }
@@ -123,20 +120,15 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
   using size_type    = typename Bsr::non_const_size_type;
-  using Crs =
-      KokkosSparse::CrsMatrix<scalar_type, ordinal_type,
-                              typename Bsr::device_type, void, size_type>;
-  using Graph = typename Crs::staticcrsgraph_type;
+  using Crs          = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, typename Bsr::device_type, void, size_type>;
+  using Graph        = typename Crs::staticcrsgraph_type;
 
   // construct a random Crs Matrix
-  Test::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type,
-                     ordinal_type, size_type>
-      rcs(blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
+  Test::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type, ordinal_type, size_type> rcs(
+      blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
 
-  const auto colids = Kokkos::subview(
-      rcs.get_ids(), Kokkos::make_pair(size_t(0), rcs.get_nnz()));
-  const auto vals = Kokkos::subview(
-      rcs.get_vals(), Kokkos::make_pair(size_t(0), rcs.get_nnz()));
+  const auto colids = Kokkos::subview(rcs.get_ids(), Kokkos::make_pair(size_type(0), rcs.get_nnz()));
+  const auto vals   = Kokkos::subview(rcs.get_vals(), Kokkos::make_pair(size_type(0), rcs.get_nnz()));
   Graph graph(colids, rcs.get_map());
   Crs crs("crs", blockCols, vals, graph);
 
@@ -147,11 +139,9 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
 /*! \brief test a specific spmv
 
 */
-template <typename Handle, typename Bsr, typename Crs, typename XVector,
-          typename YVector, typename Alpha = typename Bsr::non_const_value_type,
-          typename Beta = typename Bsr::non_const_value_type>
-void test_spmv(Handle *handle, const char *mode, const Alpha &alpha,
-               const Beta &beta, const Bsr &a, const Crs &acrs,
+template <typename Handle, typename Bsr, typename Crs, typename XVector, typename YVector,
+          typename Alpha = typename Bsr::non_const_value_type, typename Beta = typename Bsr::non_const_value_type>
+void test_spmv(Handle *handle, const char *mode, const Alpha &alpha, const Beta &beta, const Bsr &a, const Crs &acrs,
                size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
@@ -181,10 +171,9 @@ void test_spmv(Handle *handle, const char *mode, const Alpha &alpha,
 
      10x means same order of magnitude
   */
-  const mag_type tolerance =
-      KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
-      10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) *
-          KATS::abs(max_a<scalar_type>()) * KATS::abs(max_x<scalar_type>());
+  const mag_type tolerance = KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
+                             10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) * KATS::abs(max_a<scalar_type>()) *
+                                 KATS::abs(max_x<scalar_type>());
 
   std::vector<ordinal_type> errIdx;
 
@@ -195,15 +184,12 @@ void test_spmv(Handle *handle, const char *mode, const Alpha &alpha,
   }
 
   if (!errIdx.empty()) {
-    std::string alg =
-        KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
+    std::string alg = KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
 
-    std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMV failure!"
-              << std::endl;
+    std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMV failure!" << std::endl;
     std::cerr << "alg:          " << alg << std::endl;
     std::cerr << "mode:         " << mode << std::endl;
-    std::cerr << "A:            " << a.numRows() << "x" << a.numCols()
-              << std::endl;
+    std::cerr << "A:            " << a.numRows() << "x" << a.numCols() << std::endl;
     std::cerr << "A blockdim:   " << a.blockDim() << std::endl;
     std::cerr << "alpha:        " << alpha << std::endl;
     std::cerr << "beta:         " << beta << std::endl;
@@ -229,14 +215,12 @@ void test_spmv(Handle *handle, const char *mode, const Alpha &alpha,
 
 template <typename Bsr>
 struct VectorTypeFor {
-  using type = Kokkos::View<typename Bsr::non_const_value_type *,
-                            typename Bsr::device_type>;
+  using type = Kokkos::View<typename Bsr::non_const_value_type *, typename Bsr::device_type>;
 };
 
 template <typename Bsr>
-std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
-           typename VectorTypeFor<Bsr>::type>
-spmv_corner_case_0_by_0(const char * /*mode*/, const int blockSize) {
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> spmv_corner_case_0_by_0(
+    const char * /*mode*/, const int blockSize) {
   using vector_type = typename VectorTypeFor<Bsr>::type;
   Bsr a             = bsr_corner_case_0_by_0<Bsr>(blockSize);
   vector_type x("x", 0);
@@ -245,9 +229,8 @@ spmv_corner_case_0_by_0(const char * /*mode*/, const int blockSize) {
 }
 
 template <typename Bsr>
-std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
-           typename VectorTypeFor<Bsr>::type>
-spmv_corner_case_0_by_1(const char *mode, const int blockSize) {
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> spmv_corner_case_0_by_1(
+    const char *mode, const int blockSize) {
   using vector_type     = typename VectorTypeFor<Bsr>::type;
   using execution_space = typename Bsr::execution_space;
   using scalar_type     = typename Bsr::non_const_value_type;
@@ -269,9 +252,8 @@ spmv_corner_case_0_by_1(const char *mode, const int blockSize) {
 }
 
 template <typename Bsr>
-std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
-           typename VectorTypeFor<Bsr>::type>
-spmv_corner_case_1_by_0(const char *mode, const int blockSize) {
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> spmv_corner_case_1_by_0(
+    const char *mode, const int blockSize) {
   using vector_type     = typename VectorTypeFor<Bsr>::type;
   using execution_space = typename Bsr::execution_space;
   using scalar_type     = typename Bsr::non_const_value_type;
@@ -296,10 +278,10 @@ spmv_corner_case_1_by_0(const char *mode, const int blockSize) {
 
 */
 template <typename Bsr>
-std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
-           typename VectorTypeFor<Bsr>::type>
-spmv_random(const char *mode, const int blockSize, const int blockRows,
-            const int blockCols) {
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> spmv_random(const char *mode,
+                                                                                                  const int blockSize,
+                                                                                                  const int blockRows,
+                                                                                                  const int blockCols) {
   using scalar_type = typename Bsr::non_const_value_type;
 
   // expand to Bsr matrix
@@ -327,10 +309,12 @@ spmv_random(const char *mode, const int blockSize, const int blockRows,
 /*! \brief create random x and y multivectors for a given matrix and spmv mode
  */
 template <typename Bsr>
-auto random_vecs_for_spmv(const char *mode, const Bsr &a) {
+auto random_vecs_for_spmv(const char *mode, const Bsr &a, const bool nans = false)
+    -> std::tuple<typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> {
   using scalar_type     = typename Bsr::non_const_value_type;
   using vector_type     = typename VectorTypeFor<Bsr>::type;
   using execution_space = typename Bsr::execution_space;
+  using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -344,26 +328,41 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a) {
   Kokkos::fill_random(x, random, max_x<scalar_type>());
   Kokkos::fill_random(y, random, max_y<scalar_type>());
 
+  if (nans) {
+    Kokkos::parallel_for(
+        policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          if (0 == (i % 17)) {
+            x(i) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+          }
+        });
+    Kokkos::parallel_for(
+        policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          if (0 == (i % 17)) {
+            y(i) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+          }
+        });
+  }
+
   return std::make_tuple(x, y);
 }
 
 /*! \brief test all combos of the provided matrix
  */
 template <typename Bsr, typename Crs>
-void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
-                      size_t maxNnzPerRow) {
+void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs, size_t maxNnzPerRow) {
   using namespace KokkosSparse;
   using scalar_type     = typename Bsr::non_const_value_type;
   using execution_space = typename Bsr::execution_space;
 
-  auto [x, y] = random_vecs_for_spmv(mode, a);
+  auto [x, y]                     = random_vecs_for_spmv(mode, a);
+  auto [x_with_nans, y_with_nans] = random_vecs_for_spmv(mode, a, true);
 
   using handle_t = SPMVHandle<execution_space, Bsr, decltype(x), decltype(y)>;
 
   // cover a variety of algorithms
-  std::vector<handle_t *> handles;
+  std::vector<std::unique_ptr<handle_t>> handles;
   for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
-    handles.push_back(new handle_t(algo));
+    handles.push_back(std::make_unique<handle_t>(algo));
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
@@ -383,12 +382,13 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   }
   */
 
-  for (handle_t *handle : handles) {
-    for (scalar_type alpha :
-         {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
-      for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
-                               scalar_type(-1.5)}) {
-        test_spmv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+  for (std::unique_ptr<handle_t> &handle : handles) {
+    for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
+      for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(-1.5)}) {
+        test_spmv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+        if (beta == scalar_type(0)) {
+          test_spmv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow, x_with_nans, y_with_nans);
+        }
       }
     }
   }
@@ -398,8 +398,7 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
  */
 template <typename Scalar, typename Ordinal, typename Offset, typename Device>
 void test_spmv_corner_cases() {
-  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
-                                                    void, Offset>;
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   for (auto mode : {"N", "T", "C", "H"}) {
     for (int bs : {1, 2, 5, 9}) {
@@ -424,8 +423,7 @@ void test_spmv_corner_cases() {
 
 template <typename Scalar, typename Ordinal, typename Offset, typename Device>
 void test_spmv_random() {
-  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
-                                                    void, Offset>;
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   // thoroughly test smaller matrices
   std::vector<std::pair<int, int>> shapes = {{10, 10}, {10, 50}, {50, 10}};
@@ -436,9 +434,7 @@ void test_spmv_random() {
       size_t maxNnzPerRow      = opMaxNnzPerRow(A, false);
       size_t maxNnzPerRowTrans = opMaxNnzPerRow(A, true);
       for (auto mode : {"N", "T", "C", "H"}) {
-        test_spmv_combos(
-            mode, A, Acrs,
-            mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
+        test_spmv_combos(mode, A, Acrs, mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
       }
     }
   }
@@ -448,14 +444,12 @@ void test_spmv_random() {
     constexpr int blockSizePrime = 7;
     constexpr int smallPrime     = 11;
     constexpr int largePrime     = 499;
-    auto A    = bsr_random<Bsr>(blockSizePrime, smallPrime, largePrime);
-    auto Acrs = KokkosSparse::Impl::bsr_to_crs<Crs>(A);
-    size_t maxNnzPerRow      = opMaxNnzPerRow(A, false);
-    size_t maxNnzPerRowTrans = opMaxNnzPerRow(A, true);
+    auto A                       = bsr_random<Bsr>(blockSizePrime, smallPrime, largePrime);
+    auto Acrs                    = KokkosSparse::Impl::bsr_to_crs<Crs>(A);
+    size_t maxNnzPerRow          = opMaxNnzPerRow(A, false);
+    size_t maxNnzPerRowTrans     = opMaxNnzPerRow(A, true);
     for (auto mode : {"N", "T"}) {
-      test_spmv_combos(
-          mode, A, Acrs,
-          mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
+      test_spmv_combos(mode, A, Acrs, mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
     }
   }
 }
@@ -472,10 +466,9 @@ void test_spmv() {
 
 // Note: if mode_is_transpose(mode), then maxNnzPerRow is for A^T. Otherwise,
 // it's for A.
-template <typename Handle, typename Bsr, typename Crs, typename XVector,
-          typename YVector, typename Alpha, typename Beta>
-void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha,
-                 const Beta &beta, const Bsr &a, const Crs &acrs,
+template <typename Handle, typename Bsr, typename Crs, typename XVector, typename YVector, typename Alpha,
+          typename Beta>
+void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha, const Beta &beta, const Bsr &a, const Crs &acrs,
                  size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
@@ -503,10 +496,9 @@ void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha,
      scaling y is one op
      dot product of x is two ops per entry (mul and add)
   */
-  const mag_type tolerance =
-      KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
-      10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) *
-          KATS::abs(max_a<scalar_type>()) * KATS::abs(max_x<scalar_type>());
+  const mag_type tolerance = KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
+                             10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) * KATS::abs(max_a<scalar_type>()) *
+                                 KATS::abs(max_x<scalar_type>());
 
   std::vector<std::pair<ordinal_type, ordinal_type>> errIdx;
 
@@ -519,15 +511,12 @@ void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha,
   }
 
   if (!errIdx.empty()) {
-    std::string alg =
-        KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
+    std::string alg = KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
 
-    std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMMV failure!"
-              << std::endl;
+    std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMMV failure!" << std::endl;
     std::cerr << "alg:          " << alg << std::endl;
     std::cerr << "mode:         " << mode << std::endl;
-    std::cerr << "A:            " << a.numRows() << "x" << a.numCols()
-              << std::endl;
+    std::cerr << "A:            " << a.numRows() << "x" << a.numCols() << std::endl;
     std::cerr << "A blockdim:   " << a.blockDim() << std::endl;
     std::cerr << "alpha:        " << alpha << std::endl;
     std::cerr << "beta:         " << beta << std::endl;
@@ -555,18 +544,18 @@ void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha,
 
 template <typename Layout, typename Bsr>
 struct MultiVectorTypeFor {
-  using type = Kokkos::View<typename Bsr::non_const_value_type **, Layout,
-                            typename Bsr::device_type>;
+  using type = Kokkos::View<typename Bsr::non_const_value_type **, Layout, typename Bsr::device_type>;
 };
 
 /*! \brief create random x and y multivectors for a given matrix and spmv mode
  */
 template <typename Layout, typename Bsr>
-auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
-                                 const size_t numVecs) {
+auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a, const size_t numVecs, const bool nans = false)
+    -> std::tuple<typename MultiVectorTypeFor<Layout, Bsr>::type, typename MultiVectorTypeFor<Layout, Bsr>::type> {
   using scalar_type     = typename Bsr::non_const_value_type;
   using vector_type     = typename MultiVectorTypeFor<Layout, Bsr>::type;
   using execution_space = typename Bsr::execution_space;
+  using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -580,23 +569,41 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
   Kokkos::fill_random(x, random, max_x<scalar_type>());
   Kokkos::fill_random(y, random, max_y<scalar_type>());
 
+  // sprinkle some "random" NaNs in
+  if (nans) {
+    Kokkos::parallel_for(
+        policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          for (size_t j = 0; j < x.extent(1); ++j) {
+            if (0 == ((i * x.extent(1) + j) % 13)) {
+              x(i, j) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+            }
+          }
+        });
+    Kokkos::parallel_for(
+        policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          for (size_t j = 0; j < y.extent(1); ++j) {
+            if (0 == ((i * y.extent(1) + j) % 17)) {
+              y(i, j) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+            }
+          }
+        });
+  }
+
   return std::make_tuple(x, y);
 }
 
 template <typename Layout, typename Bsr, typename Crs>
-void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
-                        size_t maxNnzPerRow) {
+void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs, size_t maxNnzPerRow) {
   using namespace KokkosSparse;
   using execution_space = typename Bsr::execution_space;
   using scalar_type     = typename Bsr::non_const_value_type;
   using multivector_t   = typename MultiVectorTypeFor<Layout, Bsr>::type;
-  using handle_t =
-      SPMVHandle<execution_space, Bsr, multivector_t, multivector_t>;
+  using handle_t        = SPMVHandle<execution_space, Bsr, multivector_t, multivector_t>;
 
   // cover a variety of algorithms
-  std::vector<handle_t *> handles;
+  std::vector<std::unique_ptr<handle_t>> handles;
   for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
-    handles.push_back(new handle_t(algo));
+    handles.push_back(std::make_unique<handle_t>(algo));
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
@@ -617,13 +624,15 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   */
 
   for (size_t numVecs : {1, 7}) {  // num multivecs
-    auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
-    for (handle_t *handle : handles) {
-      for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
-                                scalar_type(3.7)}) {
-        for (scalar_type beta : {scalar_type(0), scalar_type(1),
-                                 scalar_type(-1), scalar_type(-1.5)}) {
-          test_spm_mv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+    auto [x, y]                     = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
+    auto [x_with_nans, y_with_nans] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs, true);
+    for (std::unique_ptr<handle_t> &handle : handles) {
+      for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
+        for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(-1.5)}) {
+          test_spm_mv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+          if (beta == scalar_type(0)) {
+            test_spm_mv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow, x_with_nans, y_with_nans);
+          }
         }
       }
     }
@@ -632,11 +641,9 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 
 /*! \brief test all combos of all matrices with different block sizes
  */
-template <typename Scalar, typename Ordinal, typename Offset, typename Layout,
-          typename Device>
+template <typename Scalar, typename Ordinal, typename Offset, typename Layout, typename Device>
 void test_spm_mv_corner_cases() {
-  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
-                                                    void, Offset>;
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   for (auto mode : {"N", "T", "C", "H"}) {
     for (int bs : {1, 2, 5, 9}) {
@@ -659,11 +666,9 @@ void test_spm_mv_corner_cases() {
   }
 }
 
-template <typename Scalar, typename Ordinal, typename Offset, typename Layout,
-          typename Device>
+template <typename Scalar, typename Ordinal, typename Offset, typename Layout, typename Device>
 void test_spm_mv_random() {
-  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
-                                                    void, Offset>;
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   // thoroughly test smaller matrices
   std::vector<std::pair<int, int>> shapes = {{10, 10}, {10, 50}, {50, 10}};
@@ -674,9 +679,7 @@ void test_spm_mv_random() {
       size_t maxNnzPerRow      = opMaxNnzPerRow(A, false);
       size_t maxNnzPerRowTrans = opMaxNnzPerRow(A, true);
       for (auto mode : {"N", "T", "C", "H"}) {
-        test_spm_mv_combos<Layout>(
-            mode, A, Acrs,
-            mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
+        test_spm_mv_combos<Layout>(mode, A, Acrs, mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
       }
     }
   }
@@ -686,20 +689,17 @@ void test_spm_mv_random() {
     constexpr int blockSizePrime = 7;
     constexpr int smallPrime     = 11;
     constexpr int largePrime     = 499;
-    auto A    = bsr_random<Bsr>(blockSizePrime, smallPrime, largePrime);
-    auto Acrs = KokkosSparse::Impl::bsr_to_crs<Crs>(A);
-    size_t maxNnzPerRow      = opMaxNnzPerRow(A, false);
-    size_t maxNnzPerRowTrans = opMaxNnzPerRow(A, true);
+    auto A                       = bsr_random<Bsr>(blockSizePrime, smallPrime, largePrime);
+    auto Acrs                    = KokkosSparse::Impl::bsr_to_crs<Crs>(A);
+    size_t maxNnzPerRow          = opMaxNnzPerRow(A, false);
+    size_t maxNnzPerRowTrans     = opMaxNnzPerRow(A, true);
     for (auto mode : {"N", "T"}) {
-      test_spm_mv_combos<Layout>(
-          mode, A, Acrs,
-          mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
+      test_spm_mv_combos<Layout>(mode, A, Acrs, mode_is_transpose(mode) ? maxNnzPerRowTrans : maxNnzPerRow);
     }
   }
 }
 
-template <typename Scalar, typename Ordinal, typename Offset, typename Layout,
-          typename Device>
+template <typename Scalar, typename Ordinal, typename Offset, typename Layout, typename Device>
 void test_spm_mv() {
   test_spm_mv_corner_cases<Scalar, Ordinal, Offset, Layout, Device>();
   test_spm_mv_random<Scalar, Ordinal, Offset, Layout, Device>();
@@ -709,10 +709,9 @@ void test_spm_mv() {
 
 //////////////////////////
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)          \
-  TEST_F(TestCategory,                                                       \
-         sparse##_##bsr_spmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    Test_Spmv_Bsr::test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>();             \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                        \
+  TEST_F(TestCategory, sparse##_##bsr_spmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    Test_Spmv_Bsr::test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>();                           \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
@@ -721,12 +720,9 @@ void test_spm_mv() {
 
 //////////////////////////
 
-#define EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)          \
-  TEST_F(                                                                             \
-      TestCategory,                                                                   \
-      sparse##_##bsr_spmmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
-    Test_Spmv_Bsr::test_spm_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT,               \
-                               DEVICE>();                                             \
+#define EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                           \
+  TEST_F(TestCategory, sparse##_##bsr_spmmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    Test_Spmv_Bsr::test_spm_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>();                     \
   }
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)

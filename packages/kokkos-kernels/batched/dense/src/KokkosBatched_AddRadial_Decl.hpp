@@ -34,8 +34,7 @@ namespace KokkosBatched {
 
 struct SerialAddRadial {
   template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType tiny,
-                                           const AViewType &A);
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType tiny, const AViewType &A);
 };
 
 ///
@@ -45,9 +44,7 @@ struct SerialAddRadial {
 template <typename MemberType>
 struct TeamAddRadial {
   template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType tiny,
-                                           const AViewType &A);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType tiny, const AViewType &A);
 };
 
 }  // namespace KokkosBatched

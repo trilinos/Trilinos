@@ -39,8 +39,7 @@ struct SerialSetIdentity {
 template <typename MemberType>
 struct TeamSetIdentity {
   template <typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const AViewType &A);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A);
 };
 
 ///
@@ -49,8 +48,7 @@ struct TeamSetIdentity {
 template <typename MemberType, typename ArgMode>
 struct SetIdentity {
   template <typename AViewType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member,
-                                                const AViewType &A) {
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
       r_val = SerialSetIdentity::invoke(A);

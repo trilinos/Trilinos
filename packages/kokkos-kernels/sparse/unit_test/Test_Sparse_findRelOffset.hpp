@@ -20,10 +20,8 @@
 //       by all backends so the following guard
 //       ensure that the test is not inclueded
 //       on these backends.
-#if !defined(TEST_HIP_SPARSE_CPP) && !defined(TEST_SYCL_SPARSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_SPARSE_CPP) &&                          \
-    (!defined(TEST_CUDA_SPARSE_CPP) ||                                 \
-     (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)))
+#if !defined(TEST_HIP_SPARSE_CPP) && !defined(TEST_SYCL_SPARSE_CPP) && !defined(TEST_OPENMPTARGET_SPARSE_CPP) && \
+    (!defined(TEST_CUDA_SPARSE_CPP) || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)))
 
 #include "Kokkos_Core.hpp"
 #include <vector>
@@ -67,13 +65,11 @@ void generalTest(bool& /*success*/, std::ostream& out) {
     for (lno_t hint = 0; hint < 3; ++hint) {
       // Length-zero array is trivially sorted, but try the unsorted
       // case just to make sure that branch of the code is right.
-      lno_t offset = findRelOffset<lno_t, const lno_t*>(indsToSearch, numEnt,
-                                                        indToFind, hint, true);
+      lno_t offset = findRelOffset<lno_t, const lno_t*>(indsToSearch, numEnt, indToFind, hint, true);
 
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
-      offset = findRelOffset<lno_t, const lno_t*>(indsToSearch, numEnt,
-                                                  indToFind, hint, false);
+      offset = findRelOffset<lno_t, const lno_t*>(indsToSearch, numEnt, indToFind, hint, false);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
     }
@@ -86,8 +82,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
     lno_t numEnt                = 7;
     const lno_t indsToSearch[7] = {1, 1, 2, 3, 5, 8, 13};
     nIVT indsToSearch_view("indsToSearch", numEnt);
-    typename nIVT::HostMirror h_indsToSearch_view =
-        Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) {
       // std::cout << "indsToSearch[i]:" << indsToSearch[i] << std::endl;
       h_indsToSearch_view(i) = indsToSearch[i];
@@ -102,8 +97,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
       // This one is in [min, max].
       lno_t indNotThere = 4;
 
-      lno_t offset = findRelOffset<lno_t, const lno_t*>(
-          indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
+      lno_t offset = findRelOffset<lno_t, const lno_t*>(indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
 
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -111,23 +105,20 @@ void generalTest(bool& /*success*/, std::ostream& out) {
       // Test another index that is not in the array.
       // This one is _not_ in [min, max].
       indNotThere = 42;
-      offset      = findRelOffset<lno_t, const lno_t*>(
-          indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
+      offset      = findRelOffset<lno_t, const lno_t*>(indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test all indices that are in the array.
       for (lno_t k = 0; k < numEnt; ++k) {
         const lno_t indToFind = indsToSearch[k];  // in the array
-        offset                = findRelOffset<lno_t, const lno_t*>(
-            indsToSearch_view.data(), numEnt, indToFind, hint, isSorted);
+        offset = findRelOffset<lno_t, const lno_t*>(indsToSearch_view.data(), numEnt, indToFind, hint, isSorted);
         if (indToFind == static_cast<lno_t>(1)) {
           // 1 is a duplicate in this example.  Treat it as a special
           // case.  We don't specify which instance of duplicates the
           // function must return, so either one is fine.
 
-          ASSERT_TRUE((offset == static_cast<lno_t>(0) ||
-                       offset == static_cast<lno_t>(1)));
+          ASSERT_TRUE((offset == static_cast<lno_t>(0) || offset == static_cast<lno_t>(1)));
           /*
       TEST_ASSERT( offset == static_cast<LO> (0) ||
                    offset == static_cast<LO> (1) );
@@ -146,8 +137,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
     const lno_t indsToSearch[7] = {1, 1, 2, 3, 5, 8, 13};
     nIVT indsToSearch_view("indsToSearch", numEnt);
 
-    typename nIVT::HostMirror h_indsToSearch_view =
-        Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
     Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
     Kokkos::fence();
@@ -158,30 +148,26 @@ void generalTest(bool& /*success*/, std::ostream& out) {
       // Test an index that is not in the array.
       // This one is in [min, max].
       lno_t indNotThere = 4;
-      lno_t offset      = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt,
-                                               indNotThere, hint, isSorted);
+      lno_t offset      = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test another index that is not in the array.
       // This one is _not_ in [min, max].
       indNotThere = 42;
-      offset = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indNotThere,
-                                         hint, isSorted);
+      offset      = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test all indices that are in the array.
       for (lno_t k = 0; k < numEnt; ++k) {
         const lno_t indToFind = indsToSearch[k];  // in the array
-        offset = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indToFind,
-                                           hint, isSorted);
+        offset                = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indToFind, hint, isSorted);
         if (indToFind == static_cast<lno_t>(1)) {
           // 1 is a duplicate in this example.  Treat it as a special
           // case.  We don't specify which instance of duplicates the
           // function must return, so either one is fine.
-          ASSERT_TRUE((offset == static_cast<lno_t>(0) ||
-                       offset == static_cast<lno_t>(1)));
+          ASSERT_TRUE((offset == static_cast<lno_t>(0) || offset == static_cast<lno_t>(1)));
 
           // TEST_ASSERT( offset == static_cast<LO> (0) ||
           //             offset == static_cast<LO> (1) );
@@ -203,8 +189,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
 
     nIVT indsToSearch_view("indsToSearch", numEnt);
 
-    typename nIVT::HostMirror h_indsToSearch_view =
-        Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
     Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
     Kokkos::fence();
@@ -213,30 +198,26 @@ void generalTest(bool& /*success*/, std::ostream& out) {
       // Test an index that is not in the array.
       // This one is in [min, max].
       lno_t indNotThere = 4;
-      lno_t offset      = findRelOffset<lno_t, const lno_t*>(
-          indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
+      lno_t offset = findRelOffset<lno_t, const lno_t*>(indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test another index that is not in the array.
       // This one is _not_ in [min, max].
       indNotThere = 42;
-      offset      = findRelOffset<lno_t, const lno_t*>(
-          indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
+      offset      = findRelOffset<lno_t, const lno_t*>(indsToSearch_view.data(), numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test all indices that are in the array.
       for (lno_t k = 0; k < numEnt; ++k) {
         const lno_t indToFind = indsToSearch[k];  // in the array
-        offset                = findRelOffset<lno_t, const lno_t*>(
-            indsToSearch_view.data(), numEnt, indToFind, hint, isSorted);
+        offset = findRelOffset<lno_t, const lno_t*>(indsToSearch_view.data(), numEnt, indToFind, hint, isSorted);
         if (indToFind == static_cast<lno_t>(1)) {
           // 1 is a duplicate in this example.  Treat it as a special
           // case.  We don't specify which instance of duplicates the
           // function must return, so either one is fine.
-          ASSERT_TRUE((offset == static_cast<lno_t>(1) ||
-                       offset == static_cast<lno_t>(3)));
+          ASSERT_TRUE((offset == static_cast<lno_t>(1) || offset == static_cast<lno_t>(3)));
           // TEST_ASSERT( offset == static_cast<LO> (1) ||
           //             offset == static_cast<LO> (3) );
         } else {
@@ -262,8 +243,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
 
     nIVT indsToSearch_view("indsToSearch", numEnt);
 
-    typename nIVT::HostMirror h_indsToSearch_view =
-        Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
     Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
     Kokkos::fence();
@@ -274,30 +254,26 @@ void generalTest(bool& /*success*/, std::ostream& out) {
       // Test an index that is not in the array.
       // This one is in [min, max].
       lno_t indNotThere = 4;
-      lno_t offset      = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt,
-                                               indNotThere, hint, isSorted);
+      lno_t offset      = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test another index that is not in the array.
       // This one is _not_ in [min, max].
       indNotThere = 42;
-      offset = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indNotThere,
-                                         hint, isSorted);
+      offset      = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indNotThere, hint, isSorted);
       EXPECT_TRUE((offset == numEnt));
       // TEST_EQUALITY( offset, numEnt ); // not in the array
 
       // Test all indices that are in the array.
       for (lno_t k = 0; k < numEnt; ++k) {
         const lno_t indToFind = indsToSearch[k];  // in the array
-        offset = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indToFind,
-                                           hint, isSorted);
+        offset                = findRelOffset<lno_t, IVT>(indsToSearch_view, numEnt, indToFind, hint, isSorted);
         if (indToFind == static_cast<lno_t>(1)) {
           // 1 is a duplicate in this example.  Treat it as a special
           // case.  We don't specify which instance of duplicates the
           // function must return, so either one is fine.
-          ASSERT_TRUE((offset == static_cast<lno_t>(1) ||
-                       offset == static_cast<lno_t>(3)));
+          ASSERT_TRUE((offset == static_cast<lno_t>(1) || offset == static_cast<lno_t>(3)));
           /*
       TEST_ASSERT( offset == static_cast<LO> (1) ||
                    offset == static_cast<LO> (3) );
@@ -348,8 +324,7 @@ void testLongArray(bool& /*success*/, std::ostream& out) {
 
   typedef Kokkos::View<lno_t*, device_t> lno_view_t;
   lno_view_t indsToSearch("indsToSearch", N);
-  typename lno_view_t::HostMirror h_indsToSearch =
-      Kokkos::create_mirror_view(indsToSearch);
+  typename lno_view_t::HostMirror h_indsToSearch = Kokkos::create_mirror_view(indsToSearch);
 
   for (lno_t k = 0; k < n; ++k) {
     h_indsToSearch[2 * k]     = 2 * (n - k);
@@ -372,14 +347,12 @@ void testLongArray(bool& /*success*/, std::ostream& out) {
       const lno_t wrongHint = expectedOffset + 7;
 
       const lno_t offset0 =
-          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t>(
-              indsToSearch, N, indToFind, correctHint, false);
+          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t>(indsToSearch, N, indToFind, correctHint, false);
 
       EXPECT_TRUE((offset0 == expectedOffset));
       // TEST_EQUALITY( offset0, expectedOffset );
       const lno_t offset1 =
-          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t>(
-              indsToSearch, N, indToFind, wrongHint, false);
+          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t>(indsToSearch, N, indToFind, wrongHint, false);
       EXPECT_TRUE((offset1 == expectedOffset));
       // TEST_EQUALITY( offset1, expectedOffset );
     }
@@ -389,8 +362,7 @@ void testLongArray(bool& /*success*/, std::ostream& out) {
       const lno_t indToFind = N + 1;  // not in the array
       const lno_t hint      = 0;
       const lno_t offset0 =
-          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t>(
-              indsToSearch, N, indToFind, hint, false);
+          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t>(indsToSearch, N, indToFind, hint, false);
       EXPECT_TRUE((offset0 == N));
       // TEST_EQUALITY( offset0, N );
     }
@@ -420,22 +392,18 @@ void test_findRelOffset() {
   EXPECT_TRUE(success);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
-  TEST_F(                                                                      \
-      TestCategory,                                                            \
-      sparse##_##findRelOffset##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_findRelOffset<ORDINAL, DEVICE>();                                     \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                           \
+  TEST_F(TestCategory, sparse##_##findRelOffset##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_findRelOffset<ORDINAL, DEVICE>();                                                      \
   }
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(double, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&             \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(double, int64_t, int, TestDevice)
 #endif
 

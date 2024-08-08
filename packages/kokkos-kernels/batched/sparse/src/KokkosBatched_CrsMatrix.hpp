@@ -42,8 +42,7 @@ class CrsMatrix {
 
  public:
   KOKKOS_INLINE_FUNCTION
-  CrsMatrix(const ValuesViewType &_values, const IntViewType &_row_ptr,
-            const IntViewType &_colIndices)
+  CrsMatrix(const ValuesViewType &_values, const IntViewType &_row_ptr, const IntViewType &_colIndices)
       : values(_values), row_ptr(_row_ptr), colIndices(_colIndices) {
     n_operators = _values.extent(0);
     n_rows      = _row_ptr.extent(0) - 1;
@@ -77,45 +76,40 @@ class CrsMatrix {
   /// \param beta [in]: input coefficient for Y (default value 0.)
   /// \param Y [in/out]: Output vector Y, a rank 2 view
 
-  template <typename ArgTrans, typename ArgMode, typename MemberType,
-            typename XViewType, typename YViewType>
-  KOKKOS_INLINE_FUNCTION void apply(
-      const MemberType &member, const XViewType &X, const YViewType &Y,
-      MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
-      MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
+  template <typename ArgTrans, typename ArgMode, typename MemberType, typename XViewType, typename YViewType>
+  KOKKOS_INLINE_FUNCTION void apply(const MemberType &member, const XViewType &X, const YViewType &Y,
+                                    MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
+                                    MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
     if (beta == Kokkos::ArithTraits<MagnitudeType>::zero()) {
       if (member.team_size() == 1 && n_operators == 8)
-        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<
-            ValuesViewType, IntViewType, XViewType, YViewType, 0>(
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<ValuesViewType, IntViewType, XViewType,
+                                                                                YViewType, 0>(
             member, alpha, values, row_ptr, colIndices, X, beta, Y);
       else
-        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
-            ValuesViewType, IntViewType, XViewType, YViewType, 0>(
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<ValuesViewType, IntViewType, XViewType,
+                                                                             YViewType, 0>(
             member, alpha, values, row_ptr, colIndices, X, beta, Y);
     } else {
       if (member.team_size() == 1 && n_operators == 8)
-        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<
-            ValuesViewType, IntViewType, XViewType, YViewType, 1>(
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<ValuesViewType, IntViewType, XViewType,
+                                                                                YViewType, 1>(
             member, alpha, values, row_ptr, colIndices, X, beta, Y);
       else
-        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
-            ValuesViewType, IntViewType, XViewType, YViewType, 1>(
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<ValuesViewType, IntViewType, XViewType,
+                                                                             YViewType, 1>(
             member, alpha, values, row_ptr, colIndices, X, beta, Y);
     }
   }
 
   template <typename ArgTrans, typename XViewType, typename YViewType>
-  KOKKOS_INLINE_FUNCTION void apply(
-      const XViewType &X, const YViewType &Y,
-      MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
-      MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
+  KOKKOS_INLINE_FUNCTION void apply(const XViewType &X, const YViewType &Y,
+                                    MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
+                                    MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
     if (beta == Kokkos::ArithTraits<MagnitudeType>::zero())
-      KokkosBatched::SerialSpmv<ArgTrans>::template invoke<
-          ValuesViewType, IntViewType, XViewType, YViewType, 0>(
+      KokkosBatched::SerialSpmv<ArgTrans>::template invoke<ValuesViewType, IntViewType, XViewType, YViewType, 0>(
           alpha, values, row_ptr, colIndices, X, beta, Y);
     else
-      KokkosBatched::SerialSpmv<ArgTrans>::template invoke<
-          ValuesViewType, IntViewType, XViewType, YViewType, 1>(
+      KokkosBatched::SerialSpmv<ArgTrans>::template invoke<ValuesViewType, IntViewType, XViewType, YViewType, 1>(
           alpha, values, row_ptr, colIndices, X, beta, Y);
   }
 };

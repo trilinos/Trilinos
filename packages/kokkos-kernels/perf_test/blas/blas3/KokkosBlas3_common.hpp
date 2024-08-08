@@ -130,11 +130,9 @@ typedef enum TEST {
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", "batched_heuristic", "batched_serial", "batched_serial_blocked",
-    "batched_serial_simd", "batched_serial_simd_blocked",
-    "batched_serial_compact_mkl", "batched_team", "batched_team_blocked",
-    "batched_team_vector", "batched_team_vector_blocked", "batched_team_simd",
-    "batched_team_simd_blocked",
+    "blas", "batched_heuristic", "batched_serial", "batched_serial_blocked", "batched_serial_simd",
+    "batched_serial_simd_blocked", "batched_serial_compact_mkl", "batched_team", "batched_team_blocked",
+    "batched_team_vector", "batched_team_vector_blocked", "batched_team_simd", "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
 
@@ -191,12 +189,11 @@ struct perf_test_options {
 typedef struct perf_test_options options_t;
 
 /*************************** Print macros **************************/
-//#define PERF_TEST_DEBUG
+// #define PERF_TEST_DEBUG
 #ifdef PERF_TEST_DEBUG
 #define STATUS printf("STATUS: %s:%d.\n", __func__, __LINE__);
 #else
 #define STATUS
 #endif  // PERF_TEST_DEBUG
-#define FATAL_ERROR(msg) \
-  printf("FATAL_ERROR: %s:%s:%d %s\n", __FILE__, __func__, __LINE__, (msg));
+#define FATAL_ERROR(msg) printf("FATAL_ERROR: %s:%s:%d %s\n", __FILE__, __func__, __LINE__, (msg));
 #endif  // KOKKOSBLAS3_COMMON_H_

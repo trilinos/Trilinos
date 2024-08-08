@@ -18,10 +18,8 @@ namespace Impl {
 
 #ifdef KOKKOS_ENABLE_OPENMP
 template <typename AMatrix, typename XVector, typename YVector>
-void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a,
-                                  AMatrix A, XVector x,
-                                  typename YVector::const_value_type& s_b,
-                                  YVector y) {
+void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatrix A, XVector x,
+                                  typename YVector::const_value_type& s_b, YVector y) {
   typedef typename YVector::non_const_value_type value_type;
   typedef typename AMatrix::ordinal_type ordinal_type;
   typedef typename AMatrix::non_const_size_type size_type;
@@ -29,18 +27,15 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a,
   typename XVector::const_value_type* KOKKOS_RESTRICT x_ptr     = x.data();
   typename YVector::non_const_value_type* KOKKOS_RESTRICT y_ptr = y.data();
 
-  const typename AMatrix::value_type* KOKKOS_RESTRICT matrixCoeffs =
-      A.values.data();
-  const ordinal_type* KOKKOS_RESTRICT matrixCols    = A.graph.entries.data();
-  const size_type* KOKKOS_RESTRICT matrixRowOffsets = A.graph.row_map.data();
-  const size_type* KOKKOS_RESTRICT threadStarts =
-      A.graph.row_block_offsets.data();
+  const typename AMatrix::value_type* KOKKOS_RESTRICT matrixCoeffs = A.values.data();
+  const ordinal_type* KOKKOS_RESTRICT matrixCols                   = A.graph.entries.data();
+  const size_type* KOKKOS_RESTRICT matrixRowOffsets                = A.graph.row_map.data();
+  const size_type* KOKKOS_RESTRICT threadStarts                    = A.graph.row_block_offsets.data();
 
 #if defined(KOKKOS_ENABLE_PROFILING)
   uint64_t kpID = 0;
   if (Kokkos::Profiling::profileLibraryLoaded()) {
-    Kokkos::Profiling::beginParallelFor(
-        "KokkosSparse::spmv<RawOpenMP,NoTranspose>", 0, &kpID);
+    Kokkos::Profiling::beginParallelFor("KokkosSparse::spmv<RawOpenMP,NoTranspose>", 0, &kpID);
   }
 #endif
 

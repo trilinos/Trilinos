@@ -33,25 +33,23 @@ struct team_mult_tpl_spec_avail {
 
 // Unification and Specialization layer
 template <class TeamType, class YVector, class AVector, class XVector,
-          bool tpl_spec_avail =
-              team_mult_tpl_spec_avail<YVector, AVector, XVector>::value>
+          bool tpl_spec_avail = team_mult_tpl_spec_avail<YVector, AVector, XVector>::value>
 struct TeamMult {
-  static KOKKOS_INLINE_FUNCTION void team_mult(
-      const TeamType& team, const typename YVector::non_const_value_type& gamma,
-      const YVector& y, const typename AVector::non_const_value_type& alpha,
-      const AVector& a, const XVector& x);
+  static KOKKOS_INLINE_FUNCTION void team_mult(const TeamType& team,
+                                               const typename YVector::non_const_value_type& gamma, const YVector& y,
+                                               const typename AVector::non_const_value_type& alpha, const AVector& a,
+                                               const XVector& x);
 };
 
 template <class TeamType, class YVector, class AVector, class XVector>
 struct TeamMult<TeamType, YVector, AVector, XVector, false> {
-  static KOKKOS_INLINE_FUNCTION void team_mult(
-      const TeamType& team, const typename YVector::non_const_value_type& gamma,
-      const YVector& y, const typename AVector::non_const_value_type& alpha,
-      const AVector& a, const XVector& x) {
+  static KOKKOS_INLINE_FUNCTION void team_mult(const TeamType& team,
+                                               const typename YVector::non_const_value_type& gamma, const YVector& y,
+                                               const typename AVector::non_const_value_type& alpha, const AVector& a,
+                                               const XVector& x) {
     const int N = x.extent(0);
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
-      y(i) = gamma * y(i) + alpha * a(i) * x(i);
-    });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N),
+                         [&](const int& i) { y(i) = gamma * y(i) + alpha * a(i) * x(i); });
   }
 };
 

@@ -83,11 +83,10 @@ namespace KokkosSparse {
 ///   to be a Kokkos::View.  Thankfully, arguments to a C++ function
 ///   behave more like LET* than LET (in ANSI Common Lisp terms).
 template <class OffsetType, class IndexViewType>
-KOKKOS_FUNCTION OffsetType findRelOffset(
-    const IndexViewType& indsToSearch, const OffsetType numEnt,
-    /* typename IndexViewType::const_value_type */
-    const typename std::decay<decltype(indsToSearch[0])>::type indToFind,
-    const OffsetType hint, const bool isSorted) {
+KOKKOS_FUNCTION OffsetType findRelOffset(const IndexViewType& indsToSearch, const OffsetType numEnt,
+                                         /* typename IndexViewType::const_value_type */
+                                         const typename std::decay<decltype(indsToSearch[0])>::type indToFind,
+                                         const OffsetType hint, const bool isSorted) {
   // IndexViewType doesn't have to be a Kokkos::View; it just has to
   // implement operator[] like a 1-D array.
   //
@@ -95,8 +94,7 @@ KOKKOS_FUNCTION OffsetType findRelOffset(
   //                 "IndexViewType must be a Kokkos::View");
   // static_assert (static_cast<int> (IndexViewType::rank) == 1,
   //                 "IndexViewType must be a rank-1 Kokkos::View");
-  static_assert(std::is_integral<OffsetType>::value,
-                "OffsetType must be an integer.");
+  static_assert(std::is_integral<OffsetType>::value, "OffsetType must be an integer.");
 
   if (hint < numEnt && indsToSearch[hint] == indToFind) {
     return hint;  // hint was correct

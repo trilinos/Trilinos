@@ -32,17 +32,14 @@ namespace KokkosKernels {
 template <typename T>
 struct GT {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
-                "Please define custom predicates for ordering complex types");
+  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
 
   /**
    * @brief Return true if a is greater than b
    * @param a First value to be compared
    * @param b Second value to be compared
    */
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a > b;
   }
 };
@@ -53,13 +50,10 @@ struct GT {
 template <typename T>
 struct GTE {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
-                "Please define custom predicates for ordering complex types");
+  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
 
   /// \brief return a >= b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a >= b;
   }
 };
@@ -70,13 +64,10 @@ struct GTE {
 template <typename T>
 struct LT {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
-                "Please define custom predicates for ordering complex types");
+  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
 
   /// \brief return a < b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a < b;
   }
 };
@@ -87,13 +78,10 @@ struct LT {
 template <typename T>
 struct LTE {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
-                "Please define custom predicates for ordering complex types");
+  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
 
   /// \brief return a <= b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a <= b;
   }
 };
@@ -106,10 +94,7 @@ struct Equal {
   using value_type = T;
 
   /// \brief return a == b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const {
-    return a == b;
-  }
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const { return a == b; }
 };
 
 /**
@@ -133,8 +118,7 @@ struct Neg {
    * @param b Second value to be compared by the predicate
    * @return Boolean inverse of the result of the predicate applied to a and b
    */
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const {
     return !pred_(a, b);
   }
 
@@ -153,8 +137,7 @@ struct Refl {
   constexpr Refl(const Pred &pred) : pred_(pred) {}
 
   /// \brief return the underlying binary predicate with reversed arguments
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const {
     return pred_(b, a);
   }
 

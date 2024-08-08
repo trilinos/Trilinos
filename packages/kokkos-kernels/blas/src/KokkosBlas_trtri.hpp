@@ -43,8 +43,7 @@ namespace KokkosBlas {
 //                    and the inversion could not be completed.
 // source: https://software.intel.com/en-us/mkl-developer-reference-c-trtri
 template <class AViewType>
-[[deprecated]] int trtri(const char uplo[], const char diag[],
-                         const AViewType& A) {
+[[deprecated]] int trtri(const char uplo[], const char diag[], const AViewType& A) {
   return KokkosLapack::trtri(uplo, diag, A);
 }
 

@@ -28,9 +28,7 @@ struct SerialLU {
   // no piv version
   template <typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const AViewType &A,
-      const typename MagnitudeScalarType<
-          typename AViewType::non_const_value_type>::type tiny = 0);
+      const AViewType &A, const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0);
 };
 
 template <typename MemberType, typename ArgAlgo>
@@ -39,8 +37,7 @@ struct TeamLU {
   template <typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const AViewType &A,
-      const typename MagnitudeScalarType<
-          typename AViewType::non_const_value_type>::type tiny = 0);
+      const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0);
 };
 
 ///
@@ -52,8 +49,7 @@ struct LU {
   template <typename AViewType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(
       const MemberType &member, const AViewType &A,
-      const typename MagnitudeScalarType<
-          typename AViewType::non_const_value_type>::type tiny = 0) {
+      const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
       r_val = SerialLU<ArgAlgo>::invoke(A, tiny);

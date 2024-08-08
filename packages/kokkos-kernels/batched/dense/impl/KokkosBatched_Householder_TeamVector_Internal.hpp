@@ -30,8 +30,7 @@ namespace KokkosBatched {
 ///
 struct TeamVectorLeftHouseholderInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int m_x2,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m_x2,
                                            /* */ ValueType *chi1,
                                            /* */ ValueType *x2, const int x2s,
                                            /* */ ValueType *tau) {
@@ -67,8 +66,7 @@ struct TeamVectorLeftHouseholderInternal {
     const mag_type norm_chi1 = Kokkos::ArithTraits<value_type>::abs(*chi1);
 
     /// compute 2 norm of x using norm_chi1 and norm_x2
-    const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(
-        norm_x2_square + norm_chi1 * norm_chi1);
+    const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
 
     /// compute alpha
     const mag_type alpha = (*chi1 < 0 ? one : minus_one) * norm_x;
@@ -76,9 +74,8 @@ struct TeamVectorLeftHouseholderInternal {
     /// overwrite x2 with u2
     const value_type chi1_minus_alpha     = *chi1 - alpha;
     const value_type inv_chi1_minus_alpha = one / chi1_minus_alpha;
-    Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(member, m_x2),
-        [&](const int &i) { x2[i * x2s] *= inv_chi1_minus_alpha; });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m_x2),
+                         [&](const int &i) { x2[i * x2s] *= inv_chi1_minus_alpha; });
     member.team_barrier();
 
     // later consider to use the following
@@ -86,9 +83,8 @@ struct TeamVectorLeftHouseholderInternal {
 
     /// compute tau
     Kokkos::single(Kokkos::PerTeam(member), [&]() {
-      const mag_type chi1_minus_alpha_square =
-          chi1_minus_alpha * chi1_minus_alpha;
-      *tau = half + half * (norm_x2_square / chi1_minus_alpha_square);
+      const mag_type chi1_minus_alpha_square = chi1_minus_alpha * chi1_minus_alpha;
+      *tau                                   = half + half * (norm_x2_square / chi1_minus_alpha_square);
 
       /// overwrite chi1 with alpha
       *chi1 = alpha;

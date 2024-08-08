@@ -40,16 +40,13 @@ struct LogisticEquation {
   scalar_type dt;
   vec_type state;
 
-  LogisticEquation(const scalar_type dt_, vec_type initial_state)
-      : dt(dt_), state(initial_state) {}
+  LogisticEquation(const scalar_type dt_, vec_type initial_state) : dt(dt_), state(initial_state) {}
 
   KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& dydt) const {
     dydt(0) = y(0) - state(0) - dt * y(0) * (1 - y(0));
   }
 
-  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    jac(0, 0) = 1 - dt + 2 * dt * y(0);
-  }
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const { jac(0, 0) = 1 - dt + 2 * dt * y(0); }
 
   KOKKOS_FUNCTION scalar_type expected_val(const scalar_type t) const {
     using Kokkos::exp;
@@ -112,9 +109,7 @@ int test_logistic() {
   using norm_type   = typename Kokkos::View<scalar_type*, execution_space>;
   using handle_type = KokkosBlas::Impl::NewtonHandle<norm_type>;
   using system_type = LogisticEquation<scalar_type, execution_space>;
-  using newton_type =
-      KokkosBlas::Impl::NewtonFunctor<system_type, mat_type, vec_type, vec_type,
-                                      handle_type>;
+  using newton_type = KokkosBlas::Impl::NewtonFunctor<system_type, mat_type, vec_type, vec_type, handle_type>;
 
   // Create the non-linear system and initialize data
   vec_type state("state", 1);
@@ -150,9 +145,7 @@ int test_intersection() {
   using norm_type   = typename Kokkos::View<scalar_type*, execution_space>;
   using handle_type = KokkosBlas::Impl::NewtonHandle<norm_type>;
   using system_type = Intersection<scalar_type, execution_space>;
-  using newton_type =
-      KokkosBlas::Impl::NewtonFunctor<system_type, mat_type, vec_type, vec_type,
-                                      handle_type>;
+  using newton_type = KokkosBlas::Impl::NewtonFunctor<system_type, mat_type, vec_type, vec_type, handle_type>;
 
   // Create the non-linear system and initialize data
   system_type intersection;

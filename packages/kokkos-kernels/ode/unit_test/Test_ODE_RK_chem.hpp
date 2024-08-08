@@ -33,13 +33,11 @@ struct chem_model_1 {
 
   const double tstart, tend, T0, T1;
 
-  chem_model_1(const double tstart_ = 0, const double tend_ = 100,
-               const double T0_ = 300, const double T1_ = 800)
+  chem_model_1(const double tstart_ = 0, const double tend_ = 100, const double T0_ = 300, const double T1_ = 800)
       : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     // First compute the temperature
     // using linear ramp from T0 to T1
@@ -61,13 +59,11 @@ struct chem_model_2 {
 
   const double tstart, tend, T0, T1;
 
-  chem_model_2(const double tstart_ = 0, const double tend_ = 1200,
-               const double T0_ = 300, const double T1_ = 1000)
+  chem_model_2(const double tstart_ = 0, const double tend_ = 1200, const double T0_ = 300, const double T1_ = 1000)
       : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     // First compute the temperature
     // using linear ramp from T0 to T1
@@ -116,9 +112,8 @@ void test_chem() {
     Kokkos::deep_copy(y_new, y_old_h);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    RKSolve_wrapper<chem_model_1, RK_type::RKCK, vec_type, mv_type, double>
-        solve_wrapper(chem_model, params, chem_model.tstart, chem_model.tend,
-                      y_old, y_new, tmp, kstack);
+    RKSolve_wrapper<chem_model_1, RK_type::RKCK, vec_type, mv_type, double> solve_wrapper(
+        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     auto y_new_h = Kokkos::create_mirror(y_new);
@@ -126,15 +121,11 @@ void test_chem() {
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
     const double dt = (chem_model.tend - chem_model.tstart) / params.num_steps;
     std::cout << "\nChem model 1" << std::endl;
-    std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend
-              << std::endl;
-    std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1
-              << std::endl;
+    std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend << std::endl;
+    std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1 << std::endl;
     std::cout << "  dt=" << dt << std::endl;
-    std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << "}"
-              << std::endl;
-    std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << "}"
-              << std::endl;
+    std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << "}" << std::endl;
+    std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << "}" << std::endl;
 #endif
   }
 
@@ -162,9 +153,8 @@ void test_chem() {
     Kokkos::deep_copy(y_new, y_old_h);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    RKSolve_wrapper<chem_model_2, RK_type::RKCK, vec_type, mv_type, double>
-        solve_wrapper(chem_model, params, chem_model.tstart, chem_model.tend,
-                      y_old, y_new, tmp, kstack);
+    RKSolve_wrapper<chem_model_2, RK_type::RKCK, vec_type, mv_type, double> solve_wrapper(
+        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     auto y_new_h = Kokkos::create_mirror(y_new);
@@ -172,17 +162,13 @@ void test_chem() {
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
     const double dt = (chem_model.tend - chem_model.tstart) / params.num_steps;
     std::cout << "\nChem model 2" << std::endl;
-    std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend
-              << std::endl;
-    std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1
-              << std::endl;
+    std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend << std::endl;
+    std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1 << std::endl;
     std::cout << "  dt=" << dt << std::endl;
-    std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << ", "
-              << y_old_h(2) << ", " << y_old_h(3) << ", " << y_old_h(4) << ", "
-              << y_old_h(5) << ", " << y_old_h(6) << "}" << std::endl;
-    std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << ", "
-              << y_new_h(2) << ", " << y_new_h(3) << ", " << y_new_h(4) << ", "
-              << y_new_h(5) << ", " << y_new_h(6) << "}" << std::endl;
+    std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << ", " << y_old_h(2) << ", " << y_old_h(3) << ", "
+              << y_old_h(4) << ", " << y_old_h(5) << ", " << y_old_h(6) << "}" << std::endl;
+    std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2) << ", " << y_new_h(3) << ", "
+              << y_new_h(4) << ", " << y_new_h(5) << ", " << y_new_h(6) << "}" << std::endl;
 #endif
   }
 }  // test_chem

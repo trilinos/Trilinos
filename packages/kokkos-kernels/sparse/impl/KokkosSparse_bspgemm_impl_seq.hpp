@@ -24,70 +24,50 @@ namespace KokkosSparse {
 namespace Impl {
 
 template <typename data_view_t>
-using kk_subview1d =
-    decltype(Kokkos::subview(data_view_t(), Kokkos::make_pair(0, 0)));
+using kk_subview1d = decltype(Kokkos::subview(data_view_t(), Kokkos::make_pair(0, 0)));
 
 // Returns subview
 template <typename data_view_t, typename size_type, typename lno_t>
-KOKKOS_INLINE_FUNCTION kk_subview1d<data_view_t> get_block(
-    data_view_t data, size_type block_index, lno_t block_size) {
+KOKKOS_INLINE_FUNCTION kk_subview1d<data_view_t> get_block(data_view_t data, size_type block_index, lno_t block_size) {
   const auto i = block_index * block_size;
   return Kokkos::subview(data, Kokkos::make_pair(i, i + block_size));
 }
 
-template <typename KernelHandle, typename alno_row_view_t_,
-          typename alno_nnz_view_t_, typename ascalar_nnz_view_t_,
-          typename blno_row_view_t_, typename blno_nnz_view_t_,
-          typename bscalar_nnz_view_t_, typename clno_row_view_t_,
+template <typename KernelHandle, typename alno_row_view_t_, typename alno_nnz_view_t_, typename ascalar_nnz_view_t_,
+          typename blno_row_view_t_, typename blno_nnz_view_t_, typename bscalar_nnz_view_t_, typename clno_row_view_t_,
           typename clno_nnz_view_t_, typename cscalar_nnz_view_t_>
-void bspgemm_debug_numeric(KernelHandle* /* handle */,
-                           typename KernelHandle::nnz_lno_t m,
-                           typename KernelHandle::nnz_lno_t /* n */,
-                           typename KernelHandle::nnz_lno_t k,
-                           typename KernelHandle::nnz_lno_t block_dim,
-                           alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA,
-                           ascalar_nnz_view_t_ valuesA,
+void bspgemm_debug_numeric(KernelHandle* /* handle */, typename KernelHandle::nnz_lno_t m,
+                           typename KernelHandle::nnz_lno_t /* n */, typename KernelHandle::nnz_lno_t k,
+                           typename KernelHandle::nnz_lno_t block_dim, alno_row_view_t_ row_mapA,
+                           alno_nnz_view_t_ entriesA, ascalar_nnz_view_t_ valuesA,
 
-                           bool /* transposeA */, blno_row_view_t_ row_mapB,
-                           blno_nnz_view_t_ entriesB,
-                           bscalar_nnz_view_t_ valuesB, bool /* transposeB */,
-                           clno_row_view_t_ row_mapC, clno_nnz_view_t_ entriesC,
-                           cscalar_nnz_view_t_ valuesC) {
-  typename alno_row_view_t_::HostMirror h_rma =
-      Kokkos::create_mirror_view(row_mapA);
+                           bool /* transposeA */, blno_row_view_t_ row_mapB, blno_nnz_view_t_ entriesB,
+                           bscalar_nnz_view_t_ valuesB, bool /* transposeB */, clno_row_view_t_ row_mapC,
+                           clno_nnz_view_t_ entriesC, cscalar_nnz_view_t_ valuesC) {
+  typename alno_row_view_t_::HostMirror h_rma = Kokkos::create_mirror_view(row_mapA);
   Kokkos::deep_copy(h_rma, row_mapA);
-  typename alno_nnz_view_t_::HostMirror h_enta =
-      Kokkos::create_mirror_view(entriesA);
+  typename alno_nnz_view_t_::HostMirror h_enta = Kokkos::create_mirror_view(entriesA);
   Kokkos::deep_copy(h_enta, entriesA);
-  typename ascalar_nnz_view_t_::HostMirror h_vala =
-      Kokkos::create_mirror_view(valuesA);
+  typename ascalar_nnz_view_t_::HostMirror h_vala = Kokkos::create_mirror_view(valuesA);
   Kokkos::deep_copy(h_vala, valuesA);
 
-  typename blno_row_view_t_::HostMirror h_rmb =
-      Kokkos::create_mirror_view(row_mapB);
+  typename blno_row_view_t_::HostMirror h_rmb = Kokkos::create_mirror_view(row_mapB);
   Kokkos::deep_copy(h_rmb, row_mapB);
-  typename blno_nnz_view_t_::HostMirror h_entb =
-      Kokkos::create_mirror_view(entriesB);
+  typename blno_nnz_view_t_::HostMirror h_entb = Kokkos::create_mirror_view(entriesB);
   Kokkos::deep_copy(h_entb, entriesB);
-  typename bscalar_nnz_view_t_::HostMirror h_valb =
-      Kokkos::create_mirror_view(valuesB);
+  typename bscalar_nnz_view_t_::HostMirror h_valb = Kokkos::create_mirror_view(valuesB);
   Kokkos::deep_copy(h_valb, valuesB);
-  typename clno_row_view_t_::HostMirror h_rmc =
-      Kokkos::create_mirror_view(row_mapC);
+  typename clno_row_view_t_::HostMirror h_rmc = Kokkos::create_mirror_view(row_mapC);
   Kokkos::deep_copy(h_rmc, row_mapC);
 
-  typename clno_nnz_view_t_::HostMirror h_entc =
-      Kokkos::create_mirror_view(entriesC);
-  typename cscalar_nnz_view_t_::HostMirror h_valc =
-      Kokkos::create_mirror_view(valuesC);
+  typename clno_nnz_view_t_::HostMirror h_entc    = Kokkos::create_mirror_view(entriesC);
+  typename cscalar_nnz_view_t_::HostMirror h_valc = Kokkos::create_mirror_view(valuesC);
   Kokkos::fence();
 
   typedef typename KernelHandle::nnz_lno_t lno_t;
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_t;
-  typedef KokkosBatched::SerialGemmInternal<
-      KokkosBatched::Algo::Gemm::Unblocked>
-      GEMM;
+  typedef KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Unblocked> GEMM;
 
   const auto block_size = block_dim * block_dim;
   const auto ZERO       = static_cast<scalar_t>(0);
@@ -126,8 +106,8 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */,
         }
         // accumulator(b_col) += a_val * b_val
         auto acc = get_block(accumulator, b_col, block_size);
-        GEMM::invoke(block_dim, block_dim, block_dim, ONE, a_val, block_dim, 1,
-                     b_val, block_dim, 1, ONE, acc.data(), block_dim, 1);
+        GEMM::invoke(block_dim, block_dim, block_dim, ONE, a_val, block_dim, 1, b_val, block_dim, 1, ONE, acc.data(),
+                     block_dim, 1);
       }
     }
 

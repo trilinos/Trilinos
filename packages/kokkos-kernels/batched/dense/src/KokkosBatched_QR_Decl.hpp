@@ -29,9 +29,7 @@ namespace KokkosBatched {
 template <typename ArgAlgo>
 struct SerialQR {
   template <typename AViewType, typename tViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const tViewType &t,
-                                           const wViewType &w);
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const tViewType &t, const wViewType &w);
 };
 
 ///
@@ -41,10 +39,8 @@ struct SerialQR {
 template <typename MemberType, typename ArgAlgo>
 struct TeamQR {
   template <typename AViewType, typename tViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType & /*member*/,
-                                           const AViewType & /*A*/,
-                                           const tViewType & /*t*/,
-                                           const wViewType & /*w*/) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType & /*member*/, const AViewType & /*A*/,
+                                           const tViewType & /*t*/, const wViewType & /*w*/) {
     /// not implemented
     return -1;
   }
@@ -57,9 +53,7 @@ struct TeamQR {
 template <typename MemberType, typename ArgAlgo>
 struct TeamVectorQR {
   template <typename AViewType, typename tViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const AViewType &A,
-                                           const tViewType &t,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                            const wViewType &w);
 };
 
@@ -69,9 +63,7 @@ struct TeamVectorQR {
 template <typename MemberType, typename ArgMode, typename ArgAlgo>
 struct QR {
   template <typename AViewType, typename tViewType, typename wViewType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member,
-                                                const AViewType &A,
-                                                const tViewType &t,
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                                 const wViewType &w) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {

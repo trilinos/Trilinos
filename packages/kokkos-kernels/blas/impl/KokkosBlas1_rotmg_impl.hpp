@@ -25,8 +25,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 template <class DXView, class YView, class PView>
-KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2,
-                                       DXView const& x1, YView const& y1,
+KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,
                                        PView const& param) {
   using Scalar = typename DXView::non_const_value_type;
 
@@ -133,8 +132,7 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2,
 
     // Rescale d2, h21 and h22
     if (d2() != zero) {
-      while ((Kokkos::abs(d2()) <= gammasqinv) ||
-             (Kokkos::abs(d2()) >= gammasq)) {
+      while ((Kokkos::abs(d2()) <= gammasqinv) || (Kokkos::abs(d2()) >= gammasq)) {
         if (flag == zero) {
           h11  = one;
           h22  = one;
@@ -182,8 +180,7 @@ struct rotmg_functor {
   YView y1;
   PView param;
 
-  rotmg_functor(DXView& d1_, DXView& d2_, DXView& x1_, const YView& y1_,
-                PView& param_)
+  rotmg_functor(DXView& d1_, DXView& d2_, DXView& x1_, const YView& y1_, PView& param_)
       : d1(d1_), d2(d2_), x1(x1_), y1(y1_), param(param_) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -191,12 +188,10 @@ struct rotmg_functor {
 };
 
 template <class execution_space, class DXView, class YView, class PView>
-void Rotmg_Invoke(execution_space const& space, DXView const& d1,
-                  DXView const& d2, DXView const& x1, YView const& y1,
+void Rotmg_Invoke(execution_space const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,
                   PView const& param) {
   using Scalar = typename DXView::value_type;
-  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex,
-                "rotmg is not defined for complex types!");
+  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex, "rotmg is not defined for complex types!");
 
   rotmg_functor myFunc(d1, d2, x1, y1, param);
   Kokkos::RangePolicy<execution_space> rotmg_policy(space, 0, 1);

@@ -61,8 +61,7 @@ inline void add_kokkos_configuration(bool verbose) {
       auto val = remove_unwanted_characters(line.substr(found + 1));
       // Ignore line without value, for example a category name
       if (!val.empty()) {
-        benchmark::AddCustomContext(
-            remove_unwanted_characters(line.substr(0, found)), val);
+        benchmark::AddCustomContext(remove_unwanted_characters(line.substr(0, found)), val);
       }
     }
   }
@@ -75,18 +74,13 @@ inline void add_version_info() {
 
   if (!GIT_BRANCH.empty()) {
     benchmark::AddCustomContext("GIT_BRANCH", std::string(GIT_BRANCH));
-    benchmark::AddCustomContext("GIT_COMMIT_HASH",
-                                std::string(GIT_COMMIT_HASH));
-    benchmark::AddCustomContext("GIT_CLEAN_STATUS",
-                                std::string(GIT_CLEAN_STATUS));
-    benchmark::AddCustomContext("GIT_COMMIT_DESCRIPTION",
-                                std::string(GIT_COMMIT_DESCRIPTION));
-    benchmark::AddCustomContext("GIT_COMMIT_DATE",
-                                std::string(GIT_COMMIT_DATE));
+    benchmark::AddCustomContext("GIT_COMMIT_HASH", std::string(GIT_COMMIT_HASH));
+    benchmark::AddCustomContext("GIT_CLEAN_STATUS", std::string(GIT_CLEAN_STATUS));
+    benchmark::AddCustomContext("GIT_COMMIT_DESCRIPTION", std::string(GIT_COMMIT_DESCRIPTION));
+    benchmark::AddCustomContext("GIT_COMMIT_DATE", std::string(GIT_COMMIT_DATE));
   }
   if (!BENCHMARK_VERSION.empty()) {
-    benchmark::AddCustomContext("GOOGLE_BENCHMARK_VERSION",
-                                std::string(BENCHMARK_VERSION));
+    benchmark::AddCustomContext("GOOGLE_BENCHMARK_VERSION", std::string(BENCHMARK_VERSION));
   }
 }
 
@@ -117,20 +111,16 @@ inline void add_benchmark_context(bool verbose = false) {
 }
 
 template <class FuncType, class... ArgsToCallOp>
-inline auto register_benchmark(const char* name, FuncType func,
-                               std::vector<std::string> arg_names,
-                               std::vector<int64_t> args, int repeat,
-                               ArgsToCallOp&&... func_args) {
+inline auto register_benchmark(const char* name, FuncType func, std::vector<std::string> arg_names,
+                               std::vector<int64_t> args, int repeat, ArgsToCallOp&&... func_args) {
   if (repeat > 0) {
-    return benchmark::RegisterBenchmark(
-               name, func, std::forward<ArgsToCallOp>(func_args)...)
+    return benchmark::RegisterBenchmark(name, func, std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseManualTime()
         ->Iterations(repeat);
   } else {
-    return benchmark::RegisterBenchmark(
-               name, func, std::forward<ArgsToCallOp>(func_args)...)
+    return benchmark::RegisterBenchmark(name, func, std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseManualTime();
@@ -138,20 +128,16 @@ inline auto register_benchmark(const char* name, FuncType func,
 }
 
 template <class FuncType, class... ArgsToCallOp>
-inline auto register_benchmark_real_time(const char* name, FuncType func,
-                                         std::vector<std::string> arg_names,
-                                         std::vector<int64_t> args, int repeat,
-                                         ArgsToCallOp&&... func_args) {
+inline auto register_benchmark_real_time(const char* name, FuncType func, std::vector<std::string> arg_names,
+                                         std::vector<int64_t> args, int repeat, ArgsToCallOp&&... func_args) {
   if (repeat > 0) {
-    return benchmark::RegisterBenchmark(
-               name, func, std::forward<ArgsToCallOp>(func_args)...)
+    return benchmark::RegisterBenchmark(name, func, std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseRealTime()
         ->Iterations(repeat);
   } else {
-    return benchmark::RegisterBenchmark(
-               name, func, std::forward<ArgsToCallOp>(func_args)...)
+    return benchmark::RegisterBenchmark(name, func, std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseRealTime();

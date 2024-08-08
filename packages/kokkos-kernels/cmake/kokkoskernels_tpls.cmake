@@ -334,6 +334,9 @@ MACRO(kokkoskernels_export_imported_tpl NAME)
 
       GET_TARGET_PROPERTY(TPL_INCLUDES ${TPL_IMPORTED_NAME} INTERFACE_INCLUDE_DIRECTORIES)
       IF(TPL_INCLUDES)
+        # remove duplicates to prevent incorrect number of arguments to INTERFACE_INCLUDE_DIRECTORIES
+        # see issue #2238
+        LIST(REMOVE_DUPLICATES TPL_INCLUDES)
         KOKKOSKERNELS_APPEND_CONFIG_LINE("INTERFACE_INCLUDE_DIRECTORIES ${TPL_INCLUDES}")
       ENDIF()
 

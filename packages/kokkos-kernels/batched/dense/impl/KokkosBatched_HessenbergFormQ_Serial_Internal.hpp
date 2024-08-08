@@ -34,13 +34,10 @@ namespace KokkosBatched {
 struct SerialHessenbergFormQInternal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int k,
-                                           /* */ ValueType* A, const int as0,
-                                           const int as1,
+                                           /* */ ValueType* A, const int as0, const int as1,
                                            /* */ ValueType* t, const int ts,
-                                           /* */ ValueType* Q, const int qs0,
-                                           const int qs1,
-                                           /* */ ValueType* w,
-                                           const bool is_Q_zero = false) {
+                                           /* */ ValueType* Q, const int qs0, const int qs1,
+                                           /* */ ValueType* w, const bool is_Q_zero = false) {
     typedef ValueType value_type;
 
     /// Given a matrix A that includes Hessenberg factorization
@@ -52,14 +49,12 @@ struct SerialHessenbergFormQInternal {
     ///   B is m x m
     // set identity
     if (is_Q_zero)
-      KokkosBlas::Impl::SerialSetInternal::invoke(m, value_type(1), Q,
-                                                  qs0 + qs1);
+      KokkosBlas::Impl::SerialSetInternal::invoke(m, value_type(1), Q, qs0 + qs1);
     else
       SerialSetIdentityInternal::invoke(m, Q, qs0, qs1);
 
-    return SerialApplyQ_LeftNoTransForwardInternal ::invoke(
-        m - 1, m - 1, k - 1, A + as0, as0, as1, t, ts, Q + qs0 + qs1, qs1, qs0,
-        w);
+    return SerialApplyQ_LeftNoTransForwardInternal ::invoke(m - 1, m - 1, k - 1, A + as0, as0, as1, t, ts,
+                                                            Q + qs0 + qs1, qs1, qs0, w);
   }
 };
 

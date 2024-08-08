@@ -44,12 +44,9 @@ struct check_spmv_functor {
 int main() {
   Kokkos::initialize();
 
-  using device_type = typename Kokkos::Device<
-      Kokkos::DefaultExecutionSpace,
-      typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using matrix_type =
-      typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
-                                       Offset>;
+  using device_type =
+      typename Kokkos::Device<Kokkos::DefaultExecutionSpace, typename Kokkos::DefaultExecutionSpace::memory_space>;
+  using matrix_type = typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void, Offset>;
   using values_type = typename matrix_type::values_type;
 
   int return_value = 0;
@@ -66,8 +63,7 @@ int main() {
     // BCs in that direction, BC=0 means Neumann BC is applied,
     // BC=1 means Dirichlet BC is applied by zeroing out the row and putting
     // one on the diagonal.
-    Kokkos::View<Ordinal * [3], Kokkos::HostSpace> mat_structure(
-        "Matrix Structure", 2);
+    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure("Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
     mat_structure(0, 1) = 0;   // Add BC to the left
     mat_structure(0, 2) = 0;   // Add BC to the right
@@ -75,8 +71,7 @@ int main() {
     mat_structure(1, 1) = 0;   // Add BC to the bottom
     mat_structure(1, 2) = 0;   // Add BC to the top
 
-    matrix_type myMatrix =
-        Test::generate_structured_matrix2D<matrix_type>("FD", mat_structure);
+    matrix_type myMatrix = Test::generate_structured_matrix2D<matrix_type>("FD", mat_structure);
 
     const Ordinal numRows = myMatrix.numRows();
 
@@ -92,15 +87,12 @@ int main() {
 
     Ordinal count_errors = 0;
     check_spmv_functor<values_type> check_spmv(y);
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<Ordinal>(0, numRows),
-                            check_spmv, count_errors);
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<Ordinal>(0, numRows), check_spmv, count_errors);
     if (count_errors > 0) {
       return_value = 1;
-      std::cout << "Found " << count_errors << " errors in y vector!"
-                << std::endl;
+      std::cout << "Found " << count_errors << " errors in y vector!" << std::endl;
     } else {
-      std::cout << "spmv was performed correctly: y = beta*y + alpha*A*x"
-                << std::endl;
+      std::cout << "spmv was performed correctly: y = beta*y + alpha*A*x" << std::endl;
     }
   }
 

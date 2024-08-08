@@ -20,10 +20,9 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class KernelHandle, class ARowMapType,
-          class AEntriesType, class AValuesType, class LRowMapType,
-          class LEntriesType, class LValuesType, class URowMapType,
-          class UEntriesType, class UValuesType>
+template <class ExecutionSpace, class KernelHandle, class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType, class URowMapType, class UEntriesType,
+          class UValuesType>
 struct spiluk_numeric_tpl_spec_avail {
   enum : bool { value = false };
 };

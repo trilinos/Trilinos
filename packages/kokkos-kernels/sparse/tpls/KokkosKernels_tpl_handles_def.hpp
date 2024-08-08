@@ -49,9 +49,7 @@ namespace Impl {
 RocsparseSingleton::RocsparseSingleton() {
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_handle(&rocsparseHandle));
 
-  Kokkos::push_finalize_hook([&]() {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_handle(rocsparseHandle));
-  });
+  Kokkos::push_finalize_hook([&]() { KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_handle(rocsparseHandle)); });
 }
 
 RocsparseSingleton& RocsparseSingleton::singleton() {

@@ -27,16 +27,14 @@ namespace Impl {
 
 // Functor for the thread parallel version of SYR2.
 // This functor parallelizes over rows of the input matrix A.
-template <class XViewType, class YViewType, class AViewType, class IndexType,
-          bool tJustTranspose, bool tJustUp>
+template <class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose, bool tJustUp>
 struct ThreadParallelSYR2 {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using XComponentType = typename XViewType::non_const_value_type;
   using YComponentType = typename YViewType::non_const_value_type;
   using AComponentType = typename AViewType::non_const_value_type;
 
-  ThreadParallelSYR2(const AlphaCoeffType& alpha, const XViewType& x,
-                     const YViewType& y, const AViewType& A)
+  ThreadParallelSYR2(const AlphaCoeffType& alpha, const XViewType& x, const YViewType& y, const AViewType& A)
       : alpha_(alpha), x_(x), y_(y), A_(A) {
     // Nothing to do
   }
@@ -55,16 +53,14 @@ struct ThreadParallelSYR2 {
       if constexpr (tJustTranspose) {
         if (x_fixed != Kokkos::ArithTraits<XComponentType>::zero()) {
           for (IndexType j = 0; j < N; ++j) {
-            if (((tJustUp == true) && (i <= j)) ||
-                ((tJustUp == false) && (i >= j))) {
+            if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
               A_(i, j) += AComponentType(alpha_ * x_fixed * y_(j));
             }
           }
         }
         if (y_fixed != Kokkos::ArithTraits<YComponentType>::zero()) {
           for (IndexType j = 0; j < N; ++j) {
-            if (((tJustUp == true) && (i <= j)) ||
-                ((tJustUp == false) && (i >= j))) {
+            if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
               A_(i, j) += AComponentType(alpha_ * y_fixed * x_(j));
             }
           }
@@ -72,21 +68,16 @@ struct ThreadParallelSYR2 {
       } else {
         if (x_fixed != Kokkos::ArithTraits<XComponentType>::zero()) {
           for (IndexType j = 0; j < N; ++j) {
-            if (((tJustUp == true) && (i <= j)) ||
-                ((tJustUp == false) && (i >= j))) {
-              A_(i, j) += AComponentType(
-                  alpha_ * x_fixed *
-                  Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
+            if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+              A_(i, j) += AComponentType(alpha_ * x_fixed * Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
             }
           }
         }
         if (y_fixed != Kokkos::ArithTraits<YComponentType>::zero()) {
           for (IndexType j = 0; j < N; ++j) {
-            if (((tJustUp == true) && (i <= j)) ||
-                ((tJustUp == false) && (i >= j))) {
-              A_(i, j) += AComponentType(
-                  Kokkos::ArithTraits<AlphaCoeffType>::conj(alpha_) * y_fixed *
-                  Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
+            if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+              A_(i, j) += AComponentType(Kokkos::ArithTraits<AlphaCoeffType>::conj(alpha_) * y_fixed *
+                                         Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
             }
           }
         }
@@ -102,14 +93,11 @@ struct ThreadParallelSYR2 {
 };
 
 // Thread parallel version of SYR2.
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType, class IndexType, bool tJustTranspose, bool tJustUp>
-void threadParallelSyr2(const ExecutionSpace& space,
-                        const typename AViewType::const_value_type& alpha,
-                        const XViewType& x, const YViewType& y,
-                        const AViewType& A) {
-  static_assert(std::is_integral<IndexType>::value,
-                "IndexType must be an integer");
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
+          bool tJustUp>
+void threadParallelSyr2(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha,
+                        const XViewType& x, const YViewType& y, const AViewType& A) {
+  static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
   using AlphaCoeffType = typename AViewType::non_const_value_type;
 
@@ -120,13 +108,9 @@ void threadParallelSyr2(const ExecutionSpace& space,
   } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
   } else {
-    Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0,
-                                                               A.extent(0));
-    ThreadParallelSYR2<XViewType, YViewType, AViewType, IndexType,
-                       tJustTranspose, tJustUp>
-        functor(alpha, x, y, A);
-    Kokkos::parallel_for("KokkosBlas::syr2[threadParallel]", rangePolicy,
-                         functor);
+    Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0, A.extent(0));
+    ThreadParallelSYR2<XViewType, YViewType, AViewType, IndexType, tJustTranspose, tJustUp> functor(alpha, x, y, A);
+    Kokkos::parallel_for("KokkosBlas::syr2[threadParallel]", rangePolicy, functor);
   }
 }
 
@@ -137,8 +121,8 @@ struct TeamParallelSYR2_LayoutRightTag {};
 
 // Functor for the team parallel version of SYR2, designed for
 // performance on GPUs. The kernel depends on the layout of A.
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType, class IndexType, bool tJustTranspose, bool tJustUp>
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
+          bool tJustUp>
 struct TeamParallelSYR2 {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using XComponentType = typename XViewType::non_const_value_type;
@@ -148,16 +132,14 @@ struct TeamParallelSYR2 {
   using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
   using member_type = typename policy_type::member_type;
 
-  TeamParallelSYR2(const AlphaCoeffType& alpha, const XViewType& x,
-                   const YViewType& y, const AViewType& A)
+  TeamParallelSYR2(const AlphaCoeffType& alpha, const XViewType& x, const YViewType& y, const AViewType& A)
       : alpha_(alpha), x_(x), y_(y), A_(A) {
     // Nothing to do
   }
 
  public:
   // LayoutLeft version: one team per column
-  KOKKOS_INLINE_FUNCTION void operator()(TeamParallelSYR2_LayoutLeftTag,
-                                         const member_type& team) const {
+  KOKKOS_INLINE_FUNCTION void operator()(TeamParallelSYR2_LayoutLeftTag, const member_type& team) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     } else {
@@ -171,47 +153,35 @@ struct TeamParallelSYR2 {
           const XComponentType x_fixed(x_(j));
           const YComponentType y_fixed(y_(j));
           if (y_fixed != Kokkos::ArithTraits<YComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(alpha_ * x_(i) * y_fixed);
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(alpha_ * x_(i) * y_fixed);
+              }
+            });
           }
           if (x_fixed != Kokkos::ArithTraits<XComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(alpha_ * y_(i) * x_fixed);
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(alpha_ * y_(i) * x_fixed);
+              }
+            });
           }
         } else {
-          const XComponentType x_fixed(
-              Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
-          const YComponentType y_fixed(
-              Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
+          const XComponentType x_fixed(Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
+          const YComponentType y_fixed(Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
           if (y_fixed != Kokkos::ArithTraits<YComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(alpha_ * x_(i) * y_fixed);
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(alpha_ * x_(i) * y_fixed);
+              }
+            });
           }
           if (x_fixed != Kokkos::ArithTraits<XComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(
-                        Kokkos::ArithTraits<AlphaCoeffType>::conj(alpha_) *
-                        y_(i) * x_fixed);
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(Kokkos::ArithTraits<AlphaCoeffType>::conj(alpha_) * y_(i) * x_fixed);
+              }
+            });
           }
         }
       }
@@ -219,8 +189,7 @@ struct TeamParallelSYR2 {
   }
 
   // LayoutRight version: one team per row
-  KOKKOS_INLINE_FUNCTION void operator()(TeamParallelSYR2_LayoutRightTag,
-                                         const member_type& team) const {
+  KOKKOS_INLINE_FUNCTION void operator()(TeamParallelSYR2_LayoutRightTag, const member_type& team) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     } else {
@@ -234,46 +203,34 @@ struct TeamParallelSYR2 {
         const YComponentType y_fixed(y_(i));
         if constexpr (tJustTranspose) {
           if (x_fixed != Kokkos::ArithTraits<XComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(alpha_ * x_fixed * y_(j));
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(alpha_ * x_fixed * y_(j));
+              }
+            });
           }
           if (y_fixed != Kokkos::ArithTraits<YComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(alpha_ * y_fixed * x_(j));
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(alpha_ * y_fixed * x_(j));
+              }
+            });
           }
         } else {
           if (x_fixed != Kokkos::ArithTraits<XComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(
-                        alpha_ * x_fixed *
-                        Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(alpha_ * x_fixed * Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
+              }
+            });
           }
           if (y_fixed != Kokkos::ArithTraits<YComponentType>::zero()) {
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
-                  if (((tJustUp == true) && (i <= j)) ||
-                      ((tJustUp == false) && (i >= j))) {
-                    A_(i, j) += AComponentType(
-                        Kokkos::ArithTraits<AlphaCoeffType>::conj(alpha_) *
-                        y_fixed *
-                        Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
-                  }
-                });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
+              if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
+                A_(i, j) += AComponentType(Kokkos::ArithTraits<AlphaCoeffType>::conj(alpha_) * y_fixed *
+                                           Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
+              }
+            });
           }
         }
       }
@@ -288,14 +245,11 @@ struct TeamParallelSYR2 {
 };
 
 // Team parallel version of SYR2.
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType, class IndexType, bool tJustTranspose, bool tJustUp>
-void teamParallelSyr2(const ExecutionSpace& space,
-                      const typename AViewType::const_value_type& alpha,
-                      const XViewType& x, const YViewType& y,
-                      const AViewType& A) {
-  static_assert(std::is_integral<IndexType>::value,
-                "IndexType must be an integer");
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
+          bool tJustUp>
+void teamParallelSyr2(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha,
+                      const XViewType& x, const YViewType& y, const AViewType& A) {
+  static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
   using AlphaCoeffType = typename AViewType::non_const_value_type;
 
@@ -310,11 +264,9 @@ void teamParallelSyr2(const ExecutionSpace& space,
     return;
   }
 
-  constexpr bool isLayoutLeft =
-      std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
+  constexpr bool isLayoutLeft = std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
   using layout_tag =
-      typename std::conditional<isLayoutLeft, TeamParallelSYR2_LayoutLeftTag,
-                                TeamParallelSYR2_LayoutRightTag>::type;
+      typename std::conditional<isLayoutLeft, TeamParallelSYR2_LayoutLeftTag, TeamParallelSYR2_LayoutRightTag>::type;
   using TeamPolicyType = Kokkos::TeamPolicy<ExecutionSpace, layout_tag>;
   TeamPolicyType teamPolicy;
   if (isLayoutLeft) {
@@ -325,9 +277,8 @@ void teamParallelSyr2(const ExecutionSpace& space,
     teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
   }
 
-  TeamParallelSYR2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType,
-                   tJustTranspose, tJustUp>
-      functor(alpha, x, y, A);
+  TeamParallelSYR2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType, tJustTranspose, tJustUp> functor(
+      alpha, x, y, A);
   Kokkos::parallel_for("KokkosBlas::syr2[teamParallel]", teamPolicy, functor);
 }
 
@@ -339,28 +290,22 @@ void teamParallelSyr2(const ExecutionSpace& space,
 //
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType, class IndexType, bool tJustTranspose, bool tJustUp,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
-              ExecutionSpace>()>::type* = nullptr>
-void generalSyr2Impl(const ExecutionSpace& space,
-                     const typename AViewType::const_value_type& alpha,
-                     const XViewType& x, const YViewType& y,
-                     const AViewType& A) {
-  threadParallelSyr2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType,
-                     tJustTranspose, tJustUp>(space, alpha, x, y, A);
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
+          bool tJustUp,
+          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+void generalSyr2Impl(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha, const XViewType& x,
+                     const YViewType& y, const AViewType& A) {
+  threadParallelSyr2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType, tJustTranspose, tJustUp>(space, alpha,
+                                                                                                          x, y, A);
 }
 
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType, class IndexType, bool tJustTranspose, bool tJustUp,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              ExecutionSpace>()>::type* = nullptr>
-void generalSyr2Impl(const ExecutionSpace& space,
-                     const typename AViewType::const_value_type& alpha,
-                     const XViewType& x, const YViewType& y,
-                     const AViewType& A) {
-  teamParallelSyr2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType,
-                   tJustTranspose, tJustUp>(space, alpha, x, y, A);
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
+          bool tJustUp,
+          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+void generalSyr2Impl(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha, const XViewType& x,
+                     const YViewType& y, const AViewType& A) {
+  teamParallelSyr2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType, tJustTranspose, tJustUp>(space, alpha, x,
+                                                                                                        y, A);
 }
 
 }  // namespace Impl

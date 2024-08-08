@@ -56,8 +56,6 @@ void testPrintConfiguration() {
   check_print_configuration(out);
 }
 
-TEST_F(TestCategory, common_print_configuration) {
-  testPrintConfiguration<TestDevice>();
-}
+TEST_F(TestCategory, common_print_configuration) { testPrintConfiguration<TestDevice>(); }
 
 #endif  // KOKKOSKERNELS_PRINTCONFIGURATIONTEST_HPP

@@ -47,8 +47,7 @@ KOKKOS_INLINE_FUNCTION constexpr bool safe_gt(const T &t, const U &u) {
   using KU = Kokkos::ArithTraits<U>;
 
   // both are integer, but only one is signed
-  if constexpr (KT::is_integer && KU::is_integer &&
-                (KT::is_signed != KU::is_signed)) {
+  if constexpr (KT::is_integer && KU::is_integer && (KT::is_signed != KU::is_signed)) {
     // how wide the signed type would need to be to hold T and U
     constexpr size_t t_width = KT::is_signed ? sizeof(T) : 2 * sizeof(T);
     constexpr size_t u_width = KU::is_signed ? sizeof(U) : 2 * sizeof(U);

@@ -40,19 +40,16 @@ struct syr2_eti_spec_avail {
 // specializations go in this header file. We may spread out definitions (see
 // _INST macro below) across one or more .cpp files.
 //
-#define KOKKOSBLAS2_SYR2_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template <>                                                                  \
-  struct syr2_eti_spec_avail<                                                  \
-      EXEC_SPACE,                                                              \
-      Kokkos::View<const SCALAR*, LAYOUT,                                      \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const SCALAR*, LAYOUT,                                      \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
-    enum : bool { value = true };                                              \
+#define KOKKOSBLAS2_SYR2_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                          \
+  template <>                                                                                           \
+  struct syr2_eti_spec_avail<EXEC_SPACE,                                                                \
+                             Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                    \
+                             Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                    \
+                             Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,      \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                 \
+    enum : bool { value = true };                                                                       \
   };
 
 // Include the actual specialization declarations
@@ -67,22 +64,17 @@ namespace Impl {
 //
 
 // Implementation of KokkosBlas::syr2.
-template <
-    class ExecutionSpace, class XViewType, class YViewType, class AViewType,
-    bool tpl_spec_avail = syr2_tpl_spec_avail<ExecutionSpace, XViewType,
-                                              YViewType, AViewType>::value,
-    bool eti_spec_avail = syr2_eti_spec_avail<ExecutionSpace, XViewType,
-                                              YViewType, AViewType>::value>
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType,
+          bool tpl_spec_avail = syr2_tpl_spec_avail<ExecutionSpace, XViewType, YViewType, AViewType>::value,
+          bool eti_spec_avail = syr2_eti_spec_avail<ExecutionSpace, XViewType, YViewType, AViewType>::value>
 struct SYR2 {
-  static void syr2(const ExecutionSpace& space, const char trans[],
-                   const char uplo[],
-                   const typename AViewType::const_value_type& alpha,
-                   const XViewType& x, const YViewType& y, const AViewType& A)
+  static void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
+                   const typename AViewType::const_value_type& alpha, const XViewType& x, const YViewType& y,
+                   const AViewType& A)
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   {
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::syr2[ETI]"
-                                      : "KokkosBlas::syr2[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::syr2[ETI]"
+                                                                     : "KokkosBlas::syr2[noETI]");
 
     typedef typename AViewType::size_type size_type;
     const size_type numRows = A.extent(0);
@@ -92,41 +84,33 @@ struct SYR2 {
     bool justUp        = (uplo[0] == 'U') || (uplo[0] == 'u');
 
     // Prefer int as the index type, but use a larsyr2 type if needed.
-    if ((numRows < static_cast<size_type>(INT_MAX)) &&
-        (numCols < static_cast<size_type>(INT_MAX))) {
+    if ((numRows < static_cast<size_type>(INT_MAX)) && (numCols < static_cast<size_type>(INT_MAX))) {
       if (justTranspose) {
         if (justUp) {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int,
-                          true, true>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int, true, true>(space, alpha, x, y, A);
         } else {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int,
-                          true, false>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int, true, false>(space, alpha, x, y, A);
         }
       } else {
         if (justUp) {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int,
-                          false, true>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int, false, true>(space, alpha, x, y, A);
         } else {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int,
-                          false, false>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int, false, false>(space, alpha, x, y, A);
         }
       }
     } else {
       if (justTranspose) {
         if (justUp) {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType,
-                          int64_t, true, true>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t, true, true>(space, alpha, x, y, A);
         } else {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType,
-                          int64_t, true, false>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t, true, false>(space, alpha, x, y, A);
         }
       } else {
         if (justUp) {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType,
-                          int64_t, false, true>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t, false, true>(space, alpha, x, y, A);
         } else {
-          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType,
-                          int64_t, false, false>(space, alpha, x, y, A);
+          generalSyr2Impl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t, false, false>(space, alpha, x, y,
+                                                                                                  A);
         }
       }
     }
@@ -149,30 +133,24 @@ struct SYR2 {
 // We may spread out definitions (see _DEF macro below) across one or more .cpp
 // files.
 //
-#define KOKKOSBLAS2_SYR2_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  extern template struct SYR2<                                                \
-      EXEC_SPACE,                                                             \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+#define KOKKOSBLAS2_SYR2_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                          \
+  extern template struct SYR2<                                                                                         \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
-#define KOKKOSBLAS2_SYR2_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template struct SYR2<                                                       \
-      EXEC_SPACE,                                                             \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+#define KOKKOSBLAS2_SYR2_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                          \
+  template struct SYR2<                                                                                                \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
 #include <KokkosBlas2_syr2_tpl_spec_decl.hpp>

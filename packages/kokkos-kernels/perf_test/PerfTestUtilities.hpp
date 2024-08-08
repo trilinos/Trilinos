@@ -36,8 +36,7 @@ std::string get_input_data_path();
 
 namespace KokkosSparse {
 
-template <class Scalar, class Ordinal, class ExecutionSpace, class,
-          class Offset>
+template <class Scalar, class Ordinal, class ExecutionSpace, class, class Offset>
 class CrsMatrix;
 }
 
@@ -62,8 +61,7 @@ inline std::vector<std::string> get_directories(std::string path) {
       std::string nname = std::string(dir->d_name);
       // Check to see if item is a directory
       // if (isDirectory(path + '/' + nname))
-      if (nname != "." && nname != ".." &&
-          isDirectory(path + '/' + dir->d_name))
+      if (nname != "." && nname != ".." && isDirectory(path + '/' + dir->d_name))
         // std::vector::emplace_back: insert a new element to the end of vector
         paths.emplace_back(dir->d_name);
     }
@@ -75,18 +73,16 @@ inline std::vector<std::string> get_directories(std::string path) {
 namespace readers {
 
 template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
-using matrix_type =
-    KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecutionSpace, void, Offset>;
+using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecutionSpace, void, Offset>;
 
 template <class>
 struct test_reader;
 
 template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
 struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
-  static matrix_type<Scalar, Ordinal, ExecutionSpace, Offset> read(
-      const std::string &filename) {
-    return KokkosKernels::Impl::read_kokkos_crst_matrix<
-        matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(filename.c_str());
+  static matrix_type<Scalar, Ordinal, ExecutionSpace, Offset> read(const std::string &filename) {
+    return KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(
+        filename.c_str());
   }
 };
 
@@ -100,30 +96,23 @@ struct data_retriever {
     std::tuple<SubComponents...> test_data;
   };
   std::vector<test_case> test_cases;
-  std::string make_full_path_to_data_file(std::string repo,
-                                          std::string path_to_data,
-                                          std::string dataset,
+  std::string make_full_path_to_data_file(std::string repo, std::string path_to_data, std::string dataset,
                                           std::string filename) {
-    return root_path + "/" + repo + "/" + path_to_data + dataset + "/" +
-           filename;
+    return root_path + "/" + repo + "/" + path_to_data + dataset + "/" + filename;
   }
   template <class... Locations>
-  data_retriever(std::string path_to_data, Locations... locations)
-      : sub_path(path_to_data) {
+  data_retriever(std::string path_to_data, Locations... locations) : sub_path(path_to_data) {
     root_path = test::get_input_data_path();
 
     // TODO: way to list the directories in the root path
     std::vector<std::string> data_repos = get_directories(root_path + "/");
     // TODO: list directories in subpaths
     for (auto repo : data_repos) {
-      std::vector<std::string> datasets =
-          get_directories(root_path + "/" + repo + "/" + path_to_data + "/");
+      std::vector<std::string> datasets = get_directories(root_path + "/" + repo + "/" + path_to_data + "/");
       for (auto dataset : datasets) {
-        test_cases.push_back(
-            test_case{repo + "/" + dataset,
-                      std::make_tuple(readers::test_reader<SubComponents>::read(
-                          make_full_path_to_data_file(
-                              repo, path_to_data, dataset, locations))...)});
+        test_cases.push_back(test_case{repo + "/" + dataset,
+                                       std::make_tuple(readers::test_reader<SubComponents>::read(
+                                           make_full_path_to_data_file(repo, path_to_data, dataset, locations))...)});
       }
     }
   }

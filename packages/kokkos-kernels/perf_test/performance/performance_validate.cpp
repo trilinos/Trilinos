@@ -34,29 +34,27 @@
 class TestManager {
  public:
   TestManager()
-      : is_error(false),  // tracks if there was an unexpected error
-        update_index(0),  // utility for running through a sequence of tests
+      : is_error(false),                           // tracks if there was an unexpected error
+        update_index(0),                           // utility for running through a sequence of tests
         archiveName("performance_validate.yaml"),  // the yaml file used
-        testName("test1"),  // the initial test name appearing in the archive
-        hostName(""),  // blank means auto detect - otherwise sets host name
-        changeCompiler(
-            ""),  // override option for simulating different machine config
-        filename("somefilename"),  // arbitrary configuration parameter
-        mpi_ranks(1),              // arbitrary configuration parameter
-        teams(1),                  // arbitrary configuration parameter
-        threads(1),                // arbitrary configuration parameter
-        tolerance(0.1),            // tolerance on time values
-        time1(10.0),               // arbitrary time value
-        time2(13.3),               // arbitrary time value
-        niters(44),                // arbitrary result value
-        residual(0.001),           // arbitrary result value
-        bExtraParameters(
-            false),        // used to validate and test the update mechanism
-        extra_time(22.3),  // extra time we'll add to preexisiting data
-        extra_result(40),  // extra result we'll add to preexisting data
-        bExactParameters(false),      // add exact match parameters
-        exact_int(5),                 // test for exact match int
-        exact_string("somestring") {  // test for exact match string
+        testName("test1"),                         // the initial test name appearing in the archive
+        hostName(""),                              // blank means auto detect - otherwise sets host name
+        changeCompiler(""),                        // override option for simulating different machine config
+        filename("somefilename"),                  // arbitrary configuration parameter
+        mpi_ranks(1),                              // arbitrary configuration parameter
+        teams(1),                                  // arbitrary configuration parameter
+        threads(1),                                // arbitrary configuration parameter
+        tolerance(0.1),                            // tolerance on time values
+        time1(10.0),                               // arbitrary time value
+        time2(13.3),                               // arbitrary time value
+        niters(44),                                // arbitrary result value
+        residual(0.001),                           // arbitrary result value
+        bExtraParameters(false),                   // used to validate and test the update mechanism
+        extra_time(22.3),                          // extra time we'll add to preexisiting data
+        extra_result(40),                          // extra result we'll add to preexisting data
+        bExactParameters(false),                   // add exact match parameters
+        exact_int(5),                              // test for exact match int
+        exact_string("somestring") {               // test for exact match string
 
     using KokkosKernels::Performance;
 
@@ -79,21 +77,18 @@ class TestManager {
     using KokkosKernels::Performance;
 
     // some arbitrary delta used to shift values up and down during test
-    const double small_time_change =
-        0.01;  // a small value not exceeding tolerance
-    const double big_time_change = 10.0;  // a big value exceeding tolerance
-    const int integer_change     = 2;     // some non 0 value
+    const double small_time_change = 0.01;  // a small value not exceeding tolerance
+    const double big_time_change   = 10.0;  // a big value exceeding tolerance
+    const int integer_change       = 2;     // some non 0 value
 
     Performance::Result expected_result = Performance::Unknown;
     switch (++update_index) {
       case 1:
-        std::cout << "Create a new machine entry with no prexisting archive."
-                  << std::endl;
+        std::cout << "Create a new machine entry with no prexisting archive." << std::endl;
         expected_result = Performance::NewMachine;
         break;
       case 2:
-        std::cout << "Run again with same data - we expect it to pass."
-                  << std::endl;
+        std::cout << "Run again with same data - we expect it to pass." << std::endl;
         expected_result = Performance::Passed;
         break;
       case 3:
@@ -104,17 +99,13 @@ class TestManager {
         expected_result = Performance::Passed;
         break;
       case 4:
-        std::cout
-            << "Make a big time change exceeding tolerance to trigger failure."
-            << std::endl;
+        std::cout << "Make a big time change exceeding tolerance to trigger failure." << std::endl;
         time1 -= small_time_change;
         time1 += big_time_change;
         expected_result = Performance::Failed;
         break;
       case 5:
-        std::cout
-            << "Run with the original time again and should pass with a match."
-            << std::endl;
+        std::cout << "Run with the original time again and should pass with a match." << std::endl;
         time1 -= big_time_change;
         expected_result = Performance::Passed;
         break;
@@ -133,27 +124,22 @@ class TestManager {
         expected_result = Performance::NewMachine;
         break;
       case 8:
-        std::cout << "Change back to default host name so we should match data."
-                  << std::endl;
+        std::cout << "Change back to default host name so we should match data." << std::endl;
         hostName        = "";
         expected_result = Performance::Passed;
         break;
       case 9:
-        std::cout
-            << "Change the test configuration to create a new config type."
-            << std::endl;
+        std::cout << "Change the test configuration to create a new config type." << std::endl;
         mpi_ranks += integer_change;
         expected_result = Performance::NewTestConfiguration;
         break;
       case 10:
-        std::cout << "Go back to original configuration which we should match."
-                  << std::endl;
+        std::cout << "Go back to original configuration which we should match." << std::endl;
         mpi_ranks -= integer_change;
         expected_result = Performance::Passed;
         break;
       case 11:
-        std::cout << "Create a new test name which will be a new entry."
-                  << std::endl;
+        std::cout << "Create a new test name which will be a new entry." << std::endl;
         testName        = "test2";
         expected_result = Performance::NewTest;
         break;
@@ -170,16 +156,14 @@ class TestManager {
                      "doesn't match test3."
                   << std::endl;
         niters -= integer_change;
-        expected_result =
-            Performance::Failed;  // because still on test3 which had +5
+        expected_result = Performance::Failed;  // because still on test3 which had +5
         break;
       case 14:
         std::cout << "Changing back to test1 we should now pass because niters "
                      "matches test1."
                   << std::endl;
-        testName = "test1";
-        expected_result =
-            Performance::Passed;  // should work because niters matches
+        testName        = "test1";
+        expected_result = Performance::Passed;  // should work because niters matches
         break;
       case 15:
         std::cout << "Simulate a different compiler by overriding the machine "
@@ -191,8 +175,7 @@ class TestManager {
         expected_result = Performance::NewConfiguration;
         break;
       case 16:
-        std::cout << "Run again - should match our machine configuration."
-                  << std::endl;
+        std::cout << "Run again - should match our machine configuration." << std::endl;
         expected_result = Performance::Passed;
         break;
       case 17:
@@ -217,8 +200,7 @@ class TestManager {
         expected_result  = Performance::UpdatedTest;
         break;
       case 20:
-        std::cout << "Run again with extra parameters. Should be fine and pass."
-                  << std::endl;
+        std::cout << "Run again with extra parameters. Should be fine and pass." << std::endl;
         expected_result = Performance::Passed;
         break;
       case 21:
@@ -239,10 +221,9 @@ class TestManager {
                      "not allowed."
                   << std::endl;
         testName = "test1";
-        extra_time -=
-            big_time_change;  // restore the value so it's correct - we fail
-                              // here because we don't have the parameters, not
-                              // because they are wrong
+        extra_time -= big_time_change;  // restore the value so it's correct - we fail
+                                        // here because we don't have the parameters, not
+                                        // because they are wrong
         expected_result = Performance::Failed;
         break;
       case 24:
@@ -298,15 +279,13 @@ class TestManager {
     // set up test results
     archiver.set_result("Time1", time1, tolerance);
     archiver.set_result("Time2", time2, tolerance);
-    archiver.set_result("Iterations", niters, niters > 0 ? niters - 1 : 0,
-                        niters + 1);
+    archiver.set_result("Iterations", niters, niters > 0 ? niters - 1 : 0, niters + 1);
     archiver.set_result("Residual", residual, tolerance);
 
     // add optionals if turned on
     if (bExtraParameters) {
       archiver.set_result("Extra time", extra_time, tolerance);
-      archiver.set_result("Extra result", extra_result, extra_result - 3,
-                          extra_result + 3);
+      archiver.set_result("Extra result", extra_result, extra_result - 3, extra_result + 3);
     }
     if (bExactParameters) {
       // if we don't set tolerance it will be assigned as an exact match
@@ -323,30 +302,20 @@ class TestManager {
     switch (result) {
       case Performance::Passed: result_string = "Archiver Passed"; break;
       case Performance::Failed: result_string = "Archiver Failed"; break;
-      case Performance::NewMachine:
-        result_string = "Archiver Passed. Adding new machine entry.";
-        break;
-      case Performance::NewConfiguration:
-        result_string = "Archiver Passed. Adding new machine configuration.";
-        break;
-      case Performance::NewTest:
-        result_string = "Archiver Passed. Adding new test entry.";
-        break;
+      case Performance::NewMachine: result_string = "Archiver Passed. Adding new machine entry."; break;
+      case Performance::NewConfiguration: result_string = "Archiver Passed. Adding new machine configuration."; break;
+      case Performance::NewTest: result_string = "Archiver Passed. Adding new test entry."; break;
       case Performance::NewTestConfiguration:
         result_string = "Archiver Passed. Adding new test entry configuration.";
         break;
-      case Performance::UpdatedTest:
-        result_string = "Archiver Passed. Updating test entry.";
-        break;
+      case Performance::UpdatedTest: result_string = "Archiver Passed. Updating test entry."; break;
       default: throw std::logic_error("Unexpected result code."); break;
     }
 
     // validate the returned result is as expected
     // note that a Fail event from the archiver may be the expected result
     if (result != expected_result) {
-      std::cout << "  Invalid result from archive! " << result_string
-                << std::endl
-                << std::endl;
+      std::cout << "  Invalid result from archive! " << result_string << std::endl << std::endl;
       is_error = true;  // we failed!
       return false;     // we can stop now - something went wrong
     } else {
@@ -357,28 +326,27 @@ class TestManager {
   }
 
  private:
-  bool is_error;            // tracks if there was an unexpected error
-  int update_index;         // utility for running through a sequence of tests
-  std::string archiveName;  // the yaml file used
-  std::string testName;     // the test name appearing in the archive
-  std::string hostName;  // blank means auto detect - otherwise sets host name
-  std::string
-      changeCompiler;    // override option to simulate different machine config
-  std::string filename;  // arbitrary configuration parameter
-  int mpi_ranks;         // arbitrary configuration parameter
-  int teams;             // arbitrary configuration parameter
-  int threads;           // arbitrary configuration parameter
-  double tolerance;      // tolerance on time values
-  double time1;          // arbitrary time value
-  double time2;          // arbitrary time value
-  int niters;            // arbitrary result value
-  double residual;       // arbitrary result value
-  bool bExtraParameters;     // used to validate and test the update mechanism
-  double extra_time;         // extra time we'll add to preexisiting data
-  int extra_result;          // extra result we'll add to preexisting data
-  bool bExactParameters;     // used to turn on exact match parameters
-  int exact_int;             // test for exact match int
-  std::string exact_string;  // test for exact match string
+  bool is_error;               // tracks if there was an unexpected error
+  int update_index;            // utility for running through a sequence of tests
+  std::string archiveName;     // the yaml file used
+  std::string testName;        // the test name appearing in the archive
+  std::string hostName;        // blank means auto detect - otherwise sets host name
+  std::string changeCompiler;  // override option to simulate different machine config
+  std::string filename;        // arbitrary configuration parameter
+  int mpi_ranks;               // arbitrary configuration parameter
+  int teams;                   // arbitrary configuration parameter
+  int threads;                 // arbitrary configuration parameter
+  double tolerance;            // tolerance on time values
+  double time1;                // arbitrary time value
+  double time2;                // arbitrary time value
+  int niters;                  // arbitrary result value
+  double residual;             // arbitrary result value
+  bool bExtraParameters;       // used to validate and test the update mechanism
+  double extra_time;           // extra time we'll add to preexisiting data
+  int extra_result;            // extra result we'll add to preexisting data
+  bool bExactParameters;       // used to turn on exact match parameters
+  int exact_int;               // test for exact match int
+  std::string exact_string;    // test for exact match string
 };
 
 int main(int argc, char *argv[]) {

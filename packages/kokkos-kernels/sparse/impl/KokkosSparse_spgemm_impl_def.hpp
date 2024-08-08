@@ -18,47 +18,35 @@ namespace KokkosSparse {
 
 namespace Impl {
 
-template <typename HandleType, typename a_row_view_t_,
-          typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_,
-          typename b_scalar_nnz_view_t_>
-template <typename c_row_view_t, typename c_lno_nnz_view_t,
-          typename c_scalar_nnz_view_t>
-void KokkosSPGEMM<
-    HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
-    b_lno_row_view_t_, b_lno_nnz_view_t_,
-    b_scalar_nnz_view_t_>::KokkosSPGEMM_numeric(c_row_view_t &rowmapC_,
-                                                c_lno_nnz_view_t &entriesC_,
-                                                c_scalar_nnz_view_t &valuesC_) {
+template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
+template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
+                  b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::KokkosSPGEMM_numeric(c_row_view_t &rowmapC_,
+                                                                                 c_lno_nnz_view_t &entriesC_,
+                                                                                 c_scalar_nnz_view_t &valuesC_) {
   // get the algorithm and execution space.
   // SPGEMMAlgorithm spgemm_algorithm =
   // this->handle->get_spgemm_handle()->get_algorithm_type();
-  KokkosKernels::Impl::ExecSpaceType my_exec_space_ =
-      KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
+  KokkosKernels::Impl::ExecSpaceType my_exec_space_ = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
   if (KOKKOSKERNELS_VERBOSE) {
     std::cout << "Numeric PHASE" << std::endl;
   }
 
-  if (spgemm_algorithm == SPGEMM_KK_SPEED ||
-      spgemm_algorithm == SPGEMM_KK_DENSE) {
-    this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_,
-                                     my_exec_space_);
+  if (spgemm_algorithm == SPGEMM_KK_SPEED || spgemm_algorithm == SPGEMM_KK_DENSE) {
+    this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_, my_exec_space_);
   } else {
-    this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_,
-                                    my_exec_space_);
+    this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space_);
   }
 }
 
-template <typename HandleType, typename a_row_view_t_,
-          typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_,
-          typename b_scalar_nnz_view_t_>
+template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 template <typename c_row_view_t>
-void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
-                  a_scalar_nnz_view_t_, b_lno_row_view_t_, b_lno_nnz_view_t_,
-                  b_scalar_nnz_view_t_>::KokkosSPGEMM_symbolic(c_row_view_t
-                                                                   rowmapC_) {
+void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
+                  b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::KokkosSPGEMM_symbolic(c_row_view_t rowmapC_) {
+  Kokkos::Profiling::pushRegion("KokkosSparse::spgemm_symbolic[NATIVE]");
   {
     if (KOKKOSKERNELS_VERBOSE) {
       std::cout << "SYMBOLIC PHASE" << std::endl;
@@ -70,20 +58,16 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     nnz_lno_t n   = this->row_mapB.extent(0) - 1;
     size_type nnz = this->entriesB.extent(0);
 
-    bool compress_in_single_step =
-        this->handle->get_spgemm_handle()->get_compression_step();
+    bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
     // compress in single step if it is GPU.
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>())
-      compress_in_single_step = true;
+    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) compress_in_single_step = true;
 
     // compressed B fields.
-    row_lno_temp_work_view_t new_row_mapB(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "new row map"), n + 1);
+    row_lno_temp_work_view_t new_row_mapB(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new row map"), n + 1);
     row_lno_temp_work_view_t new_row_mapB_begins;
 
-    nnz_lno_temp_work_view_t
-        set_index_entries;                 // will be output of compress matrix.
-    nnz_lno_temp_work_view_t set_entries;  // will be output of compress matrix
+    nnz_lno_temp_work_view_t set_index_entries;  // will be output of compress matrix.
+    nnz_lno_temp_work_view_t set_entries;        // will be output of compress matrix
 
     // First Compress B.
     Kokkos::Timer timer1;
@@ -94,14 +78,11 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
     // call compression.
     // it might not go through to the end if ratio is not high.
-    bool compression_applied = this->compressMatrix(
-        n, nnz, this->row_mapB, this->entriesB, new_row_mapB, set_index_entries,
-        set_entries, compress_in_single_step);
+    bool compression_applied = this->compressMatrix(n, nnz, this->row_mapB, this->entriesB, new_row_mapB,
+                                                    set_index_entries, set_entries, compress_in_single_step);
 
     if (KOKKOSKERNELS_VERBOSE) {
-      std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds()
-                << std::endl
-                << std::endl;
+      std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds() << std::endl << std::endl;
     }
 
     timer1.reset();
@@ -111,75 +92,61 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     // row i, and new_row_mapB[i] points to the end of row i.
 
     if (compression_applied) {
-      nnz_lno_t maxNumRoughZeros =
-          this->handle->get_spgemm_handle()->compressed_max_row_flops;
+      nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->compressed_max_row_flops;
 
       if (compress_in_single_step) {
         // calling symbolic structure
-        this->symbolic_c(a_row_cnt, row_mapA, entriesA, row_mapB, new_row_mapB,
-                         set_index_entries, set_entries, rowmapC_,
-                         maxNumRoughZeros);
+        this->symbolic_c(a_row_cnt, row_mapA, entriesA, row_mapB, new_row_mapB, set_index_entries, set_entries,
+                         rowmapC_, maxNumRoughZeros);
 
       } else {
-        nnz_lno_t begin = 0;
-        auto new_row_mapB_begin =
-            Kokkos::subview(new_row_mapB, std::make_pair(begin, n));
-        auto new_row_mapB_end =
-            Kokkos::subview(new_row_mapB, std::make_pair(begin + 1, n + 1));
+        nnz_lno_t begin         = 0;
+        auto new_row_mapB_begin = Kokkos::subview(new_row_mapB, std::make_pair(begin, n));
+        auto new_row_mapB_end   = Kokkos::subview(new_row_mapB, std::make_pair(begin + 1, n + 1));
 
         // calling symbolic structure
-        this->symbolic_c(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin,
-                         new_row_mapB_end, set_index_entries, set_entries,
-                         rowmapC_, maxNumRoughZeros);
+        this->symbolic_c(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, set_index_entries,
+                         set_entries, rowmapC_, maxNumRoughZeros);
       }
     } else {
-      new_row_mapB        = row_lno_temp_work_view_t();
-      new_row_mapB_begins = row_lno_temp_work_view_t();
-      set_index_entries   = nnz_lno_temp_work_view_t();
-      set_entries         = nnz_lno_temp_work_view_t();
-      nnz_lno_t maxNumRoughZeros =
-          this->handle->get_spgemm_handle()->original_max_row_flops;
+      new_row_mapB               = row_lno_temp_work_view_t();
+      new_row_mapB_begins        = row_lno_temp_work_view_t();
+      set_index_entries          = nnz_lno_temp_work_view_t();
+      set_entries                = nnz_lno_temp_work_view_t();
+      nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->original_max_row_flops;
       if (KOKKOSKERNELS_VERBOSE) {
-        std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:"
-                  << maxNumRoughZeros << std::endl;
+        std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:" << maxNumRoughZeros << std::endl;
       }
 
-      auto new_row_mapB_begin =
-          Kokkos::subview(this->row_mapB, std::make_pair(nnz_lno_t(0), n));
-      auto new_row_mapB_end =
-          Kokkos::subview(this->row_mapB, std::make_pair(nnz_lno_t(1), n + 1));
+      auto new_row_mapB_begin = Kokkos::subview(this->row_mapB, std::make_pair(nnz_lno_t(0), n));
+      auto new_row_mapB_end   = Kokkos::subview(this->row_mapB, std::make_pair(nnz_lno_t(1), n + 1));
 
       // calling symbolic structure
-      this->symbolic_c_no_compression(
-          a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end,
-          this->entriesB, rowmapC_, maxNumRoughZeros);
+      this->symbolic_c_no_compression(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end,
+                                      this->entriesB, rowmapC_, maxNumRoughZeros);
     }
 #ifdef KOKKOSKERNELS_ANALYZE_MEMORYACCESS
-    double read_write_cost =
-        this->handle->get_spgemm_handle()->get_read_write_cost_calc();
+    double read_write_cost = this->handle->get_spgemm_handle()->get_read_write_cost_calc();
     if (read_write_cost) {
       this->print_read_write_cost(rowmapC_);
     }
 #endif
   }
+  Kokkos::Profiling::popRegion();
 }
 
-template <typename HandleType, typename a_row_view_t_,
-          typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_,
-          typename b_scalar_nnz_view_t_>
+template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 template <typename c_row_view_t, typename c_nnz_view_t>
-void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
-                  a_scalar_nnz_view_t_, b_lno_row_view_t_, b_lno_nnz_view_t_,
-                  b_scalar_nnz_view_t_>::
-    write_matrix_to_plot(nnz_lno_t &num_colors,
-                         nnz_lno_persistent_work_host_view_t &h_color_xadj,
-                         nnz_lno_persistent_work_view_t &color_adj,
-                         c_row_view_t &rowmapC, c_nnz_view_t &entryIndicesC_) {
+void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
+                  b_lno_nnz_view_t_,
+                  b_scalar_nnz_view_t_>::write_matrix_to_plot(nnz_lno_t &num_colors,
+                                                              nnz_lno_persistent_work_host_view_t &h_color_xadj,
+                                                              nnz_lno_persistent_work_view_t &color_adj,
+                                                              c_row_view_t &rowmapC, c_nnz_view_t &entryIndicesC_) {
   std::cout << "writing to plot" << std::endl;
 
-  nnz_lno_persistent_work_host_view_t h_color_adj =
-      Kokkos::create_mirror_view(color_adj);
+  nnz_lno_persistent_work_host_view_t h_color_adj = Kokkos::create_mirror_view(color_adj);
   Kokkos::deep_copy(h_color_adj, color_adj);
   auto h_rowmapC = Kokkos::create_mirror_view(rowmapC);
   Kokkos::deep_copy(h_rowmapC, rowmapC);
@@ -199,8 +166,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     std::fstream fs;
     fs.open(colorind.c_str(), std::fstream::out);
 
-    std::cout << "COLOR:" << i << " colorbegin:" << color_begin
-              << " colorend:" << color_end
+    std::cout << "COLOR:" << i << " colorbegin:" << color_begin << " colorend:" << color_end
               << " size:" << color_end - color_begin << std::endl;
     for (nnz_lno_t j = color_begin; j < color_end; ++j) {
       nnz_lno_t row = h_color_adj(j);

@@ -29,8 +29,7 @@ namespace Test {
 struct KokkosKernelAxpyTag {};
 struct NaiveAxpyTag {};
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename AlgoTagType>
 struct Functor_TestBlasSerialAxpy {
   using execution_space = typename DeviceType::execution_space;
   ScalarType _alpha;
@@ -38,8 +37,7 @@ struct Functor_TestBlasSerialAxpy {
   ViewType _y;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBlasSerialAxpy(const ScalarType alpha, const ViewType &x,
-                             const ViewType &y)
+  Functor_TestBlasSerialAxpy(const ScalarType alpha, const ViewType &x, const ViewType &y)
       : _alpha(alpha), _x(x), _y(y) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -62,15 +60,11 @@ struct Functor_TestBlasSerialAxpy {
     using value_type = typename ViewType::value_type;
     std::string name_region("KokkosBlas::Test::SerialAxpy");
     const std::string name_value_type = Test::value_type_name<value_type>();
-    std::string name_work_tag =
-        (std::is_same<AlgoTagType, KokkosKernelAxpyTag>::value
-             ? "::KokkosBlas"
-             : std::is_same<AlgoTagType, NaiveAxpyTag>::value
-                   ? "::Naive"
-                   : "::UnknownWorkTag");
-    std::string name_test_id = "Axpy";
-    std::string name =
-        name_region + name_value_type + name_work_tag + name_test_id;
+    std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelAxpyTag>::value ? "::KokkosBlas"
+                                         : std::is_same<AlgoTagType, NaiveAxpyTag>::value      ? "::Naive"
+                                                                                               : "::UnknownWorkTag");
+    std::string name_test_id          = "Axpy";
+    std::string name                  = name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -91,20 +85,15 @@ void impl_test_blas_serial_axpy(const int N, const int BlkSize) {
   ViewType Y("Y", N, BlkSize, BlkSize);
   ViewType Yref("Yref", N, BlkSize, BlkSize);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(X, random, ats::one());
   Kokkos::fill_random(Y, random, ats::one());
   Kokkos::fence();
   Kokkos::deep_copy(Yref, Y);
 
   /// test body
-  Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType, NaiveAxpyTag>(
-      alpha, X, Yref)
-      .run();
-  Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType,
-                             KokkosKernelAxpyTag>(alpha, X, Y)
-      .run();
+  Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType, NaiveAxpyTag>(alpha, X, Yref).run();
+  Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType, KokkosKernelAxpyTag>(alpha, X, Y).run();
 
   Kokkos::fence();
 
@@ -116,12 +105,10 @@ void impl_test_blas_serial_axpy(const int N, const int BlkSize) {
   Kokkos::deep_copy(Yref_host, Yref);
 
   /// check a = b
-  typename ats::mag_type eps =
-      100 * std::numeric_limits<typename ats::mag_type>::epsilon();
+  typename ats::mag_type eps = 100 * std::numeric_limits<typename ats::mag_type>::epsilon();
   for (int k = 0; k < N; ++k)
     for (int i = 0; i < BlkSize; ++i)
-      for (int j = 0; j < BlkSize; ++j)
-        EXPECT_NEAR_KK(Y_host(k, i, j), Yref_host(k, i, j), eps);
+      for (int j = 0; j < BlkSize; ++j) EXPECT_NEAR_KK(Y_host(k, i, j), Yref_host(k, i, j), eps);
 }
 
 }  // namespace Test
@@ -130,24 +117,20 @@ template <typename DeviceType, typename ValueType, typename ScalarType>
 int test_blas_serial_axpy() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
     Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(0, 10);
     Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(10, 15);
     Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(1024, 9);
-    Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(132231,
-                                                                       3);
+    Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(132231, 3);
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
     Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(0, 10);
     Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(10, 15);
     Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(1024, 9);
-    Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(132231,
-                                                                       3);
+    Test::impl_test_blas_serial_axpy<DeviceType, ViewType, ScalarType>(132231, 3);
   }
 #endif
 
@@ -155,21 +138,16 @@ int test_blas_serial_axpy() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, serial_axpy_float_float) {
-  test_blas_serial_axpy<TestDevice, float, float>();
-}
+TEST_F(TestCategory, serial_axpy_float_float) { test_blas_serial_axpy<TestDevice, float, float>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, serial_axpy_double_double) {
-  test_blas_serial_axpy<TestDevice, double, double>();
-}
+TEST_F(TestCategory, serial_axpy_double_double) { test_blas_serial_axpy<TestDevice, double, double>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, serial_axpy_dcomplex_dcomplex) {
-  test_blas_serial_axpy<TestDevice, Kokkos::complex<double>,
-                        Kokkos::complex<double> >();
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<double>, Kokkos::complex<double> >();
 }
 
 TEST_F(TestCategory, serial_axpy_dcomplex_double) {
@@ -179,13 +157,10 @@ TEST_F(TestCategory, serial_axpy_dcomplex_double) {
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, serial_axpy_fcomplex_fcomplex) {
-  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>,
-                        Kokkos::complex<double> >();
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>, Kokkos::complex<double> >();
 }
 
-TEST_F(TestCategory, serial_axpy_fcomplex_float) {
-  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>, float>();
-}
+TEST_F(TestCategory, serial_axpy_fcomplex_float) { test_blas_serial_axpy<TestDevice, Kokkos::complex<float>, float>(); }
 #endif
 
 #endif  // TEST_BLAS_SERIAL_AXPY_HPP_

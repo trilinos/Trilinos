@@ -14,7 +14,7 @@
 //
 //@HEADER
 
-//#include "Teuchos_UnitTestHarness.hpp"
+// #include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <gtest/gtest.h>
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -40,8 +40,7 @@ class ModifyEvenNumberedRows {
   typedef typename CrsMatrixType::ordinal_type ordinal_type;
   typedef typename CrsMatrixType::value_type value_type;
 
-  ModifyEvenNumberedRows(const CrsMatrixType& A, const bool replace,
-                         const bool sorted, const bool /*atomic*/)
+  ModifyEvenNumberedRows(const CrsMatrixType& A, const bool replace, const bool sorted, const bool /*atomic*/)
       : A_(A), replace_(replace), sorted_(sorted) {}
 
   KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow) const {
@@ -76,23 +75,16 @@ namespace {  // (anonymous)
 using std::endl;
 
 template <class CrsMatrixType>
-void modifyEvenNumberedRows(const CrsMatrixType& A, const bool replace,
-                            const bool sorted, const bool atomic) {
+void modifyEvenNumberedRows(const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic) {
   typedef typename CrsMatrixType::device_type::execution_space execution_space;
-  typedef Kokkos::RangePolicy<execution_space,
-                              typename CrsMatrixType::ordinal_type>
-      policy_type;
+  typedef Kokkos::RangePolicy<execution_space, typename CrsMatrixType::ordinal_type> policy_type;
 
-  ::Test::ModifyEvenNumberedRows<CrsMatrixType> functor(A, replace, sorted,
-                                                        atomic);
-  Kokkos::parallel_for("KokkosSparse::Test::ReplaceSumInto",
-                       policy_type(0, A.numRows()), functor);
+  ::Test::ModifyEvenNumberedRows<CrsMatrixType> functor(A, replace, sorted, atomic);
+  Kokkos::parallel_for("KokkosSparse::Test::ReplaceSumInto", policy_type(0, A.numRows()), functor);
 }
 
 template <class CrsMatrixType>
-bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A,
-                                              const bool replace,
-                                              const bool /* sorted */,
+bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A, const bool replace, const bool /* sorted */,
                                               const bool /* atomic */) {
   typedef typename CrsMatrixType::value_type SC;
   typedef typename CrsMatrixType::ordinal_type LO;
@@ -101,9 +93,8 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A,
   const SC TWO   = ONE + ONE;
   const SC THREE = ONE + ONE + ONE;
 
-  typename CrsMatrixType::values_type val = A.values;
-  typename CrsMatrixType::values_type::HostMirror val_h =
-      Kokkos::create_mirror_view(val);
+  typename CrsMatrixType::values_type val               = A.values;
+  typename CrsMatrixType::values_type::HostMirror val_h = Kokkos::create_mirror_view(val);
   Kokkos::deep_copy(val_h, val);
   Kokkos::fence();
   const LO numRows = A.numRows();
@@ -133,19 +124,16 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A,
 template <class CrsMatrixType>
 void testOneCase(bool& /*success*/,
                  // Teuchos::FancyOStream& out,
-                 std::ostream& out, const CrsMatrixType& A, const bool replace,
-                 const bool sorted, const bool atomic) {
+                 std::ostream& out, const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic) {
   using Kokkos::ArithTraits;
   typedef typename CrsMatrixType::value_type value_type;
 
   // Teuchos::OSTab tab0 (out);
-  out << "replace: " << (replace ? "true" : "false")
-      << ", sorted: " << (sorted ? "true" : "false")
+  out << "replace: " << (replace ? "true" : "false") << ", sorted: " << (sorted ? "true" : "false")
       << ", atomic: " << (atomic ? "true" : "false") << endl;
 
   modifyEvenNumberedRows(A, replace, sorted, atomic);
-  const bool lclSuccess =
-      checkWhetherEvenNumberedRowsWereModified(A, replace, sorted, atomic);
+  const bool lclSuccess = checkWhetherEvenNumberedRowsWereModified(A, replace, sorted, atomic);
   EXPECT_TRUE(lclSuccess);  // this modifies 'success' and prints to 'out'
   // Restore original values.
   Kokkos::deep_copy(A.values, ArithTraits<value_type>::one());
@@ -155,13 +143,11 @@ void testOneCase(bool& /*success*/,
 //
 // This takes the same arguments as if it were declared via the
 // TEUCHOS_UNIT_TEST macro.
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void generalTest(bool& success, std::ostream& out)
 // Teuchos::FancyOStream& out)
 {
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-      matrix_type;
+  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> matrix_type;
 
   // Teuchos::OSTab tab0 (out);
   out << "Test KokkosSparse::CrsMatrix::{replace,sumInto}Values*" << endl;
@@ -173,9 +159,8 @@ void generalTest(bool& success, std::ostream& out)
   typename matrix_type::size_type numEnt = 0;  // to be updated below
   typename matrix_type::row_map_type::non_const_type ptr("ptr", numRows + 1);
   {
-    typename matrix_type::row_map_type::HostMirror ptr_h =
-        Kokkos::create_mirror_view(ptr);
-    ptr_h[0] = 0;
+    typename matrix_type::row_map_type::HostMirror ptr_h = Kokkos::create_mirror_view(ptr);
+    ptr_h[0]                                             = 0;
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ptr_h[lclRow + 1] = ptr_h[lclRow] + 1;  // 1 entry in each row
     }
@@ -185,8 +170,7 @@ void generalTest(bool& success, std::ostream& out)
 
   typename matrix_type::index_type::non_const_type ind("ind", numEnt);
   {
-    typename matrix_type::index_type::HostMirror ind_h =
-        Kokkos::create_mirror_view(ind);
+    typename matrix_type::index_type::HostMirror ind_h = Kokkos::create_mirror_view(ind);
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ind_h[lclRow] = lclRow;  // diagonal matrix
     }
@@ -195,8 +179,7 @@ void generalTest(bool& success, std::ostream& out)
 
   typename matrix_type::values_type val("val", numEnt);
   {
-    typename matrix_type::values_type::HostMirror val_h =
-        Kokkos::create_mirror_view(val);
+    typename matrix_type::values_type::HostMirror val_h = Kokkos::create_mirror_view(val);
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       val_h[lclRow] = 1.0;  // diagonal matrix
     }
@@ -220,8 +203,7 @@ void generalTest(bool& success, std::ostream& out)
 
 }  // namespace
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_replaceSumInto() {
   using std::endl;
   class NullBuffer : public std::streambuf {
@@ -238,11 +220,9 @@ void test_replaceSumInto() {
   EXPECT_TRUE(success);
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)             \
-  TEST_F(                                                                       \
-      TestCategory,                                                             \
-      sparse##_##replaceSumInto##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_replaceSumInto<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                              \
+  TEST_F(TestCategory, sparse##_##replaceSumInto##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_replaceSumInto<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

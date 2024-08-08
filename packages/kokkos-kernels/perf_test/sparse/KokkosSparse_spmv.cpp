@@ -48,13 +48,9 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
-                              const char* filename, Ordinal rows_per_thread,
-                              int team_size, int vector_length, int schedule,
-                              int loop) {
-  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal,
-                                  Kokkos::DefaultExecutionSpace, void, Offset>
-      matrix_type;
+int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const char* filename, Ordinal rows_per_thread,
+                              int team_size, int vector_length, int schedule, int loop) {
+  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset> matrix_type;
 
   spmv_additional_data data(test);
 
@@ -68,20 +64,15 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
     Offset nnz = 10 * numRows;
     // note: the help text says the bandwidth is fixed at 0.01 * numRows
     // CAVEAT:  small problem sizes are problematic, b/c of 0.01*numRows
-    A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
-        numRows, numCols, nnz, 0, 0.01 * numRows);
+    A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(numRows, numCols, nnz, 0, 0.01 * numRows);
   }
-  SPMVTestData test_data = setup_test(&data, A, rows_per_thread, team_size,
-                                      vector_length, schedule, loop);
+  SPMVTestData test_data = setup_test(&data, A, rows_per_thread, team_size, vector_length, schedule, loop);
   for (int i = 0; i < loop; i++) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
     if (test == ARMPL) {
-      if (std::is_same<Scalar, double>::value ||
-          std::is_same<Scalar, float>::value) {
-        data.set_armpl_spmat(test_data.numRows, test_data.numCols,
-                             test_data.A.graph.row_map.data(),
-                             test_data.A.graph.entries.data(),
-                             test_data.A.values.data());
+      if (std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value) {
+        data.set_armpl_spmat(test_data.numRows, test_data.numCols, test_data.A.graph.row_map.data(),
+                             test_data.A.graph.entries.data(), test_data.A.values.data());
       } else {
         throw std::runtime_error(
             "Can't use ArmPL mat-vec for scalar types other than double and "
@@ -93,13 +84,10 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
   }
 
   // Performance Output
-  double matrix_size = 1.0 *
-                       ((test_data.nnz * (sizeof(Scalar) + sizeof(Ordinal)) +
-                         numRows * sizeof(Offset))) /
-                       1024 / 1024;
-  double vector_size = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
-  double vector_readwrite =
-      (test_data.nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
+  double matrix_size =
+      1.0 * ((test_data.nnz * (sizeof(Scalar) + sizeof(Ordinal)) + numRows * sizeof(Offset))) / 1024 / 1024;
+  double vector_size      = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
+  double vector_readwrite = (test_data.nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
 
   double problem_size = matrix_size + vector_size;
   printf(
@@ -113,10 +101,8 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
       (matrix_size + vector_readwrite) / test_data.ave_time * loop / 1024,
       (matrix_size + vector_readwrite) / test_data.max_time / 1024,
       (matrix_size + vector_readwrite) / test_data.min_time / 1024,
-      2.0 * test_data.nnz * loop / test_data.ave_time / 1e9,
-      2.0 * test_data.nnz / test_data.max_time / 1e9,
-      2.0 * test_data.nnz / test_data.min_time / 1e9,
-      test_data.ave_time / loop * 1000, test_data.max_time * 1000,
+      2.0 * test_data.nnz * loop / test_data.ave_time / 1e9, 2.0 * test_data.nnz / test_data.max_time / 1e9,
+      2.0 * test_data.nnz / test_data.min_time / 1e9, test_data.ave_time / loop * 1000, test_data.max_time * 1000,
       test_data.min_time * 1000, test_data.num_errors);
   return (int)test_data.total_error;
 }
@@ -151,8 +137,7 @@ void print_help() {
       "  -f [file]       : Read in Matrix Market formatted text file "
       "'file'.\n");
   printf("  -fb [file]      : Read in binary Matrix files 'file'.\n");
-  printf(
-      "  --write-binary  : In combination with -f, generate binary files.\n");
+  printf("  --write-binary  : In combination with -f, generate binary files.\n");
   printf("  --offset [O]    : Subtract O from every index.\n");
   printf(
       "                    Useful in case the matrix market file is not 0 "
@@ -162,8 +147,7 @@ void print_help() {
   printf(
       "  -vl [V]         : Vector-length (i.e. how many Cuda threads are a "
       "Kokkos 'thread').\n");
-  printf(
-      "  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
+  printf("  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
 }
 
 int main(int argc, char** argv) {
@@ -252,8 +236,7 @@ int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
 
   int total_errors =
-      test_crs_matrix_singlevec(size, size, test, filename, rows_per_thread,
-                                team_size, vector_length, schedule, loop);
+      test_crs_matrix_singlevec(size, size, test, filename, rows_per_thread, team_size, vector_length, schedule, loop);
 
   if (total_errors == 0)
     printf("Kokkos::MultiVector Test: Passed\n");

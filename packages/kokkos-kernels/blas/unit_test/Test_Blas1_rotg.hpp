@@ -17,8 +17,7 @@
 
 namespace Test {
 template <class Device, class Scalar>
-void test_rotg_impl(typename Device::execution_space const& space,
-                    Scalar const a_in, Scalar const b_in) {
+void test_rotg_impl(typename Device::execution_space const& space, Scalar const a_in, Scalar const b_in) {
   using magnitude_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
   using SViewType      = Kokkos::View<Scalar, Device>;
   using MViewType      = Kokkos::View<magnitude_type, Device>;
@@ -59,8 +58,7 @@ int test_rotg() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<float, TestDevice>();
@@ -69,8 +67,7 @@ TEST_F(TestCategory, rotg_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<double, TestDevice>();
@@ -79,8 +76,7 @@ TEST_F(TestCategory, rotg_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<Kokkos::complex<float>, TestDevice>();
@@ -89,8 +85,7 @@ TEST_F(TestCategory, rotg_complex_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<Kokkos::complex<double>, TestDevice>();

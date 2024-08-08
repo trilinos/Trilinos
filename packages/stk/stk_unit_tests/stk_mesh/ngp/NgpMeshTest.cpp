@@ -151,16 +151,20 @@ TEST(StkVectorGpuTest, gpu_runs)
 
 void check_volatile_fast_shared_comm_map_values_on_device(const stk::mesh::NgpMesh & ngpMesh, int proc, const stk::mesh::DeviceCommMapIndices & deviceCommMapIndicesGold)
 {
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-                       KOKKOS_LAMBDA(size_t i)
-                       {
-                         stk::mesh::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
+  auto test_lambda = KOKKOS_LAMBDA(size_t i)
+                     {
+                       stk::mesh::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
 
-                         for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
-                           NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_id, deviceCommMapIndices[entry].bucket_id);
-                           NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_ord, deviceCommMapIndices[entry].bucket_ord);
-                         }
-                       });
+                       for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
+                         NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_id, deviceCommMapIndices[entry].bucket_id);
+                         NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_ord, deviceCommMapIndices[entry].bucket_ord);
+                       }
+                     };
+  if constexpr (std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>) {
+    test_lambda(0);
+  } else {
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), test_lambda);
+  }
 }
 
 using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::HostExecSpace>;

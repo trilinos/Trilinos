@@ -19,12 +19,13 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
+  using RandCs        = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
+  using size_type     = typename RandCs::size_type;
   auto expected_min   = ScalarType(1.0);
   size_t expected_nnz = 0;
-  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
+  RandCs cm(m, n, min_val, max_val);
 
-  for (size_t i = 0; i < cm.get_nnz(); ++i)
-    ASSERT_GE(cm(i), expected_min) << cm.info;
+  for (size_type i = 0; i < cm.get_nnz(); ++i) ASSERT_GE(cm(i), expected_min) << cm.info;
 
   auto map_d = cm.get_map();
   auto map   = Kokkos::create_mirror_view(map_d);
@@ -66,10 +67,8 @@ void doAllCsMat(size_t m, size_t n) {
   doCsMat<double, Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
 
   // Verify that CsMat can be instantiated with complex types.
-  RandCsMatrix<Kokkos::complex<float>, Kokkos::LayoutLeft, ExeSpaceType> cmcf(
-      m, n, min, max);
-  RandCsMatrix<Kokkos::complex<double>, Kokkos::LayoutRight, ExeSpaceType> cmcd(
-      m, n, min, max);
+  RandCsMatrix<Kokkos::complex<float>, Kokkos::LayoutLeft, ExeSpaceType> cmcf(m, n, min, max);
+  RandCsMatrix<Kokkos::complex<double>, Kokkos::LayoutRight, ExeSpaceType> cmcd(m, n, min, max);
 }
 
 // Test randomly generated Cs matrices

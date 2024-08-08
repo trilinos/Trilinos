@@ -39,50 +39,49 @@ struct CommonInputParams {
 
 std::string list_common_options() {
   std::ostringstream common_options;
-  common_options
-      << "\t[Required] Backend: the available backends are:\n"
+  common_options << "\t[Required] Backend: the available backends are:\n"
 #ifdef KOKKOS_ENABLE_THREADS
-      << "\t\t'--threads [numThreads]'\n"
+                 << "\t\t'--threads [numThreads]'\n"
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
-      << "\t\t'--openmp [numThreads]'\n"
+                 << "\t\t'--openmp [numThreads]'\n"
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
-      << "\t\t'--cuda [deviceIndex]'\n"
+                 << "\t\t'--cuda [deviceIndex]'\n"
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-      << "\t\t'--hip [deviceIndex]'\n"
+                 << "\t\t'--hip [deviceIndex]'\n"
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-      << "\t\t'--sycl [deviceIndex]'\n"
+                 << "\t\t'--sycl [deviceIndex]'\n"
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
-      << "\t\tIf no parallel backend is requested, Serial will be used.\n"
+                 << "\t\tIf no parallel backend is requested, Serial will be used.\n"
 #endif
-      << "\n"
-      << "\t The following backends are not available because Kokkos was not "
-         "configured with them:\n"
+                 << "\n"
+                 << "\t The following backends are not available because Kokkos was not "
+                    "configured with them:\n"
 #ifndef KOKKOS_ENABLE_THREADS
-      << "\t\t'--threads [numThreads]'\n"
+                 << "\t\t'--threads [numThreads]'\n"
 #endif
 #ifndef KOKKOS_ENABLE_OPENMP
-      << "\t\t'--openmp [numThreads]'\n"
+                 << "\t\t'--openmp [numThreads]'\n"
 #endif
 #ifndef KOKKOS_ENABLE_CUDA
-      << "\t\t'--cuda [deviceIndex]'\n"
+                 << "\t\t'--cuda [deviceIndex]'\n"
 #endif
 #ifndef KOKKOS_ENABLE_HIP
-      << "\t\t'--hip [deviceIndex]'\n"
+                 << "\t\t'--hip [deviceIndex]'\n"
 #endif
 #ifndef KOKKOS_ENABLE_SYCL
-      << "\t\t'--sycl [deviceIndex]'\n"
+                 << "\t\t'--sycl [deviceIndex]'\n"
 #endif
 #ifndef KOKKOS_ENABLE_SERIAL
-      << "\t\tSerial is not enabled so a parallel backend must be selected.\n"
+                 << "\t\tSerial is not enabled so a parallel backend must be selected.\n"
 #endif
-      << "\n"
-      << "\t[Optional]:\n"
-      << "\t\t'-h', '--help': show available options\n\n";
+                 << "\n"
+                 << "\t[Optional]:\n"
+                 << "\t\t'-h', '--help': show available options\n\n";
 
   return common_options.str();
 }
@@ -94,15 +93,13 @@ void process_arg_int(char const* str_val, int& val) {
 
   if (str_val == ptr_end) {
     std::stringstream ss;
-    ss << "Error: cannot convert command line argument '" << str_val
-       << "' to an integer.\n";
+    ss << "Error: cannot convert command line argument '" << str_val << "' to an integer.\n";
     throw std::invalid_argument(ss.str());
   }
 
   if (errno == ERANGE) {
     std::stringstream ss;
-    ss << "Error: converted value for command line argument '" << str_val
-       << "' falls out of range.\n";
+    ss << "Error: converted value for command line argument '" << str_val << "' falls out of range.\n";
     throw std::invalid_argument(ss.str());
   }
 }
@@ -114,21 +111,18 @@ void process_arg_double(char const* str_val, double& val) {
 
   if (str_val == ptr_end) {
     std::stringstream ss;
-    ss << "Error: cannot convert command line argument '" << str_val
-       << "' to a double.\n";
+    ss << "Error: cannot convert command line argument '" << str_val << "' to a double.\n";
     throw std::invalid_argument(ss.str());
   }
 
   if (errno == ERANGE) {
     std::stringstream ss;
-    ss << "Error: converted value for command line argument '" << str_val
-       << "' falls out of range.\n";
+    ss << "Error: converted value for command line argument '" << str_val << "' falls out of range.\n";
     throw std::invalid_argument(ss.str());
   }
 }
 
-bool check_arg_int(int const i, int const argc, char** argv, char const* name,
-                   int& val) {
+bool check_arg_int(int const i, int const argc, char** argv, char const* name, int& val) {
   if (0 != Test::string_compare_no_case(argv[i], name)) {
     return false;
   }
@@ -143,8 +137,7 @@ bool check_arg_int(int const i, int const argc, char** argv, char const* name,
   return true;
 }
 
-bool check_arg_double(int const i, int const argc, char** argv,
-                      char const* name, double& val) {
+bool check_arg_double(int const i, int const argc, char** argv, char const* name, double& val) {
   if (0 != Test::string_compare_no_case(argv[i], name)) {
     return false;
   }
@@ -159,8 +152,7 @@ bool check_arg_double(int const i, int const argc, char** argv,
   return true;
 }
 
-bool check_arg_bool(int const i, int const /*argc*/, char** argv,
-                    char const* name, bool& val) {
+bool check_arg_bool(int const i, int const /*argc*/, char** argv, char const* name, bool& val) {
   if (0 != Test::string_compare_no_case(argv[i], name)) {
     return false;
   }
@@ -168,8 +160,7 @@ bool check_arg_bool(int const i, int const /*argc*/, char** argv,
   return true;
 }
 
-bool check_arg_str(int const i, int const argc, char** argv, char const* name,
-                   std::string& val) {
+bool check_arg_str(int const i, int const argc, char** argv, char const* name, std::string& val) {
   if (0 != Test::string_compare_no_case(argv[i], name)) {
     return false;
   }
@@ -198,8 +189,7 @@ void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
     int remove_flags = 0;
     if (check_arg_int(argIdx, argc, argv, "--threads", params.use_threads)) {
       remove_flags = 2;
-    } else if (check_arg_int(argIdx, argc, argv, "--openmp",
-                             params.use_openmp)) {
+    } else if (check_arg_int(argIdx, argc, argv, "--openmp", params.use_openmp)) {
       remove_flags = 2;
     } else if (check_arg_int(argIdx, argc, argv, "--cuda", params.use_cuda)) {
       params.use_cuda++;
@@ -213,8 +203,7 @@ void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
     } else if (check_arg_int(argIdx, argc, argv, "--repeat", params.repeat)) {
       remove_flags = 2;
     } else if (check_arg_bool(argIdx, argc, argv, "-h", params.print_help) ||
-               check_arg_bool(argIdx, argc, argv, "--help",
-                              params.print_help)) {
+               check_arg_bool(argIdx, argc, argv, "--help", params.print_help)) {
       remove_flags = 1;
     }
 

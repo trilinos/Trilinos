@@ -37,13 +37,11 @@ template <class matrix_type>
 struct MDF_handle {
   using crs_matrix_type = matrix_type;
   using execution_space = typename matrix_type::execution_space;
-  using row_map_type    = typename crs_matrix_type::StaticCrsGraphType::
-      row_map_type::non_const_type;
-  using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
-      entries_type::non_const_type;
-  using values_type  = typename crs_matrix_type::values_type::non_const_type;
-  using size_type    = typename crs_matrix_type::size_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
+  using row_map_type    = typename crs_matrix_type::StaticCrsGraphType::row_map_type::non_const_type;
+  using col_ind_type    = typename crs_matrix_type::StaticCrsGraphType::entries_type::non_const_type;
+  using values_type     = typename crs_matrix_type::values_type::non_const_type;
+  using size_type       = typename crs_matrix_type::size_type;
+  using ordinal_type    = typename crs_matrix_type::ordinal_type;
 
   ordinal_type numRows;
 
@@ -76,16 +74,14 @@ struct MDF_handle {
     entriesL = col_ind_type("entries L", nnzL);
     valuesL  = values_type("values L", nnzL);
 
-    L = crs_matrix_type("L", numRows, numRows, nnzL, valuesL, row_mapL,
-                        entriesL);
+    L = crs_matrix_type("L", numRows, numRows, nnzL, valuesL, row_mapL, entriesL);
 
     // Allocate U
     row_mapU = row_map_type("row map U", numRows + 1);
     entriesU = col_ind_type("entries U", nnzU);
     valuesU  = values_type("values U", nnzU);
 
-    U = crs_matrix_type("U", numRows, numRows, nnzU, valuesU, row_mapU,
-                        entriesU);
+    U = crs_matrix_type("U", numRows, numRows, nnzU, valuesU, row_mapU, entriesU);
   }
 
   col_ind_type get_permutation() { return permutation; }

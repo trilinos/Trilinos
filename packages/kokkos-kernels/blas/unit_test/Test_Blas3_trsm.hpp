@@ -44,8 +44,7 @@ struct NonUnitDiagTRSM {
   void operator()(const int& i) const { A_(i, i) = A_(i, i) + 10; }
 };
 
-template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
-          class ExecutionSpace>
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
 struct trsm_VanillaGEMM {
   bool A_t, B_t, A_c, B_c;
   int N, K;
@@ -62,12 +61,9 @@ struct trsm_VanillaGEMM {
   ScalarC beta;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(
-      const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team)
-      const {
+  void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && \
-    !defined(__HIP_DEVICE_COMPILE__)
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
 
     int i = team.league_rank();
 #else
@@ -99,8 +95,7 @@ struct trsm_VanillaGEMM {
 };
 
 template <class ViewTypeA, class ViewTypeB, class Device>
-void impl_test_trsm(const char* side, const char* uplo, const char* trans,
-                    const char* diag, int M, int N,
+void impl_test_trsm(const char* side, const char* uplo, const char* trans, const char* diag, int M, int N,
                     typename ViewTypeA::value_type alpha) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
@@ -123,31 +118,21 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
   typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror_view(B);
   typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
 
-  uint64_t seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   if ((diag[0] == 'U') || (diag[0] == 'u')) {
-    Kokkos::fill_random(A, rand_pool,
-                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     ScalarA>::max() *
-                            0.1);
+    Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max() * 0.1);
     using functor_type = UnitDiagTRSM<ViewTypeA, execution_space>;
     functor_type udtrsm(A);
-    Kokkos::parallel_for("KokkosBlas::Test::UnitDiagTRSM",
-                         Kokkos::RangePolicy<execution_space>(0, K), udtrsm);
+    Kokkos::parallel_for("KokkosBlas::Test::UnitDiagTRSM", Kokkos::RangePolicy<execution_space>(0, K), udtrsm);
   } else {  //(diag[0]=='N')||(diag[0]=='n')
-    Kokkos::fill_random(A, rand_pool,
-                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     ScalarA>::max());
+    Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
     using functor_type = NonUnitDiagTRSM<ViewTypeA, execution_space>;
     functor_type nudtrsm(A);
-    Kokkos::parallel_for("KokkosBlas::Test::NonUnitDiagTRSM",
-                         Kokkos::RangePolicy<execution_space>(0, K), nudtrsm);
+    Kokkos::parallel_for("KokkosBlas::Test::NonUnitDiagTRSM", Kokkos::RangePolicy<execution_space>(0, K), nudtrsm);
   }
-  Kokkos::fill_random(
-      X0, rand_pool,
-      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(X0, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
 
   Kokkos::deep_copy(h_A, A);
   Kokkos::deep_copy(h_X0, X0);
@@ -165,8 +150,7 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
 
   Kokkos::deep_copy(A, h_A);
 
-  struct trsm_VanillaGEMM<ViewTypeB, ViewTypeA, ViewTypeB, execution_space>
-      vgemm;
+  struct trsm_VanillaGEMM<ViewTypeB, ViewTypeA, ViewTypeB, execution_space> vgemm;
   if (A_l) {
     vgemm.A_t = (trans[0] != 'N') && (trans[0] != 'n');
     vgemm.B_t = false;
@@ -187,12 +171,10 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
   vgemm.C     = B;
   vgemm.alpha = alpha_trmm;
   vgemm.beta  = beta;
-  Kokkos::parallel_for(
-      "KokkosBlas::Test::trsm_VanillaGEMM",
-      Kokkos::TeamPolicy<execution_space>(
-          M, Kokkos::AUTO,
-          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
-      vgemm);
+  Kokkos::parallel_for("KokkosBlas::Test::trsm_VanillaGEMM",
+                       Kokkos::TeamPolicy<execution_space>(
+                           M, Kokkos::AUTO, KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+                       vgemm);
   Kokkos::fence();
 
   KokkosBlas::trsm(side, uplo, trans, diag, alpha, A, B);
@@ -223,41 +205,30 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
 template <class ScalarA, class ScalarB, class Device>
 int test_trsm(const char* mode, ScalarA alpha) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using view_type_a_ll = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
   using view_type_b_ll = Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device>;
-  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 0, 0, alpha);
-  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 101, 19, alpha);
-  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 19, 101, alpha);
-  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 343, 201, alpha);
+  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 0, 0, alpha);
+  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 101, 19, alpha);
+  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 19, 101, alpha);
+  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 343, 201, alpha);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using view_type_a_lr = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
   using view_type_b_lr = Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device>;
-  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 0, 0, alpha);
-  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 101, 19, alpha);
-  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 19, 101, alpha);
-  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(
-      &mode[0], &mode[1], &mode[2], &mode[3], 343, 201, alpha);
+  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 0, 0, alpha);
+  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 101, 19, alpha);
+  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 19, 101, alpha);
+  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 343, 201, alpha);
 #endif
 
   return 1;
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trsm_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_float");
   float alpha = 1.0f;
@@ -302,8 +273,7 @@ TEST_F(TestCategory, trsm_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trsm_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_double");
   double alpha = 1.0;
@@ -348,157 +318,91 @@ TEST_F(TestCategory, trsm_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trsm_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_complex_double");
   Kokkos::complex<double> alpha = 1.0;
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCU", alpha);
 
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCU", alpha);
 
   alpha = Kokkos::complex<double>(4.5, 0.0);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "LUCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCU", alpha);
 
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
-      "RUCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNU", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCN", alpha);
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCU", alpha);
   Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trsm_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_complex_float");
   Kokkos::complex<float> alpha = 1.0f;
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU",
-                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU", alpha);
 
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU",
-                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU", alpha);
 
   alpha = Kokkos::complex<float>(4.5f, 0.0f);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU",
-                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU", alpha);
 
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN",
-                                                                        alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU",
-                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU", alpha);
   Kokkos::Profiling::popRegion();
 }
 #endif

@@ -32,17 +32,12 @@ struct ODE_params {
   // be constant such that dt = (tend - tstart) / num_steps;
   KOKKOS_FUNCTION
   ODE_params(const int num_steps_)
-      : adaptivity(false),
-        num_steps(num_steps_),
-        max_steps(num_steps_),
-        abs_tol(0),
-        rel_tol(0),
-        min_step_size(0) {}
+      : adaptivity(false), num_steps(num_steps_), max_steps(num_steps_), abs_tol(0), rel_tol(0), min_step_size(0) {}
 
   /// ODE_parms construtor for adaptive time stepping.
   KOKKOS_FUNCTION
-  ODE_params(const int num_steps_, const int max_steps_, const double abs_tol_,
-             const double rel_tol_, const double min_step_size_)
+  ODE_params(const int num_steps_, const int max_steps_, const double abs_tol_, const double rel_tol_,
+             const double min_step_size_)
       : adaptivity(true),
         num_steps(num_steps_),
         max_steps(max_steps_),
@@ -68,8 +63,7 @@ struct Newton_params {
   // double abs_tol_ [in]: absolute tolerance to reach for successful solve
   // double rel_tol_ [in]: relative tolerance to reach for successful solve
   KOKKOS_FUNCTION
-  Newton_params(const int max_iters_, const double abs_tol_,
-                const double rel_tol_)
+  Newton_params(const int max_iters_, const double abs_tol_, const double rel_tol_)
       : max_iters(max_iters_), abs_tol(abs_tol_), rel_tol(rel_tol_) {}
 };
 

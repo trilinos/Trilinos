@@ -53,8 +53,7 @@ namespace Impl {
  * Distance-1 conflicts will not be checked.
  *
  */
-template <typename HandleType, typename rowmap_t, typename entries_t,
-          bool doing_bipartite>
+template <typename HandleType, typename rowmap_t, typename entries_t, bool doing_bipartite>
 class GraphColorDistance2 {
   // Need mutable entries type for edge filtering
   using nc_entries_t = typename entries_t::non_const_type;
@@ -109,9 +108,8 @@ class GraphColorDistance2 {
    * \param handle: GraphColoringHandle object that holds the specification
    * about the graph coloring, including parameters.
    */
-  GraphColorDistance2(lno_t nr_, lno_t nc_, rowmap_t row_map, entries_t entries,
-                      rowmap_t t_row_map, entries_t t_entries,
-                      HandleType* handle)
+  GraphColorDistance2(lno_t nr_, lno_t nc_, rowmap_t row_map, entries_t entries, rowmap_t t_row_map,
+                      entries_t t_entries, HandleType* handle)
       : nr(nr_),
         nc(nc_),
         ne(entries.extent(0)),
@@ -157,15 +155,14 @@ class GraphColorDistance2 {
       colors_out = color_view_type("Graph Colors", this->nr);
     }
     switch (this->gc_handle->get_coloring_algo_type()) {
-      case COLORING_D2_VB_BIT_EF: using_edge_filtering = true;
+      case COLORING_D2_VB_BIT_EF: using_edge_filtering = true; [[fallthrough]];
       case COLORING_D2_VB_BIT:
       case COLORING_D2_VB: compute_d2_coloring_vb(colors_out); break;
       case COLORING_D2_NB_BIT: compute_d2_coloring_nb(colors_out); break;
       case COLORING_D2_SERIAL: compute_d2_coloring_serial(colors_out); break;
       default:
-        throw std::runtime_error(
-            std::string("D2 coloring handle has invalid algorithm: ") +
-            std::to_string((int)this->gc_handle->get_coloring_algo_type()));
+        throw std::runtime_error(std::string("D2 coloring handle has invalid algorithm: ") +
+                                 std::to_string((int)this->gc_handle->get_coloring_algo_type()));
     }
   }
 
@@ -179,16 +176,11 @@ class GraphColorDistance2 {
     // adjacency list )
     if (this->_ticToc) {
       std::cout << "\tcolor_graph_d2 params:" << std::endl
-                << "\t  algorithm                : "
-                << this->gc_handle->getD2AlgorithmName() << std::endl
-                << "\t  ticToc                   : " << this->_ticToc
-                << std::endl
-                << "\t  max_num_iterations       : "
-                << this->_max_num_iterations << std::endl
-                << "\t  chunkSize                : " << this->_chunkSize
-                << std::endl
-                << "\t  Edge Filtering Pass?     : "
-                << (int)using_edge_filtering << std::endl
+                << "\t  algorithm                : " << this->gc_handle->getD2AlgorithmName() << std::endl
+                << "\t  ticToc                   : " << this->_ticToc << std::endl
+                << "\t  max_num_iterations       : " << this->_max_num_iterations << std::endl
+                << "\t  chunkSize                : " << this->_chunkSize << std::endl
+                << "\t  Edge Filtering Pass?     : " << (int)using_edge_filtering << std::endl
                 << "\tgraph information:" << std::endl
                 << "\t  nr                       : " << this->nr << std::endl
                 << "\t  ne                       : " << this->ne << std::endl;
@@ -203,9 +195,7 @@ class GraphColorDistance2 {
 
     // conflictlist - store conflicts that can happen when we're coloring in
     // parallel.
-    lno_view_t current_vertexList(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "vertexList"),
-        this->nr);
+    lno_view_t current_vertexList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "vertexList"), this->nr);
 
     lno_t current_vertexListLength = this->nr;
 
@@ -215,13 +205,10 @@ class GraphColorDistance2 {
       current_vertexListLength = this->gc_handle->get_vertex_list_size();
     } else {
       // init conflictlist sequentially.
-      Kokkos::parallel_for("InitList", range_policy_type(0, this->nr),
-                           functorInitList<lno_view_t>(current_vertexList));
+      Kokkos::parallel_for("InitList", range_policy_type(0, this->nr), functorInitList<lno_view_t>(current_vertexList));
     }
     // Next iteratons's conflictList
-    lno_view_t next_iteration_recolorList(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "recolorList"),
-        this->nr);
+    lno_view_t next_iteration_recolorList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "recolorList"), this->nr);
 
     // Size the next iteration conflictList
     single_lno_view_t next_iteration_recolorListLength("recolorListLength");
@@ -251,15 +238,11 @@ class GraphColorDistance2 {
         // entries_t,
         //   so that it has the same type as adj
         // * on the other hand, t_adj is not actually modified by EF functor
-        lno_view_t adj_copy(
-            Kokkos::view_alloc(Kokkos::WithoutInitializing, "adj copy"),
-            this->ne);
+        lno_view_t adj_copy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "adj copy"), this->ne);
         Kokkos::deep_copy(adj_copy, this->adj);
-        this->colorGreedyEF(this->xadj, adj_copy, this->t_xadj, this->t_adj,
-                            colors_out);
+        this->colorGreedyEF(this->xadj, adj_copy, this->t_xadj, this->t_adj, colors_out);
       } else {
-        this->colorGreedy(this->xadj, this->adj, this->t_xadj, this->t_adj,
-                          colors_out, current_vertexList,
+        this->colorGreedy(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList,
                           current_vertexListLength);
       }
 
@@ -269,10 +252,8 @@ class GraphColorDistance2 {
         time = timer.seconds();
         total_time += time;
         std::cout << "\tIteration: " << iter << std::endl
-                  << "\t  - Time speculative greedy phase : " << time
-                  << std::endl
-                  << "\t  - Num Uncolored (greedy-color)  : " << numUncolored
-                  << std::endl;
+                  << "\t  - Time speculative greedy phase : " << time << std::endl
+                  << "\t  - Num Uncolored (greedy-color)  : " << numUncolored << std::endl;
 
         gc_handle->add_to_overall_coloring_time_phase1(time);
 
@@ -289,20 +270,17 @@ class GraphColorDistance2 {
 
       // NOTE: not using colorset algorithm in this so we don't include colorset
       // data
-      numUncolored = this->findConflicts(
-          swap_work_arrays, this->xadj, this->adj, this->t_xadj, this->t_adj,
-          colors_out, current_vertexList, current_vertexListLength,
-          next_iteration_recolorList, next_iteration_recolorListLength);
+      numUncolored = this->findConflicts(swap_work_arrays, this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out,
+                                         current_vertexList, current_vertexListLength, next_iteration_recolorList,
+                                         next_iteration_recolorListLength);
 
       execution_space().fence();
 
       if (_ticToc) {
         time = timer.seconds();
         total_time += time;
-        std::cout << "\t  - Time conflict detection       : " << time
-                  << std::endl;
-        std::cout << "\t  - Num Uncolored (conflicts)     : " << numUncolored
-                  << std::endl;
+        std::cout << "\t  - Time conflict detection       : " << time << std::endl;
+        std::cout << "\t  - Num Uncolored (conflicts)     : " << numUncolored << std::endl;
         gc_handle->add_to_overall_coloring_time_phase2(time);
         timer.reset();
       }
@@ -315,9 +293,8 @@ class GraphColorDistance2 {
           current_vertexList         = next_iteration_recolorList;
           next_iteration_recolorList = temp;
 
-          current_vertexListLength = numUncolored;
-          next_iteration_recolorListLength =
-              single_lno_view_t("recolorListLength");
+          current_vertexListLength         = numUncolored;
+          next_iteration_recolorListLength = single_lno_view_t("recolorListLength");
         }
       }
 
@@ -331,8 +308,7 @@ class GraphColorDistance2 {
     // clean up in serial (resolveConflictsSerial)
     // ------------------------------------------
     if (numUncolored > 0) {
-      this->resolveConflictsSerial(this->xadj, this->adj, this->t_xadj,
-                                   this->t_adj, colors_out, current_vertexList,
+      this->resolveConflictsSerial(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList,
                                    current_vertexListLength);
     }
 
@@ -341,10 +317,8 @@ class GraphColorDistance2 {
     if (_ticToc) {
       time = timer.seconds();
       total_time += time;
-      std::cout << "\tTime serial conflict resolution   : " << time
-                << std::endl;
-      std::cout << "\tTotal time for coloring           : " << total_time
-                << std::endl;
+      std::cout << "\tTime serial conflict resolution   : " << time << std::endl;
+      std::cout << "\tTotal time for coloring           : " << total_time << std::endl;
       gc_handle->add_to_overall_coloring_time_phase3(time);
     }
 
@@ -356,11 +330,9 @@ class GraphColorDistance2 {
 
   template <int batch>
   struct NB_Coloring {
-    NB_Coloring(const lno_view_t& worklist_, const single_lno_view_t& worklen_,
-                color_type colorBase_, const forbidden_view& forbidden_,
-                color_view_type colors_, const rowmap_t& Vrowmap_,
-                const entries_t& Vcolinds_, lno_t vertsPerThread_,
-                lno_t numCols_)
+    NB_Coloring(const lno_view_t& worklist_, const single_lno_view_t& worklen_, color_type colorBase_,
+                const forbidden_view& forbidden_, color_view_type colors_, const rowmap_t& Vrowmap_,
+                const entries_t& Vcolinds_, lno_t vertsPerThread_, lno_t numCols_)
         : worklist(worklist_),
           worklen(worklen_),
           colorBase(colorBase_),
@@ -387,8 +359,7 @@ class GraphColorDistance2 {
         for (size_type j = rowBegin; j < rowEnd; j++) {
           lno_t nei = Vcolinds(j);
           if (nei < numCols) {
-            for (int b = 0; b < batch; b++)
-              forbid[b] |= forbidden(nei * batch + b);
+            for (int b = 0; b < batch; b++) forbid[b] |= forbidden(nei * batch + b);
           }
         }
         // Find the first 0 bit in forbid
@@ -405,27 +376,22 @@ class GraphColorDistance2 {
             break;
           }
         }
-        if (color && (colors(v) == 0 || colors(v) == CONFLICTED ||
-                      colors(v) == UNCOLORABLE)) {
+        if (color && (colors(v) == 0 || colors(v) == CONFLICTED || colors(v) == UNCOLORABLE)) {
           // Color v
           colors(v) = color;
           if (!doing_bipartite) {
             // Update forbidden for v (preventing dist-1 conflicts)
-            if (v < numCols)
-              Kokkos::atomic_fetch_or(&forbidden(v * batch + colorWord),
-                                      (uint32_t)1 << colorBit);
+            if (v < numCols) Kokkos::atomic_fetch_or(&forbidden(v * batch + colorWord), (uint32_t)1 << colorBit);
           }
           // Update forbidden for all of v's neighbors
           for (size_type j = rowBegin; j < rowEnd; j++) {
             lno_t nei = Vcolinds(j);
             if (nei < numCols) {
               // Update column forbidden
-              Kokkos::atomic_fetch_or(&forbidden(nei * batch + colorWord),
-                                      (uint32_t)1 << colorBit);
+              Kokkos::atomic_fetch_or(&forbidden(nei * batch + colorWord), (uint32_t)1 << colorBit);
             }
           }
-        } else if (colors(v) == 0 || colors(v) == CONFLICTED ||
-                   colors(v) == UNCOLORABLE) {
+        } else if (colors(v) == 0 || colors(v) == CONFLICTED || colors(v) == UNCOLORABLE) {
           colors(v) = UNCOLORABLE;
         }
       }
@@ -444,9 +410,8 @@ class GraphColorDistance2 {
 
   template <int batch>
   struct NB_Conflict {
-    NB_Conflict(color_type colorBase_, const forbidden_view& forbidden_,
-                const color_view_type& colors_, const rowmap_t& Crowmap_,
-                const entries_t& Ccolinds_, lno_t numVerts_)
+    NB_Conflict(color_type colorBase_, const forbidden_view& forbidden_, const color_view_type& colors_,
+                const rowmap_t& Crowmap_, const entries_t& Ccolinds_, lno_t numVerts_)
         : colorBase(colorBase_),
           forbidden(forbidden_),
           colors(colors_),
@@ -513,10 +478,8 @@ class GraphColorDistance2 {
 
   template <int batch>
   struct NB_RefreshForbidden {
-    NB_RefreshForbidden(color_type colorBase_, const forbidden_view& forbidden_,
-                        const color_view_type& colors_,
-                        const rowmap_t& Crowmap_, const entries_t& Ccolinds_,
-                        lno_t numVerts_)
+    NB_RefreshForbidden(color_type colorBase_, const forbidden_view& forbidden_, const color_view_type& colors_,
+                        const rowmap_t& Crowmap_, const entries_t& Ccolinds_, lno_t numVerts_)
         : colorBase(colorBase_),
           colorEnd(colorBase + 32 * batch),
           forbidden(forbidden_),
@@ -563,12 +526,11 @@ class GraphColorDistance2 {
   };
 
   struct NB_Worklist {
-    NB_Worklist(const color_view_type colors_, const lno_view_t& worklist_,
-                const single_lno_view_t& worklen_, lno_t nr_)
+    NB_Worklist(const color_view_type colors_, const lno_view_t& worklist_, const single_lno_view_t& worklen_,
+                lno_t nr_)
         : colors(colors_), worklist(worklist_), worklen(worklen_), nr(nr_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(const lno_t v, lno_t& lnum,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(const lno_t v, lno_t& lnum, bool finalPass) const {
       if (colors(v) == CONFLICTED) {
         if (finalPass) worklist(lnum) = v;
         lnum++;
@@ -587,12 +549,11 @@ class GraphColorDistance2 {
   };
 
   struct NB_UpdateBatch {
-    NB_UpdateBatch(const color_view_type& colors_, const lno_view_t& worklist_,
-                   const single_lno_view_t& worklen_, lno_t nr_)
+    NB_UpdateBatch(const color_view_type& colors_, const lno_view_t& worklist_, const single_lno_view_t& worklen_,
+                   lno_t nr_)
         : colors(colors_), worklist(worklist_), worklen(worklen_), nr(nr_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(const lno_t v, lno_t& lnum,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(const lno_t v, lno_t& lnum, bool finalPass) const {
       if (colors(v) == UNCOLORABLE) {
         if (finalPass) worklist(lnum) = v;
         lnum++;
@@ -630,8 +591,7 @@ class GraphColorDistance2 {
     Kokkos::deep_copy(worklen, this->nr);
 
     // init conflictlist sequentially.
-    Kokkos::parallel_for("InitList", range_policy_type(0, this->nr),
-                         functorInitList<lno_view_t>(worklist));
+    Kokkos::parallel_for("InitList", range_policy_type(0, this->nr), functorInitList<lno_view_t>(worklist));
 
     // Estimate the number of colors that will be needed
     // The algorithm can't use more colors than the max distance-2 degree,
@@ -670,7 +630,7 @@ class GraphColorDistance2 {
       // for batch size
       while (currentWork) {
         lno_t vertsPerThread = 1;
-        lno_t workBatches = (currentWork + vertsPerThread - 1) / vertsPerThread;
+        lno_t workBatches    = (currentWork + vertsPerThread - 1) / vertsPerThread;
         timer.reset();
         // if still using this color set, refresh forbidden.
         // This avoids using too many colors, by relying on forbidden from
@@ -681,26 +641,22 @@ class GraphColorDistance2 {
           case 1:
             Kokkos::parallel_for(
                 "NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<1>(colorBase, forbidden, colors_out,
-                                       this->t_xadj, this->t_adj, numVerts));
+                NB_RefreshForbidden<1>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             break;
           case 2:
             Kokkos::parallel_for(
                 "NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<2>(colorBase, forbidden, colors_out,
-                                       this->t_xadj, this->t_adj, numVerts));
+                NB_RefreshForbidden<2>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             break;
           case 4:
             Kokkos::parallel_for(
                 "NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<4>(colorBase, forbidden, colors_out,
-                                       this->t_xadj, this->t_adj, numVerts));
+                NB_RefreshForbidden<4>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             break;
           case 8:
             Kokkos::parallel_for(
                 "NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<8>(colorBase, forbidden, colors_out,
-                                       this->t_xadj, this->t_adj, numVerts));
+                NB_RefreshForbidden<8>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             break;
           default:;
         }
@@ -709,62 +665,46 @@ class GraphColorDistance2 {
         switch (batch) {
           case 1:
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Coloring", range_policy_type(0, workBatches),
-                NB_Coloring<1>(worklist, worklen, colorBase, forbidden,
-                               colors_out, this->xadj, this->adj,
-                               vertsPerThread, numCols));
+            Kokkos::parallel_for("NB D2 Coloring", range_policy_type(0, workBatches),
+                                 NB_Coloring<1>(worklist, worklen, colorBase, forbidden, colors_out, this->xadj,
+                                                this->adj, vertsPerThread, numCols));
             colorTime += timer.seconds();
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Conflict Resolution", range_policy_type(0, numCols),
-                NB_Conflict<1>(colorBase, forbidden, colors_out, this->t_xadj,
-                               this->t_adj, numVerts));
+            Kokkos::parallel_for("NB D2 Conflict Resolution", range_policy_type(0, numCols),
+                                 NB_Conflict<1>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             conflictTime += timer.seconds();
             break;
           case 2:
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Coloring", range_policy_type(0, workBatches),
-                NB_Coloring<2>(worklist, worklen, colorBase, forbidden,
-                               colors_out, this->xadj, this->adj,
-                               vertsPerThread, numCols));
+            Kokkos::parallel_for("NB D2 Coloring", range_policy_type(0, workBatches),
+                                 NB_Coloring<2>(worklist, worklen, colorBase, forbidden, colors_out, this->xadj,
+                                                this->adj, vertsPerThread, numCols));
             colorTime += timer.seconds();
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Conflict Resolution", range_policy_type(0, numCols),
-                NB_Conflict<2>(colorBase, forbidden, colors_out, this->t_xadj,
-                               this->t_adj, numVerts));
+            Kokkos::parallel_for("NB D2 Conflict Resolution", range_policy_type(0, numCols),
+                                 NB_Conflict<2>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             conflictTime += timer.seconds();
             break;
           case 4:
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Coloring", range_policy_type(0, workBatches),
-                NB_Coloring<4>(worklist, worklen, colorBase, forbidden,
-                               colors_out, this->xadj, this->adj,
-                               vertsPerThread, numCols));
+            Kokkos::parallel_for("NB D2 Coloring", range_policy_type(0, workBatches),
+                                 NB_Coloring<4>(worklist, worklen, colorBase, forbidden, colors_out, this->xadj,
+                                                this->adj, vertsPerThread, numCols));
             colorTime += timer.seconds();
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Conflict Resolution", range_policy_type(0, numCols),
-                NB_Conflict<4>(colorBase, forbidden, colors_out, this->t_xadj,
-                               this->t_adj, numVerts));
+            Kokkos::parallel_for("NB D2 Conflict Resolution", range_policy_type(0, numCols),
+                                 NB_Conflict<4>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             conflictTime += timer.seconds();
             break;
           case 8:
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Coloring", range_policy_type(0, workBatches),
-                NB_Coloring<8>(worklist, worklen, colorBase, forbidden,
-                               colors_out, this->xadj, this->adj,
-                               vertsPerThread, numCols));
+            Kokkos::parallel_for("NB D2 Coloring", range_policy_type(0, workBatches),
+                                 NB_Coloring<8>(worklist, worklen, colorBase, forbidden, colors_out, this->xadj,
+                                                this->adj, vertsPerThread, numCols));
             colorTime += timer.seconds();
             timer.reset();
-            Kokkos::parallel_for(
-                "NB D2 Conflict Resolution", range_policy_type(0, numCols),
-                NB_Conflict<8>(colorBase, forbidden, colors_out, this->t_xadj,
-                               this->t_adj, numVerts));
+            Kokkos::parallel_for("NB D2 Conflict Resolution", range_policy_type(0, numCols),
+                                 NB_Conflict<8>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
             conflictTime += timer.seconds();
             break;
           default:
@@ -774,17 +714,15 @@ class GraphColorDistance2 {
         }
         timer.reset();
         // Then build the next worklist
-        Kokkos::parallel_scan(
-            "NB D2 worklist", range_policy_type(0, numVerts),
-            NB_Worklist(colors_out, worklist, worklen, numVerts), currentWork);
+        Kokkos::parallel_scan("NB D2 worklist", range_policy_type(0, numVerts),
+                              NB_Worklist(colors_out, worklist, worklen, numVerts), currentWork);
         worklistTime += timer.seconds();
         timer.reset();
         iter++;
       }
       // Will need to run with a different color base, so rebuild the work list
-      Kokkos::parallel_scan(
-          "NB D2 Worklist Rebuild", range_policy_type(0, numVerts),
-          NB_UpdateBatch(colors_out, worklist, worklen, numVerts));
+      Kokkos::parallel_scan("NB D2 Worklist Rebuild", range_policy_type(0, numVerts),
+                            NB_UpdateBatch(colors_out, worklist, worklen, numVerts));
       Kokkos::deep_copy(currentWork, worklen);
       worklistTime += timer.seconds();
       timer.reset();
@@ -802,9 +740,7 @@ class GraphColorDistance2 {
       std::cout << "Conflict: " << conflictTime << '\n';
       std::cout << "Forbidden: " << forbiddenTime << '\n';
       std::cout << "Worklist: " << worklistTime << '\n';
-      std::cout << "** Total: "
-                << colorTime + conflictTime + forbiddenTime + worklistTime
-                << "\n\n";
+      std::cout << "** Total: " << colorTime + conflictTime + forbiddenTime + worklistTime << "\n\n";
     }
     if (this->_ticToc) {
       gc_handle->add_to_overall_coloring_time_phase1(timer.seconds());
@@ -838,8 +774,8 @@ class GraphColorDistance2 {
     Kokkos::View<const lno_t*, Kokkos::HostSpace> Vcolinds =
         Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), this->adj);
     // Create worklist
-    Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "Worklist"), this->nr);
+    Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Worklist"),
+                                                     this->nr);
     int iter = 0;
     Kokkos::Timer timer;
     lno_t currentWork = this->nr;
@@ -898,10 +834,8 @@ class GraphColorDistance2 {
   // GraphColorDistance2::colorGreedy()
   //
   // -----------------------------------------------------------------
-  void colorGreedy(rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_,
-                   entries_t t_adj_, color_view_type vertex_colors_,
-                   lno_view_t current_vertexList_,
-                   lno_t current_vertexListLength_) {
+  void colorGreedy(rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_, color_view_type vertex_colors_,
+                   lno_view_t current_vertexList_, lno_t current_vertexListLength_) {
     lno_t chunkSize_ = this->_chunkSize;
 
     if (current_vertexListLength_ < 100 * chunkSize_) {
@@ -917,11 +851,9 @@ class GraphColorDistance2 {
       // 3. [S] loop over vertex neighbors
       // 4. [S] loop over vertex neighbors of neighbors
       case COLORING_D2_VB: {
-        functorGreedyColorVB gc(this->nr, this->nc, xadj_, adj_, t_xadj_,
-                                t_adj_, vertex_colors_, current_vertexList_,
+        functorGreedyColorVB gc(this->nr, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_,
                                 current_vertexListLength_);
-        Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr),
-                             gc);
+        Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr), gc);
       } break;
 
       // One level Perallelism, BIT Array for coloring
@@ -930,11 +862,9 @@ class GraphColorDistance2 {
       // 3. [S] loop over vertex neighbors
       // 4. [S] loop over vertex neighbors of neighbors
       case COLORING_D2_VB_BIT: {
-        functorGreedyColorVB_BIT gc(this->nr, this->nc, xadj_, adj_, t_xadj_,
-                                    t_adj_, vertex_colors_, current_vertexList_,
-                                    current_vertexListLength_);
-        Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr),
-                             gc);
+        functorGreedyColorVB_BIT gc(this->nr, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_,
+                                    current_vertexList_, current_vertexListLength_);
+        Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr), gc);
       } break;
 
       default:
@@ -950,8 +880,8 @@ class GraphColorDistance2 {
   // GraphColorDistance2::colorGreedyEF()
   //
   // -----------------------------------------------------------------
-  void colorGreedyEF(rowmap_t xadj_, lno_view_t adj_copy_, rowmap_t t_xadj_,
-                     entries_t t_adj_copy_, color_view_type vertex_colors_) {
+  void colorGreedyEF(rowmap_t xadj_, lno_view_t adj_copy_, rowmap_t t_xadj_, entries_t t_adj_copy_,
+                     color_view_type vertex_colors_) {
     // Pick the right coloring algorithm to use based on which algorithm we're
     // using
     switch (this->gc_handle->get_coloring_algo_type()) {
@@ -961,10 +891,8 @@ class GraphColorDistance2 {
       // 3. [S] loop over vertex neighbors
       // 4. [S] loop over vertex neighbors of neighbors
       case COLORING_D2_VB_BIT_EF: {
-        functorGreedyColorVB_BIT_EF gc(this->nr, this->nc, xadj_, adj_copy_,
-                                       t_xadj_, t_adj_copy_, vertex_colors_);
-        Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr),
-                             gc);
+        functorGreedyColorVB_BIT_EF gc(this->nr, this->nc, xadj_, adj_copy_, t_xadj_, t_adj_copy_, vertex_colors_);
+        Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr), gc);
         // prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
       } break;
 
@@ -980,23 +908,17 @@ class GraphColorDistance2 {
   // GraphColorDistance2::findConflicts()
   //
   // -----------------------------------------------------------------
-  lno_t findConflicts(bool& swap_work_arrays, rowmap_t xadj_, entries_t adj_,
-                      rowmap_t t_xadj_, entries_t t_adj_,
-                      color_view_type vertex_colors_,
-                      lno_view_t current_vertexList_,
-                      lno_t current_vertexListLength_,
-                      lno_view_t next_iteration_recolorList_,
-                      single_lno_view_t next_iteration_recolorListLength_) {
+  lno_t findConflicts(bool& swap_work_arrays, rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_,
+                      color_view_type vertex_colors_, lno_view_t current_vertexList_, lno_t current_vertexListLength_,
+                      lno_view_t next_iteration_recolorList_, single_lno_view_t next_iteration_recolorListLength_) {
     swap_work_arrays          = true;
     lno_t output_numUncolored = 0;
 
-    functorFindConflicts_Atomic conf(
-        this->nr, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_,
-        current_vertexList_, next_iteration_recolorList_,
-        next_iteration_recolorListLength_);
-    Kokkos::parallel_reduce("FindConflicts",
-                            range_policy_type(0, current_vertexListLength_),
-                            conf, output_numUncolored);
+    functorFindConflicts_Atomic conf(this->nr, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_,
+                                     current_vertexList_, next_iteration_recolorList_,
+                                     next_iteration_recolorListLength_);
+    Kokkos::parallel_reduce("FindConflicts", range_policy_type(0, current_vertexListLength_), conf,
+                            output_numUncolored);
     return output_numUncolored;
   }  // findConflicts (end)
 
@@ -1005,9 +927,8 @@ class GraphColorDistance2 {
   // GraphColorDistance2::resolveConflictsSerial()
   //
   // -----------------------------------------------------------------
-  void resolveConflictsSerial(rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_,
-                              entries_t t_adj_, color_view_type vertex_colors_,
-                              lno_view_t current_vertexList_,
+  void resolveConflictsSerial(rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_,
+                              color_view_type vertex_colors_, lno_view_t current_vertexList_,
                               size_type current_vertexListLength_) {
     color_type* forbidden = new color_type[nr];
     for (lno_t i = 0; i < nr; i++) forbidden[i] = nr;
@@ -1042,16 +963,14 @@ class GraphColorDistance2 {
       if (h_colors(vid) > 0) continue;
 
       // loop over distance-1 neighbors of vid
-      for (size_type vid_d1_adj = h_idx(vid); vid_d1_adj < h_idx(vid + 1);
-           vid_d1_adj++) {
+      for (size_type vid_d1_adj = h_idx(vid); vid_d1_adj < h_idx(vid + 1); vid_d1_adj++) {
         lno_t vid_d1 = h_adj(vid_d1_adj);
         if (vid_d1 < nc) {
           if (!doing_bipartite && vid_d1 != vid) {
             forbidden[h_colors(vid_d1)] = vid;
           }
           // loop over neighbors of vid_d1 (distance-2 from vid)
-          for (size_type vid_d2_adj = h_t_idx(vid_d1);
-               vid_d2_adj < h_t_idx(vid_d1 + 1); vid_d2_adj++) {
+          for (size_type vid_d2_adj = h_t_idx(vid_d1); vid_d2_adj < h_t_idx(vid_d1 + 1); vid_d2_adj++) {
             lno_t vid_d2 = h_t_adj(vid_d2_adj);
 
             // skip over loops vid -- x -- vid, and filter out-of-bounds
@@ -1076,8 +995,7 @@ class GraphColorDistance2 {
  public:
   // pretty-print a 1D View with label
   template <typename kokkos_view_t>
-  void prettyPrint1DView(kokkos_view_t& view, const char* label,
-                         const size_t max_entries = 500) const {
+  void prettyPrint1DView(kokkos_view_t& view, const char* label, const size_t max_entries = 500) const {
     int max_per_line = 20;
     int line_count   = 1;
     std::cout << label << " = [ \n\t";
@@ -1132,10 +1050,8 @@ class GraphColorDistance2 {
     lno_t _vertexListLength;  //
     lno_t _chunkSize;         //
 
-    functorGreedyColorVB(lno_t nr_, lno_t nc_, rowmap_t xadj_, entries_t adj_,
-                         rowmap_t t_xadj_, entries_t t_adj_,
-                         color_view_type colors, lno_view_t vertexList,
-                         lno_t vertexListLength)
+    functorGreedyColorVB(lno_t nr_, lno_t nc_, rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_,
+                         color_view_type colors, lno_view_t vertexList, lno_t vertexListLength)
         : nr(nr_),
           nc(nc_),
           _idx(xadj_),
@@ -1173,15 +1089,13 @@ class GraphColorDistance2 {
         //   but in distance-2 we'd need the total vertices at distance-2 which
         //   we don't easily have aprioi. This could be as big as all the
         //   vertices in the graph if diameter(G)=2...
-        for (color_type offset = 1; offset <= nr;
-             offset += VB_D2_COLORING_FORBIDDEN_SIZE) {
+        for (color_type offset = 1; offset <= nr; offset += VB_D2_COLORING_FORBIDDEN_SIZE) {
           // initialize
           for (int i = 0; i < VB_D2_COLORING_FORBIDDEN_SIZE; i++) {
             forbidden[i] = false;
           }
           // Check neighbors, fill forbidden array.
-          for (size_type vid_adj = vid_adj_begin; vid_adj < vid_adj_end;
-               vid_adj++) {
+          for (size_type vid_adj = vid_adj_begin; vid_adj < vid_adj_end; vid_adj++) {
             const lno_t vid_d1 = _adj(vid_adj);
             if (vid_d1 < nc) {
               if (!doing_bipartite)  // note: compile-time branch (template
@@ -1189,23 +1103,20 @@ class GraphColorDistance2 {
               {
                 if (vid_d1 != vid) {
                   const color_type c = _colors(vid_d1);
-                  if ((c >= offset) &&
-                      (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE)) {
+                  if ((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE)) {
                     forbidden[c - offset] = true;
                   }
                 }
               }
               const size_type vid_d1_adj_begin = _t_idx(vid_d1);
               const size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
-              for (size_type vid_d1_adj = vid_d1_adj_begin;
-                   vid_d1_adj < vid_d1_adj_end; vid_d1_adj++) {
+              for (size_type vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++) {
                 const lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                 // Skip distance-2-self-loops
                 if (vid_d2 != vid && vid_d2 < nr) {
                   const color_type c = _colors(vid_d2);
-                  if ((c >= offset) &&
-                      (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE)) {
+                  if ((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE)) {
                     forbidden[c - offset] = true;
                   }
                 }
@@ -1240,10 +1151,8 @@ class GraphColorDistance2 {
     lno_view_t _vertexList;   //
     lno_t _vertexListLength;  //
 
-    functorGreedyColorVB_BIT(lno_t nr_, lno_t nc_, rowmap_t xadj_,
-                             entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_,
-                             color_view_type colors, lno_view_t vertexList,
-                             lno_t vertexListLength)
+    functorGreedyColorVB_BIT(lno_t nr_, lno_t nc_, rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_,
+                             color_view_type colors, lno_view_t vertexList, lno_t vertexListLength)
         : nr(nr_),
           nc(nc_),
           _idx(xadj_),
@@ -1270,8 +1179,7 @@ class GraphColorDistance2 {
         const size_type vid_adj_begin = _idx(vid);
         const size_type vid_adj_end   = _idx(vid + 1);
 
-        for (color_type offset = 1;
-             offset <= (nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
+        for (color_type offset = 1; offset <= (nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
              offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
           // Forbidden colors
           // - single long int for forbidden colors
@@ -1282,8 +1190,7 @@ class GraphColorDistance2 {
           bool break_out = false;
 
           // Loop over distance-1 neighbors of vid
-          for (size_type vid_adj = vid_adj_begin;
-               !break_out && vid_adj < vid_adj_end; ++vid_adj) {
+          for (size_type vid_adj = vid_adj_begin; !break_out && vid_adj < vid_adj_end; ++vid_adj) {
             const lno_t vid_d1 = _adj(vid_adj);
             if (vid_d1 < nc) {
               if (!doing_bipartite)  // note: compile-time branch (template
@@ -1293,8 +1200,7 @@ class GraphColorDistance2 {
                 if (vid_d1 != vid) {
                   const color_type color        = _colors(vid_d1);
                   const color_type color_offset = color - offset;
-                  if (color &&
-                      color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
+                  if (color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
                     // if it is in the current range, then add the color to the
                     // banned colors
                     if (color > offset) {
@@ -1313,8 +1219,7 @@ class GraphColorDistance2 {
               const size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
 
               // Loop over distance-2 neighbors of vid
-              for (size_type vid_d1_adj = vid_d1_adj_begin;
-                   !break_out && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj) {
+              for (size_type vid_d1_adj = vid_d1_adj_begin; !break_out && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj) {
                 const lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                 // Ignore Distance-2 Self Loops
@@ -1324,8 +1229,7 @@ class GraphColorDistance2 {
 
                   // if color is within the current range, or if its color is in
                   // a previously traversed range
-                  if (offset <= color &&
-                      color_offset < VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
+                  if (offset <= color && color_offset < VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
                     // if it is in the current range, then add the color to the
                     // banned colors
                     forbidden |= (bit_64_forbidden_type(1) << color_offset);
@@ -1343,9 +1247,8 @@ class GraphColorDistance2 {
 
           // check if an available color exists.
           if (~forbidden) {
-            bit_64_forbidden_type color_offset =
-                KokkosKernels::Impl::least_set_bit(~forbidden) - 1;
-            _colors(vid) = offset + color_offset;
+            bit_64_forbidden_type color_offset = KokkosKernels::Impl::least_set_bit(~forbidden) - 1;
+            _colors(vid)                       = offset + color_offset;
             return;
           }
         }  // for offset <= (nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE)
@@ -1366,16 +1269,9 @@ class GraphColorDistance2 {
     entries_t _t_adj;         // transpose vertex adjacency list (NOT modified)
     color_view_type _colors;  // vertex colors
 
-    functorGreedyColorVB_BIT_EF(lno_t nr_, lno_t nc_, rowmap_t xadj_,
-                                lno_view_t adj_, rowmap_t t_xadj_,
+    functorGreedyColorVB_BIT_EF(lno_t nr_, lno_t nc_, rowmap_t xadj_, lno_view_t adj_, rowmap_t t_xadj_,
                                 entries_t t_adj_, color_view_type colors)
-        : _nr(nr_),
-          _nc(nc_),
-          _idx(xadj_),
-          _adj(adj_),
-          _t_idx(t_xadj_),
-          _t_adj(t_adj_),
-          _colors(colors) {}
+        : _nr(nr_), _nc(nc_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors) {}
 
     // Color vertex i with smallest available color.
     //
@@ -1394,8 +1290,7 @@ class GraphColorDistance2 {
         size_type vid_adj_end   = _idx(vid + 1);
 
         bool foundColor = false;
-        for (color_type offset = 0;
-             !foundColor && offset <= (_nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
+        for (color_type offset = 0; !foundColor && offset <= (_nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
              offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
           // Forbidden colors
           // - single long int for forbidden colors
@@ -1406,8 +1301,7 @@ class GraphColorDistance2 {
           bool offset_colors_full = false;
 
           // Loop over distance-1 neighbors of vid
-          for (size_type vid_adj = vid_adj_begin;
-               !offset_colors_full && vid_adj < vid_adj_end; ++vid_adj) {
+          for (size_type vid_adj = vid_adj_begin; !offset_colors_full && vid_adj < vid_adj_end; ++vid_adj) {
             const lno_t vid_d1 = _adj(vid_adj);
             if (vid_d1 < _nc) {
               if (!doing_bipartite)  // note: compile-time branch (template
@@ -1419,21 +1313,20 @@ class GraphColorDistance2 {
                   color_type color_offset = color - offset;
                   // if color is within the current range, or if its color is in
                   // a previously traversed range
-                  if (color && offset < color &&
-                      color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
+                  if (color && offset < color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
                     // if it is in the current range, then add the color to the
                     // banned colors convert color to bit representation
                     bit_64_forbidden_type ban_color_bit = 1;
-                    ban_color_bit = ban_color_bit << (color_offset - 1);
+                    ban_color_bit                       = ban_color_bit << (color_offset - 1);
                     // add it to forbidden colors
                     forbidden = forbidden | ban_color_bit;
                   }
                 }
               }
 
-              size_type vid_d1_adj_begin     = _t_idx(vid_d1);
-              const size_type vid_d1_adj_end = _t_idx(vid_d1 + 1);
-              const size_type degree_vid_d1 = vid_d1_adj_end - vid_d1_adj_begin;
+              size_type vid_d1_adj_begin            = _t_idx(vid_d1);
+              const size_type vid_d1_adj_end        = _t_idx(vid_d1 + 1);
+              const size_type degree_vid_d1         = vid_d1_adj_end - vid_d1_adj_begin;
               size_type num_vid_d2_colored_in_range = 0;
 
               // Store the maximum color value found in the vertices adjacent to
@@ -1441,26 +1334,22 @@ class GraphColorDistance2 {
               color_type max_color_adj_to_d1 = 0;
 
               // Loop over distance-2 neighbors of vid
-              for (size_type vid_d1_adj = vid_d1_adj_begin;
-                   !offset_colors_full && vid_d1_adj < vid_d1_adj_end;
+              for (size_type vid_d1_adj = vid_d1_adj_begin; !offset_colors_full && vid_d1_adj < vid_d1_adj_end;
                    ++vid_d1_adj) {
                 const lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                 // Ignore Distance-2 Self Loops
                 if (vid_d2 != vid && vid_d2 < _nr) {
-                  color_type color = _colors(vid_d2);
-                  color_type color_offset =
-                      color - offset;  // color_offset < 0 means color is from a
-                                       // previous offset.
+                  color_type color        = _colors(vid_d2);
+                  color_type color_offset = color - offset;  // color_offset < 0 means color is from a
+                                                             // previous offset.
 
                   // Update maximum color adjacent to vid_d1 found so far.
-                  max_color_adj_to_d1 =
-                      color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
+                  max_color_adj_to_d1 = color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
 
                   // if color is within the current range, or if its color is in
                   // a previously traversed range
-                  if (color &&
-                      color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
+                  if (color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
                     num_vid_d2_colored_in_range++;
 
                     // if it is in the current range, then add the color to the
@@ -1543,10 +1432,8 @@ class GraphColorDistance2 {
     lno_view_t _recolorList;
     single_lno_view_t _recolorListLength;
 
-    functorFindConflicts_Atomic(lno_t nr_, lno_t nc_, rowmap_t xadj_,
-                                entries_t adj_, rowmap_t t_xadj_,
-                                entries_t t_adj_, color_view_type colors,
-                                lno_view_t vertexList, lno_view_t recolorList,
+    functorFindConflicts_Atomic(lno_t nr_, lno_t nc_, rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_,
+                                entries_t t_adj_, color_view_type colors, lno_view_t vertexList, lno_view_t recolorList,
                                 single_lno_view_t recolorListLength)
         : nr(nr_),
           nc(nc_),
@@ -1566,8 +1453,7 @@ class GraphColorDistance2 {
       const size_type vid_d1_adj_begin = _idx(vid);
       const size_type vid_d1_adj_end   = _idx(vid + 1);
       // If vid is a valid column (vid < nc), check for column->vert conflicts
-      for (size_type vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end;
-           vid_d1_adj++) {
+      for (size_type vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++) {
         lno_t vid_d1 = _adj(vid_d1_adj);
         if (vid_d1 < nc) {
           if (!doing_bipartite)  // note: compile-time branch (template param)
@@ -1576,8 +1462,7 @@ class GraphColorDistance2 {
             if (vid_d1 != vid && _colors(vid_d1) == my_color) {
               _colors(vid) = 0;  // uncolor vertex
               // Atomically add vertex to recolorList
-              const lno_t k =
-                  Kokkos::atomic_fetch_add(&_recolorListLength(), lno_t(1));
+              const lno_t k   = Kokkos::atomic_fetch_add(&_recolorListLength(), lno_t(1));
               _recolorList(k) = vid;
               numConflicts++;
               return;
@@ -1585,16 +1470,14 @@ class GraphColorDistance2 {
           }
           const size_type d2_adj_begin = _t_idx(vid_d1);
           const size_type d2_adj_end   = _t_idx(vid_d1 + 1);
-          for (size_type vid_d2_adj = d2_adj_begin; vid_d2_adj < d2_adj_end;
-               vid_d2_adj++) {
+          for (size_type vid_d2_adj = d2_adj_begin; vid_d2_adj < d2_adj_end; vid_d2_adj++) {
             const lno_t vid_d2 = _t_adj(vid_d2_adj);
 
             if (vid != vid_d2 && vid_d2 < nr) {
               if (_colors(vid_d2) == my_color) {
                 _colors(vid) = 0;  // uncolor vertex
                 // Atomically add vertex to recolorList
-                const lno_t k =
-                    Kokkos::atomic_fetch_add(&_recolorListLength(), lno_t(1));
+                const lno_t k   = Kokkos::atomic_fetch_add(&_recolorListLength(), lno_t(1));
                 _recolorList(k) = vid;
                 numConflicts++;
                 return;
@@ -1634,8 +1517,7 @@ class GraphColorDistance2 {
  * @return nothing
  */
 template <class KernelHandle>
-void graph_print_distance2_color_histogram(KernelHandle* handle,
-                                           bool csv = false) {
+void graph_print_distance2_color_histogram(KernelHandle* handle, bool csv = false) {
   using lno_view_t      = typename KernelHandle::nnz_lno_temp_work_view_t;
   using lno_t           = typename KernelHandle::nnz_lno_t;
   using execution_space = typename KernelHandle::HandleExecSpace;
@@ -1647,11 +1529,8 @@ void graph_print_distance2_color_histogram(KernelHandle* handle,
   color_view_t colors = gch_d2->get_vertex_colors();
   lno_t num_colors    = gch_d2->get_num_colors();
   lno_view_t histogram("histogram", num_colors + 1);
-  KokkosKernels::Impl::kk_get_histogram<color_view_t, lno_view_t,
-                                        execution_space>(colors.extent(0),
-                                                         colors, histogram);
-  auto h_histogram =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), histogram);
+  KokkosKernels::Impl::kk_get_histogram<color_view_t, lno_view_t, execution_space>(colors.extent(0), colors, histogram);
+  auto h_histogram = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), histogram);
   // note: both modes ignore color 0 in output, since we assume the coloring is
   // valid
   if (csv) {
@@ -1661,8 +1540,7 @@ void graph_print_distance2_color_histogram(KernelHandle* handle,
     }
     std::cout << h_histogram(i);
   } else {
-    auto histogram_slice = Kokkos::subview(
-        histogram, std::make_pair((size_t)1, histogram.extent(0)));
+    auto histogram_slice = Kokkos::subview(histogram, std::make_pair((size_t)1, histogram.extent(0)));
     std::cout << "Distance-2 Color Histogram (1..N): " << std::endl;
     KokkosKernels::Impl::kk_print_1Dview(histogram_slice);
     std::cout << std::endl;

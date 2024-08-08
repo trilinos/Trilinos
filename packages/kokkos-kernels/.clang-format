@@ -4,3 +4,4 @@ SortIncludes: false
 AlignConsecutiveAssignments: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
+ColumnLimit: 120

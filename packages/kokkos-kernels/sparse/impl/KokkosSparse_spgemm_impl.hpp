@@ -35,10 +35,8 @@ namespace KokkosSparse {
 
 namespace Impl {
 
-template <typename HandleType, typename a_row_view_t_,
-          typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_,
-          typename b_scalar_nnz_view_t_>
+template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+          typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 class KokkosSPGEMM {
  public:
   typedef a_row_view_t_ a_row_view_t;
@@ -62,47 +60,36 @@ class KokkosSPGEMM {
   typedef typename a_row_view_t::non_const_type non_const_a_lno_row_view_t;
 
   typedef typename a_in_lno_nnz_view_t::const_type const_a_lno_nnz_view_t;
-  typedef
-      typename a_in_lno_nnz_view_t::non_const_type non_const_a_lno_nnz_view_t;
+  typedef typename a_in_lno_nnz_view_t::non_const_type non_const_a_lno_nnz_view_t;
 
   typedef typename a_in_scalar_nnz_view_t::const_type const_a_scalar_nnz_view_t;
-  typedef typename a_in_scalar_nnz_view_t::non_const_type
-      non_const_a_scalar_nnz_view_t;
+  typedef typename a_in_scalar_nnz_view_t::non_const_type non_const_a_scalar_nnz_view_t;
 
   typedef typename b_in_lno_row_view_t::const_type const_b_lno_row_view_t;
-  typedef
-      typename b_in_lno_row_view_t::non_const_type non_const_b_lno_row_view_t;
+  typedef typename b_in_lno_row_view_t::non_const_type non_const_b_lno_row_view_t;
 
   typedef typename b_in_lno_nnz_view_t::const_type const_b_lno_nnz_view_t;
-  typedef
-      typename b_in_lno_nnz_view_t::non_const_type non_const_b_lno_nnz_view_t;
+  typedef typename b_in_lno_nnz_view_t::non_const_type non_const_b_lno_nnz_view_t;
 
   typedef typename b_in_scalar_nnz_view_t::const_type const_b_scalar_nnz_view_t;
-  typedef typename b_in_scalar_nnz_view_t::non_const_type
-      non_const_b_scalar_nnz_view_t;
+  typedef typename b_in_scalar_nnz_view_t::non_const_type non_const_b_scalar_nnz_view_t;
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-  typedef
-      typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
+  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
+  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
   typedef
-      typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_view_t
-      row_lno_persistent_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_host_view_t
-      row_lno_persistent_work_host_view_t;  // Host view type
+      typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t;  // Host view type
 
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
   typedef
-      typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_view_t
-      nnz_lno_persistent_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_host_view_t
-      nnz_lno_persistent_work_host_view_t;  // Host view type
+      typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t;  // Host view type
 
   typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
-  typedef typename HandleType::scalar_persistent_work_view_t
-      scalar_persistent_work_view_t;
+  typedef typename HandleType::scalar_persistent_work_view_t scalar_persistent_work_view_t;
 
   typedef typename HandleType::bool_persistent_view_t bool_persistent_view_t;
   typedef typename HandleType::bool_temp_view_t bool_temp_view_t;
@@ -140,44 +127,30 @@ class KokkosSPGEMM {
   struct Numeric2Tag {};
   struct Numeric3Tag {};
 
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace>
-      multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace>
-      multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace>
-      multicore_dense_team3_count_policy_t;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace> multicore_dense_team_count_policy_t;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace> multicore_dense_team2_count_policy_t;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace> multicore_dense_team3_count_policy_t;
 
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag,
-                             MyExecSpace>
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag, MyExecSpace>
       nc_multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2,
-                             MyExecSpace>
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2, MyExecSpace>
       nc_multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3,
-                             MyExecSpace>
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3, MyExecSpace>
       nc_multicore_dense_team3_count_policy_t;
 
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag,
-                             MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       nc_dynamic_multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2,
-                             MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       nc_dynamic_multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3,
-                             MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       nc_dynamic_multicore_dense_team3_count_policy_t;
 
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace>
-      multicore_team_policy2_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace>
-      multicore_team_policy3_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace>
-      multicore_team_policy4_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace>
-      multicore_team_policy5_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace>
-      multicore_team_policy6_t;
+  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore_team_policy2_t;
+  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace> multicore_team_policy3_t;
+  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace> multicore_team_policy4_t;
+  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace> multicore_team_policy5_t;
+  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace> multicore_team_policy6_t;
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t;
   typedef Kokkos::TeamPolicy<GPUTag2, MyExecSpace> gpu_team_policy2_t;
@@ -198,53 +171,36 @@ class KokkosSPGEMM {
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace> team_numeric2_policy_t;
   typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace> team_numeric3_policy_t;
 
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_dense_team3_count_policy_t;
 
-  typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_team_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_team_policy2_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_team_policy3_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_team_policy4_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_team_policy5_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_multicore_team_policy6_t;
 
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_fill_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_count_policy_t;
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t;
+  typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_team_numeric1_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_team_numeric2_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
       dynamic_team_numeric3_policy_t;
 
-  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_policy_t;
+  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_policy_t;
 
  protected:
   HandleType *handle;
@@ -285,19 +241,17 @@ class KokkosSPGEMM {
    * matrix. \param out_nnz_sets: output, column sets of the output matrix.
    *
    */
-  template <typename in_row_view_t, typename in_nnz_view_t,
-            typename out_rowmap_view_t, typename out_nnz_view_t>
-  bool compressMatrix(nnz_lno_t n, size_type nnz, in_row_view_t in_row_map,
-                      in_nnz_view_t in_entries, out_rowmap_view_t out_row_map,
-                      out_nnz_view_t &out_nnz_indices,
-                      out_nnz_view_t &out_nnz_sets, bool singleStep);
+  template <typename in_row_view_t, typename in_nnz_view_t, typename out_rowmap_view_t, typename out_nnz_view_t>
+  bool compressMatrix(nnz_lno_t n, size_type nnz, in_row_view_t in_row_map, in_nnz_view_t in_entries,
+                      out_rowmap_view_t out_row_map, out_nnz_view_t &out_nnz_indices, out_nnz_view_t &out_nnz_sets,
+                      bool singleStep);
 
  public:
   /**
    *\brief Functor to zip the B matrix.
    */
-  template <typename row_view_t, typename nnz_view_t, typename new_row_view_t,
-            typename new_nnz_view_t, typename pool_memory_space>
+  template <typename row_view_t, typename nnz_view_t, typename new_row_view_t, typename new_nnz_view_t,
+            typename pool_memory_space>
   struct SingleStepZipMatrix;
 
  private:
@@ -307,26 +261,20 @@ class KokkosSPGEMM {
   //////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////
   template <typename struct_visit_t>
-  void triangle_count_ai(const int is_symbolic_or_numeric, const nnz_lno_t m,
-                         const size_type *row_mapA_, const nnz_lno_t *entriesA_,
+  void triangle_count_ai(const int is_symbolic_or_numeric, const nnz_lno_t m, const size_type *row_mapA_,
+                         const nnz_lno_t *entriesA_,
 
-                         const size_type bnnz, const size_type *old_row_mapB,
-                         const size_type *row_mapB_,
-                         const nnz_lno_t *entriesSetIndex,
-                         const nnz_lno_t *entriesSets,
+                         const size_type bnnz, const size_type *old_row_mapB, const size_type *row_mapB_,
+                         const nnz_lno_t *entriesSetIndex, const nnz_lno_t *entriesSets,
 
-                         size_type *rowmapC, nnz_lno_t *entriesC,
-                         struct_visit_t visit_applier);
+                         size_type *rowmapC, nnz_lno_t *entriesC, struct_visit_t visit_applier);
 
  public:
   template <typename pool_memory_space, typename struct_visit_t>
   struct TriangleCount;
 
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_triangle(c_row_view_t rowmapC_,
-                                     c_lno_nnz_view_t entriesC_,
-                                     c_scalar_nnz_view_t valuesC_);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  void KokkosSPGEMM_numeric_triangle(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_);
 
   template <typename c_row_view_t>
   void KokkosSPGEMM_symbolic_triangle(c_row_view_t rowmapC_);
@@ -353,25 +301,20 @@ class KokkosSPGEMM {
 
  private:
   template <typename c_row_view_t, typename c_lno_nnz_view_t>
-  void KokkosSPGEMM_numeric_triangle_ai(c_row_view_t rowmapC_,
-                                        c_lno_nnz_view_t entriesC_);
+  void KokkosSPGEMM_numeric_triangle_ai(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_);
 
  public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for SPEED SPGEMM
   ////DECL IS AT _speed.hpp
   //////////////////////////////////////////////////////////////////////////
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename a_scalar_view_t, typename b_row_view_t,
-            typename b_nnz_view_t, typename b_scalar_view_t,
-            typename c_row_view_t, typename c_nnz_view_t,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+            typename b_nnz_view_t, typename b_scalar_view_t, typename c_row_view_t, typename c_nnz_view_t,
             typename c_scalar_view_t, typename mpool_type>
   struct NumericCMEM_CPU;
 
-  template <typename a_row_view_t__, typename a_nnz_view_t__,
-            typename a_scalar_view_t__, typename b_row_view_t__,
-            typename b_nnz_view_t__, typename b_scalar_view_t__,
-            typename c_row_view_t__, typename c_nnz_view_t__,
+  template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_view_t__, typename b_row_view_t__,
+            typename b_nnz_view_t__, typename b_scalar_view_t__, typename c_row_view_t__, typename c_nnz_view_t__,
             typename c_scalar_view_t__, typename c_nnz_tmp_view_t>
   struct NumericCMEM;
 
@@ -379,12 +322,9 @@ class KokkosSPGEMM {
   /**
    * \brief Numeric phase with speed method
    */
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_speed(
-      c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  void KokkosSPGEMM_numeric_speed(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+                                  KokkosKernels::Impl::ExecSpaceType my_exec_space);
 
  public:
   /*
@@ -427,43 +367,32 @@ class KokkosSPGEMM {
   /////BELOW CODE IS TO for kkmem SPGEMM
   ////DECL IS AT _kkmem.hpp
   //////////////////////////////////////////////////////////////////////////
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename a_scalar_view_t, typename b_row_view_t,
-            typename b_nnz_view_t, typename b_scalar_view_t,
-            typename c_row_view_t, typename c_nnz_view_t,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+            typename b_nnz_view_t, typename b_scalar_view_t, typename c_row_view_t, typename c_nnz_view_t,
             typename c_scalar_view_t, typename pool_memory_type>
   struct PortableNumericCHASH;
 
  private:
   // KKMEM only difference is work memory does not use output memory for 2nd
   // level accumulator.
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_hash2(
-      c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  void KokkosSPGEMM_numeric_hash2(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+                                  KokkosKernels::Impl::ExecSpaceType my_exec_space);
 
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_hash(
-      c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  void KokkosSPGEMM_numeric_hash(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+                                 KokkosKernels::Impl::ExecSpaceType my_exec_space);
 #if defined(KOKKOS_ENABLE_OPENMP)
 #ifdef KOKKOSKERNELS_HAVE_OUTER
  public:
   // OUTER PRODUCT CODES
   struct Triplet;
 
-  template <typename a_col_view_t, typename a_nnz_view_t,
-            typename a_scalar_view_t, typename b_row_view_t,
-            typename b_nnz_view_t, typename b_scalar_view_t,
-            typename flop_row_view_t>
+  template <typename a_col_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+            typename b_nnz_view_t, typename b_scalar_view_t, typename flop_row_view_t>
   struct OuterProduct;
 
-  template <typename a_row_view_t, typename b_row_view_t,
-            typename flop_row_view_t>
+  template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t>
   struct FlopsPerRowOuter;
 
  private:
@@ -471,34 +400,25 @@ class KokkosSPGEMM {
   void sort_triplets(triplet_view_t triplets, size_t num_triplets);
 
   template <typename host_triplet_view_t>
-  void merge_triplets_on_slow_memory(host_triplet_view_t *triplets,
-                                     size_t num_blocks, size_t overall_size,
+  void merge_triplets_on_slow_memory(host_triplet_view_t *triplets, size_t num_blocks, size_t overall_size,
                                      host_triplet_view_t output_triplets);
 
-  template <typename triplet_view_t, typename c_row_view_t,
-            typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
-  size_t final_collapse_triplets_omp(triplet_view_t triplets,
-                                     size_t num_triplets,
-                                     c_row_view_t &rowmapC_,
-                                     c_lno_nnz_view_t &entriesC_,
-                                     c_scalar_nnz_view_t &valuesC_);
+  template <typename triplet_view_t, typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  size_t final_collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets, c_row_view_t &rowmapC_,
+                                     c_lno_nnz_view_t &entriesC_, c_scalar_nnz_view_t &valuesC_);
 
   template <typename triplet_view_t>
   size_t collapse_triplets(triplet_view_t triplets, size_t num_triplets);
 
   template <typename triplet_view_t>
-  size_t collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets,
-                               triplet_view_t out_triplets);
+  size_t collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets, triplet_view_t out_triplets);
 
 #endif
 #endif
 
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_outer(
-      c_row_view_t &rowmapC_, c_lno_nnz_view_t &entriesC_,
-      c_scalar_nnz_view_t &valuesC_,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  void KokkosSPGEMM_numeric_outer(c_row_view_t &rowmapC_, c_lno_nnz_view_t &entriesC_, c_scalar_nnz_view_t &valuesC_,
+                                  KokkosKernels::Impl::ExecSpaceType my_exec_space);
   //////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////
 
@@ -509,45 +429,38 @@ class KokkosSPGEMM {
   //////////////////////////////////////////////////////////////////////////
  public:
   // Functor to calculate how many flops is performed per row of C.
-  template <typename a_row_view_t, typename a_nnz_view_t, typename b_row_view_t,
-            typename b_nnz_view_t, typename c_row_view_t>
+  template <typename a_row_view_t, typename a_nnz_view_t, typename b_row_view_t, typename b_nnz_view_t,
+            typename c_row_view_t>
   struct FlopsPerRow;
   struct Cache;
 
  private:
-  void create_read_write_hg(size_t &overall_flops,
-                            row_lno_temp_work_view_t &c_flop_rowmap,
-                            row_lno_temp_work_view_t &c_comp_a_net_index,
-                            row_lno_temp_work_view_t &c_comp_b_net_index,
-                            nnz_lno_temp_work_view_t &c_comp_row_index,
-                            nnz_lno_temp_work_view_t &c_comp_col_index);
+  void create_read_write_hg(size_t &overall_flops, row_lno_temp_work_view_t &c_flop_rowmap,
+                            row_lno_temp_work_view_t &c_comp_a_net_index, row_lno_temp_work_view_t &c_comp_b_net_index,
+                            nnz_lno_temp_work_view_t &c_comp_row_index, nnz_lno_temp_work_view_t &c_comp_col_index);
 
   template <typename c_row_view_t>
   void print_read_write_cost(c_row_view_t rowmapC);
 
   template <typename c_row_view_t>
-  void read_write_cost(
-      nnz_lno_t num_colors, nnz_lno_t num_multi_colors,
-      nnz_lno_t num_parallel_colors, bool isGPU, int num_cores,
+  void read_write_cost(nnz_lno_t num_colors, nnz_lno_t num_multi_colors, nnz_lno_t num_parallel_colors, bool isGPU,
+                       int num_cores,
 
-      nnz_lno_t num_hyperthreads_in_core, nnz_lno_t hyper_threads_in_team,
+                       nnz_lno_t num_hyperthreads_in_core, nnz_lno_t hyper_threads_in_team,
 
-      int vectorlane, const int cache_line_size, const int data_size,
-      const int cache_size,
+                       int vectorlane, const int cache_line_size, const int data_size, const int cache_size,
 
-      nnz_lno_persistent_work_host_view_t color_xadj,
-      typename nnz_lno_persistent_work_view_t::HostMirror color_adj,
-      typename nnz_lno_persistent_work_view_t::HostMirror vertex_colors,
+                       nnz_lno_persistent_work_host_view_t color_xadj,
+                       typename nnz_lno_persistent_work_view_t::HostMirror color_adj,
+                       typename nnz_lno_persistent_work_view_t::HostMirror vertex_colors,
 
-      size_t overall_flops,
-      typename row_lno_temp_work_view_t::HostMirror c_flop_rowmap,
-      typename row_lno_temp_work_view_t::HostMirror c_comp_a_net_index,
-      typename row_lno_temp_work_view_t::HostMirror c_comp_b_net_index,
-      typename nnz_lno_temp_work_view_t::HostMirror c_comp_row_index,
-      typename nnz_lno_temp_work_view_t::HostMirror c_comp_col_index,
-      c_row_view_t rowmapC,
-      int write_type  // 0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR
-                      // 4-KKMULTICOLOR2
+                       size_t overall_flops, typename row_lno_temp_work_view_t::HostMirror c_flop_rowmap,
+                       typename row_lno_temp_work_view_t::HostMirror c_comp_a_net_index,
+                       typename row_lno_temp_work_view_t::HostMirror c_comp_b_net_index,
+                       typename nnz_lno_temp_work_view_t::HostMirror c_comp_row_index,
+                       typename nnz_lno_temp_work_view_t::HostMirror c_comp_col_index, c_row_view_t rowmapC,
+                       int write_type  // 0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR
+                                       // 4-KKMULTICOLOR2
   );
 
 #endif
@@ -557,10 +470,8 @@ class KokkosSPGEMM {
   /////BELOW CODE IS for public symbolic and numeric functions
   ////DECL IS AT _def.hpp
   //////////////////////////////////////////////////////////////////////////
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric(c_row_view_t &rowmapC_, c_lno_nnz_view_t &entriesC_,
-                            c_scalar_nnz_view_t &valuesC_);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  void KokkosSPGEMM_numeric(c_row_view_t &rowmapC_, c_lno_nnz_view_t &entriesC_, c_scalar_nnz_view_t &valuesC_);
   // TODO: These are references only for outer product algorithm.
   // If the algorithm is removed, then remove the references.
 
@@ -573,16 +484,12 @@ class KokkosSPGEMM {
   void KokkosSPGEMM_symbolic(c_row_view_t rowmapC_);
 
   template <typename c_row_view_t, typename c_nnz_view_t>
-  void write_matrix_to_plot(nnz_lno_t &num_colors,
-                            nnz_lno_persistent_work_host_view_t &h_color_xadj,
-                            nnz_lno_persistent_work_view_t &color_adj,
-                            c_row_view_t &rowmapC,
+  void write_matrix_to_plot(nnz_lno_t &num_colors, nnz_lno_persistent_work_host_view_t &h_color_xadj,
+                            nnz_lno_persistent_work_view_t &color_adj, c_row_view_t &rowmapC,
                             c_nnz_view_t &entryIndicesC_);
 
-  KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_,
-               const_a_lno_row_view_t row_mapA_,
-               const_a_lno_nnz_view_t entriesA_, bool transposeA_,
-               const_b_lno_row_view_t row_mapB_,
+  KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_, const_a_lno_row_view_t row_mapA_,
+               const_a_lno_nnz_view_t entriesA_, bool transposeA_, const_b_lno_row_view_t row_mapB_,
                const_b_lno_nnz_view_t entriesB_, bool transposeB_)
       : handle(handle_),
         a_row_cnt(m_),
@@ -601,20 +508,15 @@ class KokkosSPGEMM {
         use_dynamic_schedule(handle_->is_dynamic_scheduling()),
         KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
         MyEnumExecSpace(this->handle->get_handle_exec_space()),
-        spgemm_algorithm(
-            this->handle->get_spgemm_handle()->get_algorithm_type()),
-        spgemm_accumulator(
-            this->handle->get_spgemm_handle()->get_accumulator_type())
+        spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
+        spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
   //,row_mapC(), entriesC(), valsC()
   {}
 
-  KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_,
-               const_a_lno_row_view_t row_mapA_,
-               const_a_lno_nnz_view_t entriesA_,
-               const_a_scalar_nnz_view_t valsA_, bool transposeA_,
-               const_b_lno_row_view_t row_mapB_,
-               const_b_lno_nnz_view_t entriesB_,
-               const_b_scalar_nnz_view_t valsB_, bool transposeB_)
+  KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_, const_a_lno_row_view_t row_mapA_,
+               const_a_lno_nnz_view_t entriesA_, const_a_scalar_nnz_view_t valsA_, bool transposeA_,
+               const_b_lno_row_view_t row_mapB_, const_b_lno_nnz_view_t entriesB_, const_b_scalar_nnz_view_t valsB_,
+               bool transposeB_)
       : handle(handle_),
         a_row_cnt(m_),
         b_row_cnt(n_),
@@ -632,10 +534,8 @@ class KokkosSPGEMM {
         use_dynamic_schedule(handle_->is_dynamic_scheduling()),
         KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
         MyEnumExecSpace(this->handle->get_handle_exec_space()),
-        spgemm_algorithm(
-            this->handle->get_spgemm_handle()->get_algorithm_type()),
-        spgemm_accumulator(
-            this->handle->get_spgemm_handle()->get_accumulator_type())
+        spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
+        spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
   //,row_mapB(), entriesC(), valsC()
   {}
 
@@ -647,23 +547,20 @@ class KokkosSPGEMM {
   /***
    * \brief Functor to calculate the row sizes of C.
    */
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_original_row_view_t, typename b_compressed_row_view_t,
-            typename b_nnz_view_t,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t,
             typename c_row_view_t,  // typename nnz_lno_temp_work_view_t,
             typename pool_memory_space>
   struct StructureC;
 
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_original_row_view_t, typename b_compressed_row_view_t,
-            typename b_nnz_view_t,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t,
             typename c_row_view_t,  // typename nnz_lno_temp_work_view_t,
             typename pool_memory_space>
   struct StructureC_NC;
 
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_original_row_view_t, typename b_compressed_row_view_t,
-            typename b_nnz_view_t, typename c_row_view_t,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t, typename c_row_view_t,
             typename nnz_lno_temp_work_view_t, typename pool_memory_space>
   struct NonzeroesC;
 
@@ -671,8 +568,7 @@ class KokkosSPGEMM {
    * \brief Functor to calculate the max flops in a row of SPGEMM.
    *
    */
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_oldrow_view_t, typename b_row_view_t>
+  template <typename a_row_view_t, typename a_nnz_view_t, typename b_oldrow_view_t, typename b_row_view_t>
   struct PredicMaxRowNNZ;
 
   struct PredicMaxRowNNZIntersection;
@@ -687,86 +583,63 @@ class KokkosSPGEMM {
    * \param row_pointers_begin_B: beginning of the row indices for B
    * \param row_pointers_end_B: end of the row indices for B
    */
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_oldrow_view_t, typename b_row_view_t>
-  size_t getMaxRoughRowNNZ(nnz_lno_t m, a_row_view_t row_mapA_,
-                           a_nnz_view_t entriesA_,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename b_oldrow_view_t, typename b_row_view_t>
+  size_t getMaxRoughRowNNZ(nnz_lno_t m, a_row_view_t row_mapA_, a_nnz_view_t entriesA_,
 
-                           b_oldrow_view_t row_pointers_begin_B,
-                           b_row_view_t row_pointers_end_B,
+                           b_oldrow_view_t row_pointers_begin_B, b_row_view_t row_pointers_end_B,
                            size_type *flops_per_row = NULL);
 
-  size_t getMaxRoughRowNNZ_p(const nnz_lno_t m, const size_type annz,
-                             const size_type *row_mapA_,
+  size_t getMaxRoughRowNNZ_p(const nnz_lno_t m, const size_type annz, const size_type *row_mapA_,
                              const nnz_lno_t *entriesA_,
 
-                             const size_type *row_pointers_begin_B,
-                             const size_type *row_pointers_end_B);
+                             const size_type *row_pointers_begin_B, const size_type *row_pointers_end_B);
 
-  size_t getMaxRoughRowNNZIntersection_p(
-      const nnz_lno_t m, const size_type annz, const size_type *row_mapA_,
-      const nnz_lno_t *entriesA_,
+  size_t getMaxRoughRowNNZIntersection_p(const nnz_lno_t m, const size_type annz, const size_type *row_mapA_,
+                                         const nnz_lno_t *entriesA_,
 
-      const size_type *row_pointers_begin_B,
-      const size_type *row_pointers_end_B,
-      nnz_lno_t *min_result_row_for_each_row);
+                                         const size_type *row_pointers_begin_B, const size_type *row_pointers_end_B,
+                                         nnz_lno_t *min_result_row_for_each_row);
 
-  template <typename a_r_view_t, typename a_nnz_view_t,
-            typename b_original_row_view_t, typename b_compressed_row_view_t,
-            typename b_nnz_view_t, typename c_row_view_t>
+  template <typename a_r_view_t, typename a_nnz_view_t, typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t, typename c_row_view_t>
   void symbolic_c(nnz_lno_t m, a_r_view_t row_mapA_, a_nnz_view_t entriesA_,
 
-                  b_original_row_view_t old_row_mapB,
-                  b_compressed_row_view_t row_mapB_,
-                  b_nnz_view_t entriesSetIndex, b_nnz_view_t entriesSets,
+                  b_original_row_view_t old_row_mapB, b_compressed_row_view_t row_mapB_, b_nnz_view_t entriesSetIndex,
+                  b_nnz_view_t entriesSets,
 
                   c_row_view_t rowmapC, nnz_lno_t maxNumRoughNonzeros);
 
-  template <typename a_r_view_t, typename a_nnz_view_t,
-            typename b_original_row_view_t, typename b_compressed_row_view_t,
-            typename b_nnz_view_t, typename c_row_view_t>
-  void symbolic_c_no_compression(nnz_lno_t m, a_r_view_t row_mapA_,
-                                 a_nnz_view_t entriesA_,
+  template <typename a_r_view_t, typename a_nnz_view_t, typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t, typename c_row_view_t>
+  void symbolic_c_no_compression(nnz_lno_t m, a_r_view_t row_mapA_, a_nnz_view_t entriesA_,
 
-                                 b_original_row_view_t b_rowmap_begin,
-                                 b_compressed_row_view_t b_rowmap_end,
-                                 b_nnz_view_t entriesb_, c_row_view_t rowmapC,
-                                 nnz_lno_t maxNumRoughNonzeros);
+                                 b_original_row_view_t b_rowmap_begin, b_compressed_row_view_t b_rowmap_end,
+                                 b_nnz_view_t entriesb_, c_row_view_t rowmapC, nnz_lno_t maxNumRoughNonzeros);
 
   //////////////////////////////////////////////////////////////////////////
   ///// Jacobi-fused SpGEMM declarations
   //////////////////////////////////////////////////////////////////////////
  public:
-  template <
-      typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
-      typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
-      typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
-      typename dinv_view_t, typename pool_memory_type>
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+            typename b_nnz_view_t, typename b_scalar_view_t, typename c_row_view_t, typename c_nnz_view_t,
+            typename c_scalar_view_t, typename dinv_view_t, typename pool_memory_type>
   struct JacobiSpGEMMSparseAcc;
 
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename a_scalar_view_t, typename b_row_view_t,
-            typename b_nnz_view_t, typename b_scalar_view_t,
-            typename c_row_view_t, typename c_nnz_view_t,
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+            typename b_nnz_view_t, typename b_scalar_view_t, typename c_row_view_t, typename c_nnz_view_t,
             typename c_scalar_view_t, typename dinv_view_t, typename mpool_type>
   struct JacobiSpGEMMDenseAcc;
 
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t, typename dinv_view_t>
-  void KokkosSPGEMM_jacobi_sparseacc(
-      c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_,
-      typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
-      KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t, typename dinv_view_t>
+  void KokkosSPGEMM_jacobi_sparseacc(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+                                     typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
+                                     KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space);
 
  protected:
-  template <typename c_row_view_t, typename c_lno_nnz_view_t,
-            typename c_scalar_nnz_view_t, typename dinv_view_t>
-  void KokkosSPGEMM_jacobi_denseacc(
-      c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_,
-      typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space);
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t, typename dinv_view_t>
+  void KokkosSPGEMM_jacobi_denseacc(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+                                    typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
+                                    KokkosKernels::Impl::ExecSpaceType my_exec_space);
 
   // Utility to compute the number of pool chunks for L2 hashmap accumulators.
   // Uses free memory query for accelerators/GPUs but assumes infinite available
@@ -777,17 +650,13 @@ class KokkosSPGEMM {
   // chunk (no contention)
   template <typename Pool>
   size_t compute_num_pool_chunks(size_t chunk_bytes, size_t ideal_num_chunks) {
-    if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
-            typename Pool::execution_space>())
-      return ideal_num_chunks;
+    if (!KokkosKernels::Impl::kk_is_gpu_exec_space<typename Pool::execution_space>()) return ideal_num_chunks;
     size_t free_byte, total_byte;
-    KokkosKernels::Impl::kk_get_free_total_memory<typename Pool::memory_space>(
-        free_byte, total_byte);
+    KokkosKernels::Impl::kk_get_free_total_memory<typename Pool::memory_space>(free_byte, total_byte);
     size_t required_size = ideal_num_chunks * chunk_bytes;
     if (KOKKOSKERNELS_VERBOSE)
-      std::cout << "\tmempool required size:" << required_size
-                << " free_byte:" << free_byte << " total_byte:" << total_byte
-                << std::endl;
+      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte
+                << " total_byte:" << total_byte << std::endl;
     size_t num_chunks = ideal_num_chunks;
     // If there is not enough memory to safely allocate ideal_num_chunks, use
     // half the free memory, rounded down
@@ -808,29 +677,22 @@ class KokkosSPGEMM {
     nnz_lno_t maxNumRoughZeros = 0;
     size_t overall_flops       = 0;
     Kokkos::Timer timer1;
-    auto new_row_mapB_begin =
-        Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(0), b_row_cnt));
-    auto new_row_mapB_end =
-        Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(1), b_row_cnt + 1));
-    row_lno_persistent_work_view_t flops_per_row(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "original row flops"),
-        a_row_cnt);
+    auto new_row_mapB_begin = Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(0), b_row_cnt));
+    auto new_row_mapB_end   = Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(1), b_row_cnt + 1));
+    row_lno_persistent_work_view_t flops_per_row(Kokkos::view_alloc(Kokkos::WithoutInitializing, "original row flops"),
+                                                 a_row_cnt);
 
     // get maximum row flops.
-    maxNumRoughZeros = this->getMaxRoughRowNNZ(
-        a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end,
-        flops_per_row.data());
+    maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end,
+                                               flops_per_row.data());
 
     // calculate overal flops.
-    KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t,
-                                         MyExecSpace>(a_row_cnt, flops_per_row,
-                                                      overall_flops);
+    KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(a_row_cnt, flops_per_row,
+                                                                                      overall_flops);
     if (KOKKOSKERNELS_VERBOSE) {
       std::cout << "\tOriginal Max Row Flops:" << maxNumRoughZeros << std::endl;
-      std::cout << "\tOriginal overall_flops Flops:" << overall_flops
-                << std::endl;
-      std::cout << "\ttOriginal Max Row Flop Calc Time:" << timer1.seconds()
-                << std::endl;
+      std::cout << "\tOriginal overall_flops Flops:" << overall_flops << std::endl;
+      std::cout << "\ttOriginal Max Row Flop Calc Time:" << timer1.seconds() << std::endl;
     }
     sh->original_max_row_flops = maxNumRoughZeros;
     sh->original_overall_flops = overall_flops;

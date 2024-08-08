@@ -31,8 +31,8 @@ using namespace KokkosBatched;
 
 namespace Test {
 
-template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
-          typename PivViewType, typename WorkViewType, typename AlgoTagType>
+template <typename DeviceType, typename MatrixViewType, typename VectorViewType, typename PivViewType,
+          typename WorkViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorUTV {
   using execution_space = typename DeviceType::execution_space;
   MatrixViewType _r, _a, _acopy, _u, _v;
@@ -41,11 +41,9 @@ struct Functor_TestBatchedTeamVectorUTV {
   WorkViewType _w;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamVectorUTV(
-      const MatrixViewType &r, const MatrixViewType &a,
-      const MatrixViewType &acopy, const MatrixViewType &u,
-      const MatrixViewType &v, const PivViewType &p, const VectorViewType &x,
-      const VectorViewType &b, const WorkViewType &w)
+  Functor_TestBatchedTeamVectorUTV(const MatrixViewType &r, const MatrixViewType &a, const MatrixViewType &acopy,
+                                   const MatrixViewType &u, const MatrixViewType &v, const PivViewType &p,
+                                   const VectorViewType &x, const VectorViewType &b, const WorkViewType &w)
       : _r(r), _a(a), _acopy(acopy), _u(u), _v(v), _p(p), _x(x), _b(b), _w(w) {}
 
   template <typename MemberType>
@@ -71,22 +69,18 @@ struct Functor_TestBatchedTeamVectorUTV {
     // make diagonal dominant and set xx = 1,2,3,4,5
     const int m = aa.extent(0), r = rr.extent(1);
     if (m <= r) {
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
-                           [&](const int &i) {
-                             aa(i, i) += add_this;
-                             xx(i) = (i + 1);
-                           });
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) {
+        aa(i, i) += add_this;
+        xx(i) = (i + 1);
+      });
     } else {
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m * m),
-                           [=](const int &ij) {
-                             const int i = ij / m, j = ij % m;
-                             value_type tmp(0);
-                             for (int l = 0; l < r; ++l)
-                               tmp += rr(i, l) * rr(j, l);
-                             aa(i, j) = tmp;
-                           });
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
-                           [&](const int &i) { xx(i) = (i + 1); });
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m * m), [=](const int &ij) {
+        const int i = ij / m, j = ij % m;
+        value_type tmp(0);
+        for (int l = 0; l < r; ++l) tmp += rr(i, l) * rr(j, l);
+        aa(i, j) = tmp;
+      });
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { xx(i) = (i + 1); });
     }
     member.team_barrier();  // finish writing aa, xx
 
@@ -94,9 +88,8 @@ struct Functor_TestBatchedTeamVectorUTV {
     TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, aa, ac);
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
-                               Algo::Gemv::Unblocked>::invoke(member, one, aa,
-                                                              xx, zero, bb);
+    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(member, one, aa, xx, zero,
+                                                                                              bb);
     member.team_barrier();
 
     /// Solving Ax = b using UTV transformation
@@ -105,46 +98,41 @@ struct Functor_TestBatchedTeamVectorUTV {
 
     /// UTV = A P^T
     int matrix_rank(0);
-    TeamVectorUTV<MemberType, AlgoTagType>::invoke(member, aa, pp, uu, vv, ww,
-                                                   matrix_rank);
+    TeamVectorUTV<MemberType, AlgoTagType>::invoke(member, aa, pp, uu, vv, ww, matrix_rank);
     member.team_barrier();
     const auto range_upto_rank = Kokkos::pair<int, int>(0, matrix_rank);
-    auto um = Kokkos::subview(uu, Kokkos::ALL(), range_upto_rank);
-    auto am = Kokkos::subview(aa, range_upto_rank, range_upto_rank);
-    auto vm = Kokkos::subview(vv, range_upto_rank, Kokkos::ALL());
+    auto um                    = Kokkos::subview(uu, Kokkos::ALL(), range_upto_rank);
+    auto am                    = Kokkos::subview(aa, range_upto_rank, range_upto_rank);
+    auto vm                    = Kokkos::subview(vv, range_upto_rank, Kokkos::ALL());
     if (matrix_rank < m) {
       /// w = U^T b
-      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose,
-                                 Algo::Gemv::Unblocked>::invoke(member, one, um,
-                                                                bb, zero, ww);
+      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked>::invoke(member, one, um, bb, zero,
+                                                                                              ww);
       member.team_barrier();
 
       /// w = T^{-1} w
-      TeamVectorTrsv<MemberType, Uplo::Lower, Trans::NoTranspose, Diag::NonUnit,
-                     Algo::Trsv::Unblocked>::invoke(member, one, am, ww);
+      TeamVectorTrsv<MemberType, Uplo::Lower, Trans::NoTranspose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(
+          member, one, am, ww);
       member.team_barrier();
 
       /// x = V^T w
-      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose,
-                                 Algo::Gemv::Unblocked>::invoke(member, one, vm,
-                                                                ww, zero, xx);
+      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked>::invoke(member, one, vm, ww, zero,
+                                                                                              xx);
       member.team_barrier();
     } else {
       /// x = U^T b
-      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose,
-                                 Algo::Gemv::Unblocked>::invoke(member, one, um,
-                                                                bb, zero, xx);
+      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked>::invoke(member, one, um, bb, zero,
+                                                                                              xx);
       member.team_barrier();
 
       /// x = T^{-1} x
-      TeamVectorTrsv<MemberType, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-                     Algo::Trsv::Unblocked>::invoke(member, one, am, xx);
+      TeamVectorTrsv<MemberType, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(
+          member, one, am, xx);
       member.team_barrier();
     }
 
     /// x = P^T x
-    TeamVectorApplyPivot<MemberType, Side::Left, Direct::Backward>::invoke(
-        member, pp, xx);
+    TeamVectorApplyPivot<MemberType, Side::Left, Direct::Backward>::invoke(member, pp, xx);
     member.team_barrier();
   }
 
@@ -163,8 +151,8 @@ struct Functor_TestBatchedTeamVectorUTV {
   }
 };
 
-template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
-          typename PivViewType, typename WorkViewType, typename AlgoTagType>
+template <typename DeviceType, typename MatrixViewType, typename VectorViewType, typename PivViewType,
+          typename WorkViewType, typename AlgoTagType>
 void impl_test_batched_utv(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
@@ -182,8 +170,7 @@ void impl_test_batched_utv(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   if (BlkSize <= 3)
     Kokkos::fill_random(a, random, value_type(1.0));
   else
@@ -191,8 +178,7 @@ void impl_test_batched_utv(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Functor_TestBatchedTeamVectorUTV<DeviceType, MatrixViewType, VectorViewType,
-                                   PivViewType, WorkViewType, AlgoTagType>(
+  Functor_TestBatchedTeamVectorUTV<DeviceType, MatrixViewType, VectorViewType, PivViewType, WorkViewType, AlgoTagType>(
       r, a, acopy, u, v, p, x, b, w)
       .run();
 
@@ -236,46 +222,35 @@ void impl_test_batched_utv(const int N, const int BlkSize) {
 }
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType, typename IntType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ValueType, typename IntType, typename AlgoTagType>
 int test_batched_utv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        MatrixViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType>
-        VectorViewType;
-    typedef Kokkos::View<IntType **, Kokkos::LayoutLeft, DeviceType>
-        PivViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        WorkViewType;
-    Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType,
-                                PivViewType, WorkViewType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> MatrixViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> VectorViewType;
+    typedef Kokkos::View<IntType **, Kokkos::LayoutLeft, DeviceType> PivViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> WorkViewType;
+    Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType, PivViewType, WorkViewType, AlgoTagType>(0,
+                                                                                                                    10);
     for (int i = 1; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType,
-                                  PivViewType, WorkViewType, AlgoTagType>(1024,
-                                                                          i);
+      Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType, PivViewType, WorkViewType, AlgoTagType>(
+          1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        MatrixViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        VectorViewType;
-    typedef Kokkos::View<IntType **, Kokkos::LayoutRight, DeviceType>
-        PivViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        WorkViewType;
-    Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType,
-                                PivViewType, WorkViewType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> MatrixViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> VectorViewType;
+    typedef Kokkos::View<IntType **, Kokkos::LayoutRight, DeviceType> PivViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> WorkViewType;
+    Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType, PivViewType, WorkViewType, AlgoTagType>(0,
+                                                                                                                    10);
     for (int i = 1; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType,
-                                  PivViewType, WorkViewType, AlgoTagType>(1024,
-                                                                          i);
+      Test::impl_test_batched_utv<DeviceType, MatrixViewType, VectorViewType, PivViewType, WorkViewType, AlgoTagType>(
+          1024, i);
     }
   }
 #endif

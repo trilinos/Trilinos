@@ -26,8 +26,7 @@
 namespace KokkosGraph {
 namespace Impl {
 
-template <typename device_t, typename rowmap_t, typename entries_t,
-          typename lno_view_t>
+template <typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
 struct D2_MIS_RandomPriority {
   using exec_space     = typename device_t::execution_space;
   using mem_space      = typename device_t::memory_space;
@@ -66,17 +65,14 @@ struct D2_MIS_RandomPriority {
     // adjacent to the column.
     //  This counts up monotonically as vertices are eliminated (given status
     //  OUT_SET)
-    rowStatus = status_view_t(
-        Kokkos::ViewAllocateWithoutInitializing("RowStatus"), numVerts);
-    colStatus = status_view_t(
-        Kokkos::ViewAllocateWithoutInitializing("ColStatus"), numVerts);
+    rowStatus    = status_view_t(Kokkos::ViewAllocateWithoutInitializing("RowStatus"), numVerts);
+    colStatus    = status_view_t(Kokkos::ViewAllocateWithoutInitializing("ColStatus"), numVerts);
     allWorklists = Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space>(
         Kokkos::ViewAllocateWithoutInitializing("AllWorklists"), numVerts, 3);
   }
 
   struct RefreshRowStatus {
-    RefreshRowStatus(const status_view_t& rowStatus_,
-                     const worklist_t& worklist_, lno_t nvBits_, int round)
+    RefreshRowStatus(const status_view_t& rowStatus_, const worklist_t& worklist_, lno_t nvBits_, int round)
         : rowStatus(rowStatus_), worklist(worklist_), nvBits(nvBits_) {
       hashedRound = KokkosKernels::Impl::xorshiftHash<status_t>(round);
     }
@@ -85,8 +81,8 @@ struct D2_MIS_RandomPriority {
       lno_t i = worklist(w);
       // Combine vertex and round to get some pseudorandom priority bits that
       // change each round
-      status_t priority = KokkosKernels::Impl::xorshiftHash<status_t>(
-          KokkosKernels::Impl::xorshiftHash<status_t>(i) ^ hashedRound);
+      status_t priority =
+          KokkosKernels::Impl::xorshiftHash<status_t>(KokkosKernels::Impl::xorshiftHash<status_t>(i) ^ hashedRound);
       // Generate unique status per row, with IN_SET < status < OUT_SET,
       status_t newStatus = (status_t)(i + 1) | (priority << nvBits);
       if (newStatus == OUT_SET) newStatus--;
@@ -100,10 +96,8 @@ struct D2_MIS_RandomPriority {
   };
 
   struct RefreshColStatus {
-    RefreshColStatus(const status_view_t& colStatus_,
-                     const worklist_t& worklist_,
-                     const status_view_t& rowStatus_, const rowmap_t& rowmap_,
-                     const entries_t& entries_, lno_t nv_, lno_t worklistLen_)
+    RefreshColStatus(const status_view_t& colStatus_, const worklist_t& worklist_, const status_view_t& rowStatus_,
+                     const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, lno_t worklistLen_)
         : colStatus(colStatus_),
           worklist(worklist_),
           rowStatus(rowStatus_),
@@ -167,10 +161,8 @@ struct D2_MIS_RandomPriority {
   };
 
   struct DecideSetFunctor {
-    DecideSetFunctor(const status_view_t& rowStatus_,
-                     const status_view_t& colStatus_, const rowmap_t& rowmap_,
-                     const entries_t& entries_, lno_t nv_,
-                     const worklist_t& worklist_, lno_t worklistLen_)
+    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_,
+                     const entries_t& entries_, lno_t nv_, const worklist_t& worklist_, lno_t worklistLen_)
         : rowStatus(rowStatus_),
           colStatus(colStatus_),
           rowmap(rowmap_),
@@ -275,8 +267,7 @@ struct D2_MIS_RandomPriority {
   struct CompactInSet {
     CompactInSet(const status_view_t& rowStatus_, const lno_view_t& setList_)
         : rowStatus(rowStatus_), setList(setList_) {}
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInSet,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInSet, bool finalPass) const {
       if (rowStatus(i) == IN_SET) {
         if (finalPass) setList(lNumInSet) = i;
         lNumInSet++;
@@ -287,11 +278,9 @@ struct D2_MIS_RandomPriority {
   };
 
   struct MaskedWorklist {
-    MaskedWorklist(const lno_view_t& mask_, const worklist_t& worklist_)
-        : mask(mask_), worklist(worklist_) {}
+    MaskedWorklist(const lno_view_t& mask_, const worklist_t& worklist_) : mask(mask_), worklist(worklist_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInList,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInList, bool finalPass) const {
       if (mask(i) < 0) {
         if (finalPass) worklist(lNumInList) = i;
         lNumInList++;
@@ -302,12 +291,10 @@ struct D2_MIS_RandomPriority {
   };
 
   struct CompactWorklistFunctor {
-    CompactWorklistFunctor(const worklist_t& src_, const worklist_t& dst_,
-                           const status_view_t& status_)
+    CompactWorklistFunctor(const worklist_t& src_, const worklist_t& dst_, const status_view_t& status_)
         : src(src_), dst(dst_), status(status_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t w, lno_t& lNumInSet,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t w, lno_t& lNumInSet, bool finalPass) const {
       lno_t i    = src(w);
       status_t s = status(i);
       if (s != IN_SET && s != OUT_SET) {
@@ -329,15 +316,12 @@ struct D2_MIS_RandomPriority {
     KokkosKernels::Impl::sequential_fill(rowWorklist);
     KokkosKernels::Impl::sequential_fill(colWorklist);
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
-    auto execSpaceEnum =
-        KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
-    bool useTeams = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() &&
-                    (entries.extent(0) / numVerts >= 16);
-    int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(
-        numVerts, entries.extent(0), execSpaceEnum);
-    int round              = 0;
-    lno_t rowWorkLen       = numVerts;
-    lno_t colWorkLen       = numVerts;
+    auto execSpaceEnum       = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
+    bool useTeams    = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() && (entries.extent(0) / numVerts >= 16);
+    int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
+    int round        = 0;
+    lno_t rowWorkLen = numVerts;
+    lno_t colWorkLen = numVerts;
     int refreshColTeamSize = 0;
     int decideSetTeamSize  = 0;
     if (useTeams) {
@@ -345,71 +329,54 @@ struct D2_MIS_RandomPriority {
       // Compute the recommended team size for RefreshColStatus and
       // DecideSetFunctor (will be constant)
       {
-        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap,
-                                    entries, numVerts, colWorkLen);
-        refreshColTeamSize =
-            dummyPolicy.team_size_max(refreshCol, Kokkos::ParallelForTag());
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
+        refreshColTeamSize = dummyPolicy.team_size_max(refreshCol, Kokkos::ParallelForTag());
       }
       {
-        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries,
-                                   numVerts, rowWorklist, rowWorkLen);
-        decideSetTeamSize =
-            dummyPolicy.team_size_max(decideSet, Kokkos::ParallelForTag());
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
+        decideSetTeamSize = dummyPolicy.team_size_max(decideSet, Kokkos::ParallelForTag());
       }
     }
     while (true) {
       // Compute new row statuses
-      Kokkos::parallel_for(
-          range_pol(0, rowWorkLen),
-          RefreshRowStatus(rowStatus, rowWorklist, nvBits, round));
+      Kokkos::parallel_for(range_pol(0, rowWorkLen), RefreshRowStatus(rowStatus, rowWorklist, nvBits, round));
       // Compute new col statuses
       {
-        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap,
-                                    entries, numVerts, colWorkLen);
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
         if (useTeams)
-          Kokkos::parallel_for(team_pol((colWorkLen + refreshColTeamSize - 1) /
-                                            refreshColTeamSize,
-                                        refreshColTeamSize, vectorLength),
-                               refreshCol);
+          Kokkos::parallel_for(
+              team_pol((colWorkLen + refreshColTeamSize - 1) / refreshColTeamSize, refreshColTeamSize, vectorLength),
+              refreshCol);
         else
           Kokkos::parallel_for(range_pol(0, colWorkLen), refreshCol);
       }
       // Decide row statuses where enough information is available
       {
-        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries,
-                                   numVerts, rowWorklist, rowWorkLen);
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
         if (useTeams)
           Kokkos::parallel_for(
-              team_pol((rowWorkLen + decideSetTeamSize - 1) / decideSetTeamSize,
-                       decideSetTeamSize, vectorLength),
+              team_pol((rowWorkLen + decideSetTeamSize - 1) / decideSetTeamSize, decideSetTeamSize, vectorLength),
               decideSet);
         else
           Kokkos::parallel_for(range_pol(0, rowWorkLen), decideSet);
       }
       round++;
       // Compact row worklist
-      Kokkos::parallel_scan(
-          range_pol(0, rowWorkLen),
-          CompactWorklistFunctor(rowWorklist, thirdWorklist, rowStatus),
-          rowWorkLen);
+      Kokkos::parallel_scan(range_pol(0, rowWorkLen), CompactWorklistFunctor(rowWorklist, thirdWorklist, rowStatus),
+                            rowWorkLen);
       if (rowWorkLen == 0) break;
       std::swap(rowWorklist, thirdWorklist);
       // Compact col worklist
-      Kokkos::parallel_scan(
-          range_pol(0, colWorkLen),
-          CompactWorklistFunctor(colWorklist, thirdWorklist, colStatus),
-          colWorkLen);
+      Kokkos::parallel_scan(range_pol(0, colWorkLen), CompactWorklistFunctor(colWorklist, thirdWorklist, colStatus),
+                            colWorkLen);
       std::swap(colWorklist, thirdWorklist);
     }
     // now that every vertex has been decided IN_SET/OUT_SET,
     // build a compact list of the vertices which are IN_SET.
     lno_t numInSet = 0;
-    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus),
-                            numInSet);
-    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"),
-                       numInSet);
-    Kokkos::parallel_scan(range_pol(0, numVerts),
-                          CompactInSet(rowStatus, setList));
+    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus), numInSet);
+    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"), numInSet);
+    Kokkos::parallel_scan(range_pol(0, numVerts), CompactInSet(rowStatus, setList));
     return setList;
   }
 
@@ -422,20 +389,16 @@ struct D2_MIS_RandomPriority {
     lno_t rowWorkLen       = numVerts;
     lno_t colWorkLen       = numVerts;
     // Row worklist: initially only the non-masked vertices
-    Kokkos::parallel_scan(range_pol(0, numVerts),
-                          MaskedWorklist(mask, rowWorklist), rowWorkLen);
+    Kokkos::parallel_scan(range_pol(0, numVerts), MaskedWorklist(mask, rowWorklist), rowWorkLen);
     KokkosKernels::Impl::sequential_fill(colWorklist);
     // Need to fill rowStatus with OUT_SET initially so that vertices not in the
     // worklist don't affect algorithm
     Kokkos::deep_copy(rowStatus, ~(status_t(0)));
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
-    auto execSpaceEnum =
-        KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
-    bool useTeams = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() &&
-                    (entries.extent(0) / numVerts >= 16);
-    int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(
-        numVerts, entries.extent(0), execSpaceEnum);
-    int round              = 0;
+    auto execSpaceEnum       = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
+    bool useTeams    = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() && (entries.extent(0) / numVerts >= 16);
+    int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
+    int round        = 0;
     int refreshColTeamSize = 0;
     int decideSetTeamSize  = 0;
     if (useTeams) {
@@ -443,71 +406,54 @@ struct D2_MIS_RandomPriority {
       // Compute the recommended team size for RefreshColStatus and
       // DecideSetFunctor (will be constant)
       {
-        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap,
-                                    entries, numVerts, colWorkLen);
-        refreshColTeamSize =
-            dummyPolicy.team_size_max(refreshCol, Kokkos::ParallelForTag());
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
+        refreshColTeamSize = dummyPolicy.team_size_max(refreshCol, Kokkos::ParallelForTag());
       }
       {
-        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries,
-                                   numVerts, rowWorklist, rowWorkLen);
-        decideSetTeamSize =
-            dummyPolicy.team_size_max(decideSet, Kokkos::ParallelForTag());
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
+        decideSetTeamSize = dummyPolicy.team_size_max(decideSet, Kokkos::ParallelForTag());
       }
     }
     while (true) {
       // Compute new row statuses
-      Kokkos::parallel_for(
-          range_pol(0, rowWorkLen),
-          RefreshRowStatus(rowStatus, rowWorklist, nvBits, round));
+      Kokkos::parallel_for(range_pol(0, rowWorkLen), RefreshRowStatus(rowStatus, rowWorklist, nvBits, round));
       // Compute new col statuses
       {
-        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap,
-                                    entries, numVerts, colWorkLen);
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
         if (useTeams)
-          Kokkos::parallel_for(team_pol((colWorkLen + refreshColTeamSize - 1) /
-                                            refreshColTeamSize,
-                                        refreshColTeamSize, vectorLength),
-                               refreshCol);
+          Kokkos::parallel_for(
+              team_pol((colWorkLen + refreshColTeamSize - 1) / refreshColTeamSize, refreshColTeamSize, vectorLength),
+              refreshCol);
         else
           Kokkos::parallel_for(range_pol(0, colWorkLen), refreshCol);
       }
       // Decide row statuses where enough information is available
       {
-        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries,
-                                   numVerts, rowWorklist, rowWorkLen);
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
         if (useTeams)
           Kokkos::parallel_for(
-              team_pol((rowWorkLen + decideSetTeamSize - 1) / decideSetTeamSize,
-                       decideSetTeamSize, vectorLength),
+              team_pol((rowWorkLen + decideSetTeamSize - 1) / decideSetTeamSize, decideSetTeamSize, vectorLength),
               decideSet);
         else
           Kokkos::parallel_for(range_pol(0, rowWorkLen), decideSet);
       }
       round++;
       // Compact row worklist
-      Kokkos::parallel_scan(
-          range_pol(0, rowWorkLen),
-          CompactWorklistFunctor(rowWorklist, thirdWorklist, rowStatus),
-          rowWorkLen);
+      Kokkos::parallel_scan(range_pol(0, rowWorkLen), CompactWorklistFunctor(rowWorklist, thirdWorklist, rowStatus),
+                            rowWorkLen);
       if (rowWorkLen == 0) break;
       std::swap(rowWorklist, thirdWorklist);
       // Compact col worklist
-      Kokkos::parallel_scan(
-          range_pol(0, colWorkLen),
-          CompactWorklistFunctor(colWorklist, thirdWorklist, colStatus),
-          colWorkLen);
+      Kokkos::parallel_scan(range_pol(0, colWorkLen), CompactWorklistFunctor(colWorklist, thirdWorklist, colStatus),
+                            colWorkLen);
       std::swap(colWorklist, thirdWorklist);
     }
     // now that every vertex has been decided IN_SET/OUT_SET,
     // build a compact list of the vertices which are IN_SET.
     lno_t numInSet = 0;
-    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus),
-                            numInSet);
-    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"),
-                       numInSet);
-    Kokkos::parallel_scan(range_pol(0, numVerts),
-                          CompactInSet(rowStatus, setList));
+    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus), numInSet);
+    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"), numInSet);
+    Kokkos::parallel_scan(range_pol(0, numVerts), CompactInSet(rowStatus, setList));
     return setList;
   }
 
@@ -523,8 +469,7 @@ struct D2_MIS_RandomPriority {
   int nvBits;
 };
 
-template <typename device_t, typename rowmap_t, typename entries_t,
-          typename lno_view_t>
+template <typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
 struct D2_MIS_FixedPriority {
   using exec_space     = typename device_t::execution_space;
   using mem_space      = typename device_t::memory_space;
@@ -551,10 +496,8 @@ struct D2_MIS_FixedPriority {
         entries(entries_),
         numVerts(rowmap.extent(0) - 1),
         colUpdateBitset(numVerts),
-        worklist1(Kokkos::view_alloc(Kokkos::WithoutInitializing, "WL1"),
-                  numVerts),
-        worklist2(Kokkos::view_alloc(Kokkos::WithoutInitializing, "WL2"),
-                  numVerts) {
+        worklist1(Kokkos::view_alloc(Kokkos::WithoutInitializing, "WL1"), numVerts),
+        worklist2(Kokkos::view_alloc(Kokkos::WithoutInitializing, "WL2"), numVerts) {
     status_t i = numVerts + 1;
     nvBits     = 0;
     while (i) {
@@ -566,25 +509,19 @@ struct D2_MIS_FixedPriority {
     // adjacent to the column.
     //  This counts up monotonically as vertices are eliminated (given status
     //  OUT_SET)
-    rowStatus = status_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "RowStatus"), numVerts);
-    colStatus = status_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "ColStatus"), numVerts);
-    KokkosSparse::Impl::graph_min_max_degree<device_t, lno_t, rowmap_t>(
-        rowmap, minDegree, maxDegree);
+    rowStatus = status_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RowStatus"), numVerts);
+    colStatus = status_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "ColStatus"), numVerts);
+    KokkosSparse::Impl::graph_min_max_degree<device_t, lno_t, rowmap_t>(rowmap, minDegree, maxDegree);
     // Compute row statuses
     Kokkos::parallel_for(range_pol(0, numVerts),
-                         InitRowStatus(rowStatus, rowmap, numVerts, nvBits,
-                                       minDegree, maxDegree));
+                         InitRowStatus(rowStatus, rowmap, numVerts, nvBits, minDegree, maxDegree));
     // Compute col statuses
-    Kokkos::parallel_for(
-        range_pol(0, numVerts),
-        InitColStatus(colStatus, rowStatus, rowmap, entries, numVerts));
+    Kokkos::parallel_for(range_pol(0, numVerts), InitColStatus(colStatus, rowStatus, rowmap, entries, numVerts));
   }
 
   struct InitRowStatus {
-    InitRowStatus(const status_view_t& rowStatus_, const rowmap_t& rowmap_,
-                  lno_t nv_, lno_t nvBits_, lno_t minDeg_, lno_t maxDeg_)
+    InitRowStatus(const status_view_t& rowStatus_, const rowmap_t& rowmap_, lno_t nv_, lno_t nvBits_, lno_t minDeg_,
+                  lno_t maxDeg_)
         : rowStatus(rowStatus_),
           rowmap(rowmap_),
           nv(nv_),
@@ -605,8 +542,7 @@ struct D2_MIS_FixedPriority {
       status_t maxDegRange = (((status_t)1) << degBits) - 2;
       lno_t deg            = rowmap(i + 1) - rowmap(i);
       float degScore       = (float)(deg - minDeg) * invDegRange;
-      rowStatus(i) =
-          (status_t)(i + 1) + (((status_t)(degScore * maxDegRange)) << nvBits);
+      rowStatus(i)         = (status_t)(i + 1) + (((status_t)(degScore * maxDegRange)) << nvBits);
     }
 
     status_view_t rowStatus;
@@ -619,14 +555,9 @@ struct D2_MIS_FixedPriority {
   };
 
   struct InitColStatus {
-    InitColStatus(const status_view_t& colStatus_,
-                  const status_view_t& rowStatus_, const rowmap_t& rowmap_,
+    InitColStatus(const status_view_t& colStatus_, const status_view_t& rowStatus_, const rowmap_t& rowmap_,
                   const entries_t& entries_, lno_t nv_)
-        : colStatus(colStatus_),
-          rowStatus(rowStatus_),
-          rowmap(rowmap_),
-          entries(entries_),
-          nv(nv_) {}
+        : colStatus(colStatus_), rowStatus(rowStatus_), rowmap(rowmap_), entries(entries_), nv(nv_) {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const {
       // iterate over {i} union the neighbors of i, to find
@@ -652,10 +583,8 @@ struct D2_MIS_FixedPriority {
   };
 
   struct IterateStatusFunctor {
-    IterateStatusFunctor(const status_view_t& rowStatus_,
-                         const status_view_t& colStatus_,
-                         const rowmap_t& rowmap_, const entries_t& entries_,
-                         lno_t nv_, const lno_view_t& worklist_,
+    IterateStatusFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_,
+                         const entries_t& entries_, lno_t nv_, const lno_view_t& worklist_,
                          const bitset_t& colUpdateBitset_)
         : rowStatus(rowStatus_),
           colStatus(colStatus_),
@@ -715,15 +644,11 @@ struct D2_MIS_FixedPriority {
   };
 
   struct UpdateWorklistFunctor {
-    UpdateWorklistFunctor(const status_view_t& rowStatus_,
-                          const lno_view_t& oldWorklist_,
+    UpdateWorklistFunctor(const status_view_t& rowStatus_, const lno_view_t& oldWorklist_,
                           const lno_view_t& newWorklist_)
-        : rowStatus(rowStatus_),
-          oldWorklist(oldWorklist_),
-          newWorklist(newWorklist_) {}
+        : rowStatus(rowStatus_), oldWorklist(oldWorklist_), newWorklist(newWorklist_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t w, lno_t& lcount,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t w, lno_t& lcount, bool finalPass) const {
       // processing row i
       lno_t i = oldWorklist(w);
       // Bit i will be set when it's decided IN_SET/OUT_SET.
@@ -741,12 +666,10 @@ struct D2_MIS_FixedPriority {
   };
 
   struct ColRefreshWorklist {
-    ColRefreshWorklist(const bitset_t& colUpdateBitset_,
-                       const lno_view_t& refreshList_)
+    ColRefreshWorklist(const bitset_t& colUpdateBitset_, const lno_view_t& refreshList_)
         : colUpdateBitset(colUpdateBitset_), refreshList(refreshList_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lindex,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lindex, bool finalPass) const {
       if (colUpdateBitset.test(i)) {
         if (finalPass) {
           refreshList(lindex) = i;
@@ -761,10 +684,8 @@ struct D2_MIS_FixedPriority {
   };
 
   struct RefreshColStatus {
-    RefreshColStatus(const lno_view_t& worklist_,
-                     const status_view_t& rowStatus_,
-                     const status_view_t& colStatus_, const rowmap_t& rowmap_,
-                     const entries_t& entries_, lno_t nv_)
+    RefreshColStatus(const lno_view_t& worklist_, const status_view_t& rowStatus_, const status_view_t& colStatus_,
+                     const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_)
         : worklist(worklist_),
           rowStatus(rowStatus_),
           colStatus(colStatus_),
@@ -812,8 +733,7 @@ struct D2_MIS_FixedPriority {
   struct CompactInSet {
     CompactInSet(const status_view_t& rowStatus_, const lno_view_t& setList_)
         : rowStatus(rowStatus_), setList(setList_) {}
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInSet,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInSet, bool finalPass) const {
       if (rowStatus(i) == IN_SET) {
         if (finalPass) setList(lNumInSet) = i;
         lNumInSet++;
@@ -825,30 +745,22 @@ struct D2_MIS_FixedPriority {
 
   lno_view_t compute() {
     // Initialize first worklist to 0...numVerts
-    Kokkos::parallel_for(range_pol(0, numVerts),
-                         InitWorklistFunctor(worklist1));
+    Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(worklist1));
     lno_t workRemain = numVerts;
     while (workRemain) {
       // do another iteration
-      Kokkos::parallel_for(
-          range_pol(0, workRemain),
-          IterateStatusFunctor(rowStatus, colStatus, rowmap, entries, numVerts,
-                               worklist1, colUpdateBitset));
+      Kokkos::parallel_for(range_pol(0, workRemain), IterateStatusFunctor(rowStatus, colStatus, rowmap, entries,
+                                                                          numVerts, worklist1, colUpdateBitset));
       // And refresh the column statuses using the other worklist.
       lno_t colsToRefresh;
-      Kokkos::parallel_scan(range_pol(0, numVerts),
-                            ColRefreshWorklist(colUpdateBitset, worklist2),
-                            colsToRefresh);
+      Kokkos::parallel_scan(range_pol(0, numVerts), ColRefreshWorklist(colUpdateBitset, worklist2), colsToRefresh);
       Kokkos::parallel_for(range_pol(0, colsToRefresh),
-                           RefreshColStatus(worklist2, rowStatus, colStatus,
-                                            rowmap, entries, numVerts));
+                           RefreshColStatus(worklist2, rowStatus, colStatus, rowmap, entries, numVerts));
       // then build the next worklist with a scan. Also get the length of the
       // next worklist.
       lno_t newWorkRemain = 0;
-      Kokkos::parallel_scan(
-          range_pol(0, workRemain),
-          UpdateWorklistFunctor(rowStatus, worklist1, worklist2),
-          newWorkRemain);
+      Kokkos::parallel_scan(range_pol(0, workRemain), UpdateWorklistFunctor(rowStatus, worklist1, worklist2),
+                            newWorkRemain);
       // Finally, flip the worklists
       std::swap(worklist1, worklist2);
       workRemain = newWorkRemain;
@@ -856,12 +768,9 @@ struct D2_MIS_FixedPriority {
     // now that every vertex has been decided IN_SET/OUT_SET,
     // build a compact list of the vertices which are IN_SET.
     lno_t numInSet = 0;
-    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus),
-                            numInSet);
-    lno_view_t setList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "D2MIS"),
-                       numInSet);
-    Kokkos::parallel_scan(range_pol(0, numVerts),
-                          CompactInSet(rowStatus, setList));
+    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus), numInSet);
+    lno_view_t setList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "D2MIS"), numInSet);
+    Kokkos::parallel_scan(range_pol(0, numVerts), CompactInSet(rowStatus, setList));
     return setList;
   }
 
@@ -883,8 +792,7 @@ struct D2_MIS_FixedPriority {
   lno_view_t worklist2;
 };
 
-template <typename device_t, typename rowmap_t, typename entries_t,
-          typename labels_t>
+template <typename device_t, typename rowmap_t, typename entries_t, typename labels_t>
 struct D2_MIS_Aggregation {
   using exec_space     = typename device_t::execution_space;
   using mem_space      = typename device_t::memory_space;
@@ -904,15 +812,13 @@ struct D2_MIS_Aggregation {
       : rowmap(rowmap_),
         entries(entries_),
         numVerts(rowmap.extent(0) - 1),
-        labels(Kokkos::ViewAllocateWithoutInitializing("AggregateLabels"),
-               numVerts),
+        labels(Kokkos::ViewAllocateWithoutInitializing("AggregateLabels"), numVerts),
         roots("Root Status", numVerts) {
     Kokkos::deep_copy(labels, (lno_t)-1);
   }
 
   struct Phase1Functor {
-    Phase1Functor(lno_t numVerts__, const mis2_view& m1__,
-                  const rowmap_t& rowmap__, const entries_t& entries__,
+    Phase1Functor(lno_t numVerts__, const mis2_view& m1__, const rowmap_t& rowmap__, const entries_t& entries__,
                   const labels_t& labels__, const char_view_t& roots__)
         : numVerts_(numVerts__),
           m1_(m1__),
@@ -943,21 +849,16 @@ struct D2_MIS_Aggregation {
 
   void createPrimaryAggregates() {
     // Compute an MIS-2
-    D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, mis2_view> d2mis(
-        rowmap, entries);
+    D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, mis2_view> d2mis(rowmap, entries);
     mis2_view m1 = d2mis.compute();
     // Construct initial aggregates using roots and all direct neighbors
-    Kokkos::parallel_for(
-        range_pol(0, m1.extent(0)),
-        Phase1Functor(numVerts, m1, rowmap, entries, labels, roots));
+    Kokkos::parallel_for(range_pol(0, m1.extent(0)), Phase1Functor(numVerts, m1, rowmap, entries, labels, roots));
     numAggs = m1.extent(0);
   }
 
   struct CandAggSizesFunctor {
-    CandAggSizesFunctor(lno_t numVerts__, const labels_t& m2__,
-                        const rowmap_t& rowmap__, const entries_t& entries__,
-                        const labels_t& labels__,
-                        const labels_t& candAggSizes__)
+    CandAggSizesFunctor(lno_t numVerts__, const labels_t& m2__, const rowmap_t& rowmap__, const entries_t& entries__,
+                        const labels_t& labels__, const labels_t& candAggSizes__)
         : numVerts_(numVerts__),
           m2_(m2__),
           rowmap_(rowmap__),
@@ -988,11 +889,8 @@ struct D2_MIS_Aggregation {
   };
 
   struct ChoosePhase2AggsFunctor {
-    ChoosePhase2AggsFunctor(lno_t numVerts__, lno_t numAggs__,
-                            const labels_t& m2__, const rowmap_t& rowmap__,
-                            const entries_t& entries__,
-                            const labels_t& labels__,
-                            const labels_t& candAggSizes__,
+    ChoosePhase2AggsFunctor(lno_t numVerts__, lno_t numAggs__, const labels_t& m2__, const rowmap_t& rowmap__,
+                            const entries_t& entries__, const labels_t& labels__, const labels_t& candAggSizes__,
                             const char_view_t& roots__)
         : numVerts_(numVerts__),
           numAggs_(numAggs__),
@@ -1003,8 +901,7 @@ struct D2_MIS_Aggregation {
           candAggSizes_(candAggSizes__),
           roots_(roots__) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lid,
-                                           bool finalPass) const {
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lid, bool finalPass) const {
       lno_t aggSize = candAggSizes_(i);
       if (aggSize < 3) return;
       if (finalPass) {
@@ -1035,36 +932,27 @@ struct D2_MIS_Aggregation {
   };
 
   void createSecondaryAggregates() {
-    labels_t candAggSizes(
-        Kokkos::ViewAllocateWithoutInitializing("Phase2 Candidate Agg Sizes"),
-        numVerts);
+    labels_t candAggSizes(Kokkos::ViewAllocateWithoutInitializing("Phase2 Candidate Agg Sizes"), numVerts);
     // Compute a new MIS-2 from only unaggregated nodes
-    D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, labels_t> d2mis(
-        rowmap, entries);
+    D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, labels_t> d2mis(rowmap, entries);
     labels_t m2        = d2mis.compute(labels);
     lno_t numCandRoots = m2.extent(0);
     // Compute the sizes of would-be aggregates.
     Kokkos::parallel_for(range_pol(0, numCandRoots),
-                         CandAggSizesFunctor(numVerts, m2, rowmap, entries,
-                                             labels, candAggSizes));
+                         CandAggSizesFunctor(numVerts, m2, rowmap, entries, labels, candAggSizes));
     // Now, filter out the candidate aggs which are big enough, and create those
     // aggregates. Using a scan for this assigns IDs deterministically (unlike
     // an atomic counter).
     lno_t numNewAggs = 0;
-    Kokkos::parallel_scan(
-        range_pol(0, numCandRoots),
-        ChoosePhase2AggsFunctor(numVerts, numAggs, m2, rowmap, entries, labels,
-                                candAggSizes, roots),
-        numNewAggs);
+    Kokkos::parallel_scan(range_pol(0, numCandRoots),
+                          ChoosePhase2AggsFunctor(numVerts, numAggs, m2, rowmap, entries, labels, candAggSizes, roots),
+                          numNewAggs);
     numAggs += numNewAggs;
   }
 
   struct SizeAndConnectivityFunctor {
-    SizeAndConnectivityFunctor(lno_t numVerts__, const rowmap_t& rowmap__,
-                               const entries_t& entries__,
-                               const labels_t& labels__,
-                               const labels_t& connectivities__,
-                               const labels_t& aggSizes__)
+    SizeAndConnectivityFunctor(lno_t numVerts__, const rowmap_t& rowmap__, const entries_t& entries__,
+                               const labels_t& labels__, const labels_t& connectivities__, const labels_t& aggSizes__)
         : numVerts_(numVerts__),
           rowmap_(rowmap__),
           entries_(entries__),
@@ -1100,12 +988,9 @@ struct D2_MIS_Aggregation {
   };
 
   struct AssignLeftoverFunctor {
-    AssignLeftoverFunctor(lno_t numVerts__, const rowmap_t& rowmap__,
-                          const entries_t& entries__, const labels_t& labels__,
-                          const labels_t& labelsOld__,
-                          const labels_t& connectivities__,
-                          const labels_t& aggSizes__,
-                          const char_view_t& roots__)
+    AssignLeftoverFunctor(lno_t numVerts__, const rowmap_t& rowmap__, const entries_t& entries__,
+                          const labels_t& labels__, const labels_t& labelsOld__, const labels_t& connectivities__,
+                          const labels_t& aggSizes__, const char_view_t& roots__)
         : numVerts_(numVerts__),
           rowmap_(rowmap__),
           entries_(entries__),
@@ -1167,8 +1052,7 @@ struct D2_MIS_Aggregation {
         // Priorities: adjacent to root > connect > size
         if (trackedRootAdj[k] > bestRootAdj ||
             (trackedRootAdj[k] == bestRootAdj &&
-             ((trackedConnect[k] > bestConnect) ||
-              (trackedConnect[k] == bestConnect && s < bestSize)))) {
+             ((trackedConnect[k] > bestConnect) || (trackedConnect[k] == bestConnect && s < bestSize)))) {
           bestRootAdj = trackedRootAdj[k];
           bestConnect = trackedConnect[k];
           bestSize    = s;
@@ -1195,18 +1079,13 @@ struct D2_MIS_Aggregation {
     // neighboring aggregate.
     labels_t labelsOld("old", numVerts);
     Kokkos::deep_copy(labelsOld, labels);
-    labels_t connectivities(Kokkos::ViewAllocateWithoutInitializing("connect"),
-                            numVerts);
+    labels_t connectivities(Kokkos::ViewAllocateWithoutInitializing("connect"), numVerts);
     labels_t aggSizes("Phase3 Agg Sizes", numAggs);
-    Kokkos::parallel_for(
-        range_pol(0, numVerts),
-        SizeAndConnectivityFunctor(numVerts, rowmap, entries, labels,
-                                   connectivities, aggSizes));
+    Kokkos::parallel_for(range_pol(0, numVerts),
+                         SizeAndConnectivityFunctor(numVerts, rowmap, entries, labels, connectivities, aggSizes));
     // Now, join vertices to aggregates
-    Kokkos::parallel_for(
-        range_pol(0, numVerts),
-        AssignLeftoverFunctor(numVerts, rowmap, entries, labels, labelsOld,
-                              connectivities, aggSizes, roots));
+    Kokkos::parallel_for(range_pol(0, numVerts), AssignLeftoverFunctor(numVerts, rowmap, entries, labels, labelsOld,
+                                                                       connectivities, aggSizes, roots));
   }
 
   // phase 2 creates new aggregates in between the initial MIS-2 neighborhoods.

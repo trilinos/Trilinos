@@ -1,5 +1,77 @@
 # Change Log
 
+## [4.4.00](https://github.com/kokkos/kokkos-kernels/tree/4.4.00)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.3.01...4.4.00)
+
+### New Features
+
+#### Sparse
+- Add support for BSRs to sptrsv [\#2281](https://github.com/kokkos/kokkos-kernels/pull/2281)
+
+#### Batched updates
+- Add batched serial tbsv [\#2202](https://github.com/kokkos/kokkos-kernels/pull/2202)
+- Implement batched serial pttrf [\#2256](https://github.com/kokkos/kokkos-kernels/pull/2256)
+
+### Enhancements:
+- clang-format version update, increase column limit to 120. [\#2255](https://github.com/kokkos/kokkos-kernels/pull/2255)
+- Add big reformat commits to ignore revs for blame [\#2286](https://github.com/kokkos/kokkos-kernels/pull/2286)
+
+#### Sparse
+- RCM fixes, improvements [\#2254](https://github.com/kokkos/kokkos-kernels/pull/2254)
+- Support non-squared matrice in spmv_team [\#2273](https://github.com/kokkos/kokkos-kernels/pull/2273)
+
+#### Common utilities
+- c++17: add `[[fallthrough]]` attribute [\#1493](https://github.com/kokkos/kokkos-kernels/pull/1493)
+
+#### Misc updates
+
+#### TPL support
+- Performance improvement: disable cuBLAS dot wrapper [\#2206](https://github.com/kokkos/kokkos-kernels/pull/2206)
+- SPMV TPLs: improve profile region labels [\#2219](https://github.com/kokkos/kokkos-kernels/pull/2219)
+- cusparse spgemm: provide non-null row-ptr [\#2213](https://github.com/kokkos/kokkos-kernels/pull/2213)
+- spmv_mv wrappers for rocsparse [\#2233](https://github.com/kokkos/kokkos-kernels/pull/2233)
+- Update rocsparse algo defaults [\#2245](https://github.com/kokkos/kokkos-kernels/pull/2245)
+
+### Build System:
+- cmake: add CMake language support for CUDA/HIP [\#2173](https://github.com/kokkos/kokkos-kernels/pull/2173)
+- FindTPLROC*: updates to fix export of import targets [\#2250](https://github.com/kokkos/kokkos-kernels/pull/2250)
+
+### Documentation and Testing:
+- Enable 3 at2 builds [\#2210](https://github.com/kokkos/kokkos-kernels/pull/2210)
+- At2 ROCM+TPL fixes, remove volta70 too [\#2182](https://github.com/kokkos/kokkos-kernels/pull/2182)
+- Add AutoTester2 CI Configs (Sans Power9 & ROCM w/ TPLS) [\#2174](https://github.com/kokkos/kokkos-kernels/pull/2174)
+- Kokkos Kernels: initial security policy [\#2220](https://github.com/kokkos/kokkos-kernels/pull/2220)
+- Sparse - BsrMatrix: adding new wiki example for documentation [\#2228](https://github.com/kokkos/kokkos-kernels/pull/2228)
+- Add testing for transpose corner cases [\#2234](https://github.com/kokkos/kokkos-kernels/pull/2234)
+- spgemm unit test: change matrix value distribution [\#2241](https://github.com/kokkos/kokkos-kernels/pull/2241)
+
+- docs.yml: change kokkos version to latest release [\#2199](https://github.com/kokkos/kokkos-kernels/pull/2199)
+
+### Cleanup:
+- Bigger sptrsv cleanup [\#2280](https://github.com/kokkos/kokkos-kernels/pull/2280)
+- Sparse - SpGEMM: labeling spgemm_symbolic in TPL layer [\#2193](https://github.com/kokkos/kokkos-kernels/pull/2193)
+- A little sptrsv cleanup before the main block effort [\#2247](https://github.com/kokkos/kokkos-kernels/pull/2247)
+- sparse: replace macros with constexpr bools [\#2260](https://github.com/kokkos/kokkos-kernels/pull/2260)
+- spgemm: add profiling regions to native implementations [\#2253](https://github.com/kokkos/kokkos-kernels/pull/2253)
+
+### Bug Fixes:
+- Sparse - SpMV: removing calls to unsuported oneapi - MKL functions [\#2274](https://github.com/kokkos/kokkos-kernels/pull/2274)
+- Sycl gemv beta [\#2276](https://github.com/kokkos/kokkos-kernels/pull/2276)
+- Unify alignPtrTo implementation [\#2275](https://github.com/kokkos/kokkos-kernels/pull/2275)
+- SpMV: Test NaN, fix NaN handling when beta=0 [\#2188](https://github.com/kokkos/kokkos-kernels/pull/2188)
+- KokkosLapack_svd_tpl_spec_decl: defer to MKL spec when LAPACK also enabled [\#2171](https://github.com/kokkos/kokkos-kernels/pull/2171)
+- Fix spmv regressions [\#2204](https://github.com/kokkos/kokkos-kernels/pull/2204)
+- Sparse - CrsToBsr: fix type mismatch [\#2242](https://github.com/kokkos/kokkos-kernels/pull/2242)
+- Fix logic around merge path with TPLs [\#2240](https://github.com/kokkos/kokkos-kernels/pull/2240)
+- In deprecated spmv, fix Controls algorithm mapping [\#2246](https://github.com/kokkos/kokkos-kernels/pull/2246)
+- kokkoskernels_tpls.cmake: remove duplicates arguments when creating a… [\#2244](https://github.com/kokkos/kokkos-kernels/pull/2244)
+- sparse: spadd_symbolic fences before device values used on host [\#2259](https://github.com/kokkos/kokkos-kernels/pull/2259)
+- Fix warning about memcpy [\#2252](https://github.com/kokkos/kokkos-kernels/pull/2252)
+- sycl: use alternative `alignPtrTo` when SYCL is enabled (SpGEMM) [\#2262](https://github.com/kokkos/kokkos-kernels/pull/2262)
+- Rename `Impl::alignPtr` to `Impl::alignPtrTo`, allow it to infer argument type [\#2261](https://github.com/kokkos/kokkos-kernels/pull/2261)
+- Workarounds for removed cusparse functions [\#2270](https://github.com/kokkos/kokkos-kernels/pull/2270)
+- handle_t* -> std::unique_ptr<handle_t> in Bsr SpMV unit tests [\#2269](https://github.com/kokkos/kokkos-kernels/pull/2269)
+
 ## [4.3.01](https://github.com/kokkos/kokkos-kernels/tree/4.3.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.3.00...4.3.01)
 

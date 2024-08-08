@@ -40,15 +40,11 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 };
 }
 
-#define GEMM_ALGO_STRS                           \
-  "GemmTplAlgos::CUBLAS", "GemmTplAlgos::MAGMA", \
-      "GemmKokkosBatchedAlgos::KK_TEAM",         \
-      "GemmKokkosBatchedAlgos::KK_TEAMVECTOR",   \
-      "GemmKokkosBatchedAlgos::KK_SERIALSIMD",   \
-      "GemmKokkosBatchedAlgos::KK_TEAMSIMD",     \
-      "GemmKokkosBatchedAlgos::KK_SERIAL_RANK0", \
-      "GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM", \
-      "GemmKokkosBatchedAlgos::KK_DBLBUF"
+#define GEMM_ALGO_STRS                                                                  \
+  "GemmTplAlgos::CUBLAS", "GemmTplAlgos::MAGMA", "GemmKokkosBatchedAlgos::KK_TEAM",     \
+      "GemmKokkosBatchedAlgos::KK_TEAMVECTOR", "GemmKokkosBatchedAlgos::KK_SERIALSIMD", \
+      "GemmKokkosBatchedAlgos::KK_TEAMSIMD", "GemmKokkosBatchedAlgos::KK_SERIAL_RANK0", \
+      "GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM", "GemmKokkosBatchedAlgos::KK_DBLBUF"
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
 ///
@@ -96,8 +92,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 // clang-format on
 class BatchedGemmHandle : public BatchedKernelHandle {
  public:
-  BatchedGemmHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0, int vecLength = 0)
       : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
     if (!_tplParamsSet && kernelAlgoType == GemmTplAlgos::CUBLAS) {
@@ -116,26 +111,23 @@ class BatchedGemmHandle : public BatchedKernelHandle {
 #endif  // MAGMA
   };
 
-  BatchedGemmHandle(bool tplParamsSet,
-                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(bool tplParamsSet, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
+                    int vecLength = 0)
       : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
     _tplParamsSet = tplParamsSet;
   };
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-  BatchedGemmHandle(cublasHandle_t &cublas_handle,
-                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(cublasHandle_t &cublas_handle, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
+                    int vecLength = 0)
       : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
     _tplParamsSingleton.cublas_handle = &cublas_handle;
   };
 #endif  // CUBLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-  BatchedGemmHandle(magma_queue_t &magma_queue,
-                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(magma_queue_t &magma_queue, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
+                    int vecLength = 0)
       : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
     _tplParamsSingleton.magma_queue = &magma_queue;
   };
@@ -151,13 +143,10 @@ class BatchedGemmHandle : public BatchedKernelHandle {
 #endif
   }
 
-  std::string get_kernel_algo_type_str() const {
-    return gemm_algo_type_strs[_kernelAlgoType];
-  }
+  std::string get_kernel_algo_type_str() const { return gemm_algo_type_strs[_kernelAlgoType]; }
 
  private:
-  const char *gemm_algo_type_strs[GemmKokkosBatchedAlgos::N] = {BASE_ALGO_STRS,
-                                                                GEMM_ALGO_STRS};
+  const char *gemm_algo_type_strs[GemmKokkosBatchedAlgos::N] = {BASE_ALGO_STRS, GEMM_ALGO_STRS};
 };
 
 }  // namespace KokkosBatched

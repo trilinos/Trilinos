@@ -44,16 +44,13 @@ namespace Experimental {
  */
 
 template <class KernelHandle, typename InRowmap, typename InEntries>
-void graph_color_distance2(KernelHandle *handle,
-                           typename KernelHandle::nnz_lno_t num_verts,
-                           InRowmap row_map, InEntries row_entries) {
+void graph_color_distance2(KernelHandle *handle, typename KernelHandle::nnz_lno_t num_verts, InRowmap row_map,
+                           InEntries row_entries) {
   using size_type       = typename KernelHandle::size_type;
   using lno_t           = typename KernelHandle::nnz_lno_t;
-  using InternalRowmap  = Kokkos::View<const size_type *, Kokkos::LayoutLeft,
-                                      typename InRowmap::device_type,
+  using InternalRowmap  = Kokkos::View<const size_type *, Kokkos::LayoutLeft, typename InRowmap::device_type,
                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using InternalEntries = Kokkos::View<const lno_t *, Kokkos::LayoutLeft,
-                                       typename InEntries::device_type,
+  using InternalEntries = Kokkos::View<const lno_t *, Kokkos::LayoutLeft, typename InEntries::device_type,
                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   Kokkos::Timer timer;
   size_type nnz = row_entries.extent(0);
@@ -61,11 +58,9 @@ void graph_color_distance2(KernelHandle *handle,
   InternalEntries rowentries_internal(row_entries.data(), nnz);
   auto gch_d2 = handle->get_distance2_graph_coloring_handle();
   // note: last template argument 'false' means do distance-2, not bipartite
-  KokkosGraph::Impl::GraphColorDistance2<
-      typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap,
-      InternalEntries, false>
-      gc(num_verts, num_verts, rowmap_internal, rowentries_internal,
-         rowmap_internal, rowentries_internal, gch_d2);
+  KokkosGraph::Impl::GraphColorDistance2<typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap,
+                                         InternalEntries, false>
+      gc(num_verts, num_verts, rowmap_internal, rowentries_internal, rowmap_internal, rowentries_internal, gch_d2);
   gc.compute_distance2_color();
   gch_d2->add_to_overall_coloring_time(timer.seconds());
   gch_d2->set_coloring_time(timer.seconds());
@@ -104,24 +99,18 @@ void graph_color_distance2(KernelHandle *handle,
  */
 
 template <class KernelHandle, typename InRowmap, typename InEntries>
-void bipartite_color_rows(KernelHandle *handle,
-                          typename KernelHandle::nnz_lno_t num_rows,
-                          typename KernelHandle::nnz_lno_t num_columns,
-                          InRowmap row_map, InEntries row_entries,
+void bipartite_color_rows(KernelHandle *handle, typename KernelHandle::nnz_lno_t num_rows,
+                          typename KernelHandle::nnz_lno_t num_columns, InRowmap row_map, InEntries row_entries,
                           bool is_symmetric = false) {
   using execution_space = typename KernelHandle::HandleExecSpace;
   using size_type       = typename KernelHandle::size_type;
   using lno_t           = typename KernelHandle::nnz_lno_t;
-  using InternalRowmap  = Kokkos::View<const size_type *, Kokkos::LayoutLeft,
-                                      typename InRowmap::device_type,
+  using InternalRowmap  = Kokkos::View<const size_type *, Kokkos::LayoutLeft, typename InRowmap::device_type,
                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using InternalEntries = Kokkos::View<const lno_t *, Kokkos::LayoutLeft,
-                                       typename InEntries::device_type,
+  using InternalEntries = Kokkos::View<const lno_t *, Kokkos::LayoutLeft, typename InEntries::device_type,
                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using TRowmap         = Kokkos::View<size_type *, Kokkos::LayoutLeft,
-                               typename InRowmap::device_type>;
-  using TEntries        = Kokkos::View<lno_t *, Kokkos::LayoutLeft,
-                                typename InEntries::device_type>;
+  using TRowmap         = Kokkos::View<size_type *, Kokkos::LayoutLeft, typename InRowmap::device_type>;
+  using TEntries        = Kokkos::View<lno_t *, Kokkos::LayoutLeft, typename InEntries::device_type>;
   Kokkos::Timer timer;
   size_type nnz = row_entries.extent(0);
   TRowmap col_map;
@@ -130,8 +119,7 @@ void bipartite_color_rows(KernelHandle *handle,
     // Compute the transpose
     col_map     = TRowmap("Col map", num_columns + 1);
     col_entries = TEntries("Col entries", nnz);
-    KokkosSparse::Impl::transpose_graph<InRowmap, InEntries, TRowmap, TEntries,
-                                        TRowmap, execution_space>(
+    KokkosSparse::Impl::transpose_graph<InRowmap, InEntries, TRowmap, TEntries, TRowmap, execution_space>(
         num_rows, num_columns, row_map, row_entries, col_map, col_entries);
   }
   InternalRowmap rowmap_internal(row_map.data(), row_map.extent(0));
@@ -147,11 +135,9 @@ void bipartite_color_rows(KernelHandle *handle,
   }
   auto gch_d2 = handle->get_distance2_graph_coloring_handle();
   // note: last template argument 'true' means do bipartite one-sided
-  KokkosGraph::Impl::GraphColorDistance2<
-      typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap,
-      InternalEntries, true>
-      gc(num_rows, num_columns, rowmap_internal, rowentries_internal,
-         colmap_internal, colentries_internal, gch_d2);
+  KokkosGraph::Impl::GraphColorDistance2<typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap,
+                                         InternalEntries, true>
+      gc(num_rows, num_columns, rowmap_internal, rowentries_internal, colmap_internal, colentries_internal, gch_d2);
   gc.compute_distance2_color();
   gch_d2->add_to_overall_coloring_time(timer.seconds());
   gch_d2->set_coloring_time(timer.seconds());
@@ -185,31 +171,23 @@ void bipartite_color_rows(KernelHandle *handle,
  * return a view of length num_columns, containing the colors.
  */
 template <class KernelHandle, typename InRowmap, typename InEntries>
-void bipartite_color_columns(KernelHandle *handle,
-                             typename KernelHandle::nnz_lno_t num_rows,
-                             typename KernelHandle::nnz_lno_t num_columns,
-                             InRowmap row_map, InEntries row_entries) {
+void bipartite_color_columns(KernelHandle *handle, typename KernelHandle::nnz_lno_t num_rows,
+                             typename KernelHandle::nnz_lno_t num_columns, InRowmap row_map, InEntries row_entries) {
   using execution_space = typename KernelHandle::HandleExecSpace;
   using size_type       = typename KernelHandle::size_type;
   using lno_t           = typename KernelHandle::nnz_lno_t;
-  using InternalRowmap  = Kokkos::View<const size_type *, Kokkos::LayoutLeft,
-                                      typename InRowmap::device_type,
+  using InternalRowmap  = Kokkos::View<const size_type *, Kokkos::LayoutLeft, typename InRowmap::device_type,
                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using InternalEntries = Kokkos::View<const lno_t *, Kokkos::LayoutLeft,
-                                       typename InEntries::device_type,
+  using InternalEntries = Kokkos::View<const lno_t *, Kokkos::LayoutLeft, typename InEntries::device_type,
                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using TRowmap         = Kokkos::View<size_type *, Kokkos::LayoutLeft,
-                               typename InRowmap::device_type>;
-  using TEntries        = Kokkos::View<lno_t *, Kokkos::LayoutLeft,
-                                typename InEntries::device_type>;
+  using TRowmap         = Kokkos::View<size_type *, Kokkos::LayoutLeft, typename InRowmap::device_type>;
+  using TEntries        = Kokkos::View<lno_t *, Kokkos::LayoutLeft, typename InEntries::device_type>;
   Kokkos::Timer timer;
   size_type nnz = row_entries.extent(0);
   // Compute the transpose
   TRowmap col_map("Col map", num_columns + 1);
-  TEntries col_entries(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Col entries"), nnz);
-  KokkosSparse::Impl::transpose_graph<InRowmap, InEntries, TRowmap, TEntries,
-                                      TRowmap, execution_space>(
+  TEntries col_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Col entries"), nnz);
+  KokkosSparse::Impl::transpose_graph<InRowmap, InEntries, TRowmap, TEntries, TRowmap, execution_space>(
       num_rows, num_columns, row_map, row_entries, col_map, col_entries);
   // Get unmanaged views for both graph and its transpose
   InternalRowmap colmap_internal(col_map.data(), col_map.extent(0));
@@ -218,11 +196,9 @@ void bipartite_color_columns(KernelHandle *handle,
   InternalEntries rowentries_internal(row_entries.data(), nnz);
   auto gch_d2 = handle->get_distance2_graph_coloring_handle();
   // note: last template argument 'true' means do bipartite one-sided
-  KokkosGraph::Impl::GraphColorDistance2<
-      typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap,
-      InternalEntries, true>
-      gc(num_columns, num_rows, colmap_internal, colentries_internal,
-         rowmap_internal, rowentries_internal, gch_d2);
+  KokkosGraph::Impl::GraphColorDistance2<typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap,
+                                         InternalEntries, true>
+      gc(num_columns, num_rows, colmap_internal, colentries_internal, rowmap_internal, rowentries_internal, gch_d2);
   gc.compute_distance2_color();
   gch_d2->add_to_overall_coloring_time(timer.seconds());
   gch_d2->set_coloring_time(timer.seconds());

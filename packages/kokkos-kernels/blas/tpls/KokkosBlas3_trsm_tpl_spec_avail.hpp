@@ -29,38 +29,26 @@ struct trsm_tpl_spec_avail {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#define KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUTA, LAYOUTB,     \
-                                             MEMSPACE)                     \
-  template <class ExecSpace>                                               \
-  struct trsm_tpl_spec_avail<                                              \
-      ExecSpace,                                                           \
-      Kokkos::View<const SCALAR**, LAYOUTA,                                \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {           \
-    enum : bool { value = true };                                          \
+#define KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUTA, LAYOUTB, MEMSPACE)                        \
+  template <class ExecSpace>                                                                            \
+  struct trsm_tpl_spec_avail<ExecSpace,                                                                 \
+                             Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                    \
+                             Kokkos::View<SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEMSPACE>,       \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                 \
+    enum : bool { value = true };                                                                       \
   };
 
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft,
-                                     Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft,
-                                     Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
-                                     Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                                     Kokkos::HostSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                     Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
 
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutRight,
-                                     Kokkos::LayoutRight, Kokkos::HostSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutRight,
-                                     Kokkos::LayoutRight, Kokkos::HostSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
-                                     Kokkos::LayoutRight, Kokkos::LayoutRight,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight,
                                      Kokkos::HostSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
-                                     Kokkos::LayoutRight, Kokkos::LayoutRight,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::LayoutRight,
                                      Kokkos::HostSpace)
 
 #endif
@@ -68,61 +56,40 @@ KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
-#define KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUTA, LAYOUTB,   \
-                                               MEMSPACE)                   \
-  template <class ExecSpace>                                               \
-  struct trsm_tpl_spec_avail<                                              \
-      ExecSpace,                                                           \
-      Kokkos::View<const SCALAR**, LAYOUTA,                                \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {           \
-    enum : bool { value = true };                                          \
+#define KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUTA, LAYOUTB, MEMSPACE)                      \
+  template <class ExecSpace>                                                                            \
+  struct trsm_tpl_spec_avail<ExecSpace,                                                                 \
+                             Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                    \
+                             Kokkos::View<SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEMSPACE>,       \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                 \
+    enum : bool { value = true };                                                                       \
   };
 
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                        Kokkos::CudaUVMSpace)
 
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
-                                       Kokkos::LayoutRight, Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
-                                       Kokkos::LayoutRight,
-                                       Kokkos::CudaUVMSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight,
-                                       Kokkos::LayoutRight, Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight,
-                                       Kokkos::LayoutRight,
-                                       Kokkos::CudaUVMSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutRight, Kokkos::LayoutRight,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutRight, Kokkos::LayoutRight,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutRight, Kokkos::LayoutRight,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::LayoutRight,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutRight, Kokkos::LayoutRight,
+KOKKOSBLAS3_TRSM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::LayoutRight,
                                        Kokkos::CudaUVMSpace)
 
 #endif

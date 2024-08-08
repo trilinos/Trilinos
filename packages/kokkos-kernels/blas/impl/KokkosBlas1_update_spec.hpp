@@ -27,8 +27,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class execution_space, class XMV, class YMV, class ZMV,
-          int rank = ZMV::rank>
+template <class execution_space, class XMV, class YMV, class ZMV, int rank = ZMV::rank>
 struct update_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -42,21 +41,17 @@ struct update_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_UPDATE_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE,      \
-                                          MEM_SPACE)                       \
-  template <>                                                              \
-  struct update_eti_spec_avail<                                            \
-      EXEC_SPACE,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      1> {                                                                 \
-    enum : bool { value = true };                                          \
+#define KOKKOSBLAS1_UPDATE_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                      \
+  template <>                                                                                                         \
+  struct update_eti_spec_avail<                                                                                       \
+      EXEC_SPACE,                                                                                                     \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      1> {                                                                                                            \
+    enum : bool { value = true };                                                                                     \
   };
 
 //
@@ -66,21 +61,17 @@ struct update_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE,    \
-                                             MEM_SPACE)                     \
-  template <>                                                               \
-  struct update_eti_spec_avail<                                             \
-      EXEC_SPACE,                                                           \
-      Kokkos::View<const SCALAR**, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<const SCALAR**, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      2> {                                                                  \
-    enum : bool { value = true };                                           \
+#define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
+  template <>                                                                                                          \
+  struct update_eti_spec_avail<                                                                                        \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      2> {                                                                                                             \
+    enum : bool { value = true };                                                                                      \
   };
 
 // Include the actual specialization declarations
@@ -103,39 +94,27 @@ namespace Impl {
 /// Z(i,j) = alpha*X(i,j) + beta*Y(i,j) + gamma*Z(i,j),
 ///
 /// with special cases for alpha, beta, or gamma = 0.
-template <class execution_space, class XMV, class YMV, class ZMV,
-          int rank = ZMV::rank,
-          bool tpl_spec_avail =
-              update_tpl_spec_avail<execution_space, XMV, YMV, ZMV>::value,
-          bool eti_spec_avail =
-              update_eti_spec_avail<execution_space, XMV, YMV, ZMV>::value>
+template <class execution_space, class XMV, class YMV, class ZMV, int rank = ZMV::rank,
+          bool tpl_spec_avail = update_tpl_spec_avail<execution_space, XMV, YMV, ZMV>::value,
+          bool eti_spec_avail = update_eti_spec_avail<execution_space, XMV, YMV, ZMV>::value>
 struct Update {
-  static void update(const execution_space& space,
-                     const typename XMV::non_const_value_type& alpha,
-                     const XMV& X,
-                     const typename YMV::non_const_value_type& beta,
-                     const YMV& Y,
-                     const typename ZMV::non_const_value_type& gamma,
-                     const ZMV& Z);
+  static void update(const execution_space& space, const typename XMV::non_const_value_type& alpha, const XMV& X,
+                     const typename YMV::non_const_value_type& beta, const YMV& Y,
+                     const typename ZMV::non_const_value_type& gamma, const ZMV& Z);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Partial specialization for XMV, YMV, and ZMV rank-2 Views.
 template <class execution_space, class XMV, class YMV, class ZMV>
-struct Update<execution_space, XMV, YMV, ZMV, 2, false,
-              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Update<execution_space, XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
   typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
   typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATB;
   typedef Kokkos::ArithTraits<typename ZMV::non_const_value_type> ATC;
 
-  static void update(const execution_space& space,
-                     const typename XMV::non_const_value_type& alpha,
-                     const XMV& X,
-                     const typename YMV::non_const_value_type& beta,
-                     const YMV& Y,
-                     const typename ZMV::non_const_value_type& gamma,
-                     const ZMV& Z) {
+  static void update(const execution_space& space, const typename XMV::non_const_value_type& alpha, const XMV& X,
+                     const typename YMV::non_const_value_type& beta, const YMV& Y,
+                     const typename ZMV::non_const_value_type& gamma, const ZMV& Z) {
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 2>::update: X is not a Kokkos::View.");
@@ -145,32 +124,28 @@ struct Update<execution_space, XMV, YMV, ZMV, 2, false,
     static_assert(Kokkos::is_view<ZMV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 2>::update: Z is not a Kokkos::View.");
-    static_assert(std::is_same<typename ZMV::value_type,
-                               typename ZMV::non_const_value_type>::value,
+    static_assert(std::is_same<typename ZMV::value_type, typename ZMV::non_const_value_type>::value,
                   "KokkosBlas::Impl::Update<rank 2>::update: Z is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
     // Casting to int avoids compiler warnings about comparing
     // different kinds of enum values.
-    static_assert(
-        (int)ZMV::rank == (int)XMV::rank && (int)ZMV::rank == (int)YMV::rank,
-        "KokkosBlas::Impl::Update<rank 2>::update: "
-        "X, Y, and Z must have the same rank.");
+    static_assert((int)ZMV::rank == (int)XMV::rank && (int)ZMV::rank == (int)YMV::rank,
+                  "KokkosBlas::Impl::Update<rank 2>::update: "
+                  "X, Y, and Z must have the same rank.");
     static_assert(ZMV::rank == 2,
                   "KokkosBlas::Impl::Update<rank 2>::update: "
                   "XMV, YMV, and ZMV must have rank 2.");
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::update[ETI]"
-                                      : "KokkosBlas::update[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::update[ETI]"
+                                                                     : "KokkosBlas::update[noETI]");
 
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::update<> ETI specialization for < %s , %s , %s >\n",
-             typeid(XMV).name(), typeid(YMV).name(), typeid(ZMV).name());
+      printf("KokkosBlas1::update<> ETI specialization for < %s , %s , %s >\n", typeid(XMV).name(), typeid(YMV).name(),
+             typeid(ZMV).name());
     else {
-      printf(
-          "KokkosBlas1::update<> non-ETI specialization for < %s , %s , %s >\n",
-          typeid(XMV).name(), typeid(YMV).name(), typeid(ZMV).name());
+      printf("KokkosBlas1::update<> non-ETI specialization for < %s , %s , %s >\n", typeid(XMV).name(),
+             typeid(YMV).name(), typeid(ZMV).name());
     }
 #endif
 
@@ -203,24 +178,20 @@ struct Update<execution_space, XMV, YMV, ZMV, 2, false,
 
       if (numRows * numCols < static_cast<size_type>(INT_MAX)) {
         typedef int index_type;
-        V_Update_Generic<execution_space, decltype(X_0), decltype(Y_0),
-                         decltype(Z_0), index_type>(space, alpha, X_0, beta,
-                                                    Y_0, gamma, Z_0, a, b, c);
+        V_Update_Generic<execution_space, decltype(X_0), decltype(Y_0), decltype(Z_0), index_type>(
+            space, alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c);
       } else {
         typedef typename XMV::size_type index_type;
-        V_Update_Generic<execution_space, decltype(X_0), decltype(Y_0),
-                         decltype(Z_0), index_type>(space, alpha, X_0, beta,
-                                                    Y_0, gamma, Z_0, a, b, c);
+        V_Update_Generic<execution_space, decltype(X_0), decltype(Y_0), decltype(Z_0), index_type>(
+            space, alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c);
       }
     } else {
       if (numRows * numCols < static_cast<size_type>(INT_MAX)) {
         typedef int index_type;
-        MV_Update_Generic<execution_space, XMV, YMV, ZMV, index_type>(
-            space, alpha, X, beta, Y, gamma, Z, a, b, c);
+        MV_Update_Generic<execution_space, XMV, YMV, ZMV, index_type>(space, alpha, X, beta, Y, gamma, Z, a, b, c);
       } else {
         typedef typename XMV::size_type index_type;
-        MV_Update_Generic<execution_space, XMV, YMV, ZMV, index_type>(
-            space, alpha, X, beta, Y, gamma, Z, a, b, c);
+        MV_Update_Generic<execution_space, XMV, YMV, ZMV, index_type>(space, alpha, X, beta, Y, gamma, Z, a, b, c);
       }
     }
     Kokkos::Profiling::popRegion();
@@ -229,19 +200,15 @@ struct Update<execution_space, XMV, YMV, ZMV, 2, false,
 
 // Partial specialization for XV, YV, and ZV rank-1 Views.
 template <class execution_space, class XV, class YV, class ZV>
-struct Update<execution_space, XV, YV, ZV, 1, false,
-              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Update<execution_space, XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::size_type size_type;
   typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
   typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATB;
   typedef Kokkos::ArithTraits<typename ZV::non_const_value_type> ATC;
 
-  static void update(const execution_space& space,
-                     const typename XV::non_const_value_type& alpha,
-                     const XV& X, const typename YV::non_const_value_type& beta,
-                     const YV& Y,
-                     const typename ZV::non_const_value_type& gamma,
-                     const ZV& Z) {
+  static void update(const execution_space& space, const typename XV::non_const_value_type& alpha, const XV& X,
+                     const typename YV::non_const_value_type& beta, const YV& Y,
+                     const typename ZV::non_const_value_type& gamma, const ZV& Z) {
     // XV, YV, and ZV must be Kokkos::View specializations.
     static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
@@ -253,29 +220,25 @@ struct Update<execution_space, XV, YV, ZV, 1, false,
                   "KokkosBlas::Impl::"
                   "Update<rank 1>::update: Z is not a Kokkos::View.");
     // ZV must be nonconst (else it can't be an output argument).
-    static_assert(std::is_same<typename ZV::value_type,
-                               typename ZV::non_const_value_type>::value,
+    static_assert(std::is_same<typename ZV::value_type, typename ZV::non_const_value_type>::value,
                   "KokkosBlas::Impl::Update<rank 1>::update: Z is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert(
-        (int)ZV::rank == (int)XV::rank && (int)ZV::rank == (int)YV::rank,
-        "KokkosBlas::Impl::Update<rank 1>::update: "
-        "X, Y, and Z must have the same rank.");
+    static_assert((int)ZV::rank == (int)XV::rank && (int)ZV::rank == (int)YV::rank,
+                  "KokkosBlas::Impl::Update<rank 1>::update: "
+                  "X, Y, and Z must have the same rank.");
     static_assert(ZV::rank == 1,
                   "KokkosBlas::Impl::Update<rank 1>::update: "
                   "XV, YV, and ZV must have rank 1.");
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::update[ETI]"
-                                      : "KokkosBlas::update[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::update[ETI]"
+                                                                     : "KokkosBlas::update[noETI]");
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::update<> ETI specialization for < %s , %s , %s >\n",
-             typeid(XV).name(), typeid(YV).name(), typeid(ZV).name());
+      printf("KokkosBlas1::update<> ETI specialization for < %s , %s , %s >\n", typeid(XV).name(), typeid(YV).name(),
+             typeid(ZV).name());
     else {
-      printf(
-          "KokkosBlas1::update<> non-ETI specialization for < %s , %s , %s >\n",
-          typeid(XV).name(), typeid(YV).name(), typeid(ZV).name());
+      printf("KokkosBlas1::update<> non-ETI specialization for < %s , %s , %s >\n", typeid(XV).name(),
+             typeid(YV).name(), typeid(ZV).name());
     }
 #endif
 
@@ -299,15 +262,12 @@ struct Update<execution_space, XV, YV, ZV, 1, false,
       c = 2;
     }
 
-    if (numRows < static_cast<size_type>(INT_MAX) &&
-        numRows * numCols < static_cast<size_type>(INT_MAX)) {
+    if (numRows < static_cast<size_type>(INT_MAX) && numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      V_Update_Generic<execution_space, XV, YV, ZV, index_type>(
-          space, alpha, X, beta, Y, gamma, Z, a, b, c);
+      V_Update_Generic<execution_space, XV, YV, ZV, index_type>(space, alpha, X, beta, Y, gamma, Z, a, b, c);
     } else {
       typedef typename XV::size_type index_type;
-      V_Update_Generic<execution_space, XV, YV, ZV, index_type>(
-          space, alpha, X, beta, Y, gamma, Z, a, b, c);
+      V_Update_Generic<execution_space, XV, YV, ZV, index_type>(space, alpha, X, beta, Y, gamma, Z, a, b, c);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -326,32 +286,24 @@ struct Update<execution_space, XV, YV, ZV, 1, false,
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS1_UPDATE_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,       \
-                                         MEM_SPACE)                        \
-  extern template struct Update<                                           \
-      EXEC_SPACE,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
+#define KOKKOSBLAS1_UPDATE_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
+  extern template struct Update<                                                                                      \
+      EXEC_SPACE,                                                                                                     \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       1, false, true>;
 
-#define KOKKOSBLAS1_UPDATE_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,       \
-                                         MEM_SPACE)                        \
-  template struct Update<                                                  \
-      EXEC_SPACE,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
+#define KOKKOSBLAS1_UPDATE_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
+  template struct Update<                                                                                             \
+      EXEC_SPACE,                                                                                                     \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       1, false, true>;
 
 //
@@ -362,32 +314,24 @@ struct Update<execution_space, XV, YV, ZV, 1, false,
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,     \
-                                            MEM_SPACE)                      \
-  extern template struct Update<                                            \
-      EXEC_SPACE,                                                           \
-      Kokkos::View<const SCALAR**, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<const SCALAR**, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+#define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                     \
+  extern template struct Update<                                                                                       \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       2, false, true>;
 
-#define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,     \
-                                            MEM_SPACE)                      \
-  template struct Update<                                                   \
-      EXEC_SPACE,                                                           \
-      Kokkos::View<const SCALAR**, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<const SCALAR**, LAYOUT,                                  \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+#define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                     \
+  template struct Update<                                                                                              \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       2, false, true>;
 
 #include <KokkosBlas1_update_tpl_spec_decl.hpp>
