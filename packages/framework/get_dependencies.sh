@@ -19,6 +19,11 @@ function tril_genconfig_assert_pwd_is_git_repo() {
   fi
 }
 
+function retry_command() {
+  cmd=$1
+  ${cmd} || { echo "Retrying after 1m..." ; sleep 60 ; ${cmd} ; } || { echo "Retrying after 5m..." ; sleep 300 ; ${cmd} ; }
+}
+
 function tril_genconfig_clone_or_update_repo() {
   git_url=$1
   sub_dir=$2
@@ -33,10 +38,12 @@ function tril_genconfig_clone_or_update_repo() {
     echo "STATUS: ${sub_dir}: Fetching remote repo"
     cd ${sub_dir}
     tril_genconfig_assert_pwd_is_git_repo
-    git fetch
+    cmd="git fetch"
+    retry_command "${cmd}"
   else
     echo "STATUS: ${sub_dir}: Cloning from '${git_url}'"
-    git clone ${git_url} ${sub_dir}
+    cmd="git clone ${git_url} ${sub_dir}"
+    retry_command "${cmd}"
     cd ${sub_dir}
   fi
 
@@ -52,7 +59,8 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ "${has_submodules}" == "has-submodules" ]] ; then
     echo
     echo "STATUS: ${sub_dir}: Update submodules"
-    git submodule update --force --init --recursive
+    cmd="git submodule update --force --init --recursive"
+    retry_command "${cmd}"
     cd - > /dev/null
   elif [[ "${has_submodules}" != "" ]] ; then
     echo "ERROR: argument '${has_submodules}' not allowed!  Only 'has-submodules' or ''!"
