@@ -1515,7 +1515,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
       auto row_map = A2->graph.row_map;
       Kokkos::RangePolicy<execution_space> policy(0, vals.size());
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA(size_t i) {
-        if(i < row_map(1)) { // just do 1st row
+        if(i < size_t(row_map(1))) { // just do 1st row
           vals(i) = vals(i) * vals(i);
         }
       });
