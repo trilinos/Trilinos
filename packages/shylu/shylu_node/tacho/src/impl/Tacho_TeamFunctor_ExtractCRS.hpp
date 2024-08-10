@@ -21,24 +21,21 @@
 namespace Tacho {
 
 
-template <typename rowptr_view>
 struct rowptr_sum {
-  rowptr_view _rowptr;
+  int* _rowptr;
 
-  rowptr_sum(rowptr_view rowptr)
+  rowptr_sum(int* rowptr)
       : _rowptr(rowptr) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type i, ordinal_type& update,
                   const bool is_final) const {
-    const ordinal_type val_i = _rowptr(i);
+    const ordinal_type val_i = _rowptr[i];
     update += val_i;
     if (is_final) {
-      _rowptr(i) = update;
+      _rowptr[i] = update;
     }
   }
-
-  ordinal_type nnz() { return _rowptr(_rowptr.extent(0)); }
 };
 
 template <typename SupernodeInfoType> struct TeamFunctor_ExtractCrs {
@@ -48,16 +45,9 @@ public:
   typedef SupernodeInfoType supernode_info_type;
   typedef typename supernode_info_type::supernode_type supernode_type;
 
-  typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
-  typedef typename supernode_info_type::size_type_array size_type_array;
-
   typedef typename supernode_info_type::value_type value_type;
-  typedef typename supernode_info_type::value_type_array value_type_array;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-  typedef typename supernode_info_type::rowptr_view rowptr_view;
-  typedef typename supernode_info_type::colind_view colind_view;
-  typedef typename supernode_info_type::nzvals_view nzvals_view;
+  typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
 
 private:
   supernode_info_type _info;
@@ -66,13 +56,13 @@ private:
   ordinal_type _m;
 
   // in CRS format
-  rowptr_view _rowptr;
-  colind_view _colind;
-  nzvals_view _nzvals;
+  int* _rowptr;
+  int* _colind;
+  value_type* _nzvals;
   // in CRS format, transpose
-  rowptr_view _rowptrT;
-  colind_view _colindT;
-  nzvals_view _nzvalsT;
+  int* _rowptrT;
+  int* _colindT;
+  value_type* _nzvalsT;
   // pivot
   ordinal_type_array _piv;
 
@@ -94,13 +84,13 @@ public:
     _pend = pend;
   }
 
-  inline void setRowPtr(rowptr_view &rowptr) { _rowptr = rowptr; }
-  inline void setCrsView(colind_view &colind, nzvals_view &nzvals) {
+  inline void setRowPtr(int* rowptr) { _rowptr = rowptr; }
+  inline void setCrsView(int *colind, value_type *nzvals) {
     _colind = colind;
     _nzvals = nzvals;
   }
-  inline void setRowPtrT(rowptr_view &rowptrT) { _rowptrT = rowptrT; }
-  inline void setCrsViewT(colind_view &colindT, nzvals_view &nzvalsT) {
+  inline void setRowPtrT(int* rowptrT) { _rowptrT = rowptrT; }
+  inline void setCrsViewT(int *colindT, value_type *nzvalsT) {
     _colindT = colindT;
     _nzvalsT = nzvalsT;
   }
@@ -140,7 +130,7 @@ public:
       }
       // add diagonal entry
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, offm-row_id),
-                          [&](const int& i) { _rowptr(row_id+i+1) = 1; });
+                          [&](const int& i) { _rowptr[row_id+i+1] = 1; });
       #endif
       if (p < _pend) {
         if (s.m > 0) {
@@ -150,10 +140,10 @@ public:
           UnmanagedViewType<value_type_matrix> AT(aptr, s.m, s.n);
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, s.m),
                                [&](const int& i) { 
-                                 _rowptr(1+i+offm) = 0;
+                                 _rowptr[1+i+offm] = 0;
                                  for (ordinal_type j = 0; j < s.n; j++) {
                                    if (AT(i,j) != zero) {
-                                     _rowptr(1+i+offm) ++;
+                                     _rowptr[1+i+offm] ++;
                                    }
                                  }
                                });
@@ -187,10 +177,10 @@ public:
       // insert diagonals for the missing rows between previous and this block
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, offm-row_id),
                           [&](const int& i) {
-                            int nnz = _rowptr(row_id+i);
-                            _colind(nnz) = row_id+i;
-                            _nzvals(nnz) = one;
-                            _rowptr(row_id+i)++;
+                            int nnz = _rowptr[row_id+i];
+                            _colind[nnz] = row_id+i;
+                            _nzvals[nnz] = one;
+                            _rowptr[row_id+i]++;
                           });
       #endif
       if (p < _pend) {
@@ -204,10 +194,10 @@ public:
                                  ordinal_type j;
                                  for (ordinal_type j = i; j < s.m; j++) {
                                    if (AT(i,j) != zero) {
-                                     int nnz = _rowptr(i+offm);
-                                     _colind(nnz) = j+offm;
-                                     _nzvals(nnz) = AT(i,j);
-                                     _rowptr(i+offm) ++;
+                                     int nnz = _rowptr[i+offm];
+                                     _colind[nnz] = j+offm;
+                                     _nzvals[nnz] = AT(i,j);
+                                     _rowptr[i+offm] ++;
                                    }
                                  }
                                  // off-diagonal blocksa
@@ -215,10 +205,10 @@ public:
                                  for (ordinal_type id = s.sid_col_begin + 1; id < s.sid_col_end - 1; id++) {
                                    for (ordinal_type k = _info.sid_block_colidx(id).second; k < _info.sid_block_colidx(id + 1).second; k++) {
                                      if (AT(i,j) != zero) {
-                                       int nnz = _rowptr(i+offm);
-                                       _colind(nnz) = _info.gid_colidx(k+offn);
-                                       _nzvals(nnz) = AT(i,j);
-                                       _rowptr(i+offm) ++;
+                                       int nnz = _rowptr[i+offm];
+                                       _colind[nnz] = _info.gid_colidx(k+offn);
+                                       _nzvals[nnz] = AT(i,j);
+                                       _rowptr[i+offm] ++;
                                      }
                                      j++;
                                    }
@@ -255,7 +245,7 @@ public:
       }
       // add diagonal entry
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, offm-row_id),
-                          [&](const int& i) { Kokkos::atomic_add(&(_rowptr(row_id+i+1)), 1); });
+                          [&](const int& i) { Kokkos::atomic_add(&(_rowptr[row_id+i+1]), 1); });
       #endif
       if (p < _pend) {
         // extract this supernode (AL is stored by col)
@@ -267,7 +257,7 @@ public:
                                  // first extract diagnal block (each thread extract row in parallel)
                                  for (ordinal_type i = 0; i < s.m; i++) {
                                    if (AL(i,j) != zero) {
-                                     Kokkos::atomic_add(&(_rowptr(1+i+offm)), 1);
+                                     Kokkos::atomic_add(&(_rowptr[1+i+offm]), 1);
                                    }
                                  }
                                  // off-diagonals (each thread extract col, needing atomic-add)
@@ -276,7 +266,7 @@ public:
                                    for (ordinal_type k = _info.sid_block_colidx(id).second; k < _info.sid_block_colidx(id + 1).second; k++) {
                                      if (AL(i, j) != zero) {
                                        ordinal_type gid_i = _info.gid_colidx(k+offn);
-                                       Kokkos::atomic_add(&(_rowptr(1+gid_i)), 1);
+                                       Kokkos::atomic_add(&(_rowptr[1+gid_i]), 1);
                                      }
                                      i++;
                                    }
@@ -312,9 +302,9 @@ public:
       // add diagonal entry
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, offm-row_id),
                           [&](const int& i) {
-                            ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr(row_id+i)), 1);
-                            _colind(nnz) = row_id+i;
-                            _nzvals(nnz) = one;
+                            ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr[row_id+i]), 1);
+                            _colind[nnz] = row_id+i;
+                            _nzvals[nnz] = one;
                           });
       #endif
       if (p < _pend) {
@@ -332,9 +322,9 @@ public:
                                  // diagnal block 
                                  for (ordinal_type i = 0; i < s.m; i++) {
                                    if (AL(i,j) != zero) {
-                                     ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr(offm+i)), 1);
-                                     _colind(nnz) = gid_j;
-                                     _nzvals(nnz) = AL(i,j);
+                                     ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr[offm+i]), 1);
+                                     _colind[nnz] = gid_j;
+                                     _nzvals[nnz] = AL(i,j);
                                    }
                                  }
                                  // off-diagonals (each thread extract col, needing atomic-add)
@@ -343,9 +333,9 @@ public:
                                    for (ordinal_type k = _info.sid_block_colidx(id).second; k < _info.sid_block_colidx(id + 1).second; k++) {
                                      if (AL(i, j) != zero) {
                                        ordinal_type gid_i = _info.gid_colidx(k+offn);
-                                       ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr(gid_i)), 1);
-                                       _colind(nnz) = gid_j;
-                                       _nzvals(nnz) = AL(i,j);
+                                       ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr[gid_i]), 1);
+                                       _colind[nnz] = gid_j;
+                                       _nzvals[nnz] = AL(i,j);
                                      }
                                      i++;
                                    }
@@ -361,17 +351,17 @@ public:
   // Functors to transpose
   KOKKOS_INLINE_FUNCTION void operator()(const TransPtrTag &, const int i) const {
     // count offset rowptrT
-    for (ordinal_type k = _rowptr(i); k < _rowptr(i+1); k++) {
-      Kokkos::atomic_add(&(_rowptrT(_colind(k)+1)), 1);
+    for (ordinal_type k = _rowptr[i]; k < _rowptr[i+1]; k++) {
+      Kokkos::atomic_add(&(_rowptrT[_colind[k]+1]), 1);
     }
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const TransMatTag &, const int i) const {
     // count offset rowptrT
-    for (ordinal_type k = _rowptr(i); k < _rowptr(i+1); k++) {
-      int nnz = Kokkos::atomic_fetch_add(&(_rowptrT(_colind(k))), 1);
-      _colindT(nnz) = i;
-      _nzvalsT(nnz) = _nzvals(k);
+    for (ordinal_type k = _rowptr[i]; k < _rowptr[i+1]; k++) {
+      int nnz = Kokkos::atomic_fetch_add(&(_rowptrT[_colind[k]]), 1);
+      _colindT[nnz] = i;
+      _nzvalsT[nnz] = _nzvals[k];
     }
   }
 };

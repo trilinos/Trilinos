@@ -34,10 +34,6 @@ public:
   typedef typename supernode_info_type::value_type_array value_type_array;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-  typedef typename supernode_info_type::rowptr_view rowptr_view;
-  typedef typename supernode_info_type::colind_view colind_view;
-  typedef typename supernode_info_type::nzvals_view nzvals_view;
-
 private:
   supernode_info_type _info;
   ordinal_type_array _compute_mode, _level_sids;

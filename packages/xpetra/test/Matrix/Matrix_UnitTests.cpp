@@ -17,6 +17,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 #include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_MatrixFactory2.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #ifdef HAVE_XPETRA_TPETRA
