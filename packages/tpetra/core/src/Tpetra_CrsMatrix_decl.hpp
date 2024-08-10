@@ -2288,6 +2288,18 @@ private:
     const crs_graph_type& getCrsGraphRef () const;
 
   public:
+#if __armclang_major__ == 22 && __armclang_minor__ == 1
+   // On Stria, PR 13052 caused a 25% performance regression in the
+   // CGSolve performance test that is fixed by forcing
+   // getLocalMatrixDevice to always be inlined. Restrict the fix
+   // to the specific toolchain where the problem was observed
+#define TPETRA_DETAILS_ALWAYS_INLINE __attribute__((always_inline))
+#else
+#define TPETRA_DETAILS_ALWAYS_INLINE
+#endif
+     /// \brief The local sparse matrix.
+     ///
+     /// \warning It is only valid to call this method under certain
     /// \brief The local sparse matrix.
     ///
     /// \warning It is only valid to call this method under certain
@@ -2297,8 +2309,10 @@ private:
     ///   least once.  This method will do no error checking, so you
     ///   are responsible for knowing when it is safe to call this
     ///   method.
-    local_matrix_device_type getLocalMatrixDevice () const;
+    TPETRA_DETAILS_ALWAYS_INLINE local_matrix_device_type
+    getLocalMatrixDevice () const;
     local_matrix_host_type getLocalMatrixHost () const;
+#undef TPETRA_DETAILS_ALWAYS_INLINE
 
 #if KOKKOSKERNELS_VERSION < 40299
     /// \brief The local sparse matrix operator 
