@@ -177,7 +177,6 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   ArrayView<const SC> values_E, values_N;
 
   size_t Ne = EdgeMatrix->getLocalNumRows();
-  size_t Nn = NodeMatrix->getLocalNumRows();
 
   // Notinal upper bound on local number of coarse edges
   size_t max_edges = PnT_D0T->getLocalNumEntries();
@@ -262,7 +261,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
       }
 
       // Exponential memory reallocation, if needed
-      if (current + 1 >= max_edges) {
+      if (current + 1 >= Teuchos::as<LocalOrdinal>(max_edges)) {
         max_edges *= 2;
         D0_colind.resize(max_edges);
         D0_values.resize(max_edges);

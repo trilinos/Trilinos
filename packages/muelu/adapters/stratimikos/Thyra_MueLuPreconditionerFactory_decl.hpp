@@ -85,6 +85,8 @@ class MueLuPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
 
   /** \brief . */
   MueLuPreconditionerFactory();
+
+  ~MueLuPreconditionerFactory();
   //@}
 
   /** @name Overridden from PreconditionerFactoryBase */

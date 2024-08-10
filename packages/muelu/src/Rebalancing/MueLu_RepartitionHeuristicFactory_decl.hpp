@@ -83,10 +83,10 @@ class RepartitionHeuristicFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Constructor.
-  RepartitionHeuristicFactory() {}
+  RepartitionHeuristicFactory();
 
   //! Destructor.
-  virtual ~RepartitionHeuristicFactory() {}
+  virtual ~RepartitionHeuristicFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 

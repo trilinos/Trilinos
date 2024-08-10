@@ -31,6 +31,9 @@ RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RAPFactory()
   : hasDeclaredInput_(false) {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RAPFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 

@@ -85,10 +85,10 @@ class RepartitionFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Constructor.
-  RepartitionFactory() {}
+  RepartitionFactory();
 
   //! Destructor.
-  virtual ~RepartitionFactory() {}
+  virtual ~RepartitionFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 

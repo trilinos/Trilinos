@@ -583,12 +583,12 @@ template<class HandleType, class ZViewType, class RHSViewType>
 inline
 void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
-  if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
-    back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
-  }
-  else {
+  //if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
+  //  back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
+  //}
+  //else {
     back_solve_currcol_bcast(ahandle, Z, RHS);
-  }
+  //}
 }
 
 }//namespace Adelus

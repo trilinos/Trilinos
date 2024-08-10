@@ -48,10 +48,10 @@ class RebalanceTransferFactory : public TwoLevelFactoryBase {
   //@{
 
   //! Constructor.
-  RebalanceTransferFactory() {}
+  RebalanceTransferFactory();
 
   //! Destructor.
-  virtual ~RebalanceTransferFactory() {}
+  virtual ~RebalanceTransferFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 

@@ -110,7 +110,7 @@ class SmootherFactory : public SmootherFactoryBase {
 
   SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
-  virtual ~SmootherFactory() {}
+  virtual ~SmootherFactory();
   //@}
 
   //! @name Set/Get methods.

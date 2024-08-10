@@ -1,8 +1,8 @@
 // @HEADER
 // *****************************************************************************
-//                           Stokhos Package
+//           Trilinos: An Object-Oriented Solver Framework
 //
-// Copyright 2009 NTESS and the Stokhos contributors.
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER

@@ -468,8 +468,6 @@ namespace panzer {
                      Teuchos::FancyOStream& out,
                      bool &success) {
     using Scalar = double;
-    using LocalOrdinal = int;
-    using GlobalOrdinal = panzer::GlobalOrdinal;
     using ThyLinOp = Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal>;
     using CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
     using Operator = Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal>;

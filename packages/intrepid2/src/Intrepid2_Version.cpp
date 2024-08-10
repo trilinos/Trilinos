@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-
 /*! \file  Intrepid_Version.cpp
     \brief Returns current version of Intrepid.
 */

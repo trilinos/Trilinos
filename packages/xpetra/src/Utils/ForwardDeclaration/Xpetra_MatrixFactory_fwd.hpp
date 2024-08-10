@@ -14,8 +14,6 @@ namespace Xpetra {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class MatrixFactory;
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class MatrixFactory2;
 }  // namespace Xpetra
 
 #ifndef XPETRA_MATRIXFACTORY_SHORT

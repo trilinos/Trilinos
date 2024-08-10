@@ -79,6 +79,10 @@ class CoarseMapFactory : public SingleLevelFactoryBase {
 #include "MueLu_UseShortNames.hpp"
 
  public:
+  CoarseMapFactory();
+
+  ~CoarseMapFactory();
+
   //! @name Input
   //@{
 

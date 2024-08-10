@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef MULTIMAT_FILTERED_COMPLIANCE_ROBJ_H
 #define MULTIMAT_FILTERED_COMPLIANCE_ROBJ_H

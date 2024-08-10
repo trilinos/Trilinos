@@ -32,13 +32,26 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   EXEDEPS main_driver
   )
 
+IF(PANZER_HAVE_EPETRA_STACK)
+  TRIBITS_ADD_ADVANCED_TEST(
+    main_driver_energy-ss
+    TEST_0 EXEC main_driver
+      ARGS  --i=energy-ss.xml --exodus-io-num-procs=1
+      PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+      XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+    )
+
+  TRIBITS_ADD_ADVANCED_TEST(
+    main_driver_energy-ss-blocked
+    TEST_0 EXEC main_driver
+      ARGS  --i=energy-ss-blocked.xml
+      PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    )
+ENDIF(PANZER_HAVE_EPETRA_STACK)
+
 TRIBITS_ADD_ADVANCED_TEST(
-  main_driver_energy-ss
+  main_driver_energy-ss-tp
   TEST_0 EXEC main_driver
-    ARGS  --i=energy-ss.xml --exodus-io-num-procs=1
-    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
-  TEST_1 EXEC main_driver
     ARGS  --i=energy-ss-tp.xml --exodus-io-num-procs=1
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
@@ -47,13 +60,6 @@ TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-tp-delay-prec
   TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-tp-delay-prec.xml
-    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-  )
-
-TRIBITS_ADD_ADVANCED_TEST(
-  main_driver_energy-ss-blocked
-  TEST_0 EXEC main_driver
-    ARGS  --i=energy-ss-blocked.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
