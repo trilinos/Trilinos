@@ -73,10 +73,10 @@ template <> struct LU<Algo::External> {
       TACHO_TEST_FOR_EXCEPTION(int(P.extent(0)) < 4 * m, std::runtime_error, "P should be 4*m.");
 
       if (m > 0) {
-        ordinal_type *__restrict__ ipiv = P.data();
-        ordinal_type *__restrict__ fpiv = ipiv + m;
-        ordinal_type *__restrict__ perm = fpiv + m;
-        ordinal_type *__restrict__ peri = perm + m;
+        ordinal_type *KOKKOS_RESTRICT ipiv = P.data();
+        ordinal_type *KOKKOS_RESTRICT fpiv = ipiv + m;
+        ordinal_type *KOKKOS_RESTRICT perm = fpiv + m;
+        ordinal_type *KOKKOS_RESTRICT peri = perm + m;
 
         for (ordinal_type i = 0; i < m; ++i)
           perm[i] = i;

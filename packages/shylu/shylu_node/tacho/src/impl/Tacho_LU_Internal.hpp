@@ -49,8 +49,8 @@ template <> struct LU<Algo::Internal> {
 
     int r_val = 0;
     if (m > 0) {
-      ordinal_type *__restrict__ ipiv = P.data(), *__restrict__ fpiv = ipiv + m, *__restrict__ perm = fpiv + m,
-                                 *__restrict__ peri = perm + m;
+      ordinal_type *KOKKOS_RESTRICT ipiv = P.data(), *KOKKOS_RESTRICT fpiv = ipiv + m, *KOKKOS_RESTRICT perm = fpiv + m,
+                                 *KOKKOS_RESTRICT peri = perm + m;
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) {
         perm[i] = i;
         fpiv[i] = ipiv[i] - i - 1;

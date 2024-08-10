@@ -83,9 +83,9 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
 
       const ordinal_type m = A.extent(0);
       if (m > 0) {
-        value_type *__restrict__ Aptr = A.data();
-        ordinal_type *__restrict__ ipiv = P.data(), *__restrict__ fpiv = ipiv + m, *__restrict__ perm = fpiv + m,
-                                   *__restrict__ peri = perm + m;
+        value_type *KOKKOS_RESTRICT Aptr = A.data();
+        ordinal_type *KOKKOS_RESTRICT ipiv = P.data(), *KOKKOS_RESTRICT fpiv = ipiv + m, *KOKKOS_RESTRICT perm = fpiv + m,
+                                   *KOKKOS_RESTRICT peri = perm + m;
 
         const value_type one(1), zero(0);
         for (ordinal_type i = 0; i < m; ++i)
@@ -107,8 +107,8 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
               const ordinal_type fla_pivot = -ipiv[i] - i - 1;
               fpiv[i] = fla_pivot;
               if (fla_pivot) {
-                value_type *__restrict__ src = Aptr + i;
-                value_type *__restrict__ tgt = src + fla_pivot;
+                value_type *KOKKOS_RESTRICT src = Aptr + i;
+                value_type *KOKKOS_RESTRICT tgt = src + fla_pivot;
                 for (ordinal_type j = 0; j < (i - 1); ++j) {
                   const ordinal_type idx = j * m;
                   swap(src[idx], tgt[idx]);
