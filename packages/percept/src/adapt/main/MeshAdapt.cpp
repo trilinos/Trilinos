@@ -45,6 +45,7 @@
 
 #endif
 
+#include <percept/element/intrepid/BasisTable.hpp>
 
 namespace percept {
 
@@ -111,11 +112,13 @@ namespace percept {
   {
 
 #if defined( STK_HAS_MPI )
+    percept::BasisTable::destroyBasisTable();
+
     Kokkos::finalize();
     stk::parallel_machine_finalize();
 #endif
 
-    std::exit(exit_code);
+    //std::exit(exit_code);
   }      
 
   void MeshAdapt::fill_help_strings(int argc, char **argv)

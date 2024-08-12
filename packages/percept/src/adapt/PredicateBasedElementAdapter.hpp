@@ -25,7 +25,7 @@
      *  The functor @class RefinePredicate should supply an operator() that returns an entry from AdaptInstruction,
      *    either to do nothing, refine, unrefine, or both refine & unrefine (useful for unit testing, etc.)
      */
-    typedef std::unary_function<stk::mesh::Entity , bool> AdapterPredicateFunctor;
+    typedef std::function<bool(stk::mesh::Entity)> AdapterPredicateFunctor;
 
     /// This class (and derived classes) supports basic element-based marking, 
     ///   a flavor of quality-improved element-based marking,

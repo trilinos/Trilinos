@@ -166,7 +166,8 @@
       MDArray found_parametric_coordinates_one("found_parametric_coordinates_one", 1, 1, D_);
       setup_searcher(D_);
 
-      MDArray output_field_values_local = output_field_values;
+      MDArray output_field_values_local("output_field_values_local",output_field_values.layout());
+      Kokkos::deep_copy(output_field_values_local,output_field_values);
       //int R_output = output_field_values.rank();
 
       int R_input = input_phy_points.rank();
@@ -201,9 +202,7 @@
               stk::mesh::Entity found_element = stk::mesh::Entity();
               {
                 EXCEPTWATCH;
-                //if (m_searchType==STK_SEARCH) std::cout << "find" << std::endl;
                 found_element = m_searcher->findElement(input_phy_points_one, found_parametric_coordinates_one, found_it, m_cachedElement);
-                //if (m_searchType==STK_SEARCH)                std::cout << "find..done found_it=" << found_it << std::endl;
               }
 
               // if found element on the local owned part, evaluate
@@ -219,7 +218,7 @@
                   Kokkos::deep_copy(found_parametric_coordinates,
                                     Kokkos::subview(found_parametric_coordinates_one, 0, Kokkos::ALL(), Kokkos::ALL()));
 
-                  (*this)(input_phy_points, output_field_values, found_element, found_parametric_coordinates);
+                  (*this)(input_phy_points, output_field_values_local, found_element, found_parametric_coordinates);
 
                   /*
                   for (int iDOF = 0; iDOF < DOF_; iDOF++)
@@ -267,7 +266,7 @@
                 }
               else
                 {
-                  output_field_values = output_field_values_local;
+                  output_field_values=output_field_values_local;
                 }
               m_cachedElement = found_element;
             }

@@ -51,7 +51,6 @@ xxx error
 #endif
 
 
-using namespace std;
 using namespace Intrepid2;
 
 #define IM_TAG( ADT ) ADT ## _TAG

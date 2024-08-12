@@ -157,7 +157,7 @@
 #define GET(x,i) x[i]
 
     template<class T, std::size_t N>
-    struct my_hash : public std::unary_function< SubDimCell<T,N>, std::size_t>
+    struct my_hash : public std::function<std::size_t(SubDimCell<T,N>)>
     {
       typedef SubDimCell<T,N> _Tp ;
 
@@ -184,7 +184,7 @@
     };
 
     template<class T, std::size_t N>
-    struct my_fast_hash : public std::unary_function< SubDimCell<T,N>, std::size_t>
+    struct my_fast_hash : public std::function<std::size_t(SubDimCell<T,N>)>
     {
       typedef SubDimCell<T,N> _Tp ;
 
@@ -197,8 +197,8 @@
     };
 
     template<class T, std::size_t N>
-    struct my_equal_to :  public std::binary_function<SubDimCell<T,N>,
-                                                      SubDimCell<T,N>, bool>
+    struct my_equal_to :  public std::function<bool(SubDimCell<T,N>,
+						    SubDimCell<T,N>)>
     {
       typedef SubDimCell<T,N> _Tp ;
       bool
@@ -219,8 +219,8 @@
     };
 
     template<class T, std::size_t N>
-    struct my_fast_equal_to :  public std::binary_function<SubDimCell<T,N>,
-                                                           SubDimCell<T,N>, bool>
+    struct my_fast_equal_to :  public std::function<bool(SubDimCell<T,N>,
+							 SubDimCell<T,N>)>
     {
       typedef SubDimCell<T,N> _Tp ;
       inline bool

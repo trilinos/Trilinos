@@ -67,9 +67,10 @@ fitCubic(MDArray& c, const MDArray& pi, const MDArray& pj, const MDArray& ni, co
 bool  GregoryPatch::
 fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool rIsTri)
 {
-  MDArray p = pin, r = rin;
+  MDArray p("ploc",pin.layout()), r("rloc",rin.layout());
+  Kokkos::deep_copy(p,pin);
+  Kokkos::deep_copy(r,rin);
   double Lam0, Lam1, Mu0, Mu1, DetAAtLhs;
-  //MDArray pt = p, rt = r;
   MDArray pe("pe",4,3), re("re",4,3);
   MDArray m0("m0",3,3), m1("m1",3,3), R0("R0",3), R1("R1",3);
   MDArray b("b",3,3), a("a",3,4), aat("aat",3,3), aatI("aatI",3,3), d("d",3,3), d1("d1",3,3);
@@ -595,7 +596,8 @@ fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool
 void  GregoryPatch::
 fitRibbonNoNeighbor(MDArray& pin, MDArray& q, MDArray& qh, bool pIsTri)
 {
-  MDArray p = pin;
+  MDArray p("ploc",pin.layout());
+  Kokkos::deep_copy(p,pin);
   MDArray pe("pe",4,3);
 
   //

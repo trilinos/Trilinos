@@ -1406,8 +1406,10 @@ namespace percept {
             MDArray np_0 (normals_data_p0, 1, dim);
 
             // maybe modified below
-            MDArray n(n_0);
-            MDArray np(np_0);
+            MDArray n("n",n_0.layout());
+            Kokkos::deep_copy(n, n_0); 
+            MDArray np("np",np_0.layout());
+            Kokkos::deep_copy(np, np_0); 
             MDArray c (static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node )), 1, dim);
             MDArray cp (static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodep )), 1, dim);
             MDArray cf("cf",4,3);
@@ -1461,21 +1463,6 @@ namespace percept {
                     PointVector normals1 = m_nodeNormalsMap[nodep];
                     VERIFY_OP_ON(orient0, <, int(normals0.size()), "bad normals");
                     VERIFY_OP_ON(orient1, <, int(normals1.size()), "bad normals");
-
-                    if (0)
-                      {
-                        if (orient0 < 0 && m_nodeToEdgeMap[node].size() > 1)
-                          {
-                            std::cout << "face= " << ID(face) << " node= " << ID(node) << std::endl;
-                            VERIFY_MSG("bad orient0");
-                          }
-                        if (orient1 < 0 && m_nodeToEdgeMap[nodep].size() > 1)
-                          {
-                            std::cout << "face= " << ID(face) << " nodep= " << ID(nodep) << std::endl;
-                            orient(face, nodep, selAll, true);
-                            VERIFY_MSG("bad orient1");
-                          }
-                      }
 
                     if (orient0 >= 0)
                       {
@@ -1605,7 +1592,9 @@ namespace percept {
       }
     if (reverse)
       {
-        MDArray pr = p, qr = q;
+        MDArray pr("pr",p.layout()), qr("qr",q.layout());
+        Kokkos::deep_copy(pr,p);
+        Kokkos::deep_copy(qr,q);
         for (unsigned ip=0; ip < 4; ++ip)
           {
             for (unsigned jc=0; jc < 3; ++jc)
@@ -1626,7 +1615,8 @@ namespace percept {
     double *Cp = (m_eMesh.entity_rank(face) == m_eMesh.side_rank()
                   ? stk::mesh::field_data( *m_eMesh.m_gregory_control_points_field, face)
                   : stk::mesh::field_data( *m_eMesh.m_gregory_control_points_field_shell, face));
-    MDArray p = p_in;
+    MDArray p("ploc",p_in.layout());
+    Kokkos::deep_copy(p,p_in);
     if (reverse)
       {
         for (unsigned ip=0; ip < 4; ++ip)
@@ -1753,7 +1743,8 @@ namespace percept {
                 if (debug) std::cout << "P[" << m_eMesh.get_rank() << " FGP:: doing non-neigh ribbons face= " << m_eMesh.identifier(face) << " edge= " << edge << std::endl;
                 MDArray p("p",4,3), q("q",4,3), qh("qh",5,3);
                 extractRibbon(face, edge, reverseAll, p, q);
-                MDArray pex = p;
+                MDArray pex("pex",p.layout());
+                Kokkos::deep_copy(pex,p);
                 GregoryPatch::fitRibbonNoNeighbor(p, q, qh, isTri);
                 putRibbon(face, edge, reverseAll, p);
               }

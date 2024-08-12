@@ -160,7 +160,7 @@
 
 
     template<>
-    struct my_fast_hash<SDCEntityType, 2> : public std::unary_function< MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>, std::size_t>
+    struct my_fast_hash<SDCEntityType, 2> : public std::function< std::size_t(MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>)>
     {
       typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
 
@@ -174,7 +174,7 @@
 
 
     template<>
-    struct my_fast_hash<SDCEntityType, 4> : public std::unary_function< MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>, std::size_t>
+    struct my_fast_hash<SDCEntityType, 4> : public std::function< std::size_t(MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>)>
     {
       typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
 
@@ -188,8 +188,8 @@
 
 
     template<>
-    struct my_fast_equal_to<SDCEntityType, 2> :  public std::binary_function< MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>,
-                                                                              MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>, bool>
+    struct my_fast_equal_to<SDCEntityType, 2> :  public std::function<bool(MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>,
+										  MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>)>
     {
       typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
       inline bool
@@ -209,8 +209,8 @@
     };
 
     template<>
-    struct my_fast_equal_to<SDCEntityType, 4> :  public std::binary_function< MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>,
-                                                                              MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>, bool>
+    struct my_fast_equal_to<SDCEntityType, 4> :  public std::function< bool(MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>,
+									    MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>)>
     {
       typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
       inline bool

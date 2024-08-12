@@ -187,7 +187,7 @@
      *  Dimensions of output_field_values are required to be ([P],[DOF]), (or in future, ([C],[P],[DOF]) )
      *
      */
-#define EXTRA_PRINT_FF_HELPER 1
+#define EXTRA_PRINT_FF_HELPER 0
     template<class BucketOrEntity>
     void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
                                const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional)
@@ -409,6 +409,8 @@
                         output_field_values(iDOF) = loc_output_field_values(iCell, iPoint);
                       else if (output_field_values.rank() == 2)
                         output_field_values(iCell, iDOF) = loc_output_field_values(iCell, iPoint);
+                      else if (output_field_values.rank() == 3)
+                        output_field_values(iCell, iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
                       if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;
                     }
                 }
