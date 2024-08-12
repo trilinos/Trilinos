@@ -41,14 +41,7 @@ struct spmv_parameters {
   std::string alg;
   std::string tpl;
 
-  spmv_parameters(const int N_)
-      : N(N_),
-        offset(0),
-        numvecs(1),
-        mode(""),
-        filename(""),
-        alg(""),
-        tpl("") {}
+  spmv_parameters(const int N_) : N(N_), offset(0), numvecs(1), mode(""), filename(""), alg(""), tpl("") {}
 };
 
 void print_options() {
@@ -57,8 +50,7 @@ void print_options() {
   std::cerr << perf_test::list_common_options();
 
   std::cerr << "\t[Optional] --mode        :: whether to run a suite of "
-            << "automated test or manually define one (auto, manual)"
-            << std::endl;
+            << "automated test or manually define one (auto, manual)" << std::endl;
   std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall "
             << "test" << std::endl;
   std::cerr << "  -n [N]          :: generate a semi-random banded (band size "
@@ -77,8 +69,7 @@ void print_options() {
             << "                    Useful in case the matrix market file is "
                "not 0 based."
             << std::endl;
-  std::cerr << "  --num_vecs      : The number of vectors stored in X and Y"
-            << std::endl;
+  std::cerr << "  --num_vecs      : The number of vectors stored in X and Y" << std::endl;
 }  // print_options
 
 void parse_inputs(int argc, char** argv, spmv_parameters& params) {
@@ -86,15 +77,12 @@ void parse_inputs(int argc, char** argv, spmv_parameters& params) {
     if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "--mode", params.alg)) {
-      if ((params.mode != "") && (params.mode != "auto") &&
-          (params.alg != "manual")) {
-        throw std::runtime_error(
-            "--mode can only be an empty string, `auto` or `manual`!");
+      if ((params.mode != "") && (params.mode != "auto") && (params.alg != "manual")) {
+        throw std::runtime_error("--mode can only be an empty string, `auto` or `manual`!");
       }
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "--alg", params.alg)) {
-      if ((params.alg != "") && (params.alg != "default") &&
-          (params.alg != "native") && (params.alg != "merge")) {
+      if ((params.alg != "") && (params.alg != "default") && (params.alg != "native") && (params.alg != "merge")) {
         throw std::runtime_error(
             "--alg can only be an empty string, `default`, `native` or "
             "`merge`!");
@@ -104,27 +92,22 @@ void parse_inputs(int argc, char** argv, spmv_parameters& params) {
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "-f", params.filename)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--offset",
-                                        params.offset)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--offset", params.offset)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--num_vecs",
-                                        params.numvecs)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--num_vecs", params.numvecs)) {
       ++i;
     } else {
       print_options();
-      KK_USER_REQUIRE_MSG(false, "Unrecognized command line argument #"
-                                     << i << ": " << argv[i]);
+      KK_USER_REQUIRE_MSG(false, "Unrecognized command line argument #" << i << ": " << argv[i]);
     }
   }
 }  // parse_inputs
 
 template <class execution_space>
 void run_spmv(benchmark::State& state, const spmv_parameters& inputs) {
-  using matrix_type =
-      KokkosSparse::CrsMatrix<double, int, execution_space, void, int>;
-  using mv_type = Kokkos::View<double**, execution_space>;
-  using handle_t =
-      KokkosSparse::SPMVHandle<execution_space, matrix_type, mv_type, mv_type>;
+  using matrix_type = KokkosSparse::CrsMatrix<double, int, execution_space, void, int>;
+  using mv_type     = Kokkos::View<double**, execution_space>;
+  using handle_t    = KokkosSparse::SPMVHandle<execution_space, matrix_type, mv_type, mv_type>;
 
   KokkosSparse::SPMVAlgorithm spmv_alg;
   if ((inputs.alg == "default") || (inputs.alg == "")) {
@@ -143,11 +126,9 @@ void run_spmv(benchmark::State& state, const spmv_parameters& inputs) {
   matrix_type A;
   if (inputs.filename == "") {
     int nnz = 10 * inputs.N;
-    A       = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
-        inputs.N, inputs.N, nnz, 0, 0.01 * inputs.N);
+    A       = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(inputs.N, inputs.N, nnz, 0, 0.01 * inputs.N);
   } else {
-    A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(
-        inputs.filename.c_str());
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(inputs.filename.c_str());
   }
 
   // Create input vectors
@@ -189,17 +170,15 @@ int main(int argc, char** argv) {
       for (int nv : {1, 2, 3, 4, 10}) {
         inputs.N       = n;
         inputs.numvecs = nv;
-        KokkosKernelsBenchmark::register_benchmark_real_time(
-            bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>,
-            {"n", "nv"}, {inputs.N, inputs.numvecs}, common_params.repeat,
-            inputs);
+        KokkosKernelsBenchmark::register_benchmark_real_time(bench_name.c_str(),
+                                                             run_spmv<Kokkos::DefaultExecutionSpace>, {"n", "nv"},
+                                                             {inputs.N, inputs.numvecs}, common_params.repeat, inputs);
       }
     }
   } else {
     // Google benchmark will report the wrong n if an input file matrix is used.
-    KokkosKernelsBenchmark::register_benchmark_real_time(
-        bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>, {"n"},
-        {inputs.N}, common_params.repeat, inputs);
+    KokkosKernelsBenchmark::register_benchmark_real_time(bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>,
+                                                         {"n"}, {inputs.N}, common_params.repeat, inputs);
   }
 
   benchmark::RunSpecifiedBenchmarks();

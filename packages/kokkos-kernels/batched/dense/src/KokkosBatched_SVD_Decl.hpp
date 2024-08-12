@@ -56,19 +56,16 @@ struct SVD_S_Tag {};
 
 struct SerialSVD {
   // Version to compute full factorization: A == U * diag(s) * Vt
-  template <typename AViewType, typename UViewType, typename VtViewType,
-            typename SViewType, typename WViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(SVD_USV_Tag, const AViewType &A,
-                                           const UViewType &U,
-                                           const SViewType &s,
-                                           const VtViewType &Vt,
-                                           const WViewType &W);
+  template <typename AViewType, typename UViewType, typename VtViewType, typename SViewType, typename WViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      SVD_USV_Tag, const AViewType &A, const UViewType &U, const SViewType &s, const VtViewType &Vt, const WViewType &W,
+      typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero());
 
   // Version which computes only singular values
   template <typename AViewType, typename SViewType, typename WViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(SVD_S_Tag, const AViewType &A,
-                                           const SViewType &s,
-                                           const WViewType &W);
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      SVD_S_Tag, const AViewType &A, const SViewType &s, const WViewType &W,
+      typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero());
 };
 
 }  // namespace KokkosBatched

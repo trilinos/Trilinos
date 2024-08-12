@@ -25,13 +25,9 @@ namespace KokkosBlas {
 
 template <typename ArgTrans, typename ArgAlgo>
 struct SerialGemv {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType /*alpha*/,
-                                           const AViewType & /*A*/,
-                                           const xViewType & /*x*/,
-                                           const ScalarType /*beta*/,
-                                           const yViewType & /*y*/);
+  template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType /*alpha*/, const AViewType & /*A*/, const xViewType & /*x*/,
+                                           const ScalarType /*beta*/, const yViewType & /*y*/);
 };
 
 }  // namespace KokkosBlas
@@ -49,27 +45,21 @@ namespace KokkosBlas {
 ///
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
-      A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(),
-      x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemv<Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x, const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(A.extent(0), A.extent(1), alpha, A.data(),
+                                                                 A.stride_0(), A.stride_1(), x.data(), x.stride_0(),
+                                                                 beta, y.data(), y.stride_0());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::NoTranspose, Algo::Gemv::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
-      A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(),
-      x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemv<Trans::NoTranspose, Algo::Gemv::Blocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x, const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
+                                                               A.stride_1(), x.data(), x.stride_0(), beta, y.data(),
+                                                               y.stride_0());
 }
 
 ///
@@ -77,27 +67,21 @@ SerialGemv<Trans::NoTranspose, Algo::Gemv::Blocked>::invoke(
 ///
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
-      A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(),
-      x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x, const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(A.extent(1), A.extent(0), alpha, A.data(),
+                                                                 A.stride_1(), A.stride_0(), x.data(), x.stride_0(),
+                                                                 beta, y.data(), y.stride_0());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::Transpose, Algo::Gemv::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
-      A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(),
-      x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemv<Trans::Transpose, Algo::Gemv::Blocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x, const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+                                                               A.stride_0(), x.data(), x.stride_0(), beta, y.data(),
+                                                               y.stride_0());
 }
 
 ///
@@ -105,27 +89,21 @@ SerialGemv<Trans::Transpose, Algo::Gemv::Blocked>::invoke(
 ///
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::ConjTranspose, Algo::Gemv::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
-      Impl::OpConj(), A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
-      A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemv<Trans::ConjTranspose, Algo::Gemv::Unblocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x, const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(Impl::OpConj(), A.extent(1), A.extent(0), alpha,
+                                                                 A.data(), A.stride_1(), A.stride_0(), x.data(),
+                                                                 x.stride_0(), beta, y.data(), y.stride_0());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::ConjTranspose, Algo::Gemv::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
-      Impl::OpConj(), A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
-      A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+template <typename ScalarType, typename AViewType, typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemv<Trans::ConjTranspose, Algo::Gemv::Blocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x, const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(Impl::OpConj(), A.extent(1), A.extent(0), alpha,
+                                                               A.data(), A.stride_1(), A.stride_0(), x.data(),
+                                                               x.stride_0(), beta, y.data(), y.stride_0());
 }
 
 }  // namespace KokkosBlas

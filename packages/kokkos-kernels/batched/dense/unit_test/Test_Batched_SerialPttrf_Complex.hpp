@@ -13,23 +13,19 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
-#include <Kokkos_Macros.hpp>
-static_assert(false,
-              "Including non-public Kokkos header files is not allowed.");
-#endif
-#ifndef KOKKOS_ATOMICS_DESUL_CONFIG_HPP
-#define KOKKOS_ATOMICS_DESUL_CONFIG_HPP
 
-#include <Kokkos_Macros.hpp>
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_F(TestCategory, test_batched_pttrf_fcomplex) {
+  using algo_tag_type = typename Algo::Pttrf::Unblocked;
 
-#if defined(KOKKOS_ARCH_KEPLER) || defined(KOKKOS_ARCH_MAXWELL)
-#define DESUL_CUDA_ARCH_IS_PRE_PASCAL
+  test_batched_pttrf<TestDevice, float, algo_tag_type>();
+}
 #endif
 
-#if defined(KOKKOS_ARCH_KEPLER) || defined(KOKKOS_ARCH_MAXWELL) || \
-    defined(KOKKOS_ARCH_PASCAL)
-#define DESUL_CUDA_ARCH_IS_PRE_VOLTA
-#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+TEST_F(TestCategory, test_batched_pttrf_dcomplex) {
+  using algo_tag_type = typename Algo::Pttrf::Unblocked;
 
-#endif  // KOKKOS_ATOMICS_DESUL_CONFIG_HPP
+  test_batched_pttrf<TestDevice, double, algo_tag_type>();
+}
+#endif

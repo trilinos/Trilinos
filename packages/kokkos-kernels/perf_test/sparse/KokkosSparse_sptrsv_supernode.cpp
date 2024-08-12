@@ -23,8 +23,7 @@
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) &&             \
-    (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
+#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) && (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
     defined(KOKKOSKERNELS_INST_DOUBLE)
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
@@ -34,22 +33,13 @@
 namespace KSExp = KokkosSparse::Experimental;
 namespace KSPTE = KokkosSparse::PerfTest::Experimental;
 
-enum {
-  CUSPARSE,
-  SUPERNODAL_NAIVE,
-  SUPERNODAL_ETREE,
-  SUPERNODAL_DAG,
-  SUPERNODAL_SPMV,
-  SUPERNODAL_SPMV_DAG
-};
+enum { CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG };
 
 /* =========================================================================================
  */
 template <typename scalar_type>
-int test_sptrsv_perf(std::vector<int> tests, bool verbose,
-                     std::string& lower_filename, std::string& upper_filename,
-                     std::string& supernode_filename, bool merge,
-                     bool invert_offdiag, bool u_in_csr, int loop) {
+int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& lower_filename, std::string& upper_filename,
+                     std::string& supernode_filename, bool merge, bool invert_offdiag, bool u_in_csr, int loop) {
   using ordinal_type = int;
   using size_type    = int;
   using STS          = Kokkos::ArithTraits<scalar_type>;
@@ -65,9 +55,8 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
   using host_memory_space    = typename host_execution_space::memory_space;
 
   //
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, ordinal_type, scalar_type, execution_space, memory_space,
-      memory_space>;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, ordinal_type, scalar_type,
+                                                                        execution_space, memory_space, memory_space>;
 
   //
   using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
@@ -87,20 +76,15 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
   std::cout << "Execution space: " << execution_space::name() << std::endl;
   std::cout << "Memory space   : " << memory_space::name() << std::endl;
   std::cout << std::endl;
-  if ((!lower_filename.empty() || !upper_filename.empty()) &&
-      !supernode_filename.empty()) {
+  if ((!lower_filename.empty() || !upper_filename.empty()) && !supernode_filename.empty()) {
     // ==============================================
     // read the CRS matrix ** on host **
     // it stores the supernodal triangular matrix, stored by blocks with
     // explicit zeros
     std::cout << " Supernode Tester Begin:" << std::endl;
-    std::string matrix_filename =
-        (lower_filename.empty() ? upper_filename : lower_filename);
-    std::cout << " > Read a triangular-matrix filename " << matrix_filename
-              << std::endl;
-    host_crsmat_t M =
-        KokkosSparse::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
-            matrix_filename.c_str());
+    std::string matrix_filename = (lower_filename.empty() ? upper_filename : lower_filename);
+    std::cout << " > Read a triangular-matrix filename " << matrix_filename << std::endl;
+    host_crsmat_t M       = KokkosSparse::Impl::read_kokkos_crst_matrix<host_crsmat_t>(matrix_filename.c_str());
     const size_type nrows = M.graph.numRows();
     // transpose the matrix to be stored in CCS
     //{
@@ -109,10 +93,10 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     auto entriesM = graphM.entries;
     auto valuesM  = M.values;
 
-    using host_graph_t   = typename host_crsmat_t::StaticCrsGraphType;
-    using row_map_view_t = typename host_graph_t::row_map_type::non_const_type;
-    using cols_view_t    = typename host_graph_t::entries_type::non_const_type;
-    using values_view_t  = typename host_crsmat_t::values_type::non_const_type;
+    using host_graph_t      = typename host_crsmat_t::StaticCrsGraphType;
+    using row_map_view_t    = typename host_graph_t::row_map_type::non_const_type;
+    using cols_view_t       = typename host_graph_t::entries_type::non_const_type;
+    using values_view_t     = typename host_crsmat_t::values_type::non_const_type;
     using in_row_map_view_t = typename host_graph_t::row_map_type;
     using in_cols_view_t    = typename host_graph_t::entries_type;
     using in_values_view_t  = typename host_crsmat_t::values_type;
@@ -122,9 +106,8 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     cols_view_t entries("colmap_view", nnzL);
     values_view_t values("values_view", nnzL);
     // transpose L
-    KokkosSparse::Impl::transpose_matrix<
-        in_row_map_view_t, in_cols_view_t, in_values_view_t, row_map_view_t,
-        cols_view_t, values_view_t, row_map_view_t, host_execution_space>(
+    KokkosSparse::Impl::transpose_matrix<in_row_map_view_t, in_cols_view_t, in_values_view_t, row_map_view_t,
+                                         cols_view_t, values_view_t, row_map_view_t, host_execution_space>(
         nrows, nrows, row_mapM, entriesM, valuesM, row_map, entries, values);
 
     // store L in CSC
@@ -143,13 +126,10 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     // first entry in the file specifies the number of supernode
     // the rest of the entries specifies the column offsets to the beginning of
     // supernodes
-    std::cout << " > Read a supernode filename " << supernode_filename
-              << std::endl;
+    std::cout << " > Read a supernode filename " << supernode_filename << std::endl;
     std::ifstream fp(supernode_filename.c_str(), std::ios::in);
     if (!fp.is_open()) {
-      std::cout << std::endl
-                << " failed to open " << supernode_filename << std::endl
-                << std::endl;
+      std::cout << std::endl << " failed to open " << supernode_filename << std::endl << std::endl;
       return 0;
     }
     int nsuper;
@@ -178,26 +158,17 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           // ==============================================
           // create an handle
           if (test == SUPERNODAL_NAIVE) {
-            std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl
-                      << std::endl;
-            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE,
-                                     nrows, true);
-            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE,
-                                     nrows, true);
+            std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
           } else if (test == SUPERNODAL_DAG) {
-            std::cout << " > create handle for SUPERNODAL_DAG" << std::endl
-                      << std::endl;
-            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG,
-                                     nrows, true);
-            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG,
-                                     nrows, true);
+            std::cout << " > create handle for SUPERNODAL_DAG" << std::endl << std::endl;
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
           } else if (test == SUPERNODAL_SPMV_DAG) {
-            std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl
-                      << std::endl;
-            khL.create_sptrsv_handle(
-                KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
-            khU.create_sptrsv_handle(
-                KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
+            std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl << std::endl;
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
           }
           // verbose (optional, default is false)
           khL.set_sptrsv_verbose(verbose);
@@ -220,10 +191,8 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           // do symbolic analysis (preprocssing, e.g., merging supernodes,
           // inverting diagonal/offdiagonal blocks, and scheduling based on
           // graph/dag)
-          khU.get_sptrsv_handle()->set_column_major(
-              !khL.get_sptrsv_handle()->is_column_major());
-          KSExp::sptrsv_supernodal_symbolic(nsuper, supercols.data(), etree,
-                                            L.graph, &khL, L.graph, &khU);
+          khU.get_sptrsv_handle()->set_column_major(!khL.get_sptrsv_handle()->is_column_major());
+          KSExp::sptrsv_supernodal_symbolic(nsuper, supercols.data(), etree, L.graph, &khL, L.graph, &khU);
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data
@@ -287,8 +256,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           std::cout << " L-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time / loop << std::endl;
           std::cout << "  LOOP_MAX_TIME:  " << max_time << std::endl;
-          std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl
-                    << std::endl;
+          std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
         } break;
 
         default: std::cout << " > Invalid test ID < " << std::endl; exit(0);
@@ -304,8 +272,7 @@ void print_help_sptrsv() {
   printf("Options:\n");
   printf("  --test [OPTION] : Use different kernel implementations\n");
   printf("                    Options:\n");
-  printf(
-      "                    superlu-naive, superlu-dag, superlu-spmv-dag\n\n");
+  printf("                    superlu-naive, superlu-dag, superlu-spmv-dag\n\n");
   printf(
       "  -lf [file]      : Read in Lower-triangular matrix in Matrix Market "
       "formatted text file 'file'.\n");
@@ -313,8 +280,7 @@ void print_help_sptrsv() {
       "  -uf [file]      : Read in Upper-triangular matrix in Matrix Market "
       "formatted text file 'file'.\n");
   printf("  -sf [file]      : Read in Supernode sizes from 'file'.\n");
-  printf(
-      "  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
 }
 
 int main(int argc, char** argv) {
@@ -403,23 +369,20 @@ int main(int argc, char** argv) {
     using scalar_t = double;
     // using scalar_t = Kokkos::complex<double>;
     Kokkos::ScopeGuard kokkosScope(argc, argv);
-    int total_errors = test_sptrsv_perf<scalar_t>(
-        tests, verbose, lower_filename, upper_filename, supernode_filename,
-        merge, invert_offdiag, u_in_csr, loop);
+    int total_errors = test_sptrsv_perf<scalar_t>(tests, verbose, lower_filename, upper_filename, supernode_filename,
+                                                  merge, invert_offdiag, u_in_csr, loop);
     if (total_errors == 0)
       std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else
-      std::cout << "Kokkos::SPTRSV Test: Failed (" << total_errors << " / "
-                << 2 * tests.size() << " failed)" << std::endl
+      std::cout << "Kokkos::SPTRSV Test: Failed (" << total_errors << " / " << 2 * tests.size() << " failed)"
+                << std::endl
                 << std::endl;
   }
   return 0;
 }
 #else  // defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 int main() {
-  std::cout << std::endl
-            << " ** SUPERNODAL NOT ENABLED **" << std::endl
-            << std::endl;
+  std::cout << std::endl << " ** SUPERNODAL NOT ENABLED **" << std::endl << std::endl;
   exit(0);
   return 1;
 }
@@ -433,8 +396,7 @@ int main() {
   std::cout << " Only supported with double precision" << std::endl;
 #endif
 #if !defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
-  std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined"
-            << std::endl;
+  std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
 #if defined(KOKKOS_ENABLE_CUDA)
   std::cout << " KOKKOS_ENABLE_CUDA defined" << std::endl;

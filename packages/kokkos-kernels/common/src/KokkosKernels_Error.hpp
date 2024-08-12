@@ -23,32 +23,25 @@
 namespace KokkosKernels {
 namespace Impl {
 
-inline void throw_runtime_exception(const std::string &msg) {
-  throw std::runtime_error(msg);
-}
+inline void throw_runtime_exception(const std::string &msg) { throw std::runtime_error(msg); }
 
 #if defined(KOKKOS_ENABLE_HIP)
-inline void hip_internal_error_throw(hipError_t e, const char *name,
-                                     const char *file, const int line) {
+inline void hip_internal_error_throw(hipError_t e, const char *name, const char *file, const int line) {
   std::ostringstream out;
-  out << name << " error( " << hipGetErrorName(e)
-      << "): " << hipGetErrorString(e);
+  out << name << " error( " << hipGetErrorName(e) << "): " << hipGetErrorString(e);
   if (file) {
     out << " " << file << ":" << line;
   }
   throw_runtime_exception(out.str());
 }
 
-inline void hip_internal_safe_call(hipError_t e, const char *name,
-                                   const char *file = nullptr,
-                                   const int line   = 0) {
+inline void hip_internal_safe_call(hipError_t e, const char *name, const char *file = nullptr, const int line = 0) {
   if (hipSuccess != e) {
     hip_internal_error_throw(e, name, file, line);
   }
 }
 
-#define KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(call) \
-  hip_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(call) hip_internal_safe_call(call, #call, __FILE__, __LINE__)
 #endif
 
 }  // namespace Impl
@@ -80,16 +73,6 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
   } while (0)
 
 // SYCL cannot printf like the other backends quite yet
-#if KOKKOS_VERSION < 40199
-#define IMPL_KERNEL_THROW(condition, msg)                                   \
-  do {                                                                      \
-    if (!(condition)) {                                                     \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("KERNEL CHECK FAILED:\n   %s\n   %s\n", \
-                                    #condition, msg);                       \
-      Kokkos::abort("");                                                    \
-    }                                                                       \
-  } while (0)
-#else
 #define IMPL_KERNEL_THROW(condition, msg)                                      \
   do {                                                                         \
     if (!(condition)) {                                                        \
@@ -97,12 +80,10 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
       Kokkos::abort("");                                                       \
     }                                                                          \
   } while (0)
-#endif
 
 #ifndef NDEBUG
 #define KK_ASSERT(condition) IMPL_THROW(condition, "", std::logic_error)
-#define KK_ASSERT_MSG(condition, msg) \
-  IMPL_THROW(condition, msg, std::logic_error)
+#define KK_ASSERT_MSG(condition, msg) IMPL_THROW(condition, msg, std::logic_error)
 #define KK_KERNEL_ASSERT(condition) IMPL_KERNEL_THROW(condition, "")
 #define KK_KERNEL_ASSERT_MSG(condition, msg) IMPL_KERNEL_THROW(condition, msg)
 #else
@@ -113,12 +94,10 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
 #endif
 
 #define KK_REQUIRE(condition) IMPL_THROW(condition, "", std::logic_error)
-#define KK_REQUIRE_MSG(condition, msg) \
-  IMPL_THROW(condition, msg, std::logic_error)
+#define KK_REQUIRE_MSG(condition, msg) IMPL_THROW(condition, msg, std::logic_error)
 
 #define KK_USER_REQUIRE(condition) IMPL_THROW(condition, "", std::runtime_error)
-#define KK_USER_REQUIRE_MSG(condition, msg) \
-  IMPL_THROW(condition, msg, std::runtime_error)
+#define KK_USER_REQUIRE_MSG(condition, msg) IMPL_THROW(condition, msg, std::runtime_error)
 
 #define KK_KERNEL_REQUIRE(condition) IMPL_KERNEL_THROW(condition, "")
 #define KK_KERNEL_REQUIRE_MSG(condition, msg) IMPL_KERNEL_THROW(condition, msg)

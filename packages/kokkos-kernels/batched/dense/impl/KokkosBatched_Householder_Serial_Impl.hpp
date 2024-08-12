@@ -29,11 +29,9 @@ namespace KokkosBatched {
 
 template <>
 template <typename aViewType, typename tauViewType>
-KOKKOS_INLINE_FUNCTION int SerialHouseholder<Side::Left>::invoke(
-    const aViewType &a, const tauViewType &tau) {
-  return SerialLeftHouseholderInternal::invoke(a.extent(0) - 1, a.data(),
-                                               a.data() + a.stride(0),
-                                               a.stride(0), tau.data());
+KOKKOS_INLINE_FUNCTION int SerialHouseholder<Side::Left>::invoke(const aViewType &a, const tauViewType &tau) {
+  return SerialLeftHouseholderInternal::invoke(a.extent(0) - 1, a.data(), a.data() + a.stride(0), a.stride(0),
+                                               tau.data());
 }
 
 }  // namespace KokkosBatched

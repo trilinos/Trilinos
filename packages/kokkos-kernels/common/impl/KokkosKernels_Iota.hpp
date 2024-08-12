@@ -67,8 +67,7 @@ class Iota {
       Constructing with size < 0 yeilds a 0-size Iota
   */
   KOKKOS_INLINE_FUNCTION
-  constexpr Iota(const size_type &size, const value_type offset)
-      : size_(size), offset_(offset) {
+  constexpr Iota(const size_type &size, const value_type offset) : size_(size), offset_(offset) {
     if constexpr (std::is_signed_v<size_type>) {
       if (size_ < size_type(0)) {
         size_ = 0;
@@ -102,8 +101,7 @@ class Iota {
     Creating a subview outside of the base Iota yeilds undefined behavior
   */
   template <typename P1, typename P2>
-  KOKKOS_INLINE_FUNCTION constexpr Iota(const Iota &base,
-                                        const Kokkos::pair<P1, P2> &range)
+  KOKKOS_INLINE_FUNCTION constexpr Iota(const Iota &base, const Kokkos::pair<P1, P2> &range)
       : Iota(range.second - range.first, base.offset_ + range.first) {}
 
   /*! \brief Construct Iota subview
@@ -111,9 +109,7 @@ class Iota {
      i >= size() or i < 0 yields undefined behavior.
   */
   KOKKOS_INLINE_FUNCTION
-  constexpr T operator()(size_type i) const noexcept {
-    return value_type(i + offset_);
-  };
+  constexpr T operator()(size_type i) const noexcept { return value_type(i + offset_); };
 
   /// \brief return the size of the iota
   KOKKOS_INLINE_FUNCTION

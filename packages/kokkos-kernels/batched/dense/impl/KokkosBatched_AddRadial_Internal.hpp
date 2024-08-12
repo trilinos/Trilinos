@@ -28,8 +28,7 @@ namespace KokkosBatched {
 struct SerialAddRadialInternal {
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType tiny,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as) {
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as) {
     const auto abs_tiny       = tiny > 0 ? tiny : -tiny;
     const auto minus_abs_tiny = -abs_tiny;
 
@@ -52,10 +51,8 @@ struct SerialAddRadialInternal {
 /// ==================
 struct TeamAddRadialInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int m, const ScalarType tiny,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const ScalarType tiny,
+                                           /* */ ValueType *KOKKOS_RESTRICT A, const int as) {
     const auto abs_tiny       = tiny > 0 ? tiny : -tiny;
     const auto minus_abs_tiny = -abs_tiny;
 

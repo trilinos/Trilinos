@@ -51,8 +51,7 @@ class KrylovHandle {
   using norm_type = typename NormViewType::non_const_value_type;
 
   typedef ViewType3D ArnoldiViewType;
-  typedef Kokkos::View<typename ViewType3D::non_const_value_type **,
-                       typename ViewType3D::array_layout,
+  typedef Kokkos::View<typename ViewType3D::non_const_value_type **, typename ViewType3D::array_layout,
                        typename ViewType3D::execution_space>
       TemporaryViewType;
 
@@ -81,8 +80,7 @@ class KrylovHandle {
   bool host_synchronised;
 
  public:
-  KrylovHandle(int _batched_size, int _N_team, int _max_iteration = 200,
-               bool _monitor_residual = false)
+  KrylovHandle(int _batched_size, int _N_team, int _max_iteration = 200, bool _monitor_residual = false)
       : max_iteration(_max_iteration),
         batched_size(_batched_size),
         N_team(_N_team),
@@ -192,9 +190,7 @@ class KrylovHandle {
   /// \param batched_id [in]: Global batched ID
 
   KOKKOS_INLINE_FUNCTION
-  bool is_converged(int batched_id) const {
-    return (iteration_numbers(batched_id) != -1);
-  }
+  bool is_converged(int batched_id) const { return (iteration_numbers(batched_id) != -1); }
 
   /// \brief is_converged
   ///   Test if one particular system has converged (host).
@@ -226,9 +222,7 @@ class KrylovHandle {
   /// \param _max_tolerance [in]: New tolerance
 
   KOKKOS_INLINE_FUNCTION
-  void set_max_tolerance(norm_type _max_tolerance) {
-    max_tolerance = _max_tolerance;
-  }
+  void set_max_tolerance(norm_type _max_tolerance) { max_tolerance = _max_tolerance; }
 
   /// \brief get_max_tolerance
   ///   Get the maximal tolerance of the batched Krylov solver
@@ -310,9 +304,7 @@ class KrylovHandle {
   /// \param batched_id [in]: Global batched ID
 
   KOKKOS_INLINE_FUNCTION
-  int get_iteration(int batched_id) const {
-    return iteration_numbers(batched_id);
-  }
+  int get_iteration(int batched_id) const { return iteration_numbers(batched_id); }
 
   /// \brief get_iteration_host
   ///   Get the number of iteration after convergence for one system (host)
@@ -332,9 +324,7 @@ class KrylovHandle {
   /// \param _ortho_strategy [in]: used orthogonalization strategy
 
   KOKKOS_INLINE_FUNCTION
-  void set_ortho_strategy(int _ortho_strategy) {
-    ortho_strategy = _ortho_strategy;
-  }
+  void set_ortho_strategy(int _ortho_strategy) { ortho_strategy = _ortho_strategy; }
 
   /// \brief get_ortho_strategy
   ///   Get the used orthogonalization strategy.
@@ -350,9 +340,7 @@ class KrylovHandle {
   /// \param _scratch_pad_level [in]: used level
 
   KOKKOS_INLINE_FUNCTION
-  void set_scratch_pad_level(int _scratch_pad_level) {
-    scratch_pad_level = _scratch_pad_level;
-  }
+  void set_scratch_pad_level(int _scratch_pad_level) { scratch_pad_level = _scratch_pad_level; }
 
   /// \brief get_scratch_pad_level
   ///   Get the scratch pad level used to store temporary variables.
@@ -386,9 +374,7 @@ class KrylovHandle {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void set_memory_strategy(int _memory_strategy) {
-    memory_strategy = _memory_strategy;
-  }
+  void set_memory_strategy(int _memory_strategy) { memory_strategy = _memory_strategy; }
 
   KOKKOS_INLINE_FUNCTION
   int get_memory_strategy() const { return memory_strategy; }
@@ -415,10 +401,8 @@ class KrylovHandle {
   /// \param norm_i [in]: Norm to store
 
   KOKKOS_INLINE_FUNCTION
-  void set_norm(int team_id, int batched_id, int iteration_id,
-                norm_type norm_i) const {
-    if (monitor_residual)
-      residual_norms(team_id * N_team + batched_id, iteration_id) = norm_i;
+  void set_norm(int team_id, int batched_id, int iteration_id, norm_type norm_i) const {
+    if (monitor_residual) residual_norms(team_id * N_team + batched_id, iteration_id) = norm_i;
   }
 
   /// \brief set_last_norm
@@ -429,8 +413,7 @@ class KrylovHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_last_norm(int batched_id, norm_type norm_i) const {
-    if (monitor_residual)
-      residual_norms(batched_id, max_iteration + 1) = norm_i;
+    if (monitor_residual) residual_norms(batched_id, max_iteration + 1) = norm_i;
   }
 
   /// \brief set_last_norm
@@ -442,8 +425,7 @@ class KrylovHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_last_norm(int team_id, int batched_id, norm_type norm_i) const {
-    if (monitor_residual)
-      residual_norms(team_id * N_team + batched_id, max_iteration + 1) = norm_i;
+    if (monitor_residual) residual_norms(team_id * N_team + batched_id, max_iteration + 1) = norm_i;
   }
 
   /// \brief set_iteration
@@ -453,9 +435,7 @@ class KrylovHandle {
   /// \param iteration_id [in]: Iteration ID
 
   KOKKOS_INLINE_FUNCTION
-  void set_iteration(int batched_id, int iteration_id) const {
-    iteration_numbers(batched_id) = iteration_id;
-  }
+  void set_iteration(int batched_id, int iteration_id) const { iteration_numbers(batched_id) = iteration_id; }
 
   /// \brief set_iteration
   ///   Store the number of iteration after convergence for one system

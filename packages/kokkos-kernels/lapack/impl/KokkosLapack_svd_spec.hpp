@@ -28,8 +28,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix,
-          class VMatrix>
+template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix, class VMatrix>
 struct svd_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -43,24 +42,19 @@ struct svd_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_SVD_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE,             \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE)      \
-  template <>                                                                 \
-  struct svd_eti_spec_avail<                                                  \
-      EXEC_SPACE_TYPE,                                                        \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, LAYOUT_TYPE, \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                \
-    enum : bool { value = true };                                             \
+#define KOKKOSLAPACK_SVD_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)            \
+  template <>                                                                                                 \
+  struct svd_eti_spec_avail<                                                                                  \
+      EXEC_SPACE_TYPE,                                                                                        \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, LAYOUT_TYPE,                                 \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                \
+    enum : bool { value = true };                                                                             \
   };
 
 // Include the actual specialization declarations
@@ -73,29 +67,21 @@ namespace Impl {
 // Unification layer
 /// \brief Implementation of KokkosLapack::svd.
 
-template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix,
-          class VMatrix,
-          bool tpl_spec_avail = svd_tpl_spec_avail<
-              ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix>::value,
-          bool eti_spec_avail = svd_eti_spec_avail<
-              ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix>::value>
+template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix, class VMatrix,
+          bool tpl_spec_avail = svd_tpl_spec_avail<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix>::value,
+          bool eti_spec_avail = svd_eti_spec_avail<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix>::value>
 struct SVD {
-  static void svd(const ExecutionSpace &space, const char jobu[],
-                  const char jobvt[], const AMatrix &A, const SVector &S,
-                  const UMatrix &U, const VMatrix &Vt);
+  static void svd(const ExecutionSpace &space, const char jobu[], const char jobvt[], const AMatrix &A,
+                  const SVector &S, const UMatrix &U, const VMatrix &Vt);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of svd
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix,
-          class VMatrix>
-struct SVD<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix, false,
-           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void svd(const ExecutionSpace & /* space */, const char * /* jobu */,
-                  const char * /* jobvt */, const AMatrix & /* A */,
-                  const SVector & /* S */, const UMatrix & /* U */,
-                  const VMatrix & /* Vt */) {
+template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix, class VMatrix>
+struct SVD<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void svd(const ExecutionSpace & /* space */, const char * /* jobu */, const char * /* jobvt */,
+                  const AMatrix & /* A */, const SVector & /* S */, const UMatrix & /* U */, const VMatrix & /* Vt */) {
     // NOTE: Might add the implementation of KokkosLapack::svd later
     throw std::runtime_error(
         "No fallback implementation of SVD (singular value decomposition) "
@@ -115,40 +101,30 @@ struct SVD<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_SVD_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE,              \
-                                       EXEC_SPACE_TYPE, MEM_SPACE_TYPE)       \
-  extern template struct SVD<                                                 \
-      EXEC_SPACE_TYPE,                                                        \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, LAYOUT_TYPE, \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+#define KOKKOSLAPACK_SVD_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)             \
+  extern template struct SVD<                                                                                 \
+      EXEC_SPACE_TYPE,                                                                                        \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, LAYOUT_TYPE,                                 \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
       false, true>;
 
-#define KOKKOSLAPACK_SVD_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE,              \
-                                       EXEC_SPACE_TYPE, MEM_SPACE_TYPE)       \
-  template struct SVD<                                                        \
-      EXEC_SPACE_TYPE,                                                        \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, LAYOUT_TYPE, \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                               \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+#define KOKKOSLAPACK_SVD_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)             \
+  template struct SVD<                                                                                        \
+      EXEC_SPACE_TYPE,                                                                                        \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, LAYOUT_TYPE,                                 \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
       false, true>;
 
 #include <KokkosLapack_svd_tpl_spec_decl.hpp>

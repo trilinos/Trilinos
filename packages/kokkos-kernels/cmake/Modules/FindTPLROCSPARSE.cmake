@@ -1,9 +1,47 @@
-# MPL: 05/01/2023: This file follows the partern of FindTPLROCBLAS.cmake
-FIND_PACKAGE(ROCSPARSE)
-if(TARGET roc::rocsparse)
-  SET(TPL_ROCSPARSE_IMPORTED_NAME roc::rocsparse)
-  SET(TPL_IMPORTED_NAME roc::rocsparse)
-  ADD_LIBRARY(KokkosKernels::ROCSPARSE ALIAS roc::rocsparse)
-ELSE()
-  MESSAGE(FATAL_ERROR "Package ROCSPARSE requested but not found")
+IF(ROCSPARSE_LIBRARIES AND ROCSPARSE_LIBRARY_DIRS AND ROCSPARSE_INCLUDE_DIRS)
+  kokkoskernels_find_imported(ROCSPARSE INTERFACE
+    LIBRARIES ${ROCSPARSE_LIBRARIES}
+    LIBRARY_PATHS ${ROCSPARSE_LIBRARY_DIRS}
+    HEADER_PATHS ${ROCSPARSE_INCLUDE_DIRS}
+  )
+ELSEIF(ROCSPARSE_LIBRARIES AND ROCSPARSE_LIBRARY_DIRS)
+  kokkoskernels_find_imported(ROCSPARSE INTERFACE
+    LIBRARIES ${ROCSPARSE_LIBRARIES}
+    LIBRARY_PATHS ${ROCSPARSE_LIBRARY_DIRS}
+    HEADER rocsparse.h
+  )
+ELSEIF(ROCSPARSE_LIBRARIES)
+  kokkoskernels_find_imported(ROCSPARSE INTERFACE
+    LIBRARIES ${ROCSPARSE_LIBRARIES}
+    HEADER rocsparse.h
+  )
+ELSEIF(ROCSPARSE_LIBRARY_DIRS)
+  kokkoskernels_find_imported(ROCSPARSE INTERFACE
+    LIBRARIES rocsparse
+    LIBRARY_PATHS ${ROCSPARSE_LIBRARY_DIRS}
+    HEADER rocsparse.h
+  )
+ELSEIF(ROCSPARSE_ROOT OR KokkosKernels_ROCSPARSE_ROOT) # nothing specific provided, just ROOT
+  kokkoskernels_find_imported(ROCSPARSE INTERFACE
+    LIBRARIES rocsparse
+    HEADER rocsparse.h
+  )
+ELSE() # backwards-compatible way
+  FIND_PACKAGE(ROCSPARSE)
+  INCLUDE(FindPackageHandleStandardArgs)
+  IF (NOT ROCSPARSE_FOUND)
+    #Important note here: this find Module is named TPLROCSPARSE
+    #The eventual target is named ROCSPARSE. To avoid naming conflicts
+    #the find module is called TPLROCSPARSE. This call will cause
+    #the find_package call to fail in a "standard" CMake way
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS(TPLROCSPARSE REQUIRED_VARS ROCSPARSE_FOUND)
+  ELSE()
+    #The libraries might be empty - OR they might explicitly be not found
+    IF("${ROCSPARSE_LIBRARIES}" MATCHES "NOTFOUND")
+      FIND_PACKAGE_HANDLE_STANDARD_ARGS(TPLROCSPARSE REQUIRED_VARS ROCSPARSE_LIBRARIES)
+    ELSE()
+      KOKKOSKERNELS_CREATE_IMPORTED_TPL(ROCSPARSE INTERFACE
+        LINK_LIBRARIES "${ROCSPARSE_LIBRARIES}")
+    ENDIF()
+  ENDIF()
 ENDIF()

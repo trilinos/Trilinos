@@ -32,18 +32,16 @@ struct MDF_types {
   using scalar_type     = typename crs_matrix_type::value_type;
   using KAS             = typename Kokkos::ArithTraits<scalar_type>;
   using scalar_mag_type = typename KAS::mag_type;
-  using values_mag_type = Kokkos::View<scalar_mag_type*, Kokkos::LayoutRight,
-                                       typename crs_matrix_type::device_type,
+  using values_mag_type = Kokkos::View<scalar_mag_type*, Kokkos::LayoutRight, typename crs_matrix_type::device_type,
                                        typename crs_matrix_type::memory_traits>;
 };
 
 template <class crs_matrix_type>
 struct MDF_count_lower {
-  using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
-      entries_type::non_const_type;
-  using size_type  = typename crs_matrix_type::ordinal_type;
-  using value_type = typename crs_matrix_type::size_type;
-  using KAV        = typename Kokkos::ArithTraits<value_type>;
+  using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::entries_type::non_const_type;
+  using size_type    = typename crs_matrix_type::ordinal_type;
+  using value_type   = typename crs_matrix_type::size_type;
+  using KAV          = typename Kokkos::ArithTraits<value_type>;
 
   crs_matrix_type A;
   col_ind_type permutation;
@@ -53,8 +51,7 @@ struct MDF_count_lower {
   using team_policy_t   = Kokkos::TeamPolicy<execution_space>;
   using team_member_t   = typename team_policy_t::member_type;
 
-  MDF_count_lower(crs_matrix_type A_, col_ind_type permutation_,
-                  col_ind_type permutation_inv_)
+  MDF_count_lower(crs_matrix_type A_, col_ind_type permutation_, col_ind_type permutation_inv_)
       : A(A_), permutation(permutation_), permutation_inv(permutation_inv_){};
 
   KOKKOS_INLINE_FUNCTION
@@ -83,18 +80,16 @@ struct MDF_discarded_fill_norm {
   using device_type = typename crs_matrix_type::device_type;
 
   using static_crs_graph_type = typename crs_matrix_type::StaticCrsGraphType;
-  using col_ind_type =
-      typename static_crs_graph_type::entries_type::non_const_type;
-  using values_type     = typename crs_matrix_type::values_type::non_const_type;
-  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
-  using size_type       = typename crs_matrix_type::size_type;
-  using ordinal_type    = typename crs_matrix_type::ordinal_type;
-  using scalar_type     = typename crs_matrix_type::value_type;
-  using KAS             = typename Kokkos::ArithTraits<scalar_type>;
-  using scalar_mag_type = typename KAS::mag_type;
-  using KAM             = typename Kokkos::ArithTraits<scalar_mag_type>;
-  using permutation_set_type =
-      Kokkos::UnorderedMap<ordinal_type, void, device_type>;
+  using col_ind_type          = typename static_crs_graph_type::entries_type::non_const_type;
+  using values_type           = typename crs_matrix_type::values_type::non_const_type;
+  using values_mag_type       = typename MDF_types<crs_matrix_type>::values_mag_type;
+  using size_type             = typename crs_matrix_type::size_type;
+  using ordinal_type          = typename crs_matrix_type::ordinal_type;
+  using scalar_type           = typename crs_matrix_type::value_type;
+  using KAS                   = typename Kokkos::ArithTraits<scalar_type>;
+  using scalar_mag_type       = typename KAS::mag_type;
+  using KAM                   = typename Kokkos::ArithTraits<scalar_mag_type>;
+  using permutation_set_type  = Kokkos::UnorderedMap<ordinal_type, void, device_type>;
 
   crs_matrix_type A, At;
   ordinal_type factorization_step;
@@ -106,12 +101,9 @@ struct MDF_discarded_fill_norm {
   col_ind_type deficiency;
   int verbosity;
 
-  MDF_discarded_fill_norm(crs_matrix_type A_, crs_matrix_type At_,
-                          ordinal_type factorization_step_,
-                          col_ind_type permutation_,
-                          permutation_set_type permutation_set_,
-                          values_mag_type discarded_fill_,
-                          col_ind_type deficiency_, int verbosity_,
+  MDF_discarded_fill_norm(crs_matrix_type A_, crs_matrix_type At_, ordinal_type factorization_step_,
+                          col_ind_type permutation_, permutation_set_type permutation_set_,
+                          values_mag_type discarded_fill_, col_ind_type deficiency_, int verbosity_,
                           col_ind_type update_list_ = col_ind_type{})
       : A(A_),
         At(At_),
@@ -174,8 +166,7 @@ struct MDF_discarded_fill_norm {
   KOKKOS_INLINE_FUNCTION
   void operator()(team_member_t team) const {
     const ordinal_type rowIdx =
-        is_initial_fill ? permutation(team.league_rank())
-                        : permutation(update_list(team.league_rank()));
+        is_initial_fill ? permutation(team.league_rank()) : permutation(update_list(team.league_rank()));
     const auto colView = At.rowConst(rowIdx);
     const auto rowView = A.rowConst(rowIdx);
 
@@ -188,9 +179,7 @@ struct MDF_discarded_fill_norm {
 
           // Record diagonal term
           if (fillRowIdx == rowIdx) {
-            Kokkos::single(Kokkos::PerThread(team), [&] {
-              running_disc_norm.diag_val = colView.value(alpha);
-            });
+            Kokkos::single(Kokkos::PerThread(team), [&] { running_disc_norm.diag_val = colView.value(alpha); });
             return;
           }
 
@@ -203,8 +192,7 @@ struct MDF_discarded_fill_norm {
           reduction_val_t local_reduction_val = DiscNormReducer::init();
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(team, rowView.length),
-              [&](const ordinal_type beta,
-                  reduction_val_t& vect_running_disc_norm) {
+              [&](const ordinal_type beta, reduction_val_t& vect_running_disc_norm) {
                 const ordinal_type fillColIdx = rowView.colidx(beta);
 
                 if (fillColIdx == rowIdx) return;
@@ -214,26 +202,22 @@ struct MDF_discarded_fill_norm {
                 }
 
                 bool entryIsDiscarded = true;
-                for (ordinal_type gamma = 0; gamma < fillRowView.length;
-                     ++gamma) {
+                for (ordinal_type gamma = 0; gamma < fillRowView.length; ++gamma) {
                   if (fillRowView.colidx(gamma) == fillColIdx) {
                     entryIsDiscarded = false;
                   }
                 }
                 if (entryIsDiscarded) {
                   vect_running_disc_norm.numFillEntries += 1;
-                  vect_running_disc_norm.discarded_norm +=
-                      KAS::abs(colView.value(alpha) * rowView.value(beta)) *
-                      KAS::abs(colView.value(alpha) * rowView.value(beta));
+                  vect_running_disc_norm.discarded_norm += KAS::abs(colView.value(alpha) * rowView.value(beta)) *
+                                                           KAS::abs(colView.value(alpha) * rowView.value(beta));
                 }
               },
               DiscNormReducer(local_reduction_val));
 
           Kokkos::single(Kokkos::PerThread(team), [&] {
-            running_disc_norm.discarded_norm +=
-                local_reduction_val.discarded_norm;
-            running_disc_norm.numFillEntries +=
-                local_reduction_val.numFillEntries;
+            running_disc_norm.discarded_norm += local_reduction_val.discarded_norm;
+            running_disc_norm.numFillEntries += local_reduction_val.numFillEntries;
           });
         },
         DiscNormReducer(reduction_val));
@@ -252,11 +236,9 @@ struct MDF_discarded_fill_norm {
 
 template <class crs_matrix_type>
 struct MDF_select_row {
-  using values_type  = typename crs_matrix_type::values_type::non_const_type;
-  using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
-      entries_type::non_const_type;
-  using row_map_type =
-      typename crs_matrix_type::StaticCrsGraphType::row_map_type;
+  using values_type     = typename crs_matrix_type::values_type::non_const_type;
+  using col_ind_type    = typename crs_matrix_type::StaticCrsGraphType::entries_type::non_const_type;
+  using row_map_type    = typename crs_matrix_type::StaticCrsGraphType::row_map_type;
   using size_type       = typename crs_matrix_type::size_type;
   using ordinal_type    = typename crs_matrix_type::ordinal_type;
   using scalar_type     = typename crs_matrix_type::value_type;
@@ -272,8 +254,7 @@ struct MDF_select_row {
   row_map_type row_map;
   col_ind_type permutation;
 
-  MDF_select_row(value_type factorization_step_,
-                 values_mag_type discarded_fill_, col_ind_type deficiency_,
+  MDF_select_row(value_type factorization_step_, values_mag_type discarded_fill_, col_ind_type deficiency_,
                  row_map_type row_map_, col_ind_type permutation_)
       : factorization_step(factorization_step_),
         discarded_fill(discarded_fill_),
@@ -283,33 +264,28 @@ struct MDF_select_row {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type src, ordinal_type& dst) const {
-    const ordinal_type src_perm = permutation(src);
-    const ordinal_type dst_perm = permutation(dst);
-    const ordinal_type degree_src =
-        row_map(src_perm + 1) - row_map(src_perm) - 1;
-    const ordinal_type degree_dst =
-        row_map(dst_perm + 1) - row_map(dst_perm) - 1;
+    const ordinal_type src_perm   = permutation(src);
+    const ordinal_type dst_perm   = permutation(dst);
+    const ordinal_type degree_src = row_map(src_perm + 1) - row_map(src_perm) - 1;
+    const ordinal_type degree_dst = row_map(dst_perm + 1) - row_map(dst_perm) - 1;
 
     if (discarded_fill(src_perm) < discarded_fill(dst_perm)) {
       dst = src;
       return;
     }
 
-    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) &&
-        (deficiency(src_perm) < deficiency(dst_perm))) {
+    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) && (deficiency(src_perm) < deficiency(dst_perm))) {
       dst = src;
       return;
     }
 
-    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) &&
-        (deficiency(src_perm) == deficiency(dst_perm)) &&
+    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) && (deficiency(src_perm) == deficiency(dst_perm)) &&
         (degree_src < degree_dst)) {
       dst = src;
       return;
     }
 
-    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) &&
-        (deficiency(src_perm) == deficiency(dst_perm)) &&
+    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) && (deficiency(src_perm) == deficiency(dst_perm)) &&
         (degree_src == degree_dst) && (src_perm < dst_perm)) {
       dst = src;
       return;
@@ -320,33 +296,28 @@ struct MDF_select_row {
 
   KOKKOS_INLINE_FUNCTION
   void join(value_type& dst, const value_type& src) const {
-    const ordinal_type src_perm = permutation(src);
-    const ordinal_type dst_perm = permutation(dst);
-    const ordinal_type degree_src =
-        row_map(src_perm + 1) - row_map(src_perm) - 1;
-    const ordinal_type degree_dst =
-        row_map(dst_perm + 1) - row_map(dst_perm) - 1;
+    const ordinal_type src_perm   = permutation(src);
+    const ordinal_type dst_perm   = permutation(dst);
+    const ordinal_type degree_src = row_map(src_perm + 1) - row_map(src_perm) - 1;
+    const ordinal_type degree_dst = row_map(dst_perm + 1) - row_map(dst_perm) - 1;
 
     if (discarded_fill(src_perm) < discarded_fill(dst_perm)) {
       dst = src;
       return;
     }
 
-    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) &&
-        (deficiency(src_perm) < deficiency(dst_perm))) {
+    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) && (deficiency(src_perm) < deficiency(dst_perm))) {
       dst = src;
       return;
     }
 
-    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) &&
-        (deficiency(src_perm) == deficiency(dst_perm)) &&
+    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) && (deficiency(src_perm) == deficiency(dst_perm)) &&
         (degree_src < degree_dst)) {
       dst = src;
       return;
     }
 
-    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) &&
-        (deficiency(src_perm) == deficiency(dst_perm)) &&
+    if ((discarded_fill(src_perm) == discarded_fill(dst_perm)) && (deficiency(src_perm) == deficiency(dst_perm)) &&
         (degree_src == degree_dst) && (src_perm < dst_perm)) {
       dst = src;
       return;
@@ -361,11 +332,9 @@ struct MDF_select_row {
 };  // MDF_select_row
 
 template <class view_type, class ordinal_type>
-KOKKOS_INLINE_FUNCTION bool sorted_view_contains(
-    const view_type& values, const ordinal_type size,
-    typename view_type::const_value_type search_val) {
-  return KokkosSparse::findRelOffset(values, size, search_val, size, true) !=
-         size;
+KOKKOS_INLINE_FUNCTION bool sorted_view_contains(const view_type& values, const ordinal_type size,
+                                                 typename view_type::const_value_type search_val) {
+  return KokkosSparse::findRelOffset(values, size, search_val, size, true) != size;
 }
 
 template <class crs_matrix_type>
@@ -375,18 +344,15 @@ struct MDF_factorize_row {
   using team_policy_t   = Kokkos::TeamPolicy<execution_space>;
   using team_member_t   = typename team_policy_t::member_type;
 
-  using row_map_type = typename crs_matrix_type::StaticCrsGraphType::
-      row_map_type::non_const_type;
-  using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
-      entries_type::non_const_type;
-  using values_type     = typename crs_matrix_type::values_type::non_const_type;
-  using ordinal_type    = typename crs_matrix_type::ordinal_type;
-  using size_type       = typename crs_matrix_type::size_type;
-  using value_type      = typename crs_matrix_type::value_type;
-  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
-  using value_mag_type  = typename values_mag_type::value_type;
-  using permutation_set_type =
-      Kokkos::UnorderedMap<ordinal_type, void, device_type>;
+  using row_map_type         = typename crs_matrix_type::StaticCrsGraphType::row_map_type::non_const_type;
+  using col_ind_type         = typename crs_matrix_type::StaticCrsGraphType::entries_type::non_const_type;
+  using values_type          = typename crs_matrix_type::values_type::non_const_type;
+  using ordinal_type         = typename crs_matrix_type::ordinal_type;
+  using size_type            = typename crs_matrix_type::size_type;
+  using value_type           = typename crs_matrix_type::value_type;
+  using values_mag_type      = typename MDF_types<crs_matrix_type>::values_mag_type;
+  using value_mag_type       = typename values_mag_type::value_type;
+  using permutation_set_type = Kokkos::UnorderedMap<ordinal_type, void, device_type>;
 
   crs_matrix_type A, At;
 
@@ -408,16 +374,11 @@ struct MDF_factorize_row {
 
   int verbosity;
 
-  MDF_factorize_row(crs_matrix_type A_, crs_matrix_type At_,
-                    row_map_type row_mapL_, col_ind_type entriesL_,
-                    values_type valuesL_, row_map_type row_mapU_,
-                    col_ind_type entriesU_, values_type valuesU_,
-                    col_ind_type permutation_, col_ind_type permutation_inv_,
-                    permutation_set_type permutation_set_,
-                    values_mag_type discarded_fill_, col_ind_type factored_,
-                    ordinal_type selected_row_idx_,
-                    ordinal_type factorization_step_,
-                    col_ind_type& update_list_, int verbosity_)
+  MDF_factorize_row(crs_matrix_type A_, crs_matrix_type At_, row_map_type row_mapL_, col_ind_type entriesL_,
+                    values_type valuesL_, row_map_type row_mapU_, col_ind_type entriesU_, values_type valuesU_,
+                    col_ind_type permutation_, col_ind_type permutation_inv_, permutation_set_type permutation_set_,
+                    values_mag_type discarded_fill_, col_ind_type factored_, ordinal_type selected_row_idx_,
+                    ordinal_type factorization_step_, col_ind_type& update_list_, int verbosity_)
       : A(A_),
         At(At_),
         row_mapL(row_mapL_),
@@ -454,8 +415,7 @@ struct MDF_factorize_row {
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(team, rowView.length),
         [&](const size_type ind, value_type& running_diag) {
-          if (rowView.colidx(ind) == selected_row)
-            running_diag = rowView.value(ind);
+          if (rowView.colidx(ind) == selected_row) running_diag = rowView.value(ind);
         },
         Kokkos::Sum<value_type, execution_space>(diag));
 
@@ -463,34 +423,28 @@ struct MDF_factorize_row {
     // Then insert alpha*beta/diag_val if the corresponding
     // entry in A is non-zero.
     auto fillRowView = A.row(rowInd);
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, rowView.length),
-        [&](const ordinal_type beta) {
-          const auto colInd = rowView.colidx(beta);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, rowView.length), [&](const ordinal_type beta) {
+      const auto colInd = rowView.colidx(beta);
 
-          if (colInd == selected_row) return;
+      if (colInd == selected_row) return;
 
-          if (permutation_set.exists(colInd)) return;
+      if (permutation_set.exists(colInd)) return;
 
-          const auto subVal = colView.value(alpha) * rowView.value(beta) / diag;
+      const auto subVal = colView.value(alpha) * rowView.value(beta) / diag;
 
-          Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(team, fillRowView.length),
-              [&](const ordinal_type gamma) {
-                if (colInd == fillRowView.colidx(gamma)) {
-                  Kokkos::atomic_sub(&fillRowView.value(gamma), subVal);
-                }
-              });
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, fillRowView.length), [&](const ordinal_type gamma) {
+        if (colInd == fillRowView.colidx(gamma)) {
+          Kokkos::atomic_sub(&fillRowView.value(gamma), subVal);
+        }
+      });
 
-          auto fillColView = At.row(colInd);
-          Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(team, fillColView.length),
-              [&](const ordinal_type delt) {
-                if (rowInd == fillColView.colidx(delt)) {
-                  Kokkos::atomic_sub(&fillColView.value(delt), subVal);
-                }
-              });
-        });
+      auto fillColView = At.row(colInd);
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, fillColView.length), [&](const ordinal_type delt) {
+        if (rowInd == fillColView.colidx(delt)) {
+          Kokkos::atomic_sub(&fillColView.value(delt), subVal);
+        }
+      });
+    });
   }
 };
 
@@ -501,10 +455,8 @@ struct MDF_compute_list_length {
   using team_policy_t   = Kokkos::TeamPolicy<execution_space>;
   using team_member_t   = typename team_policy_t::member_type;
 
-  using row_map_type = typename crs_matrix_type::StaticCrsGraphType::
-      row_map_type::non_const_type;
-  using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
-      entries_type::non_const_type;
+  using row_map_type    = typename crs_matrix_type::StaticCrsGraphType::row_map_type::non_const_type;
+  using col_ind_type    = typename crs_matrix_type::StaticCrsGraphType::entries_type::non_const_type;
   using values_type     = typename crs_matrix_type::values_type::non_const_type;
   using ordinal_type    = typename crs_matrix_type::ordinal_type;
   using size_type       = typename crs_matrix_type::size_type;
@@ -512,8 +464,7 @@ struct MDF_compute_list_length {
   using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
   using value_mag_type  = typename values_mag_type::value_type;
 
-  using permutation_set_type =
-      Kokkos::UnorderedMap<ordinal_type, void, device_type>;
+  using permutation_set_type = Kokkos::UnorderedMap<ordinal_type, void, device_type>;
 
   crs_matrix_type A, At;
 
@@ -535,14 +486,12 @@ struct MDF_compute_list_length {
 
   int verbosity;
 
-  MDF_compute_list_length(
-      crs_matrix_type A_, crs_matrix_type At_, row_map_type row_mapL_,
-      col_ind_type entriesL_, values_type valuesL_, row_map_type row_mapU_,
-      col_ind_type entriesU_, values_type valuesU_, col_ind_type permutation_,
-      col_ind_type permutation_inv_, permutation_set_type permutation_set_,
-      values_mag_type discarded_fill_, col_ind_type factored_,
-      ordinal_type selected_row_idx_, ordinal_type factorization_step_,
-      col_ind_type& update_list_, int verbosity_)
+  MDF_compute_list_length(crs_matrix_type A_, crs_matrix_type At_, row_map_type row_mapL_, col_ind_type entriesL_,
+                          values_type valuesL_, row_map_type row_mapU_, col_ind_type entriesU_, values_type valuesU_,
+                          col_ind_type permutation_, col_ind_type permutation_inv_,
+                          permutation_set_type permutation_set_, values_mag_type discarded_fill_,
+                          col_ind_type factored_, ordinal_type selected_row_idx_, ordinal_type factorization_step_,
+                          col_ind_type& update_list_, int verbosity_)
       : A(A_),
         At(At_),
         row_mapL(row_mapL_),
@@ -563,8 +512,7 @@ struct MDF_compute_list_length {
 
   // Phase 1, update list length
   KOKKOS_INLINE_FUNCTION
-  void operator()(const team_member_t team, ordinal_type& update_list_len,
-                  ordinal_type& selected_row_len) const {
+  void operator()(const team_member_t team, ordinal_type& update_list_len, ordinal_type& selected_row_len) const {
     ordinal_type selected_row = 0;
 
     size_type U_entryIdx = row_mapU(factorization_step);
@@ -575,8 +523,8 @@ struct MDF_compute_list_length {
       discarded_fill(selected_row) = Kokkos::ArithTraits<value_mag_type>::max();
 
       // Swap entries in permutation vectors
-      permutation(selected_row_idx)   = permutation(factorization_step);
-      permutation(factorization_step) = selected_row;
+      permutation(selected_row_idx)                    = permutation(factorization_step);
+      permutation(factorization_step)                  = selected_row;
       permutation_inv(permutation(factorization_step)) = factorization_step;
       permutation_inv(permutation(selected_row_idx))   = selected_row_idx;
 
@@ -601,20 +549,18 @@ struct MDF_compute_list_length {
     ordinal_type updateIdx = 0;
     value_type diag        = Kokkos::ArithTraits<value_type>::zero();
     {
-      Kokkos::parallel_scan(
-          Kokkos::TeamThreadRange(team, rowView.length),
-          [&](const size_type alpha, ordinal_type& running_update,
-              bool is_final) {
-            const auto colInd = rowView.colidx(alpha);
-            if ((colInd != selected_row) && (factored(colInd) != 1)) {
-              if (is_final) {
-                update_list(running_update) = colInd;
-                ++updateIdx;
-              }
-              ++running_update;
-            }
-          }
-          // ,updateIdx
+      Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, rowView.length),
+                            [&](const size_type alpha, ordinal_type& running_update, bool is_final) {
+                              const auto colInd = rowView.colidx(alpha);
+                              if ((colInd != selected_row) && (factored(colInd) != 1)) {
+                                if (is_final) {
+                                  update_list(running_update) = colInd;
+                                  ++updateIdx;
+                                }
+                                ++running_update;
+                              }
+                            }
+                            // ,updateIdx
       );
 
       // Until https://github.com/kokkos/kokkos/issues/6259 is resolved, do
@@ -626,21 +572,20 @@ struct MDF_compute_list_length {
     }
     {
       size_type numEntrU = 0;
-      Kokkos::parallel_scan(
-          Kokkos::TeamThreadRange(team, rowView.length),
-          [&](const size_type alpha, size_type& running_nEntr, bool is_final) {
-            const auto colInd = rowView.colidx(alpha);
-            if (permutation_inv(colInd) >= factorization_step) {
-              if (is_final) {
-                ++numEntrU;
-                entriesU(U_entryIdx + running_nEntr) = colInd;
-                valuesU(U_entryIdx + running_nEntr)  = rowView.value(alpha);
-                if (colInd == selected_row) diag = rowView.value(alpha);
-              }
-              ++running_nEntr;
-            }
-          }
-          // , numEntrU
+      Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, rowView.length),
+                            [&](const size_type alpha, size_type& running_nEntr, bool is_final) {
+                              const auto colInd = rowView.colidx(alpha);
+                              if (permutation_inv(colInd) >= factorization_step) {
+                                if (is_final) {
+                                  ++numEntrU;
+                                  entriesU(U_entryIdx + running_nEntr) = colInd;
+                                  valuesU(U_entryIdx + running_nEntr)  = rowView.value(alpha);
+                                  if (colInd == selected_row) diag = rowView.value(alpha);
+                                }
+                                ++running_nEntr;
+                              }
+                            }
+                            // , numEntrU
       );
 
       // Until https://github.com/kokkos/kokkos/issues/6259 is resolved, do
@@ -658,21 +603,19 @@ struct MDF_compute_list_length {
     // diagonal value in L.
     {
       size_type numEntrL = 0;
-      Kokkos::parallel_scan(
-          Kokkos::TeamThreadRange(team, colView.length),
-          [&](const size_type alpha, size_type& running_nEntr, bool is_final) {
-            const auto rowInd = colView.colidx(alpha);
-            if (permutation_inv(rowInd) > factorization_step) {
-              if (is_final) {
-                ++numEntrL;
-                entriesL(L_entryIdx + running_nEntr) = rowInd;
-                valuesL(L_entryIdx + running_nEntr) =
-                    colView.value(alpha) / diag;
-              }
-              ++running_nEntr;
-            }
-          }
-          // , numEntrL
+      Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, colView.length),
+                            [&](const size_type alpha, size_type& running_nEntr, bool is_final) {
+                              const auto rowInd = colView.colidx(alpha);
+                              if (permutation_inv(rowInd) > factorization_step) {
+                                if (is_final) {
+                                  ++numEntrL;
+                                  entriesL(L_entryIdx + running_nEntr) = rowInd;
+                                  valuesL(L_entryIdx + running_nEntr)  = colView.value(alpha) / diag;
+                                }
+                                ++running_nEntr;
+                              }
+                            }
+                            // , numEntrL
       );
 
       // Until https://github.com/kokkos/kokkos/issues/6259 is resolved, do
@@ -683,33 +626,30 @@ struct MDF_compute_list_length {
     }
     {
       ordinal_type numUpdateL = 0;
-      Kokkos::parallel_scan(
-          Kokkos::TeamThreadRange(team, colView.length),
-          [&](const size_type alpha, ordinal_type& running_update,
-              bool is_final) {
-            const auto rowInd = colView.colidx(alpha);
-            if ((rowInd != selected_row) && (factored(rowInd) != 1)) {
-              // updateIdx currently holds the rows that were updated. don't add
-              // duplicates
-              const size_type& update_rows = updateIdx;
+      Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, colView.length),
+                            [&](const size_type alpha, ordinal_type& running_update, bool is_final) {
+                              const auto rowInd = colView.colidx(alpha);
+                              if ((rowInd != selected_row) && (factored(rowInd) != 1)) {
+                                // updateIdx currently holds the rows that were updated. don't add
+                                // duplicates
+                                const size_type& update_rows = updateIdx;
 
-              const bool already_updated =
-                  sorted_view_contains(update_list, update_rows, rowInd);
+                                const bool already_updated = sorted_view_contains(update_list, update_rows, rowInd);
 
-              if (!already_updated) {
-                // Cannot make use of vector ranges until
-                // https://github.com/kokkos/kokkos/issues/6259 is resolved
-                // Kokkos::single(Kokkos::PerThread(team),[&]{
-                if (is_final) {
-                  update_list(updateIdx + running_update) = rowInd;
-                  ++numUpdateL;
-                }
-                ++running_update;
-                // });
-              }
-            }
-          }
-          // , numUpdateL
+                                if (!already_updated) {
+                                  // Cannot make use of vector ranges until
+                                  // https://github.com/kokkos/kokkos/issues/6259 is resolved
+                                  // Kokkos::single(Kokkos::PerThread(team),[&]{
+                                  if (is_final) {
+                                    update_list(updateIdx + running_update) = rowInd;
+                                    ++numUpdateL;
+                                  }
+                                  ++running_update;
+                                  // });
+                                }
+                              }
+                            }
+                            // , numUpdateL
       );
 
       // Until https://github.com/kokkos/kokkos/issues/6259 is resolved, do
@@ -740,9 +680,7 @@ struct MDF_reindex_matrix {
       : permutation_inv(permutation_inv_), entries(entries_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int entryIdx) const {
-    entries(entryIdx) = permutation_inv(entries(entryIdx));
-  }
+  void operator()(const int entryIdx) const { entries(entryIdx) = permutation_inv(entries(entryIdx)); }
 };
 
 }  // namespace Impl

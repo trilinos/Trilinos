@@ -35,13 +35,11 @@ struct chem_model_1 {
 
   const double tstart, tend, T0, T1;
 
-  chem_model_1(const double tstart_ = 0, const double tend_ = 300,
-               const double T0_ = 300, const double T1_ = 800)
+  chem_model_1(const double tstart_ = 0, const double tend_ = 300, const double T0_ = 300, const double T1_ = 800)
       : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     // First compute the temperature
     // using linear ramp from T0 to T1
@@ -66,13 +64,11 @@ struct chem_model_2 {
 
   const double tstart, tend, T0, T1;
 
-  chem_model_2(const double tstart_ = 0, const double tend_ = 2000,
-               const double T0_ = 300, const double T1_ = 1000)
+  chem_model_2(const double tstart_ = 0, const double tend_ = 2000, const double T0_ = 300, const double T1_ = 1000)
       : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     // First compute the temperature
     // using linear ramp from T0 to T1
@@ -96,8 +92,7 @@ struct chem_model_2 {
   }
 };
 
-template <class ode_type, class table_type, class vec_type, class mv_type,
-          class scalar_type>
+template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type>
 struct RKSolve_wrapper {
   using ode_params = KokkosODE::Experimental::ODE_params;
 
@@ -109,11 +104,9 @@ struct RKSolve_wrapper {
   vec_type y_old, y_new, tmp;
   mv_type kstack;
 
-  RKSolve_wrapper(const ode_type& my_ode_, const table_type& table_,
-                  const ode_params& params_, const scalar_type tstart_,
-                  const scalar_type tend_, const vec_type& y_old_,
-                  const vec_type& y_new_, const vec_type& tmp_,
-                  const mv_type& kstack_)
+  RKSolve_wrapper(const ode_type& my_ode_, const table_type& table_, const ode_params& params_,
+                  const scalar_type tstart_, const scalar_type tend_, const vec_type& y_old_, const vec_type& y_new_,
+                  const vec_type& tmp_, const mv_type& kstack_)
       : my_ode(my_ode_),
         table(table_),
         params(params_),
@@ -127,18 +120,14 @@ struct RKSolve_wrapper {
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
     // Take subviews to create the local problem
-    auto local_y_old =
-        Kokkos::subview(y_old, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_y_new =
-        Kokkos::subview(y_new, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_tmp = Kokkos::subview(tmp, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_kstack = Kokkos::subview(kstack, Kokkos::ALL(),
-                                        Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_y_old  = Kokkos::subview(y_old, Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_y_new  = Kokkos::subview(y_new, Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_tmp    = Kokkos::subview(tmp, Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_kstack = Kokkos::subview(kstack, Kokkos::ALL(), Kokkos::pair(2 * idx, 2 * idx + 1));
 
     // Run Runge-Kutta time integrator
     KokkosODE::Impl::RKSolve<ode_type, table_type, vec_type, mv_type, double>(
-        my_ode, table, params, tstart, tend, local_y_old, local_y_new,
-        local_tmp, local_kstack);
+        my_ode, table, params, tstart, tend, local_y_old, local_y_new, local_tmp, local_kstack);
   }
 };
 
@@ -148,12 +137,8 @@ struct rk_input_parameters {
   int repeat;
   bool verbose;
 
-  rk_input_parameters(const int num_odes_, const int model_, const int repeat_,
-                      const bool verbose_)
-      : num_odes(num_odes_),
-        model(model_),
-        repeat(repeat_),
-        verbose(verbose_){};
+  rk_input_parameters(const int num_odes_, const int model_, const int repeat_, const bool verbose_)
+      : num_odes(num_odes_), model(model_), repeat(repeat_), verbose(verbose_){};
 };
 
 }  // namespace
@@ -190,9 +175,8 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       Kokkos::deep_copy(y_new, y_old_h);
 
       Kokkos::RangePolicy<execution_space> my_policy(0, num_odes);
-      RKSolve_wrapper solve_wrapper(chem_model, table, params,
-                                    chem_model.tstart, chem_model.tend, y_old,
-                                    y_new, tmp, kstack);
+      RKSolve_wrapper solve_wrapper(chem_model, table, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp,
+                                    kstack);
 
       Kokkos::Timer time;
       time.reset();
@@ -207,15 +191,11 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
         auto y_new_h = Kokkos::create_mirror(y_new);
         Kokkos::deep_copy(y_new_h, y_new);
         std::cout << "\nChem model 1" << std::endl;
-        std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend
-                  << std::endl;
-        std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1
-                  << std::endl;
+        std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend << std::endl;
+        std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1 << std::endl;
         std::cout << "  dt=" << dt << std::endl;
-        std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << "}"
-                  << std::endl;
-        std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << "}"
-                  << std::endl;
+        std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << "}" << std::endl;
+        std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << "}" << std::endl;
         std::cout << "  num odes: " << num_odes << std::endl;
         std::cout << "  time elapsed: " << run_time << std::endl;
       }
@@ -247,9 +227,8 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       Kokkos::deep_copy(y_new, y_old_h);
 
       Kokkos::RangePolicy<execution_space> my_policy(0, num_odes);
-      RKSolve_wrapper solve_wrapper(chem_model, table, params,
-                                    chem_model.tstart, chem_model.tend, y_old,
-                                    y_new, tmp, kstack);
+      RKSolve_wrapper solve_wrapper(chem_model, table, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp,
+                                    kstack);
 
       Kokkos::Timer time;
       time.reset();
@@ -264,15 +243,11 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
         auto y_new_h = Kokkos::create_mirror(y_new);
         Kokkos::deep_copy(y_new_h, y_new);
         std::cout << "\nChem model 2" << std::endl;
-        std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend
-                  << std::endl;
-        std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1
-                  << std::endl;
+        std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend << std::endl;
+        std::cout << "  T0=" << chem_model.T0 << ", Tn=" << chem_model.T1 << std::endl;
         std::cout << "  dt=" << dt << std::endl;
-        std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << "}"
-                  << std::endl;
-        std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << "}"
-                  << std::endl;
+        std::cout << "  y(t0)={" << y_old_h(0) << ", " << y_old_h(1) << "}" << std::endl;
+        std::cout << "  y(tn)={" << y_new_h(0) << ", " << y_new_h(1) << "}" << std::endl;
         std::cout << "  num odes: " << num_odes << std::endl;
         std::cout << "  time elapsed: " << run_time << std::endl;
       }
@@ -286,33 +261,23 @@ void print_options() {
 
   std::cerr << perf_test::list_common_options();
 
-  std::cerr
-      << "\t[Optional] --repeat      :: how many times to repeat overall test"
-      << std::endl;
-  std::cerr << "\t[Optional] --verbose     :: enable verbose output"
-            << std::endl;
-  std::cerr << "\t[Optional] --n           :: number of ode problems to solve"
-            << std::endl;
-  std::cerr
-      << "\t[Optional] --model       :: chemical mode to be solved: 1 or 2"
-      << std::endl;
+  std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall test" << std::endl;
+  std::cerr << "\t[Optional] --verbose     :: enable verbose output" << std::endl;
+  std::cerr << "\t[Optional] --n           :: number of ode problems to solve" << std::endl;
+  std::cerr << "\t[Optional] --model       :: chemical mode to be solved: 1 or 2" << std::endl;
 }  // print_options
 
 int parse_inputs(rk_input_parameters& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "--n", params.num_odes)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--model",
-                                        params.model)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--model", params.model)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--repeat",
-                                        params.repeat)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--repeat", params.repeat)) {
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
-                                         params.verbose)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose", params.verbose)) {
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -340,17 +305,13 @@ int main(int argc, char** argv) {
   std::string bench_name = "KokkosODE_chem_models";
 
   if (0 < common_params.repeat) {
-    benchmark::RegisterBenchmark(
-        bench_name.c_str(),
-        run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
+    benchmark::RegisterBenchmark(bench_name.c_str(), run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
         ->UseRealTime()
         ->ArgNames({"n", "model"})
         ->Args({1000, 1})
         ->Iterations(common_params.repeat);
   } else {
-    benchmark::RegisterBenchmark(
-        bench_name.c_str(),
-        run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
+    benchmark::RegisterBenchmark(bench_name.c_str(), run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
         ->UseRealTime()
         ->ArgNames({"n", "model"})
         ->Args({1000, 1});

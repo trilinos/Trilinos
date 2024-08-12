@@ -15,8 +15,8 @@
 //@HEADER
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-//#define __KOKKOSBATCHED_INTEL_MKL__
-//#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__
+// #define __KOKKOSBATCHED_INTEL_MKL__
+// #define __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 #include <iomanip>
 
 #include "KokkosBatched_Util.hpp"
@@ -57,15 +57,11 @@ double FlopCount(int mm, int nn) {
   double m = (double)mm;
   double n = (double)nn;
   if (m > n)
-    return (FLOP_MUL * (0.5 * m * n * n - (1.0 / 6.0) * n * n * n +
-                        0.5 * m * n - 0.5 * n * n + (2.0 / 3.0) * n) +
-            FLOP_ADD * (0.5 * m * n * n - (1.0 / 6.0) * n * n * n -
-                        0.5 * m * n + (1.0 / 6.0) * n));
+    return (FLOP_MUL * (0.5 * m * n * n - (1.0 / 6.0) * n * n * n + 0.5 * m * n - 0.5 * n * n + (2.0 / 3.0) * n) +
+            FLOP_ADD * (0.5 * m * n * n - (1.0 / 6.0) * n * n * n - 0.5 * m * n + (1.0 / 6.0) * n));
   else
-    return (FLOP_MUL * (0.5 * n * m * m - (1.0 / 6.0) * m * m * m +
-                        0.5 * n * m - 0.5 * m * m + (2.0 / 3.0) * m) +
-            FLOP_ADD * (0.5 * n * m * m - (1.0 / 6.0) * m * m * m -
-                        0.5 * n * m + (1.0 / 6.0) * m));
+    return (FLOP_MUL * (0.5 * n * m * m - (1.0 / 6.0) * m * m * m + 0.5 * n * m - 0.5 * m * m + (2.0 / 3.0) * m) +
+            FLOP_ADD * (0.5 * n * m * m - (1.0 / 6.0) * m * m * m - 0.5 * n * m + (1.0 / 6.0) * m));
 }
 
 template <int BlkSize, typename HostSpaceType, typename AlgoTagType>
@@ -73,26 +69,21 @@ void LU(const int NN) {
   typedef Kokkos::Schedule<Kokkos::Static> ScheduleType;
   // typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
 
-  constexpr int VectorLength =
-      DefaultVectorLength<value_type,
-                          typename HostSpaceType::memory_space>::value;
-  const int N = NN / VectorLength;
+  constexpr int VectorLength = DefaultVectorLength<value_type, typename HostSpaceType::memory_space>::value;
+  const int N                = NN / VectorLength;
 
   {
     std::string value_type_name;
     if (std::is_same<value_type, double>::value) value_type_name = "double";
-    if (std::is_same<value_type, Kokkos::complex<double> >::value)
-      value_type_name = "Kokkos::complex<double>";
+    if (std::is_same<value_type, Kokkos::complex<double> >::value) value_type_name = "Kokkos::complex<double>";
 
 #if defined(__AVX512F__)
-    std::cout << "AVX512 is defined: datatype " << value_type_name
-              << " a vector length " << VectorLength << "\n";
+    std::cout << "AVX512 is defined: datatype " << value_type_name << " a vector length " << VectorLength << "\n";
 #elif defined(__AVX__) || defined(__AVX2__)
-    std::cout << "AVX or AVX2 is defined: datatype " << value_type_name
-              << " a vector length " << VectorLength << "\n";
+    std::cout << "AVX or AVX2 is defined: datatype " << value_type_name << " a vector length " << VectorLength << "\n";
 #else
-    std::cout << "SIMD (compiler vectorization) is defined: datatype "
-              << value_type_name << " a vector length " << VectorLength << "\n";
+    std::cout << "SIMD (compiler vectorization) is defined: datatype " << value_type_name << " a vector length "
+              << VectorLength << "\n";
 #endif
   }
 
@@ -106,8 +97,7 @@ void LU(const int NN) {
   /// Reference version using MKL DGETRF
   ///
   Kokkos::View<value_type***, Kokkos::LayoutRight, HostSpaceType> aref;
-  Kokkos::View<value_type***, Kokkos::LayoutRight, HostSpaceType> amat(
-      "amat", N * VectorLength, BlkSize, BlkSize);
+  Kokkos::View<value_type***, Kokkos::LayoutRight, HostSpaceType> amat("amat", N * VectorLength, BlkSize, BlkSize);
 
   Random<value_type> random;
 
@@ -124,12 +114,11 @@ void LU(const int NN) {
   }
 
   typedef Vector<SIMD<value_type>, VectorLength> VectorType;
-  Kokkos::View<VectorType***, Kokkos::LayoutRight, HostSpaceType> amat_simd(
-      "amat_simd", N, BlkSize, BlkSize);  //, a("a", N, BlkSize, BlkSize);
+  Kokkos::View<VectorType***, Kokkos::LayoutRight, HostSpaceType> amat_simd("amat_simd", N, BlkSize,
+                                                                            BlkSize);  //, a("a", N, BlkSize, BlkSize);
 
   Kokkos::parallel_for(
-      "KokkosBatched::PerfTest::LUHost::Pack",
-      Kokkos::RangePolicy<HostSpaceType>(0, N * VectorLength),
+      "KokkosBatched::PerfTest::LUHost::Pack", Kokkos::RangePolicy<HostSpaceType>(0, N * VectorLength),
       KOKKOS_LAMBDA(const int k) {
         const int k0 = k / VectorLength, k1 = k % VectorLength;
         for (int i = 0; i < BlkSize; ++i)
@@ -147,10 +136,8 @@ void LU(const int NN) {
   ///
 #if defined(__KOKKOSBATCHED_INTEL_MKL__)
   {
-    Kokkos::View<value_type***, Kokkos::LayoutRight, HostSpaceType> a(
-        "a", N * VectorLength, BlkSize, BlkSize);
-    Kokkos::View<int**, Kokkos::LayoutRight, HostSpaceType> p(
-        "p", N * VectorLength, BlkSize);
+    Kokkos::View<value_type***, Kokkos::LayoutRight, HostSpaceType> a("a", N * VectorLength, BlkSize, BlkSize);
+    Kokkos::View<int**, Kokkos::LayoutRight, HostSpaceType> p("p", N * VectorLength, BlkSize);
     {
       double tavg = 0, tmin = tmax;
       for (int iter = iter_begin; iter < iter_end; ++iter) {
@@ -163,16 +150,12 @@ void LU(const int NN) {
         HostSpaceType().fence();
         timer.reset();
 
-        Kokkos::RangePolicy<HostSpaceType, ScheduleType> policy(
-            0, N * VectorLength);
+        Kokkos::RangePolicy<HostSpaceType, ScheduleType> policy(0, N * VectorLength);
         Kokkos::parallel_for(
-            "KokkosBatched::PerfTest::LUHost::LAPACKE_dgetrfOpenMP", policy,
-            KOKKOS_LAMBDA(const int k) {
+            "KokkosBatched::PerfTest::LUHost::LAPACKE_dgetrfOpenMP", policy, KOKKOS_LAMBDA(const int k) {
               auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
               auto pp = Kokkos::subview(p, k, Kokkos::ALL());
-              LAPACKE_dgetrf(LAPACK_ROW_MAJOR, BlkSize, BlkSize,
-                             (double*)aa.data(), aa.stride_0(),
-                             (int*)pp.data());
+              LAPACKE_dgetrf(LAPACK_ROW_MAJOR, BlkSize, BlkSize, (double*)aa.data(), aa.stride_0(), (int*)pp.data());
             });
 
         HostSpaceType().fence();
@@ -183,10 +166,8 @@ void LU(const int NN) {
       tavg /= iter_end;
 
       std::cout << std::setw(10) << "MKL LU"
-                << " BlkSize = " << std::setw(3) << BlkSize
-                << " time = " << std::scientific << tmin
-                << " avg flop/s = " << (flop / tavg)
-                << " max flop/s = " << (flop / tmin) << std::endl;
+                << " BlkSize = " << std::setw(3) << BlkSize << " time = " << std::scientific << tmin
+                << " avg flop/s = " << (flop / tavg) << " max flop/s = " << (flop / tmin) << std::endl;
     }
 
     aref = a;
@@ -197,8 +178,7 @@ void LU(const int NN) {
 
 #if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
   {
-    Kokkos::View<VectorType***, Kokkos::LayoutRight, HostSpaceType> a(
-        "a", N, BlkSize, BlkSize);
+    Kokkos::View<VectorType***, Kokkos::LayoutRight, HostSpaceType> a("a", N, BlkSize, BlkSize);
 
     {
       double tavg = 0, tmin = tmax;
@@ -220,8 +200,7 @@ void LU(const int NN) {
           HostSpaceType().fence();
           timer.reset();
 
-          mkl_dgetrfnp_compact(MKL_ROW_MAJOR, BlkSize, BlkSize,
-                               (double*)a.data(), a.stride_1(), (MKL_INT*)&info,
+          mkl_dgetrfnp_compact(MKL_ROW_MAJOR, BlkSize, BlkSize, (double*)a.data(), a.stride_1(), (MKL_INT*)&info,
                                format, (MKL_INT)N * VectorLength);
 
           HostSpaceType().fence();
@@ -235,15 +214,12 @@ void LU(const int NN) {
         for (int i = 0, iend = aref.extent(0); i < iend; ++i)
           for (int j = 0, jend = aref.extent(1); j < jend; ++j)
             for (int k = 0, kend = aref.extent(2); k < kend; ++k)
-              diff += abs(aref(i, j, k) -
-                          a(i / VectorLength, j, k)[i % VectorLength]);
+              diff += abs(aref(i, j, k) - a(i / VectorLength, j, k)[i % VectorLength]);
 
         std::cout << std::setw(10) << "MKL Cmpt"
-                  << " BlkSize = " << std::setw(3) << BlkSize
-                  << " time = " << std::scientific << tmin
-                  << " avg flop/s = " << (flop / tavg)
-                  << " max flop/s = " << (flop / tmin)
-                  << " diff to ref = " << diff << std::endl;
+                  << " BlkSize = " << std::setw(3) << BlkSize << " time = " << std::scientific << tmin
+                  << " avg flop/s = " << (flop / tavg) << " max flop/s = " << (flop / tmin) << " diff to ref = " << diff
+                  << std::endl;
       }
     }
   }
@@ -307,8 +283,7 @@ void LU(const int NN) {
   ///
 
   {
-    Kokkos::View<VectorType***, Kokkos::LayoutRight, HostSpaceType> a(
-        "a", N, BlkSize, BlkSize);
+    Kokkos::View<VectorType***, Kokkos::LayoutRight, HostSpaceType> a("a", N, BlkSize, BlkSize);
 
     {
       double tavg = 0, tmin = tmax;
@@ -324,8 +299,7 @@ void LU(const int NN) {
 
         Kokkos::RangePolicy<HostSpaceType, ScheduleType> policy(0, N);
         Kokkos::parallel_for(
-            "KokkosBatched::PerfTest::LUHost::SIMDSerialOpenMP", policy,
-            KOKKOS_LAMBDA(const int k) {
+            "KokkosBatched::PerfTest::LUHost::SIMDSerialOpenMP", policy, KOKKOS_LAMBDA(const int k) {
               auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 
               SerialLU<AlgoTagType>::invoke(aa);
@@ -342,14 +316,11 @@ void LU(const int NN) {
       for (int i = 0, iend = aref.extent(0); i < iend; ++i)
         for (int j = 0, jend = aref.extent(1); j < jend; ++j)
           for (int k = 0, kend = aref.extent(2); k < kend; ++k)
-            diff += abs(aref(i, j, k) -
-                        a(i / VectorLength, j, k)[i % VectorLength]);
+            diff += abs(aref(i, j, k) - a(i / VectorLength, j, k)[i % VectorLength]);
       std::cout << std::setw(10) << "SIMD"
-                << " BlkSize = " << std::setw(3) << BlkSize
-                << " time = " << std::scientific << tmin
-                << " avg flop/s = " << (flop / tavg)
-                << " max flop/s = " << (flop / tmin)
-                << " diff to ref = " << diff << std::endl;
+                << " BlkSize = " << std::setw(3) << BlkSize << " time = " << std::scientific << tmin
+                << " avg flop/s = " << (flop / tavg) << " max flop/s = " << (flop / tmin) << " diff to ref = " << diff
+                << std::endl;
     }
   }
 }

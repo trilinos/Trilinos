@@ -34,20 +34,18 @@ namespace KokkosBatched {
 template <typename ArgAlgo>
 struct TeamGemmInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const int m, const int n, const int k,
-      const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-      const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
-      const int bs1, const ScalarType beta,
-      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n, const int k,
+                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+                                           const int bs1, const ScalarType beta,
+                                           /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
 };
 
 template <>
 template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
-    const MemberType &member, const int m, const int n, const int k,
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+    const MemberType &member, const int m, const int n, const int k, const ScalarType alpha,
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
     const int bs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
@@ -58,25 +56,22 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
   if (beta == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, C, cs0, cs1);
   else if (beta != one)
-    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0,
-                                                cs1);
+    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
 
   if (alpha != ScalarType(0.0)) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;
 
     if (beta != one) member.team_barrier();
 
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(member, 0, m * n), [&](const int &ij) {
-          // assume layout right for batched computation
-          const int i = ij / n, j = ij % n;
-          const ValueType *KOKKOS_RESTRICT pA                  = A + i * as0,
-                                           *KOKKOS_RESTRICT pB = B + j * bs1;
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, m * n), [&](const int &ij) {
+      // assume layout right for batched computation
+      const int i = ij / n, j = ij % n;
+      const ValueType *KOKKOS_RESTRICT pA = A + i * as0, *KOKKOS_RESTRICT pB = B + j * bs1;
 
-          ValueType c = ValueType(0);
-          for (int p = 0; p < k; ++p) c += pA[p * as1] * pB[p * bs0];
-          C[i * cs0 + j * cs1] += alpha * c;
-        });
+      ValueType c = ValueType(0);
+      for (int p = 0; p < k; ++p) c += pA[p * as1] * pB[p * bs0];
+      C[i * cs0 + j * cs1] += alpha * c;
+    });
   }
   return 0;
 }
@@ -84,9 +79,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
 template <>
 template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
-    const MemberType &member, const int m, const int n, const int k,
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+    const MemberType &member, const int m, const int n, const int k, const ScalarType alpha,
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
     const int bs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
@@ -100,8 +94,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
   if (beta == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, C, cs0, cs1);
   else if (beta != one)
-    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0,
-                                                cs1);
+    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
 
   if (alpha != ScalarType(0.0)) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;
@@ -111,31 +104,27 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
     ///
     /// GPU case: team size is large and blocksize (mb,nb) is small
     InnerGemmFixC<mbAlgo, nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
-    auto gemm = [&](const int ib, const int jb, const int pb,
-                    const ValueType *KOKKOS_RESTRICT AA,
+    auto gemm = [&](const int ib, const int jb, const int pb, const ValueType *KOKKOS_RESTRICT AA,
                     const ValueType *KOKKOS_RESTRICT BB,
                     /**/ ValueType *KOKKOS_RESTRICT CC) {
       // Made this non-const in order to WORKAROUND issue #349
-      int mb = mbAlgo, mp = (ib % mb), mq = (ib / mb) + (mp > 0), nb = nbAlgo,
-          np = (jb % nb), nq = (jb / nb) + (np > 0);
+      int mb = mbAlgo, mp = (ib % mb), mq = (ib / mb) + (mp > 0), nb = nbAlgo, np = (jb % nb),
+          nq = (jb / nb) + (np > 0);
 
       // square tiling
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(member, mq * nq), [&](const int &ij) {
-            int i, j;
-            // note: the condition is constexpr
-            if (KokkosKernels::Impl::kk_is_gpu_exec_space<
-                    typename MemberType::execution_space>()) {
-              i = ij % mq * mb;
-              j = ij / mq * nb;
-            } else {
-              i = ij / nq * mb;
-              j = ij % nq * nb;
-            }
-            inner.serial_invoke(
-                alpha, AA + i * as0, BB + j * bs1, (i + mb) > ib ? mp : mb,
-                (j + nb) > jb ? np : nb, pb, CC + i * cs0 + j * cs1);
-          });
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, mq * nq), [&](const int &ij) {
+        int i, j;
+        // note: the condition is constexpr
+        if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename MemberType::execution_space>()) {
+          i = ij % mq * mb;
+          j = ij / mq * nb;
+        } else {
+          i = ij / nq * mb;
+          j = ij % nq * nb;
+        }
+        inner.serial_invoke(alpha, AA + i * as0, BB + j * bs1, (i + mb) > ib ? mp : mb, (j + nb) > jb ? np : nb, pb,
+                            CC + i * cs0 + j * cs1);
+      });
     };
 
     const bool is_small = true;  //(m*n*k <= 64*64*64);

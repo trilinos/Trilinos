@@ -19,7 +19,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
+// #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Trsv_Serial_Impl.hpp"
@@ -38,8 +38,7 @@ struct ParamTag {
   typedef D diag;
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamTrsv {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
@@ -47,22 +46,18 @@ struct Functor_TestBatchedTeamTrsv {
   ScalarType _alpha;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamTrsv(const ScalarType alpha, const ViewType &a,
-                              const ViewType &b)
+  Functor_TestBatchedTeamTrsv(const ScalarType alpha, const ViewType &a, const ViewType &b)
       : _a(a), _b(b), _alpha(alpha) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &,
-                                         const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const MemberType &member) const {
     const int k = member.league_rank();
 
     auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
 
-    KokkosBatched::TeamTrsv<
-        MemberType, typename ParamTagType::uplo, typename ParamTagType::trans,
-        typename ParamTagType::diag, AlgoTagType>::invoke(member, _alpha, aa,
-                                                          bb);
+    KokkosBatched::TeamTrsv<MemberType, typename ParamTagType::uplo, typename ParamTagType::trans,
+                            typename ParamTagType::diag, AlgoTagType>::invoke(member, _alpha, aa, bb);
   }
 
   inline void run() {
@@ -73,15 +68,13 @@ struct Functor_TestBatchedTeamTrsv {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _b.extent(0);
-    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
-                                                             Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size, Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsv(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
@@ -89,11 +82,10 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
   /// randomized input testing views
   ScalarType alpha(1.5);
 
-  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize),
-      b0("b0", N, BlkSize, 1), b1("b1", N, BlkSize, 1);
+  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize), b0("b0", N, BlkSize, 1),
+      b1("b1", N, BlkSize, 1);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a0, random, value_type(1.0));
   Kokkos::fill_random(b0, random, value_type(1.0));
 
@@ -104,12 +96,9 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
   Kokkos::deep_copy(a1, a0);
   Kokkos::deep_copy(b1, b0);
 
-  Functor_TestBatchedTeamTrsv<DeviceType, ViewType, ScalarType, ParamTagType,
-                              Algo::Trsv::Unblocked>(alpha, a0, b0)
+  Functor_TestBatchedTeamTrsv<DeviceType, ViewType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(alpha, a0, b0)
       .run();
-  Functor_TestBatchedTeamTrsv<DeviceType, ViewType, ScalarType, ParamTagType,
-                              AlgoTagType>(alpha, a1, b1)
-      .run();
+  Functor_TestBatchedTeamTrsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(alpha, a1, b1).run();
 
   Kokkos::fence();
 
@@ -136,34 +125,25 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
 }  // namespace TeamTrsv
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ValueType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 int test_batched_team_trsv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                           ParamTagType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
+    Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                             ParamTagType, AlgoTagType>(1024,
-                                                                        i);
+      Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                           ParamTagType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
+    Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                             ParamTagType, AlgoTagType>(1024,
-                                                                        i);
+      Test::TeamTrsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1024, i);
     }
   }
 #endif

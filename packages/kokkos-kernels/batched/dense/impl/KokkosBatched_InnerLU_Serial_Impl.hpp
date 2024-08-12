@@ -29,21 +29,16 @@ namespace KokkosBatched {
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
-    ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(ValueType *KOKKOS_RESTRICT A) {
   // load
-  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
-            a_02 = A[0 * _as0 + 2 * _as1], a_03 = A[0 * _as0 + 3 * _as1],
-            a_04 = A[0 * _as0 + 4 * _as1], a_10 = A[1 * _as0 + 0 * _as1],
-            a_11 = A[1 * _as0 + 1 * _as1], a_12 = A[1 * _as0 + 2 * _as1],
-            a_13 = A[1 * _as0 + 3 * _as1], a_14 = A[1 * _as0 + 4 * _as1],
-            a_20 = A[2 * _as0 + 0 * _as1], a_21 = A[2 * _as0 + 1 * _as1],
-            a_22 = A[2 * _as0 + 2 * _as1], a_23 = A[2 * _as0 + 3 * _as1],
-            a_24 = A[2 * _as0 + 4 * _as1], a_30 = A[3 * _as0 + 0 * _as1],
-            a_31 = A[3 * _as0 + 1 * _as1], a_32 = A[3 * _as0 + 2 * _as1],
-            a_33 = A[3 * _as0 + 3 * _as1], a_34 = A[3 * _as0 + 4 * _as1],
-            a_40 = A[4 * _as0 + 0 * _as1], a_41 = A[4 * _as0 + 1 * _as1],
-            a_42 = A[4 * _as0 + 2 * _as1], a_43 = A[4 * _as0 + 3 * _as1],
+  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
+            a_03 = A[0 * _as0 + 3 * _as1], a_04 = A[0 * _as0 + 4 * _as1], a_10 = A[1 * _as0 + 0 * _as1],
+            a_11 = A[1 * _as0 + 1 * _as1], a_12 = A[1 * _as0 + 2 * _as1], a_13 = A[1 * _as0 + 3 * _as1],
+            a_14 = A[1 * _as0 + 4 * _as1], a_20 = A[2 * _as0 + 0 * _as1], a_21 = A[2 * _as0 + 1 * _as1],
+            a_22 = A[2 * _as0 + 2 * _as1], a_23 = A[2 * _as0 + 3 * _as1], a_24 = A[2 * _as0 + 4 * _as1],
+            a_30 = A[3 * _as0 + 0 * _as1], a_31 = A[3 * _as0 + 1 * _as1], a_32 = A[3 * _as0 + 2 * _as1],
+            a_33 = A[3 * _as0 + 3 * _as1], a_34 = A[3 * _as0 + 4 * _as1], a_40 = A[4 * _as0 + 0 * _as1],
+            a_41 = A[4 * _as0 + 1 * _as1], a_42 = A[4 * _as0 + 2 * _as1], a_43 = A[4 * _as0 + 3 * _as1],
             a_44 = A[4 * _as0 + 4 * _as1];
 
   // 0 iteration
@@ -121,17 +116,14 @@ KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
-    ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(ValueType *KOKKOS_RESTRICT A) {
   // load
-  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
-            a_02 = A[0 * _as0 + 2 * _as1], a_03 = A[0 * _as0 + 3 * _as1],
-            a_10 = A[1 * _as0 + 0 * _as1], a_11 = A[1 * _as0 + 1 * _as1],
-            a_12 = A[1 * _as0 + 2 * _as1], a_13 = A[1 * _as0 + 3 * _as1],
-            a_20 = A[2 * _as0 + 0 * _as1], a_21 = A[2 * _as0 + 1 * _as1],
-            a_22 = A[2 * _as0 + 2 * _as1], a_23 = A[2 * _as0 + 3 * _as1],
-            a_30 = A[3 * _as0 + 0 * _as1], a_31 = A[3 * _as0 + 1 * _as1],
-            a_32 = A[3 * _as0 + 2 * _as1], a_33 = A[3 * _as0 + 3 * _as1];
+  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
+            a_03 = A[0 * _as0 + 3 * _as1], a_10 = A[1 * _as0 + 0 * _as1], a_11 = A[1 * _as0 + 1 * _as1],
+            a_12 = A[1 * _as0 + 2 * _as1], a_13 = A[1 * _as0 + 3 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
+            a_21 = A[2 * _as0 + 1 * _as1], a_22 = A[2 * _as0 + 2 * _as1], a_23 = A[2 * _as0 + 3 * _as1],
+            a_30 = A[3 * _as0 + 0 * _as1], a_31 = A[3 * _as0 + 1 * _as1], a_32 = A[3 * _as0 + 2 * _as1],
+            a_33 = A[3 * _as0 + 3 * _as1];
 
   // 0 iteration
   a_10 /= a_00;
@@ -178,14 +170,11 @@ KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
-    ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(ValueType *KOKKOS_RESTRICT A) {
   // load
-  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
-            a_02 = A[0 * _as0 + 2 * _as1], a_10 = A[1 * _as0 + 0 * _as1],
-            a_11 = A[1 * _as0 + 1 * _as1], a_12 = A[1 * _as0 + 2 * _as1],
-            a_20 = A[2 * _as0 + 0 * _as1], a_21 = A[2 * _as0 + 1 * _as1],
-            a_22 = A[2 * _as0 + 2 * _as1];
+  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
+            a_10 = A[1 * _as0 + 0 * _as1], a_11 = A[1 * _as0 + 1 * _as1], a_12 = A[1 * _as0 + 2 * _as1],
+            a_20 = A[2 * _as0 + 0 * _as1], a_21 = A[2 * _as0 + 1 * _as1], a_22 = A[2 * _as0 + 2 * _as1];
 
   // 0 iteration
   a_10 /= a_00;
@@ -212,11 +201,10 @@ KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
-    ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(ValueType *KOKKOS_RESTRICT A) {
   // load
-  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
-            a_10 = A[1 * _as0 + 0 * _as1], a_11 = A[1 * _as0 + 1 * _as1];
+  ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1], a_10 = A[1 * _as0 + 0 * _as1],
+            a_11 = A[1 * _as0 + 1 * _as1];
 
   // 0 iteration
   a_10 /= a_00;
@@ -231,15 +219,13 @@ KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(
-    ValueType *KOKKOS_RESTRICT /* A */) {
+KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(ValueType *KOKKOS_RESTRICT /* A */) {
   return 0;
 }
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
-    const int m, ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 5) Kokkos::abort("InnerLU<5>::serial_invoke, assert failure (m<=5)");
   if (m <= 0) return 0;
 
@@ -275,8 +261,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
-    const int m, ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 4) Kokkos::abort("InnerLU<4>::serial_invoke, assert failure (m<=4)");
   if (m <= 0) return 0;
 
@@ -307,8 +292,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
-    const int m, ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 3) Kokkos::abort("InnerLU<3>::serial_invoke, assert failure (m<=3)");
   if (m <= 0) return 0;
 
@@ -334,8 +318,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
-    const int m, ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 2) Kokkos::abort("InnerLU<2>::serial_invoke, assert failure (m<=2)");
   if (m <= 0) return 0;
 
@@ -356,8 +339,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(
-    const int m, ValueType *KOKKOS_RESTRICT A) {
+KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 1) Kokkos::abort("InnerLU<1>::serial_invoke, assert failure (m<=1)");
   if (m <= 0) return 0;
 

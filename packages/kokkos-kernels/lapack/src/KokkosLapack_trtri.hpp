@@ -49,16 +49,12 @@ namespace KokkosLapack {
 // source: https://software.intel.com/en-us/mkl-developer-reference-c-trtri
 template <class AViewType>
 int trtri(const char uplo[], const char diag[], const AViewType& A) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(AViewType::rank) == 2,
-                "AViewType must have rank 2.");
+  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
+  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
 
   // Check validity of indicator argument
-  bool valid_uplo = (uplo[0] == 'U') || (uplo[0] == 'u') || (uplo[0] == 'L') ||
-                    (uplo[0] == 'l');
-  bool valid_diag = (diag[0] == 'U') || (diag[0] == 'u') || (diag[0] == 'N') ||
-                    (diag[0] == 'n');
+  bool valid_uplo = (uplo[0] == 'U') || (uplo[0] == 'u') || (uplo[0] == 'L') || (uplo[0] == 'l');
+  bool valid_diag = (diag[0] == 'U') || (diag[0] == 'u') || (diag[0] == 'N') || (diag[0] == 'n');
 
   if (!valid_uplo) {
     std::ostringstream os;
@@ -94,22 +90,17 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
   }
 
   // Create A matrix view type alias
-  using AViewInternalType =
-      Kokkos::View<typename AViewType::non_const_value_type**,
-                   typename AViewType::array_layout,
-                   typename AViewType::device_type,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using AViewInternalType = Kokkos::View<typename AViewType::non_const_value_type**, typename AViewType::array_layout,
+                                         typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   // This is the return value type and should always reside on host
   using RViewInternalType =
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   int result;
   RViewInternalType R = RViewInternalType(&result);
 
-  KokkosLapack::Impl::TRTRI<RViewInternalType, AViewInternalType>::trtri(
-      R, uplo, diag, A);
+  KokkosLapack::Impl::TRTRI<RViewInternalType, AViewInternalType>::trtri(R, uplo, diag, A);
 
   return result;
 }

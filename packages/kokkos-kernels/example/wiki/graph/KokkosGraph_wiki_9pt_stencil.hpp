@@ -33,8 +33,8 @@ using DeviceSpace = typename ExecSpace::memory_space;
 using Kokkos::HostSpace;
 using RowmapType  = Kokkos::View<Offset*, DeviceSpace>;
 using ColindsType = Kokkos::View<Ordinal*, DeviceSpace>;
-using Handle      = KokkosKernels::Experimental::KokkosKernelsHandle<
-    Offset, Ordinal, default_scalar, ExecSpace, DeviceSpace, DeviceSpace>;
+using Handle = KokkosKernels::Experimental::KokkosKernelsHandle<Offset, Ordinal, default_scalar, ExecSpace, DeviceSpace,
+                                                                DeviceSpace>;
 
 namespace GraphDemo {
 Ordinal gridX       = 15;
@@ -124,10 +124,8 @@ void generate9pt(RowmapType& rowmapDevice, ColindsType& colindsDevice) {
   Offset numEdges = colinds.size();
   // Now that the graph is formed, copy rowmap and colinds to Kokkos::Views in
   // device memory The nonowning host views just alias the std::vectors.
-  Kokkos::View<Offset*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      rowmapHost(rowmap.data(), numVertices + 1);
-  Kokkos::View<Ordinal*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      colindsHost(colinds.data(), numEdges);
+  Kokkos::View<Offset*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> rowmapHost(rowmap.data(), numVertices + 1);
+  Kokkos::View<Ordinal*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> colindsHost(colinds.data(), numEdges);
   // Allocate owning views on device with the correct size.
   rowmapDevice  = RowmapType("Rowmap", numVertices + 1);
   colindsDevice = ColindsType("Colinds", numEdges);

@@ -14,7 +14,7 @@
 //
 //@HEADER
 
-//#include "Teuchos_UnitTestHarness.hpp"
+// #include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <sstream>
 
@@ -41,20 +41,17 @@ class ModifyEntries {
   // The type of the reduction result.
   typedef ordinal_type value_type;
 
-  ModifyEntries(const CrsMatrixType& A, const bool replace, const bool sorted,
-                const bool /*atomic*/)
+  ModifyEntries(const CrsMatrixType& A, const bool replace, const bool sorted, const bool /*atomic*/)
       : A_(A), replace_(replace), sorted_(sorted) {}
 
-  KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow,
-                                  ordinal_type& numModified) const {
+  KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow, ordinal_type& numModified) const {
     typedef Kokkos::ArithTraits<scalar_type> KAT;
     typedef typename KAT::mag_type mag_type;
     const scalar_type ONE = KAT::one();
 
-    const ordinal_type ncol =
-        A_.numCols() < static_cast<ordinal_type>(numEntToModify)
-            ? A_.numCols()
-            : static_cast<ordinal_type>(numEntToModify);
+    const ordinal_type ncol = A_.numCols() < static_cast<ordinal_type>(numEntToModify)
+                                  ? A_.numCols()
+                                  : static_cast<ordinal_type>(numEntToModify);
 
     ordinal_type cols[numEntToModify];
     scalar_type vals[numEntToModify];
@@ -71,8 +68,7 @@ class ModifyEntries {
     // the input (not the matrix's row) is not sorted.
 
     for (ordinal_type k = 0; k < ncol; ++k) {
-      const ordinal_type colToChange =
-          A_.numCols() - k - static_cast<ordinal_type>(1);
+      const ordinal_type colToChange = A_.numCols() - k - static_cast<ordinal_type>(1);
       // Cast integers to mag_type first, since direct cast from
       // (e.g.,) int to Kokkos::complex (or std::complex) doesn't
       // work.
@@ -95,11 +91,9 @@ class ModifyEntries {
 
     ordinal_type lclNumModified = 0;
     if (replace_) {
-      lclNumModified =
-          A_.replaceValues(lclRow, cols, ncol, vals, sorted_, atomic_);
+      lclNumModified = A_.replaceValues(lclRow, cols, ncol, vals, sorted_, atomic_);
     } else {  // sumInto
-      lclNumModified =
-          A_.sumIntoValues(lclRow, cols, ncol, vals, sorted_, atomic_);
+      lclNumModified = A_.sumIntoValues(lclRow, cols, ncol, vals, sorted_, atomic_);
     }
     numModified += lclNumModified;
   }
@@ -118,8 +112,7 @@ using std::endl;
 template <class CrsMatrixType, const int numEntToModify>
 void modifyEntries(bool& success, std::ostream& outRef,
                    // Teuchos::FancyOStream& outRef, // see notes
-                   const CrsMatrixType& A, const bool replace,
-                   const bool sorted, const bool atomic,
+                   const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic,
                    const bool debug = false) {
   // using Teuchos::RCP;
   typedef typename CrsMatrixType::device_type::execution_space execution_space;
@@ -144,13 +137,11 @@ void modifyEntries(bool& success, std::ostream& outRef,
   functor_type functor(A, replace, sorted, atomic);
   ordinal_type numModified = 0;
   policy_type range(0, A.numRows());
-  Kokkos::parallel_reduce("KokkosSparse::Test::ModifyEntries", range, functor,
-                          numModified);
+  Kokkos::parallel_reduce("KokkosSparse::Test::ModifyEntries", range, functor, numModified);
 
-  const ordinal_type numEntShouldModify =
-      static_cast<ordinal_type>(numEntToModify) <= A.numCols()
-          ? static_cast<ordinal_type>(numEntToModify)
-          : A.numCols();
+  const ordinal_type numEntShouldModify = static_cast<ordinal_type>(numEntToModify) <= A.numCols()
+                                              ? static_cast<ordinal_type>(numEntToModify)
+                                              : A.numCols();
   // TEST_EQUALITY( numModified, numEntShouldModify );
   EXPECT_TRUE((numModified == numEntShouldModify));
 
@@ -163,11 +154,10 @@ void modifyEntries(bool& success, std::ostream& outRef,
 }
 
 template <class CrsMatrixType, const int numEntToModify>
-void checkWhetherEntriesWereModified(
-    bool& success, std::ostream& outRef,
-    // Teuchos::FancyOStream& outRef, // see notes
-    const CrsMatrixType& A, const bool /*replace*/, const bool /* sorted */,
-    const bool /* atomic */, const bool debug = false) {
+void checkWhetherEntriesWereModified(bool& success, std::ostream& outRef,
+                                     // Teuchos::FancyOStream& outRef, // see notes
+                                     const CrsMatrixType& A, const bool /*replace*/, const bool /* sorted */,
+                                     const bool /* atomic */, const bool debug = false) {
   // using Teuchos::RCP;
   typedef typename CrsMatrixType::value_type value_type;
   typedef typename CrsMatrixType::ordinal_type ordinal_type;
@@ -190,9 +180,7 @@ void checkWhetherEntriesWereModified(
   std::ostream& out    = *outPtr;
   const value_type ONE = KAT::one();
   const ordinal_type ncol =
-      A.numCols() < static_cast<ordinal_type>(numEntToModify)
-          ? A.numCols()
-          : static_cast<ordinal_type>(numEntToModify);
+      A.numCols() < static_cast<ordinal_type>(numEntToModify) ? A.numCols() : static_cast<ordinal_type>(numEntToModify);
   // modifyEntries changes entries with column indices N-1, N-2,
   // ..., max(N - numEntToModify, 0), where N = A.numCols().  Make
   // sure that the "lower bound" works for signed or unsigned
@@ -201,8 +189,8 @@ void checkWhetherEntriesWereModified(
 
   // Teuchos::OSTab tab0 (out);
   out << "check: "
-      << "{numCols: " << A.numCols() << ", numEntToModify: " << numEntToModify
-      << ", ncol: " << ncol << ", lowerBound: " << lowerBound << "}" << endl;
+      << "{numCols: " << A.numCols() << ", numEntToModify: " << numEntToModify << ", ncol: " << ncol
+      << ", lowerBound: " << lowerBound << "}" << endl;
   // Teuchos::OSTab tab1 (out);
 
   auto val_h = Kokkos::create_mirror_view(A.values);
@@ -227,12 +215,10 @@ void checkWhetherEntriesWereModified(
     // Kokkos::complex (or std::complex) doesn't work.
 
     if (ind_h(k) < lowerBound) {  // entry should not have been modified
-      out << "ind_h(" << k << ") = " << ind_h(k)
-          << "; entry should not have been modified" << endl;
+      out << "ind_h(" << k << ") = " << ind_h(k) << "; entry should not have been modified" << endl;
       expectedVal = curVal;
     } else {
-      out << "ind_h(" << k << ") = " << ind_h(k)
-          << "; entry should have been modified" << endl;
+      out << "ind_h(" << k << ") = " << ind_h(k) << "; entry should have been modified" << endl;
       // The expected result for modified entries will always be
       // -curVal, whether we're doing replace or sumInto.  This lets
       // us make sure that we changed the right value.
@@ -244,8 +230,8 @@ void checkWhetherEntriesWereModified(
     } else {
       success = false;
       out << "ERROR: k: " << k << ", ind_h(k): " << ind_h(k) << ", "
-          << "val_h(" << k << ") = " << val_h(k) << " != " << expectedVal
-          << " (lowerBound = " << lowerBound << ")" << endl;
+          << "val_h(" << k << ") = " << val_h(k) << " != " << expectedVal << " (lowerBound = " << lowerBound << ")"
+          << endl;
     }
   }
 
@@ -260,8 +246,7 @@ void checkWhetherEntriesWereModified(
 template <class CrsMatrixType, const int numEntriesToModify>
 void testOneCaseImpl(bool& /*success*/, std::ostream& out,
                      // Teuchos::FancyOStream& out,
-                     const CrsMatrixType& A, const bool replace,
-                     const bool sorted, const bool atomic,
+                     const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic,
                      const bool debug = false) {
   typedef typename CrsMatrixType::value_type scalar_type;
   typedef typename CrsMatrixType::ordinal_type ordinal_type;
@@ -270,12 +255,11 @@ void testOneCaseImpl(bool& /*success*/, std::ostream& out,
     // Teuchos::OSTab tab0 (out);
     out << "numEntriesToModify: " << numEntriesToModify << endl;
     bool lclSuccess = true;
-    modifyEntries<CrsMatrixType, numEntriesToModify>(
-        lclSuccess, out, A, replace, sorted, atomic, debug);
+    modifyEntries<CrsMatrixType, numEntriesToModify>(lclSuccess, out, A, replace, sorted, atomic, debug);
     // If modifyEntries didn't work, no need to test further.
     if (lclSuccess) {
-      checkWhetherEntriesWereModified<CrsMatrixType, numEntriesToModify>(
-          lclSuccess, out, A, replace, sorted, atomic, debug);
+      checkWhetherEntriesWereModified<CrsMatrixType, numEntriesToModify>(lclSuccess, out, A, replace, sorted, atomic,
+                                                                         debug);
       EXPECT_TRUE(lclSuccess);  // this modifies 'success' and prints to 'out'
     }
 
@@ -294,17 +278,14 @@ template <class CrsMatrixType, const int numEntriesToModify>
 struct TestOneCase {
   static void test(bool& success, std::ostream& out,
                    // Teuchos::FancyOStream& out,
-                   const CrsMatrixType& A, const bool replace,
-                   const bool sorted, const bool atomic,
+                   const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic,
                    const bool debug = false) {
-    testOneCaseImpl<CrsMatrixType, numEntriesToModify>(success, out, A, replace,
-                                                       sorted, atomic, debug);
+    testOneCaseImpl<CrsMatrixType, numEntriesToModify>(success, out, A, replace, sorted, atomic, debug);
     if (!success) {
       return;  // Don't bother continuing
     }
     // Yay template recursion!
-    TestOneCase<CrsMatrixType, numEntriesToModify / 2>::test(
-        success, out, A, replace, sorted, atomic, debug);
+    TestOneCase<CrsMatrixType, numEntriesToModify / 2>::test(success, out, A, replace, sorted, atomic, debug);
   }
 };
 
@@ -313,12 +294,10 @@ template <class CrsMatrixType>
 struct TestOneCase<CrsMatrixType, 1> {
   static void test(bool& success, std::ostream& out,
                    // Teuchos::FancyOStream& out,
-                   const CrsMatrixType& A, const bool replace,
-                   const bool sorted, const bool atomic,
+                   const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic,
                    const bool debug = false) {
     constexpr int numEntriesToModify = 1;
-    testOneCaseImpl<CrsMatrixType, numEntriesToModify>(success, out, A, replace,
-                                                       sorted, atomic, debug);
+    testOneCaseImpl<CrsMatrixType, numEntriesToModify>(success, out, A, replace, sorted, atomic, debug);
     // This is the base case, so don't recurse on numEntriesToModify.
   }
 };
@@ -330,26 +309,23 @@ template <class CrsMatrixType>
 struct TestOneCase<CrsMatrixType, 0> {
   static void test(bool& /* success */, std::ostream& /*out*/,
                    // Teuchos::FancyOStream& /* out */,
-                   const CrsMatrixType& /* A */, const bool /* replace */,
-                   const bool /* sorted */, const bool /* atomic */,
-                   const bool /* debug */) {}
+                   const CrsMatrixType& /* A */, const bool /* replace */, const bool /* sorted */,
+                   const bool /* atomic */, const bool /* debug */) {}
 };
 
 template <class CrsMatrixType>
 void testOneCase(bool& success, std::ostream& out,
                  // Teuchos::FancyOStream& out,
-                 const CrsMatrixType& A, const bool replace, const bool sorted,
-                 const bool atomic, const bool debug = false) {
+                 const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic,
+                 const bool debug = false) {
   // Teuchos::OSTab tab0 (out);
-  out << "replace: " << (replace ? "true" : "false")
-      << ", sorted: " << (sorted ? "true" : "false")
+  out << "replace: " << (replace ? "true" : "false") << ", sorted: " << (sorted ? "true" : "false")
       << ", atomic: " << (atomic ? "true" : "false") << endl;
   // Teuchos::OSTab tab1 (out);
 
   constexpr int maxNumEntriesToModify = 128;
   // Invoke template recursion.
-  TestOneCase<CrsMatrixType, maxNumEntriesToModify>::test(
-      success, out, A, replace, sorted, atomic, debug);
+  TestOneCase<CrsMatrixType, maxNumEntriesToModify>::test(success, out, A, replace, sorted, atomic, debug);
 }
 
 template <class CrsMatrixType>
@@ -357,8 +333,7 @@ void testOneSize(bool& success,
                  std::ostream& out,  // Teuchos::FancyOStream& out,
                  const CrsMatrixType& A, const bool debug = false) {
   // Teuchos::OSTab tab0 (out);
-  out << "testOneSize: {numRows: " << A.numRows()
-      << ", numCols: " << A.numCols() << "}" << endl;
+  out << "testOneSize: {numRows: " << A.numRows() << ", numCols: " << A.numCols() << "}" << endl;
 
   for (int replaceInt = 0; replaceInt < 2; ++replaceInt) {
     const bool replace = replaceInt != 0;
@@ -382,8 +357,7 @@ void testOneSize(bool& success,
 template <class CrsMatrixType>
 void testAllSizes(bool& success,
                   std::ostream& out,  // Teuchos::FancyOStream& out,
-                  const typename CrsMatrixType::size_type maxNumEnt,
-                  const bool debug = false) {
+                  const typename CrsMatrixType::size_type maxNumEnt, const bool debug = false) {
   typedef CrsMatrixType matrix_type;
   typedef typename matrix_type::value_type value_type;
   typedef typename matrix_type::ordinal_type ordinal_type;
@@ -408,13 +382,11 @@ void testAllSizes(bool& success,
   typename matrix_type::values_type::non_const_type val_whole("val", maxNumEnt);
   auto val_whole_h = Kokkos::create_mirror_view(val_whole);
 
-  for (size_type numEnt = 1; numEnt <= maxNumEnt;
-       numEnt *= static_cast<size_type>(2)) {
+  for (size_type numEnt = 1; numEnt <= maxNumEnt; numEnt *= static_cast<size_type>(2)) {
     const ordinal_type numCols = numEnt;
 
-    out << "Test " << numRows << " x " << numCols << " matrix with " << numEnt
-        << " entr" << (numEnt != static_cast<size_type>(1) ? "ies" : "y")
-        << endl;
+    out << "Test " << numRows << " x " << numCols << " matrix with " << numEnt << " entr"
+        << (numEnt != static_cast<size_type>(1) ? "ies" : "y") << endl;
 
     ptr_h[0] = 0;
     ptr_h[1] = numEnt;
@@ -445,13 +417,11 @@ void testAllSizes(bool& success,
 // The first two arguments let us call Teuchos unit test macros
 // inside.  Those macros expect 'success' and 'out' to have exactly
 // those names.
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void generalTest(bool& success,
                  std::ostream& out,  // Teuchos::FancyOStream& out,
                  const bool debug = false) {
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-      matrix_type;
+  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> matrix_type;
 
   // Teuchos::OSTab tab0 (out);
   out << "Test KokkosSparse::CrsMatrix::{replace,sumInto}Values*" << endl;
@@ -463,8 +433,7 @@ void generalTest(bool& success,
 
 }  // namespace
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_replaceSumIntoLonger() {
   using std::endl;
   class NullBuffer : public std::streambuf {
@@ -481,11 +450,9 @@ void test_replaceSumIntoLonger() {
   EXPECT_TRUE(success);
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                   \
-  TEST_F(                                                                             \
-      TestCategory,                                                                   \
-      sparse##_##replaceSumIntoLonger##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_replaceSumIntoLonger<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
+  TEST_F(TestCategory, sparse##_##replaceSumIntoLonger##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_replaceSumIntoLonger<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
   }
 
 // FIXME SYCL: test hangs or gives "CL error -46 invalid kernel name"

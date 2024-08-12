@@ -60,9 +60,7 @@ struct OrdinalTraits<short int> {
 
 template <>
 struct OrdinalTraits<unsigned short int> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned short int invalid() {
-    return USHRT_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned short int invalid() { return USHRT_MAX; }
 };
 
 template <>
@@ -72,9 +70,7 @@ struct OrdinalTraits<int> {
 
 template <>
 struct OrdinalTraits<unsigned int> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() {
-    return UINT_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() { return UINT_MAX; }
 };
 
 template <>
@@ -84,9 +80,7 @@ struct OrdinalTraits<long> {
 
 template <>
 struct OrdinalTraits<unsigned long> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() {
-    return ULONG_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() { return ULONG_MAX; }
 };
 
 template <>
@@ -96,9 +90,7 @@ struct OrdinalTraits<long long> {
 
 template <>
 struct OrdinalTraits<unsigned long long> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned long long invalid() {
-    return ULLONG_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long long invalid() { return ULLONG_MAX; }
 };
 
 }  // namespace KokkosSparse

@@ -16,8 +16,7 @@
 
 #include <KokkosKernels_config.h>
 #include <iostream>
-#if defined(KOKKOSKERNELS_INST_DOUBLE) &&     \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
+#if defined(KOKKOSKERNELS_INST_DOUBLE) && defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
     defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 #include "KokkosSparse_pcg.hpp"
 
@@ -47,8 +46,7 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
 
   if (std::string(mtx_bin_file) == "auto") {
     INDEX_TYPE num_rows = 11, num_cols = 11, nnz = 40;
-    crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
-        crsMat_t>(num_rows, num_cols, nnz, 3, 5);
+    crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(num_rows, num_cols, nnz, 3, 5);
     printf("generating test matrix automatically\n");
     printf("   num rows:      %d", num_rows);
     printf("   num cols:      %d", num_cols);
@@ -58,20 +56,16 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
     INDEX_TYPE *xadj, *adj;
     SCALAR_TYPE *ew;
 
-    KokkosSparse::Impl::read_matrix<INDEX_TYPE, INDEX_TYPE, SCALAR_TYPE>(
-        &nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+    KokkosSparse::Impl::read_matrix<INDEX_TYPE, INDEX_TYPE, SCALAR_TYPE>(&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
     row_map_view_t rowmap_view("rowmap_view", nv + 1);
     cols_view_t columns_view("colsmap_view", ne);
     values_view_t values_view("values_view", ne);
 
     if (KokkosKernels::Impl::kk_is_gpu_exec_space<myExecSpace>()) {
-      typename row_map_view_t::HostMirror hr =
-          Kokkos::create_mirror_view(rowmap_view);
-      typename cols_view_t::HostMirror hc =
-          Kokkos::create_mirror_view(columns_view);
-      typename values_view_t::HostMirror hv =
-          Kokkos::create_mirror_view(values_view);
+      typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
+      typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
+      typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
 
       for (INDEX_TYPE i = 0; i <= nv; ++i) {
         hr(i) = xadj[i];
@@ -85,12 +79,9 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
       Kokkos::deep_copy(columns_view, hc);
       Kokkos::deep_copy(values_view, hv);
     } else {
-      KokkosKernels::Impl::copy_vector<SCALAR_TYPE *, values_view_t,
-                                       myExecSpace>(ne, ew, values_view);
-      KokkosKernels::Impl::copy_vector<INDEX_TYPE *, cols_view_t, myExecSpace>(
-          ne, adj, columns_view);
-      KokkosKernels::Impl::copy_vector<INDEX_TYPE *, row_map_view_t,
-                                       myExecSpace>(nv + 1, xadj, rowmap_view);
+      KokkosKernels::Impl::copy_vector<SCALAR_TYPE *, values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Impl::copy_vector<INDEX_TYPE *, cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Impl::copy_vector<INDEX_TYPE *, row_map_view_t, myExecSpace>(nv + 1, xadj, rowmap_view);
     }
 
     graph_t static_graph(columns_view, rowmap_view);
@@ -110,9 +101,8 @@ scalar_view_t create_x_vector(INDEX_TYPE nv, SCALAR_TYPE max_value = 1.0) {
   typename scalar_view_t::HostMirror h_x = Kokkos::create_mirror_view(kok_x);
 
   for (INDEX_TYPE i = 0; i < nv; ++i) {
-    SCALAR_TYPE r = static_cast<SCALAR_TYPE>(rand()) /
-                    static_cast<SCALAR_TYPE>(RAND_MAX / max_value);
-    h_x(i) = r;
+    SCALAR_TYPE r = static_cast<SCALAR_TYPE>(rand()) / static_cast<SCALAR_TYPE>(RAND_MAX / max_value);
+    h_x(i)        = r;
   }
   Kokkos::deep_copy(kok_x, h_x);
   return kok_x;
@@ -126,15 +116,11 @@ vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector) {
 }
 
 template <typename ExecSpace, typename crsMat_t>
-void run_point_experiment(
-    crsMat_t crsmat,
-    typename crsMat_t::values_type::non_const_type kok_x_original) {
+void run_point_experiment(crsMat_t crsmat, typename crsMat_t::values_type::non_const_type kok_x_original) {
   // typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type
-      lno_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
-      lno_nnz_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
 
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename lno_view_t::value_type size_type;
@@ -153,75 +139,59 @@ void run_point_experiment(
 
   KokkosKernels::Experimental::Example::CGSolveResult cg_result;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, ExecSpace, ExecSpace, ExecSpace>
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, ExecSpace, ExecSpace, ExecSpace>
       KernelHandle;
 
   KernelHandle kh;
 
   kh.create_gs_handle(/*KokkosSparse::GS_TEAM*/);
   Kokkos::Timer timer1;
-  KokkosKernels::Experimental::Example::pcgsolve(
-      kh, crsmat, kok_b_vector, kok_x_vector, cg_iteration_limit,
-      cg_iteration_tolerance, &cg_result, true);
+  KokkosKernels::Experimental::Example::pcgsolve(kh, crsmat, kok_b_vector, kok_x_vector, cg_iteration_limit,
+                                                 cg_iteration_tolerance, &cg_result, true);
   Kokkos::fence();
 
   solve_time = timer1.seconds();
 
   std::cout << "DEFAULT SOLVE:"
             << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
-            << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time
-            << "]"
+            << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
             << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
             << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
-            << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time
-            << "]"
-            << "\n\tPRECONDITIONER_INIT_TIME    ["
-            << cg_result.precond_init_time << "]"
-            << "\n\tPRECOND_APPLY_TIME_PER_ITER ["
-            << cg_result.precond_time / (cg_result.iteration + 1) << "]"
-            << "\n\tSOLVE_TIME                  [" << solve_time << "]"
-            << std::endl;
+            << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+            << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+            << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration + 1) << "]"
+            << "\n\tSOLVE_TIME                  [" << solve_time << "]" << std::endl;
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
   kok_x_vector = scalar_view_t("kok_x_vector", nv);
 
   kh.create_gs_handle(KokkosSparse::GS_TEAM);
   timer1.reset();
-  KokkosKernels::Experimental::Example::pcgsolve(
-      kh, crsmat, kok_b_vector, kok_x_vector, cg_iteration_limit,
-      cg_iteration_tolerance, &cg_result, true);
+  KokkosKernels::Experimental::Example::pcgsolve(kh, crsmat, kok_b_vector, kok_x_vector, cg_iteration_limit,
+                                                 cg_iteration_tolerance, &cg_result, true);
   Kokkos::fence();
 
   solve_time = timer1.seconds();
 
   std::cout << "TEAM SOLVE:"
             << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
-            << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time
-            << "]"
+            << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
             << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
             << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
-            << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time
-            << "]"
-            << "\n\tPRECONDITIONER_INIT_TIME    ["
-            << cg_result.precond_init_time << "]"
-            << "\n\tPRECOND_APPLY_TIME_PER_ITER ["
-            << cg_result.precond_time / (cg_result.iteration + 1) << "]"
-            << "\n\tSOLVE_TIME                  [" << solve_time << "]"
-            << std::endl;
+            << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+            << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+            << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration + 1) << "]"
+            << "\n\tSOLVE_TIME                  [" << solve_time << "]" << std::endl;
 #endif
 }
 
 template <typename ExecSpace, typename crsMat_t>
-void run_block_experiment(
-    crsMat_t point_crsmat, crsMat_t block_crsmat, int block_size,
-    typename crsMat_t::values_type::non_const_type kok_x_original) {
+void run_block_experiment(crsMat_t point_crsmat, crsMat_t block_crsmat, int block_size,
+                          typename crsMat_t::values_type::non_const_type kok_x_original) {
   // typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type
-      lno_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
-      lno_nnz_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
 
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename lno_view_t::value_type size_type;
@@ -241,50 +211,40 @@ void run_block_experiment(
 
   KokkosKernels::Experimental::Example::CGSolveResult cg_result;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, ExecSpace, ExecSpace, ExecSpace>
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, ExecSpace, ExecSpace, ExecSpace>
       KernelHandle;
 
   KernelHandle kh;
 
   kh.create_gs_handle();
   Kokkos::Timer timer1;
-  KokkosKernels::Experimental::Example::block_pcgsolve(
-      kh, point_crsmat, block_crsmat, block_size, kok_b_vector, kok_x_vector,
-      cg_iteration_limit, cg_iteration_tolerance, &cg_result, true);
+  KokkosKernels::Experimental::Example::block_pcgsolve(kh, point_crsmat, block_crsmat, block_size, kok_b_vector,
+                                                       kok_x_vector, cg_iteration_limit, cg_iteration_tolerance,
+                                                       &cg_result, true);
   Kokkos::fence();
 
   solve_time = timer1.seconds();
 
   std::cout << "DEFAULT SOLVE:"
             << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
-            << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time
-            << "]"
+            << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
             << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
             << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
-            << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time
-            << "]"
-            << "\n\tPRECONDITIONER_INIT_TIME    ["
-            << cg_result.precond_init_time << "]"
-            << "\n\tPRECOND_APPLY_TIME_PER_ITER ["
-            << cg_result.precond_time / (cg_result.iteration + 1) << "]"
-            << "\n\tSOLVE_TIME                  [" << solve_time << "]"
-            << std::endl;
+            << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+            << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+            << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration + 1) << "]"
+            << "\n\tSOLVE_TIME                  [" << solve_time << "]" << std::endl;
 }
 
 template <typename ExecSpace, typename crsMat_t>
-void run_experiment(
-    crsMat_t crsmat,
-    typename crsMat_t::values_type::non_const_type kok_x_original,
-    int block_size = 5) {
+void run_experiment(crsMat_t crsmat, typename crsMat_t::values_type::non_const_type kok_x_original,
+                    int block_size = 5) {
   // run_point_experiment<ExecSpace, crsMat_t>(crsmat, kok_x_original);
 
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type
-      lno_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
-      lno_nnz_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
 
   lno_view_t pf_rm;
   lno_nnz_view_t pf_e;
@@ -294,13 +254,12 @@ void run_experiment(
   // typedef typename lno_nnz_view_t::value_type lno_t;
   // typedef typename lno_view_t::value_type size_type;
   // typedef typename scalar_view_t::value_type scalar_t;
-  KokkosSparse::Impl::kk_create_bsr_formated_point_crsmatrix(
-      block_size, crsmat.numRows(), crsmat.numCols(), crsmat.graph.row_map,
-      crsmat.graph.entries, crsmat.values, out_r, out_c, pf_rm, pf_e, pf_v);
+  KokkosSparse::Impl::kk_create_bsr_formated_point_crsmatrix(block_size, crsmat.numRows(), crsmat.numCols(),
+                                                             crsmat.graph.row_map, crsmat.graph.entries, crsmat.values,
+                                                             out_r, out_c, pf_rm, pf_e, pf_v);
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-  std::cout << "nr:" << crsmat.numRows() << " nc:" << crsmat.numCols()
-            << std::endl;
+  std::cout << "nr:" << crsmat.numRows() << " nc:" << crsmat.numCols() << std::endl;
 
   KokkosKernels::Impl::print_1Dview(crsmat.graph.row_map);
   KokkosKernels::Impl::print_1Dview(crsmat.graph.entries);
@@ -321,9 +280,8 @@ void run_experiment(
   scalar_view_t bf_v;
   size_t but_r, but_c;
 
-  KokkosSparse::Impl::kk_create_bsr_from_bsr_formatted_point_crs(
-      block_size, out_r, out_c, pf_rm, pf_e, pf_v, but_r, but_c, bf_rm, bf_e,
-      bf_v);
+  KokkosSparse::Impl::kk_create_bsr_from_bsr_formatted_point_crs(block_size, out_r, out_c, pf_rm, pf_e, pf_v, but_r,
+                                                                 but_c, bf_rm, bf_e, bf_v);
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
   KokkosKernels::Impl::print_1Dview(bf_rm);
@@ -332,8 +290,7 @@ void run_experiment(
 #endif
   graph_t static_graph3(bf_e, bf_rm);
   crsMat_t crsmat3("CrsMatrix3", but_c, bf_v, static_graph3);
-  run_block_experiment<ExecSpace, crsMat_t>(crsmat2, crsmat3, block_size,
-                                            kok_x_original);
+  run_block_experiment<ExecSpace, crsMat_t>(crsmat2, crsmat3, block_size, kok_x_original);
 }
 
 enum {
@@ -380,8 +337,7 @@ int main(int argc, char **argv) {
       cg_iteration_limit = atoi(argv[++i]);
     } else {
       cmdline[CMD_ERROR] = 1;
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp "
                    "[numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx["
                    "binary_mtx_file]"
@@ -392,16 +348,14 @@ int main(int argc, char **argv) {
   }
 
   if (mtx_bin_file == NULL) {
-    std::cerr << "Provide a mtx binary file or specify auto-generation"
-              << std::endl;
+    std::cerr << "Provide a mtx binary file or specify auto-generation" << std::endl;
     std::cerr << "OPTIONS\n\t--serial\n\t--threads [numThreads]\n\t--openmp "
                  "[numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx["
                  "binary_mtx_file|auto]"
               << std::endl;
     return 1;
   }
-  std::cout << "Running experiments with block size:" << block_size
-            << std::endl;
+  std::cout << "Running experiments with block size:" << block_size << std::endl;
 
   Kokkos::initialize(kargs);
 
@@ -411,15 +365,12 @@ int main(int argc, char **argv) {
     using myExecSpace = Kokkos::Serial;
     myExecSpace().print_configuration(std::cout);
 
-    using crsMat_t =
-        typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
-                                         void, SIZE_TYPE>;
+    using crsMat_t  = typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE>;
     crsMat_t crsmat = create_crs_matrix<crsMat_t>(mtx_bin_file);
     INDEX_TYPE nv   = crsmat.numRows();
 
-    using values_view_t = typename crsMat_t::values_type::non_const_type;
-    values_view_t kok_x_original = create_x_vector<values_view_t>(
-        ((nv / block_size) + 1) * block_size, MAXVAL);
+    using values_view_t          = typename crsMat_t::values_type::non_const_type;
+    values_view_t kok_x_original = create_x_vector<values_view_t>(((nv / block_size) + 1) * block_size, MAXVAL);
     for (INDEX_TYPE i = nv; i < ((nv / block_size) + 1) * block_size; ++i) {
       kok_x_original(i) = 0;
     }
@@ -434,15 +385,12 @@ int main(int argc, char **argv) {
     using myExecSpace = Kokkos::Threads;
     myExecSpace().print_configuration(std::cout);
 
-    using crsMat_t =
-        typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
-                                         void, SIZE_TYPE>;
+    using crsMat_t  = typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE>;
     crsMat_t crsmat = create_crs_matrix<crsMat_t>(mtx_bin_file);
     INDEX_TYPE nv   = crsmat.numRows();
 
-    using values_view_t = typename crsMat_t::values_type::non_const_type;
-    values_view_t kok_x_original = create_x_vector<values_view_t>(
-        ((nv / block_size) + 1) * block_size, MAXVAL);
+    using values_view_t          = typename crsMat_t::values_type::non_const_type;
+    values_view_t kok_x_original = create_x_vector<values_view_t>(((nv / block_size) + 1) * block_size, MAXVAL);
     for (INDEX_TYPE i = nv; i < ((nv / block_size) + 1) * block_size; ++i) {
       kok_x_original(i) = 0;
     }
@@ -457,15 +405,12 @@ int main(int argc, char **argv) {
     using myExecSpace = Kokkos::OpenMP;
     myExecSpace().print_configuration(std::cout);
 
-    using crsMat_t =
-        typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
-                                         void, SIZE_TYPE>;
+    using crsMat_t  = typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE>;
     crsMat_t crsmat = create_crs_matrix<crsMat_t>(mtx_bin_file);
     INDEX_TYPE nv   = crsmat.numRows();
 
-    using values_view_t = typename crsMat_t::values_type::non_const_type;
-    values_view_t kok_x_original = create_x_vector<values_view_t>(
-        ((nv / block_size) + 1) * block_size, MAXVAL);
+    using values_view_t          = typename crsMat_t::values_type::non_const_type;
+    values_view_t kok_x_original = create_x_vector<values_view_t>(((nv / block_size) + 1) * block_size, MAXVAL);
     for (INDEX_TYPE i = nv; i < ((nv / block_size) + 1) * block_size; ++i) {
       kok_x_original(i) = 0;
     }
@@ -480,15 +425,12 @@ int main(int argc, char **argv) {
     using myExecSpace = Kokkos::Cuda;
     myExecSpace().print_configuration(std::cout);
 
-    using crsMat_t =
-        typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
-                                         void, SIZE_TYPE>;
+    using crsMat_t  = typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE>;
     crsMat_t crsmat = create_crs_matrix<crsMat_t>(mtx_bin_file);
     INDEX_TYPE nv   = crsmat.numRows();
 
-    using values_view_t = typename crsMat_t::values_type::non_const_type;
-    values_view_t kok_x_original = create_x_vector<values_view_t>(
-        ((nv / block_size) + 1) * block_size, MAXVAL);
+    using values_view_t          = typename crsMat_t::values_type::non_const_type;
+    values_view_t kok_x_original = create_x_vector<values_view_t>(((nv / block_size) + 1) * block_size, MAXVAL);
     run_experiment<myExecSpace, crsMat_t>(crsmat, kok_x_original, block_size);
   }
 

@@ -20,8 +20,8 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class KernelHandle, class RowMapType,
-          class EntriesType, class ValuesType, class BType, class XType>
+template <class ExecutionSpace, class KernelHandle, class RowMapType, class EntriesType, class ValuesType, class BType,
+          class XType>
 struct sptrsv_solve_tpl_spec_avail {
   enum : bool { value = false };
 };

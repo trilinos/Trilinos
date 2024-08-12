@@ -37,23 +37,19 @@ struct Logistic {
   Logistic(double r_, double K_) : r(r_), K(K_){};
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double /*t*/,
-                                         const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     f(0) = r * y(0) * (1.0 - y(0) / K);
   }
 
   template <class vec_type, class mat_type>
-  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/,
-                                         const double /*dt*/, const vec_type& y,
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& y,
                                          const mat_type& jac) const {
     jac(0, 0) = r - 2 * r * y(0) / K;
   }
 
   template <class vec_type>
-  KOKKOS_FUNCTION void solution(const double t, const vec_type& y0,
-                                const vec_type& y) const {
+  KOKKOS_FUNCTION void solution(const double t, const vec_type& y0, const vec_type& y) const {
     y(0) = K / (1 + (K - y0) / y0 * Kokkos::exp(-r * t));
   }
 
@@ -78,17 +74,14 @@ struct LotkaVolterra {
       : alpha(alpha_), beta(beta_), delta(delta_), gamma(gamma_){};
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double /*t*/,
-                                         const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     f(0) = alpha * y(0) - beta * y(0) * y(1);
     f(1) = delta * y(0) * y(1) - gamma * y(1);
   }
 
   template <class vec_type, class mat_type>
-  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/,
-                                         const double /*dt*/, const vec_type& y,
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& y,
                                          const mat_type& jac) const {
     jac(0, 0) = alpha - beta * y(1);
     jac(0, 1) = -beta * y(0);
@@ -112,9 +105,7 @@ struct StiffChemistry {
   StiffChemistry() {}
 
   template <class vec_type1, class vec_type2>
-  KOKKOS_FUNCTION void evaluate_function(const double /*t*/,
-                                         const double /*dt*/,
-                                         const vec_type1& y,
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
                                          const vec_type2& f) const {
     f(0) = -0.04 * y(0) + 1.e4 * y(1) * y(2);
     f(1) = 0.04 * y(0) - 1.e4 * y(1) * y(2) - 3.e7 * y(1) * y(1);
@@ -122,8 +113,7 @@ struct StiffChemistry {
   }
 
   template <class vec_type, class mat_type>
-  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/,
-                                         const double /*dt*/, const vec_type& y,
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& y,
                                          const mat_type& jac) const {
     jac(0, 0) = -0.04;
     jac(0, 1) = 1.e4 * y(2);
@@ -137,8 +127,8 @@ struct StiffChemistry {
   }
 };
 
-template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type,
-          class vec_type, class mv_type, class mat_type, class scalar_type>
+template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type, class vec_type, class mv_type, class mat_type,
+          class scalar_type>
 struct BDFSolve_wrapper {
   ode_type my_ode;
   scalar_type tstart, tend;
@@ -147,12 +137,9 @@ struct BDFSolve_wrapper {
   mv_type y_vecs, kstack;
   mat_type temp, jac;
 
-  BDFSolve_wrapper(const ode_type& my_ode_, const scalar_type tstart_,
-                   const scalar_type tend_, const int num_steps_,
-                   const vec_type& y_old_, const vec_type& y_new_,
-                   const vec_type& rhs_, const vec_type& update_,
-                   const vec_type& scale_, const mv_type& y_vecs_,
-                   const mv_type& kstack_, const mat_type& temp_,
+  BDFSolve_wrapper(const ode_type& my_ode_, const scalar_type tstart_, const scalar_type tend_, const int num_steps_,
+                   const vec_type& y_old_, const vec_type& y_new_, const vec_type& rhs_, const vec_type& update_,
+                   const vec_type& scale_, const mv_type& y_vecs_, const mv_type& kstack_, const mat_type& temp_,
                    const mat_type& jac_)
       : my_ode(my_ode_),
         tstart(tstart_),
@@ -170,9 +157,8 @@ struct BDFSolve_wrapper {
 
   KOKKOS_FUNCTION
   void operator()(const int /*idx*/) const {
-    KokkosODE::Experimental::BDF<bdf_type>::Solve(
-        my_ode, tstart, tend, num_steps, y_old, y_new, rhs, update, scale,
-        y_vecs, kstack, temp, jac);
+    KokkosODE::Experimental::BDF<bdf_type>::Solve(my_ode, tstart, tend, num_steps, y_old, y_new, rhs, update, scale,
+                                                  y_vecs, kstack, temp, jac);
   }
 };
 
@@ -183,11 +169,9 @@ struct BDF_Solve_wrapper {
   const vec_type y0, y_new;
   const mat_type temp, temp2;
 
-  BDF_Solve_wrapper(const ode_type& my_ode_, const scalar_type& t_start_,
-                    const scalar_type& t_end_, const scalar_type& dt_,
-                    const scalar_type& max_step_, const vec_type& y0_,
-                    const vec_type& y_new_, const mat_type& temp_,
-                    const mat_type& temp2_)
+  BDF_Solve_wrapper(const ode_type& my_ode_, const scalar_type& t_start_, const scalar_type& t_end_,
+                    const scalar_type& dt_, const scalar_type& max_step_, const vec_type& y0_, const vec_type& y_new_,
+                    const mat_type& temp_, const mat_type& temp2_)
       : my_ode(my_ode_),
         t_start(t_start_),
         t_end(t_end_),
@@ -199,8 +183,7 @@ struct BDF_Solve_wrapper {
         temp2(temp2_) {}
 
   KOKKOS_FUNCTION void operator()(const int) const {
-    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, y0,
-                                      y_new, temp, temp2);
+    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, y0, y_new, temp, temp2);
   }
 };
 
@@ -221,8 +204,7 @@ void test_BDF_Logistic() {
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
   vec_type scale("scaling factors", mySys.neqs);
-  mat_type jac("jacobian", mySys.neqs, mySys.neqs),
-      temp("temp storage", mySys.neqs, mySys.neqs + 4);
+  mat_type jac("jacobian", mySys.neqs, mySys.neqs), temp("temp storage", mySys.neqs, mySys.neqs + 4);
   mv_type kstack("Startup RK vectors", 6, mySys.neqs);
 
   Kokkos::deep_copy(scale, 1);
@@ -239,26 +221,21 @@ void test_BDF_Logistic() {
     Kokkos::deep_copy(y0, 0.5);
     Kokkos::deep_copy(y_vecs, 0.5);
 
-    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF1,
-                     vec_type, mv_type, mat_type, scalar_type>
-        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs,
-                      update, scale, y_vecs, kstack, temp, jac);
+    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF1, vec_type, mv_type, mat_type, scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
     Kokkos::parallel_for(myPolicy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
 
-    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) /
-                  Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
+    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
-  measured_order =
-      Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
+  measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 2.0, 0.15);
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
   std::cout << "expected ratio: 2, actual ratio: " << measured_order
-            << ", order error=" << Kokkos::abs(measured_order - 2.0) / 2.0
-            << std::endl;
+            << ", order error=" << Kokkos::abs(measured_order - 2.0) / 2.0 << std::endl;
 #endif
 
   // Test BDF2
@@ -269,26 +246,21 @@ void test_BDF_Logistic() {
     mv_type y_vecs("history vectors", mySys.neqs, 2);
     Kokkos::deep_copy(y0, 0.5);
 
-    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF2,
-                     vec_type, mv_type, mat_type, scalar_type>
-        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs,
-                      update, scale, y_vecs, kstack, temp, jac);
+    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF2, vec_type, mv_type, mat_type, scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
     Kokkos::parallel_for(myPolicy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
 
-    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) /
-                  Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
+    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
-  measured_order =
-      Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
+  measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 4.0, 0.15);
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
   std::cout << "expected ratio: 4, actual ratio: " << measured_order
-            << ", order error=" << Kokkos::abs(measured_order - 4.0) / 4.0
-            << std::endl;
+            << ", order error=" << Kokkos::abs(measured_order - 4.0) / 4.0 << std::endl;
 #endif
 
   // Test BDF3
@@ -299,26 +271,21 @@ void test_BDF_Logistic() {
     mv_type y_vecs("history vectors", mySys.neqs, 3);
     Kokkos::deep_copy(y0, 0.5);
 
-    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF3,
-                     vec_type, mv_type, mat_type, scalar_type>
-        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs,
-                      update, scale, y_vecs, kstack, temp, jac);
+    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF3, vec_type, mv_type, mat_type, scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
     Kokkos::parallel_for(myPolicy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
 
-    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) /
-                  Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
+    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
-  measured_order =
-      Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
+  measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 8.0, 0.15);
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
   std::cout << "expected ratio: 8, actual ratio: " << measured_order
-            << ", order error=" << Kokkos::abs(measured_order - 8.0) / 8.0
-            << std::endl;
+            << ", order error=" << Kokkos::abs(measured_order - 8.0) / 8.0 << std::endl;
 #endif
 
   // Test BDF4
@@ -329,25 +296,20 @@ void test_BDF_Logistic() {
     mv_type y_vecs("history vectors", mySys.neqs, 4);
     Kokkos::deep_copy(y0, 0.5);
 
-    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF4,
-                     vec_type, mv_type, mat_type, scalar_type>
-        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs,
-                      update, scale, y_vecs, kstack, temp, jac);
+    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF4, vec_type, mv_type, mat_type, scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
     Kokkos::parallel_for(myPolicy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
 
-    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) /
-                  Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
+    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
-  measured_order =
-      Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
+  measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
   std::cout << "expected ratio: 16, actual ratio: " << measured_order
-            << ", order error=" << Kokkos::abs(measured_order - 16.0) / 16.0
-            << std::endl;
+            << ", order error=" << Kokkos::abs(measured_order - 16.0) / 16.0 << std::endl;
 #endif
 
   // Test BDF5
@@ -358,25 +320,20 @@ void test_BDF_Logistic() {
     mv_type y_vecs("history vectors", mySys.neqs, 5);
     Kokkos::deep_copy(y0, 0.5);
 
-    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF5,
-                     vec_type, mv_type, mat_type, scalar_type>
-        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs,
-                      update, scale, y_vecs, kstack, temp, jac);
+    BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF5, vec_type, mv_type, mat_type, scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
     Kokkos::parallel_for(myPolicy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
 
-    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) /
-                  Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
+    errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
-  measured_order =
-      Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
+  measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
   std::cout << "expected ratio: 32, actual ratio: " << measured_order
-            << ", order error=" << Kokkos::abs(measured_order - 32.0) / 32.0
-            << std::endl;
+            << ", order error=" << Kokkos::abs(measured_order - 32.0) / 32.0 << std::endl;
 #endif
 
 }  // test_BDF_Logistic
@@ -394,8 +351,7 @@ void test_BDF_LotkaVolterra() {
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
   vec_type scale("scaling factors", mySys.neqs);
-  mat_type jac("jacobian", mySys.neqs, mySys.neqs),
-      temp("temp storage", mySys.neqs, mySys.neqs + 4);
+  mat_type jac("jacobian", mySys.neqs, mySys.neqs), temp("temp storage", mySys.neqs, mySys.neqs + 4);
 
   Kokkos::deep_copy(scale, 1);
 
@@ -407,10 +363,8 @@ void test_BDF_LotkaVolterra() {
   Kokkos::deep_copy(y_vecs, 10.0);
 
   Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
-  BDFSolve_wrapper<LotkaVolterra, KokkosODE::Experimental::BDF_type::BDF5,
-                   vec_type, mv_type, mat_type, scalar_type>
-      solve_wrapper(mySys, t_start, t_end, 1000, y0, y_new, rhs, update, scale,
-                    y_vecs, kstack, temp, jac);
+  BDFSolve_wrapper<LotkaVolterra, KokkosODE::Experimental::BDF_type::BDF5, vec_type, mv_type, mat_type, scalar_type>
+      solve_wrapper(mySys, t_start, t_end, 1000, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
   Kokkos::parallel_for(myPolicy, solve_wrapper);
 }
 
@@ -427,8 +381,7 @@ void test_BDF_StiffChemistry() {
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
   vec_type scale("scaling factors", mySys.neqs);
-  mat_type jac("jacobian", mySys.neqs, mySys.neqs),
-      temp("temp storage", mySys.neqs, mySys.neqs + 4);
+  mat_type jac("jacobian", mySys.neqs, mySys.neqs), temp("temp storage", mySys.neqs, mySys.neqs + 4);
 
   Kokkos::deep_copy(scale, 1);
 
@@ -444,10 +397,8 @@ void test_BDF_StiffChemistry() {
   Kokkos::deep_copy(y_vecs, 0.0);
 
   Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
-  BDFSolve_wrapper<StiffChemistry, KokkosODE::Experimental::BDF_type::BDF5,
-                   vec_type, mv_type, mat_type, scalar_type>
-      solve_wrapper(mySys, t_start, t_end, 110000, y0, y_new, rhs, update,
-                    scale, y_vecs, kstack, temp, jac);
+  BDFSolve_wrapper<StiffChemistry, KokkosODE::Experimental::BDF_type::BDF5, vec_type, mv_type, mat_type, scalar_type>
+      solve_wrapper(mySys, t_start, t_end, 110000, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
   Kokkos::parallel_for(myPolicy, solve_wrapper);
 }
 
@@ -559,8 +510,7 @@ void test_BDF_StiffChemistry() {
 // }
 
 template <class mat_type, class scalar_type>
-void compute_coeffs(const int order, const scalar_type factor,
-                    const mat_type& coeffs) {
+void compute_coeffs(const int order, const scalar_type factor, const mat_type& coeffs) {
   std::cout << "compute_coeffs" << std::endl;
 
   coeffs(0, 0) = 1.0;
@@ -568,35 +518,28 @@ void compute_coeffs(const int order, const scalar_type factor,
     coeffs(0, colIdx + 1) = 1.0;
     for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
       coeffs(rowIdx + 1, colIdx + 1) =
-          ((rowIdx - factor * (colIdx + 1.0)) / (rowIdx + 1.0)) *
-          coeffs(rowIdx, colIdx + 1);
+          ((rowIdx - factor * (colIdx + 1.0)) / (rowIdx + 1.0)) * coeffs(rowIdx, colIdx + 1);
     }
   }
 }
 
 template <class mat_type, class scalar_type>
-void update_D(const int order, const scalar_type factor, const mat_type& coeffs,
-              const mat_type& tempD, const mat_type& D) {
-  auto subD =
-      Kokkos::subview(D, Kokkos::pair<int, int>(0, order + 1), Kokkos::ALL);
-  auto subTempD =
-      Kokkos::subview(tempD, Kokkos::pair<int, int>(0, order + 1), Kokkos::ALL);
+void update_D(const int order, const scalar_type factor, const mat_type& coeffs, const mat_type& tempD,
+              const mat_type& D) {
+  auto subD     = Kokkos::subview(D, Kokkos::pair<int, int>(0, order + 1), Kokkos::ALL);
+  auto subTempD = Kokkos::subview(tempD, Kokkos::pair<int, int>(0, order + 1), Kokkos::ALL);
 
   compute_coeffs(order, factor, coeffs);
-  auto R = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1),
-                           Kokkos::pair<int, int>(0, order + 1));
+  auto R = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
   std::cout << "SerialGemm" << std::endl;
-  KokkosBatched::SerialGemm<
-      KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose,
-      KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, R, subD, 0.0, subTempD);
+  KokkosBatched::SerialGemm<KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose,
+                            KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, R, subD, 0.0, subTempD);
 
   compute_coeffs(order, 1.0, coeffs);
-  auto U = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1),
-                           Kokkos::pair<int, int>(0, order + 1));
+  auto U = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
   std::cout << "SerialGemm" << std::endl;
-  KokkosBatched::SerialGemm<
-      KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose,
-      KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, U, subTempD, 0.0, subD);
+  KokkosBatched::SerialGemm<KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose,
+                            KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, U, subTempD, 0.0, subD);
 }
 
 template <class device_type, class scalar_type>
@@ -604,10 +547,8 @@ void test_Nordsieck() {
   using execution_space = Kokkos::HostSpace;
   StiffChemistry mySys{};
 
-  Kokkos::View<scalar_type**, execution_space> R("coeffs", 6, 6),
-      U("coeffs", 6, 6);
-  Kokkos::View<scalar_type**, execution_space> D("D", 8, mySys.neqs),
-      tempD("tmp", 8, mySys.neqs);
+  Kokkos::View<scalar_type**, execution_space> R("coeffs", 6, 6), U("coeffs", 6, 6);
+  Kokkos::View<scalar_type**, execution_space> D("D", 8, mySys.neqs), tempD("tmp", 8, mySys.neqs);
   int order     = 1;
   double factor = 0.8;
 
@@ -639,17 +580,13 @@ void test_Nordsieck() {
   }
 
   std::cout << "D before update:" << std::endl;
-  std::cout << "  { " << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << " }"
-            << std::endl;
-  std::cout << "  { " << D(1, 0) << ", " << D(1, 1) << ", " << D(1, 2) << " }"
-            << std::endl;
+  std::cout << "  { " << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << " }" << std::endl;
+  std::cout << "  { " << D(1, 0) << ", " << D(1, 1) << ", " << D(1, 2) << " }" << std::endl;
   update_D(order, factor, R, tempD, D);
 
   std::cout << "D after update:" << std::endl;
-  std::cout << "  { " << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << " }"
-            << std::endl;
-  std::cout << "  { " << D(1, 0) << ", " << D(1, 1) << ", " << D(1, 2) << " }"
-            << std::endl;
+  std::cout << "  { " << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << " }" << std::endl;
+  std::cout << "  { " << D(1, 0) << ", " << D(1, 1) << ", " << D(1, 2) << " }" << std::endl;
 }
 
 template <class device_type, class scalar_type>
@@ -668,8 +605,7 @@ void test_adaptive_BDF() {
 
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
-  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4),
-      temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   // Initial condition
   Kokkos::deep_copy(y0, 0.5);
@@ -688,13 +624,11 @@ void test_adaptive_BDF() {
   std::cout << "Initial conditions" << std::endl;
   std::cout << "   y0=" << y0(0) << ", t=" << t << ", dt=" << dt << std::endl;
 
-  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2)
-            << ", " << D(0, 3) << ", " << D(0, 4) << ", " << D(0, 5) << ", "
-            << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
+  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4)
+            << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
-  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps,
-                           max_newton_iters, atol, rtol, 0.2, y0, y_new, rhs,
-                           update, temp, temp2);
+  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0, y_new,
+                           rhs, update, temp, temp2);
 
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     y0(eqIdx) = y_new(eqIdx);
@@ -706,13 +640,11 @@ void test_adaptive_BDF() {
 
   std::cout << "   y0=" << y0(0) << ", t=" << t << ", dt: " << dt << std::endl;
 
-  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2)
-            << ", " << D(0, 3) << ", " << D(0, 4) << ", " << D(0, 5) << ", "
-            << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
+  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4)
+            << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
-  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps,
-                           max_newton_iters, atol, rtol, 0.2, y0, y_new, rhs,
-                           update, temp, temp2);
+  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0, y_new,
+                           rhs, update, temp, temp2);
 
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     y0(eqIdx) = y_new(eqIdx);
@@ -724,13 +656,11 @@ void test_adaptive_BDF() {
 
   std::cout << "   y0=" << y0(0) << ", t=" << t << ", dt: " << dt << std::endl;
 
-  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2)
-            << ", " << D(0, 3) << ", " << D(0, 4) << ", " << D(0, 5) << ", "
-            << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
+  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4)
+            << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
-  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps,
-                           max_newton_iters, atol, rtol, 0.2, y0, y_new, rhs,
-                           update, temp, temp2);
+  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0, y_new,
+                           rhs, update, temp, temp2);
 
   std::cout << "Final t: " << t << ", y=" << y_new(0) << std::endl;
 
@@ -751,22 +681,18 @@ void test_adaptive_BDF_v2() {
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   Kokkos::deep_copy(y0, 0.5);
 
-  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4),
-      temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   {
     scalar_type dt = KAT::zero();
     vec_type f0("initial value f", mySys.neqs);
     mySys.evaluate_function(t_start, KAT::zero(), y0, f0);
-    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-3, y0, f0,
-                                       temp, dt);
+    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-3, y0, f0, temp, dt);
 
     std::cout << "Initial Step Size: dt=" << dt << std::endl;
   }
 
-  KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, 0.0117188,
-                                    (t_end - t_start) / 10, y0, y_new, temp,
-                                    temp2);
+  KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, 0.0117188, (t_end - t_start) / 10, y0, y_new, temp, temp2);
 }
 
 template <class Device, class scalar_type>
@@ -789,42 +715,30 @@ void test_BDF_adaptive_stiff() {
   y0_h(2)   = KAT::zero();
   Kokkos::deep_copy(y0, y0_h);
 
-  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4),
-      temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   Kokkos::RangePolicy<execution_space> policy(0, 1);
-  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
-                                (t_end - t_start) / 10, y0, y_new, temp, temp2);
+  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2);
 
   Kokkos::parallel_for(policy, bdf_wrapper);
 
   auto y_new_h = Kokkos::create_mirror_view(y_new);
   Kokkos::deep_copy(y_new_h, y_new);
-  std::cout << "Stiff Chemistry solution at t=500: {" << y_new_h(0) << ", "
-            << y_new_h(1) << ", " << y_new_h(2) << "}" << std::endl;
+  std::cout << "Stiff Chemistry solution at t=500: {" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2) << "}"
+            << std::endl;
 }
 
 }  // namespace Test
 
-TEST_F(TestCategory, BDF_Logistic_serial) {
-  ::Test::test_BDF_Logistic<TestDevice, double>();
-}
-TEST_F(TestCategory, BDF_LotkaVolterra_serial) {
-  ::Test::test_BDF_LotkaVolterra<TestDevice, double>();
-}
-TEST_F(TestCategory, BDF_StiffChemistry_serial) {
-  ::Test::test_BDF_StiffChemistry<TestDevice, double>();
-}
+TEST_F(TestCategory, BDF_Logistic_serial) { ::Test::test_BDF_Logistic<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_LotkaVolterra_serial) { ::Test::test_BDF_LotkaVolterra<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_StiffChemistry_serial) { ::Test::test_BDF_StiffChemistry<TestDevice, double>(); }
 // TEST_F(TestCategory, BDF_parallel_serial) {
 //   ::Test::test_BDF_parallel<TestDevice, double>();
 // }
-TEST_F(TestCategory, BDF_Nordsieck) {
-  ::Test::test_Nordsieck<TestDevice, double>();
-}
+TEST_F(TestCategory, BDF_Nordsieck) { ::Test::test_Nordsieck<TestDevice, double>(); }
 // TEST_F(TestCategory, BDF_adaptive) {
 //   ::Test::test_adaptive_BDF<TestDevice, double>();
 //   ::Test::test_adaptive_BDF_v2<TestDevice, double>();
 // }
-TEST_F(TestCategory, BDF_StiffChemistry_adaptive) {
-  ::Test::test_BDF_adaptive_stiff<TestDevice, double>();
-}
+TEST_F(TestCategory, BDF_StiffChemistry_adaptive) { ::Test::test_BDF_adaptive_stiff<TestDevice, double>(); }

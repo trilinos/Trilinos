@@ -27,14 +27,10 @@ int main(int argc, char* argv[]) {
   using OT   = int;
   using EXSP = Kokkos::DefaultExecutionSpace;
   using MESP = typename EXSP::memory_space;
-  using CRS =
-      KokkosSparse::CrsMatrix<ST, OT, Kokkos::Device<EXSP, MESP>, void, OT>;
+  using CRS  = KokkosSparse::CrsMatrix<ST, OT, Kokkos::Device<EXSP, MESP>, void, OT>;
 
-  using ViewVectorType =
-      Kokkos::View<ST*, Kokkos::LayoutLeft, Kokkos::Device<EXSP, MESP>>;
-  using KernelHandle =
-      KokkosKernels::Experimental::KokkosKernelsHandle<OT, OT, ST, EXSP, MESP,
-                                                       MESP>;
+  using ViewVectorType = Kokkos::View<ST*, Kokkos::LayoutLeft, Kokkos::Device<EXSP, MESP>>;
+  using KernelHandle   = KokkosKernels::Experimental::KokkosKernelsHandle<OT, OT, ST, EXSP, MESP, MESP>;
 
   std::string ortho("CGS2");  // orthog type
   int n          = 1000;      // Matrix size
@@ -53,29 +49,26 @@ int main(int argc, char* argv[]) {
     if (token == std::string("--ortho")) ortho = argv[++i];
     if (token == std::string("--rand_rhs")) rand_rhs = true;
     if (token == std::string("--help") || token == std::string("-h")) {
-      std::cout
-          << "Kokkos GMRES solver options:" << std::endl
-          << "--mat-size    :  The size of the nxn test matrix. (Default: "
-             "n=1000.)"
-          << std::endl
-          << "--max-subsp   :  The maximum size of the Kyrlov subspace before "
-             "restarting (Default 50)."
-          << std::endl
-          << "--max-restarts:  Maximum number of GMRES restarts (Default 50)."
-          << std::endl
-          << "--tol         :  Convergence tolerance.  (Default 1e-10)."
-          << std::endl
-          << "--ortho       :  Type of orthogonalization. Use 'CGS2' or 'MGS'. "
-             "(Default 'CGS2')"
-          << std::endl
-          << "--rand_rhs    :  Generate a random right-hand side b.  (Else, "
-             "default uses b = vector of ones.)"
-          << std::endl
-          << "--help  -h    :  Display this help message." << std::endl
-          << "Example Call  :  ./Gmres.exe --filename Laplace3D100.mtx --tol "
-             "1e-5 --max-subsp 100 "
-          << std::endl
-          << std::endl;
+      std::cout << "Kokkos GMRES solver options:" << std::endl
+                << "--mat-size    :  The size of the nxn test matrix. (Default: "
+                   "n=1000.)"
+                << std::endl
+                << "--max-subsp   :  The maximum size of the Kyrlov subspace before "
+                   "restarting (Default 50)."
+                << std::endl
+                << "--max-restarts:  Maximum number of GMRES restarts (Default 50)." << std::endl
+                << "--tol         :  Convergence tolerance.  (Default 1e-10)." << std::endl
+                << "--ortho       :  Type of orthogonalization. Use 'CGS2' or 'MGS'. "
+                   "(Default 'CGS2')"
+                << std::endl
+                << "--rand_rhs    :  Generate a random right-hand side b.  (Else, "
+                   "default uses b = vector of ones.)"
+                << std::endl
+                << "--help  -h    :  Display this help message." << std::endl
+                << "Example Call  :  ./Gmres.exe --filename Laplace3D100.mtx --tol "
+                   "1e-5 --max-subsp 100 "
+                << std::endl
+                << std::endl;
       return 0;
     }
   }
@@ -87,18 +80,16 @@ int main(int argc, char* argv[]) {
   auto gmres_handle = kh.get_gmres_handle();
   // Get full gmres handle type using decltype. Deferencing a pointer gives a
   // reference, so we need to strip that too.
-  using GMRESHandle =
-      typename std::remove_reference<decltype(*gmres_handle)>::type;
-  gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2
-                                          : GMRESHandle::Ortho::MGS);
+  using GMRESHandle = typename std::remove_reference<decltype(*gmres_handle)>::type;
+  gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2 : GMRESHandle::Ortho::MGS);
 
   // Initialize Kokkos AFTER parsing parameters:
   Kokkos::initialize();
   {
     // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
-    CRS A       = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n);
-    auto myPrec = new KokkosSparse::Experimental::MatrixPrec<CRS>(
-        KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true));
+    CRS A = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n);
+    auto myPrec =
+        new KokkosSparse::Experimental::MatrixPrec<CRS>(KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true));
 
     ViewVectorType X(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"),
                      n);         // Solution and initial guess
@@ -107,9 +98,8 @@ int main(int argc, char* argv[]) {
                      n);  // right-hand side vec
     int rand_seed = 123;
     Kokkos::Random_XorShift64_Pool<> pool(rand_seed);
-    Kokkos::fill_random(
-        X, pool, -1,
-        1);  // Use non-zero initial guess to test GMRES properties.
+    Kokkos::fill_random(X, pool, -1,
+                        1);  // Use non-zero initial guess to test GMRES properties.
     if (rand_rhs) {
       Kokkos::fill_random(B, pool, -1, 1);
     } else {
@@ -131,8 +121,7 @@ int main(int argc, char* argv[]) {
     std::cout << "=========================================" << std::endl;
     std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
     std::cout << "Number of iterations is: " << numIters << std::endl;
-    std::cout << "Diff of residual from main - residual from solver: "
-              << endRelRes - endRes << std::endl;
+    std::cout << "Diff of residual from main - residual from solver: " << endRelRes - endRes << std::endl;
     std::cout << "Convergence flag is : " << convFlag << std::endl;
     if (endRes < convTol && numIters == 1) {
       pass = true;
