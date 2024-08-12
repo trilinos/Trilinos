@@ -2069,7 +2069,7 @@ public:
 #endif
         }
       }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_HAVE_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
       cusparseDestroy(cusparseHandle);
       cusparseDestroyDnMat(matL);
       cusparseDestroyDnVec(vecL);
