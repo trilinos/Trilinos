@@ -283,7 +283,7 @@ build_problem (Teuchos::ParameterList& test_params,
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
       useZoltan2, std::invalid_argument,
-      "Both Xpetra and Zoltan2 are neeeded to usee Zoltan2.");
+      "Both Xpetra and Zoltan2 are needed to usee Zoltan2.");
 #endif
   }
 
