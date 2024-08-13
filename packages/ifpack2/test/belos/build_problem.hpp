@@ -58,6 +58,12 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+# include "Zoltan2_PartitioningProblem.hpp"
+# include "Zoltan2_XpetraCrsMatrixAdapter.hpp"
+# include "Zoltan2_XpetraMultiVectorAdapter.hpp"
+#endif
+
 #include "read_matrix.hpp"
 #include "build_precond.hpp"
 
@@ -101,7 +107,11 @@ build_problem (Teuchos::ParameterList& test_params,
   std::string hb_file("not specified");
   Ifpack2::getParameter(test_params, "hb_file", hb_file);
   bool useMatrixWithConstGraph = false;
+  bool useZoltan2 = false;
+  bool useParMETIS = false;
   Ifpack2::getParameter(test_params, "Use matrix with const graph", useMatrixWithConstGraph);
+  Ifpack2::getParameter(test_params, "Use Zoltan2",  useZoltan2);
+  Ifpack2::getParameter(test_params, "Use ParMetis", useParMETIS);
 
   if (mm_file != "not specified") {
     if (comm->getRank() == 0) {
@@ -220,6 +230,61 @@ build_problem (Teuchos::ParameterList& test_params,
   }
   else {
     x->putScalar (STS::zero ());
+  }
+
+  if (useZoltan2) {
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+    // Create an input adapter for the Tpetra matrix.
+    Zoltan2::XpetraCrsMatrixAdapter<crs_matrix_type>
+      zoltan_matrix(A);
+
+    // Specify partitioning parameters
+    Teuchos::ParameterList zoltan_params;
+    zoltan_params.set("partitioning_approach", "partition");
+    //
+    if (useParMETIS) {
+      if (comm->getRank() == 0) {
+        std::cout << "Using Zoltan2(ParMETIS)" << std::endl;
+      }
+      zoltan_params.set("algorithm", "parmetis");
+      zoltan_params.set("symmetrize_input", "transpose");
+      zoltan_params.set("partitioning_objective", "minimize_cut_edge_weight");
+    } else {
+      if (comm->getRank() == 0) {
+        std::cout << "Using Zoltan2(HyperGraph)" << std::endl;
+      }
+      zoltan_params.set("algorithm", "phg");
+    }
+
+    // Create and solve partitioning problem
+    Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter<crs_matrix_type>>
+      problem(&zoltan_matrix, &zoltan_params);
+    problem.solve();
+
+    // Redistribute matrix
+    RCP<crs_matrix_type> zoltan_A;
+    zoltan_matrix.applyPartitioningSolution (*A, zoltan_A, problem.getSolution());
+    // Set it as coefficient matrix
+    A = zoltan_A;
+
+    // Redistribute RHS
+    RCP<TMV> zoltan_b;
+    Zoltan2::XpetraMultiVectorAdapter<TMV> adapterRHS(rcpFromRef (*b));
+    adapterRHS.applyPartitioningSolution (*b, zoltan_b, problem.getSolution());
+    // Set it as RHS
+    b = zoltan_b;
+
+    // Redistribute Sol
+    RCP<TMV> zoltan_x;
+    Zoltan2::XpetraMultiVectorAdapter<TMV> adapterSol(rcpFromRef (*x));
+    adapterSol.applyPartitioningSolution (*x, zoltan_x, problem.getSolution());
+    // Set it as Sol
+    x = zoltan_x;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      useZoltan2, std::invalid_argument,
+      "Both Xpetra and Zoltan2 are neeeded to usee Zoltan2.");
+#endif
   }
 
   Teuchos::RCP< BLinProb > problem;
