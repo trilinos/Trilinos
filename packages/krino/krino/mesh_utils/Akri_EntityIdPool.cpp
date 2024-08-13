@@ -31,16 +31,13 @@ EntityIdPool::get_EntityId(stk::mesh::EntityRank rank)
 void
 EntityIdPool::reserve(stk::mesh::EntityRank rank, size_t count, bool assert_32bit_ids, bool make_64bit_ids)
 {
-  my_meta_data.mesh_bulk_data().generate_new_ids( rank, count, my_entity_id_pool[rank] );
-  STK_ThrowAssert(!make_64bit_ids || !assert_32bit_ids);
-  if (make_64bit_ids)
-  {
-    push_ids_to_64_bit(my_entity_id_pool[rank]);
-  }
-  if (assert_32bit_ids && (rank == stk::topology::NODE_RANK || rank == stk::topology::ELEMENT_RANK)) // Only worry about node and elements since they are output
-  {
-    check_ids_are_32_bit(rank, my_entity_id_pool[rank]);
-  }
+  auto & ids = my_entity_id_pool[rank];
+  generate_new_ids(my_meta_data.mesh_bulk_data(), rank, count, ids, assert_32bit_ids, make_64bit_ids);
+
+  // Reverse order because these are used from the back
+  const size_t num = ids.size();
+  for (size_t i=0; i<num/2; ++i)
+    std::swap(ids[i], ids[num-i-1]);
 }
 
 void

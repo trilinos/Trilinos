@@ -37,7 +37,9 @@ public:
   virtual size_t size() const = 0;
   virtual size_t nonlocal_size() const = 0;
   virtual double point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const = 0;
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) = 0;
+  void prepare_to_compute(const double time,
+      const BoundingBox & point_bbox,
+      const double truncation_length) override = 0;
   virtual std::string print_sizes() const = 0;
   virtual stk::math::Vector3d closest_point(const stk::math::Vector3d &x) const = 0;
 
@@ -100,7 +102,7 @@ public:
   virtual void swap(FacetedSurfaceBase & other) override;
 
   virtual size_t nonlocal_size() const override { return myNonLocalFacets.size(); }
-  virtual std::string print_sizes() const;
+  std::string print_sizes() const override;
 
   void parallel_distribute_facets(const size_t batch_size, const std::vector<BoundingBox> & proc_bboxes);
   double point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const override;

@@ -43,7 +43,9 @@ Fast_Marching::Fast_Marching(const stk::mesh::BulkData & mesh,
   {
     if (fieldSelector(*bucket) &&
         bucket->topology() != stk::topology::TRIANGLE_3_2D &&
-        bucket->topology() != stk::topology::TETRAHEDRON_4)
+        bucket->topology() != stk::topology::QUADRILATERAL_4_2D &&
+        bucket->topology() != stk::topology::TETRAHEDRON_4 &&
+        bucket->topology() != stk::topology::HEXAHEDRON_8)
     {
       err << "Topology " << bucket->topology().name() << " is not supported in Fast_Marching.\n";
     }
@@ -134,7 +136,7 @@ void Fast_Marching::initialize_nodes_of_crossed_elements()
   stk::mesh::get_selected_entities( selected_with_field_not_ghost_selector(), myMesh.buckets( stk::topology::ELEMENT_RANK ), field_elems );
   for (auto&& elem : field_elems)
     if (have_crossing(elem))
-      initialize_element(elem, get_element_interface_speed(err, elem));
+      initialize_element(elem, err);
 
   if (myMesh.parallel_size() > 1)
   {
@@ -316,22 +318,26 @@ void Fast_Marching::initialize_node(const stk::mesh::Entity node)
 }
 
 bool
-Fast_Marching::have_crossing(const stk::mesh::Entity & elem) const
+Fast_Marching::have_crossing(const StkMeshEntities & elemNodes) const
 {
-  const unsigned npe = myMesh.bucket(elem).topology().num_nodes();
-  STK_ThrowAssert(npe > 0);
-
-  const stk::mesh::Entity * elem_nodes = myMesh.begin(elem, stk::topology::NODE_RANK);
-  const double dist0 = get_node_distance(elem_nodes[0]);
-  for (unsigned n=1; n<npe; ++n)
+  STK_ThrowAssert(elemNodes.size() > 0);
+  const double dist0 = get_node_distance(elemNodes[0]);
+  for (unsigned n=1; n<elemNodes.size(); ++n)
   {
-    const double dist = get_node_distance(elem_nodes[n]);
+    const double dist = get_node_distance(elemNodes[n]);
     if (sign_change(dist0, dist))
     {
       return true;
     }
   }
   return false;
+}
+
+bool
+Fast_Marching::have_crossing(const stk::mesh::Entity & elem) const
+{
+  const StkMeshEntities elemNodes{myMesh.begin_nodes(elem), myMesh.end_nodes(elem)};
+  return have_crossing(elemNodes);
 }
 
 static std::function<const stk::math::Vector3d &(stk::mesh::Entity)> build_get_fm_node_coordinates(Fast_Marching * fm)
@@ -344,8 +350,56 @@ static std::function<const stk::math::Vector3d &(stk::mesh::Entity)> build_get_f
     };
 }
 
+template<size_t NNODES>
+std::array<stk::mesh::Entity, NNODES> get_simplex_nodes_from_element_nodes(const stk::mesh::Entity* elemNodes, const std::array<int, NNODES> & simplexNodeIndices)
+{
+  std::array<stk::mesh::Entity, NNODES> simplexNodes;
+  for (size_t n=0; n<NNODES; ++n)
+    simplexNodes[n] = elemNodes[simplexNodeIndices[n]];
+  return simplexNodes;
+}
+
+template<size_t NNODES>
+void Fast_Marching::initialize_from_simplex(const std::array<stk::mesh::Entity, NNODES> & simplexNodes,
+    const double elemSpeed,
+    const std::function<const stk::math::Vector3d &(stk::mesh::Entity)> & get_coordinates)
+{
+  const StkMeshEntities simplexNodeEntities{simplexNodes.data(), simplexNodes.data()+NNODES};
+  if (have_crossing(simplexNodeEntities))
+  {
+    const double mag_grad = calculate_gradient_magnitude(NNODES, simplexNodes.data(), myDistance, get_coordinates);
+
+    for (size_t inode=0; inode<NNODES; ++inode)
+    {
+      Fast_Marching_Node * fm_node = get_fm_node(simplexNodes[inode]);
+      STK_ThrowAssert(nullptr != fm_node && fm_node->status() != STATUS_UNUSED);
+      const double elem_node_dist = get_node_distance(simplexNodes[inode]) / (mag_grad * elemSpeed);
+      const int sign = fm_node->sign();
+      fm_node->set_signed_dist(sign * std::min(std::abs(fm_node->signed_dist()), std::abs(elem_node_dist)));
+      fm_node->set_status(STATUS_INITIAL);
+    }
+  }
+}
+
+template<size_t NSIMPLICES, size_t NNODES>
+void Fast_Marching::initialize_from_simplices(const stk::mesh::Entity* elemNodes, const std::array<std::array<int, NNODES>,NSIMPLICES> & simplices,
+    const double elemSpeed,
+    const std::function<const stk::math::Vector3d &(stk::mesh::Entity)> & get_coordinates)
+{
+  for (auto & simplex : simplices)
+    initialize_from_simplex(get_simplex_nodes_from_element_nodes(elemNodes, simplex), elemSpeed, get_coordinates);
+}
+
+static constexpr std::array<std::array<int,3>,1> triangleSimplices = {{ {{0,1,2}} }};
+static constexpr std::array<std::array<int,3>,4> quadrilateralSimplices = {{ {{0,1,2}},  {{0,2,3}}, {{0,1,3}}, {{1,2,3}} }};
+static constexpr std::array<std::array<int,4>,1> tetrahedronSimplices = {{ {{0,1,2,3}} }};
+static constexpr std::array<std::array<int,4>,10> hexahedronSimplices = {{
+    {{0,1,3,4}}, {{1,2,3,6}}, {{3,4,6,7}}, {{1,6,4,5}}, {{1,3,4,6}},
+    {{0,1,2,5}}, {{0,2,3,7}}, {{0,5,7,4}}, {{2,7,5,6}}, {{0,2,7,5}}
+}};
+
 void
-Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double speed)
+Fast_Marching::initialize_element(const stk::mesh::Entity & elem, ParallelErrorMessage& err)
 {
   // To start the nodes of elements that have interfaces will be redistanced.
   // I have tried a few different methods for this distance calculation with varying success.
@@ -367,83 +421,122 @@ Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double s
 
   // Initialize using method #5 (element rescaling)
 
-  const stk::mesh::Entity * elem_nodes = myMesh.begin(elem, stk::topology::NODE_RANK);
-  const int npe = myMesh.bucket(elem).topology().num_nodes();
-
   auto get_coordinates = build_get_fm_node_coordinates(this);
 
-  const double mag_grad = calculate_gradient_magnitude(npe, elem_nodes, myDistance, get_coordinates);
+  const stk::topology elemTopology = myMesh.bucket(elem).topology();
 
-  for (int inode=0; inode<npe; ++inode)
+  const double elemSpeed = get_element_interface_speed(err, elem);
+
+  const stk::mesh::Entity* elemNodes = myMesh.begin_nodes(elem);
+
+  switch(elemTopology())
   {
-    Fast_Marching_Node * fm_node = get_fm_node(elem_nodes[inode]);
-    STK_ThrowAssert(nullptr != fm_node && fm_node->status() != STATUS_UNUSED);
-    const double elem_node_dist = get_node_distance(elem_nodes[inode]) / (mag_grad * speed);
-    const int sign = fm_node->sign();
-    fm_node->set_signed_dist(sign * std::min(std::abs(fm_node->signed_dist()), std::abs(elem_node_dist)));
-    fm_node->set_status(STATUS_INITIAL);
+    case stk::topology::TRIANGLE_3_2D:
+        initialize_from_simplices(elemNodes, triangleSimplices, elemSpeed, get_coordinates);
+        break;
+    case stk::topology::QUADRILATERAL_4_2D:
+        initialize_from_simplices(elemNodes, quadrilateralSimplices, elemSpeed, get_coordinates);
+        break;
+    case stk::topology::TETRAHEDRON_4:
+        initialize_from_simplices(elemNodes, tetrahedronSimplices, elemSpeed, get_coordinates);
+        break;
+    case stk::topology::HEXAHEDRON_8:
+        initialize_from_simplices(elemNodes, hexahedronSimplices, elemSpeed, get_coordinates);
+        break;
+    default:
+        err << "Unsupported element topology " << elemTopology.name() << " in initialize_element.\n";
   }
 }
 
-void
-Fast_Marching::update_neighbors(Fast_Marching_Node & accepted_node, ParallelErrorMessage& err)
+static bool do_make_neighbor_a_trial_node(const Fast_Marching_Node & acceptedNode, const Fast_Marching_Node & nbrNode)
 {
+  if (nbrNode.status() == STATUS_FAR)
+    return true;
+  if (nbrNode.status() == STATUS_ACCEPTED)
+  {
+    const double accepted_node_unsigned_dist = acceptedNode.signed_dist()*acceptedNode.sign();
+    const double nbr_unsigned_dist = nbrNode.signed_dist()*nbrNode.sign();
+    if(nbr_unsigned_dist > accepted_node_unsigned_dist)
+      return true;
+  }
+  return false;
+}
+
+template<size_t NNODES>
+void Fast_Marching::update_neighbors_from_simplex(const Fast_Marching_Node & acceptedNode, const std::array<stk::mesh::Entity, NNODES> & simplexNodes, const double elemSpeed)
+{
+  int node_to_update = -1;
+  int num_trial = 0;
+
+  std::array<Fast_Marching_Node *, NNODES> simplexFmNodes;
+
+  for ( size_t i = 0; i < NNODES; ++i )
+  {
+    Fast_Marching_Node * fm_nbr = get_fm_node(simplexNodes[i]);
+    STK_ThrowAssertMsg(nullptr != fm_nbr && (STATUS_INITIAL == fm_nbr->status() || STATUS_ACCEPTED == fm_nbr->status() || STATUS_FAR == fm_nbr->status() || STATUS_TRIAL == fm_nbr->status()), "Unexpected node status.");
+    simplexFmNodes[i] = fm_nbr;
+    if (do_make_neighbor_a_trial_node(acceptedNode, *fm_nbr))
+    {
+      add_trial_node(*fm_nbr);
+    }
+    if (fm_nbr->status() == STATUS_TRIAL)
+    {
+      ++num_trial;
+      node_to_update = i;
+    }
+  }
+
+  if (1 == num_trial)
+  {
+    update_trial_node_from_simplex(simplexFmNodes, node_to_update, elemSpeed);
+  }
+}
+
+template<size_t NSIMPLICES, size_t NNODES>
+void Fast_Marching::update_neighbors_from_simplices(const Fast_Marching_Node & acceptedNode,
+    const stk::mesh::Entity* elemNodes,
+    const std::array<std::array<int, NNODES>,NSIMPLICES> & simplices,
+    const double elemSpeed)
+{
+  for (auto & simplex : simplices)
+    update_neighbors_from_simplex(acceptedNode, get_simplex_nodes_from_element_nodes(elemNodes, simplex), elemSpeed);
+}
+
+void
+Fast_Marching::update_neighbors(Fast_Marching_Node & acceptedNode, ParallelErrorMessage& err)
+{
+  STK_ThrowAssertMsg(STATUS_ACCEPTED == acceptedNode.status() || STATUS_INITIAL == acceptedNode.status(), "Expected ACCEPTED OR INITIAL status");
+
+  stk::mesh::Entity node = acceptedNode.node();
+
   const stk::mesh::Selector elemSelector = selected_with_field_not_ghost_selector();
 
-  stk::mesh::Entity node = accepted_node.node();
-
-  STK_ThrowAssertMsg(STATUS_ACCEPTED == accepted_node.status() || STATUS_INITIAL == accepted_node.status(), "Expected ACCEPTED OR INITIAL status");
-
-  const int dim = myMesh.mesh_meta_data().spatial_dimension();
-  STK_ThrowAssert(2 == dim || 3 == dim);
-  const int npe_dist = (2==dim) ? 3 : 4;
-  std::vector<Fast_Marching_Node *> elem_nodes(npe_dist);
-
-  const unsigned num_node_elems = myMesh.num_elements(node);
-  const stk::mesh::Entity* node_elems = myMesh.begin_elements(node);
-  for (unsigned node_elem_index=0; node_elem_index<num_node_elems; ++node_elem_index)
+  for (auto elem : StkMeshEntities{myMesh.begin_elements(node), myMesh.end_elements(node)})
   {
-    stk::mesh::Entity elem = node_elems[node_elem_index];
-    if (!myMesh.is_valid(elem) || !elemSelector(myMesh.bucket(elem)))
+    if (myMesh.is_valid(elem) && elemSelector(myMesh.bucket(elem)))
     {
-      continue;
-    }
+      const double elemSpeed = get_element_interface_speed(err, elem);
+      const stk::topology elemTopology = myMesh.bucket(elem).topology();
 
-    const double speed = get_element_interface_speed(err, elem);
+      const stk::mesh::Entity* elemNodes = myMesh.begin_nodes(elem);
 
-    int node_to_update = -1;
-    int num_trial = 0;
-
-    const stk::mesh::Entity* nodes = myMesh.begin_nodes(elem);
-    for ( int i = 0; i < npe_dist; ++i )
-    {
-      Fast_Marching_Node * fm_nbr = get_fm_node(nodes[i]);
-      STK_ThrowAssertMsg(nullptr != fm_nbr && (STATUS_INITIAL == fm_nbr->status() || STATUS_ACCEPTED == fm_nbr->status() || STATUS_FAR == fm_nbr->status() || STATUS_TRIAL == fm_nbr->status()), "Unexpected node status.");
-      elem_nodes[i] = fm_nbr;
-      bool do_add_trial_node = fm_nbr->status() == STATUS_FAR;
-      if (fm_nbr->status() == STATUS_ACCEPTED)
+      switch(elemTopology())
       {
-        const double accepted_node_unsigned_dist = accepted_node.signed_dist()*accepted_node.sign();
-        const double nbr_unsigned_dist = fm_nbr->signed_dist()*fm_nbr->sign();
-        if(nbr_unsigned_dist > accepted_node_unsigned_dist)
-        {
-          do_add_trial_node = true;
-        }
+        case stk::topology::TRIANGLE_3_2D:
+            update_neighbors_from_simplices(acceptedNode, elemNodes, triangleSimplices, elemSpeed);
+            break;
+        case stk::topology::QUADRILATERAL_4_2D:
+            update_neighbors_from_simplices(acceptedNode, elemNodes, quadrilateralSimplices, elemSpeed);
+            break;
+        case stk::topology::TETRAHEDRON_4:
+            update_neighbors_from_simplices(acceptedNode, elemNodes, tetrahedronSimplices, elemSpeed);
+            break;
+        case stk::topology::HEXAHEDRON_8:
+            update_neighbors_from_simplices(acceptedNode, elemNodes,  hexahedronSimplices, elemSpeed);
+            break;
+        default:
+            err << "Unsupported element topology " << elemTopology.name() << " in initialize_element.\n";
       }
-      if (do_add_trial_node)
-      {
-        add_trial_node(*fm_nbr);
-      }
-      if (fm_nbr->status() == STATUS_TRIAL)
-      {
-        ++num_trial;
-        node_to_update = i;
-      }
-    }
-
-    if (1 == num_trial)
-    {
-      update_node(elem_nodes, node_to_update, speed);
     }
   }
 }
@@ -470,35 +563,26 @@ Fast_Marching::update_trial_node(Fast_Marching_Node & trial_node, const double d
   trial_nodes.insert(&trial_node);
 }
 
-void
-Fast_Marching::update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed)
+template <size_t NNODES>
+void Fast_Marching::update_trial_node_from_simplex(const std::array<Fast_Marching_Node *, NNODES> & simplexNodes, const int nodeToUpdate, const double speed)
 {
-  // update distance
+  static_assert(NNODES == 3 || NNODES == 4);
   double dist = std::numeric_limits<double>::max();
-  const int npe_dist = elem_nodes.size();
 
-  if (3 == npe_dist)
-  {
-    dist = update_triangle(elem_nodes, node_to_update, speed);
-  }
-  else if (4 == npe_dist)
-  {
-    dist = update_tetrahedron(elem_nodes, node_to_update, speed);
-  }
+  if constexpr(4 == NNODES)
+    dist = update_tetrahedron(simplexNodes, nodeToUpdate, speed);
   else
-  {
-    STK_ThrowAssertMsg(false, "Unexpected number of nodes per element: " << npe_dist);
-  }
+    dist = update_triangle(simplexNodes, nodeToUpdate, speed);
 
-  Fast_Marching_Node & fm_node = *elem_nodes[node_to_update];
-  if (dist*fm_node.sign() < fm_node.signed_dist()*fm_node.sign())
+  Fast_Marching_Node & fmNode = *simplexNodes[nodeToUpdate];
+  if (dist*fmNode.sign() < fmNode.signed_dist()*fmNode.sign())
   {
-    update_trial_node(fm_node, dist);
+    update_trial_node(fmNode, dist);
   }
 }
 
 double
-Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
+Fast_Marching::update_triangle(const std::array<Fast_Marching_Node *, 3> & elemNodes, const int nodeToUpdate, const double speed)
 {
   static constexpr double far = std::numeric_limits<double>::max();
 
@@ -512,7 +596,7 @@ Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elemNodes, in
 }
 
 double
-Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
+Fast_Marching::update_tetrahedron(const std::array<Fast_Marching_Node *, 4> & elemNodes, const int nodeToUpdate, const double speed)
 {
   static constexpr double far = std::numeric_limits<double>::max();
   const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);

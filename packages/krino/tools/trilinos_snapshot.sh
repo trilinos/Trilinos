@@ -53,15 +53,19 @@ verify_clean_repo $TRILINOS
 verify_no_local_commits $TRILINOS_BRANCH
 
 #Pull request workflow
-exe git fetch upstream
-exe git pull upstream develop
-exe git push
+exe git fetch --all
+exe git checkout master
+exe git merge upstream/master
+exe git push origin master
+exe git checkout develop
+exe git merge upstream/develop
+exe git push origin develop
 
 exe git checkout $TRILINOS_BRANCH
 exe git pull
 
 exe git checkout $SNAPSHOT_BRANCH
-exe git reset --hard $TRILINOS_BRANCH
+exe git reset --hard upstream/$TRILINOS_BRANCH
 
 update_package krino
 exe git rm -rf packages/krino/krino_sierra packages/krino/Jamfile packages/krino/.clang-format

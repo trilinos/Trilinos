@@ -131,9 +131,8 @@ public:
     activePart(meta.declare_part("active")),
     boundaryPart(meta.declare_part("boundary"))
   {
-    meta.use_simple_fields();
     stk::io::fill_mesh("generated:1x1x4", bulk);
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulk, activePart);
+    stk::unit_test_util::put_mesh_into_part(bulk, activePart);
   }
 
   void add_element_to_deactivate_on_proc(int elementId, int procRankToKillElementsOn, stk::mesh::EntityVector &elementsDeactivated)

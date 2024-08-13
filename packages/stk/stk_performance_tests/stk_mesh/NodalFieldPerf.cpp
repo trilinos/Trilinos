@@ -57,7 +57,7 @@ namespace
 
 double initial_value[3] = {-1, 2, -0.3};
 
-class NgpFieldAccessPerformance : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpFieldAccessPerformance : public stk::unit_test_util::MeshFixture
 {
 public:
   using DoubleVecField = stk::mesh::Field<double>;
@@ -85,7 +85,6 @@ public:
 
         if(nullptr == metaData) {
           metaData = builder.create_meta_data();
-          metaData->use_simple_fields();
         }
 
         if(nullptr == bulkData) {
@@ -249,7 +248,7 @@ TEST_F(NgpFieldAccessPerformance, pureHost_vectorSum_DefaultFieldDataManager)
   batchTimer.initialize_batch_timer();
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
   createNodalVectorFields();
-  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
+  stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), *bulkData);
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1000;
@@ -274,7 +273,7 @@ TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
   batchTimer.initialize_batch_timer();
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
   createNodalVectorFields();
-  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
+  stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), *bulkData);
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1000;
@@ -291,9 +290,8 @@ TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
 void fill_mesh(stk::mesh::BulkData& bulk, unsigned numElemsPerDim)
 {
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
-  stkIo.use_simple_fields();
   stkIo.set_bulk_data(bulk);
-  stkIo.add_mesh_database(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), stk::io::READ_MESH);
+  stkIo.add_mesh_database(stk::unit_test_util::get_mesh_spec(numElemsPerDim), stk::io::READ_MESH);
   stkIo.create_input_mesh();
   const bool delayFieldDataAllocation = true;
   stkIo.populate_mesh(delayFieldDataAllocation);

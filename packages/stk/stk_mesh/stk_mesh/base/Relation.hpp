@@ -39,6 +39,7 @@
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Types.hpp>      // for RelationType, EntityRank, etc
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssertMsg
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class BulkData; } }
@@ -118,13 +119,10 @@ private:
   enum {
     rank_digits = 8  ,
     id_digits   = 24 ,
-    id_mask     = ~(0u) >> rank_digits
-#ifdef SIERRA_MIGRATION
-    ,
+    id_mask     = ~(0u) >> rank_digits ,
     fwmk_relation_type_digits = 8,
     fmwk_permutation_digits   = 24,
     fmwk_permutation_mask     = ~(0u) >> fwmk_relation_type_digits
-#endif
   };
 
   union RawRelationType {
@@ -174,7 +172,6 @@ private:
 // Solution: Have framework and STK_Mesh use the same type as its relation_descriptor.
 // The code below is designed to make this class compatible with the fmwk
 // Relation class.
-#ifdef SIERRA_MIGRATION
  public:
 
   // Moved this to enum in struct RelationType.
@@ -247,7 +244,6 @@ private:
 
 private:
   bool has_fmwk_state() const { return getRelationType() != RelationType::INVALID; }
-#endif // SIERRA_MIGRATION
 };
 
 //----------------------------------------------------------------------
@@ -275,11 +271,17 @@ RelationIdentifier Relation::relation_ordinal() const
  *          that are related (connected) to all of
  *          the input mesh entities.
  */
+template<typename Vec1Type, typename Vec2Type>
 void get_entities_through_relations(
-  const BulkData& mesh,
-  const std::vector<Entity> & entities ,
-        EntityRank             entities_related_rank ,
-        std::vector<Entity> & entities_related );
+               const BulkData& mesh,
+               const Vec1Type& entities,
+                     EntityRank relatedEntitiesRank,
+                     Vec2Type& relatedEntities)
+{
+  impl::find_entities_these_nodes_have_in_common(mesh, relatedEntitiesRank,
+                                                 entities.size(), entities.data(),
+                                                 relatedEntities);
+}
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.
@@ -298,9 +300,7 @@ Relation::Relation() :
   m_attribute(),
   m_target_entity()
 {
-#ifdef SIERRA_MIGRATION
   setRelationType(RelationType::INVALID);
-#endif
 }
 
 inline
@@ -309,35 +309,25 @@ Relation::Relation( Entity ent, EntityRank entityRank , RelationIdentifier id )
     m_attribute(),
     m_target_entity(ent)
 {
-#ifdef SIERRA_MIGRATION
   setRelationType(RelationType::INVALID);
-#endif
 }
 
 inline
 bool Relation::operator == ( const Relation & rhs ) const
 {
   return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity
-#ifdef SIERRA_MIGRATION
     // compared fmwk state too
     && m_attribute == rhs.m_attribute
-#endif
     ;
 }
 
 inline
 bool same_specification(const Relation& lhs, const Relation& rhs)
 {
-#ifdef SIERRA_MIGRATION
   return  lhs.entity_rank()     == rhs.entity_rank() &&
           lhs.getRelationType() == rhs.getRelationType() &&
           lhs.getOrdinal()      == rhs.getOrdinal();
-#else
-  return  lhs.entity_rank()     == rhs.entity_rank();
-#endif // SIERRA_MIGRATION
 }
-
-#ifdef SIERRA_MIGRATION
 
 inline
 RelationType
@@ -393,16 +383,11 @@ bool internal_is_handled_generically(const RelationType relation_type)
 
 }
 
-#endif // SIERRA_MIGRATION
-
 inline
 Entity Relation::entity() const
 {
   return m_target_entity;
 }
-
-
-#ifdef SIERRA_MIGRATION
 
 inline
 Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned permut)
@@ -424,8 +409,6 @@ void Relation::setMeshObj(Entity object, EntityRank object_rank )
 
 // Find relation from mesh_obj to an Entity of certain rank by relation ordinal
 stk::mesh::Entity find_by_ordinal(stk::mesh::Entity mesh_obj, stk::mesh::EntityRank rank, size_t ordinal, const stk::mesh::BulkData& mesh);
-
-#endif
 
 } // namespace mesh
 } // namespace stk

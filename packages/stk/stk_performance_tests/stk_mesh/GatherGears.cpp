@@ -111,8 +111,8 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
 TEST(gather_gears, gather_gears)
 {
-  stk::mesh::fixtures::simple_fields::GearsFixture fixture(MPI_COMM_WORLD, 1,
-      stk::mesh::fixtures::simple_fields::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
+  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, 1,
+      stk::mesh::fixtures::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
   fixture.meta_data.commit();
 
   double start_time = stk::cpu_time();

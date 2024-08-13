@@ -64,6 +64,6 @@ INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_middle_mesh_util/)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_middle_mesh_util DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_middle_mesh_util EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()
 

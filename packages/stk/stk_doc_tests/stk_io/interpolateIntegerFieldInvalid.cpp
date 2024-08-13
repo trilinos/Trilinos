@@ -64,7 +64,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateIntegerFieldInvalid)
     //+ integer interpolated field.
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);

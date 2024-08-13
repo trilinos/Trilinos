@@ -57,7 +57,6 @@ TEST(StkMeshHowTo, basicSelectorUsage)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator)
                                                    .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
 
 //create a simple shell-quad-4 mesh:
 //       6
@@ -75,7 +74,7 @@ TEST(StkMeshHowTo, basicSelectorUsage)
                          "0,2,SHELL_QUAD_4, 2,5,6,3, block_2\n"
                          "0,3,SHELL_QUAD_4, 4,7,8,5, block_3\n"
                          "0,4,SHELL_QUAD_4, 5,8,9,6, block_4\n";
-  stk::unit_test_util::simple_fields::setup_text_mesh(*bulkPtr, meshDesc);
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, meshDesc);
 
   stk::mesh::Part& block_1 = *meta.get_part("block_1");
   stk::mesh::Part& block_2 = *meta.get_part("block_2");
@@ -99,7 +98,6 @@ TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   const std::string generatedCubeMeshSpecification = "generated:1x1x1";
   stk::io::fill_mesh(generatedCubeMeshSpecification, *bulkPtr);
 
@@ -121,7 +119,6 @@ TEST(StkMeshHowTo, makeSureYouAreNotIntersectingNothingSelector)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { return; }
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   // syntax creates faces for surface on the positive: 'x-side', 'y-side', and 'z-side'
   // of a 1x1x1 cube, these parts are given the names: 'surface_1', 'surface_2', and 'surface_3'
   const std::string generatedCubeMeshSpecification = "generated:1x1x1|sideset:XYZ";

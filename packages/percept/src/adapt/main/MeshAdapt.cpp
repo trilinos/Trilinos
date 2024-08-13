@@ -22,7 +22,7 @@
 
 #include <sys/ioctl.h>
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
 #include <AuditLog.h>
 #endif
 
@@ -848,7 +848,7 @@ namespace percept {
                                   "\n\tEnsures output mesh has the same block ids and names as the input mesh."
                                   "\n\tThis only makes sense for refine (not enrich or convert).", true);
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
     // Salinas
     set_option(ps, "rbar_blocks"              , &rbar_blocks              , PARAMETER, "blocks to treat as special Salinas RBARs.", "", 
       "\n\tRBARs will connect new nodes between two surfaces."
@@ -1554,7 +1554,7 @@ namespace percept {
     BlockNamesType block_names(percept::EntityRankEnd+1u);
     BlockNamesType block_names_rbar(percept::EntityRankEnd+1u);
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
     if (rbar_blocks.length())
       {
         BlockNamesType rbar_names(percept::EntityRankEnd+1u);
@@ -1866,7 +1866,7 @@ namespace percept {
 
         refiner->setFixAllBlockBoundaries(fix_all_block_boundaries);
         refiner->setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
         if (rbar_blocks.length())
           {
             BlockNamesType rbar_names(percept::EntityRankEnd+1u);
@@ -2014,7 +2014,7 @@ namespace percept {
   bool MeshAdapt::get_version(std::string* v)
   {
     if (v) *v = version_prefix+version;
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
     return true;
 #else
     return false;
@@ -2023,7 +2023,7 @@ namespace percept {
 
   void MeshAdapt::log_usage( bool status )
   {
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
     const bool disable_audit = !sierra::Env::get_param("noaudit").empty() || std::getenv("SIERRA_USAGE_METRICS_OFF") != NULL;
 
     size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
@@ -2098,7 +2098,6 @@ namespace percept {
 //    std::string output_mesh_save = output_mesh;
 
     eMeshP.reset(new percept::PerceptMesh);
-    eMeshP->use_simple_fields();
 
     if (output_active_elements_only)
       eMeshP->output_active_children_only(true);

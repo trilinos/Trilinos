@@ -66,7 +66,6 @@ TEST( UnitTestPartAlias, noAliasForDefaultCreatedPart )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -79,7 +78,6 @@ TEST( UnitTestPartAlias, getAliasForAliasedPart )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -96,7 +94,6 @@ TEST( UnitTestPartAlias, partAliasesAreUnique )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -111,7 +108,6 @@ TEST( UnitTestPartAlias, partAliasReregistration )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -129,7 +125,6 @@ TEST( UnitTestPartAlias, multiplePartAliasRegistration )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -155,7 +150,6 @@ TEST( UnitTestPartAlias, partAliasesAreCaseSensitive )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -175,7 +169,6 @@ TEST( UnitTestPartAlias, deletePartAliasExact )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -216,7 +209,6 @@ TEST( UnitTestPartAlias, deletePartAliasCaseInsensitive )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -244,7 +236,6 @@ TEST( UnitTestPartAlias, getPartFromAlias )
 {
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   std::string partName_a("a");

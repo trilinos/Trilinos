@@ -29,7 +29,7 @@ void expect_num_elements_and_faces_and_nodes(stk::mesh::BulkData &bulk, size_t g
   EXPECT_EQ(goldNumNodes, entityCounts[stk::topology::NODE_RANK]);
 }
 
-class HexShellHexMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class HexShellHexMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   HexShellHexMesh()
@@ -48,7 +48,7 @@ protected:
           1,2,HEX_8,5,6,7,8,9,10,11,12\n\
           0,3,SHELL_QUAD_4,5,6,7,8";
     }
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 
@@ -59,7 +59,7 @@ TEST_F(HexShellHexMesh, DeleteShell_OnlyHexesRemain)
   expect_num_elements_and_nodes(get_bulk(), 2u, 12u);
 }
 
-class HexHexShellMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class HexHexShellMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   HexHexShellMesh()
@@ -78,7 +78,7 @@ protected:
           1,2,HEX_8,5,6,7,8,9,10,11,12\n\
           0,3,SHELL_QUAD_4,9,10,11,12";
     }
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 
@@ -94,7 +94,7 @@ TEST_F(HexHexShellMesh, DeleteAllHexes_OnlyShellRemains)
     EXPECT_TRUE(!get_bulk().bucket(node).shared());
 }
 
-class HexWedgeHexMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class HexWedgeHexMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   HexWedgeHexMesh()
@@ -113,7 +113,7 @@ protected:
           1,2,WEDGE_6,5,9,8,6,10,7\n\
           1,3,HEX_8,11,12,13,14,5,9,10,6";
     }
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 
@@ -185,7 +185,7 @@ TEST_F(HexWedgeHexMesh, CreateFacesThenDeleteWedgeThenCreateFaces_TwoHexesRemain
   expect_num_elements_and_faces_and_nodes(get_bulk(), 2u, 12u, 14u);
 }
 
-class SingleHexMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class SingleHexMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   const stk::mesh::EntityId firstHexId = 1;

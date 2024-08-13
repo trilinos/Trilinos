@@ -41,6 +41,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
@@ -57,129 +58,88 @@ namespace mesh {
 
 template<class Scalar, typename EXEC_SPACE>
 inline
-void field_fill(const Scalar alpha, const FieldBase& field, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+void field_fill(const Scalar alpha,
+                const FieldBase& field,
+                int component,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
-
-  field.clear_sync_state();
-
-  if constexpr (operateOnDevice) {
-    NgpField<Scalar>& ngpField = get_updated_ngp_field<Scalar>(field);
-    impl::field_fill_no_sync_or_mark(alpha, ngpField, execSpace);
-  }
-  else {
-    stk::mesh::field_fill(alpha, field);
-  }
-
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    field.modify_on_device();
-  }
-  else {
-    field.modify_on_host();
-  }
+  ngp_field_blas::impl::field_fill_impl(alpha, field, component, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
 
-template<class Scalar, typename EXEC_SPACE>
+template<class Scalar, class EXEC_SPACE>
 inline
-void field_fill(const Scalar alpha, const FieldBase& field, const Selector& selector, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+void field_fill(const Scalar alpha,
+                const FieldBase& field,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
+  ngp_field_blas::impl::field_fill_impl(alpha, field, -1, nullptr, execSpace, isDeviceExecSpaceUserOverride);
+}
 
-  field.clear_sync_state();
-
-  if constexpr (operateOnDevice) {
-    NgpField<Scalar>& ngpField = get_updated_ngp_field<Scalar>(field);
-    impl::field_fill_no_sync_or_mark(alpha, ngpField, selector, execSpace);
-  }
-  else {
-    stk::mesh::field_fill(alpha, field, selector);
-  }
-
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    field.modify_on_device();
-  }
-  else {
-    field.modify_on_host();
-  }
+template<class Scalar, class EXEC_SPACE>
+inline
+void field_fill(const Scalar alpha,
+                const FieldBase& field,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  ngp_field_blas::impl::field_fill_impl(alpha, field, -1, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<typename EXEC_SPACE>
 inline
-void field_copy(const FieldBase& xField, const FieldBase& yField, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+void field_copy(const FieldBase& xField,
+                const FieldBase& yField,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
-
-  yField.clear_sync_state();
-
-  if constexpr (operateOnDevice) {
-    xField.sync_to_device();
-    impl::field_copy_no_sync_or_mark(xField, yField, execSpace);
-  }
-  else {
-    xField.sync_to_host();
-    stk::mesh::field_copy(xField, yField);
-  }
-
-  yField.clear_sync_state();
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    yField.modify_on_device();
-  }
-  else {
-    yField.modify_on_host();
-  }
+  ngp_field_blas::impl::field_copy_impl(xField, yField, nullptr, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<typename EXEC_SPACE>
 inline
-void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+void field_copy(const FieldBase& xField,
+                const FieldBase& yField,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
+  ngp_field_blas::impl::field_copy_impl(xField, yField, &selector, execSpace, isDeviceExecSpaceUserOverride);
+}
 
-  yField.clear_sync_state();
+template<class DataType, typename EXEC_SPACE>
+inline void field_axpbyz(const stk::mesh::BulkData& mesh,
+    const DataType alpha,
+    const stk::mesh::FieldBase & xField,
+    const DataType beta,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::FieldBase & zField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  // z = a*x + b*y
 
-  if constexpr (operateOnDevice) {
-    xField.sync_to_device();
-    impl::field_copy_no_sync_or_mark(xField, yField, selector, execSpace);
-  }
-  else {
+   if constexpr (ngp_field_blas::impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+     ngp_field_blas::impl::apply_functor_on_field<double, stk::ngp_field_blas::impl::FieldAXPBYFunctor>(
+      mesh, zField, xField, yField, alpha, beta, selector);
+   }
+   else {
     xField.sync_to_host();
-    stk::mesh::field_copy(xField, yField, selector);
+    yField.sync_to_host();
+    stk::mesh::field_copy(yField, zField, selector);
+    stk::mesh::field_axpby(alpha, xField, beta, zField, selector);
   }
 
-  yField.clear_sync_state();
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    yField.modify_on_device();
+  zField.clear_sync_state();
+  if (ngp_field_blas::impl::mark_modified_on_device(execSpace, IsDeviceExecSpaceUserOverride)) {
+    zField.modify_on_device();
   }
   else {
-    yField.modify_on_host();
+    zField.modify_on_host();
   }
 }
 

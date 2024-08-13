@@ -41,7 +41,8 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_integration_tests-root)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_integration_tests-root)
   : build-dir $(stk_integration_tests-builddir)

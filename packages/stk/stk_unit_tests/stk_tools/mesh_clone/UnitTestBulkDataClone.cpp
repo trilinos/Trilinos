@@ -239,14 +239,14 @@ void expect_superset_sharing(const stk::mesh::BulkData& oldBulk, stk::mesh::Enti
         );
 }
 
-class CloningMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class CloningMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   const char *get_mesh_spec_for_1x1x8_with_sideset() const {return "generated:1x1x8|sideset:x";}
   stk::mesh::BulkData::AutomaticAuraOption get_no_auto_aura_option() const {return stk::mesh::BulkData::NO_AUTO_AURA;}
 
   CloningMesh()
-    : stk::unit_test_util::simple_fields::MeshFixture(3, {"node", "edge", "face", "element", "constraint"})
+    : stk::unit_test_util::MeshFixture(3, {"node", "edge", "face", "element", "constraint"})
   { }
 
   void create_constraints()

@@ -16,7 +16,7 @@ class DeletedEntityCacheTester : public stk::unit_test_util::MeshFixture
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
          0,2,HEX_8,2,9,10,3,6,11,12,7";
       setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-      stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+      stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
       stk::mesh::BucketVector const& buckets = bulkData->get_buckets(stk::topology::NODE_RANK, metaData->universal_part());
       for (auto& bucket : buckets) 

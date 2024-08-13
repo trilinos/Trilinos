@@ -58,7 +58,8 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_comm_size( stk::parallel_machine_size( pm ) ),
     m_elem_part( m_fem_meta.declare_part_with_topology("elem_part", stk::topology::HEX_8) ),
     m_elem_topology( stk::topology::HEX_8 )
-{}
+{
+}
 
 void BoxFixture::generate_boxes( const BOX   root_box,
                                        BOX   local_box )
@@ -236,7 +237,6 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_elem_part( m_fem_meta.declare_part_with_topology("elem_part", stk::topology::HEX_8) ),
     m_elem_topology( stk::topology::HEX_8 )
 {
-  m_fem_meta.use_simple_fields();
 }
 
 void BoxFixture::generate_boxes( const BOX   root_box,
@@ -293,7 +293,7 @@ void BoxFixture::generate_boxes( const BOX   root_box,
     for (int en_i = 0; en_i < 8; ++en_i) {
       nodes[en_i] = m_bulk_data.declare_node(node_ids[en_i] , no_parts);
       m_bulk_data.declare_relation(elem, nodes[en_i], en_i);
-      DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_ids[en_i], nodes[en_i]);
+      stk::mesh::fixtures::DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_ids[en_i], nodes[en_i]);
     }
   }
   }
@@ -339,7 +339,7 @@ void BoxFixture::fill_node_map(int proc_rank, const BOX root_box)
     node_ids[7]= 1 + (i+0) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
 
     for (int en_i = 0; en_i < 8; ++en_i) {
-      AddToNodeProcsMMap(m_nodes_to_procs, node_ids[en_i], proc_rank);
+      stk::mesh::fixtures::AddToNodeProcsMMap(m_nodes_to_procs, node_ids[en_i], proc_rank);
      }
   }
   }

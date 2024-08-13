@@ -457,7 +457,7 @@ namespace percept {
           for (unsigned iface=3; iface < 5; ++iface)
             {
               unsigned tri_edge_marks[3] = {0};
-              unsigned num_tri_edge_marks = 0;
+              //unsigned num_tri_edge_marks = 0;
               //stk::mesh::Entity tri_local_entities[3] = {stk::mesh::Entity()};
               stk::mesh::Entity tri_local_entities_non_outward_normal[3] = {stk::mesh::Entity()};
               for (unsigned j = 0; j < 6; j++)
@@ -475,8 +475,8 @@ namespace percept {
                   int l_edge = edge_map_rev[q_edge - DiscretizeWedge::edge_offset];  // extract Shards index of edge
                   VERIFY_OP_ON(((0 <= l_edge) && (l_edge < nedges)), == , true, "l_edge");
                   tri_edge_marks[j] = edge_marks[l_edge];
-                  if (edge_marks[l_edge])
-                    ++num_tri_edge_marks;
+                  //if (edge_marks[l_edge])
+                  //  ++num_tri_edge_marks;
                 }
 
               TriangulateTri tt;

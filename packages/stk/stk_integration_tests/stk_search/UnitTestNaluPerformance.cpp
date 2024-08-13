@@ -89,33 +89,42 @@ struct Options
      void setSphereFile()
      {
          std::string optionString = "-sphere";
-         mSphereFile = stk::unit_test_util::simple_fields::get_option(optionString, "NO_FILE_SPECIFIED");
+         mSphereFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mSphereFile);
      }
 
      void setVolumeFile()
      {
          std::string optionString = "-volume";
-         mVolumeFile = stk::unit_test_util::simple_fields::get_option(optionString, "NO_FILE_SPECIFIED");
+         mVolumeFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mVolumeFile);
      }
 
      void setSearchMethod()
      {
          std::string optionString = "-method";
-         mSearchMethod = stk::search::KDTREE;
-         std::string searchString = stk::unit_test_util::simple_fields::get_option(optionString, "gtk");
-         if ( searchString != "gtk" && searchString != "kdtree")
-         {
-             STK_ThrowRequireMsg(false, "unrecognized search method");
+         std::string searchString = stk::unit_test_util::get_option(optionString, "gtk");
+         if ( searchString == "kdtree" || searchString == "KDTREE" || searchString == "gtk") {
+           mSearchMethod = stk::search::KDTREE;
+           return;
          }
+         if ( searchString == "MORTON_LBVH") {
+           mSearchMethod = stk::search::MORTON_LBVH;
+           return;
+         }
+         if ( searchString == "ARBORX") {
+           mSearchMethod = stk::search::ARBORX;
+           return;
+         }
+
+         STK_ThrowErrorMsg("unrecognized search method: "<<searchString);
      }
 
      void setRangeBoxCommunication()
      {
          std::string optionString = "-rangeBoxComm";
          mCommunicateRangeBoxes = true;
-         if ( stk::unit_test_util::simple_fields::get_option(optionString, "yes") == "no" )
+         if ( stk::unit_test_util::get_option(optionString, "yes") == "no" )
          {
              mCommunicateRangeBoxes = false;
          }
@@ -125,7 +134,7 @@ struct Options
      {
          std::string optionString = "-sb";
          mSpheresFirstThenBoxes = false;
-         if ( stk::unit_test_util::simple_fields::get_option(optionString, "no" ) == "yes" )
+         if ( stk::unit_test_util::get_option(optionString, "no" ) == "yes" )
          {
              mSpheresFirstThenBoxes = true;
          }
@@ -135,7 +144,7 @@ struct Options
      {
          mTestToGetGoldResults = false;
          std::string optionString = "-getGold";
-         if ( stk::unit_test_util::simple_fields::get_option(optionString, "no") == "yes" )
+         if ( stk::unit_test_util::get_option(optionString, "no") == "yes" )
          {
              mTestToGetGoldResults = true;
          }
@@ -164,15 +173,7 @@ void printOptions(const Options& options)
     {
         std::cerr << "Sphere file: " << options.mSphereFile << std::endl;
         std::cerr << "Volume file: " << options.mVolumeFile << std::endl;
-        std::cerr << "Search Method: ";
-        if (options.mSearchMethod == stk::search::KDTREE )
-        {
-            std::cerr << "KDTREE" << std::endl;
-        }
-        else
-        {
-            STK_ThrowRequireMsg(false,"Unrecognized search method "<<options.mSearchMethod);
-        }
+        std::cerr << "Search Method: " << options.mSearchMethod << std::endl;
     }
 }
 
@@ -201,11 +202,11 @@ TEST(NaluPerformance, BoxSphereIntersections)
     }
 
     double elapsedTime = stk::wall_time() - startTime;
-    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::printPeformanceStats(elapsedTime, comm);
 
     if ( !options.mTestToGetGoldResults )
     {
-        stk::unit_test_util::simple_fields::gatherResultstoProcZero(comm, searchResults);
+        stk::unit_test_util::gatherResultstoProcZero(comm, searchResults);
 
         int procId = -1;
         MPI_Comm_rank(comm, &procId);
@@ -220,7 +221,7 @@ TEST(NaluPerformance, BoxSphereIntersections)
             std::vector< std::pair<int,int> >::iterator iter_end = std::unique(globalIdMapping.begin(), globalIdMapping.end());
             globalIdMapping.erase(iter_end, globalIdMapping.end());
 
-            size_t numInteractions = stk::unit_test_util::simple_fields::getGoldValueForTest();
+            size_t numInteractions = stk::unit_test_util::getGoldValueForTest();
             EXPECT_EQ(numInteractions, globalIdMapping.size());
         }
     }
@@ -270,7 +271,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
     }
 
     double elapsedTime = stk::wall_time() - startTime;
-    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::printPeformanceStats(elapsedTime, comm);
 
     if ( options.mTestToGetGoldResults )
     {
@@ -287,7 +288,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
     }
     else
     {
-        stk::unit_test_util::simple_fields::gatherResultstoProcZero(comm, searchResults);
+        stk::unit_test_util::gatherResultstoProcZero(comm, searchResults);
 
         if ( procId == 0 )
         {
@@ -300,7 +301,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
             std::vector< std::pair<int,int> >::iterator iter_end = std::unique(globalIdMapping.begin(), globalIdMapping.end());
             globalIdMapping.erase(iter_end, globalIdMapping.end());
 
-            size_t numInteractions = stk::unit_test_util::simple_fields::getGoldValueForTest();
+            size_t numInteractions = stk::unit_test_util::getGoldValueForTest();
             EXPECT_EQ(numInteractions, globalIdMapping.size());
         }
     }

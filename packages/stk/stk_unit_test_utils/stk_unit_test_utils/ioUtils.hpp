@@ -129,14 +129,24 @@ private:
 void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,
                                                           const std::string &fileName,
                                                           const std::string& fieldName,
+                                                          stk::topology::rank_t fieldRank,
                                                           const std::string& globalVariableName,
                                                           const std::vector<double>& timeSteps,
                                                           const FieldValueSetter &fieldValueSetter);
 
+void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh::BulkData &mesh,
+                                         const std::string &decompositionMethod);
+
+
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void generated_mesh_to_file_in_serial(const std::string& meshSizeSpec, const std::string& fileName);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void text_mesh_to_file_in_serial(const std::string& meshDesc, const std::string& fileName);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(const std::string &meshSizeSpec, stk::mesh::BulkData & mesh, const std::string &decompositionMethod);
 
 class MeshFromFile
@@ -158,7 +168,8 @@ public:
   stk::io::StkMeshIoBroker broker;
 };
 
-class TransientVerifier
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+TransientVerifier
 {
 public:
   TransientVerifier(const MPI_Comm& c);
@@ -189,6 +200,7 @@ private:
   const double m_epsilon;
 };
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,
                                                           const std::string &fileName,
                                                           const std::string& fieldName,
@@ -197,6 +209,7 @@ void generated_mesh_with_transient_data_to_file_in_serial(const std::string &mes
                                                           const std::vector<double>& timeSteps,
                                                           const FieldValueSetter &fieldValueSetter);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh::BulkData &mesh,
                                          const std::string &decompositionMethod);
 

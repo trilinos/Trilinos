@@ -23,11 +23,11 @@ namespace
 {
 
 //==============================================================================
-class PolarityPerformanceBase : public stk::unit_test_util::simple_fields::PerformanceTester
+class PolarityPerformanceBase : public stk::unit_test_util::PerformanceTester
 {
 public:
   PolarityPerformanceBase(stk::mesh::BulkData &bulk)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       m_bulk(bulk)
   {
     create_mesh();
@@ -131,7 +131,7 @@ protected:
 
   int get_num_loops()
   {
-    return stk::unit_test_util::simple_fields::get_command_line_option("-l", m_defaultLoops);
+    return stk::unit_test_util::get_command_line_option("-l", m_defaultLoops);
   }
 
   stk::mesh::BulkData &m_bulk;
@@ -203,7 +203,7 @@ protected:
   }
 };
 
-class PolarityPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class PolarityPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_util_polarity_perf_test()

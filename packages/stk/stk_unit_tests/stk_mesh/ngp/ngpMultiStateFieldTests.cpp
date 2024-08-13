@@ -94,7 +94,7 @@ void delete_class_on_device(ClassWithNgpField* devicePtr)
   Kokkos::kokkos_free<stk::ngp::MemSpace>(static_cast<void*>(devicePtr));
 }
 
-class NgpMultiStateFieldTest : public stk::mesh::fixtures::simple_fields::TestHexFixture
+class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
 {
 public:
 

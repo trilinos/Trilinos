@@ -100,7 +100,8 @@ public:
 
 namespace simple_fields {
 
-class RingFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+RingFixture
 {
 public:
   const int             m_spatial_dimension;

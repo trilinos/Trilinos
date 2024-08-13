@@ -51,8 +51,8 @@ TEST(StkIo, checkCanonicalNameFromFile)
   stk::io::StkMeshIoBroker stkIo;
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(communicator).create();
 
-  std::string meshSpec = stk::unit_test_util::simple_fields::get_option("-mesh", "");
-  std::string partName = stk::unit_test_util::simple_fields::get_option("-part", "UNKNOWN");
+  std::string meshSpec = stk::unit_test_util::get_option("-mesh", "");
+  std::string partName = stk::unit_test_util::get_option("-part", "UNKNOWN");
 
   if(file_exists(meshSpec)) {
     stk::io::fill_mesh(meshSpec, *bulk, stkIo);

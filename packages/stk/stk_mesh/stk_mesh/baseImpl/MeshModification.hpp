@@ -37,7 +37,6 @@
 
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityCommListInfo.hpp>
 #include "stk_mesh/base/EntityKey.hpp"
 #include "stk_mesh/base/EntityParallelState.hpp"
@@ -81,7 +80,7 @@ public:
     bool resolve_node_sharing();
     bool modification_end_after_node_sharing_resolution();
 
-    void change_entity_owner( const EntityProcVec & arg_change);
+    bool change_entity_owner( const EntityProcVec & arg_change);
 
     void internal_resolve_shared_modify_delete(
          const std::vector<EntityParallelState>& remotely_modified_shared_entities,
@@ -115,6 +114,8 @@ public:
 
     const DeletedEntityCache& get_deleted_entity_cache() const { return m_deleted_entity_cache; }
     void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing);
+    void internal_change_entity_owner( const std::vector<EntityProc> & local_change,
+                                             modification_optimization mod_optimization );
 private:
     bool remote_owner_destroyed(EntityKey key, const std::vector<EntityParallelState>& pllStates) const;
     void reset_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = false; }

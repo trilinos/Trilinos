@@ -38,7 +38,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
-class AttributeOrdering : public stk::unit_test_util::simple_fields::MeshFixture
+class AttributeOrdering : public stk::unit_test_util::MeshFixture
 {
 public:
   AttributeOrdering()

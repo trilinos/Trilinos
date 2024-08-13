@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/DestroyRelations.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/SkinBoundary.hpp>   // for skin_mesh
 #include <stk_unit_test_utils/getOption.h>
@@ -16,11 +17,11 @@ size_t get_num_global_faces(const stk::mesh::BulkData &bulk)
   return meshCounts[stk::topology::FACE_RANK];
 }
 
-class ExposedBlockBoundaryPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class ExposedBlockBoundaryPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
   ExposedBlockBoundaryPerformance(stk::mesh::BulkData &bulk)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       bulkData(bulk),
       thingToSkin(bulk.mesh_meta_data().universal_part()),
       skinPart(bulk.mesh_meta_data().declare_part("skinPart"))
@@ -37,13 +38,7 @@ public:
 
     for(stk::mesh::Entity elem : elems)
     {
-      unsigned numSides = bulkData.num_sides(elem);
-      const stk::mesh::Entity* sides = bulkData.begin(elem, meta.side_rank());
-      const stk::mesh::ConnectivityOrdinal* side_ords = bulkData.begin_ordinals(elem, meta.side_rank());
-      for(unsigned i=0; i<numSides; ++i)
-      {
-        bulkData.destroy_relation(elem, sides[i], side_ords[i]);
-      }
+      stk::mesh::destroy_relations(bulkData, elem, meta.side_rank());
     }
 
     stk::mesh::EntityVector sides;
@@ -72,7 +67,7 @@ protected:
   stk::mesh::Part &skinPart;
 };
 
-class ExposedBlockBoundaryPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class ExposedBlockBoundaryPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_skin_mesh_perf_test()
@@ -87,14 +82,14 @@ protected:
   }
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+    return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
   }
 };
 
 TEST_F(ExposedBlockBoundaryPerformanceTest, read_mesh_with_auto_decomp)
 {
   allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
-  stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+  stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
   run_skin_mesh_perf_test();
 }

@@ -83,7 +83,7 @@ refine_edges_with_multiple_unsnapped_crossings(const stk::mesh::BulkData& mesh,
       if (alreadyInSet)
       {
         std::vector<stk::mesh::Entity> edge_elems;
-        stk::mesh::get_entities_through_relations(mesh, {edge.nodes[0], edge.nodes[1]},
+        stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edge.nodes[0], edge.nodes[1]},
             stk::topology::ELEMENT_RANK, edge_elems);
         for (auto && elem : edge_elems)
         {
@@ -115,7 +115,7 @@ refine_edges_with_nodes_with_multiple_snapped_interfaces(const stk::mesh::BulkDa
     if (num_node1_interfaces > 1 || num_node2_interfaces > 1)
     {
       std::vector<stk::mesh::Entity> edge_elems;
-      stk::mesh::get_entities_through_relations(mesh, {edge.nodes[0], edge.nodes[1]},
+      stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edge.nodes[0], edge.nodes[1]},
           stk::topology::ELEMENT_RANK, edge_elems);
       for (auto && elem : edge_elems)
       {
@@ -234,7 +234,7 @@ static void initialize_marker(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const bool isDefaultCoarsen)
 {
-  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
   const int initialVal = isDefaultCoarsen ? static_cast<int>(Refinement_Marker::COARSEN) : static_cast<int>(Refinement_Marker::NOTHING);
   stk::mesh::field_fill(initialVal, elementMarkerField);
 }
@@ -256,7 +256,7 @@ static void mark_given_elements(const stk::mesh::BulkData& mesh,
       const int minRefineLevel,
       const bool isDefaultCoarsen)
 {
-  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
   constexpr bool doMarkElement = true;
 
   for( auto&& elem : elementsToMark )
@@ -386,7 +386,7 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
   // This refinement strategy cuts elements by the user-specified number of adapt levels
   // before the conformal decomposition.
 
-  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
 
   const stk::mesh::Selector locally_owned_selector(mesh.mesh_meta_data().locally_owned_part());
   const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
@@ -438,7 +438,7 @@ refine_edges_with_unsnappable_nodes(const stk::mesh::BulkData& mesh,
     {
       krinolog << "Refining unsnappable edge  " << mesh.identifier(edge.nodes[0]) << " " << mesh.identifier(edge.nodes[1]) << " " << debug_output(mesh, edgeIntersection) << stk::diag::dendl;
       std::vector<stk::mesh::Entity> edge_elems;
-      stk::mesh::get_entities_through_relations(mesh, {edge.nodes[0], edge.nodes[1]},
+      stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edge.nodes[0], edge.nodes[1]},
           stk::topology::ELEMENT_RANK, edge_elems);
       for (auto && elem : edge_elems)
       {

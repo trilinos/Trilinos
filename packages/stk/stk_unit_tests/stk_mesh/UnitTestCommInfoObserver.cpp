@@ -57,7 +57,6 @@ protected:
       meta(bulkPtr->mesh_meta_data()),
       bulk(*bulkPtr)
   {
-    meta.use_simple_fields();
     stk::io::fill_mesh("generated:1x1x4", bulk);
 
     observer = std::make_shared<MockCommInfoObserver>();

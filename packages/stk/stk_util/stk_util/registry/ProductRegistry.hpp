@@ -251,7 +251,7 @@ std::string get_version(const std::string& executableName);
 
 } // namespace stk
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 #undef VERSION // Nice, Trilinos leaves us this gem
 
 namespace sierra {
@@ -259,7 +259,7 @@ namespace sierra {
 typedef stk::ProductRegistry ProductRegistry;
 
 } // namespace sierra
-#endif // STK_BUILT_IN_SIERRA
+#endif // STK_BUILT_FOR_SIERRA
 
 
 #endif // STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP

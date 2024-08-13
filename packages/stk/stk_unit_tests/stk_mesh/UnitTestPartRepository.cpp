@@ -86,7 +86,6 @@ UnitTestPartRepository::UnitTestPartRepository()
     part_2_A (partRepo_2.declare_part("A",stk::topology::NODE_RANK) ),
     singleton(nullptr)
 {
-  meta.use_simple_fields();
   meta.commit();
 }
 

@@ -40,7 +40,6 @@
       , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_beam( m_metaData.declare_part_with_topology( "block_2", stk::topology::BEAM_2 ) )
     {
-      m_metaData.use_simple_fields();
       m_coordinates_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "coordinates" );
       m_centroid_field    = &m_metaData.declare_field<double>( stk::topology::ELEMENT_RANK, "centroid" );
       m_temperature_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "temperature" );

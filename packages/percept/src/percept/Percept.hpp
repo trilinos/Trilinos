@@ -64,12 +64,12 @@
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
 
-#if defined(STK_BUILT_IN_SIERRA) && !defined(STK_PERCEPT_HAS_GEOMETRY)
+#if defined(STK_BUILT_FOR_SIERRA) && !defined(STK_PERCEPT_HAS_GEOMETRY)
 #define STK_PERCEPT_HAS_GEOMETRY
 #define STK_PERCEPT_USE_INTREPID
 #endif
 
-#if !defined(STK_BUILT_IN_SIERRA) && defined(STK_PERCEPT_LITE) && STK_PERCEPT_LITE == 0
+#if !defined(STK_BUILT_FOR_SIERRA) && defined(STK_PERCEPT_LITE) && STK_PERCEPT_LITE == 0
 #  if !defined(STK_PERCEPT_HAS_GEOMETRY)
 #    define STK_PERCEPT_HAS_GEOMETRY
 #  endif

@@ -36,19 +36,22 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 message("starting STK cmake configuration, CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
 
+option(STK_BUILT_FOR_SIERRA "Enable SIERRA capability" OFF)
+set(SIERRA_MIGRATION ${STK_BUILT_FOR_SIERRA} CACHE BOOL "Enable SIERRA capability")
+
 IF(COMMAND TRIBITS_PACKAGE_DECL)
   SET(HAVE_STK_Trilinos ON)
   TRIBITS_PACKAGE_DECL(STK)
   MESSAGE("*** Building STK as a Trilinos package. ***")
 ELSE()
   SET(HAVE_STK_Trilinos OFF)
-  project(STK CXX)
+  project(STK CXX Fortran)
 
   SET(PACKAGE_NAME "STK")
 
   MESSAGE("*** Building STK as a stand-alone cmake package. ***")
 ENDIF()
-
+  
 SET(STK_TOPLEVEL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(STK_TOPLEVEL_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -201,3 +204,41 @@ STK_SUBPACKAGES()
 
 STK_PACKAGE_POSTPROCESS()
 
+IF (NOT HAVE_STK_Trilinos)
+  include(CMakePackageConfigHelpers)
+  
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/stkConfigVersion.cmake"
+    VERSION VOTD
+    COMPATIBILITY ExactVersion
+  )
+
+  install(EXPORT stkTargets
+    FILE stkTargets.cmake
+    NAMESPACE stk::
+    DESTINATION share/cmake/stk
+  )
+
+  install(
+    FILES
+      cmake/stkConfig.cmake
+      "${CMAKE_CURRENT_BINARY_DIR}/stkConfigVersion.cmake"
+    DESTINATION share/cmake/stk
+    COMPONENT Devel
+  )
+  if(STK_BUILT_FOR_SIERRA)
+    install(
+      FILES cmake/stkLapackSierra.cmake
+      DESTINATION share/cmake/stk
+      RENAME stkLapack.cmake
+      COMPONENT Devel
+    )
+  else()
+    install(
+      FILES cmake/stkLapackGeneric.cmake
+      DESTINATION share/cmake/stk
+      RENAME stkLapack.cmake
+      COMPONENT Devel
+    )
+  endif()
+ENDIF()

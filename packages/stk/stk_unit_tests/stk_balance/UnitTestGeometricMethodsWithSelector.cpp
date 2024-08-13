@@ -28,7 +28,7 @@ private:
   const std::string& m_method;
 };
 
-class ZoltanGeometricMethods : public stk::unit_test_util::simple_fields::MeshFixture
+class ZoltanGeometricMethods : public stk::unit_test_util::MeshFixture
 {
 protected:
 

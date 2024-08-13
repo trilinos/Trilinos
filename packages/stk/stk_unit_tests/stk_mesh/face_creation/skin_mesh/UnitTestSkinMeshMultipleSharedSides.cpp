@@ -9,7 +9,7 @@
 
 namespace {
 
-class SkinMesh_TwoElemTwoSharedSide : public simple_fields::TwoElemTwoSharedSideTester {};
+class SkinMesh_TwoElemTwoSharedSide : public TwoElemTwoSharedSideTester {};
 
 TEST_F(SkinMesh_TwoElemTwoSharedSide, skin_mesh)
 {
@@ -34,7 +34,7 @@ TEST_F(SkinMesh_TwoElemTwoSharedSide, skin_one_hex)
 }
 
 
-class SkinMesh_TwoElemThreeSharedSide : public simple_fields::TwoElemThreeSharedSideTester {};
+class SkinMesh_TwoElemThreeSharedSide : public TwoElemThreeSharedSideTester {};
 
 TEST_F(SkinMesh_TwoElemThreeSharedSide, skin_mesh)
 {
@@ -58,7 +58,7 @@ TEST_F(SkinMesh_TwoElemThreeSharedSide, skin_one_hex)
   }
 }
 
-class SkinMesh_TwoElemThreeSharedSideNoAura : public simple_fields::TwoElemThreeSharedSideNoAuraTester {};
+class SkinMesh_TwoElemThreeSharedSideNoAura : public TwoElemThreeSharedSideNoAuraTester {};
 
 TEST_F(SkinMesh_TwoElemThreeSharedSideNoAura, skin_mesh)
 {

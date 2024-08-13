@@ -38,7 +38,8 @@ FILE(GLOB HEADERS_KDTREE
      ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.hpp)
 FILE(GLOB HEADERS_MORTON  
      ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.hpp)
-
+FILE(GLOB HEADERS_ARBORX  
+     ${CMAKE_CURRENT_SOURCE_DIR}/arborx/*.hpp)
 FILE(GLOB HEADERS *.hpp)
 
 FILE(GLOB SOURCES_KDTREE
@@ -61,6 +62,8 @@ else()
 
   if(STK_HAS_ARBORX)
     target_link_libraries(stk_search PUBLIC ArborX::ArborX)
+    INSTALL(FILES ${HEADERS_ARBORX} DESTINATION
+        ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search/arborx)
   endif()
 
 #  find_package(KokkosKernels REQUIRED)
@@ -80,5 +83,5 @@ INSTALL(FILES ${HEADERS_MORTON} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search/morton_lbvh)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_search DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_search EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

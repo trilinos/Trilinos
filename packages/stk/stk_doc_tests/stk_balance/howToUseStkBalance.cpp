@@ -24,7 +24,7 @@ public:
 };
 //ENDRcbSettings
 
-class StkBalanceHowTo : public stk::unit_test_util::simple_fields::MeshFixture
+class StkBalanceHowTo : public stk::unit_test_util::MeshFixture
 {};
 
 bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
@@ -377,7 +377,7 @@ public:
     }
     virtual ~MultipleCriteriaFieldSettings() override = default;
 
-    virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual bool isMultiCriteriaRebalance() const override { return true;}
 
 protected:
     MultipleCriteriaFieldSettings() = delete;

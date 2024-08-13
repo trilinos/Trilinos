@@ -37,7 +37,7 @@
 
 #include "stk_util/util/Fortran.hpp"
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 #include <sierra_blas_lapack.h>
 #endif
 
@@ -71,7 +71,7 @@ void SIERRA_FORTRAN(dtrsm)(const char *side, const char *uplo, const char *trans
                            const int *m, const int *n, const double *alpha, const double *a, const int *lda,
                            double *b, const int *ldb);
 
-#if !defined(_MKL_LAPACK_H_) && !defined(STK_BUILT_IN_SIERRA)
+#if !defined(_MKL_LAPACK_H_) && !defined(STK_BUILT_FOR_SIERRA)
 
 void SIERRA_FORTRAN(dgels)(const char* trans, const int* m, const int* n,
                            const int* nrhs, double* a, const int* lda, double* b,

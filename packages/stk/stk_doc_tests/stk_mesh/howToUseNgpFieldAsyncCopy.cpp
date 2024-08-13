@@ -76,7 +76,6 @@ TEST(stkMeshHowTo, ngpFieldAsyncCopy)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk = *bulkPtr;
 

@@ -35,7 +35,6 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <vector>                       // for vector, etc
-#include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/MetaData.hpp"  // for FieldRestriction
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
@@ -114,17 +113,8 @@ std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& t
 
 std::ostream & operator<<(std::ostream & s, const FieldBase & field)
 {
-  if (field.mesh_meta_data().is_using_simple_fields()) {
-    s << "Field<" << field.data_traits().name << ">";
-  }
-  else {
-    s << "Field<" << field.data_traits().name;
-    for (unsigned i = 0; i < stk::mesh::legacy::field_array_rank(field); ++i) {
-      s << "," << stk::mesh::legacy::dimension_tags(field)[i]->name();
-    }
-    s << ">";
-  }
-  s << "[\"" << field.name() << "\", #states: " << field.number_of_states() << "]";
+  s << "Field<" << field.data_traits().name << ">[\"" << field.name() << "\", #states: "
+    << field.number_of_states() << "]";
   return s ;
 }
 
@@ -461,44 +451,6 @@ void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
 bool FieldBase::defined_on(const stk::mesh::Part& part) const
 {
   return (length(part) > 0);
-}
-
-STK_DEPRECATED_MSG("FieldBase::field_array_rank() is no longer supported since it represents the number of "
-                   "extra Field template parameters, which are being removed.")
-unsigned
-FieldBase::field_array_rank() const
-{
-  return legacy_field_array_rank();
-}
-
-unsigned
-FieldBase::legacy_field_array_rank() const
-{
-  if (m_meta_data->is_using_simple_fields()) {
-    STK_ThrowErrorMsg("FieldBase::field_array_rank() is no longer supported since it represents" << std::endl
-                      << "the number of extra Field template parameters, which are being removed.");
-  }
-
-  return m_field_rank;
-}
-
-STK_DEPRECATED_MSG("FieldBase::dimension_tags() is no longer supported since it holds the "
-                   "extra Field template parameters, which are being removed.")
-const shards::ArrayDimTag * const *
-FieldBase::dimension_tags() const
-{
-  return legacy_dimension_tags();
-}
-
-const shards::ArrayDimTag * const *
-FieldBase::legacy_dimension_tags() const
-{
-  if (m_meta_data->is_using_simple_fields()) {
-    STK_ThrowErrorMsg("FieldBase::dimension_tags() is no longer supported since it holds the" << std::endl
-                      << "extra Field template parameters, which are being removed.");
-  }
-
-  return m_dim_tags;
 }
 
 unsigned FieldBase::length(const stk::mesh::Part& part) const

@@ -44,7 +44,8 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_middle_mesh_util-root-inc)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_middle_mesh_util-root-inc)
   : build-dir $(stk_middle_mesh_util-builddir)

@@ -34,6 +34,7 @@
 #ifndef STRING_AND_NUMBER_COMPARISONS_HPP
 #define STRING_AND_NUMBER_COMPARISONS_HPP
 
+#include "stk_util/stk_config.h"
 #include <iostream>
 #include <string>
 
@@ -57,13 +58,13 @@ bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, c
 
 namespace simple_fields {
 
-inline bool isNear(double a, double b, double tolerance)
-{
-  return stk::unit_test_util::isNear(a, b, tolerance);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+bool isNear(double a, double b, double tolerance);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
 
 } // namespace simple_fields

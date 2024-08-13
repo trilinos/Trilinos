@@ -108,7 +108,6 @@ static bool delete_small_elements(const DeleteSmallElementsInputData& inputData,
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   stk::io::fill_mesh_with_auto_decomp(inputData.meshIn, *bulk);
 

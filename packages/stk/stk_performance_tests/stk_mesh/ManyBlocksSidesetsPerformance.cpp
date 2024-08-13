@@ -58,7 +58,7 @@
 namespace stk_perf_many_blocks
 {
 
-class ManyBlocksSidesets : public stk::unit_test_util::simple_fields::MeshFixture
+class ManyBlocksSidesets : public stk::unit_test_util::MeshFixture
 {
 public:
   ManyBlocksSidesets()
@@ -135,7 +135,7 @@ protected:
 
   void output_mesh(stk::mesh::BulkData & bulk, const std::string & fileName)
   {
-    std::string writeOutput = stk::unit_test_util::simple_fields::get_option("--output", "off");
+    std::string writeOutput = stk::unit_test_util::get_option("--output", "off");
     if (writeOutput == "on") {
       stk::io::write_mesh(fileName, bulk);
     }
@@ -210,9 +210,9 @@ TEST_F(ManyBlocksSidesets, disconnect_blocks_face_creation)
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 400);
-  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 10);
-  bool verbose = stk::unit_test_util::simple_fields::has_option("--v");
+  int ELEMS_PER_DIM = stk::unit_test_util::get_command_line_option("--ne", 400);
+  int NUM_BLOCKS = stk::unit_test_util::get_command_line_option("--nb", 10);
+  bool verbose = stk::unit_test_util::has_option("--v");
 
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
@@ -284,9 +284,9 @@ TEST_F(ManyBlocksSidesets, sidesets_writeRestart)
 
   const unsigned NUM_RUNS = 1;
   const unsigned NUM_ITERS = 5;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 200);
-  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 200);
-  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 100);
+  int ELEMS_PER_DIM = stk::unit_test_util::get_command_line_option("--ne", 200);
+  int NUM_BLOCKS = stk::unit_test_util::get_command_line_option("--nb", 200);
+  int NUM_FIELDS = stk::unit_test_util::get_command_line_option("--nf", 100);
 
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
@@ -316,9 +316,9 @@ TEST_F(ManyBlocksSidesets, noSidesets_writeRestart)
 
   const unsigned NUM_RUNS = 1;
   const unsigned NUM_ITERS = 5;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 200);
-  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 200);
-  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 100);
+  int ELEMS_PER_DIM = stk::unit_test_util::get_command_line_option("--ne", 200);
+  int NUM_BLOCKS = stk::unit_test_util::get_command_line_option("--nb", 200);
+  int NUM_FIELDS = stk::unit_test_util::get_command_line_option("--nf", 100);
 
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
@@ -351,8 +351,8 @@ TEST_F(ManyBlocksSidesets, find_restriction)
   unsigned numElemsX = 400;
   unsigned numElemsY = 1;
   unsigned numElemsZ = 2;
-  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 400);
-  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 50);
+  int NUM_BLOCKS = stk::unit_test_util::get_command_line_option("--nb", 400);
+  int NUM_FIELDS = stk::unit_test_util::get_command_line_option("--nf", 50);
 
   unsigned initialBucketCapacity = 1;
   unsigned maxBucketCapacity = 8;
@@ -395,8 +395,8 @@ TEST_F(ManyBlocksSidesets, find_restriction_part_union)
   unsigned numElemsX = 400;
   unsigned numElemsY = 1;
   unsigned numElemsZ = 2;
-  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 400);
-  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 50);
+  int NUM_BLOCKS = stk::unit_test_util::get_command_line_option("--nb", 400);
+  int NUM_FIELDS = stk::unit_test_util::get_command_line_option("--nf", 50);
 
   unsigned initialBucketCapacity = 1;
   unsigned maxBucketCapacity = 8;
@@ -439,8 +439,8 @@ TEST_F(ManyBlocksSidesets, selectUnion)
   unsigned numElemsX = 400;
   unsigned numElemsY = 1;
   unsigned numElemsZ = 2;
-  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 400);
-  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 50);
+  int NUM_BLOCKS = stk::unit_test_util::get_command_line_option("--nb", 400);
+  int NUM_FIELDS = stk::unit_test_util::get_command_line_option("--nf", 50);
 
   unsigned initialBucketCapacity = 1;
   unsigned maxBucketCapacity = 8;

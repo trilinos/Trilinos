@@ -39,6 +39,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/HashEntityAndEntityKey.hpp>
+#include <unordered_map>
 
 namespace stk {
 namespace mesh {

@@ -34,12 +34,14 @@
 #ifndef SIDESETTRANSLATOR_HPP_
 #define SIDESETTRANSLATOR_HPP_
 
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
-#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/EntityLess.hpp"
+#include "stk_mesh/base/Relation.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_io/OutputParams.hpp"
 

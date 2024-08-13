@@ -41,7 +41,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <utility>                      // for pair
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, OrdinalVector, etc
-#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, etc
 
@@ -56,19 +55,6 @@ Relation::RawRelationType & Relation::RawRelationType::operator =(const Relation
     return *this;
 }
 
-void get_entities_through_relations(
-  const BulkData& mesh,
-  const std::vector<Entity> & entities ,
-        EntityRank              entities_related_rank ,
-        std::vector<Entity> & entities_related )
-{
-  impl::find_entities_these_nodes_have_in_common(mesh, entities_related_rank,
-                                                 entities.size(), entities.data(),
-                                                 entities_related);
-}
-
-//----------------------------------------------------------------------
-
 void induced_part_membership(const BulkData& mesh,
                              const Entity entity ,
                                    OrdinalVector & induced_parts)
@@ -80,16 +66,18 @@ void induced_part_membership(const BulkData& mesh,
 
   for (EntityRank irank = static_cast<EntityRank>(e_rank + 1); irank < end_rank; ++irank)
   {
-    int num_rels = mesh.num_connectivity(entity, irank);
-    Entity const* rels     = mesh.begin(entity, irank);
+    const int num_rels = mesh.num_connectivity(entity, irank);
+    if (num_rels > 0) {
+      const Entity * rels     = mesh.begin(entity, irank);
 
-    const Bucket* prevBucketPtr = nullptr;
-    for (int j = 0; j < num_rels; ++j)
-    {
-      const Bucket* curBucketPtr = mesh.bucket_ptr(rels[j]);
-      if (prevBucketPtr != curBucketPtr) {
-        prevBucketPtr = curBucketPtr;
-        impl::get_part_ordinals_to_induce_on_lower_ranks(mesh, *curBucketPtr, e_rank, induced_parts);
+      const Bucket* prevBucketPtr = nullptr;
+      for (int j = 0; j < num_rels; ++j)
+      {
+        const Bucket* curBucketPtr = mesh.bucket_ptr(rels[j]);
+        if (prevBucketPtr != curBucketPtr) {
+          prevBucketPtr = curBucketPtr;
+          impl::get_part_ordinals_to_induce_on_lower_ranks(mesh, *curBucketPtr, e_rank, induced_parts);
+        }
       }
     }
   }

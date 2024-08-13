@@ -98,12 +98,7 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
   stk::mesh::MeshBuilder builder(comm);
   builder.set_aura_option(stk::mesh::BulkData::AUTO_AURA);
   std::shared_ptr<stk::mesh::BulkData> inBulk = builder.create();
-  stk::mesh::MetaData& inMeta = inBulk->mesh_meta_data();
-  inMeta.use_simple_fields();
-
   std::shared_ptr<stk::mesh::BulkData> outBulk = builder.create();
-  stk::mesh::MetaData& outMeta = outBulk->mesh_meta_data();
-  outMeta.use_simple_fields();
 
   stk::io::StkMeshIoBroker stkInput;
   stk::io::fill_mesh_preexisting(stkInput, inFile, *inBulk);
