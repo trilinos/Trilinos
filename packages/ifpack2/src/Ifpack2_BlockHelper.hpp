@@ -10,6 +10,7 @@
 #ifndef IFPACK2_BLOCKHELPER_IMPL_HPP
 #define IFPACK2_BLOCKHELPER_IMPL_HPP
 
+#include "Ifpack2_BlockHelper_Timers.hpp"
 
 namespace Ifpack2 {
 
@@ -153,15 +154,6 @@ namespace Ifpack2 {
 	exec_instance = Kokkos::Experimental::SYCL();
       }
     };
-#endif
-
-
-#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS)
-#define IFPACK2_BLOCKHELPER_TIMER(label) TEUCHOS_FUNC_TIME_MONITOR(label);
-#define IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) execution_space().fence();
-#else
-#define IFPACK2_BLOCKHELPER_TIMER(label)
-#define IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKHELPER_ENABLE_PROFILE)
