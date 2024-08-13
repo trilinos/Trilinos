@@ -55,13 +55,11 @@ IF(NOT TEKO_HAVE_EPETRA)
   LIST(REMOVE_ITEM SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NS/Teko_ALOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teko_ProbingPreconditionerFactory.cpp
   )
   LIST(REMOVE_ITEM HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/NS/Teko_ALOperator.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerFactory.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teko_ProbingPreconditionerFactory.hpp
   )
 ELSE()
