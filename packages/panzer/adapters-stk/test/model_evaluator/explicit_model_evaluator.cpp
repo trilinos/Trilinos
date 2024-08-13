@@ -94,7 +94,7 @@ namespace panzer {
       Stratimikos::DefaultLinearSolverBuilder builder;
       Teuchos::RCP<Teuchos::ParameterList> validList = Teuchos::rcp(new Teuchos::ParameterList(*builder.getValidParameters()));
       builder.setParameterList(validList);
-      RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = builder.createLinearSolveStrategy("Belos");
+      RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = builder.createLinearSolveStrategy("Amesos2");
 
       RCP<PME> me = Teuchos::rcp(new PME(fmb,rLibrary,lof,p_names,p_values,lowsFactory,gd,build_transient_support,0.0));
       RCP<ExpPME> exp_me = Teuchos::rcp(new ExpPME(me,true,false)); // constant mass, use lumped
