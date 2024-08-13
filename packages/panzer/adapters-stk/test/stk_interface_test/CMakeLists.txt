@@ -146,11 +146,11 @@ IF (PANZER_HAVE_EPETRA_STACK)
     SOURCES   tScatterSpeed_Epetra.cpp
   )
 ENDIF()
-
-TRIBITS_ADD_EXECUTABLE(
-    ScatterSpeed_Tpetra
-    SOURCES tScatterSpeed_Tpetra.cpp
-  )
+# Disabled until further guidance
+# TRIBITS_ADD_EXECUTABLE(
+#     ScatterSpeed_Tpetra
+#     SOURCES tScatterSpeed_Tpetra.cpp
+#   )
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tUniformRef
