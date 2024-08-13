@@ -51,6 +51,7 @@
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include "stk_mesh/baseImpl/DeviceMeshHostData.hpp"
 
@@ -121,13 +122,6 @@ struct DeviceBucket {
     return m_entities(offsetIntoBucket);
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2024/06/26
-  STK_DEPRECATED
-  stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
-    return m_hostEntities(offsetIntoBucket);
-  }
-#endif
-
   KOKKOS_FUNCTION
   bool member(stk::mesh::PartOrdinal partOrdinal) const
   {
@@ -147,10 +141,6 @@ struct DeviceBucket {
   std::pair<unsigned, unsigned> scan_entities_for_nodal_connectivity(const stk::mesh::Bucket & bucket);
 
   EntityViewType m_entities;
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2024/06/26
-  HostEntityViewType m_hostEntities;
-#endif
-
   BucketConnectivityType m_nodeConnectivity;
   OrdinalViewType m_nodeConnectivityOffsets;
 
@@ -168,14 +158,6 @@ struct DeviceBucket {
   stk::mesh::EntityRank m_entityRank;
 };
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-struct STK_DEPRECATED DeviceMeshIndex
-{
-  const DeviceBucket *bucket;
-  size_t bucketOrd;
-};
-#endif
-
 class DeviceMesh : public NgpMeshBase
 {
 public:
@@ -184,11 +166,7 @@ public:
   using ConnectedEntities = DeviceBucket::ConnectedEntities;
   using ConnectedOrdinals = DeviceBucket::ConnectedOrdinals;
   using Permutations      = DeviceBucket::Permutations;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  using MeshIndex         = DeviceMeshIndex;
-#else
   using MeshIndex         = FastMeshIndex;
-#endif
   using BucketType        = DeviceBucket;
 
   KOKKOS_FUNCTION
@@ -256,15 +234,6 @@ public:
   {
     return buckets[rank](meshIndex.bucket_id)[meshIndex.bucket_ord];
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED
-  KOKKOS_FUNCTION
-  ConnectedNodes get_nodes(const DeviceMeshIndex &entity) const
-  {
-    return buckets[entity.bucket->entity_rank()](entity.bucket->bucket_id()).get_nodes(entity.bucketOrd);
-  }
-#endif
 
   KOKKOS_FUNCTION
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
@@ -413,13 +382,6 @@ public:
     return deviceMeshIndices(entity.local_offset());
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-STK_DEPRECATED const stk::mesh::FastMeshIndex& host_mesh_index(stk::mesh::Entity entity) const
-  {
-    return hostMeshIndices(entity.local_offset());
-  }
-#endif
-
   stk::NgpVector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
   {
     return stk::mesh::get_bucket_ids(get_bulk_on_host(), rank, selector);
@@ -455,6 +417,7 @@ STK_DEPRECATED const stk::mesh::FastMeshIndex& host_mesh_index(stk::mesh::Entity
 
   const stk::mesh::BulkData &get_bulk_on_host() const
   {
+    STK_ThrowRequireMsg(bulk != nullptr, "DeviceMesh::get_bulk_on_host, bulk==nullptr");
     return *bulk;
   }
 

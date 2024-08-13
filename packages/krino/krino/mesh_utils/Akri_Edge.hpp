@@ -15,7 +15,7 @@
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }
-namespace stk { class topology; }
+namespace stk { struct topology; }
 
 namespace krino {
 struct Edge

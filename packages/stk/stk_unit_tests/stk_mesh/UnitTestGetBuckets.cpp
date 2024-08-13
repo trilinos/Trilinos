@@ -72,7 +72,7 @@ TEST( UnitTestGetBuckets, ExampleFixture )
 
   // Generate mesh
 
-  stk::mesh::fixtures::simple_fields::SelectorFixture fix ;
+  stk::mesh::fixtures::SelectorFixture fix ;
   fix.m_meta_data.commit();
 
   fix.m_bulk_data.modification_begin();

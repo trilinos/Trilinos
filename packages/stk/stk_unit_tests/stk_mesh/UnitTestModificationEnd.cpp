@@ -86,7 +86,6 @@ namespace stk { namespace mesh { namespace unit_test {
 //
 //    const int spatialDim = 3;
 //    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stkMeshMetaData.use_simple_fields();
 //    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 //
 //    std::string exodusFileName = getOption("-i", "generated:1x1x4");
@@ -184,7 +183,6 @@ namespace stk { namespace mesh { namespace unit_test {
 //
 //    const int spatialDim = 3;
 //    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stkMeshMetaData.use_simple_fields();
 //    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 //
 //    // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
@@ -392,7 +390,6 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
@@ -528,7 +525,6 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_and_test_internal_modificati
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
@@ -632,7 +628,6 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
@@ -707,7 +702,6 @@ TEST(BulkDataModificationEnd, create_edges)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     std::string exodusFileName = getOption("-i", "generated:1x1x4");
@@ -735,7 +729,6 @@ TEST(BulkDataModificationEnd, test_invalid_add_node_sharing)
 
     const unsigned spatial_dim = 3;
     stk::mesh::MetaData meta_data(spatial_dim);
-    meta_data.use_simple_fields();
     stk::mesh::Part &node_part = meta_data.get_topology_root_part(stk::topology::NODE);
     meta_data.commit();
     stk::unit_test_util::BulkDataTester mesh(meta_data, MPI_COMM_WORLD);
@@ -777,7 +770,6 @@ TEST(BulkDataModificationEnd, create_edges_with_min_map)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
@@ -843,7 +835,6 @@ TEST(ModEndForEntityCreation, DISABLED_promotion_of_ghosted_to_shared)
 
   const int spatialDim = 3;
   stk::mesh::MetaData metaData(spatialDim);
-  metaData.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulkData(metaData, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
   const int p_rank = bulkData.parallel_rank();
 
@@ -910,7 +901,6 @@ std::shared_ptr<stk::mesh::BulkData> create_mesh(stk::ParallelMachine comm,
   builder.set_spatial_dimension(spatialDim);
   builder.set_aura_option(auraOption);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -928,7 +918,7 @@ TEST(TestModificationEnd, destroySharedNode_twoSharers_deinducePartMembership)
     0,0, 1,0, 2,0,
     0,1, 1,1, 2,1
   };
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   bulk.modification_begin();
   if (bulk.parallel_rank() == 1) {
@@ -970,7 +960,7 @@ TEST(TestModificationEnd, destroySharedNode_threeSharers_deinducePartMembership)
     0,1, 1,1, 2,1,
     0,2, 1,2
   };
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   bulk.modification_begin();
   if (bulk.parallel_rank() == 2) {

@@ -36,7 +36,7 @@ void test_that_ids_are_unique(const stk::mesh::BulkData &bulkData, stk::mesh::En
         for(size_t j = 0; j < requestedIds.size(); ++j)
         {
           bool is_id_unique = std::binary_search(ids_in_use.begin(), ids_in_use.end(), requestedIds[j]);
-          STK_ThrowRequireMsg(is_id_unique == false, "Oh no! " <<  __FILE__<< __LINE__);
+          STK_ThrowRequireMsg(is_id_unique == false, "ID="<<requestedIds[j]<<" already in use in the mesh." <<  __FILE__<< __LINE__);
           comm.send_buffer(i).pack<uint64_t>(requestedIds[j]);
         }
       }
@@ -70,10 +70,8 @@ void test_that_ids_are_unique(const stk::mesh::BulkData &bulkData, stk::mesh::En
 TEST(StkMeshHowTo, use_generate_new_ids)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
-
   int num_procs = stk::parallel_machine_size(communicator);
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
 
   const std::string generatedMeshSpecification = "generated:1x1x" + std::to_string(num_procs);
   stk::io::fill_mesh(generatedMeshSpecification, *bulkPtr);

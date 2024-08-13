@@ -52,58 +52,11 @@ namespace fixtures {
 class TestHexFixture : public ::ngp_testing::Test
 {
 protected:
-
-  TestHexFixture()
-  : m_bulk(stk::mesh::MeshBuilder(MPI_COMM_WORLD).create()),
-    m_meta(m_bulk->mesh_meta_data()),
-    m_coord_field(stk::mesh::legacy::declare_field<HexFixture::CoordFieldType>(m_meta, stk::topology::NODE_RANK, "Coordinates")),
-    m_hexFixture(nullptr)
-  {}
-
-  virtual ~TestHexFixture() { delete m_hexFixture; }
-
-  void setup_mesh(size_t nx, size_t ny, size_t nz,
-                  const std::vector<std::string>& entityRankNames = std::vector<std::string>())
-  {
-    STK_ThrowRequireMsg(m_hexFixture == nullptr, "TestHexFixture::setup_mesh may only be called once.");
-    m_meta.initialize(3, entityRankNames, m_coord_field.name());
-    m_hexFixture = new HexFixture(m_meta, *m_bulk, nx, ny, nz, 1, 1);
-    m_hexFixture->m_meta.commit();
-    m_hexFixture->generate_mesh();
-  }
-
-  MPI_Comm get_comm() const { return m_bulk->parallel(); }
-
-  int get_parallel_rank() const { return m_bulk->parallel_rank(); }
-
-  int get_parallel_size() const { return m_bulk->parallel_size(); }
-
-  stk::mesh::MetaData& get_meta() { return m_meta; }
-  const stk::mesh::MetaData& get_meta() const { return m_meta; }
-
-  stk::mesh::BulkData& get_bulk() { return *m_bulk; }
-  const stk::mesh::BulkData& get_bulk() const { return *m_bulk; }
-
-  HexFixture::CoordFieldType& get_coord_field() { return m_coord_field; }
-
-private:
-  std::shared_ptr<stk::mesh::BulkData> m_bulk;
-  stk::mesh::MetaData& m_meta;
-  HexFixture::CoordFieldType& m_coord_field;
-  HexFixture* m_hexFixture;
-};
-
-namespace simple_fields {
-
-class TestHexFixture : public ::ngp_testing::Test
-{
-protected:
   TestHexFixture()
   : m_bulk(stk::mesh::MeshBuilder(MPI_COMM_WORLD).create()),
     m_meta(m_bulk->mesh_meta_data()),
     m_hexFixture(nullptr)
   {
-    m_meta.use_simple_fields();
     m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates");
   }
 
@@ -138,6 +91,53 @@ private:
   stk::mesh::MetaData& m_meta;
   HexFixture::CoordFieldType* m_coord_field;
   HexFixture* m_hexFixture;
+};
+
+namespace simple_fields {
+
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+TestHexFixture : public ::ngp_testing::Test
+{
+protected:
+  TestHexFixture()
+  : m_bulk(stk::mesh::MeshBuilder(MPI_COMM_WORLD).create()),
+    m_meta(m_bulk->mesh_meta_data()),
+    m_hexFixture(nullptr)
+  {
+    m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates");
+  }
+
+  virtual ~TestHexFixture() { delete m_hexFixture; }
+
+  void setup_mesh(size_t nx, size_t ny, size_t nz,
+                  const std::vector<std::string>& entityRankNames = std::vector<std::string>())
+  {
+    STK_ThrowRequireMsg(m_hexFixture == nullptr, "TestHexFixture::setup_mesh may only be called once.");
+    m_meta.initialize(3, entityRankNames, m_coord_field->name());
+    m_hexFixture = new stk::mesh::fixtures::HexFixture(m_meta, *m_bulk, nx, ny, nz, 1, 1);
+    m_hexFixture->m_meta.commit();
+    m_hexFixture->generate_mesh();
+  }
+
+  MPI_Comm get_comm() const { return m_bulk->parallel(); }
+
+  int get_parallel_rank() const { return m_bulk->parallel_rank(); }
+
+  int get_parallel_size() const { return m_bulk->parallel_size(); }
+
+  stk::mesh::MetaData& get_meta() { return m_meta; }
+  const stk::mesh::MetaData& get_meta() const { return m_meta; }
+
+  stk::mesh::BulkData& get_bulk() { return *m_bulk; }
+  const stk::mesh::BulkData& get_bulk() const { return *m_bulk; }
+
+  stk::mesh::Field<double>& get_coord_field() { return *m_coord_field; }
+
+private:
+  std::shared_ptr<stk::mesh::BulkData> m_bulk;
+  stk::mesh::MetaData& m_meta;
+  stk::mesh::Field<double>* m_coord_field;
+  stk::mesh::fixtures::HexFixture* m_hexFixture;
 };
 
 } // namespace simple_fields

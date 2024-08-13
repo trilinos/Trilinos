@@ -115,6 +115,8 @@ struct Entity
     KOKKOS_FUNCTION
     bool operator<(Entity entity) const { return m_value < entity.m_value; }
 
+    KOKKOS_FUNCTION
+    bool operator>(Entity entity) const { return m_value > entity.m_value; }
 };
 
 std::ostream & operator << ( std::ostream & , const Entity & );

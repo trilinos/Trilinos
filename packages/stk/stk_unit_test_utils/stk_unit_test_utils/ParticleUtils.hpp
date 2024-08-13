@@ -72,7 +72,7 @@ private:
     stk::mesh::Entity m_owningElement;
 };
 
-typedef std::vector<std::unique_ptr<Particle> > ParticleVector;
+typedef std::vector<std::unique_ptr<Particle>> ParticleVector;
 
 class ParticleManager
 {
@@ -122,7 +122,8 @@ private:
 
 typedef std::vector<std::unique_ptr<Particle>> ParticleVector;
 
-class ParticleManager
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+ParticleManager
 {
 public:
     ParticleManager() = default;

@@ -26,7 +26,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-using namespace std;
 using namespace stk;
 using namespace stk::rebalance;
 
@@ -47,7 +46,7 @@ inline unsigned num_lid_entries() {
 }
 
 inline void convert_param_to_string(const Parameters &from,
-                                    vector < pair<std::string, std::string> > &to)
+                                    std::vector < std::pair<std::string, std::string> > &to)
 {
   Parameters::ConstIterator
     from_iter  = from.begin(),
@@ -590,7 +589,7 @@ Zoltan::set_mesh_info( const std::vector<mesh::Entity > &mesh_entities,
   m_mesh_information_ = mesh_info;
 }
 
-void Zoltan::init( const vector< pair<std::string,std::string> >
+void Zoltan::init( const std::vector< std::pair<std::string,std::string> >
                    &dynamicLoadRebalancingParameters ) {
   if (0==static_zoltan_version()) {
     const double v = init_zoltan_library();
@@ -603,14 +602,14 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
 
   m_zoltan_id_ = Zoltan_Create( comm_ );
   if ( m_zoltan_id_ == NULL ) {
-    throw runtime_error ("(FATAL ERROR) Zoltan_Create() returned NULL");
+    throw std::runtime_error ("(FATAL ERROR) Zoltan_Create() returned NULL");
   }
 
   /**
    * Set up dynamic load rebalancing
    */
 
-  vector<pair<std::string,std::string> >::const_iterator
+  std::vector<std::pair<std::string,std::string> >::const_iterator
     P  =  dynamicLoadRebalancingParameters.begin(),
     PE =  dynamicLoadRebalancingParameters.end();
 
@@ -621,7 +620,7 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
 
     if (ZOLTAN_OK != (Zoltan_Set_Param(m_zoltan_id_,label,value)))
     {
-      throw runtime_error(": FATAL ERROR returned from Zoltan_Set_Param ");
+      throw std::runtime_error(": FATAL ERROR returned from Zoltan_Set_Param ");
     }
   }
 
@@ -629,7 +628,7 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
    * Register the Zoltan/SIERRA "call-back" (querry) functions.
    */
   if ( ZOLTAN_OK != register_callbacks() )
-    throw runtime_error ("zoltan->Register_Callbacks error. ");
+    throw std::runtime_error ("zoltan->Register_Callbacks error. ");
 
 #if STK_GEOMDECOMP_DEBUG>=2
   {
@@ -932,7 +931,7 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
                                   &num_exported,    &export_gids,
                                   &export_lids,     &export_procs );
   if (status != ZOLTAN_OK) {
-    stringstream sstatus;
+    std::stringstream sstatus;
     sstatus << status;
     throw std::runtime_error("Zoltan_Balance() returned error code " + sstatus.str());
   }
@@ -972,7 +971,7 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
   if ( ZOLTAN_OK !=
        Zoltan_LB_Free_Data( &import_gids, &import_lids, &import_procs,
                             &export_gids, &export_lids, &export_procs )) {
-    throw runtime_error (" FATAL ERROR in Zoltan_LB_Free_Data.");
+    throw std::runtime_error (" FATAL ERROR in Zoltan_LB_Free_Data.");
   }
 
 }
@@ -1025,8 +1024,7 @@ void Zoltan::convert_names_and_values(const Parameters &from, Parameters &to)
        Only a couple of parameters have parameter conversion.
        The ones converted are nested in Value_Conversion.
     */
-    std::string to_value = Teuchos::getValue<string>(from.entry(from_iter));
-    //if (Value_Conversion->isParameter(from_name)) to_value = Value_Conversion->get<std::string>(to_value);
+    std::string to_value = Teuchos::getValue<std::string>(from.entry(from_iter));
     if (Value_Conversion->isParameter(from_name)) to_value = Value_Conversion->sublist(from_name).get<std::string>(to_value);
     if (!to_name.empty()) to.set(to_name, to_value);
   }

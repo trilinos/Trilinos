@@ -6,7 +6,7 @@
 namespace
 {
 
-class GetEntitiesTest : public stk::unit_test_util::simple_fields::MeshFixture { };
+class GetEntitiesTest : public stk::unit_test_util::MeshFixture { };
 
 TEST_F(GetEntitiesTest, get_num_entities)
 {

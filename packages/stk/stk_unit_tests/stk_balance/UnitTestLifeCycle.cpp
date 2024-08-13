@@ -34,7 +34,7 @@ private:
   const char** m_argv;
 };
 
-class TestLifeCycle : public stk::unit_test_util::simple_fields::MeshFixture
+class TestLifeCycle : public stk::unit_test_util::MeshFixture
 {
 protected:
   TestLifeCycle()
@@ -44,19 +44,19 @@ protected:
   }
 
   void build_serial_mesh() {
-    stk::unit_test_util::simple_fields::generated_mesh_to_file_in_serial("1x1x4", m_inFile);
+    stk::unit_test_util::generated_mesh_to_file_in_serial("1x1x4", m_inFile);
     MPI_Barrier(get_comm());
   }
 
   void build_parallel_mesh() {
-    stk::unit_test_util::simple_fields::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
     const bool useBigIds = false;
     gMesh.setup_mesh("1x1x4", m_inFile, useBigIds);
     gMesh.write_mesh();
   }
 
   void build_parallel_mesh_with_big_ids() {
-    stk::unit_test_util::simple_fields::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
     const bool useBigIds = true;
     gMesh.setup_mesh("1x1x4", m_inFile, useBigIds);
     gMesh.write_mesh();
@@ -66,7 +66,7 @@ protected:
     std::vector<double> transientTimeSteps = {0.0, 1.0, 2.0};
     std::string transientFieldName = "transient_field";
     std::string globalVariableName = "global_variable";
-    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial("1x1x4",
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial("1x1x4",
                                                                                              m_inFile,
                                                                                              transientFieldName,
                                                                                              stk::topology::NODE_RANK,
@@ -80,7 +80,7 @@ protected:
     std::vector<double> transientTimeSteps = {0.0, 1.0, 2.0};
     std::string transientFieldName = "transient_field";
     std::string globalVariableName = "global_variable";
-    stk::unit_test_util::simple_fields::GeneratedMeshToFileWithTransientFields gMesh(get_comm(),
+    stk::unit_test_util::GeneratedMeshToFileWithTransientFields gMesh(get_comm(),
                                                                                      stk::mesh::BulkData::AUTO_AURA,
                                                                                      transientFieldName,
                                                                                      stk::topology::NODE_RANK);

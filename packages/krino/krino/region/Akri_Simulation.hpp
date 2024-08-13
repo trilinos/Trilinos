@@ -33,6 +33,7 @@ public:
   const std::string & get_name() const { return my_name; }
   bool is_transient() const { return my_is_transient; }
   double get_time_step() const { return my_time_step_size; }
+  double get_old_time() const { return my_old_time; }
   double get_current_time() const { return my_current_time; }
   double get_stop_time() const { return my_stop_time; }
   int get_time_step_count() const { return my_step_count; }
@@ -50,6 +51,7 @@ private:
   bool my_is_transient;
   double my_stop_time;
   unsigned my_step_count;
+  double my_old_time;
   double my_current_time;
   double my_time_step_size;
   std::vector<std::unique_ptr<Region>> my_regions;

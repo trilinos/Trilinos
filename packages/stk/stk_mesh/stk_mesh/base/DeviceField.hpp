@@ -311,15 +311,6 @@ private:
     return deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, component));
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  template <typename MeshIndex> STK_DEPRECATED KOKKOS_FUNCTION
-  T& get(MeshIndex index, int component,
-         const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
-  {
-    return deviceData(deviceSelectedBucketOffset(index.bucket->bucket_id()), ORDER_INDICES(index.bucketOrd, component));
-  }
-#endif
-
   KOKKOS_FUNCTION
   T& operator()(const FastMeshIndex& index, int component,
                 const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
@@ -327,15 +318,6 @@ private:
     fieldSyncDebugger.device_stale_access_check(this, index, component, fileName, lineNumber);
     return deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, component));
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  template <typename MeshIndex> STK_DEPRECATED KOKKOS_FUNCTION
-  T& operator()(const MeshIndex& index, int component,
-                const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
-  {
-    return deviceData(deviceSelectedBucketOffset(index.bucket->bucket_id()), ORDER_INDICES(index.bucketOrd, component));
-  }
-#endif
 
   KOKKOS_FUNCTION
   EntityFieldData<T> operator()(const FastMeshIndex& index,
@@ -369,12 +351,6 @@ private:
   FieldState state() const { return hostField->state(); }
 
   const FieldBase* get_field_base() const { return hostField; }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED void rotate_multistate_data() override
-  {
-  }
-#endif
 
   void update_bucket_pointer_view() override
   {
@@ -512,7 +488,7 @@ private:
     newDeviceSelectedBucketOffset = UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_bucket_offset"),
                                                      allBuckets.size());
     newHostSelectedBucketOffset =
-        Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), newDeviceSelectedBucketOffset);
+        Kokkos::create_mirror_view(Kokkos::WithoutInitializing, newDeviceSelectedBucketOffset);
 
     for(unsigned i = 0; i < allBuckets.size(); i++) {
       if(selector(*allBuckets[i])) {

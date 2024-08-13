@@ -43,7 +43,7 @@
 #include <vector>
 #include <string>
 
-class StkBalanceDecomposition : public stk::unit_test_util::simple_fields::MeshFixture
+class StkBalanceDecomposition : public stk::unit_test_util::MeshFixture
 {
 protected:
   StkBalanceDecomposition()
@@ -120,7 +120,7 @@ TEST_F(StkBalanceDecomposition, 6Elem2ProcMesh_OneElem)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}});
   balance_mesh({*get_meta().get_part("partA")});
 
   test_mesh_element_distribution({2, 4});  // Moved the one elem from p0 to p1
@@ -131,7 +131,7 @@ TEST_F(StkBalanceDecomposition, 6Elem2ProcMesh_TwoElems)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
   balance_mesh({*get_meta().get_part("partA")});
 
   test_mesh_element_distribution({2, 4});  // Moved one of the two elems from p0 to p1
@@ -142,7 +142,7 @@ TEST_F(StkBalanceDecomposition, 6Elem2ProcMesh_TwoElemsEachProc)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
   balance_mesh({*get_meta().get_part("partA")});
 
   test_mesh_element_distribution({3, 3});
@@ -153,7 +153,7 @@ TEST_F(StkBalanceDecomposition, 6Elem2ProcMesh_TwoElemsAcrossProcBoundary)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{3, "partA"}, {4, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{3, "partA"}, {4, "partA"}});
   balance_mesh({*get_meta().get_part("partA")});
 
   test_mesh_element_distribution({3, 3});
@@ -164,7 +164,7 @@ TEST_F(StkBalanceDecomposition, 6Elem2ProcMesh_TwoElemsEachProcWithOneAdjacentTo
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}, {4, "partA"}, {6, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}, {4, "partA"}, {6, "partA"}});
   balance_mesh({*get_meta().get_part("partA")});
 
   test_mesh_element_distribution({3, 3});

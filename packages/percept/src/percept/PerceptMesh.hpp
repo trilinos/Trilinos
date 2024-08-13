@@ -1169,9 +1169,8 @@ private:
       bool m_avoid_add_all_mesh_fields_as_input_fields;
     public:
       bool m_markNone;
-    private:
-      bool m_useSimpleFields;
 
+    private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
       void checkState(const std::string& function) {

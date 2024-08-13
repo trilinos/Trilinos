@@ -178,32 +178,32 @@ struct InternalFaceInfo
 
   operator stk::mesh::Entity() const { return internalFace; }
 
-  bool operator<(const InternalFaceInfo &rhs)
+  bool operator<(const InternalFaceInfo &rhs) const
   {
     return internalFace < rhs.internalFace;
   };
 
-  bool operator<(const stk::mesh::Entity &rhs)
+  bool operator<(const stk::mesh::Entity &rhs) const
   {
     return internalFace < rhs;
   };
 
-  bool operator==(const InternalFaceInfo &rhs)
+  bool operator==(const InternalFaceInfo &rhs) const
   {
     return internalFace == rhs.internalFace;
   };
 
-  bool operator==(const stk::mesh::Entity &rhs)
+  bool operator==(const stk::mesh::Entity &rhs) const
   {
     return internalFace == rhs;
   };
 
-  bool operator!=(const InternalFaceInfo &rhs)
+  bool operator!=(const InternalFaceInfo &rhs) const
   {
     return internalFace != rhs.internalFace;
   };
 
-  bool operator!=(const stk::mesh::Entity &rhs)
+  bool operator!=(const stk::mesh::Entity &rhs) const
   {
     return internalFace != rhs;
   };

@@ -67,7 +67,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
     //+ with times 1.0 and 2.0.
     //+ The value of the field at each node is equal to the 'time'
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -115,7 +114,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
     //+ The field values from 1.0 to 2.0 will be interpolated
     //+
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 

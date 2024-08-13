@@ -152,7 +152,6 @@ TEST(StkSearchHowTo, useCoarseSearch)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::fill_mesh(meshSpec, *mesh);
 
   // Point in element 1
@@ -186,7 +185,7 @@ TEST(StkSearchHowTo, useCoarseSearch)
 
   stk::mesh::EntityIdVector expectedSendIds{1, 3, 5, 7};
 
-  for (auto& result : coarseSearchResult) {
+  for (Relation& result : coarseSearchResult) {
     const Hex8SourceMesh::EntityKey sendEntityKey = result.second.id();
     EXPECT_EQ(stk::topology::ELEM_RANK, sendEntityKey.rank());
 

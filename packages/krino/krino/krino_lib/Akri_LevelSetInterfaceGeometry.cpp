@@ -400,7 +400,7 @@ static ParentEdgeFilter keep_owned_edges_filter(const stk::mesh::BulkData & mesh
   {
     const std::pair<stk::mesh::Entity,stk::mesh::Entity> edgeNodes = edge.get_parent_nodes();
     std::vector<stk::mesh::Entity> edgeElems;
-    stk::mesh::get_entities_through_relations(mesh, {edgeNodes.first, edgeNodes.second}, stk::topology::ELEMENT_RANK, edgeElems);
+    stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edgeNodes.first, edgeNodes.second}, stk::topology::ELEMENT_RANK, edgeElems);
     {
     bool foundOwnedElement = false;
     for (auto && edgeElem : edgeElems)

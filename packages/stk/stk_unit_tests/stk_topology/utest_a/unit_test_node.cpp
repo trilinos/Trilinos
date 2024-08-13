@@ -112,6 +112,7 @@ void check_node_on_device()
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
     constexpr unsigned numNodes = 1;  // Node actually has 0 nodes, but zero-length arrays are not allowed
+    NGP_EXPECT_EQ(1u, numNodes);//silly suppression of "unused" compiler warning
 
     check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });

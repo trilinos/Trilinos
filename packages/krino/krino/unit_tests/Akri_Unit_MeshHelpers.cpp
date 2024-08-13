@@ -109,7 +109,6 @@ void test_and_cleanup_internal_side(stk::mesh::BulkData & mesh, const stk::mesh:
 auto create_2D_mesh(const stk::ParallelMachine & pm)
 {
   std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(pm).set_spatial_dimension(2).create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 

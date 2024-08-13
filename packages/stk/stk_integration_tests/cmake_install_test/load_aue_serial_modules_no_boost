@@ -1,0 +1,6 @@
+#!/bin/bash
+
+module load aue/cmake/3.27.7
+module load aue/gcc/10.3.0
+module load aue/netlib-lapack/3.11.0-gcc-10.3.0
+

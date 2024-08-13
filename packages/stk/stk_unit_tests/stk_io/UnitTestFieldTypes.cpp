@@ -196,8 +196,8 @@ void test_output_field(const stk::mesh::MetaData & meta, stk::mesh::FieldBase & 
   size_t numCopies = 1;
   const Ioss::CompositeVariableType* compositeVarType = dynamic_cast<const Ioss::CompositeVariableType*>(varType);
   if (compositeVarType != nullptr) {
-    const Ioss::VariableType * baseVarType = compositeVarType->GetBaseType();
-    numCopies = compositeVarType->GetNumCopies();
+    const Ioss::VariableType * baseVarType = compositeVarType->get_base_type();
+    numCopies = compositeVarType->get_num_copies();
     numComponents = baseVarType->component_count();
   }
 
@@ -221,7 +221,6 @@ void create_and_test_output_field(const FieldConfig & fieldConfig,
 {
   const int spatialDimension = 3;
   stk::mesh::MetaData meta(spatialDimension);
-  meta.use_simple_fields();
 
   stk::mesh::FieldBase & field = create_stk_field<T>(meta, fieldConfig);
 
@@ -238,7 +237,6 @@ void create_and_test_output_field_with_copy(const FieldConfig & fieldConfig,
 {
   const int spatialDimension = 3;
   stk::mesh::MetaData meta(spatialDimension);
-  meta.use_simple_fields();
 
   stk::mesh::FieldBase & field = create_stk_field<T>(meta, fieldConfig);
 
@@ -267,7 +265,6 @@ void create_and_test_custom_output_field(const FieldConfig & fieldConfig,
 {
   const int spatialDimension = 3;
   stk::mesh::MetaData meta(spatialDimension);
-  meta.use_simple_fields();
 
   stk::mesh::FieldBase & field = create_custom_stk_field<T>(meta, fieldConfig);
 
@@ -1136,10 +1133,8 @@ Ioss::Field create_io_field(const FieldConfig & fieldConfig, Ioss::Field::BasicT
 
 void create_and_test_stk_field(stk::mesh::MetaData & meta, const FieldConfig & fieldConfig, const Ioss::Field & ioField)
 {
-  const bool useCartesianForScalar = false;
   const stk::mesh::FieldBase * field = stk::io::impl::declare_stk_field_internal(meta, stk::topology::NODE_RANK,
-                                                                                 meta.universal_part(), ioField,
-                                                                                 useCartesianForScalar);
+                                                                                 meta.universal_part(), ioField);
   ASSERT_NE(field, nullptr);
 
   const Ioss::VariableType * varType = ioField.transformed_storage();
@@ -1148,9 +1143,9 @@ void create_and_test_stk_field(stk::mesh::MetaData & meta, const FieldConfig & f
 
   const Ioss::CompositeVariableType* compositeVarType = dynamic_cast<const Ioss::CompositeVariableType*>(varType);
   if (compositeVarType != nullptr) {
-    const Ioss::VariableType * baseVarType = compositeVarType->GetBaseType();
+    const Ioss::VariableType * baseVarType = compositeVarType->get_base_type();
     numComponents = baseVarType->component_count();
-    numCopies = compositeVarType->GetNumCopies();
+    numCopies = compositeVarType->get_num_copies();
     varType = baseVarType;
   }
 
@@ -1178,7 +1173,6 @@ void create_and_test_input_field(const FieldConfig & fieldConfig,
 
   const int spatialDimension = 3;
   stk::mesh::MetaData meta(spatialDimension);
-  meta.use_simple_fields();
 
   Ioss::Field ioField = create_io_field(fieldConfig, dataType);
   create_and_test_stk_field(meta, fieldConfig, ioField);

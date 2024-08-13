@@ -58,7 +58,6 @@ TEST(StkMeshHowTo, SkinExposedHex)
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   const std::string generatedFileName = "generated:1x1x1";
   stk::io::fill_mesh(generatedFileName, *bulk);
@@ -91,7 +90,6 @@ TEST(StkMeshHowTo, SkinInteriorHex)
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   const std::string generatedFileName = "generated:1x1x2";
   stk::io::fill_mesh(generatedFileName, *bulk);
@@ -133,7 +131,6 @@ TEST(StkMeshHowTo, SkinAllHexBlocks)
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   const std::string generatedFileName = "generated:1x1x2";
   stk::io::fill_mesh(generatedFileName, *bulk);

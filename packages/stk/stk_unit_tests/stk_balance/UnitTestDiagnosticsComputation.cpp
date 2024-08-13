@@ -44,7 +44,7 @@
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_unit_test_utils/TextMeshToFile.hpp>
 
-class TestDiagnosticsComputation : public stk::unit_test_util::simple_fields::MeshFixture
+class TestDiagnosticsComputation : public stk::unit_test_util::MeshFixture
 {
 protected:
   TestDiagnosticsComputation()
@@ -108,7 +108,7 @@ protected:
 
   void build_mesh(const std::string & meshDesc) {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     MPI_Barrier(get_comm());
   }
 
@@ -116,7 +116,7 @@ protected:
                        stk::io::StkMeshIoBroker & ioBroker) {
     const std::string tempFileName = "tempFile.g";
 
-    stk::unit_test_util::simple_fields::TextMeshToFile tMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::TextMeshToFile tMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
     tMesh.setup_mesh(meshDesc, tempFileName);
     tMesh.write_mesh();
 
@@ -149,7 +149,7 @@ protected:
       0,0,0, 1,0,0, 2,0,0, 3,-1,0, 3,1,0
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_four_shells_in_square() {
@@ -164,7 +164,7 @@ protected:
       0,2,0, 1,2,0, 2,2,0
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_three_hex_in_row() {
@@ -179,7 +179,7 @@ protected:
       3,0,0, 3,1,0, 3,1,1, 3,0,1
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_four_hex_in_square() {
@@ -197,7 +197,7 @@ protected:
       0,1,2, 1,1,2, 2,1,2
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_hex_pyramid_tet() {
@@ -214,7 +214,7 @@ protected:
       2,0,0, 2,1,0, 2,1,1, 2,0,1
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   template <typename T, typename DT>

@@ -46,7 +46,6 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 
   namespace percept {
-    using namespace std;
     using namespace percept;
 
 

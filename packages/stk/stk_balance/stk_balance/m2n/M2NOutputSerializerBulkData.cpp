@@ -40,15 +40,21 @@ namespace balance {
 namespace m2n {
 
 OutputSerializerBulkData::OutputSerializerBulkData(ParallelMachine parallel)
-  : BulkData(std::make_shared<stk::mesh::MetaData>(), parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
+  : BulkData(std::make_shared<stk::mesh::MetaData>(), parallel, stk::mesh::BulkData::NO_AUTO_AURA
+#ifdef SIERRA_MIGRATION
+             , true
+#endif
+            )
 {
-  mesh_meta_data().use_simple_fields();
 }
 
 OutputSerializerBulkData::OutputSerializerBulkData(unsigned spatialDim, ParallelMachine parallel)
-  : BulkData(std::make_shared<stk::mesh::MetaData>(spatialDim), parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
+  : BulkData(std::make_shared<stk::mesh::MetaData>(spatialDim), parallel, stk::mesh::BulkData::NO_AUTO_AURA
+#ifdef SIERRA_MIGRATION
+             , true
+#endif
+            )
 {
-  mesh_meta_data().use_simple_fields();
 }
 
 void

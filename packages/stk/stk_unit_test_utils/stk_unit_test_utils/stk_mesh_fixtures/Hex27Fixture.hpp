@@ -71,8 +71,8 @@ namespace fixtures {
 class Hex27Fixture
 {
 public:
-  typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
+  typedef double        Scalar;
+  typedef Field<Scalar> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -124,7 +124,7 @@ public:
   BulkData&         m_bulk_data;
   PartVector        m_elem_parts;
   PartVector        m_node_parts;
-  CoordFieldType &  m_coord_field ;
+  CoordFieldType *  m_coord_field ;
   stk::topology     m_elem_topology = stk::topology::HEX_27;
   stk::topology     m_face_topology = stk::topology::QUAD_9;
 

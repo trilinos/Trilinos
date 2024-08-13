@@ -55,6 +55,14 @@ AuxMetaData::create(stk::mesh::MetaData & stk_meta)
   return *aux_meta;
 }
 
+AuxMetaData & 
+AuxMetaData::get_or_create(stk::mesh::MetaData & stk_meta)
+{
+  if (AuxMetaData::has(stk_meta)) return AuxMetaData::get(stk_meta);
+
+  return AuxMetaData::create(stk_meta);
+}
+
 AuxMetaData::AuxMetaData(stk::mesh::MetaData & stk_meta)
   : my_meta(stk_meta),
     is_fmwk(false),

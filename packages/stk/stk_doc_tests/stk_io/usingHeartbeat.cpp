@@ -86,7 +86,6 @@ TEST(StkMeshIoBrokerHowTo, writeHeartbeat)
     //+ EXAMPLE USAGE...
     //+ Begin use of stk io heartbeat file...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     //+ Define the heartbeat output to be in TEXT format.
     size_t hb = stkIo.add_heartbeat_output(file_name, stk::io::TEXT); /*@\label{io:hb:add_heartbeat_output}*/

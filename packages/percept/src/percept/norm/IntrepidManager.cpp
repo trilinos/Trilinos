@@ -316,7 +316,7 @@
     IntrepidManager::IntegrandValuesDOF::
     copyFrom(MDArray& mda)
     {
-      copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
+      std::copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -331,7 +331,7 @@
     IntrepidManager::IntegrandValues::
     copyFrom(MDArray& mda)
     {
-      copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
+      std::copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
     }
     void
     IntrepidManager::IntegrandValues::

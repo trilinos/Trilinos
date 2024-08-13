@@ -66,7 +66,7 @@ void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorF
   stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("pyramids", stk::topology::PYRAMID_5));
   stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("quad_shells", stk::topology::SHELL_QUAD_4));
   stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("tri_shells", stk::topology::SHELL_TRI_3));
-  
+
   const stk::mesh::FieldBase::Restriction & res = stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
 
   if ( res.num_scalars_per_entity() != 3 ) {
@@ -225,7 +225,7 @@ void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorF
   for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++elem_id ) {
     stk::mesh::declare_element( bulk_data, tri_shell_block, elem_id, shell_tri_node_ids[i] );
   }
-  
+
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
     stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );

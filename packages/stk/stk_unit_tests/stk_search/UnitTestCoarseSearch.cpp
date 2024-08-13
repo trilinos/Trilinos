@@ -46,6 +46,7 @@
 #include <sstream>
 #include <tuple>
 #include <vector>
+#include "stk_search/SearchMethod.hpp"
 
 namespace std {
 template <typename Ident, typename Proc>
@@ -126,14 +127,13 @@ void expect_search_results(int num_procs, int proc_id, const SearchResults&  sea
   }
 }
 
-template <typename FloatType>
+template <typename FloatType, typename ExecSpace=Kokkos::DefaultExecutionSpace>
 void test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  using ExecSpace = Kokkos::DefaultExecutionSpace;
   using BoxType = stk::search::Box<FloatType>;
   using PointType = stk::search::Point<FloatType>;
   using BoxIdentProcType = stk::search::BoxIdentProc<BoxType, IdentProc>;
@@ -213,6 +213,71 @@ void test_coarse_search_for_algorithm(stk::search::SearchMethod algorithm, MPI_C
   expect_search_results(num_procs, proc_id, searchResults);
 }
 
+#ifdef KOKKOS_ENABLE_CUDA
+void test_coarse_search_with_non_default_view(stk::search::SearchMethod algorithm, MPI_Comm comm)
+{
+  using Box = stk::search::Box<double>;
+  using IdentProc = stk::search::IdentProc<int, int>;
+  using BoxIdentProc = stk::search::BoxIdentProc<Box, IdentProc>;
+  using ViewType1 = Kokkos::View<BoxIdentProc*, Kokkos::CudaSpace>;
+  using ViewType2 = Kokkos::View<BoxIdentProc*, Kokkos::CudaUVMSpace>;
+  Kokkos::Cuda execSpace{};
+
+  int myrank = stk::parallel_machine_rank(comm);
+  ViewType1 domainView("domainView", 1);
+  ViewType2 rangeView("rangeView", 1);
+  auto createBoxes = KOKKOS_LAMBDA(int idx)
+  {
+    Box box(2*myrank, 0, 0, 2*myrank+1, 1, 1);
+    domainView(idx) = BoxIdentProc{box, IdentProc(0, myrank)};
+    rangeView(idx)  = BoxIdentProc{box, IdentProc(0, myrank)};
+  };
+
+  Kokkos::parallel_for("create_boxes", 1, createBoxes);
+
+  Kokkos::View<stk::search::IdentProcIntersection<IdentProc, IdentProc>*, Kokkos::CudaSpace> results;
+  stk::search::coarse_search(domainView, rangeView, algorithm, comm, results, execSpace);
+
+  auto resultsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, results);
+
+  EXPECT_EQ(resultsHost.size(), 1U);
+  EXPECT_EQ(resultsHost(0).domainIdentProc, IdentProc(0, myrank));
+  EXPECT_EQ(resultsHost(0).rangeIdentProc, IdentProc(0, myrank));
+}
+
+void test_local_coarse_search_with_non_default_view(stk::search::SearchMethod algorithm)
+{
+  using Box = stk::search::Box<double>;
+  using Ident = int;
+  using BoxIdent = stk::search::BoxIdent<Box, Ident>;
+  using ViewType1 = Kokkos::View<BoxIdent*, Kokkos::CudaSpace>;
+  using ViewType2 = Kokkos::View<BoxIdent*, Kokkos::CudaUVMSpace>;
+  Kokkos::Cuda execSpace{};
+
+  ViewType1 domainView("domainView", 1);
+  ViewType2 rangeView("rangeView", 1);
+  auto createBoxes = KOKKOS_LAMBDA(int idx)
+  {
+    Box box(0, 0, 0, 1, 1, 1);
+    domainView(idx) = BoxIdent{box, Ident(0) };
+    rangeView(idx)  = BoxIdent{box, Ident(0)};
+  };
+
+  Kokkos::parallel_for("create_boxes", 1, createBoxes);
+
+  Kokkos::View<stk::search::IdentIntersection<Ident, Ident>*, Kokkos::CudaSpace> results;
+  stk::search::local_coarse_search(domainView, rangeView, algorithm, results, execSpace);
+
+  auto resultsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, results);
+
+  EXPECT_EQ(resultsHost.size(), 1U);
+  EXPECT_EQ(resultsHost(0).domainIdent, Ident(0));
+  EXPECT_EQ(resultsHost(0).rangeIdent,  Ident(0));
+}
+
+
+#endif
+
 TEST(stk_search, coarseSearchDoubleBoxes_KDTREE)
 {
   test_coarse_search_for_algorithm<double>(stk::search::KDTREE, MPI_COMM_WORLD);
@@ -226,7 +291,8 @@ TEST(stk_search, coarseSearchFloatBoxes_KDTREE)
 TEST(CoarseSearchCorrectness, coarseSearchDoubleBoxes_MORTON_LBVH)
 {
   test_coarse_search_for_algorithm<double>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
-  test_coarse_search_for_algorithm_with_views<double>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultExecutionSpace>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultHostExecutionSpace>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
 }
 
 TEST(CoarseSearchCorrectness, coarseSearchFloatBoxes_MORTON_LBVH)
@@ -241,7 +307,9 @@ TEST(CoarseSearchCorrectness, coarseSearchDoubleBoxes_ARBORX)
   GTEST_SKIP();
 #endif
   test_coarse_search_for_algorithm<double>(stk::search::ARBORX, MPI_COMM_WORLD);
-  test_coarse_search_for_algorithm_with_views<double>(stk::search::ARBORX, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
+
 }
 
 TEST(CoarseSearchCorrectness, coarseSearchFloatBoxes_ARBORX)
@@ -364,6 +432,50 @@ TEST(stk_search, Local_CoarseSearchDoubleBoxes_KDTREE)
 TEST(stk_search, Local_CoarseSearchFloatBoxes_KDTREE)
 {
   host_local_test_coarse_search_for_algorithm<float>(stk::search::KDTREE);
+}
+
+template <typename FloatType, typename ExecSpace>
+void local_test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algorithm)
+{
+  using BoxType = stk::search::Box<FloatType>;
+  using PointType = stk::search::Point<FloatType>;
+  using BoxIdentType = stk::search::BoxIdent<BoxType, Ident>;
+  using HostSpace = Kokkos::DefaultHostExecutionSpace;
+
+  auto domain = Kokkos::View<BoxIdentType*, ExecSpace>("domain box-ident", 2);
+  auto range = Kokkos::View<BoxIdentType*, ExecSpace>("range box-ident", 2);
+
+  auto domainHost = Kokkos::create_mirror_view(HostSpace{}, domain);
+  auto rangeHost  = Kokkos::create_mirror_view(HostSpace{}, range);
+
+
+  domainHost(0) = {BoxType(PointType(0.1, 0.0, 0.0), PointType(0.9, 1.0, 1.0)), 0};
+  domainHost(1) = {BoxType(PointType(0.1, 2.0, 0.0), PointType(0.9, 3.0, 1.0)), 1};
+  rangeHost(0)  = {BoxType(PointType(0.6, 0.5, 0.0), PointType(1.4, 1.5, 1.0)), 2};
+  rangeHost(1)  = {BoxType(PointType(0.6, 2.5, 0.0), PointType(1.4, 3.5, 1.0)), 3};
+
+  Kokkos::deep_copy(domain, domainHost);
+  Kokkos::deep_copy(range, rangeHost);
+  auto intersections = Kokkos::View<IdentIntersection*, ExecSpace>("intersections", 0);
+
+  stk::search::local_coarse_search(domain, range, algorithm, intersections);
+
+  auto hostIntersections = Kokkos::create_mirror_view(HostSpace{}, intersections);
+  Kokkos::deep_copy(hostIntersections, intersections);
+
+  local_expect_search_results(hostIntersections);
+}
+
+TEST(stk_search, Local_CoarseSearchWithViews_MORTON_LBVH)
+{
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultExecutionSpace>(stk::search::MORTON_LBVH);
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultHostExecutionSpace>(stk::search::MORTON_LBVH);
+}
+
+TEST(stk_search, Local_CoarseSearchWithViews_ARBORX)
+{
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX);
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX);
 }
 
 
@@ -934,5 +1046,27 @@ TEST(CoarseSearchScaling, forDeterminingSharingLinearAdjacentCase_ARBORX)
 #endif
   test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::ARBORX, 1000);
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+TEST(CoarseSearch, nonDefaultView_MORTON_LBVH)
+{
+  test_coarse_search_with_non_default_view(stk::search::MORTON_LBVH, stk::parallel_machine_world());
+}
+
+TEST(CoarseSearch, nonDefaultView_ARBORX)
+{
+  test_coarse_search_with_non_default_view(stk::search::ARBORX, stk::parallel_machine_world());
+}
+
+TEST(LocalCoarseSearch, nonDefaultView_MORTON_LBVH)
+{
+  test_local_coarse_search_with_non_default_view(stk::search::MORTON_LBVH);
+}
+
+TEST(LocalCoarseSearch, nonDefaultView_ARBORX)
+{
+  test_local_coarse_search_with_non_default_view(stk::search::ARBORX);
+}
+#endif
 
 } //namespace

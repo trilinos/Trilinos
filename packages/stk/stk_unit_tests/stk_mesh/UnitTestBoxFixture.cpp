@@ -54,7 +54,7 @@ using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::BoxFixture;
 
 namespace {
 

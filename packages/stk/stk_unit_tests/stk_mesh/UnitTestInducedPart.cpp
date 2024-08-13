@@ -61,7 +61,7 @@ namespace {
 //        element_ranked_part subset of unranked_superset_part
 // modification cycle is left uncompleted
 
-class UnitTestInducedPart2D : public stk::unit_test_util::simple_fields::MeshFixture
+class UnitTestInducedPart2D : public stk::unit_test_util::MeshFixture
 {
 protected:
   UnitTestInducedPart2D()
@@ -116,7 +116,7 @@ protected:
 
 };
 
-class UnitTestInducedPart3D : public stk::unit_test_util::simple_fields::MeshFixture
+class UnitTestInducedPart3D : public stk::unit_test_util::MeshFixture
 {
 protected:
   UnitTestInducedPart3D()

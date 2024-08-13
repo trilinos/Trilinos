@@ -132,7 +132,6 @@ TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -169,7 +168,6 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -231,7 +229,6 @@ TEST(UnitTestPartsAfterCommit, SelectorOps)
   if(numProcs == 1)
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.use_simple_fields();
     const std::string generatedMeshSpecification = "generated:1x1x1";
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();

@@ -69,7 +69,6 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ Create a "restart database" with several nodal and element fields,
     //+ and some timesteps...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|shell:XYZ|"
                                           "nodeset:xyz|times:3|variables:nodal,4,element,3,nodeset,2";
@@ -103,7 +102,6 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ "temp" for 10 timesteps - 0.0, 1.0, ..., 9.0.
     //+ The value of the field at each node is the 'time' value.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -156,7 +154,6 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ reading the initial condition data from the other database
     //+ interpolating this data.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t ic = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     size_t rs = stkIo.add_mesh_database(rs_name, stk::io::READ_RESTART);
 

@@ -39,9 +39,6 @@
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
 #include <iostream>                     // for operator<<, basic_ostream, etc
-#include <list>                         // for list
-#include <map>                          // for map, map<>::value_compare
-#include <set>
 #include <stk_mesh/base/EntityIterator.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
@@ -49,18 +46,15 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Ngp.hpp>
-#include "stk_util/ngp/NgpSpaces.hpp"
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
 #include <functional>
-#include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
-#include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
@@ -72,6 +66,7 @@
 #include "stk_mesh/baseImpl/SoloSideIdGenerator.hpp"
 #include "stk_mesh/baseImpl/SideSetImpl.hpp"
 
+namespace stk { namespace mesh { class EntityLess; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -99,7 +94,6 @@ void replace_bulk_data(const stk::mesh::BulkData & inMesh, T & outMesh, std::fun
 } }
 
 #include "EntityCommListInfo.hpp"
-#include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
 #include "CommListUpdater.hpp"
 
@@ -293,11 +287,10 @@ public:
    *  enough communication that it will be most efficient to batch up all
    *  desired changes so that it can be called only once.
    */
-  virtual void change_entity_owner( const EntityProcVec & arg_change)
+  virtual bool change_entity_owner( const EntityProcVec & arg_change)
   {
-      notifier.notify_elements_about_to_move_procs(arg_change);
-      m_meshModification.change_entity_owner(arg_change);
-      notifier.notify_elements_moved_procs(arg_change);
+      const bool anyEntitiesMoved = m_meshModification.change_entity_owner(arg_change);
+      return anyEntitiesMoved;
   }
 
   /** \brief  Rotate the field data of multistate fields.
@@ -508,13 +501,15 @@ public:
   virtual void generate_new_entities(const std::vector<size_t>& requests, // Mod Mark
       std::vector<Entity>& requested_entities);
 
-  Permutation find_permutation( const stk::topology &hr_entity_topo,
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 31 2024
+  STK_DEPRECATED_MSG("Use function in FindPermutation.hpp") Permutation find_permutation( const stk::topology &hr_entity_topo,
                                 Entity const *higher_rank_entity_nodes,
                                 const stk::topology &side_topo,
                                 Entity const *side_nodes,
                                 unsigned side_ordinal) const;
 
-  bool check_permutation(Entity entity, Entity rel_entity, unsigned rel_ordinal, Permutation expected) const;
+  STK_DEPRECATED_MSG("Use function in FindPermutation.hpp") bool check_permutation(Entity entity, Entity rel_entity, unsigned rel_ordinal, Permutation expected) const;
+#endif
 
   //------------------------------------
   /** \brief  Declare a relation and its converse between
@@ -689,16 +684,18 @@ public:
   inline void set_global_id(stk::mesh::Entity entity, FmwkId id);
   void initialize_global_ids();
 
-  inline const RelationVector& aux_relations(Entity entity) const;
-  inline RelationVector& aux_relations(Entity entity); // Mod Mark
+  const RelationVector& aux_relations(Entity entity) const;
+  RelationVector& aux_relations(Entity entity); // Mod Mark
   void reserve_relation(stk::mesh::Entity entity, const unsigned num); // Mod Mark
   void erase_and_clear_if_empty(stk::mesh::Entity entity, RelationIterator rel_itr); // Mod Mark
   void initialize_aux_relations();
 
-  inline RelationIterator internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const;
-  inline RelationIterator internal_end_relation(Entity entity, const Relation::RelationType relation_type) const;
-  inline void compress_relation_capacity(Entity entity);
+  RelationIterator internal_begin_relation(Entity entity, const RelationType relation_type) const;
+  RelationIterator internal_end_relation(Entity entity, const RelationType relation_type) const;
+  void compress_relation_capacity(Entity entity);
   bool add_fmwk_data() const { return m_add_fmwk_data; }
+#else
+  bool add_fmwk_data() const { return false; }
 #endif
 
   //
@@ -995,7 +992,6 @@ protected: //functions
 
   inline void set_state(Entity entity, EntityState entity_state);
   inline void set_entity_key(Entity entity, EntityKey key);
-  void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0); // Mod Mark
   std::pair<Entity, bool> internal_get_or_create_entity_with_notification(EntityKey key, size_t preferred_offset = 0);
 
@@ -1003,7 +999,7 @@ protected: //functions
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
-  void internal_declare_relation( Entity entity, const std::vector<Relation> & rel,
+  void internal_declare_relation( Entity entity, const RelationVector & rel,
                          OrdinalVector& scratch1); // Mod Mark
 
   bool internal_declare_relation(Entity e_from, Entity e_to,
@@ -1012,9 +1008,6 @@ protected: //functions
   /** methods for managing arrays of entity member-data */
 
   inline void log_created_parallel_copy(Entity entity);
-
-  void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                     ModEndOptimizationFlag mod_optimization = ModEndOptimizationFlag::MOD_END_SORT );  // Mod Mark
 
   void internal_change_entity_parts_without_propagating_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
   void internal_change_bucket_parts_without_propagating_to_downward_connected_entities(Bucket* bucket, EntityRank rank, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& ranked_parts_removed, OrdinalVector& newBucketPartList);
@@ -1220,7 +1213,6 @@ protected: //functions
                                  const RelationIdentifier local_id ); // Mod Mark
 
   void check_mesh_consistency();
-  bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
   virtual void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing, EntityVector & entitiesNoLongerShared);
   virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, const shared_entity_type &sentity);
   void update_owner_global_key_and_sharing_proc(stk::mesh::EntityKey global_key_other_proc,  shared_entity_type& shared_entity_this_proc, int proc_id) const;
@@ -1311,16 +1303,14 @@ private:
   // Only to be called from add_node_sharing
   void protect_orphaned_node(Entity entity)
   {
-      if (does_entity_need_orphan_protection(entity))
-      {
+      if (does_entity_need_orphan_protection(entity)) {
           internal_force_protect_orphaned_node(entity);
       }
   }
 
   void unprotect_orphaned_node(Entity entity)
   {
-      if (does_entity_have_orphan_protection(entity))
-      {
+      if (does_entity_have_orphan_protection(entity)) {
           internal_force_unprotect_orphaned_node(entity);
       }
   }
@@ -1330,8 +1320,6 @@ private:
   void sync_parts_on_downward_related_entities_for_created_sides(const stk::mesh::EntityVector& locally_created_sides);
   void fill_entity_procs_for_owned_modified_or_created(std::vector<EntityProc> & send_list) const;
   stk::mesh::EntityVector get_lower_ranked_shared_entities(const stk::mesh::EntityVector& created_sides) const;
-
-  stk::mesh::EntityVector get_nodes_to_deactivate(const stk::mesh::EntityVector & deactivatedElements, const stk::mesh::Part & activePart) const;
 
   inline bool internal_add_node_sharing_called() const;
 
@@ -1479,8 +1467,6 @@ private:
 
   template<typename T>
   friend void stk::tools::replace_bulk_data(const stk::mesh::BulkData & in_mesh, T & out_mesh, std::function<void(T& outMesh)> op);
-
-  bool verify_parallel_attributes( std::ostream & error_log );
 
   void determineEntitiesThatNeedGhosting(stk::mesh::Entity edge,
                                          std::vector<stk::mesh::Entity>& entitiesConnectedToNodes,
@@ -2214,30 +2200,6 @@ BulkData::global_id(stk::mesh::Entity entity) const
   return m_fmwk_global_ids[entity.local_offset()];
 }
 
-inline const RelationVector&
-BulkData::aux_relations(Entity entity) const
-{
-  STK_ThrowAssert(m_add_fmwk_data);
-  STK_ThrowAssert(entity.local_offset() > 0);
-
-  if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-    m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-  }
-  return *m_fmwk_aux_relations[entity.local_offset()];
-}
-
-inline RelationVector&
-BulkData::aux_relations(Entity entity)
-{
-  STK_ThrowAssert(m_add_fmwk_data);
-  STK_ThrowAssert(entity.local_offset() > 0);
-
-  if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-    m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-  }
-  return *m_fmwk_aux_relations[entity.local_offset()];
-}
-
 inline void
 BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 {
@@ -2248,39 +2210,6 @@ BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
   m_fmwk_global_ids[entity.local_offset()] = id;
 }
 
-inline RelationIterator
-BulkData::internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const
-{
-  STK_ThrowAssert(m_add_fmwk_data);
-  if (impl::internal_is_handled_generically(relation_type)) {
-    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
-    return RelationIterator();
-  }
-  else {
-    return aux_relations(entity).begin();
-  }
-}
-
-inline RelationIterator
-BulkData::internal_end_relation(Entity entity, const Relation::RelationType relation_type) const
-{
-  STK_ThrowAssert(m_add_fmwk_data);
-  if (impl::internal_is_handled_generically(relation_type)) {
-    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
-    return RelationIterator();
-  }
-  else {
-    return aux_relations(entity).end();
-  }
-}
-
-inline void
-BulkData::compress_relation_capacity(Entity entity)
-{
-  RelationVector &rels = aux_relations(entity);
-  RelationVector tmp(rels);
-  tmp.swap(rels);
-}
 #endif
 
 inline void
@@ -2347,94 +2276,6 @@ inline void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh) {
   bulk.set_ngp_mesh(ngpMesh);
 }
 }
-
-
-#ifdef SIERRA_MIGRATION
-inline bool
-EntityLess::operator()(const Entity lhs, const Entity rhs) const
-{
-  bool result = false;
-  if (m_shouldSortFacesByNodeIds &&
-      m_mesh->entity_rank(lhs) == m_sideRank &&
-      m_mesh->entity_rank(rhs) == m_sideRank)
-  {
-    unsigned num_nodes_lhs = m_mesh->count_valid_connectivity(lhs, stk::topology::NODE_RANK);
-    unsigned num_nodes_rhs = m_mesh->count_valid_connectivity(rhs, stk::topology::NODE_RANK);
-    if (num_nodes_lhs != num_nodes_rhs)
-    {
-      result = num_nodes_lhs < num_nodes_rhs;
-    }
-    else if (num_nodes_lhs == 0) {
-      result = m_mesh->identifier(lhs) < m_mesh->identifier(rhs);
-    }
-    else
-    {
-      const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
-      const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
-      unsigned i=0;
-      while(i<num_nodes_lhs &&
-            (m_mesh->identifier(nodes_lhs_ptr[i]) == m_mesh->identifier(nodes_rhs_ptr[i])))
-      {
-        ++i;
-      }
-      result = (i<num_nodes_lhs) ?
-            (m_mesh->identifier(nodes_lhs_ptr[i]) < m_mesh->identifier(nodes_rhs_ptr[i]))
-          : false;
-    }
-  }
-  else
-  {
-    const EntityKey lhs_key = m_mesh->entity_key(lhs);
-    const EntityKey rhs_key = m_mesh->entity_key(rhs);
-    result = lhs_key < rhs_key;
-  }
-  return result;
-}
-
-#else
-
-inline
-EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
-
-inline bool
-EntityLess::operator()(const Entity lhs, const Entity rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs);
-  const EntityKey rhs_key = m_mesh->entity_key(rhs);
-  return (lhs_key < rhs_key);
-}
-#endif
-
-inline bool
-EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs);
-  return lhs_key < rhs;
-}
-
-inline bool
-EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
-  const EntityKey rhs_key = m_mesh->entity_key(rhs.first);
-  return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
-}
-
-inline bool
-EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
-  const EntityKey rhs_key = m_mesh->entity_key(rhs);
-  return lhs_key < rhs_key;
-}
-
-inline bool
-EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
-  return lhs_key < rhs ;
-}
-
 
 } // namespace mesh
 } // namespace stk

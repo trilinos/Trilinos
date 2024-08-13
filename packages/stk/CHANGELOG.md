@@ -1,5 +1,25 @@
 # CHANGELOG
 
+5.21.3 (STK_VERSION 5210300) 8/12/2024
+   general: compile-warnings/errors fixed for gcc 12 and arm
+   stk_mesh: BulkData::change_entity_owner now returns a bool
+    - indicates whether any entities actually changed owner.
+   stk_mesh: continue "simple field" transition
+    - remove some previously-deprecated functions/behaviors
+    - 'use_simple_field()' calls now unnecessary, will be deprecated in future
+   stk_mesh: deleted previously-deprecated types/methods
+    - DeviceMeshIndex and usage in DeviceMesh/HostMesh
+    - NgpFieldBase::rotate_multistate_data()
+    - DeviceMesh::host_get_entity(..)
+   stk_search: changing template parameters for input Views
+    - now less restrictive on how users' views were declared
+
+5.21.1 (STK_VERSION 5210100) 6/17/2024
+   stk_mesh: Deprecated BulkData::find_permutation and BulkData::check_permutation
+             (replaced by free-functions in FindPermutation.hpp)
+   stk_mesh: Added destroy_relations free-function in DestroyRelations.hpp
+   stk_mesh: Added overloads of field_fill, field_copy, field_axpbyz in NgpFieldBLAS.hpp
+
 5.19.4 (STK_VERSION 5190401) 5/29/2024
    stk_search: fixed bug in morton: (accessing device view on host)
    stk_search: fixed implementations to respect execution-space

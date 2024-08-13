@@ -38,8 +38,6 @@ static int find_destination_proc_for_facet(const std::vector<BoundingBox> & proc
 template<class FACET>
 static void unpack_and_append_facets_from_proc(stk::CommSparse & commSparse, const int recvProc, std::vector<FACET> & facetVec)
 {
-  std::array<stk::math::Vector3d,FACET::DIM> facetCoords;
-
   stk::CommBuffer & b = commSparse.recv_buffer(recvProc);
   if (b.remaining())
   {

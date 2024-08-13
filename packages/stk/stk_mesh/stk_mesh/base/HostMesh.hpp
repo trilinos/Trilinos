@@ -56,23 +56,11 @@
 namespace stk {
 namespace mesh {
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-struct HostMeshIndex
-{
-  const stk::mesh::Bucket *bucket;
-  size_t bucketOrd;
-};
-#endif
-
 class HostMesh : public NgpMeshBase
 {
 public:
   using MeshExecSpace     = stk::ngp::HostExecSpace;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  using MeshIndex         = HostMeshIndex;
-#else
   using MeshIndex         = FastMeshIndex;
-#endif
   using BucketType        = stk::mesh::Bucket;
   using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
   using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
@@ -131,15 +119,6 @@ public:
   {
     return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED
-  ConnectedNodes get_nodes(const MeshIndex &elem) const
-  {
-    const stk::mesh::Bucket& bucket = *elem.bucket;
-    return ConnectedNodes(bucket.begin_nodes(elem.bucketOrd), bucket.num_nodes(elem.bucketOrd));
-  }
-#endif
 
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
   {
@@ -224,13 +203,6 @@ public:
     const stk::mesh::MeshIndex &meshIndex = bulk->mesh_index(entity);
     return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity) const
-  {
-    return fast_mesh_index(entity);
-  }
-#endif
 
   stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
   {

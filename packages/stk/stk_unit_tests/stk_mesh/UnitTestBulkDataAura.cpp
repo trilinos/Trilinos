@@ -100,7 +100,6 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   std::shared_ptr<BulkData> bulkPtr = builder.create();
   BulkData& mesh = *bulkPtr;
   MetaData& meta_data = mesh.mesh_meta_data();
-  meta_data.use_simple_fields();
   Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
   Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
@@ -113,8 +112,8 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   {
     for (unsigned ielem=0; ielem < nelems; ielem++) {
       int e_owner = static_cast<int>(elems_0[ielem][3]);
-      stk::mesh::fixtures::simple_fields::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
-      stk::mesh::fixtures::simple_fields::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
     }
   }
 
@@ -143,8 +142,8 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
       mesh.declare_relation( elem, nodes[1], 1 );
 
       // Node sharing
-      stk::mesh::fixtures::simple_fields::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
-      stk::mesh::fixtures::simple_fields::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
+      stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+      stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
     }
   }
 

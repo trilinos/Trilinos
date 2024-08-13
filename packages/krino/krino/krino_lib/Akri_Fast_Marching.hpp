@@ -9,6 +9,7 @@
 #ifndef Akri_Fast_Marching_h
 #define Akri_Fast_Marching_h
 
+#include <array>
 #include <Akri_FieldRef.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_util/diag/Timer.hpp>
@@ -19,6 +20,7 @@ class SubElement;
 class Mesh_Element;
 class AuxMetaData;
 class ParallelErrorMessage;
+struct StkMeshEntities;
 
 enum Enum_Fast_Marching_Node_Status{STATUS_UNUSED=0, STATUS_INITIAL, STATUS_ACCEPTED, STATUS_TRIAL, STATUS_FAR};
 
@@ -78,11 +80,11 @@ public:
   void update_neighbors(Fast_Marching_Node & accepted_node, ParallelErrorMessage & err);
   void update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed);
 
+  bool have_crossing(const StkMeshEntities & elemNodes) const;
   bool have_crossing(const stk::mesh::Entity & elem) const;
-  void initialize_subelement(const SubElement & subelem, const int side, const double speed);
-  void initialize_element(const stk::mesh::Entity & elem, const double speed);
-  double update_triangle(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed);
-  double update_tetrahedron(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed);
+  void initialize_element(const stk::mesh::Entity & elem, ParallelErrorMessage& err);
+  double update_triangle(const std::array<Fast_Marching_Node *, 3> & elemNodes, const int node_to_update, const double speed);
+  double update_tetrahedron(const std::array<Fast_Marching_Node *, 4> & elemNodes, const int node_to_update, const double speed);
 
   void add_trial_node(Fast_Marching_Node & add_trial_node);
   void update_trial_node(Fast_Marching_Node & add_trial_node, const double dist);
@@ -100,6 +102,24 @@ private:
   double get_element_interface_speed(ParallelErrorMessage& err, const stk::mesh::Entity elem) const;
   stk::mesh::Selector selected_with_field_not_ghost_selector() const;
   stk::mesh::Selector selected_with_field_selector() const;
+
+  void update_neighbors_from_triangle_element(const Fast_Marching_Node & acceptedNode, const stk::mesh::Entity elem, const double elemSpeed);
+  void update_neighbors_from_quadrilateral_element(const Fast_Marching_Node & acceptedNode, const stk::mesh::Entity elem, const double elemSpeed);
+  void update_neighbors_from_tetrahedron_element(const Fast_Marching_Node & acceptedNode, const stk::mesh::Entity elem, const double elemSpeed);
+
+  template<size_t NSIMPLICES, size_t NNODES> void update_neighbors_from_simplices(const Fast_Marching_Node & acceptedNode,
+      const stk::mesh::Entity* elemNodes,
+      const std::array<std::array<int, NNODES>,NSIMPLICES> & simplices,
+      const double elemSpeed);
+  template<size_t NNODES> void update_neighbors_from_simplex(const Fast_Marching_Node & acceptedNode, const std::array<stk::mesh::Entity, NNODES> & simplexNodes, const double elemSpeed);
+  template <size_t NNODES> void update_trial_node_from_simplex(const std::array<Fast_Marching_Node *, NNODES> & simplexNodes, const int nodeToUpdate, const double speed);
+
+  template<size_t NNODES> void initialize_from_simplex(const std::array<stk::mesh::Entity, NNODES> & simplexNodes,
+      const double elemSpeed,
+      const std::function<const stk::math::Vector3d &(stk::mesh::Entity)> & get_coordinates);
+  template<size_t NSIMPLICES, size_t NNODES> void initialize_from_simplices(const stk::mesh::Entity* elemNodes, const std::array<std::array<int, NNODES>,NSIMPLICES> & simplices,
+    const double elemSpeed,
+    const std::function<const stk::math::Vector3d &(stk::mesh::Entity)> & get_coordinates);
 
   const stk::mesh::BulkData & myMesh;
   stk::mesh::Selector mySelector;
