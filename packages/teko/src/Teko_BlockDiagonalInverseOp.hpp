@@ -35,6 +35,9 @@ class BlockDiagonalInverseOp : public BlockImplicitLinearOp {
    */
   BlockDiagonalInverseOp(BlockedLinearOp &A, const std::vector<LinearOp> &invDiag);
 
+  BlockDiagonalInverseOp()                               = delete;
+  BlockDiagonalInverseOp(const BlockDiagonalInverseOp &) = delete;
+
   //! @name Inherited methods from Thyra::LinearOpBase
   //@{
 
@@ -48,8 +51,8 @@ class BlockDiagonalInverseOp : public BlockImplicitLinearOp {
    *
    * The <code>apply</code> function takes one vector as input
    * and applies \f$ D^{-1} \f$. The result
-   * is returned in \f$y\f$. If this operator is reprsented as \f$M\f$ then
-   * \f$ y = \alpha M x + \beta y \f$ (ignoring conjugation!).
+   * is returned in \f$y\f$. If this operator is represented as \f$M\f$ then
+   * \f$ y = \alpha M x + \beta y \f$.
    *
    * @param[in]     x
    * @param[in,out] y
@@ -64,7 +67,7 @@ class BlockDiagonalInverseOp : public BlockImplicitLinearOp {
    *
    * The <code>apply</code> function takes one vector as input
    * and applies a linear operator. The result
-   * is returned in \f$y\f$. If this operator is reprsented as \f$M\f$ then
+   * is returned in \f$y\f$. If this operator is represented as \f$M\f$ then
    * \f$ y = \alpha M x + \beta y \f$
    *
    * @param[in]     x
@@ -93,11 +96,6 @@ class BlockDiagonalInverseOp : public BlockImplicitLinearOp {
   mutable BlockedMultiVector srcScrap_;
   mutable BlockedMultiVector dstScrap_;
   mutable bool allocated = false;
-
- private:
-  // hide me!
-  BlockDiagonalInverseOp();
-  BlockDiagonalInverseOp(const BlockDiagonalInverseOp &);
 };
 
 inline LinearOp createBlockDiagonalInverseOp(BlockedLinearOp &A,

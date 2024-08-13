@@ -15,11 +15,6 @@ namespace Teko {
 
 using Teuchos::RCP;
 
-/** @brief This constructor builds the block diagonal inverse operator of A.
- *
- * @param[in] A The block operator.
- * @param[in] invDiag  A vector containing the inverse of each of the diagonal blocks.
- */
 BlockDiagonalInverseOp::BlockDiagonalInverseOp(BlockedLinearOp& A,
                                                const std::vector<LinearOp>& invDiag)
     : invDiag_(invDiag) {
@@ -43,18 +38,6 @@ void BlockDiagonalInverseOp::implicitApply(const BlockedMultiVector& src, Blocke
   implicitApply(Thyra::NOTRANS, src, dst, alpha, beta);
 }
 
-/** @brief Perform a matrix vector multiply with this operator.
- *
- * The <code>apply</code> function takes one vector as input
- * and applies the inverse \f$ LDU \f$ decomposition. The result
- * is returned in \f$y\f$. If this operator is reprsented as \f$M\f$ then
- * \f$ y = \alpha M x + \beta y \f$ (ignoring conjugation!).
- *
- * @param[in]     x
- * @param[in,out] y
- * @param[in]     alpha (default=1)
- * @param[in]     beta  (default=0)
- */
 void BlockDiagonalInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
                                            const BlockedMultiVector& src, BlockedMultiVector& dst,
                                            const double alpha, const double beta) const {
