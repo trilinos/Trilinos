@@ -260,9 +260,9 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX, int elemY) {
 
   factory.completeMeshConstruction(*mesh, MPI_COMM_WORLD);
 
-  VariableField *field = mesh->getMetaData()->get_field<VariableField>(
+  VariableField *field = mesh->getMetaData()->get_field<double>(
       stk::topology::NODE_RANK, "dog");
-  CoordinateField *cField = mesh->getMetaData()->get_field<CoordinateField>(
+  CoordinateField *cField = mesh->getMetaData()->get_field<double>(
       stk::topology::NODE_RANK, "coordinates");
   TEUCHOS_ASSERT(field != 0);
   TEUCHOS_ASSERT(cField != 0);
