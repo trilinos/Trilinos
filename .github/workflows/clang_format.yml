@@ -22,7 +22,7 @@ jobs:
     - run: git diff HEAD > format_patch.txt
     - run: if [ "$(cat format_patch.txt)" == "" ] ; then rm format_patch.txt ; else cat format_patch.txt; fi
 
-    - uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+    - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
       id: upload-artf
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
