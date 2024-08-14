@@ -265,7 +265,7 @@ namespace Tpetra {
   Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> >
   getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_LID)
   {
-      TEUCHOS_FUNC_TIME_MONITOR("Tpetra::getBlockCrsGraph");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph", getBlockCrsGraph0);
       /*
         ASSUMPTIONS:
 
@@ -299,7 +299,7 @@ namespace Tpetra {
       const map_type &pointRangeMap = *(pointMatrix.getRangeMap());
 
       {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::getBlockCrsGraph::createMeshMaps");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph::createMeshMaps", getBlockCrsGraph1);
         meshRowMap = createMeshMap<LO,GO,Node>(blockSize, pointRowMap, use_LID);
         meshColMap = createMeshMap<LO,GO,Node>(blockSize, pointColMap, use_LID);
         meshDomainMap = createMeshMap<LO,GO,Node>(blockSize, pointDomainMap, use_LID);
@@ -318,7 +318,7 @@ namespace Tpetra {
       const offset_type bs2 = blockSize * blockSize;
 
       if (use_LID) {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::getBlockCrsGraph::LID");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph::LID", getBlockCrsGraph2);
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
@@ -352,7 +352,7 @@ namespace Tpetra {
         Kokkos::DefaultExecutionSpace().fence();
       }
       else {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::getBlockCrsGraph::GID");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph::GID", getBlockCrsGraph3);
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
@@ -406,7 +406,7 @@ namespace Tpetra {
   Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >
   convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_LID)
   {
-      TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::convertToBlockCrsMatrix", convertToBlockCrsMatrix0);
       /*
         ASSUMPTIONS:
 
@@ -439,7 +439,7 @@ namespace Tpetra {
       auto meshCrsGraph = getBlockCrsGraph(pointMatrix, blockSize, use_LID);
 
       if (use_LID) {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::LID");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::convertToBlockCrsMatrix::LID", convertToBlockCrsMatrix1);
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
@@ -471,7 +471,7 @@ namespace Tpetra {
         Kokkos::DefaultExecutionSpace().fence();
       }
       else {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::GID");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::convertToBlockCrsMatrix::GID", convertToBlockCrsMatrix2);
         auto localMeshColMap = meshCrsGraph->getColMap()->getLocalMap();
         auto localPointColMap = pointMatrix.getColMap()->getLocalMap();
 

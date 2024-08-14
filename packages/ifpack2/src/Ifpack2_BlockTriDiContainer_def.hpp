@@ -53,11 +53,11 @@ namespace Ifpack2 {
                   const int block_size,
                   const bool explicitConversion) 
   {
-    IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDiContainer::initInternal", typename BlockHelperDetails::ImplType<MatrixType>::execution_space);
+    IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDiContainer::initInternal", initInternal, typename BlockHelperDetails::ImplType<MatrixType>::execution_space);
 
     // create pointer of impl
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createImpl");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createImpl", createImpl);
       impl_ = Teuchos::rcp(new BlockTriDiContainerDetails::ImplObject<MatrixType>());
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
@@ -66,14 +66,14 @@ namespace Ifpack2 {
     // using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA", setA);
       if (explicitConversion) {
         impl_->A = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
         if (impl_->A.is_null()) {
           TEUCHOS_TEST_FOR_EXCEPT_MSG
             (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
           {
-            IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA::convertToBlockCrsMatrix");
+            IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA::convertToBlockCrsMatrix", convertToBlockCrsMatrix);
             impl_->A = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(matrix), block_size, true);
             IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
           }
@@ -90,7 +90,7 @@ namespace Ifpack2 {
     
     if (useSeqMethod)
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createBlockCrsTpetraImporter useSeqMethod");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createBlockCrsTpetraImporter useSeqMethod", useSeqMethod);
       if (importer.is_null()) // there is no given importer, then create one
         impl_->tpetra_importer = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(impl_->A);
       else
@@ -99,7 +99,7 @@ namespace Ifpack2 {
     }
     else
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createBlockCrsTpetraImporter");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createBlockCrsTpetraImporter", createBlockCrsTpetraImporter);
       //Leave tpetra_importer null even if user provided an importer.
       //It is not used in the performant codepath (!useSeqMethod)
       impl_->async_importer = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(impl_->A);
@@ -115,12 +115,12 @@ namespace Ifpack2 {
     impl_->overlap_communication_and_computation = overlapCommAndComp;
 
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createZ");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createZ", createZ);
       impl_->Z = typename impl_type::tpetra_multivector_type();
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createW");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createW", createW);
       impl_->W = typename impl_type::impl_scalar_type_1d_view();
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
@@ -133,7 +133,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::clearInternal ()
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::clearInternal");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::clearInternal", clearInternal);
     using impl_type = BlockHelperDetails::ImplType<MatrixType>;
     using part_interface_type = BlockHelperDetails::PartInterface<MatrixType>;
     using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
@@ -165,7 +165,7 @@ namespace Ifpack2 {
                        bool pointIndexed)
     : Container<MatrixType>(matrix, partitions, pointIndexed), partitions_(partitions)
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer", BlockTriDiContainer);
     const bool useSeqMethod = false;
     const bool overlapCommAndComp = false;
     initInternal(matrix, importer, overlapCommAndComp, useSeqMethod);
@@ -185,7 +185,7 @@ namespace Ifpack2 {
                        const bool explicitConversion)
     : Container<MatrixType>(matrix, partitions, false), partitions_(partitions)
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer", BlockTriDiContainer);
     initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod, block_size, explicitConversion);
     n_subparts_per_part_ = n_subparts_per_part;
     block_size_ = block_size;
@@ -214,7 +214,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::initialize ()
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initialize");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initialize", initialize);
     this->IsInitialized_ = true;
     {
       auto bA = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(impl_->A);
@@ -222,7 +222,7 @@ namespace Ifpack2 {
         TEUCHOS_TEST_FOR_EXCEPT_MSG
           (block_size_ == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
         {
-          IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initialize::getBlockCrsGraph");
+          IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initialize::getBlockCrsGraph", getBlockCrsGraph);
           auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(impl_->A);
           impl_->blockGraph = Tpetra::getBlockCrsGraph(*A, block_size_, true);
           IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -234,7 +234,7 @@ namespace Ifpack2 {
     }
 
     {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createPartInterfaceBlockTridiagsNormManager");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createPartInterfaceBlockTridiagsNormManager", createPartInterfaceBlockTridiagsNormManager);
       impl_->part_interface  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(impl_->A, impl_->blockGraph, partitions_, n_subparts_per_part_);
       impl_->block_tridiags  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(impl_->part_interface);
       impl_->norm_manager    = BlockHelperDetails::NormManager<MatrixType>(impl_->A->getComm());
@@ -262,7 +262,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute ()
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::compute");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::compute", compute);
     this->IsComputed_ = false;
     if (!this->isInitialized())
       this->initialize();
@@ -282,7 +282,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::clearBlocks ()
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::clearBlocks");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::clearBlocks", clearBlocks);
     clearInternal();
     this->IsInitialized_ = false;
     this->IsComputed_ = false;
@@ -296,7 +296,7 @@ namespace Ifpack2 {
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, scalar_type dampingFactor,
                         bool zeroStartingSolution, int numSweeps) const
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi", applyInverseJacobi);
     const magnitude_type tol = Kokkos::ArithTraits<magnitude_type>::zero();
     const int check_tol_every = 1;
 
@@ -331,7 +331,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute (const ComputeParameters& in)
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::compute");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::compute", compute);
     this->IsComputed_ = false;
     if (!this->isInitialized())
       this->initialize();
@@ -362,7 +362,7 @@ namespace Ifpack2 {
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, 
                         const ApplyParameters& in) const
   {
-    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi");
+    IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi", applyInverseJacobi);
     int r_val = 0;
     {
       r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>

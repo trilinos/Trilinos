@@ -608,7 +608,7 @@ initialize ()
     Teuchos::RCP<const row_graph_type> graph = A_->getGraph ();
 
     if(!hasBlockCrsMatrix_ && List_.isParameter("relaxation: container") && List_.get<std::string>("relaxation: container") == "BlockTriDi" ) {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::convertToBlockCrsMatrix");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::convertToBlockCrsMatrix", convertToBlockCrsMatrix);
       int block_size = List_.get<int>("partitioner: block size");
       bool use_explicit_conversion = List_.isParameter("partitioner: explicit convert to BlockCrs") && List_.get<bool>("partitioner: explicit convert to BlockCrs");
       TEUCHOS_TEST_FOR_EXCEPT_MSG
@@ -645,22 +645,22 @@ initialize ()
     Partitioner_ = Teuchos::null;
 
     if (PartitionerType_ == "linear") {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::linear");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::linear", linear);
       Partitioner_ =
         rcp (new Ifpack2::LinearPartitioner<row_graph_type> (graph));
       IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     } else if (PartitionerType_ == "line") {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::line");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::line", line);
       Partitioner_ =
         rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (graph));
       IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     } else if (PartitionerType_ == "user") {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::user");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::user", user);
       Partitioner_ =
         rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (graph ) );
       IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     } else if (PartitionerType_ == "zoltan2") {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::zoltan2");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::zoltan2", zoltan2);
       #if defined(HAVE_IFPACK2_ZOLTAN2)
       if (graph->getComm ()->getSize () == 1) {
         // Only one MPI, so call zoltan2 with global graph
@@ -688,7 +688,7 @@ initialize ()
 
     // need to partition the graph of A
     {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::Partitioner");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::Partitioner", Partitioner);
       Partitioner_->setParameters (List_);
       Partitioner_->compute ();
       IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
@@ -714,7 +714,7 @@ initialize ()
 
     // Extract the submatrices
     {
-      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::ExtractSubmatricesStructure");
+      IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::ExtractSubmatricesStructure", ExtractSubmatricesStructure);
       ExtractSubmatricesStructure ();
       IFPACK2_BLOCKHELPER_TIMER_DEFAULT_FENCE();
     }
@@ -746,7 +746,7 @@ initialize ()
       //    only needed when Schwarz combine mode is ADD as opposed to ZERO (which is RAS)
 
       if (schwarzCombineMode_ == "ADD") {
-        IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::ADD");
+        IFPACK2_BLOCKHELPER_TIMER("Ifpack2::BlockRelaxation::initialize::ADD", ADD);
         typedef Tpetra::MultiVector<        typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type,  typename MatrixType::global_ordinal_type,typename MatrixType::node_type> scMV;
         Teuchos::RCP<const import_type> theImport = A_->getGraph()->getImporter();
         if (!theImport.is_null()) {

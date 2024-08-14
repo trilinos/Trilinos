@@ -396,7 +396,7 @@ namespace Ifpack2 {
       void ireduce(const int sweep, const bool force = false) {
         if ( ! force && sweep % sweep_step_) return;
 
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::Ireduce");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::Ireduce", Ireduce);
 
         work_[1] = work_[0];
 #ifdef HAVE_IFPACK2_MPI
@@ -425,7 +425,7 @@ namespace Ifpack2 {
         // early return
         if (sweep <= 0) return false;
 
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::CheckDone");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::CheckDone", CheckDone);
 
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
@@ -473,7 +473,7 @@ namespace Ifpack2 {
     void reduceVector(const ConstUnmanaged<typename BlockHelperDetails::ImplType<MatrixType>::impl_scalar_type_1d_view> zz,
                       /* */ typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type *vals) {
       IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ReduceVector");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ReduceVector", ReduceVector);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
