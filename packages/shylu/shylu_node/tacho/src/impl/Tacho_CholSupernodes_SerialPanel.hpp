@@ -157,8 +157,8 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
             case 1: {
               for (ordinal_type js = 0; js < nb; ++js) {
                 const ordinal_type jt = js + offn;
-                const value_type *__restrict__ ss = src + js * srcsize;
-                /* */ value_type *__restrict__ tt = tgt + jt * srcsize;
+                const value_type *KOKKOS_RESTRICT ss = src + js * srcsize;
+                /* */ value_type *KOKKOS_RESTRICT tt = tgt + jt * srcsize;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -175,8 +175,8 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
 
               for (ordinal_type js = 0; js < nb; ++js) {
                 const ordinal_type jt = js + offn;
-                const value_type *__restrict__ ss = src + js * srcsize;
-                /* */ value_type *__restrict__ tt = tgt + jt * srcsize;
+                const value_type *KOKKOS_RESTRICT ss = src + js * srcsize;
+                /* */ value_type *KOKKOS_RESTRICT tt = tgt + jt * srcsize;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -193,8 +193,8 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
           } else {
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, nb), [&](const ordinal_type &js) {
               const ordinal_type jt = js + offn;
-              const value_type *__restrict__ ss = src + js * srcsize;
-              /* */ value_type *__restrict__ tt = tgt + jt * srcsize;
+              const value_type *KOKKOS_RESTRICT ss = src + js * srcsize;
+              /* */ value_type *KOKKOS_RESTRICT tt = tgt + jt * srcsize;
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, jt + 1),
                                    [&](const ordinal_type &i) { Kokkos::atomic_fetch_add(&tt[i], ss[i]); });
             });

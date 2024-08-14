@@ -125,8 +125,8 @@ template <> struct LU<Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0) {
-      ordinal_type *__restrict__ ipiv = P.data(), *__restrict__ fpiv = ipiv + m, *__restrict__ perm = fpiv + m,
-                                 *__restrict__ peri = perm + m;
+      ordinal_type *KOKKOS_RESTRICT ipiv = P.data(), *KOKKOS_RESTRICT fpiv = ipiv + m, *KOKKOS_RESTRICT perm = fpiv + m,
+                                 *KOKKOS_RESTRICT peri = perm + m;
 
       Kokkos::RangePolicy<exec_space> range_policy(exec_instance, 0, m);
       Kokkos::RangePolicy<exec_space> single_policy(exec_instance, 0, 1);

@@ -225,8 +225,8 @@ public:
             Kokkos::TeamThreadRange(member, srcsize),
             [&, srcsize, src,
              tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-              const value_type *__restrict__ ss = src + j * srcsize;
-              /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+              const value_type *KOKKOS_RESTRICT ss = src + j * srcsize;
+              /* */ value_type *KOKKOS_RESTRICT tt = tgt + j * srcsize;
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1),
                                    [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
             });

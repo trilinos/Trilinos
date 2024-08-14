@@ -129,8 +129,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
           Kokkos::store_fence();
 
           for (ordinal_type j = 0; j < srcsize; ++j) {
-            const value_type *__restrict__ ss = src + j * srcsize;
-            /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+            const value_type *KOKKOS_RESTRICT ss = src + j * srcsize;
+            /* */ value_type *KOKKOS_RESTRICT tt = tgt + j * srcsize;
             const ordinal_type iend = update_lower ? srcsize : j + 1;
             #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
             #pragma unroll
@@ -144,8 +144,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
           Kokkos::load_fence();
         } else {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
-            const value_type *__restrict__ ss = src + j * srcsize;
-            /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+            const value_type *KOKKOS_RESTRICT ss = src + j * srcsize;
+            /* */ value_type *KOKKOS_RESTRICT tt = tgt + j * srcsize;
             const ordinal_type iend = update_lower ? srcsize : j + 1;
             Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
                                  [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
