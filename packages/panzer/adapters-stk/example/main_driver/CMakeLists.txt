@@ -20,6 +20,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   SOURCE_FILES
     energy-ss.xml
     energy-ss-tp.xml
+    energy-ss-point-calc.xml
     energy-ss-tp-delay-prec.xml
     energy-ss-loca-eigenvalue.xml
     energy-ss-blocked.xml
@@ -54,6 +55,14 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-tp.xml --exodus-io-num-procs=1
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+  )
+
+  TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-point-calc
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss-point-calc.xml --exodus-io-num-procs=1 --point-calc
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 4
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
