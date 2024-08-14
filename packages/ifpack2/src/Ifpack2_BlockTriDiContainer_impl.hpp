@@ -890,6 +890,7 @@ namespace Ifpack2 {
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
       using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+      using global_indices_array_device_type = Kokkos::View<const global_ordinal_type*, typename tpetra_map_type::device_type>;
 
       auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
       auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
@@ -904,13 +905,15 @@ namespace Ifpack2 {
       const auto column_map = g.getColMap();
 
       std::vector<global_ordinal_type> gids;
-      Kokkos::View<const global_ordinal_type*> column_map_global_iD_last;
+
+      Kokkos::Subview<global_indices_array_device_type, std::pair<int,int>> column_map_global_iD_last;
+
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
       {
         IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::loop_over_local_elements");
 
-        auto column_map_global_iD = column_map->getMyGlobalIndicesDevice();
-        auto domain_map_global_iD = domain_map->getMyGlobalIndicesDevice();
+        global_indices_array_device_type column_map_global_iD = column_map->getMyGlobalIndicesDevice();
+        global_indices_array_device_type domain_map_global_iD = domain_map->getMyGlobalIndicesDevice();
         
         if(are_same(domain_map_global_iD, column_map_global_iD)) {
           // this should be the most likely path
@@ -918,7 +921,7 @@ namespace Ifpack2 {
           need_owned_permutation = false;
 
           column_map_global_iD_last = Kokkos::subview(column_map_global_iD, 
-            Kokkos::pair(domain_map_global_iD.extent(0), column_map_global_iD.extent(0)));
+            std::pair<int,int>(domain_map_global_iD.extent(0), column_map_global_iD.extent(0)));
         }
         else {
           // This loop is relatively expensive
