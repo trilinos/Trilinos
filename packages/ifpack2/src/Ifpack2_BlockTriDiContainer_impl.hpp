@@ -161,7 +161,7 @@ namespace Ifpack2 {
     template<typename MatrixType>
     typename Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type>
     createBlockCrsTpetraImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::CreateBlockCrsTpetraImporter");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::CreateBlockCrsTpetraImporter", CreateBlockCrsTpetraImporter);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using tpetra_mv_type = typename impl_type::tpetra_block_multivector_type;
@@ -523,7 +523,7 @@ namespace Ifpack2 {
       }
 
       void asyncSendRecvVar1(const impl_scalar_type_2d_view_tpetra &mv) {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv", AsyncSendRecv);
 
 #ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
@@ -612,7 +612,7 @@ namespace Ifpack2 {
       }
 
       void syncRecvVar1() {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv", SyncRecv);
 #ifdef HAVE_IFPACK2_MPI
         // 0. wait for receive async.
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.recv.extent(0));++i) {
@@ -719,7 +719,7 @@ namespace Ifpack2 {
       /// standard comm
       ///
       void asyncSendRecvVar0(const impl_scalar_type_2d_view_tpetra &mv) {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv", AsyncSendRecv);
 
 #ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
@@ -790,7 +790,7 @@ namespace Ifpack2 {
       }
 
       void syncRecvVar0() {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv", SyncRecv);
 #ifdef HAVE_IFPACK2_MPI
         // receive async.
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
@@ -845,7 +845,7 @@ namespace Ifpack2 {
       }
 
       void syncExchange(const impl_scalar_type_2d_view_tpetra &mv) {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncExchange");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncExchange", SyncExchange);
         asyncSendRecv(mv);
         syncRecv();
         IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
@@ -882,7 +882,7 @@ namespace Ifpack2 {
     template<typename MatrixType>
     Teuchos::RCP<AsyncableImport<MatrixType> >
     createBlockCrsAsyncImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
-      IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter");
+      IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter", createBlockCrsAsyncImporter);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
@@ -910,7 +910,7 @@ namespace Ifpack2 {
 
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
       {
-        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::loop_over_local_elements");
+        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::loop_over_local_elements", loop_over_local_elements);
 
         global_indices_array_device_type column_map_global_iD = column_map->getMyGlobalIndicesDevice();
         global_indices_array_device_type domain_map_global_iD = domain_map->getMyGlobalIndicesDevice();
@@ -952,7 +952,7 @@ namespace Ifpack2 {
       }
 
       if (separate_remotes) {
-        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::separate_remotes");
+        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::separate_remotes", separate_remotes);
         const auto invalid = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
         const auto parsimonious_col_map
           = need_owned_permutation ? 
@@ -1044,7 +1044,7 @@ namespace Ifpack2 {
                         const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                         const Teuchos::Array<Teuchos::Array<typename BlockHelperDetails::ImplType<MatrixType>::local_ordinal_type> > &partitions,
                         const typename BlockHelperDetails::ImplType<MatrixType>::local_ordinal_type n_subparts_per_part_in) {
-      IFPACK2_BLOCKHELPER_TIMER("createPartInterface");
+      IFPACK2_BLOCKHELPER_TIMER("createPartInterface", createPartInterface);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
@@ -1179,7 +1179,7 @@ namespace Ifpack2 {
       local_ordinal_type pack_nrows = 0;
       local_ordinal_type pack_nrows_sub = 0;
       if (jacobi) {
-        IFPACK2_BLOCKHELPER_TIMER("compute part indices (Jacobi)");
+        IFPACK2_BLOCKHELPER_TIMER("compute part indices (Jacobi)", Jacobi);
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
           constexpr local_ordinal_type ipnrows = 1;
           //assume No overlap.
@@ -1321,7 +1321,7 @@ namespace Ifpack2 {
         }        
         IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       } else {
-        IFPACK2_BLOCKHELPER_TIMER("compute part indices");
+        IFPACK2_BLOCKHELPER_TIMER("compute part indices", indices);
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
           const auto* part = &partitions[p[ip]];
           const local_ordinal_type ipnrows = part->size();
@@ -1484,7 +1484,7 @@ namespace Ifpack2 {
       Kokkos::deep_copy(interf.rowidx2part, rowidx2part);
 
       { // Fill packptr.
-        IFPACK2_BLOCKHELPER_TIMER("Fill packptr");
+        IFPACK2_BLOCKHELPER_TIMER("Fill packptr", packptr0);
         local_ordinal_type npacks = ceil(float(nparts)/vector_length) * (part2packrowidx0_sub.extent(1)-1);
         npacks = 0;
         for (local_ordinal_type ip=1;ip<=nparts;++ip) //n_sub_parts_and_schur
@@ -1618,7 +1618,7 @@ namespace Ifpack2 {
     template<typename MatrixType>
     BlockTridiags<MatrixType>
     createBlockTridiags(const BlockHelperDetails::PartInterface<MatrixType> &interf) {
-      IFPACK2_BLOCKHELPER_TIMER("createBlockTridiags");
+      IFPACK2_BLOCKHELPER_TIMER("createBlockTridiags", createBlockTridiags0);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using execution_space = typename impl_type::execution_space;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
@@ -1865,7 +1865,7 @@ namespace Ifpack2 {
                          BlockTridiags<MatrixType> &btdm,
                          BlockHelperDetails::AmD<MatrixType> &amd,
                          const bool overlap_communication_and_computation) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SymbolicPhase");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SymbolicPhase", SymbolicPhase);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
 
@@ -3469,7 +3469,7 @@ namespace Ifpack2 {
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Start ExtractAndFactorizeSubLineTag\n");
 #endif
-          IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractAndFactorizeSubLineTag");
+          IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractAndFactorizeSubLineTag", ExtractAndFactorizeSubLineTag0);
           Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeSubLineTag>
             policy(packindices_sub.extent(0), team_size, vector_loop_size);
 
@@ -3500,7 +3500,7 @@ namespace Ifpack2 {
             write5DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), e_scalar_values, "e_scalar_values_before_extract.mm");
 
             {
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractBCDTag");
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractBCDTag", ExtractBCDTag0);
               Kokkos::TeamPolicy<execution_space,ExtractBCDTag>
                 policy(packindices_schur.extent(0)*packindices_schur.extent(1), team_size, vector_loop_size);
 
@@ -3519,7 +3519,7 @@ namespace Ifpack2 {
 #endif
             write5DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), e_scalar_values, "e_scalar_values_after_extract.mm");
             {
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeETag");
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeETag", ComputeETag0);
               Kokkos::TeamPolicy<execution_space,ComputeETag>
                 policy(packindices_sub.extent(0), team_size, vector_loop_size);
 
@@ -3539,7 +3539,7 @@ namespace Ifpack2 {
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Start ComputeSchurTag\n");
 #endif
-            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeSchurTag");
+            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeSchurTag", ComputeSchurTag0);
             writeBTDValuesToFile(part2packrowidx0_sub.extent(0), scalar_values_schur, "before_schur.mm");
             Kokkos::TeamPolicy<execution_space,ComputeSchurTag>
               policy(packindices_schur.extent(0)*packindices_schur.extent(1), team_size, vector_loop_size);
@@ -3558,7 +3558,7 @@ namespace Ifpack2 {
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Start FactorizeSchurTag\n");
 #endif
-            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::FactorizeSchurTag");
+            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::FactorizeSchurTag", FactorizeSchurTag0);
             Kokkos::TeamPolicy<execution_space,FactorizeSchurTag>
               policy(packindices_schur.extent(0), team_size, vector_loop_size);
             policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch));
@@ -3587,7 +3587,7 @@ namespace Ifpack2 {
                         const BlockHelperDetails::PartInterface<MatrixType> &interf,
                         BlockTridiags<MatrixType> &btdm,
                         const typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type tiny) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase", NumericPhase);
       ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, G, tiny);
       function.run();
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -3712,7 +3712,7 @@ namespace Ifpack2 {
 
       void run(const const_impl_scalar_type_2d_view_tpetra &scalar_multivector_) {
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::MultiVectorConverter");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::MultiVectorConverter", MultiVectorConverter0);
 
         scalar_multivector = scalar_multivector_;
         if constexpr (BlockHelperDetails::is_device<execution_space>::value) {
@@ -4696,7 +4696,7 @@ namespace Ifpack2 {
       void run(const impl_scalar_type_2d_view_tpetra &Y,
                const impl_scalar_type_1d_view &Z) {
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SolveTridiags");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SolveTridiags", SolveTridiags);
 
         /// set vectors
         this->Y_scalar_multivector = Y;
@@ -4747,7 +4747,7 @@ namespace Ifpack2 {
                 policy, *this);                                            \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSubLineTag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSubLineTag", SingleVectorSubLineTag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorSubLineTag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorSubLineTag<B> >       \
                 policy(packindices_sub.extent(0), team_size, vector_loop_size); \
@@ -4759,7 +4759,7 @@ namespace Ifpack2 {
               IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyCTag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyCTag", SingleVectorApplyCTag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorApplyCTag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorApplyCTag<B> >       \
                 policy(packindices_sub.extent(0), team_size, vector_loop_size); \
@@ -4771,7 +4771,7 @@ namespace Ifpack2 {
               IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSchurTag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSchurTag", SingleVectorSchurTag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorSchurTag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorSchurTag<B> >       \
                 policy(packindices_schur.extent(0), team_size, vector_loop_size); \
@@ -4783,7 +4783,7 @@ namespace Ifpack2 {
               IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyETag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyETag", SingleVectorApplyETag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorApplyETag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorApplyETag<B> >       \
                 policy(packindices_sub.extent(0), team_size, vector_loop_size); \
@@ -4862,7 +4862,7 @@ namespace Ifpack2 {
                        const int max_num_sweeps,
                        const typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type tol,
                        const int check_tol_every) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi", ApplyInverseJacobi);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using node_memory_space = typename impl_type::node_memory_space;
