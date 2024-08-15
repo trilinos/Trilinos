@@ -117,6 +117,11 @@ struct DropTol {
 };
 }  // namespace Details
 
+enum decisionAlgoType { defaultAlgo,
+                        unscaled_cut,
+                        scaled_cut,
+                        scaled_cut_symmetric };
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -354,11 +359,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 #endif
     ////////////////////////////////////////////////////
 
-    enum decisionAlgoType { defaultAlgo,
-                            unscaled_cut,
-                            scaled_cut,
-                            scaled_cut_symmetric };
-
     decisionAlgoType distanceLaplacianAlgo = defaultAlgo;
     decisionAlgoType classicalAlgo         = defaultAlgo;
     if (algo == "distance laplacian") {
@@ -591,24 +591,24 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
           //move from host to device
           auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
-          auto boundaryNodesDevice = Kokkos::create_mirror_view(ExecSpace(), boundaryNodes);
+          auto boundaryNodesDevice = Kokkos::create_mirror_view_and_copy(ExecSpace(), boundaryNodes);
           auto thresholdKokkos = static_cast<impl_scalar_type>(threshold);
           auto realThresholdKokkos = implATS::magnitude(thresholdKokkos);
+          auto columnsDevice = Kokkos::create_mirror_view(ExecSpace(), columns);
 
           auto At = Utilities::Op2TpetraCrs(A);
           auto A_device = At->getLocalMatrixDevice();
 
-          int algorithm = classicalAlgo;
           Kokkos::View<LO*, ExecSpace>rownnzView("rownnzView", A_device.numRows());
           auto drop_views = Kokkos::View<bool*, ExecSpace>("drop_views", A_device.nnz());
           auto index_views = Kokkos::View<size_t*, ExecSpace>("index_views", A_device.nnz());
 
           Kokkos::parallel_reduce("classical_cut", TeamPol(A_device.numRows(), Kokkos::AUTO), KOKKOS_LAMBDA(const TeamMem& teamMember, LO& globalnnz, GO& totalDropped) {
             LO row = teamMember.league_rank();
-            auto rowView = A_device.row(row);
+            auto rowView = A_device.rowConst(row);
             size_t nnz = rowView.length;
 
-            size_t n = 0;
+            size_t dropSize = 0;
             auto drop_view = Kokkos::subview(drop_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row+1)));
             auto index_view = Kokkos::subview(index_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row+1)));
 
@@ -629,10 +629,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                 drop_view(colID) = false;
                 count++;
               }
-            }, n);
+            }, dropSize);
 
-            size_t dropStart = n;
-            if (algorithm == unscaled_cut) {
+            size_t dropStart = dropSize;
+            if (classicalAlgo == unscaled_cut) {
               //push diagonals and boundaries to the right, sort everything else by aij on the left
               Kokkos::Experimental::sort_team(teamMember, index_view, [=](size_t& x, size_t& y) -> bool {
                 if(drop_view(x) || drop_view(y)) {
@@ -646,7 +646,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               });
 
               //find index where dropping starts
-              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, n), [=](size_t i, size_t& min) {
+              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, dropSize), [=](size_t i, size_t& min) {
                 auto const& x = index_view(i - 1);
                 auto const& y = index_view(i);
                 typename implATS::magnitudeType x_aij = 0;
@@ -664,7 +664,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                   }
                 }
               }, Kokkos::Min<size_t>(dropStart));
-            } else if (algorithm == scaled_cut) {
+            } else if (classicalAlgo == scaled_cut) {
               //push diagonals and boundaries to the right, sort everything else by aij/aiiajj on the left
               Kokkos::Experimental::sort_team(teamMember, index_view, [=](size_t& x, size_t& y) -> bool {
                 if(drop_view(x) || drop_view(y)) {
@@ -680,7 +680,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               });
 
               //find index where dropping starts
-              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, n), [=](size_t i, size_t& min) {
+              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, dropSize), [=](size_t i, size_t& min) {
                 auto const& x = index_view(i - 1);
                 auto const& y = index_view(i);
                 typename implATS::magnitudeType x_val = 0;
@@ -705,22 +705,23 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             }
 
             //drop everything to the right of where values stop passing threshold
-            if(dropStart < n) {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, n), [=](size_t i) {
+            if(dropStart < dropSize) {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, dropSize), [=](size_t i) {
                 drop_view(index_view(i)) = true;
               });
             }
 
             LO rownnz = 0;
             GO rowDropped = 0;
-            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, n), [=](const size_t idxID, LO& keep, GO& drop) {
+            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, dropSize), [=](const size_t idxID, LO& keep, GO& drop) {
               LO col = rowView.colidx(idxID);
               //don't drop diagonal
               if(row == col || !drop_view(idxID)) {
+                columnsDevice(A_device.graph.row_map(row) + idxID) = col;
                 keep++;
               }
               else {
-                rowView.colidx(idxID) = -1;
+                columnsDevice(A_device.graph.row_map(row) + idxID) = -1;
                 drop++;
               }
             }, rownnz, rowDropped);
@@ -731,7 +732,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           }, realnnz, numDropped);
 
           //update column indices so that kept indices are aligned to the left for subview that happens later on
-          auto columnsDevice = Kokkos::create_mirror_view(ExecSpace(), columns);
           Kokkos::Experimental::remove(ExecSpace(), columnsDevice, -1);
           Kokkos::deep_copy(columns, columnsDevice);
 
