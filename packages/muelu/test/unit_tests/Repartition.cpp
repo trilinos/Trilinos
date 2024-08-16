@@ -942,13 +942,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, CoordinateMap, Scalar, LocalOrdin
 
   // build a map that is a "randomly" permuted version of the correct
   // coordinate map.  This map will be used to build the "bad" coordinates.
-  RCP<const Map> coordMap = coordinates->getMap();
-  std::srand(Teuchos::as<unsigned int>(comm->getRank() * 31415));
+  RCP<const Map> coordMap                                  = coordinates->getMap();
   Teuchos::ArrayView<const GlobalOrdinal> correctLocalElts = coordMap->getLocalElementList();
   std::vector<GlobalOrdinal> eltsToShuffle;
   for (size_t i = 0; i < Teuchos::as<size_t>(correctLocalElts.size()); ++i)
     eltsToShuffle.push_back(correctLocalElts[i]);
-  std::random_shuffle(eltsToShuffle.begin(), eltsToShuffle.end(), [](GlobalOrdinal i) { return std::rand() % i; });
+  std::mt19937 g(Teuchos::as<unsigned int>(comm->getRank() * 31415));
+  std::shuffle(eltsToShuffle.begin(), eltsToShuffle.end(), g);
   Teuchos::Array<GlobalOrdinal> eltList(eltsToShuffle);
   RCP<const Map> badMap = MapFactory::Build(TestHelpers::Parameters::getLib(), coordMap->getGlobalNumElements(), eltList(), coordMap->getIndexBase(), comm);
 
