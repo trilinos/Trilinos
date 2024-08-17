@@ -2,6 +2,7 @@
 #define SIDEGEOMETRY_HPP
 
 #include "stk_math/StkVector.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk { namespace math {
 
@@ -28,7 +29,12 @@ public:
   PointGeometry(const stk::math::Vector3d & n);
   ~PointGeometry() override = default;
 
-  const stk::math::Vector3d & node(int index) const override;
+  const stk::math::Vector3d & node(int index) const override
+  {
+    STK_ThrowAssert(index==0);
+    return m_nodeData;
+  }
+
   stk::math::Vector3d centroid() const override;
   stk::math::Vector3d closest_proj_on_face(const stk::math::Vector3d & point) const override;
 
@@ -43,7 +49,12 @@ public:
                const stk::math::Vector3d & n1);
   ~LineGeometry() override = default;
 
-  const stk::math::Vector3d & node(int index) const override;
+  const stk::math::Vector3d & node(int index) const override
+  {
+    STK_ThrowAssert(index>=0 && index < 2);
+    return m_nodeData[index];
+  }
+
   stk::math::Vector3d centroid() const override;
   stk::math::Vector3d closest_proj_on_face(const stk::math::Vector3d & point) const override;
 
@@ -59,7 +70,12 @@ public:
               const stk::math::Vector3d & n2);
   ~TriGeometry() override = default;
 
-  const stk::math::Vector3d & node(int index) const override;
+  const stk::math::Vector3d & node(int index) const override
+  {
+    STK_ThrowAssert(index>=0 && index < 3);
+    return m_nodeData[index];
+  }
+
   stk::math::Vector3d centroid() const override;
   stk::math::Vector3d closest_proj_on_face(const stk::math::Vector3d & point) const override;
 
@@ -76,7 +92,12 @@ public:
                const stk::math::Vector3d & n3);
   ~QuadGeometry() override = default;
 
-  const stk::math::Vector3d & node(int index) const override;
+  const stk::math::Vector3d & node(int index) const override
+  {
+    STK_ThrowAssert(index>=0 && index < 4);
+    return m_nodeData[index];
+  }
+
   stk::math::Vector3d centroid() const override;
   stk::math::Vector3d closest_proj_on_face(const stk::math::Vector3d & point) const override;
 

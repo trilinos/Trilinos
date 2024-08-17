@@ -23,16 +23,12 @@
 
 namespace Test {
 
-template <typename ValueType,
-          int length =
-              KokkosBatched::DefaultVectorLength<ValueType, TestDevice>::value>
-using simd_vector =
-    KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, length>;
+template <typename ValueType, int length = KokkosBatched::DefaultVectorLength<ValueType, TestDevice>::value>
+using simd_vector = KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, length>;
 
 template <class AType, class XType, class YType, class ScalarType>
 struct GemvOpBase {
-  GemvOpBase(char trans_, ScalarType alpha_, AType A_, XType x_,
-             ScalarType beta_, YType y_)
+  GemvOpBase(char trans_, ScalarType alpha_, AType A_, XType x_, ScalarType beta_, YType y_)
       : trans(trans_), alpha(alpha_), beta(beta_), A(A_), x(x_), y(y_) {}
 
  protected:
@@ -52,42 +48,32 @@ template <class AType, class XType, class YType, class ScalarType>
 struct RefGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
   using params = GemvOpBase<AType, XType, YType, ScalarType>;
 
-  RefGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
-            ScalarType beta_, YType y_)
+  RefGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_, ScalarType beta_, YType y_)
       : params(trans_, alpha_, A_, x_, beta_, y_) {}
 
   template <typename TeamMember>
-  KOKKOS_INLINE_FUNCTION void operator()(
-      const TeamMember & /* member */) const {
-    vanillaGEMV(params::trans, params::alpha, params::A, params::x,
-                params::beta, params::y);
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember & /* member */) const {
+    vanillaGEMV(params::trans, params::alpha, params::A, params::x, params::beta, params::y);
   }
 };  // RefGEMVOp
 
 // fill regular view with random values
-template <class ViewType, class PoolType,
-          class ScalarType = typename ViewType::non_const_value_type>
-typename std::enable_if<!KokkosBatched::is_vector<ScalarType>::value>::type
-fill_random_view(ViewType A, PoolType &rand_pool,
-                 const ScalarType max_val = 10.0) {
+template <class ViewType, class PoolType, class ScalarType = typename ViewType::non_const_value_type>
+typename std::enable_if<!KokkosBatched::is_vector<ScalarType>::value>::type fill_random_view(
+    ViewType A, PoolType &rand_pool, const ScalarType max_val = 10.0) {
   Kokkos::fill_random(A, rand_pool, max_val);
   Kokkos::fence();
 }
 
 // fill rank-1 view of SIMD vectors with random values
-template <class ValueType, int VecLength, class Layout, class... Props,
-          class PoolType>
+template <class ValueType, int VecLength, class Layout, class... Props, class PoolType>
 void fill_random_view(
-    Kokkos::View<
-        KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, VecLength> *,
-        Layout, Props...>
-        x,
+    Kokkos::View<KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, VecLength> *, Layout, Props...> x,
     PoolType &rand_pool, const ValueType max_val = 10.0) {
   // the view can be strided and have Vector<SIMD> values, so randoms
   // are generated in a plain, linear view first and then copied
   using device_type = typename decltype(x)::device_type;
-  Kokkos::View<ValueType *, device_type> rnd("random_vals",
-                                             x.extent(0) * VecLength);
+  Kokkos::View<ValueType *, device_type> rnd("random_vals", x.extent(0) * VecLength);
   Kokkos::fill_random(rnd, rand_pool, max_val);
   using size_type = decltype(x.extent(0));
   for (size_type i = 0; i < x.extent(0); ++i) {
@@ -96,19 +82,14 @@ void fill_random_view(
 }
 
 // fill rank-2 view of SIMD vectors with random values
-template <class ValueType, int VecLength, class Layout, class... Props,
-          class PoolType>
+template <class ValueType, int VecLength, class Layout, class... Props, class PoolType>
 static void fill_random_view(
-    Kokkos::View<
-        KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, VecLength> **,
-        Layout, Props...>
-        A,
+    Kokkos::View<KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, VecLength> **, Layout, Props...> A,
     PoolType &rand_pool, const ValueType max_val = 10.0) {
   // the view can be strided and have Vector<SIMD> values, so randoms
   // are generated in a plain, linear view first and then copied
   using device_type = typename decltype(A)::device_type;
-  Kokkos::View<ValueType *, device_type> rnd(
-      "random_vals", A.extent(0) * A.extent(1) * VecLength);
+  Kokkos::View<ValueType *, device_type> rnd("random_vals", A.extent(0) * A.extent(1) * VecLength);
   Kokkos::fill_random(rnd, rand_pool, max_val);
   using size_type = decltype(A.extent(0));
   size_type idx   = 0;
@@ -120,29 +101,22 @@ static void fill_random_view(
   }
 }
 
-template <class GemvFunc, class ScalarA, class ScalarX, class ScalarY,
-          class Device, class ScalarCoef = void>
+template <class GemvFunc, class ScalarA, class ScalarX, class ScalarY, class Device, class ScalarCoef = void>
 struct GEMVTest {
-  static void run(const char *mode) {
-    run_algorithms<0, typename GemvFunc::algorithms>(mode);
-  }
+  static void run(const char *mode) { run_algorithms<0, typename GemvFunc::algorithms>(mode); }
 
  private:
   // ScalarCoef==void default behavior is to derive alpha/beta scalar types
   // from A and X scalar types
-  using ScalarType = typename std::conditional<
-      !std::is_void<ScalarCoef>::value, ScalarCoef,
-      typename std::common_type<ScalarA, ScalarX>::type>::type;
+  using ScalarType = typename std::conditional<!std::is_void<ScalarCoef>::value, ScalarCoef,
+                                               typename std::common_type<ScalarA, ScalarX>::type>::type;
 
   template <int Idx, class AlgorithmsTuple>
-  static std::enable_if_t<Idx == std::tuple_size<AlgorithmsTuple>::value>
-  run_algorithms(const char * /*mode*/) {}
+  static std::enable_if_t<Idx == std::tuple_size<AlgorithmsTuple>::value> run_algorithms(const char * /*mode*/) {}
 
   template <int Idx, class AlgorithmsTuple>
-  static
-      typename std::enable_if<(Idx <
-                               std::tuple_size<AlgorithmsTuple>::value)>::type
-      run_algorithms(const char *mode) {
+  static typename std::enable_if<(Idx < std::tuple_size<AlgorithmsTuple>::value)>::type run_algorithms(
+      const char *mode) {
     run_layouts<typename std::tuple_element<Idx, AlgorithmsTuple>::type>(mode);
     run_algorithms<Idx + 1, AlgorithmsTuple>(mode);
   }
@@ -156,8 +130,7 @@ struct GEMVTest {
 #ifdef KOKKOSKERNELS_TEST_LAYOUTRIGHT
     run_view_types<AlgoTag, Kokkos::LayoutRight>(mode);
 #endif
-#if defined(KOKKOSKERNELS_TEST_LAYOUTLEFT) && \
-    defined(KOKKOSKERNELS_TEST_LAYOUTRIGHT)
+#if defined(KOKKOSKERNELS_TEST_LAYOUTLEFT) && defined(KOKKOSKERNELS_TEST_LAYOUTRIGHT)
     using A_t = typename Kokkos::View<ScalarA **, Kokkos::LayoutRight, Device>;
     using x_t = typename Kokkos::View<ScalarX *, Kokkos::LayoutLeft, Device>;
     using y_t = typename Kokkos::View<ScalarY *, Kokkos::LayoutRight, Device>;
@@ -224,24 +197,16 @@ struct GEMVTest {
       auto y = Kokkos::subview(b_y, 0, Kokkos::ALL(), 0);
 
       // make sure it's actually LayoutStride there
-      static_assert(std::is_same<typename decltype(A)::array_layout,
-                                 Kokkos::LayoutStride>::value,
-                    "");
-      static_assert(std::is_same<typename decltype(x)::array_layout,
-                                 Kokkos::LayoutStride>::value,
-                    "");
-      static_assert(std::is_same<typename decltype(y)::array_layout,
-                                 Kokkos::LayoutStride>::value,
-                    "");
+      static_assert(std::is_same<typename decltype(A)::array_layout, Kokkos::LayoutStride>::value, "");
+      static_assert(std::is_same<typename decltype(x)::array_layout, Kokkos::LayoutStride>::value, "");
+      static_assert(std::is_same<typename decltype(y)::array_layout, Kokkos::LayoutStride>::value, "");
       run_views<AlgoTag>(trans, A, x, y);
     }
   }
 
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY>
-  static void run_views(const char trans, ViewTypeA A, ViewTypeX x,
-                        ViewTypeY y) {
-    Kokkos::TeamPolicy<typename Device::execution_space> teams(
-        1, 1);  // just run on device
+  static void run_views(const char trans, ViewTypeA A, ViewTypeX x, ViewTypeY y) {
+    Kokkos::TeamPolicy<typename Device::execution_space> teams(1, 1);  // just run on device
     fill_inputs(A, x, y);
     ScalarType alpha = 3;  // TODO: test also with zero alpha/beta ?
     ScalarType beta  = 5;
@@ -249,8 +214,7 @@ struct GEMVTest {
     // get reference results
     Kokkos::View<ScalarY *, Device> y_ref("Y_ref", y.extent(0));
     Kokkos::deep_copy(y_ref, y);
-    RefGEMVOp<ViewTypeA, ViewTypeX, decltype(y_ref), ScalarType> gemv_ref(
-        trans, alpha, A, x, beta, y_ref);
+    RefGEMVOp<ViewTypeA, ViewTypeX, decltype(y_ref), ScalarType> gemv_ref(trans, alpha, A, x, beta, y_ref);
     Kokkos::parallel_for(teams, gemv_ref);
 
     // 1. check non-consts
@@ -265,10 +229,8 @@ struct GEMVTest {
     run_case<AlgoTag>(trans, alpha, c_A, c_x, beta, y, y_ref);
   }
 
-  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
-            class ViewTypeYRef, class ScalarType>
-  static void run_case(const char trans, ScalarType alpha, ViewTypeA A,
-                       ViewTypeX x, ScalarType beta, ViewTypeY y,
+  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY, class ViewTypeYRef, class ScalarType>
+  static void run_case(const char trans, ScalarType alpha, ViewTypeA A, ViewTypeX x, ScalarType beta, ViewTypeY y,
                        ViewTypeYRef y_ref) {
     // run on original y view (not to alter the test)
     // but backup it and restore, so it can be reused
@@ -277,12 +239,10 @@ struct GEMVTest {
 
     // fetch GEMV functor from the factory
     using op_type =
-        typename GemvFunc::template functor_type<AlgoTag, ViewTypeA, ViewTypeX,
-                                                 ViewTypeY, Device, ScalarType>;
+        typename GemvFunc::template functor_type<AlgoTag, ViewTypeA, ViewTypeX, ViewTypeY, Device, ScalarType>;
 
     op_type gemv_op(trans, alpha, A, x, beta, y);
-    Kokkos::parallel_for(
-        Kokkos::TeamPolicy<typename Device::execution_space>(1, 1), gemv_op);
+    Kokkos::parallel_for(Kokkos::TeamPolicy<typename Device::execution_space>(1, 1), gemv_op);
 
     const double eps = epsilon(ScalarY{});
     EXPECT_NEAR_KK_REL_1DVIEW(y, y_ref, eps);
@@ -317,24 +277,15 @@ struct GEMVTest {
 
 }  // namespace Test
 
-#define TEST_CASE4(PREFIX, FACTORY, NAME, SCALAR_A, SCALAR_X, SCALAR_Y, \
-                   SCALAR_COEF)                                         \
-  using PREFIX##_##NAME##_gemv_test =                                   \
-      ::Test::GEMVTest<::Test::FACTORY, SCALAR_A, SCALAR_X, SCALAR_Y,   \
-                       TestDevice, SCALAR_COEF>;                        \
-  TEST_F(TestCategory, PREFIX##_gemv_nt_##NAME) {                       \
-    PREFIX##_##NAME##_gemv_test::run("N");                              \
-  }                                                                     \
-  TEST_F(TestCategory, PREFIX##_gemv_t_##NAME) {                        \
-    PREFIX##_##NAME##_gemv_test::run("T");                              \
-  }                                                                     \
-  TEST_F(TestCategory, PREFIX##_gemv_ct_##NAME) {                       \
-    PREFIX##_##NAME##_gemv_test::run("C");                              \
-  }
+#define TEST_CASE4(PREFIX, FACTORY, NAME, SCALAR_A, SCALAR_X, SCALAR_Y, SCALAR_COEF)            \
+  using PREFIX##_##NAME##_gemv_test =                                                           \
+      ::Test::GEMVTest<::Test::FACTORY, SCALAR_A, SCALAR_X, SCALAR_Y, TestDevice, SCALAR_COEF>; \
+  TEST_F(TestCategory, PREFIX##_gemv_nt_##NAME) { PREFIX##_##NAME##_gemv_test::run("N"); }      \
+  TEST_F(TestCategory, PREFIX##_gemv_t_##NAME) { PREFIX##_##NAME##_gemv_test::run("T"); }       \
+  TEST_F(TestCategory, PREFIX##_gemv_ct_##NAME) { PREFIX##_##NAME##_gemv_test::run("C"); }
 
 #define TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR_COEF) \
   TEST_CASE4(PREFIX, FACTORY, NAME, SCALAR, SCALAR, SCALAR, SCALAR_COEF)
-#define TEST_CASE(PREFIX, FACTORY, NAME, SCALAR) \
-  TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR)
+#define TEST_CASE(PREFIX, FACTORY, NAME, SCALAR) TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR)
 
 #endif  // TEST_BLAS2_GEMV_UTIL_HPP

@@ -8,11 +8,11 @@
 
 namespace {
 
-class ElementConnectivity : public stk::unit_test_util::simple_fields::MeshFixture
+class ElementConnectivity : public stk::unit_test_util::MeshFixture
 {
 protected:
   ElementConnectivity()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
@@ -24,7 +24,7 @@ TEST_F(ElementConnectivity, NumSharedNodes_DisconnectedHexes)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
                          "0,2,HEX_8,9,10,11,12,13,14,15,16";
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
@@ -39,7 +39,7 @@ TEST_F(ElementConnectivity, NumSharedNodes_HexesConnectedAtOneNode)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
                          "0,2,HEX_8,8,9,10,11,12,13,14,15";
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
@@ -54,7 +54,7 @@ TEST_F(ElementConnectivity, NumSharedNodes_HexesConnectedAtTwoNodes)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
                          "0,2,HEX_8,7,8,9,10,11,12,13,14";
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
@@ -69,7 +69,7 @@ TEST_F(ElementConnectivity, NumSharedNodes_HexesConnectedAtThreeNodes)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
                          "0,2,HEX_8,6,7,8,9,10,11,12,13";
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
@@ -84,7 +84,7 @@ TEST_F(ElementConnectivity, NumSharedNodes_HexesConnectedAtFourNodes)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
                          "0,2,HEX_8,5,6,7,8,9,10,11,12";
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
@@ -99,7 +99,7 @@ TEST_F(ElementConnectivity, NumSharedNodes_DegenerateHexAndTet)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,5,5,5\n"
                          "0,2,TET_4,4,5,6,7";
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);

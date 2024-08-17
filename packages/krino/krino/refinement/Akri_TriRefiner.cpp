@@ -12,6 +12,7 @@
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <Akri_QualityMetric.hpp>
+#include <Akri_RefinerUtils.hpp>
 
 namespace krino {
 namespace TriRefiner {
@@ -142,27 +143,6 @@ static std::array<unsigned,3> permutation_side_ordinals_tri3(const unsigned case
   std::array<unsigned,3> permutation;
   topo.permutation_node_ordinals(determine_permutation_tri3(caseId), permutation.begin());
   return permutation;
-}
-
-template<class CHILDDESCRIPTION, size_t NUMREFINEDPARENTNODES, size_t NUMNODES, size_t NUMSIDES, size_t NUMCHILDELEMENTS>
-static void append_child_elements(const std::array<unsigned,NUMREFINEDPARENTNODES> & permutedParentNodeOrdinals,
-    const std::array<unsigned,NUMSIDES> & permutedParentSideOrdinals,
-    const std::array<std::array<int,NUMNODES>,NUMCHILDELEMENTS> & childElementNodeIndices,
-    const std::array<std::array<int,NUMSIDES>,NUMCHILDELEMENTS> & childElementSideIndices,
-    std::vector<CHILDDESCRIPTION> & childElemDescs)
-{
-  const size_t oldSize = childElemDescs.size();
-  childElemDescs.resize(oldSize + NUMCHILDELEMENTS);
-  for (size_t i=0; i<NUMCHILDELEMENTS; ++i)
-  {
-    for (size_t iNode=0; iNode<NUMNODES; ++iNode)
-      childElemDescs[oldSize + i].nodeIds[iNode] = permutedParentNodeOrdinals[childElementNodeIndices[i][iNode]];
-    for (size_t iSide=0; iSide<NUMSIDES; ++iSide)
-    {
-      const int childElementSideId = childElementSideIndices[i][iSide];
-      childElemDescs[oldSize + i].sideIds[iSide] = (childElementSideId<0) ? -1 : permutedParentSideOrdinals[childElementSideId];
-    }
-  }
 }
 
 std::vector<TriDescription> refinement_child_nodes_and_sides_tri3(const unsigned caseId, const std::array<stk::math::Vector3d,3> & elementNodeCoords, const std::array<int,3> & elementNodeScore)

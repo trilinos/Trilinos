@@ -50,8 +50,8 @@ using member_type = typename policy_type::member_type;
 using namespace KokkosBatched;
 
 template <typename ManyMatrixType, typename ManyVectorType>
-val_type computeResidual(const ManyMatrixType &A, const ManyVectorType &x,
-                         const ManyVectorType &b, const ManyVectorType &r) {
+val_type computeResidual(const ManyMatrixType &A, const ManyVectorType &x, const ManyVectorType &b,
+                         const ManyVectorType &r) {
   /// compute residual
   val_type residual(0);
   {
@@ -66,17 +66,12 @@ val_type computeResidual(const ManyMatrixType &A, const ManyVectorType &x,
           auto xx = Kokkos::subview(x, i, Kokkos::ALL());
           auto rr = Kokkos::subview(r, i, Kokkos::ALL());
 
-          TeamGemv<member_type, Trans::NoTranspose,
-                   Algo::Level2::Unblocked>::invoke(member, -one, AA, xx, one,
-                                                    rr);
+          TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(member, -one, AA, xx, one, rr);
 
           val_type sum(0);
           Kokkos::parallel_reduce(
               Kokkos::TeamThreadRange(member, rr.extent(0)),
-              [&](const int &k, val_type &lsum) {
-                lsum += Kokkos::ArithTraits<val_type>::abs(rr(k));
-              },
-              sum);
+              [&](const int &k, val_type &lsum) { lsum += Kokkos::ArithTraits<val_type>::abs(rr(k)); }, sum);
           Kokkos::single(Kokkos::PerTeam(member), [&]() { update += sum; });
         },
         residual);
@@ -132,8 +127,8 @@ struct Task1SolveLowerTriangular {
     const val_type one(1);
     auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
     auto TT = Kokkos::subview(__T, i, Kokkos::ALL(), Kokkos::ALL());
-    TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
-             Diag::Unit, Algo::Level3::Unblocked>::invoke(member, one, TT, AA);
+    TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
+        member, one, TT, AA);
   }
 };
 
@@ -152,9 +147,8 @@ struct Task1SolveUpperTriangular {
     const val_type one(1);
     auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
     auto TT = Kokkos::subview(__T, i, Kokkos::ALL(), Kokkos::ALL());
-    TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose,
-             Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, one, TT,
-                                                             AA);
+    TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Level3::Unblocked>::invoke(
+        member, one, TT, AA);
   }
 };
 }  // namespace ConstructBlockJacobi
@@ -176,8 +170,7 @@ struct Task1ApplyBlockJacobi {
     auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
     auto xx = Kokkos::subview(__x, i, Kokkos::ALL());
     auto bb = Kokkos::subview(__b, i, Kokkos::ALL());
-    TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(
-        member, one, AA, bb, zero, xx);
+    TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(member, one, AA, bb, zero, xx);
   }
 };
 
@@ -200,11 +193,10 @@ struct Task2FactorizeInvert {
     TeamLU<member_type, Algo::Level3::Unblocked>::invoke(member, AA);
     TeamCopy<member_type, Trans::NoTranspose>::invoke(member, AA, TT);
     TeamSetIdentity<member_type>::invoke(member, AA);
-    TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
-             Diag::Unit, Algo::Level3::Unblocked>::invoke(member, one, TT, AA);
-    TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose,
-             Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, one, TT,
-                                                             AA);
+    TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
+        member, one, TT, AA);
+    TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Level3::Unblocked>::invoke(
+        member, one, TT, AA);
   }
 };
 
@@ -225,8 +217,7 @@ struct Task2ApplyBlockJacobi {
     auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
     auto xx = Kokkos::subview(__x, i, Kokkos::ALL());
     auto bb = Kokkos::subview(__b, i, Kokkos::ALL());
-    TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(
-        member, one, AA, bb, zero, xx);
+    TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(member, one, AA, bb, zero, xx);
   }
 };
 
@@ -260,22 +251,17 @@ int main(int argc, char *argv[]) {
     /// x - solution vector
     /// b - right hand side vector
     ///
-    Kokkos::View<val_type ***, Kokkos::LayoutRight, exec_space_type> A(
-        "block diagonals", N, Blk, Blk);
-    Kokkos::View<val_type ***, Kokkos::LayoutRight, exec_space_type> T(
-        "temporal block diagonals", N, Blk, Blk);
-    Kokkos::View<val_type **, Kokkos::LayoutRight, exec_space_type> x("x", N,
-                                                                      Blk);
-    Kokkos::View<val_type **, Kokkos::LayoutRight, exec_space_type> b("b", N,
-                                                                      Blk);
+    Kokkos::View<val_type ***, Kokkos::LayoutRight, exec_space_type> A("block diagonals", N, Blk, Blk);
+    Kokkos::View<val_type ***, Kokkos::LayoutRight, exec_space_type> T("temporal block diagonals", N, Blk, Blk);
+    Kokkos::View<val_type **, Kokkos::LayoutRight, exec_space_type> x("x", N, Blk);
+    Kokkos::View<val_type **, Kokkos::LayoutRight, exec_space_type> b("b", N, Blk);
 
     /// copy of A to check residual
-    Kokkos::View<val_type ***, Kokkos::LayoutRight, exec_space_type> Acopy(
-        "Acopy", A.extent(0), A.extent(1), A.extent(2));
+    Kokkos::View<val_type ***, Kokkos::LayoutRight, exec_space_type> Acopy("Acopy", A.extent(0), A.extent(1),
+                                                                           A.extent(2));
 
     /// residual vector
-    Kokkos::View<val_type **, Kokkos::LayoutRight, exec_space_type> r(
-        "r", b.extent(0), b.extent(1));
+    Kokkos::View<val_type **, Kokkos::LayoutRight, exec_space_type> r("r", b.extent(0), b.extent(1));
 
     /// The block diagonal matrices are assumed to be extracted from a block
     /// sparse matrix. Here we set the blocks with random values
@@ -308,23 +294,15 @@ int main(int argc, char *argv[]) {
       {
         policy_type policy(A.extent(0), Kokkos::AUTO());
         timer.reset();
-        Kokkos::parallel_for(
-            "task1.factorize", policy,
-            ConstructBlockJacobi::Task1Factorize<decltype(A)>(A));
+        Kokkos::parallel_for("task1.factorize", policy, ConstructBlockJacobi::Task1Factorize<decltype(A)>(A));
         Kokkos::deep_copy(T, A);
-        Kokkos::parallel_for(
-            "task1.set-identity", policy,
-            ConstructBlockJacobi::Task1SetIdentity<decltype(A)>(A));
+        Kokkos::parallel_for("task1.set-identity", policy, ConstructBlockJacobi::Task1SetIdentity<decltype(A)>(A));
         Kokkos::fence();
-        Kokkos::parallel_for(
-            "task1.solve-lower-triangular", policy,
-            ConstructBlockJacobi::Task1SolveLowerTriangular<decltype(A),
-                                                            decltype(T)>(A, T));
+        Kokkos::parallel_for("task1.solve-lower-triangular", policy,
+                             ConstructBlockJacobi::Task1SolveLowerTriangular<decltype(A), decltype(T)>(A, T));
         Kokkos::fence();
-        Kokkos::parallel_for(
-            "task1.solve-upper-triangular", policy,
-            ConstructBlockJacobi::Task1SolveUpperTriangular<decltype(A),
-                                                            decltype(T)>(A, T));
+        Kokkos::parallel_for("task1.solve-upper-triangular", policy,
+                             ConstructBlockJacobi::Task1SolveUpperTriangular<decltype(A), decltype(T)>(A, T));
         Kokkos::fence();
         const double t = timer.seconds();
         printf(
@@ -337,10 +315,8 @@ int main(int argc, char *argv[]) {
       {
         timer.reset();
         policy_type policy(A.extent(0), Kokkos::AUTO());
-        Kokkos::parallel_for(
-            "task1.apply-block-jacobi", policy,
-            Task1ApplyBlockJacobi<decltype(A), decltype(x), decltype(b)>(A, x,
-                                                                         b));
+        Kokkos::parallel_for("task1.apply-block-jacobi", policy,
+                             Task1ApplyBlockJacobi<decltype(A), decltype(x), decltype(b)>(A, x, b));
         const double t = timer.seconds();
         printf(
             "task 1: application of jacobi time = %f , # of applications per "
@@ -374,9 +350,7 @@ int main(int argc, char *argv[]) {
       {
         policy_type policy(A.extent(0), Kokkos::AUTO());
         timer.reset();
-        Kokkos::parallel_for(
-            "task2.factorize-invert", policy,
-            Task2FactorizeInvert<decltype(A), decltype(T)>(A, T));
+        Kokkos::parallel_for("task2.factorize-invert", policy, Task2FactorizeInvert<decltype(A), decltype(T)>(A, T));
         Kokkos::fence();
         const double t = timer.seconds();
         printf(
@@ -389,10 +363,8 @@ int main(int argc, char *argv[]) {
       {
         timer.reset();
         policy_type policy(A.extent(0), Kokkos::AUTO());
-        Kokkos::parallel_for(
-            "task2.apply-block-jacobi", policy,
-            Task2ApplyBlockJacobi<decltype(A), decltype(x), decltype(b)>(A, x,
-                                                                         b));
+        Kokkos::parallel_for("task2.apply-block-jacobi", policy,
+                             Task2ApplyBlockJacobi<decltype(A), decltype(x), decltype(b)>(A, x, b));
         const double t = timer.seconds();
         printf(
             "task 2: application of jacobi time = %f , # of applications per "

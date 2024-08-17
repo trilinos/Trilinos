@@ -30,7 +30,6 @@ public:
     m_currentTime(),
     m_finalTime(),
     m_step(),
-    m_doingSendTransfer(false),
     m_sendFieldName()
   {}
 
@@ -195,7 +194,6 @@ private:
   double m_currentTime;
   double m_finalTime;
   int m_step;
-  bool m_doingSendTransfer;
   std::string m_sendFieldName;
 };
 

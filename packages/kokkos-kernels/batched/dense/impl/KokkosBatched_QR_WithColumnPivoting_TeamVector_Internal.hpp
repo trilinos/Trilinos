@@ -37,10 +37,9 @@ namespace KokkosBatched {
 ///
 struct TeamVectorUpdateColumnNormsInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const int n, const ValueType *KOKKOS_RESTRICT a,
-      const int as0,
-      /* */ ValueType *KOKKOS_RESTRICT norm, const int ns0) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int n, const ValueType *KOKKOS_RESTRICT a,
+                                           const int as0,
+                                           /* */ ValueType *KOKKOS_RESTRICT norm, const int ns0) {
     using ats = Kokkos::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &j) {
       const int idx_a = j * as0, idx_n = j * ns0;
@@ -55,8 +54,7 @@ struct TeamVectorQR_WithColumnPivotingInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m,  // m = NumRows(A)
                                            const int n,  // n = NumCols(A)
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts0,
                                            /* */ IntType *p, const int ps0,
                                            /* */ ValueType *w,
@@ -98,8 +96,7 @@ struct TeamVectorQR_WithColumnPivotingInternal {
     norm_part1x2.partWithAL(norm, n, 0);
 
     // compute initial column norms (replaced by dot product)
-    TeamVectorDotInternal::invoke(member, m, n, A, as0, as1, A, as0, as1, norm,
-                                  1);
+    TeamVectorDotInternal::invoke(member, m, n, A, as0, as1, A, as0, as1, norm, 1);
     member.team_barrier();
 
     const bool finish_when_rank_found = (matrix_rank == -1);
@@ -124,33 +121,27 @@ struct TeamVectorQR_WithColumnPivotingInternal {
 
       /// -----------------------------------------------------
       // find max location
-      TeamVectorFindAmaxInternal::invoke(member, n_AR, norm_part1x2.AR, 1,
-                                         pividx);
+      TeamVectorFindAmaxInternal::invoke(member, n_AR, norm_part1x2.AR, 1, pividx);
       member.team_barrier();
 
       // apply pivot
-      TeamVectorApplyPivotVectorForwardInternal::invoke(member, *pividx,
-                                                        norm_part1x2.AR, 1);
-      TeamVectorApplyPivotMatrixForwardInternal::invoke(
-          member, m, *pividx, A_part2x2.ATR, as1, as0);
+      TeamVectorApplyPivotVectorForwardInternal::invoke(member, *pividx, norm_part1x2.AR, 1);
+      TeamVectorApplyPivotMatrixForwardInternal::invoke(member, m, *pividx, A_part2x2.ATR, as1, as0);
       member.team_barrier();
 
       // perform householder transformation
-      TeamVectorLeftHouseholderInternal::invoke(member, m_A22, A_part3x3.A11,
-                                                A_part3x3.A21, as0, tau);
+      TeamVectorLeftHouseholderInternal::invoke(member, m_A22, A_part3x3.A11, A_part3x3.A21, as0, tau);
       member.team_barrier();
 
       // left apply householder to A22
-      TeamVectorApplyLeftHouseholderInternal::invoke(
-          member, m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
-          A_part3x3.A22, as0, as1, w);
+      TeamVectorApplyLeftHouseholderInternal::invoke(member, m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
+                                                     A_part3x3.A22, as0, as1, w);
       member.team_barrier();
 
       // break condition
       if (matrix_rank == min_mn) {
         if (m_atl == 0) max_diag = ats::abs(A[0]);
-        const value_type val_diag = ats::abs(A_part3x3.A11[0]),
-                         threshold(10 * max_diag * ats::epsilon());
+        const value_type val_diag = ats::abs(A_part3x3.A11[0]), threshold(10 * max_diag * ats::epsilon());
         if (val_diag < threshold) {
           matrix_rank = m_atl;
           if (finish_when_rank_found) break;
@@ -158,8 +149,7 @@ struct TeamVectorQR_WithColumnPivotingInternal {
       }
 
       // norm update
-      TeamVectorUpdateColumnNormsInternal::invoke(member, n_A22, A_part3x3.A12,
-                                                  as1, norm_part1x3.A2, 1);
+      TeamVectorUpdateColumnNormsInternal::invoke(member, n_A22, A_part3x3.A12, as1, norm_part1x3.A2, 1);
       member.team_barrier();
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);

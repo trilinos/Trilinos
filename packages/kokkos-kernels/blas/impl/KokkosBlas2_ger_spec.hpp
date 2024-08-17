@@ -40,19 +40,16 @@ struct ger_eti_spec_avail {
 // specializations go in this header file. We may spread out definitions (see
 // _INST macro below) across one or more .cpp files.
 //
-#define KOKKOSBLAS2_GER_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template <>                                                                 \
-  struct ger_eti_spec_avail<                                                  \
-      EXEC_SPACE,                                                             \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {              \
-    enum : bool { value = true };                                             \
+#define KOKKOSBLAS2_GER_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                          \
+  template <>                                                                                          \
+  struct ger_eti_spec_avail<EXEC_SPACE,                                                                \
+                            Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                    \
+                            Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                    \
+                            Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,      \
+                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                 \
+    enum : bool { value = true };                                                                      \
   };
 
 // Include the actual specialization declarations
@@ -67,34 +64,26 @@ namespace Impl {
 //
 
 // Implementation of KokkosBlas::ger.
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType,
-          bool tpl_spec_avail = ger_tpl_spec_avail<ExecutionSpace, XViewType,
-                                                   YViewType, AViewType>::value,
-          bool eti_spec_avail = ger_eti_spec_avail<ExecutionSpace, XViewType,
-                                                   YViewType, AViewType>::value>
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType,
+          bool tpl_spec_avail = ger_tpl_spec_avail<ExecutionSpace, XViewType, YViewType, AViewType>::value,
+          bool eti_spec_avail = ger_eti_spec_avail<ExecutionSpace, XViewType, YViewType, AViewType>::value>
 struct GER {
-  static void ger(const ExecutionSpace& space, const char trans[],
-                  const typename AViewType::const_value_type& alpha,
+  static void ger(const ExecutionSpace& space, const char trans[], const typename AViewType::const_value_type& alpha,
                   const XViewType& x, const YViewType& y, const AViewType& A)
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   {
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::ger[ETI]"
-                                      : "KokkosBlas::ger[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::ger[ETI]"
+                                                                     : "KokkosBlas::ger[noETI]");
 
     typedef typename AViewType::size_type size_type;
     const size_type numRows = A.extent(0);
     const size_type numCols = A.extent(1);
 
     // Prefer int as the index type, but use a larger type if needed.
-    if ((numRows < static_cast<size_type>(INT_MAX)) &&
-        (numCols < static_cast<size_type>(INT_MAX))) {
-      generalGerImpl<ExecutionSpace, XViewType, YViewType, AViewType, int>(
-          space, trans, alpha, x, y, A);
+    if ((numRows < static_cast<size_type>(INT_MAX)) && (numCols < static_cast<size_type>(INT_MAX))) {
+      generalGerImpl<ExecutionSpace, XViewType, YViewType, AViewType, int>(space, trans, alpha, x, y, A);
     } else {
-      generalGerImpl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t>(
-          space, trans, alpha, x, y, A);
+      generalGerImpl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t>(space, trans, alpha, x, y, A);
     }
 
     Kokkos::Profiling::popRegion();
@@ -115,30 +104,24 @@ struct GER {
 // We may spread out definitions (see _DEF macro below) across one or more .cpp
 // files.
 //
-#define KOKKOSBLAS2_GER_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  extern template struct GER<                                                \
-      EXEC_SPACE,                                                            \
-      Kokkos::View<const SCALAR*, LAYOUT,                                    \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<const SCALAR*, LAYOUT,                                    \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+#define KOKKOSBLAS2_GER_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                           \
+  extern template struct GER<                                                                                          \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
-#define KOKKOSBLAS2_GER_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template struct GER<                                                       \
-      EXEC_SPACE,                                                            \
-      Kokkos::View<const SCALAR*, LAYOUT,                                    \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<const SCALAR*, LAYOUT,                                    \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+#define KOKKOSBLAS2_GER_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                           \
+  template struct GER<                                                                                                 \
+      EXEC_SPACE,                                                                                                      \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
 #include <KokkosBlas2_ger_tpl_spec_decl.hpp>

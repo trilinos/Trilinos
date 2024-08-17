@@ -120,6 +120,21 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         ls.set_redistance_method(redistance_method);
       }
 
+      std::string semilagrangianMethodName;
+      if (ls_node.get_if_present("semilagrangian_algorithm", semilagrangianMethodName))
+      {
+        std::transform(semilagrangianMethodName.begin(), semilagrangianMethodName.end(), semilagrangianMethodName.begin(), ::toupper);
+        SemiLagrangianAlgorithm algType = NON_ADAPTIVE_SINGLE_STEP;
+        if (semilagrangianMethodName == "NON_ADAPTIVE_SINGLE_STEP")
+          algType = NON_ADAPTIVE_SINGLE_STEP;
+        else if (semilagrangianMethodName == "ADAPTIVE_PREDICTOR_CORRECTOR")
+          algType = ADAPTIVE_PREDICTOR_CORRECTOR;
+        else
+          stk::RuntimeWarningAdHoc() << "Unrecognized redistance method:  " << redistance_method_name << std::endl;
+
+        ls.set_semilagrangian_algorithm(algType);
+      }
+
       bool perform_initial_redistance;
       if (ls_node.get_if_present("perform_initial_redistance", perform_initial_redistance))
       {

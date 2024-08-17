@@ -54,11 +54,11 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include "UnitTestReadWriteUtils.hpp"
 
-class StkEdgeIoTest : public stk::unit_test_util::simple_fields::MeshFixture
+class StkEdgeIoTest : public stk::unit_test_util::MeshFixture
 {
 public:
   StkEdgeIoTest(unsigned spatialDim=3)
-    : stk::unit_test_util::simple_fields::MeshFixture(spatialDim)
+    : stk::unit_test_util::MeshFixture(spatialDim)
   {
   }
 

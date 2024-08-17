@@ -102,7 +102,6 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   const unsigned int meshSizeZ = 4;
 
   stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stkMeshIoBroker->use_simple_fields();
   stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
   std::ostringstream osstr;
   osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
@@ -1899,7 +1898,6 @@ BLASFixture3d<A>::BLASFixture3d(A* init1_input, A* init2_input, A* init3_input)
 
   MPI_Comm my_comm = MPI_COMM_WORLD;
   stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stkMeshIoBroker->use_simple_fields();
   stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
   std::ostringstream osstr;
   osstr<<"generated:"<<meshSizeX<<"x"<<meshSizeY<<"x"<<meshSizeZ;

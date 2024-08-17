@@ -84,7 +84,6 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionNodalSubset)
     input_filename += "|shell:xyzXYZ|variables:nodal,1|times:1";
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
     stkIo.create_input_mesh();
 

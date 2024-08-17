@@ -55,7 +55,6 @@ TEST(UnitTestPart, testUnit)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
-  m.use_simple_fields();
   PartRepository partRepo(&m);
   PartRepository partRepo2(&m);
   PartRepository partRepo3(&m);
@@ -129,7 +128,6 @@ TEST(UnitTestPart, testPartVector)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
-  m.use_simple_fields();
   PartRepository partRepo(&m);
 
   Part * const pa =  partRepo.declare_part( std::string("a") , stk::topology::NODE_RANK );

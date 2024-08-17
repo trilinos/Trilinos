@@ -87,15 +87,11 @@ namespace Impl {
 
     At most view.size() predicate function calls
 */
-template <typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
-KOKKOS_INLINE_FUNCTION typename ViewLike::size_type
-lower_bound_sequential_thread(
-    const ViewLike &view, const typename ViewLike::non_const_value_type &value,
-    Pred pred = Pred()) {
+template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
+KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_thread(
+    const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::rank,
-                "lower_bound_sequential_thread requires rank-1 views");
+  static_assert(1 == ViewLike::rank, "lower_bound_sequential_thread requires rank-1 views");
 
   size_type i = 0;
   while (i < view.size() && pred(view(i), value)) {
@@ -116,14 +112,11 @@ lower_bound_sequential_thread(
 
     At most log2(view.size()) + 1 predicate function calls
 */
-template <typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
-    const ViewLike &view, const typename ViewLike::non_const_value_type &value,
-    Pred pred = Pred()) {
+    const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::rank,
-                "lower_bound_binary_thread requires rank-1 views");
+  static_assert(1 == ViewLike::rank, "lower_bound_binary_thread requires rank-1 views");
 
   size_type lo = 0;
   size_type hi = view.size();
@@ -155,13 +148,10 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
     This minimizes the calls to predicate:
     for view.size() >= 8, this does a binary search, otherwise, a linear search
 */
-template <typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_thread(
-    const ViewLike &view, const typename ViewLike::non_const_value_type &value,
-    Pred pred = Pred()) {
-  static_assert(1 == ViewLike::rank,
-                "lower_bound_thread requires rank-1 views");
+    const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
+  static_assert(1 == ViewLike::rank, "lower_bound_thread requires rank-1 views");
   /*
      sequential search makes on average 0.5 * view.size memory accesses
      binary search makes log2(view.size)+1 accesses
@@ -196,18 +186,14 @@ namespace Impl {
     Uses a single thread to call \c lower_bound_thread, and broadcasts that
     to all team members.
 */
-template <typename TeamMember, typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename TeamMember, typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_single_team(
-    const TeamMember &handle, const ViewLike &view,
-    const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
+    const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
+    Pred pred = Pred()) {
   typename ViewLike::size_type idx;
   Kokkos::single(
       Kokkos::PerTeam(handle),
-      [&](typename ViewLike::size_type &lidx) {
-        lidx = KokkosKernels::lower_bound_thread(view, value, pred);
-      },
-      idx);
+      [&](typename ViewLike::size_type &lidx) { lidx = KokkosKernels::lower_bound_thread(view, value, pred); }, idx);
   return idx;
 }
 
@@ -229,16 +215,12 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_single_team(
 
     Apply pred(view(i), value) for i in [lo, hi)
 */
-template <typename TeamMember, typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename TeamMember, typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_team(
-    const TeamMember &handle, const ViewLike &view,
-    const typename ViewLike::non_const_value_type &value,
-    typename ViewLike::size_type lo, typename ViewLike::size_type hi,
-    Pred pred = Pred()) {
+    const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
+    typename ViewLike::size_type lo, typename ViewLike::size_type hi, Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::rank,
-                "lower_bound_sequential_team requires rank-1 views");
+  static_assert(1 == ViewLike::rank, "lower_bound_sequential_team requires rank-1 views");
   static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
                 "lower_bound_sequential_team requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
@@ -251,7 +233,7 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_team(
       Kokkos::TeamThreadRange(handle, lo, hi),
       [&](const size_type &i, size_type &li) {
         li = KOKKOSKERNELS_MACRO_MIN(li, hi);
-        if (i < li) {  // no need to search higher than the smallest so far
+        if (i < li) {                   // no need to search higher than the smallest so far
           if (!pred(view(i), value)) {  // look for the smallest index that does
                                         // not satisfy
             li = i;
@@ -276,11 +258,10 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_team(
     \returns To all team members, the smallest i for which pred(view(i), value)
    is false or view.size() if no such value
 */
-template <typename TeamMember, typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename TeamMember, typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_team(
-    const TeamMember &handle, const ViewLike &view,
-    const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
+    const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
+    Pred pred = Pred()) {
   return lower_bound_sequential_team(handle, view, value, 0, view.size(), pred);
 }
 
@@ -310,10 +291,9 @@ struct Range {
 /// \brief maximizes the lower bound, and minimizes the upper bound of a Range
 template <typename T, typename Space>
 struct RangeReducer {
-  using reducer    = RangeReducer;
-  using value_type = Range<T>;
-  using result_view_type =
-      Kokkos::View<Range<T> *, Space, Kokkos::MemoryUnmanaged>;
+  using reducer          = RangeReducer;
+  using value_type       = Range<T>;
+  using result_view_type = Kokkos::View<Range<T> *, Space, Kokkos::MemoryUnmanaged>;
 
  private:
   value_type &value;
@@ -356,13 +336,11 @@ struct RangeReducer {
    false Once there are fewer values left than threads in the team, switch to
    team sequential search
 */
-template <typename TeamMember, typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename TeamMember, typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_kary_team(
-    const TeamMember &handle, const ViewLike &view,
-    const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
-  static_assert(1 == ViewLike::rank,
-                "lower_bound_kary_team requires rank-1 views");
+    const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
+    Pred pred = Pred()) {
+  static_assert(1 == ViewLike::rank, "lower_bound_kary_team requires rank-1 views");
   static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
                 "lower_bound_kary_team requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
@@ -378,9 +356,8 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_kary_team(
     }
 
     // otherwise, split the region up among threads
-    size_type mid =
-        lo + (hi - lo) * (handle.team_rank() + 1) / (handle.team_size() + 1);
-    auto ve = view(mid);
+    size_type mid = lo + (hi - lo) * (handle.team_rank() + 1) / (handle.team_size() + 1);
+    auto ve       = view(mid);
 
     // reduce across threads to figure out where the new search bounds are
     // if a thread satisfies the predicate, the first element that does not
@@ -433,14 +410,12 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_kary_team(
     Pred should be a binary function comparing two `typename
    View::non_const_value_type`
 */
-template <typename TeamMember, typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type>>
+template <typename TeamMember, typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_team(
-    const TeamMember &handle, const ViewLike &view,
-    const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
+    const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
+    Pred pred = Pred()) {
   static_assert(1 == ViewLike::rank, "lower_bound_team requires rank-1 views");
-  static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> ||
-                    Kokkos::is_view<ViewLike>::value,
+  static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
                 "lower_bound_team requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
 

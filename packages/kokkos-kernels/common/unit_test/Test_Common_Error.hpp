@@ -20,8 +20,7 @@
 #include "KokkosKernels_Error.hpp"
 
 void test_kokkoskernels_throw() {
-  const std::string my_throw_msg =
-      "Testing Kokkos Kernels' throw_runtime_exception.";
+  const std::string my_throw_msg = "Testing Kokkos Kernels' throw_runtime_exception.";
   try {
     KokkosKernels::Impl::throw_runtime_exception(my_throw_msg);
   } catch (const std::runtime_error& e) {

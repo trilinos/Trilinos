@@ -78,7 +78,6 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_checkOnDevice)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                      .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
   constexpr unsigned numStates = 2;
   stk::mesh::Field<double>& stkFieldNew = meta.declare_field<double>(stk::topology::ELEM_RANK,
                                                                      "myElemField", numStates);
@@ -112,7 +111,6 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                      .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
   constexpr unsigned numStates = 2;
   stk::mesh::Field<double>& stkFieldNew = meta.declare_field<double>(stk::topology::ELEM_RANK,
                                                                      "myElemField", numStates);
@@ -163,7 +161,6 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                      .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
   constexpr unsigned numStates = 2;
   stk::mesh::Field<double>& stkFieldNew = meta.declare_field<double>(stk::topology::ELEM_RANK,
                                                                      "myElemField", numStates);

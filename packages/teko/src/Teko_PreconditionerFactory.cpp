@@ -23,8 +23,8 @@
 #include "Teko_IterativePreconditionerFactory.hpp"
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
-#ifdef TEKO_HAVE_EPETRA
 #include "Teko_DiagonalPreconditionerFactory.hpp"
+#ifdef TEKO_HAVE_EPETRA
 #include "Teko_ProbingPreconditionerFactory.hpp"
 #endif
 #include "Teko_IdentityPreconditionerFactory.hpp"
@@ -263,10 +263,8 @@ void PreconditionerFactory::initializePrecFactoryBuilder() {
   clone = rcp(new AutoClone<IterativePreconditionerFactory>());
   precFactoryBuilder_.addClone("Iterative Preconditioner", clone);
 
-#ifdef TEKO_HAVE_EPETRA
   clone = rcp(new AutoClone<DiagonalPreconditionerFactory>());
   precFactoryBuilder_.addClone("Explicit Diagonal Preconditioner", clone);
-#endif
 
   clone = rcp(new AutoClone<DiagnosticPreconditionerFactory>());
   precFactoryBuilder_.addClone("Diagnostic Inverse", clone);

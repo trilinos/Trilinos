@@ -115,10 +115,8 @@ void DeviceBucket::update_entity_data_from_host(const stk::mesh::Bucket &bucket)
 
   Kokkos::Profiling::pushRegion("filling host-side Views");
   auto hostEntities = HostEntityViewType(bucket.begin(), m_bucketCapacity);
-  auto hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::WithoutInitializing,
-                                                         Kokkos::HostSpace(), m_nodeConnectivity);
-  auto hostNodeConnectivityOffsets = Kokkos::create_mirror_view(Kokkos::WithoutInitializing,
-                                                                Kokkos::HostSpace(), m_nodeConnectivityOffsets);
+  auto hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_nodeConnectivity);
+  auto hostNodeConnectivityOffsets = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_nodeConnectivityOffsets);
   unsigned nodeOffset = 0;
   for (unsigned iEntity = 0; iEntity < bucket.size(); ++iEntity) {
     const unsigned nodesPerEntity = bucket.num_nodes(iEntity);
@@ -239,7 +237,7 @@ inline void reallocate_views(DEVICE_VIEW & deviceView, HOST_VIEW & hostView, siz
   if (needGrowth || needShrink) {
     const size_t newSize = requiredSize + static_cast<size_t>(resizeFactor*requiredSize);
     deviceView = DEVICE_VIEW(Kokkos::view_alloc(Kokkos::WithoutInitializing, deviceView.label()), newSize);
-    hostView = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), deviceView);
+    hostView = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, deviceView);
   }
 }
 

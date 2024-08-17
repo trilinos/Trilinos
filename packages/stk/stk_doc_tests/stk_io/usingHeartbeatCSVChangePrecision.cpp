@@ -88,7 +88,6 @@ TEST(StkMeshIoBrokerHowTo, writeHeartbeatCSVChangePrecision)
     // EXAMPLE USAGE...
     // Define the heartbeat output...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     //-BEGIN
     //+ Output should have 10 digits of precision (1.0123456789e+00)

@@ -81,86 +81,6 @@ struct GearParams {
 
 class GearsFixture {
 public:
-  typedef Field<double, Cylindrical>  CylindricalField ;
-  typedef Field<double, Cartesian>    CartesianField ;
-
-  enum { SpatialDimension = 3 };
-
-  GearsFixture( stk::ParallelMachine pm, size_t num_gears,
-                GearParams gear_params=GearParams());
-  ~GearsFixture();
-
-  void generate_mesh();
-
-  const size_t NUM_GEARS;
-
-  std::shared_ptr<BulkData> bulk_data_ptr;
-  BulkData& bulk_data;
-  MetaData& meta_data;
-
-  Part & cylindrical_coord_part;
-  Part & hex_part;
-  Part & wedge_part;
-
-  CartesianField    & cartesian_coord_field ;
-  CartesianField    & displacement_field ;
-  CartesianField    & translation_field ;
-  CylindricalField  & cylindrical_coord_field;
-
-  Gear & get_gear(size_t i) {
-    return * m_gears[i];
-  }
-
-  const Gear & get_gear(size_t i) const{
-    return * m_gears[i];
-  }
-
-  void communicate_model_fields();
-
-private:
-
-  std::vector<Gear *> m_gears;
-
-  GearsFixture( const GearsFixture & );
-  GearsFixture & operator=( const GearsFixture & );
-};
-
-/// \brief Distribute gears across processors
-void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalField & cylindrical_coord_field);
-unsigned destination_processor(const Gear & gear, double rad, double angle, double height, unsigned p_rank, unsigned p_size);
-
-namespace simple_fields {
-
-struct GearParams {
-  GearParams()
-    : element_size(0.1),
-      radius_min(0.6),
-      radius_max(1.05),
-      height_min(-0.4),
-      height_max(0.4)
-  {}
-
-  GearParams(double input_element_size,
-             double input_radius_min,
-             double input_radius_max,
-             double input_height_min,
-             double input_height_max)
-    : element_size(input_element_size),
-      radius_min(input_radius_min),
-      radius_max(input_radius_max),
-      height_min(input_height_min),
-      height_max(input_height_max)
-  {}
-
-  double element_size;
-  double radius_min;
-  double radius_max;
-  double height_min;
-  double height_max;
-};
-
-class GearsFixture {
-public:
   typedef Field<double> CylindricalField;
   typedef Field<double> CartesianField;
 
@@ -208,6 +128,92 @@ private:
 /// \brief Distribute gears across processors
 void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalField & cylindrical_coord_field);
 unsigned destination_processor(const Gear & gear, double rad, double angle, double height, unsigned p_rank, unsigned p_size);
+
+namespace simple_fields {
+
+struct STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+GearParams {
+  GearParams()
+    : element_size(0.1),
+      radius_min(0.6),
+      radius_max(1.05),
+      height_min(-0.4),
+      height_max(0.4)
+  {}
+
+  GearParams(double input_element_size,
+             double input_radius_min,
+             double input_radius_max,
+             double input_height_min,
+             double input_height_max)
+    : element_size(input_element_size),
+      radius_min(input_radius_min),
+      radius_max(input_radius_max),
+      height_min(input_height_min),
+      height_max(input_height_max)
+  {}
+
+  double element_size;
+  double radius_min;
+  double radius_max;
+  double height_min;
+  double height_max;
+};
+
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+GearsFixture {
+public:
+  typedef Field<double> CylindricalField;
+  typedef Field<double> CartesianField;
+
+  enum { SpatialDimension = 3 };
+
+  GearsFixture( stk::ParallelMachine pm, size_t num_gears,
+                stk::mesh::fixtures::GearParams gear_params=stk::mesh::fixtures::GearParams());
+  ~GearsFixture();
+
+  void generate_mesh();
+
+  const size_t NUM_GEARS;
+
+  std::shared_ptr<BulkData> bulk_data_ptr;
+  BulkData& bulk_data;
+  MetaData& meta_data;
+
+  Part & cylindrical_coord_part;
+  Part & hex_part;
+  Part & wedge_part;
+
+  CartesianField    * cartesian_coord_field ;
+  CartesianField    * displacement_field ;
+  CartesianField    * translation_field ;
+  CylindricalField  * cylindrical_coord_field;
+
+  stk::mesh::fixtures::Gear & get_gear(size_t i) {
+    return * m_gears[i];
+  }
+
+  const stk::mesh::fixtures::Gear & get_gear(size_t i) const{
+    return * m_gears[i];
+  }
+
+  void communicate_model_fields();
+
+private:
+
+  std::vector<stk::mesh::fixtures::Gear *> m_gears;
+
+  GearsFixture( const GearsFixture & );
+  GearsFixture & operator=( const GearsFixture & );
+};
+
+/// \brief Distribute gears across processors
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void distribute_gear_across_processors(stk::mesh::fixtures::Gear & gear,
+                                       stk::mesh::fixtures::GearsFixture::CylindricalField & cylindrical_coord_field);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+unsigned destination_processor(const stk::mesh::fixtures::Gear & gear, double rad, double angle, double height, unsigned p_rank, unsigned p_size);
 
 } // namespace simple_fields
 

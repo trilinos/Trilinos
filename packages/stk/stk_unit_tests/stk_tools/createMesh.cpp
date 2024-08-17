@@ -11,7 +11,7 @@
 namespace
 {
 
-class StkToolsA : public stk::unit_test_util::simple_fields::MeshFixture
+class StkToolsA : public stk::unit_test_util::MeshFixture
 {
 
 };
@@ -19,7 +19,7 @@ class StkToolsA : public stk::unit_test_util::simple_fields::MeshFixture
 TEST_F(StkToolsA, WriteTextMeshDescFromExodusFile)
 {
   const std::string unNamed = "mesh not specified";
-  const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
+  const std::string meshName = stk::unit_test_util::get_option("-i", unNamed);
   STK_ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 

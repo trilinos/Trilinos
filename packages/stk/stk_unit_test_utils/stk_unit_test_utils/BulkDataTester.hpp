@@ -43,6 +43,7 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/MeshCommVerify.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/CommEntityMods.hpp>
 
@@ -143,7 +144,7 @@ public:
 
     void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, stk::mesh::ModEndOptimizationFlag mod_optimization = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT )
     {
-        this->internal_change_entity_owner(arg_change,mod_optimization);
+        this->m_meshModification.internal_change_entity_owner(arg_change,mod_optimization);
     }
 
     stk::mesh::Entity my_generate_new_entity(unsigned preferred_offset = 0)
@@ -228,7 +229,7 @@ public:
 
     bool my_comm_mesh_verify_parallel_consistency(std::ostream & error_log)
     {
-        return comm_mesh_verify_parallel_consistency(error_log);
+        return mesh::impl::comm_mesh_verify_parallel_consistency(*this, internal_comm_db(), internal_comm_list(), [&](stk::mesh::Entity entity){return internal_entity_comm_map(entity);}, error_log);
     }
 
     void my_internal_resolve_shared_modify_delete()

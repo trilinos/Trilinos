@@ -339,7 +339,7 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class UsingZoltan2 : public stk::unit_test_util::simple_fields::MeshFixture
+class UsingZoltan2 : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_decomp_with_method(const std::string& method, int nparts, stk::mesh::EntityRank primary_rank, stk::mesh::EntityRank secondary_rank)

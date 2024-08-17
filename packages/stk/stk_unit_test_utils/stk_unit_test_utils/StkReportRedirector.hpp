@@ -9,7 +9,7 @@
 #ifndef STK_STK_UNIT_TEST_UTILS_STKREPORTREDIRECTOR_HPP_
 #define STK_STK_UNIT_TEST_UTILS_STKREPORTREDIRECTOR_HPP_
 #include <stk_util/util/ReportHandler.hpp>
-
+#include "stk_util/stk_config.h"
 
 namespace stk
 {
@@ -28,7 +28,8 @@ class StkReportRedirector {
 
 namespace simple_fields {
 
-class StkReportRedirector : public stk::unit_test_util::StkReportRedirector {};
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+StkReportRedirector : public stk::unit_test_util::StkReportRedirector {};
 
 } // namespace simple_fields
 

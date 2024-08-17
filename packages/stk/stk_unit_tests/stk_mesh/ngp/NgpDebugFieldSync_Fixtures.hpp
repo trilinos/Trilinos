@@ -70,7 +70,7 @@ struct EntityIdAddRemovePart {
   std::string removePart;
 };
 
-class NgpDebugFieldSyncFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpDebugFieldSyncFixture : public stk::unit_test_util::MeshFixture
 {
 public:
   template <typename T>

@@ -39,6 +39,8 @@
 namespace stk {
 namespace mesh {
 
+class BulkData;
+
 class EntitySorterBase
 {
 public:

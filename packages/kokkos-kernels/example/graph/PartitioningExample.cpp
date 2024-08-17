@@ -28,7 +28,7 @@
 using std::cout;
 using std::vector;
 
-//#include "../../src/sparse/impl/KokkosSparse_partitioning_impl.hpp"
+// #include "../../src/sparse/impl/KokkosSparse_partitioning_impl.hpp"
 
 int main(int argc, char* argv[]) {
   /*

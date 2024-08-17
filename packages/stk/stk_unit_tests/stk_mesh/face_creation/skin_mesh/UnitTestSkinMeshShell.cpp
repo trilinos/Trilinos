@@ -20,7 +20,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
       std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
       stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
       stk::mesh::BulkData& bulk_data = *bulkPtr;
-      stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+      stk::mesh::fixtures::VectorFieldType & node_coord =
           meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
       stk::mesh::put_field_on_mesh(node_coord, meta_data.universal_part(), 3, nullptr);
 
@@ -85,7 +85,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
     stk::mesh::BulkData& bulk_data = *bulkPtr;
     stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
     stk::io::put_io_part_attribute(skin);
-    stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+    stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
     unlink(fileName.c_str());
     EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
     std::vector<size_t> mesh_counts;

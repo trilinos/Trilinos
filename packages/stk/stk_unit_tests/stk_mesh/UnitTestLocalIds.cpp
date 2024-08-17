@@ -15,11 +15,11 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
 
-class LocalIds : public stk::unit_test_util::simple_fields::MeshFixture
+class LocalIds : public stk::unit_test_util::MeshFixture
 {
 protected:
   LocalIds()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {}
   virtual ~LocalIds() {}
 };

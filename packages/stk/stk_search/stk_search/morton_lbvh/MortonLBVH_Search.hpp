@@ -38,6 +38,7 @@
 #include <stk_search/morton_lbvh/MortonLBVH_TreeManipulationUtils.hpp>
 #include <stk_search/morton_lbvh/MortonLBVH_CollisionList.hpp>
 #include <stk_search/BoxIdent.hpp>
+#include <stk_search/HelperTraits.hpp>
 #include <Kokkos_Timer.hpp>
 #include <vector>
 #include <utility>
@@ -45,6 +46,8 @@
 #define ALWAYS_SORT_MORTON_TREES 0
 
 namespace stk::search {
+
+constexpr size_t COLLISION_SCALE_FACTOR = 16;
 
 template <typename RealType, typename ExecutionSpace>
 inline void determine_mas_calling(const MortonAabbTree<RealType, ExecutionSpace> &partialTree1,
@@ -111,6 +114,30 @@ inline void export_from_box_ident_proc_vec_to_morton_tree(
   }
 }
 
+template <typename RealType, typename ExecutionSpace, typename DomainView>
+inline void export_box_ident_view_to_morton_tree(
+  const DomainView& boxIdentProcs,
+  MortonAabbTree<RealType, ExecutionSpace>& tree,
+  ExecutionSpace execSpace)
+{
+  check_view_is_usable_from<ExecutionSpace, DomainView>();
+  static_assert(is_box_ident_proc_container_v<DomainView> || is_box_ident_container_v<DomainView>,
+                "view must be a View<BoxIdent> or View<BoxIdentProc>");
+  using BoxType = typename DomainView::value_type::box_type;
+  tree.reset(boxIdentProcs.extent(0));
+
+  Kokkos::RangePolicy<ExecutionSpace> policy(execSpace, 0, boxIdentProcs.extent(0));
+  auto func = KOKKOS_LAMBDA(int index)
+  {
+    const BoxType box = boxIdentProcs(index).box;
+    tree.device_set_box(index, box.get_x_min(), box.get_x_max(),
+                               box.get_y_min(), box.get_y_max(),
+                               box.get_z_min(), box.get_z_max());
+  };
+
+  Kokkos::parallel_for("export box-ident view to tree", policy, func);
+}
+
 template <typename RealType, typename BoxType, typename IdentType, typename ExecutionSpace>
 inline void export_from_box_ident_vector_to_morton_tree(
     const std::vector<std::pair<BoxType, IdentType>> &boxIdentList, MortonAabbTree<RealType, ExecutionSpace> &tree)
@@ -127,22 +154,6 @@ inline void export_from_box_ident_vector_to_morton_tree(
       });
 }
 
-template <typename RealType, typename ExecutionSpace, typename BoxType, typename IdentType>
-inline void export_from_box_ident_view_to_morton_tree(
-    const Kokkos::View<BoxIdent<BoxType, IdentType>*, ExecutionSpace> & boxIdentList,
-    MortonAabbTree<RealType, ExecutionSpace> & tree)
-{
-  int numBoxes = static_cast<int>(boxIdentList.extent(0));
-  tree.reset(numBoxes);
-
-  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, numBoxes),
-      KOKKOS_LAMBDA(int index) {
-        const auto & box = boxIdentList[index].box;
-        tree.device_set_box(index, box.get_x_min(), box.get_x_max(),
-                            box.get_y_min(), box.get_y_max(),
-                            box.get_z_min(), box.get_z_max());
-      });
-}
 
 template <typename RealType, typename ExecutionSpace, typename BoxType>
 inline void export_from_box_vec_to_morton_tree(const std::vector<BoxType> &boxVec,
@@ -157,18 +168,39 @@ inline void export_from_box_vec_to_morton_tree(const std::vector<BoxType> &boxVe
   }
 }
 
-template <typename RealType, typename ExecutionSpace>
+template <typename RealType, typename ExecutionSpace, typename BoxView>
+inline void export_box_view_to_morton_tree(const BoxView boxes,
+                                                MortonAabbTree<RealType, ExecutionSpace>& tree,
+                                                ExecutionSpace execSpace)
+{
+  check_view_is_usable_from<ExecutionSpace, BoxView>();
+  using BoxType = typename BoxView::value_type;
+  tree.reset(boxes.extent(0));
+
+  Kokkos::RangePolicy<ExecutionSpace> policy(execSpace, 0, boxes.extent(0));
+  auto func = KOKKOS_LAMBDA (int index)
+  {
+    const BoxType box = boxes(index);
+    tree.device_set_box(index, box.get_x_min(), box.get_x_max(),
+                               box.get_y_min(), box.get_y_max(),
+                               box.get_z_min(), box.get_z_max());
+  };
+
+  Kokkos::parallel_for(policy, func);
+}
+
+template <typename RealType, typename ExecutionSpace, typename Callback>
 inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
                                MortonAabbTree<RealType, ExecutionSpace> &tree2,
-                               CollisionList<ExecutionSpace> &searchResults,
+                               Callback& resultCallback,
                                ExecutionSpace const& execSpace = ExecutionSpace{})
 {
-  Kokkos::Profiling::pushRegion("Initialization");
+  Kokkos::Profiling::pushRegion("Initialize the trees");
   Kokkos::Profiling::pushRegion("Get global bounds");
   // Get total bounds
   TotalBoundsFunctor<RealType, ExecutionSpace>::apply(tree1, execSpace);
   TotalBoundsFunctor<RealType, ExecutionSpace>::apply(tree2, execSpace);
-  Kokkos::fence();
+  execSpace.fence();
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Determine need to sort/flip trees");
@@ -180,7 +212,7 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   Kokkos::Profiling::pushRegion("Morton encoding of leaves");
   MortonEncoder<RealType, ExecutionSpace>::apply(tree1, execSpace, sortTree1);
   MortonEncoder<RealType, ExecutionSpace>::apply(tree2, execSpace, sortTree2);
-  Kokkos::fence();
+  execSpace.fence();
   Kokkos::Profiling::popRegion();
 
   // Sort the leaves if appropriate
@@ -190,10 +222,10 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
     SortByCode<RealType, ExecutionSpace>::apply(tree1, execSpace);
   }
   if (sortTree2) {
-    // printf("Sorting tree with %d leaves\n", tree1.hm_numLeaves());
+    // printf("Sorting tree with %d leaves\n", tree2.hm_numLeaves());
     SortByCode<RealType, ExecutionSpace>::apply(tree2, execSpace);
   }
-  Kokkos::fence();
+  execSpace.fence();
   Kokkos::Profiling::popRegion();
 
   // Build the tree structures, if appropriate, following Karras's algorithm
@@ -206,7 +238,7 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   if (buildTree2) {
     BuildRadixTree<RealType, ExecutionSpace>::apply(tree2, execSpace);
   }
-  Kokkos::fence();
+  execSpace.fence();
   Kokkos::Profiling::popRegion();
 
   // Augment the trees to be bounding volume (box) hierarchies
@@ -217,20 +249,39 @@ inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
   if (buildTree2) {
     UpdateInteriorNodeBVs<RealType, ExecutionSpace>::apply(tree2, execSpace);
   }
-  Kokkos::fence();
+  execSpace.fence();
   Kokkos::Profiling::popRegion();
   Kokkos::Profiling::popRegion();
 
   // Test the boxes from the non-tree against the tree that was built.
   Kokkos::Profiling::pushRegion("Search query");
+
   if (flipOrder) {
-    Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(tree2, tree1, searchResults, execSpace, true);
+    search_tree(tree2, tree1, resultCallback, execSpace, true);
+  } else {
+    search_tree(tree1, tree2, resultCallback, execSpace);
   }
-  else {
-    Traverse_MASTB_BVH_Functor<RealType, ExecutionSpace>::apply_tree(tree1, tree2, searchResults, execSpace);
-  }
-  Kokkos::fence();
+  execSpace.fence();
   Kokkos::Profiling::popRegion();
+}
+
+template <typename RealType, typename ExecutionSpace>
+inline void morton_lbvh_search(MortonAabbTree<RealType, ExecutionSpace> &tree1,
+                               MortonAabbTree<RealType, ExecutionSpace> &tree2,
+                               CollisionList<ExecutionSpace> &searchResults,
+                               ExecutionSpace const& execSpace = ExecutionSpace{})
+{
+  if (searchResults.get_capacity() == 0) {
+    const int numDomainLeaves = tree1.hm_numLeaves();
+    const int numRangeLeaves  = tree2.hm_numLeaves();
+
+    const int collisionEstimate = std::max(numDomainLeaves, numRangeLeaves) * COLLISION_SCALE_FACTOR;
+    searchResults.reset(collisionEstimate);
+  }
+
+  CollisionListCallback<ExecutionSpace> resultCallback(searchResults);
+  morton_lbvh_search(tree1, tree2, resultCallback, execSpace);
+  searchResults = resultCallback.get_collision_list();
 }
 
 template <typename RealType, class ExecutionSpace, typename BoxType>

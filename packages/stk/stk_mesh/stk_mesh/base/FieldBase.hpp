@@ -73,11 +73,6 @@ void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
 stk::CSet & get_attributes(FieldBase & field);
 }
 
-namespace legacy {
-unsigned field_array_rank(const FieldBase & field);
-const shards::ArrayDimTag * const * dimension_tags(const FieldBase & field);
-}
-
 struct FieldMetaData
 {
   unsigned char* m_data = nullptr;
@@ -135,22 +130,7 @@ public:
   /** \brief  FieldState of this field */
   FieldState state() const { return m_this_state; }
 
-  /** \brief  Multi-dimensional array rank of this field,
-   *          which is zero for a scalar field.
-   */
-  STK_DEPRECATED_MSG("FieldBase::field_array_rank() is no longer supported since it represents the number of "
-                     "extra Field template parameters, which are being removed.")
-  unsigned field_array_rank() const;
-
   EntityRank entity_rank() const { return m_entity_rank; }
-
-  /** \brief  Multi-dimensional
-   *          \ref shards::ArrayDimTag "array dimension tags"
-   *          of this field.
-   */
-  STK_DEPRECATED_MSG("FieldBase::dimension_tags() is no longer supported since it holds the "
-                     "extra Field template parameters, which are being removed.")
-  const shards::ArrayDimTag * const * dimension_tags() const;
 
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
@@ -283,9 +263,6 @@ public:
   void rotate_multistate_data(bool rotateNgpFieldViews = false);
 
  private:
-  unsigned legacy_field_array_rank() const;
-  const shards::ArrayDimTag * const * legacy_dimension_tags() const;
-
   stk::ngp::ExecSpace& get_execution_space() const {
     return m_execSpace;
   }
@@ -364,9 +341,6 @@ public:
 
   friend NgpFieldBase* impl::get_ngp_field(const FieldBase & stkField);
   friend void impl::set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
-
-  friend unsigned legacy::field_array_rank(const FieldBase & field);
-  friend const shards::ArrayDimTag * const * legacy::dimension_tags(const FieldBase & field);
 
   template <typename T, template <typename> class NgpDebugger> friend class HostField;
   template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
@@ -776,22 +750,6 @@ field_data(const FieldType & f, Entity e,
   const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
   return reinterpret_cast<typename FieldType::value_type*>(field_meta_data.m_data +
                                                            field_meta_data.m_bytesPerEntity * mi.bucket_ordinal);
-}
-
-namespace legacy {
-
-// These functions will be removed when the deprecated legacy Field handling is removed.  Do not use!
-
-inline unsigned field_array_rank(const FieldBase & field)
-{
-  return field.legacy_field_array_rank();
-}
-
-inline const shards::ArrayDimTag * const * dimension_tags(const FieldBase & field)
-{
-  return field.legacy_dimension_tags();
-}
-
 }
 
 } //namespace stk::mesh

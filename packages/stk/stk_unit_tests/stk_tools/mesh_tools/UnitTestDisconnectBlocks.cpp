@@ -28,10 +28,10 @@
 
 using stk::unit_test_util::build_mesh;
 
-class TestDisconnectBlocks2D : public stk::unit_test_util::simple_fields::MeshFixture
+class TestDisconnectBlocks2D : public stk::unit_test_util::MeshFixture
 {
 protected:
-  TestDisconnectBlocks2D() : stk::unit_test_util::simple_fields::MeshFixture(2)
+  TestDisconnectBlocks2D() : stk::unit_test_util::MeshFixture(2)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
@@ -58,8 +58,7 @@ TEST_F(TestDisconnectBlocks2D, disconnect_user_block_1block_1quad_empty_part)
   stk::tools::BlockPairVector blocksToDisconnect;
   blocksToDisconnect.emplace_back(blocks[0], &block2);
 
-  stk::tools::DisconnectBlocksOption option(stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_ALL_HINGES);
-  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, option));
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, stk::tools::SNIP_ALL_HINGES));
 }
 
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_1quad)
@@ -96,9 +95,7 @@ TEST_F(TestDisconnectBlocks2D, disconnect_user_blocks_2block_2quad_in_reverse_bl
   stk::tools::BlockPairVector blocksToDisconnect;
   blocksToDisconnect.emplace_back(blocks[1], blocks[0]);
 
-  stk::tools::DisconnectBlocksOption option(stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_ALL_HINGES);
-
-  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, option));
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, stk::tools::SNIP_ALL_HINGES));
 }
 
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad_updateGraph)
@@ -640,10 +637,10 @@ TEST_F(TestReconnectList2D, reconnect_9block_9quad_permutation2)
 }
 
 
-class TestDisconnectBlocks : public stk::unit_test_util::simple_fields::MeshFixture
+class TestDisconnectBlocks : public stk::unit_test_util::MeshFixture
 {
 protected:
-  TestDisconnectBlocks() : stk::unit_test_util::simple_fields::MeshFixture(3)
+  TestDisconnectBlocks() : stk::unit_test_util::MeshFixture(3)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
@@ -803,7 +800,7 @@ TEST(DisconnectBlocks, input_mesh)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::BulkData& bulk = *bulkPtr;
 
-  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-f", "");
+  std::string exodusFileName = stk::unit_test_util::get_option("-f", "");
   if (exodusFileName.empty()) return;
 
   stk::io::fill_mesh_with_auto_decomp(exodusFileName, bulk);
@@ -1705,13 +1702,13 @@ void test_connection_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector& all
 void test_user_block_disconnect(stk::mesh::BulkData& bulk,
                                BlockConnectionVector& blockPairConnectionsToDisconnect,
                                unsigned expectedFinalCommonNodeCount,
-                               stk::tools::DisconnectBlocksOption disconnectOptions = stk::tools::DisconnectBlocksOption())
+                               stk::tools::SnipOption snipOption = stk::tools::PRESERVE_INITIAL_HINGES)
 {
   stk::mesh::PartVector allBlocksInMesh;
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::BlockPairVector blockPairsToDisconnect = convert_connection_vector_to_pair_vector(bulk, blockPairConnectionsToDisconnect);
 
-  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect, disconnectOptions);
+  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect, snipOption);
 
   test_connection_pairs(bulk, allBlocksInMesh, blockPairConnectionsToDisconnect, expectedFinalCommonNodeCount);
 }
@@ -1929,10 +1926,10 @@ TEST(TestDisconnectInputFile, input_mesh)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
 
-  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-exoFile", "");
+  std::string exodusFileName = stk::unit_test_util::get_option("-exoFile", "");
   if (exodusFileName.empty()) return;
 
-  std::string disconnectBlockFile = stk::unit_test_util::simple_fields::get_option("-blockFile", "");
+  std::string disconnectBlockFile = stk::unit_test_util::get_option("-blockFile", "");
   if (disconnectBlockFile.empty()) return;
 
   stk::io::fill_mesh(exodusFileName, bulk);
@@ -1968,7 +1965,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   double meshReadTime = stk::wall_time();
 
   std::cout << "Starting disconnect block sequence" << std::endl;
-  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec, stk::tools::PRESERVE_INITIAL_HINGES);
 
   double disconnectTime = stk::wall_time();
 
@@ -2002,7 +1999,7 @@ TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_preserve_snip_option_4bl
     stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
 
     BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_3",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::PRESERVE_INITIAL_HINGES));
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::PRESERVE_INITIAL_HINGES);
   }
 }
 
@@ -2012,7 +2009,7 @@ TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_snip_all_hinges_snip_opt
     stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
 
     BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::SNIP_ALL_HINGES));
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::SNIP_ALL_HINGES);
   }
 }
 
@@ -2022,7 +2019,7 @@ TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_2block_3quad_1hinge)
     stk::mesh::PartVector blocks = setup_mesh_3block_3quad_1hinge_linear_stack(get_bulk());
 
     BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_3",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 3u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 3u, stk::tools::PRESERVE_INITIAL_HINGES);
   }
 }
 
@@ -2032,7 +2029,7 @@ TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_3proc)
     stk::mesh::PartVector blocks = setup_mesh_3block_4quad_keepLowerRight(get_bulk(), 1);
 
     BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_3",0), BlockConnection("block_2","block_3",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::PRESERVE_INITIAL_HINGES);
   }
 }
 
@@ -2043,7 +2040,7 @@ TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_custom_o
   stk::mesh::PartVector blocks = setup_mesh_3block_4quad_reverse_ordinal(get_bulk());
 
   BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("vl","lateral",0), BlockConnection("radax","lateral",0)};
-  test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::PRESERVE_INITIAL_HINGES);
 }
 
 
@@ -2070,7 +2067,7 @@ TEST_F(TestBlockPairCreation, test_block_pair_creation)
 
 void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
 {
-  stk::unit_test_util::simple_fields::ConstructedMesh data(3);
+  stk::unit_test_util::ConstructedMesh data(3);
 
   data.set_x_coordinates({ 2.69902090331971, 2.66623140978201, 2.75874573101832, 2.69902090331971,
                            2.69659806972163, 2.68053633989566, 2.66870203682596, 2.7137889539581,
@@ -2101,7 +2098,7 @@ void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
                                {30822787, 1}, {30824958, 1}, {26778235, 1}, {30822789, 1}, {30162567, 0},
                                {27186527, 1}, {29861241, 1}, {29528157, 0}, {30162566, 0}} );
 
-  stk::unit_test_util::simple_fields::ConstructedElementBlock block1(stk::topology::TET_4, "block_1", 202, { {2, 8, 9, 10},
+  stk::unit_test_util::ConstructedElementBlock block1(stk::topology::TET_4, "block_1", 202, { {2, 8, 9, 10},
                                                                                               {10, 8, 9, 6},
                                                                                               {5, 15, 16, 8},
                                                                                               {2, 8, 10, 5},
@@ -2114,13 +2111,13 @@ void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
                                                                                               {6, 8, 7, 10} });
   data.add_elem_block(block1);
 
-  stk::unit_test_util::simple_fields::ConstructedElementBlock block2(stk::topology::TET_4, "block_2", 223, { {15, 12, 8, 6},
+  stk::unit_test_util::ConstructedElementBlock block2(stk::topology::TET_4, "block_2", 223, { {15, 12, 8, 6},
                                                                                               {8, 13, 9, 6},
                                                                                               {12, 16, 15, 8},
                                                                                               {8, 12, 13, 6} });
   data.add_elem_block(block2);
 
-  stk::unit_test_util::simple_fields::ConstructedElementBlock block3(stk::topology::TET_4, "block_3", 245, { {2, 8, 4, 1},
+  stk::unit_test_util::ConstructedElementBlock block3(stk::topology::TET_4, "block_3", 245, { {2, 8, 4, 1},
                                                                                               {2, 8, 1, 9},
                                                                                               {8, 11, 3, 4},
                                                                                               {8, 12, 11, 4},
@@ -2145,9 +2142,8 @@ TEST(TestNGSDisconnect, jtd_sub_mesh)
   stk::mesh::Part* block2 = meta.get_part("block_2");
   stk::mesh::Part* block3 = meta.get_part("block_3");
 
-  stk::tools::DisconnectBlocksOption disconnectOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES);
   stk::tools::BlockPairVector disconnectPairs{{block1, block3}, {block2, block3}};
-  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(bulk, disconnectPairs, disconnectOption));
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(bulk, disconnectPairs, stk::tools::PRESERVE_INITIAL_HINGES));
 }
 
 void create_2_tet10s_in_2_blocks_sharing_6_nodes(stk::mesh::BulkData &bulk)
@@ -2253,10 +2249,10 @@ void expect_one_face_in_sideset_with_adjacent_blocks(
     }
 }
 
-class TestDisconnectWithSidesets : public stk::unit_test_util::simple_fields::MeshFixture
+class TestDisconnectWithSidesets : public stk::unit_test_util::MeshFixture
 {
 protected:
-  TestDisconnectWithSidesets() : stk::unit_test_util::simple_fields::MeshFixture(3)
+  TestDisconnectWithSidesets() : stk::unit_test_util::MeshFixture(3)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
@@ -2405,7 +2401,7 @@ TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_internalSidesets)
   auto block1 = blocks[0];
   auto block2 = blocks[1];
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
@@ -2426,9 +2422,9 @@ TEST_F(TestDisconnectWithSidesets, fourHexesInThreeBlocks_with_internalSidesets)
   auto block2 = blocks[1];
   auto block3 = blocks[2];
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2},
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2},
                                             stk::tools::BlockPair{block1, block3},
-                                            stk::tools::BlockPair{block2, block3}});
+                                            stk::tools::BlockPair{block2, block3}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block2, block3}));
@@ -2448,7 +2444,7 @@ TEST_F(TestDisconnectWithSidesets, twoTet4InTwoBlocks_with_internalSidesets)
   auto block1 = blocks[0];
   auto block2 = blocks[1];
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
@@ -2468,9 +2464,9 @@ TEST_F(TestDisconnectWithSidesets, threeTet4InFourBlocks_with_internalSidesets)
   auto block2 = blocks[1];
   auto block3 = blocks[2];
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2},
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2},
                                             stk::tools::BlockPair{block1, block3},
-                                            stk::tools::BlockPair{block2, block3}});
+                                            stk::tools::BlockPair{block2, block3}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block2, block3}));
@@ -2491,7 +2487,7 @@ TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_internalAndExternalS
   auto block1 = blocks[0];
   auto block2 = blocks[1];
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
@@ -2511,7 +2507,7 @@ TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_dualInternalAndExter
   auto block1 = blocks[0];
   auto block2 = blocks[1];
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
@@ -2543,7 +2539,7 @@ TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_internalSidesetAndEm
   EXPECT_EQ(0u, numFacesInSurface2);
   EXPECT_EQ(0u, numFacesInSurface3);
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
@@ -2583,7 +2579,7 @@ TEST_F(TestDisconnectWithSidesets, ALRBC)
   unsigned numFacesInSurface1 = stk::mesh::count_selected_entities(*surface1, get_bulk().buckets(stk::topology::FACE_RANK));
   EXPECT_EQ(1u, numFacesInSurface1);
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}, stk::tools::BlockPair{block2, block3}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}, stk::tools::BlockPair{block2, block3}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block2, block3}));
@@ -2625,7 +2621,7 @@ TEST_F(TestDisconnectWithSidesets, ALRB)
   unsigned numFacesInSurface1 = stk::mesh::count_selected_entities(*surface1, get_bulk().buckets(stk::topology::FACE_RANK));
   EXPECT_EQ(1u, numFacesInSurface1);
 
-  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+  stk::tools::disconnect_user_blocks(bulk, stk::tools::BlockPairVector{stk::tools::BlockPair{block1, block2}}, stk::tools::PRESERVE_INITIAL_HINGES);
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
   EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));

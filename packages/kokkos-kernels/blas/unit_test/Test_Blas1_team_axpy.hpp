@@ -48,8 +48,7 @@ void impl_test_team_axpy(int N) {
   ScalarA a  = 3;
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));
@@ -60,55 +59,38 @@ void impl_test_team_axpy(int N) {
 
   ScalarA expected_result = 0;
   for (int i = 0; i < N; i++)
-    expected_result += ScalarB(a * x.h_view(i) + y.h_view(i)) *
-                       ScalarB(a * x.h_view(i) + y.h_view(i));
+    expected_result += ScalarB(a * x.h_view(i) + y.h_view(i)) * ScalarB(a * x.h_view(i) + y.h_view(i));
 
   // KokkosBlas::axpy(a,x,y);
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamAxpy", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamAxpy", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::axpy(
             teamMember, a,
-            Kokkos::subview(
-                x.d_view,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
-            Kokkos::subview(
-                y.d_view,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+            Kokkos::subview(x.d_view, Kokkos::make_pair(teamId * team_data_siz,
+                                                        (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+            Kokkos::subview(y.d_view, Kokkos::make_pair(teamId * team_data_siz,
+                                                        (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
 
   ScalarB nonconst_nonconst_result = KokkosBlas::dot(y.d_view, y.d_view);
-  EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result,
-                 eps * expected_result);
+  EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result, eps * expected_result);
 
   Kokkos::deep_copy(y.d_base, org_y.h_base);
 
   // KokkosBlas::axpy(a,c_x,y);
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamAxpy", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamAxpy", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::axpy(
             teamMember, a,
-            Kokkos::subview(
-                x.d_view_const,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
-            Kokkos::subview(
-                y.d_view,
-                Kokkos::make_pair(
-                    teamId * team_data_siz,
-                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+            Kokkos::subview(x.d_view_const, Kokkos::make_pair(teamId * team_data_siz,
+                                                              (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+            Kokkos::subview(y.d_view, Kokkos::make_pair(teamId * team_data_siz,
+                                                        (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
 
-  ScalarB const_nonconst_result =
-      KokkosBlas::dot(y.d_view_const, y.d_view_const);
+  ScalarB const_nonconst_result = KokkosBlas::dot(y.d_view_const, y.d_view_const);
   EXPECT_NEAR_KK(const_nonconst_result, expected_result, eps * expected_result);
 }
 
@@ -143,8 +125,7 @@ void impl_test_team_axpy_mv(int N, int K) {
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
     for (int i = 0; i < N; i++)
-      expected_result[j] += ScalarB(a * x.h_view(i, j) + y.h_view(i, j)) *
-                            ScalarB(a * x.h_view(i, j) + y.h_view(i, j));
+      expected_result[j] += ScalarB(a * x.h_view(i, j) + y.h_view(i, j)) * ScalarB(a * x.h_view(i, j) + y.h_view(i, j));
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
@@ -153,39 +134,32 @@ void impl_test_team_axpy_mv(int N, int K) {
 
   // KokkosBlas::axpy(a,x,y);
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamAxpy", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamAxpy", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
-        KokkosBlas::Experimental::axpy(
-            teamMember, a, Kokkos::subview(x.d_view, Kokkos::ALL(), teamId),
-            Kokkos::subview(y.d_view, Kokkos::ALL(), teamId));
+        KokkosBlas::Experimental::axpy(teamMember, a, Kokkos::subview(x.d_view, Kokkos::ALL(), teamId),
+                                       Kokkos::subview(y.d_view, Kokkos::ALL(), teamId));
       });
 
   KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_nonconst_result = r(k);
-    EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result[k],
-                   eps * expected_result[k]);
+    EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result[k], eps * expected_result[k]);
   }
 
   Kokkos::deep_copy(y.d_base, org_y.h_base);
 
   // KokkosBlas::axpy(a,c_x,y);
   Kokkos::parallel_for(
-      "KokkosBlas::Test::TeamAxpy", policy,
-      KOKKOS_LAMBDA(const team_member &teamMember) {
+      "KokkosBlas::Test::TeamAxpy", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
-        KokkosBlas::Experimental::axpy(
-            teamMember, a,
-            Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId),
-            Kokkos::subview(y.d_view, Kokkos::ALL(), teamId));
+        KokkosBlas::Experimental::axpy(teamMember, a, Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId),
+                                       Kokkos::subview(y.d_view, Kokkos::ALL(), teamId));
       });
 
   KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA const_non_const_result = r(k);
-    EXPECT_NEAR_KK(const_non_const_result, expected_result[k],
-                   eps * expected_result[k]);
+    EXPECT_NEAR_KK(const_non_const_result, expected_result[k], eps * expected_result[k]);
   }
 
   delete[] expected_result;
@@ -195,8 +169,7 @@ void impl_test_team_axpy_mv(int N, int K) {
 template <class ScalarA, class ScalarB, class Device>
 int test_team_axpy() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_team_axpy<view_type_a_ll, view_type_b_ll, Device>(0);
@@ -206,8 +179,7 @@ int test_team_axpy() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_team_axpy<view_type_a_lr, view_type_b_lr, Device>(0);
@@ -216,8 +188,7 @@ int test_team_axpy() {
   // Test::impl_test_team_axpy<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_team_axpy<view_type_a_ls, view_type_b_ls, Device>(0);
@@ -226,8 +197,7 @@ int test_team_axpy() {
   // Test::impl_test_team_axpy<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_team_axpy<view_type_a_ls, view_type_b_ll, Device>(124);
   Test::impl_test_team_axpy<view_type_a_ll, view_type_b_ls, Device>(124);
 #endif
@@ -238,8 +208,7 @@ int test_team_axpy() {
 template <class ScalarA, class ScalarB, class Device>
 int test_team_axpy_mv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_team_axpy_mv<view_type_a_ll, view_type_b_ll, Device>(0, 5);
@@ -250,8 +219,7 @@ int test_team_axpy_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_team_axpy_mv<view_type_a_lr, view_type_b_lr, Device>(0, 5);
@@ -261,8 +229,7 @@ int test_team_axpy_mv() {
   // Device>(132231,5);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_team_axpy_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
@@ -272,8 +239,7 @@ int test_team_axpy_mv() {
   // Device>(132231,5);
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_team_axpy_mv<view_type_a_ls, view_type_b_ll, Device>(124, 5);
   Test::impl_test_team_axpy_mv<view_type_a_ll, view_type_b_ls, Device>(124, 5);
 #endif
@@ -282,57 +248,36 @@ int test_team_axpy_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_axpy_float) {
-  test_team_axpy<float, float, TestDevice>();
-}
-TEST_F(TestCategory, team_axpy_mv_float) {
-  test_team_axpy_mv<float, float, TestDevice>();
-}
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_axpy_float) { test_team_axpy<float, float, TestDevice>(); }
+TEST_F(TestCategory, team_axpy_mv_float) { test_team_axpy_mv<float, float, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_axpy_double) {
-  test_team_axpy<double, double, TestDevice>();
-}
-TEST_F(TestCategory, team_axpy_mv_double) {
-  test_team_axpy_mv<double, double, TestDevice>();
-}
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_axpy_double) { test_team_axpy<double, double, TestDevice>(); }
+TEST_F(TestCategory, team_axpy_mv_double) { test_team_axpy_mv<double, double, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_axpy_complex_double) {
-  test_team_axpy<Kokkos::complex<double>, Kokkos::complex<double>,
-                 TestDevice>();
+  test_team_axpy<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
 }
 TEST_F(TestCategory, team_axpy_mv_complex_double) {
-  test_team_axpy_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                    TestDevice>();
+  test_team_axpy_mv<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_INT) ||   \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_INT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_axpy_int) { test_team_axpy<int, int, TestDevice>(); }
-TEST_F(TestCategory, team_axpy_mv_int) {
-  test_team_axpy_mv<int, int, TestDevice>();
-}
+TEST_F(TestCategory, team_axpy_mv_int) { test_team_axpy_mv<int, int, TestDevice>(); }
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-TEST_F(TestCategory, team_axpy_double_int) {
-  test_team_axpy<double, int, TestDevice>();
-}
-TEST_F(TestCategory, team_axpy_double_mv_int) {
-  test_team_axpy_mv<double, int, TestDevice>();
-}
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+TEST_F(TestCategory, team_axpy_double_int) { test_team_axpy<double, int, TestDevice>(); }
+TEST_F(TestCategory, team_axpy_double_mv_int) { test_team_axpy_mv<double, int, TestDevice>(); }
 #endif
 
 #endif  // Check for lambda availability in CUDA backend

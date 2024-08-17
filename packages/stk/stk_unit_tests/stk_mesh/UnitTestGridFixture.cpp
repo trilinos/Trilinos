@@ -64,7 +64,7 @@ TEST( UnitTestGridFixture, test_gridfixture )
   //Coverage of GridFixture, Hexfixture, BoxFixture,QuadFixture
   //and RingFixture in fixture directory for more than one
   //processor.
-  stk::mesh::fixtures::simple_fields::GridFixture grid_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();

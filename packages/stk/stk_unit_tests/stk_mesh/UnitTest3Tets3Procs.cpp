@@ -153,9 +153,8 @@ TEST(ThreeTet4sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
     builder.set_spatial_dimension(3);
     std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
     stk::mesh::BulkData &bulk = *bulkPtr;
-    bulk.mesh_meta_data().use_simple_fields();
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
     const int proc = bulk.parallel_rank();
     stk::mesh::Part *partWithTopology = bulk.mesh_meta_data().get_part("block_TETRAHEDRON_4");
@@ -225,9 +224,8 @@ TEST(ThreeTet10sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
     builder.set_spatial_dimension(3);
     std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
     stk::mesh::BulkData &bulk = *bulkPtr;
-    bulk.mesh_meta_data().use_simple_fields();
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
     const int proc = bulk.parallel_rank();
     stk::mesh::Part *partWithTopology = bulk.mesh_meta_data().get_part("block_TETRAHEDRON_10");

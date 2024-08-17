@@ -53,15 +53,21 @@ int main(int argc, char *argv[]) {
 
   bool printMatrix   = false;
   bool printSolution = false;
+  bool checkSolution = false;
   bool printTiming   = false;
   bool allprint      = false;
   bool verbose = (myRank==0);
-  std::string filename("arc130.mtx");
+  std::string mat_filename("arc130.mtx");
+  std::string rhs_filename("");
+  std::string solvername("Superlu");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("filename",&filename,"Filename for Matrix-Market test matrix.");
+  cmdp.setOption("filename",&mat_filename,"Filename for Matrix-Market test matrix.");
+  cmdp.setOption("rhs_filename",&rhs_filename,"Filename for Matrix-Market right-hand-side.");
+  cmdp.setOption("solvername",&solvername,"Name of solver.");
   cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
+  cmdp.setOption("check-solution","no-check-solution",&checkSolution,"Check solution vector after solve.");
   cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");
   cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -76,7 +82,7 @@ int main(int argc, char *argv[]) {
 
   const size_t numVectors = 1;
 
-  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename, comm);
+  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(mat_filename, comm);
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
@@ -98,29 +104,32 @@ int main(int argc, char *argv[]) {
   RCP<MV> X = rcp(new MV(dmnmap,numVectors));
   X->randomize();
 
-  /* Create B
-   *
-   * Use RHS:
-   *
-   *  [[10]
-   *   [10]
-   *   [10]
-   *   [10]
-   *   [10]
-   *   [10]]
-   */
+  // Create B
   RCP<MV> B = rcp(new MV(rngmap,numVectors));
-  B->putScalar(10);
-
+  if (rhs_filename == "") {
+    /*
+     * Use RHS:
+     *
+     *  [[10]
+     *   [10]
+     *   [10]
+     *   [10]
+     *   [10]
+     *   [10]]
+     */
+    B->putScalar(10);
+  } else {
+    B = Tpetra::MatrixMarket::Reader<MAT>::readDenseFile (rhs_filename, comm, rngmap);
+  }
 
   // Constructor from Factory
   RCP<Amesos2::Solver<MAT,MV> > solver;
-  if( !Amesos2::query("Superlu") ){
-    *fos << "SuperLU solver not enabled.  Exiting..." << std::endl;
+  if( !Amesos2::query(solvername) ){
+    *fos << solvername << " solver not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;
   }
 
-  solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
+  solver = Amesos2::create<MAT,MV>(solvername, A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
 
@@ -138,6 +147,24 @@ int main(int argc, char *argv[]) {
         *fos << std::endl;
       }
     }
+  }
+
+  if( checkSolution ){
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one ();
+    RCP<MV> R = rcp(new MV(rngmap,numVectors));
+    A->apply(*X, *R);
+    R->update(one, *B, -one);
+    for (size_t j = 0; j < numVectors; ++j) {
+      auto Rj = R->getVector(j);
+      auto Bj = B->getVector(j);
+      auto r_norm = Rj->norm2();
+      auto b_norm = Bj->norm2();
+      if (myRank == 0) {
+        *fos << "Relative Residual norm = " << r_norm << " / " << b_norm << " = "
+             << r_norm / b_norm << std::endl;
+      }
+    }
+    if (myRank == 0) *fos << std::endl;
   }
 
   if( printTiming ){

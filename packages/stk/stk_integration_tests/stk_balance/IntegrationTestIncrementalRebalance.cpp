@@ -69,7 +69,7 @@ protected:
   bool m_incrementalRebalance;
 };
 
-class IncrementalRebalance : public stk::unit_test_util::simple_fields::MeshFixture
+class IncrementalRebalance : public stk::unit_test_util::MeshFixture
 {
 protected:
   void check_migration()

@@ -8,7 +8,14 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 
 IF(KokkosKernels_ENABLE_BENCHMARK)
     KOKKOSKERNELS_ADD_BENCHMARK(
-        Blas2_Benchmark
+        Blas2_gemv_Benchmark
         SOURCES KokkosBlas2_gemv_perf_test_benchmark.cpp
+    )
+ENDIF()
+
+IF(KokkosKernels_ENABLE_BENCHMARK)
+    KOKKOSKERNELS_ADD_BENCHMARK(
+        Blas2_ger_Benchmark
+        SOURCES KokkosBlas2_ger_perf_test_benchmark.cpp
     )
 ENDIF()

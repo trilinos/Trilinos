@@ -94,7 +94,7 @@ void Marker::setSelector(stk::mesh::Selector *sel)
 
 stk::mesh::Selector *Marker::getSelector() { return m_globalSelector; }
 
-struct CompareErrIndRefFieldVec {
+  struct CompareErrIndRefFieldVec : public std::function<bool(ErrIndInfoTuple, ErrIndInfoTuple)> {
   bool operator()( ErrIndInfoTuple a,  ErrIndInfoTuple b)
   {
     return std::get<0>(a)  < std::get<0>(b);

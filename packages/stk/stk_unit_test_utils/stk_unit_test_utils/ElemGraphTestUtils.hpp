@@ -171,7 +171,8 @@ inline void test_num_faces_per_element(const stk::mesh::BulkData& bulkData, cons
 
 namespace simple_fields {
 
-class ElementDeathBulkDataTester : public ElemGraphTestUtils::ElementDeathBulkDataTester {};
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+ElementDeathBulkDataTester : public ElemGraphTestUtils::ElementDeathBulkDataTester {};
 
 } // namespace simple_fields
 

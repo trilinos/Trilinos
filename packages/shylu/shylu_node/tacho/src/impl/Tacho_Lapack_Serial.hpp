@@ -23,8 +23,8 @@ template <typename T> struct LapackSerial {
 #if 0
   struct Impl {
     template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void sytrf_lower(const MemberType &member, const int m, T *__restrict__ A,
-                                                   const int as0, const int as1, int *__restrict__ ipiv, int *info) {
+    static KOKKOS_INLINE_FUNCTION void sytrf_lower(const MemberType &member, const int m, T *KOKKOS_RESTRICT A,
+                                                   const int as0, const int as1, int *KOKKOS_RESTRICT ipiv, int *info) {
       *info = 0;
       if (m <= 0)
         return;
@@ -40,9 +40,9 @@ template <typename T> struct LapackSerial {
       for (int p = 0; p < m; ++p) {
         const int iend = m - p - 1;
 
-        T *__restrict__ alpha11 = A + (p)*as0 + (p)*as1,
-          *__restrict__ a21 = A + (p + 1) * as0 + (p)     * as1,
-          *__restrict__ A22 = A + (p + 1) * as0 + (p + 1) * as1;
+        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1,
+          *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)     * as1,
+          *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
 
         mag_type lambda1(0);
         int idx(0);
@@ -125,7 +125,7 @@ template <typename T> struct LapackSerial {
     }
 
     template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void sytrf_lower_nopiv(const MemberType &member, const int m, T *__restrict__ A,
+    static KOKKOS_INLINE_FUNCTION void sytrf_lower_nopiv(const MemberType &member, const int m, T *KOKKOS_RESTRICT A,
                                                          const int as0, const int as1, int *info) {
       *info = 0;
       if (m <= 0)
@@ -135,8 +135,8 @@ template <typename T> struct LapackSerial {
       for (int p = 0; p < m; ++p) {
         const int iend = m - p - 1;
 
-        T *__restrict__ alpha11 = A + (p)*as0 + (p)*as1, *__restrict__ a21 = A + (p + 1) * as0 + (p)*as1,
-                        *__restrict__ A22 = A + (p + 1) * as0 + (p + 1) * as1;
+        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1, *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
+                        *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
 
         const auto alpha = *alpha11; // arith_traits::real(*alpha11);
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend), [&](const int &i) { a21[i * as0] /= alpha; });
@@ -155,7 +155,7 @@ template <typename T> struct LapackSerial {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void potrf(const MemberType &member, const char uplo, const int m,
-                                           /* */ T *__restrict__ A, const int lda, int *info) {
+                                           /* */ T *KOKKOS_RESTRICT A, const int lda, int *info) {
     switch (uplo) {
     case 'U':
     case 'u': {
@@ -174,9 +174,9 @@ template <typename T> struct LapackSerial {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void sytrf(const MemberType &member, const char uplo, const int m,
-                                           /* */ T *__restrict__ A, const int lda,
-                                           /* */ int *__restrict__ P,
-                                           /* */ T *__restrict__ W, int *info) {
+                                           /* */ T *KOKKOS_RESTRICT A, const int lda,
+                                           /* */ int *KOKKOS_RESTRICT P,
+                                           /* */ T *KOKKOS_RESTRICT W, int *info) {
     switch (uplo) {
     case 'U':
     case 'u': {

@@ -49,7 +49,6 @@ TEST(Assemblies, createAssemblyWithElementBlocks)
 {
   const unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
 
   stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& block2Part = meta.declare_part_with_topology("block_2", stk::topology::TRI_3_2D);
@@ -79,7 +78,6 @@ TEST(Assemblies, createAssemblyWithElementBlocksAndSurfaces)
 {
   const unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
 
   stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   stk::mesh::Part& block2Part = meta.declare_part_with_topology("block_2", stk::topology::WEDGE_6);
@@ -142,7 +140,6 @@ TEST(Assemblies, cannotCreateAssemblyWithMixedRanks)
   builder.set_spatial_dimension(3);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   stk::mesh::Part& surface1Part = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);

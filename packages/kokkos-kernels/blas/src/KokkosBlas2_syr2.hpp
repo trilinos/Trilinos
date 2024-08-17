@@ -78,67 +78,49 @@ namespace KokkosBlas {
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param y     [in]     Input vector, as a 1-D Kokkos::View
 /// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
-template <class ExecutionSpace, class XViewType, class YViewType,
-          class AViewType>
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType>
 void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
-          const typename AViewType::const_value_type& alpha, const XViewType& x,
-          const YViewType& y, const AViewType& A) {
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename AViewType::memory_space>::accessible,
-      "AViewType memory space must be accessible from ExecutionSpace");
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename XViewType::memory_space>::accessible,
-      "XViewType memory space must be accessible from ExecutionSpace");
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename YViewType::memory_space>::accessible,
-      "YViewType memory space must be accessible from ExecutionSpace");
+          const typename AViewType::const_value_type& alpha, const XViewType& x, const YViewType& y,
+          const AViewType& A) {
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible,
+                "AViewType memory space must be accessible from ExecutionSpace");
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename XViewType::memory_space>::accessible,
+                "XViewType memory space must be accessible from ExecutionSpace");
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename YViewType::memory_space>::accessible,
+                "YViewType memory space must be accessible from ExecutionSpace");
 
-  static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<XViewType>::value,
-                "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<YViewType>::value,
-                "YViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
 
-  static_assert(static_cast<int>(AViewType::rank()) == 2,
-                "AViewType must have rank 2.");
-  static_assert(static_cast<int>(XViewType::rank()) == 1,
-                "XViewType must have rank 1.");
-  static_assert(static_cast<int>(YViewType::rank()) == 1,
-                "YViewType must have rank 1.");
+  static_assert(static_cast<int>(AViewType::rank()) == 2, "AViewType must have rank 2.");
+  static_assert(static_cast<int>(XViewType::rank()) == 1, "XViewType must have rank 1.");
+  static_assert(static_cast<int>(YViewType::rank()) == 1, "YViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
-  if ((A.extent(0) == A.extent(1)) && (A.extent(0) == x.extent(0)) &&
-      (A.extent(0) == y.extent(0))) {
+  if ((A.extent(0) == A.extent(1)) && (A.extent(0) == x.extent(0)) && (A.extent(0) == y.extent(0))) {
     // Ok
   } else {
     std::ostringstream os;
     os << "KokkosBlas::syr2: Dimensions of A, x: "
-       << "A is " << A.extent(0) << " by " << A.extent(1) << ", x has size "
-       << x.extent(0) << ", y has size " << y.extent(0);
+       << "A is " << A.extent(0) << " by " << A.extent(1) << ", x has size " << x.extent(0) << ", y has size "
+       << y.extent(0);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  if ((trans[0] == 'T') || (trans[0] == 't') || (trans[0] == 'H') ||
-      (trans[0] == 'h')) {
+  if ((trans[0] == 'T') || (trans[0] == 't') || (trans[0] == 'H') || (trans[0] == 'h')) {
     // Ok
   } else {
     std::ostringstream os;
-    os << "KokkosBlas2::syr2(): invalid trans[0] = '" << trans[0]
-       << "'. It must be equalt to 'T' or 't' or 'H' or 'h'";
+    os << "KokkosBlas2::syr2(): invalid trans[0] = '" << trans[0] << "'. It must be equalt to 'T' or 't' or 'H' or 'h'";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  if ((uplo[0] == 'U') || (uplo[0] == 'u') || (uplo[0] == 'L') ||
-      (uplo[0] == 'l')) {
+  if ((uplo[0] == 'U') || (uplo[0] == 'u') || (uplo[0] == 'L') || (uplo[0] == 'l')) {
     // Ok
   } else {
     std::ostringstream oss;
-    oss << "KokkosBlas2::syr2(): invalid uplo[0] = " << uplo[0]
-        << "'. It must be equalt to 'U' or 'u' or 'L' or 'l'";
+    oss << "KokkosBlas2::syr2(): invalid uplo[0] = " << uplo[0] << "'. It must be equalt to 'U' or 'u' or 'L' or 'l'";
     throw std::runtime_error(oss.str());
   }
 
@@ -151,26 +133,20 @@ void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
   // Minimize the number of Impl::SYR2 instantiations, by standardizing
   // on particular View specializations for its template parameters.
   typedef Kokkos::View<typename XViewType::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           XViewType, ALayout>::array_layout,
-                       typename XViewType::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
+                       typename XViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVT;
 
   typedef Kokkos::View<typename YViewType::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           YViewType, ALayout>::array_layout,
-                       typename YViewType::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
+                       typename YViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       YVT;
 
-  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout,
-                       typename AViewType::device_type,
+  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout, typename AViewType::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AVT;
 
-  Impl::SYR2<ExecutionSpace, XVT, YVT, AVT>::syr2(space, trans, uplo, alpha, x,
-                                                  y, A);
+  Impl::SYR2<ExecutionSpace, XVT, YVT, AVT>::syr2(space, trans, uplo, alpha, x, y, A);
 }
 
 /// \brief Rank-1 update (just lower portion or just upper portion) of a
@@ -224,13 +200,10 @@ void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
 /// \param y     [in]     Input vector, as a 1-D Kokkos::View
 /// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
 template <class XViewType, class YViewType, class AViewType>
-void syr2(const char trans[], const char uplo[],
-          const typename AViewType::const_value_type& alpha, const XViewType& x,
+void syr2(const char trans[], const char uplo[], const typename AViewType::const_value_type& alpha, const XViewType& x,
           const YViewType& y, const AViewType& A) {
-  const typename AViewType::execution_space space =
-      typename AViewType::execution_space();
-  syr2<typename AViewType::execution_space, XViewType, YViewType, AViewType>(
-      space, trans, uplo, alpha, x, y, A);
+  const typename AViewType::execution_space space = typename AViewType::execution_space();
+  syr2<typename AViewType::execution_space, XViewType, YViewType, AViewType>(space, trans, uplo, alpha, x, y, A);
 }
 
 }  // namespace KokkosBlas

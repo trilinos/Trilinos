@@ -47,15 +47,13 @@ inline void getRandomBounds(double mag, Scalar &start, Scalar &end) {
 }
 
 template <>
-inline void getRandomBounds(double mag, Kokkos::complex<float> &start,
-                            Kokkos::complex<float> &end) {
+inline void getRandomBounds(double mag, Kokkos::complex<float> &start, Kokkos::complex<float> &end) {
   start = Kokkos::complex<float>(-mag, -mag);
   end   = Kokkos::complex<float>(mag, mag);
 }
 
 template <>
-inline void getRandomBounds(double mag, Kokkos::complex<double> &start,
-                            Kokkos::complex<double> &end) {
+inline void getRandomBounds(double mag, Kokkos::complex<double> &start, Kokkos::complex<double> &end) {
   start = Kokkos::complex<double>(-mag, -mag);
   end   = Kokkos::complex<double>(mag, mag);
 }
@@ -98,9 +96,7 @@ inline size_t kk_get_file_size(const char *file) {
 }
 
 template <typename lno_t>
-void buildEdgeListFromBinSrcTarg_undirected(const char *fnameSrc,
-                                            const char *fnameTarg,
-                                            size_t &numEdges, lno_t **srcs,
+void buildEdgeListFromBinSrcTarg_undirected(const char *fnameSrc, const char *fnameTarg, size_t &numEdges, lno_t **srcs,
                                             lno_t **dst) {
   size_t srcFileSize = kk_get_file_size(fnameSrc);
   size_t trgFileSize = kk_get_file_size(fnameTarg);
@@ -150,8 +146,7 @@ inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename) {
 }
 
 template <typename idx_array_type>
-inline void kk_read_1Dview_from_file(idx_array_type &view,
-                                     const char *filename) {
+inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename) {
   typedef typename idx_array_type::HostMirror host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
@@ -183,8 +178,7 @@ inline void kk_write_2Dview_to_file(idx_array_type view, const char *filename) {
 }
 
 template <typename idx_array_type>
-inline void kk_read_2Dview_from_file(idx_array_type &view,
-                                     const char *filename) {
+inline void kk_read_2Dview_from_file(idx_array_type &view, const char *filename) {
   typedef typename idx_array_type::HostMirror host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
@@ -221,8 +215,7 @@ inline void kk_write_3Dview_to_file(idx_array_type view, const char *filename) {
 }
 
 template <typename idx_array_type>
-inline void kk_read_3Dview_from_file(idx_array_type &view,
-                                     const char *filename) {
+inline void kk_read_3Dview_from_file(idx_array_type &view, const char *filename) {
   typedef typename idx_array_type::HostMirror host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
@@ -241,8 +234,7 @@ inline void kk_read_3Dview_from_file(idx_array_type &view,
 }
 
 template <typename idx, typename wt>
-[[deprecated]] void write_edgelist_bin(size_t ne, const idx *edge_begins,
-                                       const idx *edge_ends, const wt *ew,
+[[deprecated]] void write_edgelist_bin(size_t ne, const idx *edge_begins, const idx *edge_ends, const wt *ew,
                                        const char *filename) {
   std::ofstream myFile(filename, std::ios::out | std::ios::binary);
   myFile.write((char *)&ne, sizeof(idx));
@@ -253,8 +245,7 @@ template <typename idx, typename wt>
 }
 
 template <typename idx, typename wt>
-void read_edgelist_bin(idx *ne, idx **edge_begins, idx **edge_ends, wt **ew,
-                       const char *filename) {
+void read_edgelist_bin(idx *ne, idx **edge_begins, idx **edge_ends, wt **ew, const char *filename) {
   std::ifstream myFile(filename, std::ios::in | std::ios::binary);
 
   myFile.read((char *)ne, sizeof(idx));
@@ -269,8 +260,7 @@ void read_edgelist_bin(idx *ne, idx **edge_begins, idx **edge_ends, wt **ew,
 
 inline bool endswith(std::string const &fullString, std::string const &ending) {
   if (fullString.length() >= ending.length()) {
-    return (0 == fullString.compare(fullString.length() - ending.length(),
-                                    ending.length(), ending));
+    return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
   } else {
     return false;
   }

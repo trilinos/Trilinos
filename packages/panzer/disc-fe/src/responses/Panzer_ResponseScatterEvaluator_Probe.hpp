@@ -80,7 +80,13 @@ public:
 
   void evaluateFields(typename Traits::EvalData d);
 
+  void postRegistrationSetup(typename Traits::SetupData,
+                             PHX::FieldManager<Traits>&);
+
   void preEvaluate(typename Traits::PreEvalData d);
+
+  // Should be protected, but is public for cuda lambda support
+  bool findCellAndComputeBasisValues(typename Traits::EvalData d);
 
 protected:
   typedef typename EvalT::ScalarT ScalarT;
@@ -98,11 +104,11 @@ protected:
   PHX::MDField<const ScalarT,Cell,BASIS> field_; // holds field values
   Teuchos::RCP<ProbeScatterBase> scatterObj_;
 
+  bool haveProbe_;
   int cellIndex_;
+  size_t workset_id_;
   size_t num_basis, num_dim;
   Kokkos::DynRankView<double,PHX::Device> basis_values_;
-
-  bool computeBasisValues(typename Traits::EvalData d);
 };
 
 /** This class handles calculation of a DOF at a single point in space

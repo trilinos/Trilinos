@@ -30,12 +30,9 @@ namespace Impl {
 // k_i = f(t+c_i*dt, y_old+sum(a_{ij}*k_i))  j in [1, i-1]
 // we need to compute the k_i and store them as we go
 // to use them for k_{i+1} computation.
-template <class ode_type, class table_type, class vec_type, class mv_type,
-          class scalar_type>
-KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table,
-                            const bool adaptivity, scalar_type t,
-                            scalar_type dt, const vec_type& y_old,
-                            const vec_type& y_new, const vec_type& temp,
+template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type>
+KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table, const bool adaptivity, scalar_type t,
+                            scalar_type dt, const vec_type& y_old, const vec_type& y_new, const vec_type& temp,
                             const mv_type& k_vecs) {
   const int neqs    = ode.neqs;
   const int nstages = table.nstages;
@@ -64,8 +61,7 @@ KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table,
 
     for (int idx = 0; idx < stageIdx; ++idx) {
       for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
-        temp(eqIdx) +=
-            table.a[stageIdx * (stageIdx + 1) / 2 + idx] * k_vecs(idx, eqIdx);
+        temp(eqIdx) += table.a[stageIdx * (stageIdx + 1) / 2 + idx] * k_vecs(idx, eqIdx);
       }
     }
     KokkosBlas::SerialScale::invoke(dt, temp);
@@ -88,13 +84,12 @@ KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table,
   }
 }  // RKStep
 
-template <class ode_type, class table_type, class vec_type, class mv_type,
-          class scalar_type>
-KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
-    const ode_type& ode, const table_type& table,
-    const KokkosODE::Experimental::ODE_params& params,
-    const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
-    const vec_type& y, const vec_type& temp, const mv_type& k_vecs) {
+template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type>
+KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(const ode_type& ode, const table_type& table,
+                                                        const KokkosODE::Experimental::ODE_params& params,
+                                                        const scalar_type t_start, const scalar_type t_end,
+                                                        const vec_type& y0, const vec_type& y, const vec_type& temp,
+                                                        const mv_type& k_vecs) {
   constexpr scalar_type error_threshold = 1;
   bool adapt                            = params.adaptivity;
   bool dt_was_reduced;
@@ -107,8 +102,7 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
   scalar_type dt    = (t_end - t_start) / params.max_steps;
 
   // Loop over time steps to integrate ODE
-  for (int stepIdx = 0; (stepIdx < params.max_steps) && (t_now <= t_end);
-       ++stepIdx) {
+  for (int stepIdx = 0; (stepIdx < params.max_steps) && (t_now <= t_end); ++stepIdx) {
     // Check that the step attempted is not putting
     // the solution past t_end, otherwise shrink dt
     if (t_end < t_now + dt) {
@@ -138,9 +132,7 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
         for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
           error = Kokkos::max(error, Kokkos::abs(temp(eqIdx)));
           tol   = Kokkos::max(
-              tol, params.abs_tol +
-                       params.rel_tol * Kokkos::max(Kokkos::abs(y(eqIdx)),
-                                                    Kokkos::abs(y0(eqIdx))));
+              tol, params.abs_tol + params.rel_tol * Kokkos::max(Kokkos::abs(y(eqIdx)), Kokkos::abs(y0(eqIdx))));
         }
         error = error / tol;
 
@@ -148,12 +140,11 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
         // is too large and current step
         // is rejected.
         if (error > 1) {
-          dt = dt * Kokkos::max(0.2, 0.8 / Kokkos::pow(error, 1 / table.order));
+          dt             = dt * Kokkos::max(0.2, 0.8 / Kokkos::pow(error, 1 / table.order));
           dt_was_reduced = true;
         }
 
-        if (dt < params.min_step_size)
-          return Experimental::ode_solver_status::MIN_SIZE;
+        if (dt < params.min_step_size) return Experimental::ode_solver_status::MIN_SIZE;
       }
     }
 
@@ -166,10 +157,7 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
     if (t_now < t_end) {
       if (adapt && !dt_was_reduced && error < 0.5) {
         // Compute new time increment
-        dt = dt *
-             Kokkos::min(
-                 10.0,
-                 Kokkos::max(2.0, 0.9 * Kokkos::pow(error, 1 / table.order)));
+        dt = dt * Kokkos::min(10.0, Kokkos::max(2.0, 0.9 * Kokkos::pow(error, 1 / table.order)));
       }
     } else {
       return Experimental::ode_solver_status::SUCCESS;

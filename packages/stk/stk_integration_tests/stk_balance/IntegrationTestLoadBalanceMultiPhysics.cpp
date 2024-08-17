@@ -10,7 +10,7 @@
 namespace
 {
 
-class TestBalanceBalanceMultiPhysics : public stk::unit_test_util::simple_fields::MeshFixture
+class TestBalanceBalanceMultiPhysics : public stk::unit_test_util::MeshFixture
 {
 protected:
   TestBalanceBalanceMultiPhysics()

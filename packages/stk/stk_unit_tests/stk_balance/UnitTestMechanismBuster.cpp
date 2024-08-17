@@ -14,7 +14,7 @@
 namespace
 {
 
-class MechanismMesh2x2 : public stk::unit_test_util::simple_fields::MeshFixture
+class MechanismMesh2x2 : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_mechanistic_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -115,7 +115,7 @@ TEST_F(MechanismMesh2x2, move_components)
 }
 
 
-class LotsOfComponentsMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class LotsOfComponentsMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_mechanistic_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -173,7 +173,7 @@ TEST_F(LotsOfComponentsMesh, detection_without_aura)
 }
 
 
-class GlobalMeshWithMechanism : public stk::unit_test_util::simple_fields::MeshFixture
+class GlobalMeshWithMechanism : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_mechanistic_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -227,11 +227,11 @@ TEST_F(GlobalMeshWithMechanism, detection_without_aura)
   }
 }
 
-class MeshTest : public stk::unit_test_util::simple_fields::MeshFixture {};
+class MeshTest : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(MeshTest, forExodusFile)
 {
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x100");
+  std::string filename = stk::unit_test_util::get_option("-i", "generated:1x1x100");
   setup_mesh(filename, stk::mesh::BulkData::AUTO_AURA);
 
   stk::balance::GraphCreationSettings graphSettings;

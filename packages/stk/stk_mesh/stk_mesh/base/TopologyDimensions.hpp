@@ -35,75 +35,9 @@
 #ifndef stk_mesh_TopologyDimensions_hpp
 #define stk_mesh_TopologyDimensions_hpp
 
-#include <Shards_Array.hpp>             // for ArrayDimTag
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <string>                       // for string
-#include "stk_topology/topology.hpp"    // for topology, etc
-
-
-
-namespace stk {
-namespace mesh {
-
-/**
- * The file contains Field typed and ArrayDimTags that are useful for
- * setting up various types of field relations.
- */
-
-//----------------------------------------------------------------------
-/** \ingroup stk_mesh_field_dimension_tags
- *  \brief  Define an array dimension of the number of nodes per element.
- */
-class ElementNode : public shards::ArrayDimTag {
-public:
-
-  const char * name() const {
-    static const char n[] = "ElementNode";
-    return n;
-  }
-
-  static const ElementNode & tag() {
-    static const ElementNode self;
-    return self;
-  }
-
-private:
-  ElementNode() {
-    std::cerr << "Warning: The stk::mesh::ElementNode type is deprecated and will soon be removed." << std::endl;
-  }
-  ElementNode( const ElementNode & );
-  ElementNode & operator = ( const ElementNode & );
-};
-
-/** \ingroup stk_mesh_relation_stencil
- *  \brief  An element Field defining an array of values, one value per
- *          node of the element.
- */
-STK_DEPRECATED typedef Field<double,ElementNode> ElementNodeField ;
-
-/** \ingroup stk_mesh_relation_stencil
- *  \brief  A Field defining an array of pointers
- *          to an element's nodal field data.
- */
-
-/** \ingroup stk_mesh_relation_stencil
- *  \brief  Declare an element-node field.
- */
-STK_DEPRECATED
-inline
-ElementNodeField &
-declare_element_node_field( MetaData & md , const std::string & s )
-{
-  ElementNodeField & f = stk::mesh::legacy::declare_field< ElementNodeField >(md, stk::topology::ELEMENT_RANK, s, 1 /* 1 state */ );
-
-  return f ;
-}
-
-//----------------------------------------------------------------------
-
-}//namespace mesh
-}//namespace stk
+// Deprecated contents have been removed.  Inclusions of this header should
+// be removed from application code, and this file will be deprecated and
+// removed in the near future.
 
 #endif
 

@@ -20,6 +20,8 @@ public:
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
 
+  using AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements;
+
   virtual bool might_have_interior_or_face_intersections() const override { return mySurfaceIdentifiers.size() > 1; }
   virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;

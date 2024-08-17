@@ -24,8 +24,7 @@ namespace Impl {
 
 CudaLapackSingleton::CudaLapackSingleton() {
   cusolverStatus_t stat = cusolverDnCreate(&handle);
-  if (stat != CUSOLVER_STATUS_SUCCESS)
-    Kokkos::abort("CUSOLVER initialization failed\n");
+  if (stat != CUSOLVER_STATUS_SUCCESS) Kokkos::abort("CUSOLVER initialization failed\n");
 
   Kokkos::push_finalize_hook([&]() { cusolverDnDestroy(handle); });
 }

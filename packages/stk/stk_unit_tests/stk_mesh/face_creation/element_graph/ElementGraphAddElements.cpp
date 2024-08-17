@@ -12,7 +12,7 @@
 namespace
 {
 
-class ElemGraphAddElementsToEmptyGraphTester : public stk::unit_test_util::simple_fields::MeshTestFixture
+class ElemGraphAddElementsToEmptyGraphTester : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   ElemGraphAddElementsToEmptyGraphTester() : elementGraph(nullptr) { }
@@ -94,7 +94,7 @@ struct NodeSharingInfo
 
 void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector<NodeSharingInfo> & sharedNodes);
 
-class ElemGraphAddElementsToExistingGraphTester : public stk::unit_test_util::simple_fields::MeshTestFixture
+class ElemGraphAddElementsToExistingGraphTester : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   ElemGraphAddElementsToExistingGraphTester() : elementGraph(nullptr), hexPart(nullptr) { }

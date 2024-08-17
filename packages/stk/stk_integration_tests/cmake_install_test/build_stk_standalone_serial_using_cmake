@@ -44,7 +44,7 @@ stk_ctest_log=${output_dir}/stk-standalone-serial-ctest.out.$date_suffix
 
 exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_standalone_serial ${stk_build_dir}
 exe cd ${stk_build_dir}
-exe source ${stk_cmake_testing_source_dir}/load_gcc_modules_no_boost
+exe source ${stk_cmake_testing_source_dir}/load_aue_serial_modules_no_boost
 
 printf "Configuring stk (running cmake)...\n";
 exe "STK_SRC_DIR=${stk_src_dir} \

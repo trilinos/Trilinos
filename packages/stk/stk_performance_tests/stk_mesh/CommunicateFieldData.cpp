@@ -110,7 +110,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader,
                            unsigned numBlocks,
                            unsigned numFields)
 {
-    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
     if (exodusFileName == "NO_FILE_SPECIFIED") {
       exodusFileName = genMeshSpec;
     }
@@ -220,7 +220,6 @@ void test_communicate_field_data_all_ghosting(stk::ParallelMachine communicator,
     batchTimer.initialize_batch_timer();
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
 
     std::string genMeshSpec = "generated:60x60x48|sideset:xXyY";
     const unsigned numBlocks = 1;
@@ -289,7 +288,6 @@ void test_communicate_field_data_ghosting(MPI_Comm communicator,
     batchTimer.initialize_batch_timer();
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
     std::string genMeshSpec = "generated:100x100x48|sideset:xXyY";
     createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
 
@@ -322,7 +320,7 @@ void test_communicate_field_data_ghosting(MPI_Comm communicator,
 
 void test_communicate_field_data_ngp_ghosting(int num_iters, bool syncToHostEveryIter)
 {
-  const int meshDim = stk::unit_test_util::simple_fields::get_command_line_option("-s", 100);
+  const int meshDim = stk::unit_test_util::get_command_line_option("-s", 100);
   std::string meshDimStr = std::to_string(meshDim);
   std::string meshSpec = "generated:" + meshDimStr + "x" + meshDimStr + "x" + meshDimStr;
 
@@ -331,7 +329,6 @@ void test_communicate_field_data_ngp_ghosting(int num_iters, bool syncToHostEver
   batchTimer.initialize_batch_timer();
 
   stk::io::StkMeshIoBroker exodusFileReader(comm);
-  exodusFileReader.use_simple_fields();
 
   const unsigned numBlocks = 1;
   const unsigned numFields = 8;
@@ -409,8 +406,8 @@ TEST(CommunicateFieldData, NgpGhosting)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 2) { GTEST_SKIP(); }
 
-  int iter = stk::unit_test_util::simple_fields::get_command_line_option("-t", 1000);
-  bool syncToHostEveryIter = stk::unit_test_util::simple_fields::get_command_line_option("-h", false);
+  int iter = stk::unit_test_util::get_command_line_option("-t", 1000);
+  bool syncToHostEveryIter = stk::unit_test_util::get_command_line_option("-h", false);
   test_communicate_field_data_ngp_ghosting(iter, syncToHostEveryIter);
 }
 

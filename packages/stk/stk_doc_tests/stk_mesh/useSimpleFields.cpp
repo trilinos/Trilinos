@@ -55,7 +55,7 @@ void create_two_tet_element_mesh(stk::mesh::BulkData &bulk)
 {
   std::string meshSpec = "0, 1,TET_4, 1,2,3,4\n"
                          "0, 2,TET_4, 2,3,4,5";
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshSpec);
+  stk::unit_test_util::setup_text_mesh(bulk, meshSpec);
 }
 
 //BEGINUseSimpleFields
@@ -66,7 +66,6 @@ TEST(stkMeshHowTo, useSimpleFields)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(SpatialDimension);
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> DoubleField;

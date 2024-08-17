@@ -27,9 +27,9 @@ size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, 
     stkIo.create_input_mesh();
 
     stk::mesh::MetaData &meta = bulk.mesh_meta_data();
-    stk::mesh::Field<double> & field1 = stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(meta, stk::topology::ELEM_RANK, "field_1", 1);
-    stk::mesh::Field<double> & field2 = stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(meta, stk::topology::ELEM_RANK, "field_2", 1);
-    stk::mesh::Field<double> & field3 = stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(meta, stk::topology::ELEM_RANK, "field_3", 1);
+    stk::mesh::Field<double> & field1 = meta.declare_field<double>(stk::topology::ELEM_RANK, "field_1", 1);
+    stk::mesh::Field<double> & field2 = meta.declare_field<double>(stk::topology::ELEM_RANK, "field_2", 1);
+    stk::mesh::Field<double> & field3 = meta.declare_field<double>(stk::topology::ELEM_RANK, "field_3", 1);
 
     double fieldValues[] = {1.0, 2.0, 3.0};
     stk::mesh::put_field_on_mesh(field1, meta.universal_part(), fieldValues);
@@ -50,7 +50,7 @@ void create_mesh_without_time_steps(const std::string & filename, MPI_Comm commu
 {
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(communicator, stk::mesh::BulkData::AUTO_AURA);
     stk::io::StkMeshIoBroker stkIoWriter(communicator);
-    stk::unit_test_util::write_mesh_data__field_1__field_2__field_3(filename, communicator, *bulk, stkIoWriter);
+    write_mesh_data__field_1__field_2__field_3(filename, communicator, *bulk, stkIoWriter);
 }
 
 void create_mesh_with__field_1__field_2__field_3(const std::string & filename, MPI_Comm communicator)

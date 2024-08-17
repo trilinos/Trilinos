@@ -91,7 +91,7 @@ public:
     m_transientTimeSteps = {0.0, 1.0, 2.0};
     m_transientFieldName = "weight_field";
     m_globalVariableName = "global_variable";
-    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
                                                                                              get_input_file_name(),
                                                                                              m_transientFieldName,
                                                                                              stk::topology::ELEM_RANK,

@@ -33,16 +33,15 @@ namespace KokkosBatched {
 template <typename AlgoType>
 struct SerialLU_Internal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
-      const int as1, const typename MagnitudeScalarType<ValueType>::type tiny);
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1, const typename MagnitudeScalarType<ValueType>::type tiny);
 };
 
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
-    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1, const typename MagnitudeScalarType<ValueType>::type tiny) {
+    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const typename MagnitudeScalarType<ValueType>::type tiny) {
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;
 
@@ -55,14 +54,12 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
 
     const ValueType *KOKKOS_RESTRICT a12t = A + (p)*as0 + (p + 1) * as1;
 
-    ValueType *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
-                               *KOKKOS_RESTRICT A22 =
-                                   A + (p + 1) * as0 + (p + 1) * as1;
+    ValueType *KOKKOS_RESTRICT a21                  = A + (p + 1) * as0 + (p)*as1,
+                               *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
 
     if (tiny != 0) {
       ValueType &alpha11_reference = A[p * as0 + p * as1];
-      const auto alpha11_real =
-          Kokkos::ArithTraits<ValueType>::real(alpha11_reference);
+      const auto alpha11_real      = Kokkos::ArithTraits<ValueType>::real(alpha11_reference);
       alpha11_reference += minus_abs_tiny * ValueType(alpha11_real < 0);
       alpha11_reference += abs_tiny * ValueType(alpha11_real >= 0);
     }
@@ -76,8 +73,7 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-      for (int j = 0; j < jend; ++j)
-        A22[i * as0 + j * as1] -= a21[i * as0] * a12t[j * as1];
+      for (int j = 0; j < jend; ++j) A22[i * as0 + j * as1] -= a21[i * as0] * a12t[j * as1];
     }
   }
   return 0;
@@ -86,8 +82,7 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
-    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1,
+    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
   constexpr int mbAlgo = Algo::LU::Blocked::mb();
   const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
@@ -100,8 +95,7 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
   InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_llu(as0, as1, as0, as1);
   InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
 
-  auto lu_factorize = [&](const int ib, const int jb,
-                          ValueType *KOKKOS_RESTRICT AA) {
+  auto lu_factorize = [&](const int ib, const int jb, ValueType *KOKKOS_RESTRICT AA) {
     const int mb = mbAlgo;
     const int kb = ib < jb ? ib : jb;
     for (int p = 0; p < kb; p += mb) {
@@ -121,9 +115,8 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
       trsm_run.serial_invoke(Ap, pb, m_abr, Ap + mb * as0);
 
       // gemm update
-      SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-          m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1, Ap + mb * as1,
-          as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+      SerialGemmInternal<Algo::Gemm::Blocked>::invoke(m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
+                                                      Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
     }
   };
 

@@ -53,7 +53,7 @@ public:
     NgpVector(const std::string &n, size_t s)
         : mSize(s),
           deviceVals(Kokkos::view_alloc(Kokkos::WithoutInitializing, n), mSize),
-          hostVals(Kokkos::create_mirror_view(Kokkos::WithoutInitializing, HostSpace(), deviceVals))
+          hostVals(Kokkos::create_mirror_view(Kokkos::WithoutInitializing, deviceVals))
         {
     }
     NgpVector(size_t s) : NgpVector(get_default_name(), s)
@@ -151,7 +151,7 @@ public:
     }
 
 protected:
-  typedef Kokkos::View<Datatype *, DeviceSpace> DeviceType;
+    typedef Kokkos::View<Datatype *, DeviceSpace> DeviceType;
     typedef typename DeviceType::HostMirror HostType;
 
     virtual DeviceType get_new_vals_of_size(size_t s)

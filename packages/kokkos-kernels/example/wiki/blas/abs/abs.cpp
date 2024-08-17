@@ -29,8 +29,7 @@ int main(int argc, char* argv[]) {
 
   double sum = 0.0;
   Kokkos::parallel_reduce(
-      "CheckValue", N,
-      KOKKOS_LAMBDA(const int& i, double& lsum) { lsum += y(i); }, sum);
+      "CheckValue", N, KOKKOS_LAMBDA(const int& i, double& lsum) { lsum += y(i); }, sum);
 
   printf("Sum: %lf Expected: %lf Diff: %e\n", sum, 1.0 * N, sum - 1.0 * N);
 

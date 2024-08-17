@@ -34,8 +34,7 @@ void establishSmartSchedule(AType A) {
   // Generate a schedule
   Ordinal* rowSizes = NULL;
   posix_memalign((void**)&rowSizes, 64, sizeof(int) * A.numRows());
-  posix_memalign((void**)&threadStarts, 128,
-                 sizeof(int) * (omp_get_max_threads() + 1));
+  posix_memalign((void**)&threadStarts, 128, sizeof(int) * (omp_get_max_threads() + 1));
 
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     threadStarts[i] = A.numRows();
@@ -45,14 +44,12 @@ void establishSmartSchedule(AType A) {
 
 #pragma omp parallel for reduction(+ : nnz)
   for (Ordinal row = 0; row < rowCount; ++row) {
-    const Ordinal rowElements =
-        matrixRowOffsets[row + 1] - matrixRowOffsets[row];
-    rowSizes[row] = rowElements;
+    const Ordinal rowElements = matrixRowOffsets[row + 1] - matrixRowOffsets[row];
+    rowSizes[row]             = rowElements;
     nnz += rowElements;
   }
 
-  Ordinal nzPerThreadTarget =
-      (int)(nnz / (unsigned long long int)omp_get_max_threads());
+  Ordinal nzPerThreadTarget = (int)(nnz / (unsigned long long int)omp_get_max_threads());
 
   if (nzPerThreadTarget > 128) {
     nzPerThreadTarget &= 0xFFFFFFFC;
@@ -87,8 +84,7 @@ void establishSmartSchedule(AType A) {
   free(rowSizes);
 }
 
-template <typename AType, typename XType, typename YType, typename Offset,
-          typename Ordinal, typename Scalar>
+template <typename AType, typename XType, typename YType, typename Offset, typename Ordinal, typename Scalar>
 void openmp_smart_static_matvec(AType A, XType x, YType y) {
   if (NULL == threadStarts) {
     // printf("Generating Schedule...\n");
@@ -108,8 +104,7 @@ void openmp_smart_static_matvec(AType A, XType x, YType y) {
 #ifdef KOKKOS_ENABLE_PROFILING
   uint64_t kpID = 0;
   if (Kokkos::Profiling::profileLibraryLoaded()) {
-    Kokkos::Profiling::beginParallelFor("KokkosSparse::Test_SPMV_raw_openmp", 0,
-                                        &kpID);
+    Kokkos::Profiling::beginParallelFor("KokkosSparse::Test_SPMV_raw_openmp", 0, &kpID);
   }
 #endif
 

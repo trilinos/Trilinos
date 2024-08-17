@@ -265,7 +265,7 @@ namespace Tpetra {
   Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> >
   getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_LID)
   {
-
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph", getBlockCrsGraph0);
       /*
         ASSUMPTIONS:
 
@@ -292,28 +292,33 @@ namespace Tpetra {
       using range_type = Kokkos::RangePolicy<execution_space, LO>;
 
       const map_type &pointRowMap = *(pointMatrix.getRowMap());
-      RCP<const map_type> meshRowMap = createMeshMap<LO,GO,Node>(blockSize, pointRowMap);
+      RCP<const map_type> meshRowMap, meshColMap, meshDomainMap, meshRangeMap;
 
       const map_type &pointColMap = *(pointMatrix.getColMap());
-      RCP<const map_type> meshColMap = createMeshMap<LO,GO,Node>(blockSize, pointColMap);
+      const map_type &pointDomainMap = *(pointMatrix.getDomainMap());
+      const map_type &pointRangeMap = *(pointMatrix.getRangeMap());
+
+      {
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph::createMeshMaps", getBlockCrsGraph1);
+        meshRowMap = createMeshMap<LO,GO,Node>(blockSize, pointRowMap, use_LID);
+        meshColMap = createMeshMap<LO,GO,Node>(blockSize, pointColMap, use_LID);
+        meshDomainMap = createMeshMap<LO,GO,Node>(blockSize, pointDomainMap, use_LID);
+        meshRangeMap = createMeshMap<LO,GO,Node>(blockSize, pointRangeMap, use_LID);
+        Kokkos::DefaultExecutionSpace().fence();
+      }
+
       if(meshColMap.is_null()) throw std::runtime_error("ERROR: Cannot create mesh colmap");
 
       auto localMeshColMap = meshColMap->getLocalMap();
       auto localPointColMap = pointColMap.getLocalMap();
       auto localPointRowMap = pointRowMap.getLocalMap();
 
-      const map_type &pointDomainMap = *(pointMatrix.getDomainMap());
-      RCP<const map_type> meshDomainMap = createMeshMap<LO,GO,Node>(blockSize, pointDomainMap);
-
-      const map_type &pointRangeMap = *(pointMatrix.getRangeMap());
-      RCP<const map_type> meshRangeMap = createMeshMap<LO,GO,Node>(blockSize, pointRangeMap);
-
       RCP<crs_graph_type> meshCrsGraph;
 
       const offset_type bs2 = blockSize * blockSize;
 
       if (use_LID) {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillCrsGraph");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph::LID", getBlockCrsGraph2);
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
@@ -347,7 +352,7 @@ namespace Tpetra {
         Kokkos::DefaultExecutionSpace().fence();
       }
       else {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillCrsGraph");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::getBlockCrsGraph::GID", getBlockCrsGraph3);
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
@@ -401,7 +406,7 @@ namespace Tpetra {
   Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >
   convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_LID)
   {
-
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::convertToBlockCrsMatrix", convertToBlockCrsMatrix0);
       /*
         ASSUMPTIONS:
 
@@ -434,7 +439,7 @@ namespace Tpetra {
       auto meshCrsGraph = getBlockCrsGraph(pointMatrix, blockSize, use_LID);
 
       if (use_LID) {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillBlockCrsMatrix");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::convertToBlockCrsMatrix::LID", convertToBlockCrsMatrix1);
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
@@ -466,7 +471,7 @@ namespace Tpetra {
         Kokkos::DefaultExecutionSpace().fence();
       }
       else {
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillBlockCrsMatrix");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Tpetra::convertToBlockCrsMatrix::GID", convertToBlockCrsMatrix2);
         auto localMeshColMap = meshCrsGraph->getColMap()->getLocalMap();
         auto localPointColMap = pointMatrix.getColMap()->getLocalMap();
 
@@ -890,32 +895,49 @@ namespace Tpetra {
 
   template<class LO, class GO, class Node>
   Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
-  createMeshMap (const LO& blockSize, const Tpetra::Map<LO,GO,Node>& pointMap)
+  createMeshMap (const LO& blockSize, const Tpetra::Map<LO,GO,Node>& pointMap, bool use_LID)
   {
     typedef Teuchos::OrdinalTraits<Tpetra::global_size_t> TOT;
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
-    //calculate mesh GIDs
-    Teuchos::ArrayView<const GO> pointGids = pointMap.getLocalElementList();
-    Teuchos::Array<GO> meshGids;
-    GO indexBase = pointMap.getIndexBase();
+    if(use_LID) {
 
-    // Use hash table to track whether we've encountered this GID previously.  This will happen
-    // when striding through the point DOFs in a block.  It should not happen otherwise.
-    // I don't use sort/make unique because I don't want to change the ordering.
-    meshGids.reserve(pointGids.size());
-    Tpetra::Details::HashTable<GO,int> hashTable(pointGids.size());
-    for (int i=0; i<pointGids.size(); ++i) {
-      GO meshGid = (pointGids[i]-indexBase) / blockSize + indexBase;
-      if (hashTable.get(meshGid) == -1) {
-        hashTable.add(meshGid,1);   //(key,value)
-        meshGids.push_back(meshGid);
-      }
+      using execution_space = typename Node::execution_space;
+      using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
+
+      auto pointGlobalID = pointMap.getMyGlobalIndicesDevice();
+      LO block_rows = pointGlobalID.extent(0)/blockSize;
+      Kokkos::View<GO*, typename map_type::device_type> meshGlobalID("meshGlobalID", block_rows);
+
+      Kokkos::parallel_for("fillMeshMap",range_type(0,block_rows), KOKKOS_LAMBDA(const LO i) {
+        meshGlobalID(i) = pointGlobalID(i*blockSize)/blockSize;
+      });
+
+      Teuchos::RCP<const map_type> meshMap = Teuchos::rcp( new map_type(TOT::invalid(), meshGlobalID, 0, pointMap.getComm()) );
+      return meshMap;
     }
+    else {
+      //calculate mesh GIDs
+      Teuchos::ArrayView<const GO> pointGids = pointMap.getLocalElementList();
+      Teuchos::Array<GO> meshGids;
+      GO indexBase = pointMap.getIndexBase();
 
-    Teuchos::RCP<const map_type> meshMap = Teuchos::rcp( new map_type(TOT::invalid(), meshGids(), 0, pointMap.getComm()) );
-    return meshMap;
+      // Use hash table to track whether we've encountered this GID previously.  This will happen
+      // when striding through the point DOFs in a block.  It should not happen otherwise.
+      // I don't use sort/make unique because I don't want to change the ordering.
+      meshGids.reserve(pointGids.size());
+      Tpetra::Details::HashTable<GO,int> hashTable(pointGids.size());
+      for (int i=0; i<pointGids.size(); ++i) {
+        GO meshGid = (pointGids[i]-indexBase) / blockSize + indexBase;
+        if (hashTable.get(meshGid) == -1) {
+          hashTable.add(meshGid,1);   //(key,value)
+          meshGids.push_back(meshGid);
+        }
+      }
 
+      Teuchos::RCP<const map_type> meshMap = Teuchos::rcp( new map_type(TOT::invalid(), meshGids(), 0, pointMap.getComm()) );
+      return meshMap;
+    }
   }
 
 
@@ -1075,7 +1097,7 @@ namespace Tpetra {
 // Explicit instantiation macro for createMeshMap / createPointMap
 //
 #define TPETRA_CREATEMESHMAP_INSTANT(LO,GO,NODE) \
-  template Teuchos::RCP<const Map<LO,GO,NODE> > createMeshMap  (const LO& blockSize, const Map<LO,GO,NODE>& pointMap); \
+  template Teuchos::RCP<const Map<LO,GO,NODE> > createMeshMap  (const LO& blockSize, const Map<LO,GO,NODE>& pointMap, bool use_local_ID); \
   template Teuchos::RCP<const Map<LO,GO,NODE> > createPointMap (const LO& blockSize, const Map<LO,GO,NODE>& blockMap);
 
 #endif // TPETRA_BLOCKCRSMATRIX_HELPERS_DEF_HPP

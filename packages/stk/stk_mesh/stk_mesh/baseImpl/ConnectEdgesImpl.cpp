@@ -33,7 +33,9 @@
 
 #include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace stk {
@@ -103,7 +105,7 @@ struct connect_face_impl
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
           Entity const* original_edge_nodes = mesh.begin_nodes(edge);
-          Permutation perm = mesh.find_permutation(face_topo, face_nodes, edge_topo, original_edge_nodes, e);
+          Permutation perm = stk::mesh::find_permutation(mesh, face_topo, face_nodes, edge_topo, original_edge_nodes, e);
           STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to edge");
           mesh.declare_relation(m_bucket[iface], edge, e, perm, scratch1, scratch2, scratch3);
         }
@@ -178,7 +180,7 @@ struct connect_face_entity_impl
         Entity edge = iedge->second;
         Entity const* original_edge_nodes = m_bulk.begin_nodes(edge);
 
-        Permutation perm = m_bulk.find_permutation(face_topo, face_nodes, edge_topo, original_edge_nodes, e);
+        Permutation perm = stk::mesh::find_permutation(m_bulk, face_topo, face_nodes, edge_topo, original_edge_nodes, e);
         STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "Connect face to edge:  could not find valid permutation to connect face to edge");
         m_bulk.declare_relation(m_face, edge, e, perm, scratch1, scratch2, scratch3);
       }

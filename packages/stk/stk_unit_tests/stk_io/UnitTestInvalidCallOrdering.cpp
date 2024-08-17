@@ -53,7 +53,6 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t input_index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(input_index);

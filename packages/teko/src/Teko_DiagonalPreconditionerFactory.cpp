@@ -9,12 +9,16 @@
 
 #include "Teko_DiagonalPreconditionerFactory.hpp"
 #include "Teko_DiagonalPreconditionerOp.hpp"
+#ifdef TEKO_HAVE_EPETRA
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
+#endif
 
 #include "Teko_TpetraHelpers.hpp"
+#ifdef TEKO_HAVE_EPETRA
 #include "Thyra_EpetraLinearOp.hpp"
+#endif
 #include "Thyra_TpetraLinearOp.hpp"
 
 using Teuchos::rcp;
@@ -35,11 +39,11 @@ RCP<PreconditionerState> DiagonalPreconditionerFactory::buildPreconditionerState
 LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
     LinearOp& lo, PreconditionerState& state) const {
   if (diagonalType_ == BlkDiag) {
-    // Sanity check the state
-    DiagonalPrecondState& MyState = Teuchos::dyn_cast<DiagonalPrecondState>(state);
-
     TEUCHOS_TEST_FOR_EXCEPTION(TpetraHelpers::isTpetraLinearOp(lo), std::runtime_error,
                                "BlkDiag not implemented for Tpetra operators");
+#ifdef TEKO_HAVE_EPETRA
+    // Sanity check the state
+    DiagonalPrecondState& MyState = Teuchos::dyn_cast<DiagonalPrecondState>(state);
 
     // Get the underlying Epetra_CrsMatrix, if we have one
     Teuchos::RCP<const Epetra_Operator> eo = Thyra::get_Epetra_Operator(*lo);
@@ -63,6 +67,7 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
     // Build the LinearOp object  (NTS: swapping the range and domain)
     // LinearOp MyOp = Teuchos::rcp(new
     // DiagonalPreconditionerOp(MyState.BDP_,lo->domain(),lo->range()));
+#endif
   }
 
   return getInvDiagonalOp(lo, diagonalType_);

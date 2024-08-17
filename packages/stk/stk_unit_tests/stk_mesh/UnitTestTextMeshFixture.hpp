@@ -19,7 +19,7 @@
 
 namespace
 {
-class TestTextMesh : public stk::unit_test_util::simple_fields::TextMeshFixture
+class TestTextMesh : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMesh() : TextMeshFixture(3)
@@ -28,7 +28,7 @@ protected:
   }
 };
 
-class TestTextMeshAura : public stk::unit_test_util::simple_fields::TextMeshFixture
+class TestTextMeshAura : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMeshAura() : TextMeshFixture(3)
@@ -37,7 +37,7 @@ protected:
   }
 };
 
-class TestTextMesh2d : public stk::unit_test_util::simple_fields::TextMeshFixture
+class TestTextMesh2d : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMesh2d() : TextMeshFixture(2)
@@ -46,7 +46,7 @@ protected:
   }
 };
 
-class TestTextMeshAura2d : public stk::unit_test_util::simple_fields::TextMeshFixture
+class TestTextMeshAura2d : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMeshAura2d() : TextMeshFixture(2)
@@ -55,7 +55,7 @@ protected:
   }
 };
 
-class TestTextMesh1d : public stk::unit_test_util::simple_fields::TextMeshFixture
+class TestTextMesh1d : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMesh1d() : TextMeshFixture(1)
@@ -64,7 +64,7 @@ protected:
   }
 };
 
-class TestTextMeshGraph : public stk::unit_test_util::simple_fields::TextMeshFixture
+class TestTextMeshGraph : public stk::unit_test_util::TextMeshFixture
 {
  protected:
   TestTextMeshGraph() : TextMeshFixture(3) {}

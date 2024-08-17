@@ -64,8 +64,9 @@ cmake \
 -DTrilinos_ENABLE_Zoltan2:BOOL=ON \
 -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
 -DTrilinos_ENABLE_Pamgen:BOOL=ON \
--DTrilinos_ENABLE_Krino:BOOL=OFF \
+-DTrilinos_ENABLE_Krino:BOOL=ON \
 -DTrilinos_ENABLE_Percept:BOOL=ON \
+-DTrilinos_ENABLE_TrilinosCouplings:BOOL=ON \
 -DTrilinos_ENABLE_Panzer:BOOL=${not_cuda} \
 -DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=${not_cuda} \
 -DPanzer_ENABLE_TESTS:BOOL=${not_cuda} \
@@ -77,7 +78,6 @@ cmake \
 -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
--DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=ON \
 -DCMAKE_CXX_STANDARD:STRING=17 \
 -DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \

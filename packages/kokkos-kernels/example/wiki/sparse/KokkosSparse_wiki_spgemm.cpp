@@ -28,12 +28,9 @@ using Layout  = default_layout;
 int main() {
   Kokkos::initialize();
 
-  using device_type = typename Kokkos::Device<
-      Kokkos::DefaultExecutionSpace,
-      typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using matrix_type =
-      typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
-                                       Offset>;
+  using device_type =
+      typename Kokkos::Device<Kokkos::DefaultExecutionSpace, typename Kokkos::DefaultExecutionSpace::memory_space>;
+  using matrix_type = typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void, Offset>;
 
   int return_value = 0;
 
@@ -45,8 +42,7 @@ int main() {
     // In each row the first entry is the number of grid point in
     // that direction, the second and third entries are used to apply
     // BCs in that direction.
-    Kokkos::View<Ordinal * [3], Kokkos::HostSpace> mat_structure(
-        "Matrix Structure", 2);
+    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure("Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
     mat_structure(0, 1) = 1;   // Add BC to the left
     mat_structure(0, 2) = 1;   // Add BC to the right
@@ -54,15 +50,13 @@ int main() {
     mat_structure(1, 1) = 1;   // Add BC to the bottom
     mat_structure(1, 2) = 1;   // Add BC to the top
 
-    matrix_type A =
-        Test::generate_structured_matrix2D<matrix_type>("FD", mat_structure);
-    matrix_type B =
-        Test::generate_structured_matrix2D<matrix_type>("FE", mat_structure);
+    matrix_type A = Test::generate_structured_matrix2D<matrix_type>("FD", mat_structure);
+    matrix_type B = Test::generate_structured_matrix2D<matrix_type>("FE", mat_structure);
 
     matrix_type C = KokkosSparse::spgemm<matrix_type>(A, false, B, false);
 
-    std::cout << "Ran spgemm: product C is " << C.numRows() << 'x'
-              << C.numCols() << " and has " << C.nnz() << " nonzeros.\n";
+    std::cout << "Ran spgemm: product C is " << C.numRows() << 'x' << C.numCols() << " and has " << C.nnz()
+              << " nonzeros.\n";
   }
 
   Kokkos::finalize();

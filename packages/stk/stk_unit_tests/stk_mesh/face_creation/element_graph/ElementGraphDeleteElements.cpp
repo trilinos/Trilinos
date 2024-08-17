@@ -9,7 +9,7 @@
 namespace
 {
 
-class ElemGraphDeleteElementsTester : public stk::unit_test_util::simple_fields::MeshFixture
+class ElemGraphDeleteElementsTester : public stk::unit_test_util::MeshFixture
 {
 protected:
   ElemGraphDeleteElementsTester() : elementGraph(nullptr) { }

@@ -567,6 +567,13 @@ public:
       STK_NGP_ThrowErrorMsg("Incorrect number of arguments for cos_ramp or cosine_ramp function");
       break;
     }
+    case FunctionType::LINEAR_RAMP : {
+      if (argumentCount == 3) {
+        return linear_ramp3(arguments[0], arguments[1], arguments[2]);
+      }
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for linear_ramp function");
+      break;
+    }
     case FunctionType::HAVERSINE_PULSE : {
       if (argumentCount == 3) {
         return haversine_pulse(arguments[0], arguments[1], arguments[2]);

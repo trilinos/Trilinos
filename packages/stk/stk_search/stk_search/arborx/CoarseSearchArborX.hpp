@@ -41,6 +41,7 @@
 #include "Kokkos_StdAlgorithms.hpp"
 #include "stk_search/CommonSearchUtil.hpp"
 #include "stk_search/arborx/StkToArborX.hpp"
+#include "stk_search/HelperTraits.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_search/arborx/AccessTraits.hpp"
@@ -241,25 +242,29 @@ inline void coarse_search_arborx(std::vector<std::pair<DomainBoxType, DomainIden
   }
 }
 
-template <typename DomainBoxType,
-    typename DomainIdentProcType,
-    typename RangeBoxType,
-    typename RangeIdentProcType,
-    typename ExecutionSpace>
+template <typename DomainView,
+    typename RangeView,
+    typename ResultView,
+    typename ExecutionSpace = typename DomainView::execution_space>
 inline void coarse_search_arborx(
-    Kokkos::View<BoxIdentProc<DomainBoxType, DomainIdentProcType>*, ExecutionSpace> const& localDomain,
-    Kokkos::View<BoxIdentProc<RangeBoxType, RangeIdentProcType>*, ExecutionSpace> const& localRange,
+    DomainView const& localDomain,
+    RangeView const& localRange,
     MPI_Comm comm,
-    Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>& searchResults,
+    ResultView& searchResults,
     ExecutionSpace const& execSpace = ExecutionSpace{},
     bool enforceSearchResultSymmetry = true)
 {
+  check_coarse_search_types_parallel<DomainView, RangeView, ResultView, ExecutionSpace>();
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
   using ExecSpace = ExecutionSpace;
   using MemSpace = typename ExecSpace::memory_space;
-  using DomainValueType = typename DomainBoxType::value_type;
-  using RangeValueType = typename RangeBoxType::value_type;
-  using ArborXDomainType = typename impl::StkToArborX<DomainBoxType>::ArborXType;
+  using DomainBoxType       = typename DomainView::value_type::box_type;
+  using DomainIdentProcType = typename DomainView::value_type::ident_proc_type;
+  using RangeBoxType        = typename RangeView::value_type::box_type;
+  using RangeIdentProcType  = typename RangeView::value_type::ident_proc_type;
+  using DomainValueType     = typename DomainBoxType::value_type;
+  using RangeValueType      = typename RangeBoxType::value_type;
+  using ArborXDomainType    = typename impl::StkToArborX<DomainBoxType>::ArborXType;
 
   STK_ThrowRequireMsg((std::is_same_v<DomainValueType, RangeValueType>),
       "The domain and range boxes must have the same floating-point precision");

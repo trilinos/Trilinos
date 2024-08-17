@@ -54,58 +54,59 @@ namespace stk
 {
 namespace unit_test_util
 {
-  struct ConstructedElementBlock
+
+struct ConstructedElementBlock
+{
+  ConstructedElementBlock()
+    : topology(stk::topology::INVALID_TOPOLOGY),
+      name(""),
+      id(-1)
+  { }
+
+  ConstructedElementBlock(stk::topology topology_, const std::string& name_, int id_)
+    : topology(topology_),
+      name(name_),
+      id(id_)
+  { }
+
+  ConstructedElementBlock(stk::topology topology_, const std::string& name_, int id_, const std::vector< std::vector<unsigned> >& connectivityIndex_)
+    : topology(topology_),
+      name(name_),
+      id(id_),
+      connectivityIndex(connectivityIndex_)
+  { }
+
+  ConstructedElementBlock(const ConstructedElementBlock& block)
+    : topology(block.topology),
+      name(block.name),
+      id(block.id),
+      connectivityIndex(block.connectivityIndex)
+  { }
+
+  void add_connectivity(const std::vector<unsigned>& connectivity)
   {
-    ConstructedElementBlock()
-    : topology(stk::topology::INVALID_TOPOLOGY)
-    , name("")
-    , id(-1)
-    { }
+    ASSERT_EQ(topology.num_nodes(), connectivity.size());
+    connectivityIndex.push_back(connectivity);
+  }
 
-    ConstructedElementBlock(stk::topology topology_, const std::string& name_, int id_)
-    : topology(topology_)
-    , name(name_)
-    , id(id_)
-    { }
-
-    ConstructedElementBlock(stk::topology topology_, const std::string& name_, int id_, const std::vector< std::vector<unsigned> >& connectivityIndex_)
-    : topology(topology_)
-    , name(name_)
-    , id(id_)
-    , connectivityIndex(connectivityIndex_)
-    { }
-
-    ConstructedElementBlock(const ConstructedElementBlock& block)
-    : topology(block.topology)
-    , name(block.name)
-    , id(block.id)
-    , connectivityIndex(block.connectivityIndex)
-    { }
-
-    void add_connectivity(const std::vector<unsigned>& connectivity)
-    {
-      ASSERT_EQ(topology.num_nodes(), connectivity.size());
-      connectivityIndex.push_back(connectivity);
+  void set_connectivity(const std::vector< std::vector<unsigned> >& connectivities)
+  {
+    for(const std::vector<unsigned>& connectivity : connectivities) {
+      add_connectivity(connectivity);
     }
+  }
 
-    void set_connectivity(const std::vector< std::vector<unsigned> >& connectivities)
-    {
-      for(const std::vector<unsigned>& connectivity : connectivities) {
-        add_connectivity(connectivity);
-      }
-    }
-
-    stk::topology topology;
-    std::string name;
-    int id;
-    std::vector< std::vector<unsigned> > connectivityIndex;
-  };
+  stk::topology topology;
+  std::string name;
+  int id;
+  std::vector< std::vector<unsigned> > connectivityIndex;
+};
 
 class ConstructedMesh
 {
 public:
   ConstructedMesh(unsigned spatialDimension)
-  : m_spatialDimension(spatialDimension)
+    : m_spatialDimension(spatialDimension)
   { }
 
   void set_x_coordinates(const std::vector< double >& xCoordinates)

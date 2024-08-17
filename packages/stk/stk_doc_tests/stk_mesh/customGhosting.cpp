@@ -100,7 +100,6 @@ TEST(StkMeshHowTo, customGhostElem)
   if (stk::parallel_machine_size(communicator) == 2)
   {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
     stk::mesh::BulkData& bulkData = *bulkPtr;
     stk::io::fill_mesh("generated:1x1x4", bulkData);
 
@@ -127,7 +126,6 @@ TEST(StkMeshHowTo, addElementToGhostingUsingSpecializedModificationForPerformanc
   if(stk::parallel_machine_size(communicator) == 2)
   {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
     stk::mesh::BulkData& bulk = *bulkPtr;
     stk::io::fill_mesh("generated:1x1x4", bulk);
 

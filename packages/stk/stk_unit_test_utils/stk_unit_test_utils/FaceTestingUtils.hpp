@@ -77,20 +77,49 @@ bool read_file_check_face_elem_connectivity_stk(std::string filename, const std:
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_create_faces_count_sides(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_count_sides(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 bool fully_connected_elements_to_faces(const stk::mesh::BulkData& mesh);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_create_faces_fully_connected_stk(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_fully_connected_stk(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData& mesh);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_create_faces_shared_faces_different_elements_stk(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_shared_faces_different_elements_stk(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& mesh);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 unsigned read_file_shared_faces_same_elements_stk(std::string filename);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 bool check_face_elem_connectivity(const stk::mesh::BulkData& mesh, const std::set<unsigned>& counts);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts);
 
 } // namespace simple_fields
@@ -115,18 +144,21 @@ stk::mesh::Part *get_surface_part_with_id(const stk::mesh::MetaData &meta, int i
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
                                                   stk::mesh::Entity elem,
                                                   const stk::mesh::EntityVector &nodes,
                                                   stk::mesh::EntityId globalId,
                                                   stk::mesh::Part &part);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh,
                                                      stk::mesh::Entity elem,
                                                      const stk::mesh::EntityVector &sub_topology_nodes,
                                                      stk::mesh::EntityId global_sub_topology_id,
                                                      stk::mesh::Part &part);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 stk::mesh::Part *get_surface_part_with_id(const stk::mesh::MetaData &meta, int id);
 
 } // namespace simple_fields

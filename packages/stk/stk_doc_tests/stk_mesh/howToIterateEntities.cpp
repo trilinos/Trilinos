@@ -64,7 +64,6 @@ TEST(StkMeshHowTo, iterateSidesetNodes_BucketLoop_ContiguousFieldDataWithinBucke
                                                    .set_spatial_dimension(3)
                                                    .create();
   stk::mesh::MetaData &stkMeshMeta = stkMesh->mesh_meta_data();
-  stkMeshMeta.use_simple_fields();
   stk::mesh::Field<double> &temperatureField = stkMeshMeta.declare_field<double>(stk::topology::NODE_RANK, "temperature");
   stk::mesh::put_field_on_entire_mesh(temperatureField);
 
@@ -100,7 +99,6 @@ TEST(StkMeshHowTo, iterateSidesetNodes_ForEachEntity_FieldDataAccess)
                                                    .set_spatial_dimension(3)
                                                    .create();
   stk::mesh::MetaData &stkMeshMeta = stkMesh->mesh_meta_data();
-  stkMeshMeta.use_simple_fields();
   stk::mesh::Field<double> &temperatureField = stkMeshMeta.declare_field<double>(stk::topology::NODE_RANK, "temperature");
   stk::mesh::put_field_on_entire_mesh(temperatureField);
 

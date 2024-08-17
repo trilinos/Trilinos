@@ -59,7 +59,7 @@ private:
 
 using BlockWeightsMap = std::map<std::string, double>;
 
-class TestBlockWeights : public stk::unit_test_util::simple_fields::MeshFixture
+class TestBlockWeights : public stk::unit_test_util::MeshFixture
 {
 protected:
   void set_up_1x1x8_mesh_one_block()

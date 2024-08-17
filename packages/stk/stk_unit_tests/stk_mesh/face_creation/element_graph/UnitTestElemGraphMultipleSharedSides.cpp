@@ -3,7 +3,7 @@
 
 namespace {
 
-class ElemGraph_TwoElemTwoSharedSide : public simple_fields::TwoElemTwoSharedSideTester {};
+class ElemGraph_TwoElemTwoSharedSide : public TwoElemTwoSharedSideTester {};
 
 TEST_F(ElemGraph_TwoElemTwoSharedSide, elem_death)
 {
@@ -21,7 +21,7 @@ TEST_F(ElemGraph_TwoElemTwoSharedSide, double_kissing_hexes)
   }
 }
 
-class ElemGraph_TwoElemThreeSharedSide : public simple_fields::TwoElemThreeSharedSideTester {};
+class ElemGraph_TwoElemThreeSharedSide : public TwoElemThreeSharedSideTester {};
 
 TEST_F(ElemGraph_TwoElemThreeSharedSide, triple_kissing_hexes)
 {
@@ -31,7 +31,7 @@ TEST_F(ElemGraph_TwoElemThreeSharedSide, triple_kissing_hexes)
   }
 }
 
-class ElemGraph_TwoElemThreeSharedSideNoAura : public simple_fields::TwoElemThreeSharedSideNoAuraTester {};
+class ElemGraph_TwoElemThreeSharedSideNoAura : public TwoElemThreeSharedSideNoAuraTester {};
 
 TEST_F(ElemGraph_TwoElemThreeSharedSideNoAura, triple_kissing_hexes)
 {
@@ -41,7 +41,7 @@ TEST_F(ElemGraph_TwoElemThreeSharedSideNoAura, triple_kissing_hexes)
   }
 }
 
-class ElemGraph_TwoElem2dTwoSharedSide : public simple_fields::TwoElem2dTwoSharedSideTester {};
+class ElemGraph_TwoElem2dTwoSharedSide : public TwoElem2dTwoSharedSideTester {};
 
 TEST_F(ElemGraph_TwoElem2dTwoSharedSide, double_kissing_quads)
 {

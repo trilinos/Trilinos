@@ -10,7 +10,7 @@
 namespace
 {
 
-class TestBalanceBalanceActiveEntities : public stk::unit_test_util::simple_fields::MeshFixture
+class TestBalanceBalanceActiveEntities : public stk::unit_test_util::MeshFixture
 {
 protected:
   TestBalanceBalanceActiveEntities()
@@ -21,7 +21,7 @@ protected:
     setup_empty_mesh(auraOption);
     activePart = &(get_meta().declare_part("active"));
     stk::io::fill_mesh("generated:1x1x6", get_bulk());
-    stk::unit_test_util::simple_fields::put_mesh_into_part(get_bulk(), *activePart);
+    stk::unit_test_util::put_mesh_into_part(get_bulk(), *activePart);
     make_elements_4_and_5_inactive();
     test_balance_of_active_only();
   }

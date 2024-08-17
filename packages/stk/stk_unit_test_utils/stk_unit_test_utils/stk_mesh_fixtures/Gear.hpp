@@ -82,8 +82,8 @@ struct GearMovement
 
 class Gear {
 
-  typedef Field<double, Cartesian>    CartesianField;
-  typedef Field<double, Cylindrical>  CylindricalField;
+  typedef Field<double>    CartesianField;
+  typedef Field<double>  CylindricalField;
 
   enum { SpatialDimension = 3 };
 
@@ -169,7 +169,7 @@ public:
   CartesianField    & translation_field ;
   CylindricalField  & cylindrical_coord_field ;
 
-private:
+ private:
   EntityVector gear_entities;
 
   Gear(const Gear &);
@@ -196,7 +196,8 @@ struct GearMovement
   {}
 };
 
-class Gear {
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+Gear {
 
   typedef Field<double>    CartesianField;
   typedef Field<double>  CylindricalField;

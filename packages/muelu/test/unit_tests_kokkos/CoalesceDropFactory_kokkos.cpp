@@ -973,7 +973,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
         if (useKokkos) {
           auto graph           = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
           auto boundaryNodes_d = graph->GetBoundaryNodeMap();
-          boundaryNodes        = Kokkos::create_mirror_view(boundaryNodes_d);
+          boundaryNodes        = Kokkos::View<bool *, Kokkos::HostSpace>("boundaryNodes_host", boundaryNodes_d.extent(0));
           Kokkos::deep_copy(boundaryNodes, boundaryNodes_d);
         } else {
           auto graph    = fineLevel.Get<RCP<LWGraph>>("Graph", dropFact.get());

@@ -44,8 +44,7 @@ namespace KokkosBlas {
 /// \param gamma [in] scaling parameter for Z
 /// \param Z [in/out] view of type ZMV in which the results will be stored.
 template <class execution_space, class XMV, class YMV, class ZMV>
-void update(const execution_space& space,
-            const typename XMV::non_const_value_type& alpha, const XMV& X,
+void update(const execution_space& space, const typename XMV::non_const_value_type& alpha, const XMV& X,
             const typename YMV::non_const_value_type& beta, const YMV& Y,
             const typename ZMV::non_const_value_type& gamma, const ZMV& Z) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
@@ -60,20 +59,13 @@ void update(const execution_space& space,
   static_assert(Kokkos::is_view<ZMV>::value,
                 "KokkosBlas::update: "
                 "Z is not a Kokkos::View.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename XMV::memory_space>::accessible,
-      "KokkosBlas::update: XMV must be accessible from execution_space.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename YMV::memory_space>::accessible,
-      "KokkosBlas::update: YMV must be accessible from execution_space.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename ZMV::memory_space>::accessible,
-      "KokkosBlas::update: ZMV must be accessible from execution_space.");
-  static_assert(std::is_same<typename ZMV::value_type,
-                             typename ZMV::non_const_value_type>::value,
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
+                "KokkosBlas::update: XMV must be accessible from execution_space.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible,
+                "KokkosBlas::update: YMV must be accessible from execution_space.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename ZMV::memory_space>::accessible,
+                "KokkosBlas::update: ZMV must be accessible from execution_space.");
+  static_assert(std::is_same<typename ZMV::value_type, typename ZMV::non_const_value_type>::value,
                 "KokkosBlas::update: Z is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
@@ -88,37 +80,32 @@ void update(const execution_space& space,
                 "XMV, YMV, and ZMV must either have rank 1 or rank 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1) ||
-      X.extent(0) != Z.extent(0) || X.extent(1) != Z.extent(1)) {
+  if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1) || X.extent(0) != Z.extent(0) ||
+      X.extent(1) != Z.extent(1)) {
     std::ostringstream os;
     os << "KokkosBlas::update (MV): Dimensions of X, Y, and Z do not match: "
-       << "Z: " << Z.extent(0) << " x " << Z.extent(1) << ", X: " << X.extent(0)
-       << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x "
-       << Y.extent(1);
+       << "Z: " << Z.extent(0) << " x " << Z.extent(1) << ", X: " << X.extent(0) << " x " << X.extent(1)
+       << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Create unmanaged versions of the input Views.  XMV, YMV, and ZMV
   // may be rank 1 or rank 2, but they must all have the same rank.
 
-  using XMV_Internal = Kokkos::View<
-      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
-                                typename XMV::const_value_type**>::type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
-      typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
+                                                              typename XMV::const_value_type**>::type,
+                                    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+                                    typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  using YMV_Internal = Kokkos::View<
-      typename std::conditional<YMV::rank == 1, typename YMV::const_value_type*,
-                                typename YMV::const_value_type**>::type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
-      typename YMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using YMV_Internal = Kokkos::View<typename std::conditional<YMV::rank == 1, typename YMV::const_value_type*,
+                                                              typename YMV::const_value_type**>::type,
+                                    typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
+                                    typename YMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  using ZMV_Internal = Kokkos::View<
-      typename std::conditional<ZMV::rank == 1,
-                                typename ZMV::non_const_value_type*,
-                                typename ZMV::non_const_value_type**>::type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<ZMV>::array_layout,
-      typename ZMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using ZMV_Internal = Kokkos::View<typename std::conditional<ZMV::rank == 1, typename ZMV::non_const_value_type*,
+                                                              typename ZMV::non_const_value_type**>::type,
+                                    typename KokkosKernels::Impl::GetUnifiedLayout<ZMV>::array_layout,
+                                    typename ZMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   XMV_Internal X_internal = X;
   YMV_Internal Y_internal = Y;
@@ -134,9 +121,8 @@ void update(const execution_space& space,
        << endl;
 #endif  // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
-  Impl::Update<execution_space, XMV_Internal, YMV_Internal,
-               ZMV_Internal>::update(space, alpha, X_internal, beta, Y_internal,
-                                     gamma, Z_internal);
+  Impl::Update<execution_space, XMV_Internal, YMV_Internal, ZMV_Internal>::update(space, alpha, X_internal, beta,
+                                                                                  Y_internal, gamma, Z_internal);
 }
 
 /// \brief Compute Z := alpha*X + beta*Y + gamma*Z.

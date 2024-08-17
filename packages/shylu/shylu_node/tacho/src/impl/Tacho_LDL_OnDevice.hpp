@@ -134,11 +134,11 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0) {
-      value_type *__restrict__ Aptr = A.data();
-      ordinal_type *__restrict__ ipiv = P.data();
-      ordinal_type *__restrict__ fpiv = ipiv + m;
-      ordinal_type *__restrict__ perm = fpiv + m;
-      ordinal_type *__restrict__ peri = perm + m;
+      value_type *KOKKOS_RESTRICT Aptr = A.data();
+      ordinal_type *KOKKOS_RESTRICT ipiv = P.data();
+      ordinal_type *KOKKOS_RESTRICT fpiv = ipiv + m;
+      ordinal_type *KOKKOS_RESTRICT perm = fpiv + m;
+      ordinal_type *KOKKOS_RESTRICT peri = perm + m;
 
       const value_type one(1), zero(0);
       Kokkos::RangePolicy<exec_space> range_policy(exec_instance, 0, m);
@@ -169,8 +169,8 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
                     fpiv[i] = fla_pivot;
                   }
                   if (fla_pivot) {
-                    value_type *__restrict__ src = Aptr + i;
-                    value_type *__restrict__ tgt = src + fla_pivot;
+                    value_type *KOKKOS_RESTRICT src = Aptr + i;
+                    value_type *KOKKOS_RESTRICT tgt = src + fla_pivot;
                     if (j < (i - 1)) {
                       const ordinal_type idx = j * m;
                       swap(src[idx], tgt[idx]);

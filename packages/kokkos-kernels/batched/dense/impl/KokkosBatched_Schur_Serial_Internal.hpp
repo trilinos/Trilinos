@@ -68,33 +68,27 @@ struct SerialSchurInternal {
   ///     returns -1.
   template <typename RealType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m,
-                                           /* */ RealType *H, const int hs0,
-                                           const int hs1,
-                                           /* */ RealType *Z, const int zs0,
-                                           const int zs1,
-                                           /* */ RealType *w, const int wlen,
-                                           const bool restart           = false,
+                                           /* */ RealType *H, const int hs0, const int hs1,
+                                           /* */ RealType *Z, const int zs0, const int zs1,
+                                           /* */ RealType *w, const int wlen, const bool restart = false,
                                            const int user_max_iteration = -1) {
     typedef RealType real_type;
     typedef Kokkos::ArithTraits<real_type> ats;
     const real_type /* one(1), */ zero(0), tol = 1e2 * ats::epsilon();
     const int max_iteration = user_max_iteration < 0 ? 300 : user_max_iteration;
-    if (wlen < m * 5)
-      Kokkos::abort("Error: provided workspace is smaller than 3*m");
+    if (wlen < m * 5) Kokkos::abort("Error: provided workspace is smaller than 3*m");
 
     int r_val = 0;
     if (restart) {
-      if (m <= 2)
-        Kokkos::abort("Error: restart option cannot be used for m=1 or m=2");
+      if (m <= 2) Kokkos::abort("Error: restart option cannot be used for m=1 or m=2");
     } else {
       /// do not touch input
       /// SerialSetIdentityInternal::invoke(m, Z, zs0, zs1);
     }
 
     // workspaces
-    real_type *subdiags = w;
-    Kokkos::pair<real_type, real_type> *Gs =
-        (Kokkos::pair<real_type, real_type> *)(w + m);
+    real_type *subdiags                    = w;
+    Kokkos::pair<real_type, real_type> *Gs = (Kokkos::pair<real_type, real_type> *)(w + m);
     if (!restart) {
       /// initialize workspace and Gs
       for (int i = 0; i < m; ++i) subdiags[i] = zero;
@@ -111,8 +105,7 @@ struct SerialSchurInternal {
         bool is_complex;
         Kokkos::complex<real_type> lambda1, lambda2;
         Kokkos::pair<real_type, real_type> G;
-        SerialSchur2x2Internal::invoke(H, H + hs1, H + hs0, H + hs, &G,
-                                       &lambda1, &lambda2, &is_complex);
+        SerialSchur2x2Internal::invoke(H, H + hs1, H + hs0, H + hs, &G, &lambda1, &lambda2, &is_complex);
 
         G.second = -G.second;  // transpose
         SerialApplyRightGivensInternal::invoke(G, 2, Z, zs0, Z + zs1, zs0);
@@ -171,49 +164,37 @@ struct SerialSchurInternal {
               real_type *sub2x2 = H + (mend - 2) * hs;
               if (2 == mdiff) {
                 Kokkos::pair<real_type, real_type> G;
-                SerialSchur2x2Internal::invoke(sub2x2, sub2x2 + hs1,
-                                               sub2x2 + hs0, sub2x2 + hs, &G,
-                                               &lambda1, &lambda2, &is_complex);
+                SerialSchur2x2Internal::invoke(sub2x2, sub2x2 + hs1, sub2x2 + hs0, sub2x2 + hs, &G, &lambda1, &lambda2,
+                                               &is_complex);
                 subdiags[mend - 1] = sub2x2[hs0];
 
                 /// apply G' from left
                 G.second = -G.second;
-                SerialApplyLeftGivensInternal::invoke(
-                    G, m - mend, sub2x2 + 2 * hs1, hs1, sub2x2 + hs0 + 2 * hs1,
-                    hs1);
+                SerialApplyLeftGivensInternal::invoke(G, m - mend, sub2x2 + 2 * hs1, hs1, sub2x2 + hs0 + 2 * hs1, hs1);
 
                 /// apply (G')' from right
-                SerialApplyRightGivensInternal::invoke(
-                    G, mend - 2, sub2x2 - mend_minus_two_mult_hs0, hs0,
-                    sub2x2 + hs1 - mend_minus_two_mult_hs0, hs0);
+                SerialApplyRightGivensInternal::invoke(G, mend - 2, sub2x2 - mend_minus_two_mult_hs0, hs0,
+                                                       sub2x2 + hs1 - mend_minus_two_mult_hs0, hs0);
                 sub2x2[hs0] = zero;
 
                 /// apply (G')' from right to compute Z
-                SerialApplyRightGivensInternal::invoke(
-                    G, m, Z + (mend - 2) * zs1, zs0, Z + (mend - 1) * zs1, zs0);
+                SerialApplyRightGivensInternal::invoke(G, m, Z + (mend - 2) * zs1, zs0, Z + (mend - 1) * zs1, zs0);
 
               } else {
-                SerialWilkinsonShiftInternal::invoke(
-                    sub2x2[0], sub2x2[hs1], sub2x2[hs0], sub2x2[hs], &lambda1,
-                    &lambda2, &is_complex);
+                SerialWilkinsonShiftInternal::invoke(sub2x2[0], sub2x2[hs1], sub2x2[hs0], sub2x2[hs], &lambda1,
+                                                     &lambda2, &is_complex);
 
-                SerialFrancisInternal::invoke(mbeg, mend, m, H, hs0, hs1,
-                                              lambda1, lambda2, is_complex, Gs,
-                                              true);
+                SerialFrancisInternal::invoke(mbeg, mend, m, H, hs0, hs1, lambda1, lambda2, is_complex, Gs, true);
                 /* */ auto &val1    = *(sub2x2 + hs0);
                 /* */ auto &val2    = *(sub2x2 - hs1);
                 const auto abs_val1 = ats::abs(val1);
                 const auto abs_val2 = ats::abs(val2);
 
                 for (int i = mbeg; i < (mend - 1); ++i) {
-                  const Kokkos::pair<real_type, real_type> G0(
-                      Gs[2 * i].first, -Gs[2 * i].second);
-                  const Kokkos::pair<real_type, real_type> G1(
-                      Gs[2 * i + 1].first, -Gs[2 * i + 1].second);
-                  SerialApplyRightGivensInternal::invoke(
-                      G0, m, Z + i * zs1, zs0, Z + i * zs1 + 1 * zs1, zs0);
-                  SerialApplyRightGivensInternal::invoke(
-                      G1, m, Z + i * zs1, zs0, Z + i * zs1 + 2 * zs1, zs0);
+                  const Kokkos::pair<real_type, real_type> G0(Gs[2 * i].first, -Gs[2 * i].second);
+                  const Kokkos::pair<real_type, real_type> G1(Gs[2 * i + 1].first, -Gs[2 * i + 1].second);
+                  SerialApplyRightGivensInternal::invoke(G0, m, Z + i * zs1, zs0, Z + i * zs1 + 1 * zs1, zs0);
+                  SerialApplyRightGivensInternal::invoke(G1, m, Z + i * zs1, zs0, Z + i * zs1 + 2 * zs1, zs0);
                 }
 
                 /// convergence check
@@ -222,28 +203,23 @@ struct SerialSchurInternal {
                 } else if (abs_val2 < tol) {
                   /// preserve the standard schur form
                   Kokkos::pair<real_type, real_type> G;
-                  SerialSchur2x2Internal::invoke(
-                      sub2x2, sub2x2 + hs1, sub2x2 + hs0, sub2x2 + hs, &G,
-                      &lambda1, &lambda2, &is_complex);
+                  SerialSchur2x2Internal::invoke(sub2x2, sub2x2 + hs1, sub2x2 + hs0, sub2x2 + hs, &G, &lambda1,
+                                                 &lambda2, &is_complex);
                   subdiags[mend - 1] = val1;
 
                   /// apply G' from left
                   G.second = -G.second;
-                  SerialApplyLeftGivensInternal::invoke(
-                      G, m - mend, sub2x2 + 2 * hs1, hs1,
-                      sub2x2 + hs0 + 2 * hs1, hs1);
+                  SerialApplyLeftGivensInternal::invoke(G, m - mend, sub2x2 + 2 * hs1, hs1, sub2x2 + hs0 + 2 * hs1,
+                                                        hs1);
 
                   // apply (G')' from right
-                  SerialApplyRightGivensInternal::invoke(
-                      G, mend - 2, sub2x2 - mend_minus_two_mult_hs0, hs0,
-                      sub2x2 + hs1 - mend_minus_two_mult_hs0, hs0);
+                  SerialApplyRightGivensInternal::invoke(G, mend - 2, sub2x2 - mend_minus_two_mult_hs0, hs0,
+                                                         sub2x2 + hs1 - mend_minus_two_mult_hs0, hs0);
                   val1 = zero;
                   val2 = zero;
 
                   // apply (G')' from right
-                  SerialApplyRightGivensInternal::invoke(
-                      G, m, Z + (mend - 2) * zs1, zs0, Z + (mend - 1) * zs1,
-                      zs0);
+                  SerialApplyRightGivensInternal::invoke(G, m, Z + (mend - 2) * zs1, zs0, Z + (mend - 1) * zs1, zs0);
                 }
               }
             }

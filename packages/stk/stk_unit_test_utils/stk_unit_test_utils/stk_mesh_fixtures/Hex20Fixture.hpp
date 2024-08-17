@@ -71,8 +71,8 @@ namespace fixtures {
 class Hex20Fixture
 {
 public:
-  typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
+  typedef double        Scalar;
+  typedef Field<Scalar> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -124,7 +124,7 @@ public:
   BulkData&         m_bulk_data;
   PartVector        m_elem_parts;
   PartVector        m_node_parts;
-  CoordFieldType &  m_coord_field;
+  CoordFieldType *  m_coord_field;
   stk::topology     m_elem_topology = stk::topology::HEX_20;
   stk::topology     m_face_topology = stk::topology::QUAD_8;
 
@@ -195,7 +195,8 @@ private:
 
 namespace simple_fields {
 
-class Hex20Fixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+Hex20Fixture
 {
 public:
   typedef double        Scalar;

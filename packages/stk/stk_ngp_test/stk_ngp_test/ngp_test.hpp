@@ -1,9 +1,12 @@
 #ifndef STK_NGP_TEST_NGP_TEST_HPP
 #define STK_NGP_TEST_NGP_TEST_HPP
+
 #include <gtest/gtest.h>
 #include "GlobalReporter.hpp"
-#include "Reporter.hpp"
 #include <Kokkos_Core.hpp>
+#if KOKKOS_VERSION >= 40200
+#include <Kokkos_Printf.hpp>
+#endif
 #include <stk_ngp_test/NgpTestDeviceMacros.hpp>
 
 namespace ngp_testing {
