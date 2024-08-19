@@ -39,15 +39,6 @@
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-#include "MueLu_RepartitionHeuristicFactory_fwd.hpp"
-#include "MueLu_RepartitionFactory_fwd.hpp"
-#include "MueLu_RebalanceTransferFactory_fwd.hpp"
-#include "MueLu_IsorropiaInterface_fwd.hpp"
-#include "MueLu_RebalanceAcFactory_fwd.hpp"
-#include "MueLu_RebalanceMapFactory_fwd.hpp"
-#endif
-
 #ifdef HAVE_MUELU_DEPRECATED_CODE
 #ifndef TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS
 #warning "The header file MueLu_MLParameterListInterpreter.hpp is deprecated"

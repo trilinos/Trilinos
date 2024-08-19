@@ -14,12 +14,7 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#if defined(HAVE_MUELU_AMESOS)
-#include <Amesos_config.h>
-#endif
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
-#endif
 
 #include <MueLu_TestHelpers.hpp>
 
@@ -139,11 +134,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrd
           TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
 #endif
         } else if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_IFPACK2)
           RUN;
-#else
-          TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
         }
       } else {
         RUN;

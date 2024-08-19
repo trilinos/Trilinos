@@ -37,7 +37,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Apply, Scalar, LocalOrdinal, G
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   typedef MueLu::Utilities<SC, LO, GO, NO> Utils;
   typedef MueLu::TpetraOperator<SC, LO, GO, NO> muelu_tpetra_operator_type;
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
@@ -109,9 +108,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Apply, Scalar, LocalOrdinal, G
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // Apply
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Getters, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -120,7 +116,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Getters, Scalar, LocalOrdinal,
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using Utils              = MueLu::Utilities<SC, LO, GO, NO>;
   using TpetraOperatorType = MueLu::TpetraOperator<SC, LO, GO, NO>;
   using MagnitudeType      = typename Teuchos::ScalarTraits<SC>::magnitudeType;
@@ -169,9 +164,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Getters, Scalar, LocalOrdinal,
       TEST_EQUALITY(tO->hasTransposeApply(), false);
     }
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }
 
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node)                                       \

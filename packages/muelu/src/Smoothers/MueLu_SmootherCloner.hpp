@@ -16,9 +16,7 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_SmootherBase.hpp"
-#if defined(HAVE_MUELU_IFPACK2)
 #include "MueLu_Ifpack2Smoother.hpp"
-#endif
 #include "MueLu_TrilinosSmoother.hpp"
 
 namespace MueLu {

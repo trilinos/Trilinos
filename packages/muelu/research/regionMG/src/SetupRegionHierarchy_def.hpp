@@ -38,10 +38,8 @@
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionSmoothers_def.hpp"
 
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
-#endif
 
 using Teuchos::Array;
 using Teuchos::ArrayRCP;

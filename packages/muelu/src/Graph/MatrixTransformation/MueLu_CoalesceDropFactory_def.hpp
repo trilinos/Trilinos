@@ -39,9 +39,7 @@
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Utilities.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_CrsGraphTransposer.hpp"
-#endif
 
 #include <algorithm>
 #include <cstdlib>
@@ -1912,7 +1910,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
     outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
   } else {
     TEUCHOS_ASSERT(inputGraph->GetDomainMap()->lib() == Xpetra::UseTpetra);
-#ifdef HAVE_XPETRA_TPETRA
     auto outputGraph2 = rcp(new LWGraph(rows_graph, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), inputGraph->GetDomainMap(), inputGraph->GetImportMap(), "block-diagonalized graph of A"));
 
     auto tpGraph     = Xpetra::toTpetra(rcp_const_cast<const CrsGraph>(outputGraph2->GetCrsGraph()));
@@ -1927,7 +1924,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
       rows_graphSym(row) = rowsSym(row);
     outputGraph = rcp(new LWGraph(rows_graphSym, colIndsSym, inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
     outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
-#endif
   }
 }
 

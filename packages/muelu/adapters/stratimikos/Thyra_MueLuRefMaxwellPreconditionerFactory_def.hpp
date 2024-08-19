@@ -44,10 +44,6 @@ bool MueLuRefMaxwellPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, N
 
   if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetra(fwdOp)) return true;
 
-#ifdef HAVE_MUELU_EPETRA
-  if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isEpetra(fwdOp)) return true;
-#endif
-
   return false;
 }
 

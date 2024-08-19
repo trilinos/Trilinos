@@ -12,12 +12,7 @@
 
 #include "Xpetra_MapFactory_decl.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
-#endif
 
 #include "Xpetra_BlockedMap.hpp"
 
@@ -33,10 +28,8 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
           LocalGlobal lg) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra)
     return Teuchos::rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, indexBase, comm, lg));
-#endif
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -52,10 +45,8 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
           const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra)
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm));
-#endif
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -71,10 +62,8 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
           const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra)
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm));
-#endif
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -97,7 +86,6 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
     return rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
   }
 
-#ifdef HAVE_XPETRA_TPETRA
   LocalOrdinal numLocalElements                       = nodeMap->getLocalNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> oldElements = nodeMap->getLocalElementList();
   Teuchos::Array<GlobalOrdinal> newElements(nodeMap->getLocalNumElements() * numDofPerNode);
@@ -109,13 +97,11 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
   if (nodeMap->lib() == UseTpetra) {
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(nodeMap->getGlobalNumElements() * numDofPerNode, newElements, nodeMap->getIndexBase(), nodeMap->getComm()));
   }
-#endif
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(nodeMap->lib());
   XPETRA_FACTORY_END;
 }
 
-#ifdef HAVE_XPETRA_TPETRA
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
@@ -130,7 +116,6 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
 }
-#endif  // HAVE_XPETRA_TPETRA
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>
@@ -140,7 +125,6 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
                    const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra) {
     // Pre-ETI code called Tpetra::createLocalMap() but this can result in compile erros
     // when Trilinos is built with multiple node-types, specifically the GCC 4.8.4 PR
@@ -150,7 +134,6 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
     // return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm))); // (old version)
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, comm)));
   }
-#endif  // HAVE_XPETRA_TPETRA
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -164,11 +147,9 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
                            const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra) {
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, comm)));
   }
-#endif  // HAVE_XPETRA_TPETRA
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -182,11 +163,9 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
                                    const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra)
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(
         Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, comm)));
-#endif  // HAVE_XPETRA_TPETRA
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -200,11 +179,9 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
                            const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra)
     return rcp(new Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(
         Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, comm)));
-#endif  // HAVE_XPETRA_TPETRA
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -219,11 +196,9 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
                     const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra)
     return rcp(new Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(
         Tpetra::createContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, localNumElements, comm)));
-#endif  // HAVE_XPETRA_TPETRA
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;
@@ -238,12 +213,10 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
                             const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   XPETRA_MONITOR("MapFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra) {
     return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(
         Tpetra::createContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, localNumElements, comm)));
   }
-#endif  // HAVE_XPETRA_TPETRA
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
   XPETRA_FACTORY_END;

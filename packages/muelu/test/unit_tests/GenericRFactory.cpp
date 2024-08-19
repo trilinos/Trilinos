@@ -54,9 +54,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GenericRFactory, SymmetricProblem, Scalar, Loc
 #if !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
 #endif
-#if !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -189,9 +186,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GenericRFactory, GenericRSetup, Scalar, LocalO
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 #if !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
-#endif
-#if !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
 #endif
   out << "version: " << MueLu::Version() << std::endl;
 

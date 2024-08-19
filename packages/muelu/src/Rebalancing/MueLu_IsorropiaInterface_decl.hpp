@@ -25,10 +25,6 @@
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_CrsGraphFactory_fwd.hpp>  //TODO
 
-#ifdef HAVE_MUELU_EPETRA
-#include <Xpetra_EpetraCrsGraph_fwd.hpp>
-#endif
-
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
 #include "MueLu_Level_fwd.hpp"

@@ -30,13 +30,7 @@
   const RCP<type>& newObj = Teuchos::rcp_dynamic_cast<type>(obj); \
   TEUCHOS_TEST_FOR_EXCEPTION(newObj == Teuchos::null, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg);
 
-#ifdef HAVE_XPETRA_EPETRA
-#define XPETRA_FACTORY_ERROR_IF_EPETRA(lib) \
-  if ((lib) == ::Xpetra::UseEpetra)         \
-    TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and LocalOrdinal=GlobalOrdinal=int on a serial node");
-#else
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)
-#endif
 
 #define XPETRA_FACTORY_END TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
 

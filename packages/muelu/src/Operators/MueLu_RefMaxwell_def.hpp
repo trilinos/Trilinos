@@ -564,7 +564,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
       rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD);
     }
 
-#ifdef HAVE_MUELU_TPETRA
     if ((!Dk_1_T_.is_null()) &&
         (!R11_.is_null()) &&
         (!rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_T_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
@@ -573,7 +572,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
         (R11_->getColMap()->lib() == Xpetra::UseTpetra))
       Dk_1_T_R11_colMapsMatch_ = Dk_1_T_->getColMap()->isSameAs(*R11_->getColMap());
     else
-#endif
       Dk_1_T_R11_colMapsMatch_ = false;
     if (Dk_1_T_R11_colMapsMatch_)
       GetOStream(Runtime0) << solverName_ + "::compute(): Dk_1_T and R11 have matching colMaps" << std::endl;
