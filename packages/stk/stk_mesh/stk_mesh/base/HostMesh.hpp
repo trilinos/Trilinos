@@ -229,28 +229,9 @@ public:
     return *bulk->buckets(rank)[i];
   }
 
-  DeviceCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+  HostCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
   {
-    DeviceCommMapIndices commMap("CommMapIndices", 0);
-    if (bulk->parallel_size() > 1) {
-      const stk::mesh::BucketIndices & stkBktIndices = bulk->volatile_fast_shared_comm_map(rank)[proc];
-      const size_t numEntities = stkBktIndices.ords.size();
-      commMap = DeviceCommMapIndices("CommMapIndices", numEntities);
-
-      size_t stkOrdinalIndex = 0;
-      for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
-        const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
-        const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
-        for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
-          const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex];
-          const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
-          commMap[stkOrdinalIndex] = stkFastMeshIndex;
-          ++stkOrdinalIndex;
-        }
-      }
-    }
-
-    return commMap;
+    return bulk->volatile_fast_shared_comm_map(rank, proc);
   }
 
   const stk::mesh::BulkData &get_bulk_on_host() const

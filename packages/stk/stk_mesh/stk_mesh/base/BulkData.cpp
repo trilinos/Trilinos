@@ -369,6 +369,7 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
     m_volatile_fast_shared_comm_map_sync_count(0),
+    m_ngpMeshHostData(),
     m_all_sharing_procs(mesh_meta_data->entity_rank_count()),
     m_all_sharing_procs_sync_count(0),
     m_ghost_parts(),
@@ -4553,6 +4554,74 @@ void BulkData::internal_update_all_sharing_procs() const
   }
 }
 
+void BulkData::internal_update_ngp_fast_comm_maps() const
+{
+    if (m_ngpMeshHostData == nullptr) {
+      m_ngpMeshHostData = std::make_shared<impl::DeviceMeshHostData>();
+    }
+    impl::DeviceMeshHostData& ngpHostData = *m_ngpMeshHostData;
+
+    const EntityRank num_ranks = static_cast<EntityRank>(mesh_meta_data().entity_rank_count());
+    m_volatile_fast_shared_comm_map.resize(num_ranks);
+    if (parallel_size() > 1) {
+        const EntityCommListInfoVector& all_comm = m_entity_comm_list;
+        const EntityCommDatabase& commDB = internal_comm_db();
+
+        // Assemble map, find all shared entities and pack into volatile fast map
+        std::vector<std::vector<unsigned> > shared_entity_counts(num_ranks);
+        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+            shared_entity_counts[r].assign(parallel_size(), 0);
+        }
+
+        for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
+            EntityKey const key   = all_comm[i].key;
+            EntityRank const rank = key.rank();
+
+            if (all_comm[i].entity_comm != -1) {
+                PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
+                for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
+                    shared_entity_counts[rank][ec->proc]++;
+                }
+            }
+        }
+
+        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+            Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData.hostVolatileFastSharedCommMapOffset[r], parallel_size()+1);
+            unsigned offset = 0;
+            for(int p=0; p<parallel_size(); ++p) {
+                ngpHostData.hostVolatileFastSharedCommMapOffset[r](p) = offset;
+                offset += shared_entity_counts[r][p];
+            }
+            ngpHostData.hostVolatileFastSharedCommMapOffset[r](parallel_size()) = offset;
+            Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData.hostVolatileFastSharedCommMap[r], offset);
+        }
+
+        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+            shared_entity_counts[r].assign(parallel_size(), 0);
+        }
+
+        for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
+            Entity const e        = all_comm[i].entity;
+            MeshIndex const& idx  = mesh_index(e);
+            if (idx.bucket->shared() && all_comm[i].entity_comm != -1) {
+              const unsigned bucket_id  = idx.bucket->bucket_id();
+              const unsigned bucket_ord = idx.bucket_ordinal;
+
+              const EntityKey key   = all_comm[i].key;
+              const EntityRank rank = key.rank();
+
+              PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
+              for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
+                const unsigned index = ngpHostData.hostVolatileFastSharedCommMapOffset[rank](ec->proc) + shared_entity_counts[rank][ec->proc]++;
+                ngpHostData.hostVolatileFastSharedCommMap[rank](index) = FastMeshIndex{bucket_id, bucket_ord};
+              }
+            }
+        }
+    }
+    ngpHostData.volatileFastSharedCommMapSyncCount = synchronized_count();
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
 void BulkData::internal_update_fast_comm_maps() const
 {
     const EntityRank num_ranks = static_cast<EntityRank>(mesh_meta_data().entity_rank_count());
@@ -4615,6 +4684,7 @@ void BulkData::internal_update_fast_comm_maps() const
     }
     m_volatile_fast_shared_comm_map_sync_count = synchronized_count();
 }
+#endif
 
 template<typename PARTVECTOR>
 void internal_throw_error_if_manipulating_internal_part_memberships(const PARTVECTOR & parts)

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+5.21.3-1 (STK_VERSION 5210301) 8/19/2024
+   stk_mesh: fix ~65K limitation on per-bucket size of upward-connectivity tables
+    - This is an implementation detail that only arises if user sets large bucket
+      capacities such that 'entities-per-bucket'*'avg-upward-connections-per-entity' > 65K.
+      By default buckets are capped at 512 and this limit won't be reached in practice.
+      - Was using 16bit index type, now defaults to 32bit index type, but is settable
+        via cmake-settable option 'STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE=ON/OFF'
+
 5.21.3 (STK_VERSION 5210300) 8/12/2024
    general: compile-warnings/errors fixed for gcc 12 and arm
    stk_mesh: BulkData::change_entity_owner now returns a bool

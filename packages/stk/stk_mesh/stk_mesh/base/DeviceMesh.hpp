@@ -188,7 +188,7 @@ public:
       deviceMeshHostData(nullptr)
   {
     bulk->register_device_mesh();
-    deviceMeshHostData = new impl::DeviceMeshHostData();
+    deviceMeshHostData = impl::get_ngp_mesh_host_data(*bulk);
     update_mesh();
   }
 
@@ -451,7 +451,6 @@ private:
     KOKKOS_IF_ON_HOST((
       if (is_last_mesh_copy()) {
         bulk->unregister_device_mesh();
-        delete deviceMeshHostData;
       }
     
       if (is_last_bucket_reference()) {
@@ -467,8 +466,6 @@ private:
   bool fill_buckets(const stk::mesh::BulkData& bulk_in);
 
   void fill_mesh_indices(const stk::mesh::BulkData& bulk_in);
-
-  void fill_volatile_fast_shared_comm_map(const stk::mesh::BulkData & bulk_in);
 
   void copy_entity_keys_to_device();
 

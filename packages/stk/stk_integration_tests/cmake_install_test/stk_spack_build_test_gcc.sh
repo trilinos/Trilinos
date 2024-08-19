@@ -79,7 +79,7 @@ exe spack add hdf5@1.14.3~shared
 exe spack add zlib
 exe spack add openmpi@4.1.6
 exe spack add kokkos~shared
-exe spack add trilinos@develop+exodus+stk+test+kokkos~amesos~epetra~shared~boost
+exe spack add trilinos@develop+exodus+stk+test+gtest+kokkos~amesos~epetra~shared~boost
 
 exe spack concretize -f
 if [ $? -ne 0 ] ; then

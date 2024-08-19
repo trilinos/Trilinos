@@ -318,7 +318,15 @@ using ConnectivityOrdinal = uint16_t;
 constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = 65535;
 #else
 using ConnectivityOrdinal = uint32_t;
-constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = ~0U;
+constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = std::numeric_limits<ConnectivityOrdinal>::max();
+#endif
+
+#ifdef STK_16BIT_UPWARDCONN_INDEX_TYPE
+using UpwardConnIndexType = uint16_t;
+constexpr UpwardConnIndexType INVALID_UPWARDCONN_INDEX = 65535;
+#else
+using UpwardConnIndexType = uint32_t;
+constexpr UpwardConnIndexType INVALID_UPWARDCONN_INDEX = std::numeric_limits<UpwardConnIndexType>::max();
 #endif
 
 enum Permutation : unsigned char
