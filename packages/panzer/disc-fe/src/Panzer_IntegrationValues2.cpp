@@ -1721,7 +1721,7 @@ getCubaturePointsRef(const bool cache,
     const int order = int_rule->getOrder();
 
     // Scratch space for storing the points for each side of the cell
-    auto side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_points_on_face,cell_dim);
+    auto side_cub_points2 = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_points_on_face,cell_dim);
 
     Intrepid2::DefaultCubatureFactory cubature_factory;
 
@@ -1733,9 +1733,9 @@ getCubaturePointsRef(const bool cache,
       // Get the cubature for the side
       if(cell_dim==1){
         // In 1D the surface point is either on the left side of the cell, or the right side
-        auto side_cub_points_host = Kokkos::create_mirror_view(side_cub_points.get_view());
+        auto side_cub_points_host = Kokkos::create_mirror_view(side_cub_points2.get_view());
         side_cub_points_host(0,0) = (side==0)? -1. : 1.;
-        Kokkos::deep_copy(side_cub_points.get_view(),side_cub_points_host);
+        Kokkos::deep_copy(side_cub_points2.get_view(),side_cub_points_host);
       } else {
 
         // Get the face topology from the cell topology
@@ -1750,7 +1750,7 @@ getCubaturePointsRef(const bool cache,
         ic->getCubature(tmp_side_cub_points, tmp_side_cub_weights);
 
         // Convert from reference face points to reference cell points
-        cell_tools.mapToReferenceSubcell(side_cub_points.get_view(), tmp_side_cub_points, subcell_dim, side, cell_topology);
+        cell_tools.mapToReferenceSubcell(side_cub_points2.get_view(), tmp_side_cub_points, subcell_dim, side, cell_topology);
       }
 
       PHX::Device::execution_space().fence();
@@ -1758,7 +1758,7 @@ getCubaturePointsRef(const bool cache,
       // Copy from the side allocation to the surface allocation
       Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_points_on_face, num_space_dim});
       Kokkos::parallel_for("copy values",policy,KOKKOS_LAMBDA (const int cell,const int point, const int dim) {
-        aux(cell,point_offset + point,dim) = side_cub_points(point,dim);
+        aux(cell,point_offset + point,dim) = side_cub_points2(point,dim);
       });
       PHX::Device::execution_space().fence();
     }
@@ -1770,11 +1770,11 @@ getCubaturePointsRef(const bool cache,
                                 "ERROR: 0-D quadrature rule infrastructure does not exist!!! Will not be able to do "
                                  << "non-natural integration rules.");
 
-    auto cub_points = getUniformCubaturePointsRef(false,force,false);
+    auto cub_points2 = getUniformCubaturePointsRef(false,force,false);
 
     Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_ip,num_space_dim});
     Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int & cell, const int & ip, const int & dim){
-      aux(cell,ip,dim) = cub_points(ip,dim);
+      aux(cell,ip,dim) = cub_points2(ip,dim);
     });
   }
 
