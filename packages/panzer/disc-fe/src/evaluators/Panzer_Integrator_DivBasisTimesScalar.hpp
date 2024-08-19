@@ -317,11 +317,6 @@ namespace panzer
        */
       PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP> basis_;
 
-      /**
-       * \brief If set to true, device shared memory will be used.
-       */
-      bool use_shared_memory;
-
     /// Temporary for non-shared calculations
     PHX::View<ScalarT*> tmp_;
 

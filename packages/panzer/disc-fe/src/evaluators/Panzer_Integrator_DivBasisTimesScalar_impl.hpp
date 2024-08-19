@@ -50,8 +50,7 @@ namespace panzer
     :
     evalStyle_(evalStyle),
     multiplier_(multiplier),
-    basisName_(basis.name()),
-    use_shared_memory(false)
+    basisName_(basis.name())
   {
     using PHX::View;
     using panzer::BASIS;
@@ -368,7 +367,7 @@ namespace panzer
     // Grab the basis information.
     basis_ = this->wda(workset).bases[basisIndex_]->weighted_div_basis;
 
-    use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
+    bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
 
     if (use_shared_memory) {
       int bytes;

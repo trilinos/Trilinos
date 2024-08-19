@@ -205,9 +205,9 @@ void Quad8ToQuad4MeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach
 
   if(createEdgeBlocks_) {
     const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
-    std::vector<std::string> element_block_names;
-    quad8Mesh_->getElementBlockNames(element_block_names);
-    for (const auto& block_name : element_block_names)
+    std::vector<std::string> element_block_names2;
+    quad8Mesh_->getElementBlockNames(element_block_names2);
+    for (const auto& block_name : element_block_names2)
       mesh.addEdgeBlock(block_name,edgeBlockName_,edge_ctd);
   }
 
