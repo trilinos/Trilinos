@@ -31,7 +31,8 @@ namespace MueLu {
 template <class T>
 void sort_and_unique(T& array) {
   std::sort(array.begin(), array.end());
-  std::unique(array.begin(), array.end());
+  auto last = std::unique(array.begin(), array.end());
+  array.erase(last, array.end());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
