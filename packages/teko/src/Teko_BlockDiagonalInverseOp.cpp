@@ -43,7 +43,7 @@ void BlockDiagonalInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
                                            const double alpha, const double beta) const {
   int blocks = blockCount(src);
 
-  TEUCHOS_ASSERT(blocks == invDiag_.size());
+  TEUCHOS_ASSERT(blocks == (int)invDiag_.size());
 
   if (!allocated) {
     srcScrap_ = deepcopy(src);
@@ -107,7 +107,7 @@ void BlockDiagonalInverseOp::describe(Teuchos::FancyOStream& out_arg,
         OSTab tab2(out);
         *out << "[invDiag Operators]:\n";
         tab.incrTab();
-        for (int i = 0; i < invDiag_.size(); i++) {
+        for (auto i = 0U; i < invDiag_.size(); i++) {
           *out << "[invD(" << i << ")] = ";
           *out << Teuchos::describe(*invDiag_[i], verbLevel);
         }
