@@ -41,6 +41,19 @@
 namespace Tpetra {
 namespace Import_Util {
 
+namespace detail {
+
+// Primary template: this will be chosen if the specialization is not valid
+template <typename T, typename = void>
+struct has_execution_space : std::false_type {};
+
+// Specialization: this will be chosen if T::execution_space is valid
+template <typename T>
+struct has_execution_space<T, std::void_t<typename T::execution_space>>
+    : std::true_type {};
+
+} // namespace detail
+
 /// \brief Sort the entries of the (raw CSR) matrix by column index
 ///   within each row.
 template<typename Scalar, typename Ordinal>
@@ -703,21 +716,22 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   return sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
-template<class rowptr_view_type, class colind_view_type, class vals_view_type>
-void
-sortAndMergeCrsEntries(rowptr_view_type& CRS_rowptr,
-		       colind_view_type& CRS_colind,
-		       vals_view_type& CRS_vals)
-{
+template <class rowptr_view_type, class colind_view_type, class vals_view_type,
+    typename std::enable_if<detail::has_execution_space<vals_view_type>::value,
+                            int>::type = 0>
+void sortAndMergeCrsEntries(rowptr_view_type &CRS_rowptr,
+                            colind_view_type &CRS_colind,
+                            vals_view_type &CRS_vals) {
   using execution_space = typename vals_view_type::execution_space;
 
   auto CRS_rowptr_in = CRS_rowptr;
   auto CRS_colind_in = CRS_colind;
-  auto CRS_vals_in   = CRS_vals;
+  auto CRS_vals_in = CRS_vals;
 
   KokkosSparse::sort_and_merge_matrix<execution_space, rowptr_view_type,
-				      colind_view_type, vals_view_type>(CRS_rowptr_in, CRS_colind_in, CRS_vals_in,
-									CRS_rowptr, CRS_colind, CRS_vals);
+                                      colind_view_type, vals_view_type>(
+      CRS_rowptr_in, CRS_colind_in, CRS_vals_in, CRS_rowptr, CRS_colind,
+      CRS_vals);
 }
 
 
