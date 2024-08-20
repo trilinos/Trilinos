@@ -55,12 +55,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "9.00"
+#define EXODUS_VERSION       "9.01"
 #define EXODUS_VERSION_MAJOR 9
-#define EXODUS_VERSION_MINOR 0
-#define EXODUS_RELEASE_DATE  "May 30, 2024"
+#define EXODUS_VERSION_MINOR 1
+#define EXODUS_RELEASE_DATE  "July 17, 2024"
 
-#define EX_API_VERS       9.00f
+#define EX_API_VERS       9.01f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -1045,6 +1045,8 @@ EXODUS_EXPORT int ex_get_blob(int exoid, struct ex_blob *blob);
 EXODUS_EXPORT int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs);
 EXODUS_EXPORT int ex_get_blobs(int exoid, struct ex_blob *blobs);
 
+EXODUS_EXPORT int ex_put_multi_field_metadata(int exoid, const ex_field *field,
+                                              const int field_count);
 EXODUS_EXPORT int ex_put_field_metadata(int exoid, const ex_field field);
 EXODUS_EXPORT int ex_put_field_suffices(int exoid, const ex_field field, const char *suffices);
 EXODUS_EXPORT int ex_get_field_metadata(int exoid, ex_field *field);
@@ -1953,6 +1955,7 @@ enum ex_error_return_code {
   EX_LASTERR       = -1003, /**< in ex_err, use existing err_num value */
   EX_NULLENTITY    = -1006, /**< null entity found                        */
   EX_NOENTITY      = -1007, /**< no entities of that type on database    */
+  EX_INTSIZEMISMATCH = -1008, /**< integer sizes do not match on input/output databases in ex_copy  */
   EX_NOTFOUND      = -1008, /**< could not find requested variable on database */
 
   EX_FATAL = -1, /**< fatal error flag def                     */

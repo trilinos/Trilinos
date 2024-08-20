@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -253,8 +253,8 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
         EX_FUNC_LEAVE(EX_FATAL);
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to open %s of type %d for reading.\n\tEither "
-               "the file does not exist,\n\tor there is a permission or file "
+               "ERROR: failed to open %s of type %d for reading.\n\t\tThe "
+               "file does not exist, or there is a permission or file "
                "format issue.",
                canon_path, type);
       ex_err(__func__, errmsg, status);
@@ -298,6 +298,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
     int    dim_str_name = 0;
     int    stat_dim     = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
     if (stat_att != NC_NOERR || stat_dim != NC_NOERR) {
+      /* This must still be nc_redef */
       if ((status = nc_redef(exoid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to place file id %d named %s into define mode", exoid, canon_path);
@@ -332,7 +333,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
           EX_FUNC_LEAVE(EX_FATAL);
         }
       }
-      if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+      if ((status = nc_enddef(exoid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         free(canon_path);

@@ -1535,358 +1535,435 @@ namespace {
     /* Find the internal and border elements */
     double time1 = get_time();
 
-    for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-      int proc = lb->vertex2proc[ecnt];
-      assert(proc < machine->num_procs);
-      bool   internal = true;
-      int    flag     = 0;
-      E_Type etype    = mesh->elem_type[ecnt];
-      int    dim1     = get_elem_info(NDIM, etype);
+    int mesh_dim = mesh->num_dims;
+    if (mesh_dim == 1) {
+      std::vector<int> categorized(mesh->num_elems);
+      for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
+        int  proce  = lb->vertex2proc[ecnt];
+        auto etype  = mesh->elem_type[ecnt];
+        int  nsides = get_elem_info(NSIDES, etype);
+        assert(nsides == 2);
 
-      /* need to check for hex's or tet's */
-      hflag1 = is_hex(etype);
+        /* check each side of this element */
+        for (int nscnt = 0; nscnt < nsides; nscnt++) {
 
-      /* a TET10 cannot connect to a HEX */
-      tflag1 = is_tet(etype);
+          /* get the node on this element side (should only be one)*/
+          side_cnt = ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes);
+          assert(side_cnt == 1);
 
-      int nsides = get_elem_info(NSIDES, etype);
-
-      /* check each side of this element */
-      for (int nscnt = 0; nscnt < nsides; nscnt++) {
-
-        /* get the list of nodes on this element side */
-        side_cnt = ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes);
-
-        /*
-         * now determine how many side set nodes are needed to
-         * determine if there is an element connected to this side.
-         *
-         * 2-D - need two nodes, so find one intersection
-         * 3-D - need three nodes, so find two intersections
-         * NOTE: must check to make sure that this number is not
-         *       larger than the number of nodes on the sides (ie - SHELL).
-         */
-
-        int nnodes = mesh->num_dims;
-        if (side_cnt < nnodes) {
-          nnodes = side_cnt;
-        }
-        nnodes--; /* decrement to find the number of intersections needed */
-
-        nelem = 0; /* reset this in case no intersections are needed */
-
-        /*
-         * need to handle hex's differently because of
-         * the tet/hex combination
-         */
-
-        if (!hflag1) { /* Not a hex */
-
-          /* ignore degenerate bars */
-
-          if (!((etype == BAR2 || etype == SHELL2) && side_nodes[0] == side_nodes[1])) {
-
-            size_t nhold = graph->sur_elem[side_nodes[0]].size();
+          size_t nhold = graph->sur_elem[side_nodes[0]].size();
+          assert(nhold == 1 || nhold == 2);
+          if (nhold == 2) {
+            // 2 elements connected to this node -- `ecnt` and the other one...
             for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
-              hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
-            }
-
-            for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-              /* Find elements connected to both node '0' and node 'ncnt+1' */
-              nelem =
-                  find_inter(Data(hold_elem), Data(graph->sur_elem[side_nodes[(ncnt + 1)]]), nhold,
-                             graph->sur_elem[side_nodes[(ncnt + 1)]].size(), Data(pt_list));
-
-              if (nelem < 2) {
-                break;
+              size_t elem = graph->sur_elem[side_nodes[0]][ncnt];
+              if (elem == ecnt) {
+                continue;
               }
-
-              nhold = nelem;
-              for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
-                hold_elem[ncnt2] = hold_elem[pt_list[ncnt2]];
+              int proc2 = lb->vertex2proc[elem];
+              if (proce == proc2) {
+                continue;
+              }
+              else {
+                // Processors of the two elements are different, so we are
+                // at a processor boundary...
+                if (!categorized[ecnt]) {
+                  lb->bor_elems[proce].push_back(ecnt);
+                  categorized[ecnt] = 1;
+                }
+                lb->e_cmap_elems[proc2].push_back(elem);
+                lb->e_cmap_sides[proc2].push_back(2 - ncnt);
+                lb->e_cmap_procs[proc2].push_back(proce);
+                lb->e_cmap_neigh[proc2].push_back(ecnt);
               }
             }
-          }
-          else {
-            fmt::print("WARNING: Element = {} is a DEGENERATE BAR\n", ecnt + 1);
           }
         }
-        else { /* Is a hex */
+        if (!categorized[ecnt]) {
+          lb->int_elems[proce].push_back(ecnt);
+          categorized[ecnt] = 1;
+        }
+      }
+    }
+    else {
+      for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
+        int proc = lb->vertex2proc[ecnt];
+        assert(proc < machine->num_procs);
+        bool internal = true;
+        int  flag     = 0;
+        auto etype    = mesh->elem_type[ecnt];
+        int  dim1     = get_elem_info(NDIM, etype);
+
+        /* need to check for hex's or tet's */
+        hflag1 = is_hex(etype);
+
+        /* a tet10 cannot connect to a hex */
+        tflag1 = is_tet(etype);
+
+        int nsides = get_elem_info(NSIDES, etype);
+
+        /* check each side of this element */
+        for (int nscnt = 0; nscnt < nsides; nscnt++) {
+
+          /* get the list of nodes on this element side */
+          side_cnt = ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes);
 
           /*
-           * Hex faces are fairly complicated now. There are two
-           * exceptions to the standard case:
-           *   1. it is a degenerate hex (mimics a wedge). this has
-           *      two special faces, the first is a triangle, and the
-           *      second is a 2d line
-           *   2. two tets are connected to this hex face
+           * now determine how many side set nodes are needed to
+           * determine if there is an element connected to this side.
+           *
+           * 1-d - need one node
+           * 2-d - need two nodes, so find one intersection
+           * 3-d - need three nodes, so find two intersections
+           * note: must check to make sure that this number is not
+           *       larger than the number of nodes on the sides (ie - shell).
            */
 
-          /* first need to check for a degenerate element */
-          dflag = 0;
-          if (side_nodes[0] == side_nodes[1] || side_nodes[0] == side_nodes[3]) {
-            dflag++;
+          int nnodes = mesh->num_dims;
+          if (side_cnt < nnodes) {
+            nnodes = side_cnt;
           }
-          if (side_nodes[2] == side_nodes[1] || side_nodes[2] == side_nodes[3]) {
-            dflag++;
-          }
+          if (nnodes > 1)
+            nnodes--; /* decrement to find the number of intersections needed */
+
+          nelem = 0; /* reset this in case no intersections are needed */
 
           /*
-           * if both flags are set, then this face is the 2d line,
-           * and should be ignored with respect to elemental
-           * communication maps
+           * need to handle hex's differently because of
+           * the tet/hex combination
            */
-          if (dflag == 2) {
-            nelem = 1;
-          }
-          else {
-            /*
-             * In order to check for two tets connected to this face,
-             * check the intersection of opposite corners of this face.
-             * Both tets should show up in the intersection of one of the
-             * sets of opposite corners (nothing should show up in the
-             * other).
-             */
 
-            /*
-             * Initial check is side nodes 0 and 2 which are
-             * diagonally opposite
-             */
-            int    inode = 0;
-            int    node  = 2;
-            size_t nhold = 0;
-            for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-              /* Find elements connected to both node 'inode' and node 'node' */
-              nelem = find_inter(Data(graph->sur_elem[side_nodes[inode]]),
-                                 Data(graph->sur_elem[side_nodes[node]]),
-                                 graph->sur_elem[side_nodes[inode]].size(),
-                                 graph->sur_elem[side_nodes[node]].size(), Data(pt_list));
+          if (!hflag1) { /* not a hex */
 
-              if (nelem > 1) {
-                if (ncnt == 0) {
-                  nhold = nelem;
-                  for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
-                    hold_elem[ncnt2] = graph->sur_elem[side_nodes[inode]][pt_list[ncnt2]];
+            if (etype == BAR2 || etype == BAR3) {
+              size_t nhold = graph->sur_elem[side_nodes[0]].size();
+              if (nhold > 1) {
+                for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
+                  hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
+                }
+
+                for (int ncnt = 0; ncnt < nnodes; ncnt++) {
+                  /* Find elements connected to both node '0' and node 'ncnt+1' */
+                  nelem = find_inter(Data(hold_elem), Data(graph->sur_elem[side_nodes[(ncnt + 1)]]),
+                                     nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(),
+                                     Data(pt_list));
+
+                  if (nelem < 2) {
+                    break;
                   }
 
-                  if (dflag) {
-                    /*
-                     * in this case, need to get an intersection with
-                     * another (unique) point since nodes 0 and 2
-                     * may represent an edge and not the diagonal
-                     */
-                    if (side_nodes[1] != side_nodes[0] && side_nodes[1] != side_nodes[2]) {
-                      node = 1;
+                  nhold = nelem;
+                  for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
+                    hold_elem[ncnt2] = hold_elem[pt_list[ncnt2]];
+                  }
+                }
+              }
+            }
+            else if (!((etype == BAR2 || etype == SHELL2) && side_nodes[0] == side_nodes[1])) {
+
+              size_t nhold = graph->sur_elem[side_nodes[0]].size();
+              for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
+                hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
+              }
+
+              for (int ncnt = 0; ncnt < nnodes; ncnt++) {
+                /* Find elements connected to both node '0' and node 'ncnt+1' */
+                nelem = find_inter(Data(hold_elem), Data(graph->sur_elem[side_nodes[(ncnt + 1)]]),
+                                   nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(),
+                                   Data(pt_list));
+
+                if (nelem < 2) {
+                  break;
+                }
+
+                nhold = nelem;
+                for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
+                  hold_elem[ncnt2] = hold_elem[pt_list[ncnt2]];
+                }
+              }
+            }
+            else {
+              fmt::print("WARNING: Element = {} is a DEGENERATE BAR\n", ecnt + 1);
+            }
+          }
+          else { /* Is a hex */
+
+            /*
+             * Hex faces are fairly complicated now. There are two
+             * exceptions to the standard case:
+             *   1. it is a degenerate hex (mimics a wedge). this has
+             *      two special faces, the first is a triangle, and the
+             *      second is a 2d line
+             *   2. two tets are connected to this hex face
+             */
+
+            /* first need to check for a degenerate element */
+            dflag = 0;
+            if (side_nodes[0] == side_nodes[1] || side_nodes[0] == side_nodes[3]) {
+              dflag++;
+            }
+            if (side_nodes[2] == side_nodes[1] || side_nodes[2] == side_nodes[3]) {
+              dflag++;
+            }
+
+            /*
+             * if both flags are set, then this face is the 2d line,
+             * and should be ignored with respect to elemental
+             * communication maps
+             */
+            if (dflag == 2) {
+              nelem = 1;
+            }
+            else {
+              /*
+               * In order to check for two tets connected to this face,
+               * check the intersection of opposite corners of this face.
+               * Both tets should show up in the intersection of one of the
+               * sets of opposite corners (nothing should show up in the
+               * other).
+               */
+
+              /*
+               * Initial check is side nodes 0 and 2 which are
+               * diagonally opposite
+               */
+              int    inode = 0;
+              int    node  = 2;
+              size_t nhold = 0;
+              for (int ncnt = 0; ncnt < nnodes; ncnt++) {
+                /* Find elements connected to both node 'inode' and node 'node' */
+                nelem = find_inter(Data(graph->sur_elem[side_nodes[inode]]),
+                                   Data(graph->sur_elem[side_nodes[node]]),
+                                   graph->sur_elem[side_nodes[inode]].size(),
+                                   graph->sur_elem[side_nodes[node]].size(), Data(pt_list));
+
+                if (nelem > 1) {
+                  if (ncnt == 0) {
+                    nhold = nelem;
+                    for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
+                      hold_elem[ncnt2] = graph->sur_elem[side_nodes[inode]][pt_list[ncnt2]];
+                    }
+
+                    if (dflag) {
+                      /*
+                       * in this case, need to get an intersection with
+                       * another (unique) point since nodes 0 and 2
+                       * may represent an edge and not the diagonal
+                       */
+                      if (side_nodes[1] != side_nodes[0] && side_nodes[1] != side_nodes[2]) {
+                        node = 1;
+                      }
+                      else {
+                        node = 3;
+                      }
                     }
                     else {
-                      node = 3;
+                      /*
+                       * in the non-degenerate case, if an element is connected
+                       * to two opposite nodes, then it must share a face.
+                       */
+                      break;
                     }
                   }
                   else {
-                    /*
-                     * in the non-degenerate case, if an element is connected
-                     * to two opposite nodes, then it must share a face.
-                     */
-                    break;
-                  }
-                }
-                else {
-                  /* This is the second or later time through this
-                     loop and each time through, there have been two
-                     or more elements that are connected to 'node'
-                     (which changes) and 'inode'.  We want to make
-                     sure that the elements matched this time through
-                     were also in the list the first time through so
-                     that the elements contain nodes 0 1 2 of the face
-                     and not just 0 1 and 0 2...
-                     So, this time, only put an element in the list if
-                     it was in the list before.
-                  */
-                  for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
-                    hold_elem[ncnt2] = -hold_elem[ncnt2];
-                  }
-                  for (int ncnt3 = 0; ncnt3 < nelem; ncnt3++) {
+                    /* This is the second or later time through this
+                       loop and each time through, there have been two
+                       or more elements that are connected to 'node'
+                       (which changes) and 'inode'.  We want to make
+                       sure that the elements matched this time through
+                       were also in the list the first time through so
+                       that the elements contain nodes 0 1 2 of the face
+                       and not just 0 1 and 0 2...
+                       So, this time, only put an element in the list if
+                       it was in the list before.
+                    */
                     for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
-                      if (-hold_elem[ncnt2] == graph->sur_elem[side_nodes[inode]][pt_list[ncnt3]]) {
-                        hold_elem[ncnt2] = graph->sur_elem[side_nodes[inode]][pt_list[ncnt3]];
-                        break;
+                      hold_elem[ncnt2] = -hold_elem[ncnt2];
+                    }
+                    for (int ncnt3 = 0; ncnt3 < nelem; ncnt3++) {
+                      for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
+                        if (-hold_elem[ncnt2] ==
+                            graph->sur_elem[side_nodes[inode]][pt_list[ncnt3]]) {
+                          hold_elem[ncnt2] = graph->sur_elem[side_nodes[inode]][pt_list[ncnt3]];
+                          break;
+                        }
                       }
                     }
-                  }
-                  /* Now, go through list and cull out element < 0 */
-                  size_t ncnt3 = 0;
-                  for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
-                    if (hold_elem[ncnt2] >= 0) {
-                      hold_elem[ncnt3] = hold_elem[ncnt2];
-                      ncnt3++;
+                    /* Now, go through list and cull out element < 0 */
+                    size_t ncnt3 = 0;
+                    for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
+                      if (hold_elem[ncnt2] >= 0) {
+                        hold_elem[ncnt3] = hold_elem[ncnt2];
+                        ncnt3++;
+                      }
+                    }
+                    nelem = ncnt3;
+                    if (!dflag && nelem > 2) {
+                      fmt::print(
+                          stderr,
+                          "Possible corrupted mesh detected at element {}, strange connectivity.\n",
+                          ecnt);
                     }
                   }
-                  nelem = ncnt3;
-                  if (!dflag && nelem > 2) {
-                    fmt::print(
-                        stderr,
-                        "Possible corrupted mesh detected at element {}, strange connectivity.\n",
-                        ecnt);
-                  }
                 }
-              }
-              else { /* nelem == 1 or 0 */
-                if (!dflag) {
-                  nhold = graph->sur_elem[side_nodes[1]].size();
-                  for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
-                    hold_elem[ncnt2] = graph->sur_elem[side_nodes[1]][ncnt2];
+                else { /* nelem == 1 or 0 */
+                  if (!dflag) {
+                    nhold = graph->sur_elem[side_nodes[1]].size();
+                    for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
+                      hold_elem[ncnt2] = graph->sur_elem[side_nodes[1]][ncnt2];
+                    }
                   }
+                  inode = 1;
+                  node  = 3; /* The node diagonally opposite node 1 */
                 }
-                inode = 1;
-                node  = 3; /* The node diagonally opposite node 1 */
               }
             }
-          }
-        } /* "if (!hflag1)" */
-
-        /*
-         * if there is an element on this side of ecnt, then there
-         * will be at least two elements in the intersection (one
-         * will be ecnt)
-         */
-        if (nelem > 1) {
+          } /* "if (!hflag1)" */
 
           /*
-           * now go through and check each element in the list to see
-           * if it on a different processor than ecnt.  Don't need to
-           * worry about ecnt (which is in the list) since it is on
-           * the same processor as itself.  Note that due to filtering
-           * done above, we are guaranteed to either have an element
-           * on a different processor or elem==ecnt.
+           * if there is an element on this side of ecnt, then there
+           * will be at least two elements in the intersection (one
+           * will be ecnt)
            */
-          for (int ncnt = 0; ncnt < nelem; ncnt++) {
+          if (nelem > 1) {
 
-            INT elem  = hold_elem[ncnt];
-            int proc2 = lb->vertex2proc[elem];
-            assert(proc2 < machine->num_procs);
+            /*
+             * now go through and check each element in the list to see
+             * if it on a different processor than ecnt.  Don't need to
+             * worry about ecnt (which is in the list) since it is on
+             * the same processor as itself.  Note that due to filtering
+             * done above, we are guaranteed to either have an element
+             * on a different processor or elem==ecnt.
+             */
+            for (int ncnt = 0; ncnt < nelem; ncnt++) {
 
-            if (proc != proc2) {
+              INT elem  = hold_elem[ncnt];
+              int proc2 = lb->vertex2proc[elem];
+              assert(proc2 < machine->num_procs);
 
-              E_Type etype2 = mesh->elem_type[elem];
+              if (proc != proc2) {
 
-              int dim2 = get_elem_info(NDIM, etype2);
+                E_Type etype2 = mesh->elem_type[elem];
 
-              int diff = abs(dim1 - dim2);
+                int dim2 = get_elem_info(NDIM, etype2);
 
-              /*
-               * hex's to shells - ok
-               * shells to bar - ok
-               * hex to bar - BAD since a BAR will see a HEX but a HEX will not
-               *              see a BAR
-               */
+                int diff = abs(dim1 - dim2);
 
-              if (diff < 2) {
+                /*
+                 * hex's to shells - ok
+                 * shells to bar - ok
+                 * hex to bar - BAD since a BAR will see a HEX but a HEX will not
+                 *              see a BAR
+                 */
 
-                /* need to check for hex's */
-                hflag2 = is_hex(etype2);
-                tflag2 = is_tet(etype2);
+                if (diff < 2) {
 
-                /* check here for tet/hex combinations */
-                if ((tflag1 && hflag2) || (hflag1 && tflag2)) {
-                  /*
-                   * have to call a special function to get the side id
-                   * in these cases. In both cases, the number of side
-                   * nodes for the element will not be consistent with
-                   * side_cnt, and:
-                   *
-                   * TET/HEX - side_nodes only contains three of the
-                   *           the side nodes of the hex.
-                   *
-                   * HEX/TET - Have to check that this tet shares a side
-                   *           with the hex.
-                   */
-                  sid = get_side_id_hex_tet(mesh->elem_type[elem], mesh->connect[elem], side_cnt,
-                                            side_nodes);
-                }
-                else {
-                  /*
-                   * get the side id of elem. Make sure that ecnt is
-                   * trying to communicate to a valid side of elem
-                   */
-                  side_cnt = get_ss_mirror(etype, side_nodes, (nscnt + 1), mirror_nodes);
+                  /* need to check for hex's */
+                  hflag2 = is_hex(etype2);
+                  tflag2 = is_tet(etype2);
 
-                  /*
-                   * small kludge to handle 6 node faces butted up against
-                   * 4 node faces
-                   */
-                  if (etype == HEXSHELL && side_cnt == 6) {
-                    side_cnt = 4;
+                  /* check here for tet/hex combinations */
+                  if ((tflag1 && hflag2) || (hflag1 && tflag2)) {
+                    /*
+                     * have to call a special function to get the side id
+                     * in these cases. In both cases, the number of side
+                     * nodes for the element will not be consistent with
+                     * side_cnt, and:
+                     *
+                     * TET/HEX - side_nodes only contains three of the
+                     *           the side nodes of the hex.
+                     *
+                     * HEX/TET - Have to check that this tet shares a side
+                     *           with the hex.
+                     */
+                    sid = get_side_id_hex_tet(mesh->elem_type[elem], mesh->connect[elem], side_cnt,
+                                              side_nodes);
+                  }
+                  else {
+                    /*
+                     * get the side id of elem. Make sure that ecnt is
+                     * trying to communicate to a valid side of elem
+                     */
+                    side_cnt = get_ss_mirror(etype, side_nodes, (nscnt + 1), mirror_nodes);
+
+                    /*
+                     * small kludge to handle 6 node faces butted up against
+                     * 4 node faces
+                     */
+                    if (etype == HEXSHELL && side_cnt == 6) {
+                      side_cnt = 4;
+                    }
+
+                    /*
+                     * in order to get the correct side order for elem,
+                     * get the mirror of the side of ecnt
+                     */
+                    sid = get_side_id(mesh->elem_type[elem], mesh->connect[elem], side_cnt,
+                                      mirror_nodes, problem->skip_checks, problem->partial_adj);
                   }
 
-                  /*
-                   * in order to get the correct side order for elem,
-                   * get the mirror of the side of ecnt
-                   */
-                  sid = get_side_id(mesh->elem_type[elem], mesh->connect[elem], side_cnt,
-                                    mirror_nodes, problem->skip_checks, problem->partial_adj);
-                }
+                  if (sid > 0) {
+                    /* Element is a border element */
+                    internal = false;
+                    if (!flag) {
+                      flag = 1;
+                      lb->bor_elems[proc].push_back(ecnt);
+                    }
 
-                if (sid > 0) {
-                  /* Element is a border element */
-                  internal = false;
-                  if (!flag) {
-                    flag = 1;
-                    lb->bor_elems[proc].push_back(ecnt);
+                    /* now put ecnt into proc2's communications map */
+                    lb->e_cmap_elems[proc2].push_back(elem);
+                    lb->e_cmap_sides[proc2].push_back(sid);
+                    lb->e_cmap_procs[proc2].push_back(proc);
+                    lb->e_cmap_neigh[proc2].push_back(ecnt);
                   }
+                  else if ((sid < 0) && (!problem->skip_checks)) {
+                    /*
+                     * too many errors with bad meshes, print out
+                     * more information here for diagnostics
+                     */
+                    cmesg =
+                        fmt::format("Error returned while getting side id for communication map.");
+                    Gen_Error(0, cmesg);
+                    cmesg = fmt::format("Element 1: {}", (ecnt + 1));
+                    Gen_Error(0, cmesg);
+                    nnodes = get_elem_info(NNODES, etype);
+                    cmesg  = "connect table:";
+                    for (int i = 0; i < nnodes; i++) {
+                      tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][i] + 1));
+                      cmesg += tmpstr;
+                    }
+                    Gen_Error(0, cmesg);
+                    cmesg = fmt::format("side id: {}", static_cast<size_t>(nscnt + 1));
+                    Gen_Error(0, cmesg);
+                    cmesg = "side nodes:";
+                    for (int i = 0; i < side_cnt; i++) {
+                      tmpstr = fmt::format(" {}", (size_t)(side_nodes[i] + 1));
+                      cmesg += tmpstr;
+                    }
+                    Gen_Error(0, cmesg);
+                    cmesg = fmt::format("Element 2: {}", (size_t)(elem + 1));
+                    Gen_Error(0, cmesg);
+                    nnodes = get_elem_info(NNODES, etype2);
+                    cmesg  = "connect table:";
+                    for (int i = 0; i < nnodes; i++) {
+                      tmpstr = fmt::format(" {}", (size_t)(mesh->connect[elem][i] + 1));
+                      cmesg += tmpstr;
+                    }
+                    Gen_Error(0, cmesg);
+                    return 0; /* and get out of here */
 
-                  /* now put ecnt into proc2's communications map */
-                  lb->e_cmap_elems[proc2].push_back(elem);
-                  lb->e_cmap_sides[proc2].push_back(sid);
-                  lb->e_cmap_procs[proc2].push_back(proc);
-                  lb->e_cmap_neigh[proc2].push_back(ecnt);
-                }
-                else if ((sid < 0) && (!problem->skip_checks)) {
-                  /*
-                   * too many errors with bad meshes, print out
-                   * more information here for diagnostics
-                   */
-                  cmesg =
-                      fmt::format("Error returned while getting side id for communication map.");
-                  Gen_Error(0, cmesg);
-                  cmesg = fmt::format("Element 1: {}", (ecnt + 1));
-                  Gen_Error(0, cmesg);
-                  nnodes = get_elem_info(NNODES, etype);
-                  cmesg  = "connect table:";
-                  for (int i = 0; i < nnodes; i++) {
-                    tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][i] + 1));
-                    cmesg += tmpstr;
-                  }
-                  Gen_Error(0, cmesg);
-                  cmesg = fmt::format("side id: {}", static_cast<size_t>(nscnt + 1));
-                  Gen_Error(0, cmesg);
-                  cmesg = "side nodes:";
-                  for (int i = 0; i < side_cnt; i++) {
-                    tmpstr = fmt::format(" {}", (size_t)(side_nodes[i] + 1));
-                    cmesg += tmpstr;
-                  }
-                  Gen_Error(0, cmesg);
-                  cmesg = fmt::format("Element 2: {}", (size_t)(elem + 1));
-                  Gen_Error(0, cmesg);
-                  nnodes = get_elem_info(NNODES, etype2);
-                  cmesg  = "connect table:";
-                  for (int i = 0; i < nnodes; i++) {
-                    tmpstr = fmt::format(" {}", (size_t)(mesh->connect[elem][i] + 1));
-                    cmesg += tmpstr;
-                  }
-                  Gen_Error(0, cmesg);
-                  return 0; /* and get out of here */
+                  } /* End "if sid < 0 && !problem>skip_checks" */
+                } /* End "if (sid > 0)" */
+              } /* End "if (proc != proc2)" */
+            } /* End "for (ncnt = 0; ncnt < nelem; ncnt++)" */
+          } /* End "if (nelem > 1)" */
+        } /* End "for (nscnt = 0; nscnt < nsides; nscnt++)" */
 
-                } /* End "if sid < 0 && !problem>skip_checks" */
-              } /* End "if (sid > 0)" */
-            } /* End "if (proc != proc2)" */
-          } /* End "for (ncnt = 0; ncnt < nelem; ncnt++)" */
-        } /* End "if (nelem > 1)" */
-      } /* End "for (nscnt = 0; nscnt < nsides; nscnt++)" */
-
-      if (internal) {
-        lb->int_elems[proc].push_back(ecnt);
-      }
-    } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
+        if (internal) {
+          lb->int_elems[proc].push_back(ecnt);
+        }
+      } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
+    }
 
     time2 = get_time();
     fmt::print("Time for elemental categorization: {}s\n", time2 - time1);

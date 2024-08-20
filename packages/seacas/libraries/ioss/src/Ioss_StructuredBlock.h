@@ -12,6 +12,9 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_ZoneConnectivity.h"
+#if !defined BUILT_IN_SIERRA
+#include <fmt/ostream.h>
+#endif
 #include <array>
 #include <cassert>
 #include <iosfwd>
@@ -368,3 +371,12 @@ namespace Ioss {
   };
 } // namespace Ioss
 
+#if !defined BUILT_IN_SIERRA
+#if FMT_VERSION >= 90000
+namespace fmt {
+  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
+  {
+  };
+} // namespace fmt
+#endif
+#endif

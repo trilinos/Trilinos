@@ -528,9 +528,11 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   int ts_step   = interFace.step_interval();
   int num_steps = static_cast<int>(global_times.size());
 
-  if (ts_min == -1 && ts_max == -1) {
-    ts_min = num_steps;
-    ts_max = num_steps;
+  if (ts_min < 0) {
+    ts_min = num_steps + 1 + ts_min;
+  }
+  if (ts_max < 0) {
+    ts_max = num_steps + 1 + ts_max;
   }
   ts_max = ts_max < num_steps ? ts_max : num_steps;
 

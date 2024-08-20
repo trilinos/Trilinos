@@ -2101,7 +2101,7 @@ void Iocgns::Utils::generate_boundary_faces(
     auto              &boundary = boundary_faces[name];
     auto              &faces    = face_generator.faces(name);
     for (auto &face : faces) {
-      if (face.elementCount_ == 1) {
+      if (face.element_count() == 1) {
         boundary.insert(face);
       }
     }
@@ -3102,7 +3102,7 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
 
   // All faces generated for this element block; now extract boundary faces...
   for (auto &face : all_faces) {
-    if (face.elementCount_ == 1) {
+    if (face.element_count() == 1) {
       boundary.insert(face);
     }
   }

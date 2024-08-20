@@ -1777,16 +1777,114 @@ void exi_compress_variable(int exoid, int varid, int type)
   \internal
   \undoc
 */
-int exi_leavedef(int exoid, const char *call_rout)
+int exi_leavedef(int exoid, const char *call_func)
 {
   int status;
 
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+  struct exi_file_item *file = exi_find_file_item(exoid);
+  if (!file) {
     char errmsg[MAX_ERR_LENGTH];
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, call_rout, errmsg, status);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
 
-    return (EX_FATAL);
+  if (!file->persist_define_mode && file->in_define_mode) {
+    if ((status = nc_enddef(exoid)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
+               exoid);
+      ex_err_fn(exoid, call_func, errmsg, status);
+
+      return (EX_FATAL);
+    }
+    file->in_define_mode = 0;
+  }
+  return (EX_NOERR);
+}
+
+int exi_redef(int exoid, const char *call_func)
+{
+  int status;
+
+  struct exi_file_item *file = exi_find_file_item(exoid);
+
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
+
+  if (!file->in_define_mode) {
+    if ((status = nc_redef(exoid)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to put file %d into definition mode in exi_redef called from %s",
+               exoid, call_func);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      return EX_FATAL;
+    }
+    file->in_define_mode = 1;
+  }
+  return EX_NOERR;
+}
+
+int exi_persist_redef(int exoid, const char *call_func)
+{
+  int status;
+
+  struct exi_file_item *file = exi_find_file_item(exoid);
+
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
+
+  if ((++file->persist_define_mode == 1) && !file->in_define_mode) {
+    if ((status = nc_redef(exoid)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(
+          errmsg, MAX_ERR_LENGTH,
+          "ERROR: failed to put file %d into definition mode in exi_persist_redef called from %s",
+          exoid, call_func);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      return EX_FATAL;
+    }
+    file->in_define_mode = 1;
+  }
+  return EX_NOERR;
+}
+
+int exi_persist_leavedef(int exoid, const char *call_func)
+{
+  int status;
+
+  struct exi_file_item *file = exi_find_file_item(exoid);
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
+
+  if ((file->persist_define_mode-- == 1) && file->in_define_mode) {
+    if ((status = nc_enddef(exoid)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
+               exoid);
+      ex_err_fn(exoid, call_func, errmsg, status);
+
+      return (EX_FATAL);
+    }
+    file->in_define_mode      = 0;
+    file->persist_define_mode = 0;
   }
   return (EX_NOERR);
 }
@@ -2090,9 +2188,16 @@ int exi_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
    * unless specified differently via environment.
    */
   {
-    char *option = getenv("EXODUS_VERBOSE");
-    if (option != NULL) {
-      exoptval = EX_VERBOSE;
+    if (exoptval != EX_VERBOSE) {
+      /* Avoid getenv call if already in verbose mode */
+      char *option = getenv("EXODUS_VERBOSE");
+      if (option != NULL) {
+        exoptval = EX_VERBOSE;
+        if (option[0] != 'q') {
+          fprintf(stderr, "EXODUS: Setting EX_VERBOSE mode since EXODUS_VERBOSE environment "
+                          "variable is set.\n");
+        }
+      }
     }
     ex_opts(exoptval); /* call required to set ncopts first time through */
   }

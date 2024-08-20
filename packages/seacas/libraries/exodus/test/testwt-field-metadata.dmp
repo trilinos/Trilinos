@@ -25,10 +25,8 @@
 		:Quad@2x2x2@zeta = -0.57735, -0.57735, -0.57735, -0.57735, 0.57735, 0.57735, 0.57735, 0.57735 ;
 		connect1:Field@Disp@separator = "" ;
 		connect1:Field@Disp@type = 8 ;
-		connect1:Field@Disp@type_name = "" ;
 		connect1:Field@Velocity@separator = "%" ;
 		connect1:Field@Velocity@type = 8 ;
-		connect1:Field@Velocity@type_name = "" ;
 		connect2:Field@Curl@separator = "@" ;
 		connect2:Field@Curl@type = 4 ;
 		connect2:Field@Curl@type_name = "2x2x2" ;
@@ -42,10 +40,8 @@
 		connect2:Field@Species@type_name = ",1x2x1" ;
 		coor_names:Field@Disp@separator = "" ;
 		coor_names:Field@Disp@type = 8 ;
-		coor_names:Field@Disp@type_name = "" ;
 		coor_names:Field@Velocity@separator = "%" ;
 		coor_names:Field@Velocity@type = 8 ;
-		coor_names:Field@Velocity@type_name = "" ;
   "Curl@1",
   "Curl@2",
   "Curl@3",

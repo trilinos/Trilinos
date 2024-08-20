@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -406,9 +406,11 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   int ts_max  = interFace.step_max();
   int ts_step = interFace.step_interval();
 
-  if (ts_min == -1 && ts_max == -1) {
-    ts_min = num_time_steps;
-    ts_max = num_time_steps;
+  if (ts_min < 0) {
+    ts_min = num_time_steps + 1 + ts_min;
+  }
+  if (ts_max < 0) {
+    ts_max = num_time_steps + 1 + ts_max;
   }
 
   // Time steps for output file

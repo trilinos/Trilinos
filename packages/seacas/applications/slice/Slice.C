@@ -912,6 +912,8 @@ namespace {
                           size_t proc_size)
   {
     progress(__func__);
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
     std::vector<double> glob_coord_x;
     std::vector<double> glob_coord_y;
     std::vector<double> glob_coord_z;
@@ -968,8 +970,12 @@ namespace {
     }
     else {
       gnb->get_field_data("mesh_model_coordinates_x", glob_coord_x);
-      gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
-      gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      if (spatial_dimension > 1) {
+        gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
+      }
+      if (spatial_dimension > 2) {
+        gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      }
       progress("\tRead global mesh_model_coordinates");
 
       for (size_t i = 0; i < node_count; i++) {
@@ -993,8 +999,12 @@ namespace {
     for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
       Ioss::NodeBlock *nb = proc_region[p]->get_node_blocks()[0];
       nb->put_field_data("mesh_model_coordinates_x", coordinates_x[p]);
-      nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
-      nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      if (spatial_dimension > 1) {
+        nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
+      }
+      if (spatial_dimension > 2) {
+        nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      }
       proc_progress(p, processor_count);
     }
     progress("\tOutput processor coordinate vectors");
@@ -1028,7 +1038,9 @@ namespace {
     }
     progress("\tReserve processor coordinate vectors");
 
-    for (size_t comp = 0; comp < 3; comp++) {
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
+    for (size_t comp = 0; comp < spatial_dimension; comp++) {
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         coordinates[p].resize(0);
       }
@@ -1292,9 +1304,10 @@ namespace {
         offset += element_count;
       }
     }
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
     for (size_t p = 0; p < proc_count; p++) {
-      auto *nb =
-          new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count[p], 3);
+      auto *nb = new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1",
+                                     on_proc_count[p], spatial_dimension);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
         fmt::print(stderr, "\tProcessor {} has {} nodes.\n", fmt::group_digits(p),
