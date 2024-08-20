@@ -13,31 +13,28 @@ IF (Tpetra_INST_DOUBLE)
                             CATEGORIES BASIC PERFORMANCE
     )
 
-    IF (Tpetra_INST_SERIAL)
 
-      set(COUNTER 1)
-      set(MAX_COUNT 11)
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
 
-      WHILE(COUNTER LESS MAX_COUNT)
-        math(EXPR NP "${COUNTER} * ${COUNTER}")
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
 
-        TRIBITS_ADD_TEST(
-          Performance-CGSolve
-          NAME Performance_StrongScaling_CGSolve
-          ARGS "--size=200"
-          COMM mpi
-          NUM_MPI_PROCS ${NP}
-          STANDARD_PASS_OUTPUT
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
+      TRIBITS_ADD_TEST(
+        Performance-CGSolve
+        NAME Performance_StrongScaling_CGSolve
+        ARGS "--size=200"
+        COMM mpi
+        NUM_MPI_PROCS ${NP}
+        STANDARD_PASS_OUTPUT
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
 
-        math(EXPR COUNTER "${COUNTER} + 1")
-      ENDWHILE()
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
 
-    ENDIF()
-
-    IF (Tpetra_INST_CUDA)
+    IF (Tpetra_ENABLE_CUDA)
       MESSAGE(STATUS "Tpetra: Performance-CGSolve CUDA_LAUNCH_BLOCKING test ENABLED")
       set(COUNTER 1)
       set(MAX_COUNT 11)

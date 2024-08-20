@@ -45,13 +45,12 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
 
   set(TEST_ARGS ${BTDS_ARGS} ${BTDS_SCHUR_ARGS} ${BTDS_DEFAULT_SCHUR_ARGS} ${BLOCK_JACOBI_ARGS})
   set(TEST_NAMES "BTDS" "BTDS_Schur" "BTDS_Schur_Default" "BTDS_Jacobi")
-  set(ARCHS "SERIAL" "CUDA" "HIP")
+  set(ARCHS "CUDA" "HIP")
 
   list(LENGTH TEST_ARGS len1)
   math(EXPR N_TESTS "${len1} - 1")
 
   ASSERT_DEFINED(
-    Tpetra_INST_SERIAL
     Tpetra_INST_CUDA
     Tpetra_INST_HIP
   )
@@ -71,7 +70,7 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
             BlockTriDiagonalSolver
             NAME "${TEST_NAME}_${ARCH}"
             COMM mpi
-            ARGS ${TEST_ARG}
+            ARGS "${TEST_ARG} --problemName=${TEST_NAME}_${ARCH}"
             NUM_MPI_PROCS ${NP}
             RUN_SERIAL
             CATEGORIES PERFORMANCE
