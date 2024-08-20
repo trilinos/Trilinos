@@ -76,8 +76,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
     kkNativeDeepCopies = 0;
 #endif
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>) {
+    // kokkos kernels only uses cuSparse for these versions
+#if (CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040)
     kkNativeDeepCopies = 0;
+#endif
+  }
 #endif
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
   if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>)
