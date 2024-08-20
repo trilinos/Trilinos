@@ -114,10 +114,10 @@ namespace Intrepid2
      
         \return Pointer to the new Basis object.
      */
-    virtual BasisPtr<typename Kokkos::HostSpace::device_type, typename BasisBase::OutputValueType, typename BasisBase::PointValueType>
-    getHostBasis() const override {
-      using HostBasisType  = Basis_Derived_HVOL_QUAD<typename HVOL_LINE::HostBasis>;
-      return Teuchos::rcp( new HostBasisType(polyOrder_x_, polyOrder_y_, pointType_) );
+    virtual Teuchos::RCP<Basis<typename Kokkos::HostSpace::device_type, typename BasisBase::OutputValueType, typename BasisBase::PointValueType>>
+        getHostBasis() const override {
+        using HostBasisType = Basis_Derived_HVOL_QUAD<typename HVOL_LINE::HostBasis>;
+        return Teuchos::rcp(new HostBasisType(polyOrder_x_, polyOrder_y_, pointType_));
     }
   };
 } // end namespace Intrepid2
