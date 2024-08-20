@@ -62,14 +62,8 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
       set(COUNTER 2)
       set(MAX_COUNT 8)
 
-      set(NP 1)
-      set(COUNTER_INIT 0)
-      WHILE(COUNTER_INIT LESS COUNTER)
-        math(EXPR NP "${NP} * 2")
-        math(EXPR COUNTER_INIT "${COUNTER_INIT} + 1")
-      ENDWHILE()
-
       WHILE(COUNTER LESS MAX_COUNT)
+        math(EXPR NP "1 << ${COUNTER}")
         foreach(I_TEST RANGE ${N_TESTS})
           list(GET TEST_ARGS ${I_TEST} TEST_ARG)
           list(GET TEST_NAMES ${I_TEST} TEST_NAME)      
@@ -85,7 +79,6 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
 
         endforeach()
 
-        math(EXPR NP "${NP} * 2")
         math(EXPR COUNTER "${COUNTER} + 1")
       ENDWHILE()
     ENDIF()
