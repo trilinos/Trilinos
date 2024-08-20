@@ -429,13 +429,13 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
                       "Please don't mix fields with different primitive types in the same parallel assemble operation");
 
         f.sync_to_host();
-        const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
-        for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
-            unsigned bucket = bktIndices.bucket_info[i].bucket_id;
+        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank(), proc);
+        for(size_t i=0; i<commMapIndices.extent(0); ++i) {
+            const unsigned bucket = commMapIndices(i).bucket_id;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
             if (num_bytes_per_entity > 0) {
                 const int num_Ts_per_field = num_bytes_per_entity / sizeof(T);
-                reserve_len += bktIndices.bucket_info[i].num_entities_this_bucket*num_Ts_per_field;
+                reserve_len += num_Ts_per_field;
             }
         }
     }
@@ -443,29 +443,19 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
 
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j];
-        const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
+        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank(),proc);
 
-        const std::vector<unsigned>& ords = bktIndices.ords;
-        unsigned offset = 0;
-
-        for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
-            unsigned bucket = bktIndices.bucket_info[i].bucket_id;
-            unsigned num_entities = bktIndices.bucket_info[i].num_entities_this_bucket;
+        for(size_t i=0; i<commMapIndices.extent(0); ++i) {
+            const unsigned bucket = commMapIndices(i).bucket_id;
+            const unsigned offset = commMapIndices(i).bucket_ord;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
             if (num_bytes_per_entity > 0) {
                 const int num_Ts_per_field = num_bytes_per_entity / sizeof(T);
-                const T* data = reinterpret_cast<T*>(stk::mesh::field_data( f , bucket));
+                const T* data = reinterpret_cast<T*>(stk::mesh::field_data( f , bucket)) + offset*num_Ts_per_field;
 
-                for (unsigned iord=0; iord<num_entities; ++iord) {
-                    const unsigned idx = ords[offset++]*num_Ts_per_field;
-
-                    for (int d = 0; d < num_Ts_per_field; ++d) {
-                      send_data.push_back(data[idx+d]);
-                    }
+                for (int d = 0; d < num_Ts_per_field; ++d) {
+                   send_data.push_back(data[d]);
                 }
-            }
-            else {
-                offset += num_entities;
             }
         }
     }
@@ -475,35 +465,25 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
   {
     DoOp<T, OP> do_op;
 
-    unsigned offset = 0;
+    unsigned recv_offset = 0;
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j] ;
-        const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[iproc];
-        const std::vector<unsigned>& ords = bktIndices.ords;
+        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank(), iproc);
 
         f.sync_to_host();
         f.modify_on_host();
 
-        size_t ords_offset = 0;
-        for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
-            unsigned bucket = bktIndices.bucket_info[i].bucket_id;
-            unsigned num_entities = bktIndices.bucket_info[i].num_entities_this_bucket;
+        for(size_t i=0; i<commMapIndices.extent(0); ++i) {
+            const unsigned bucket = commMapIndices(i).bucket_id;
+            const unsigned offset = commMapIndices(i).bucket_ord;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
             if (num_bytes_per_entity > 0) {
                 const int num_Ts_per_field = num_bytes_per_entity / sizeof(T);
-                T* data = reinterpret_cast<T*>(stk::mesh::field_data( f , bucket));
+                T* data = reinterpret_cast<T*>(stk::mesh::field_data( f , bucket))+offset*num_Ts_per_field;
 
-                for (unsigned iord=0; iord<num_entities; ++iord) {
-                    const unsigned idx = ords[ords_offset++]*num_Ts_per_field;
-
-                    for (int d = 0; d < num_Ts_per_field; ++d) {
-                      data[idx+d] = do_op(data[idx+d], recv_data[offset + d]);
-                    }
-                    offset += num_Ts_per_field;
+                for (int d = 0; d < num_Ts_per_field; ++d) {
+                    data[d] = do_op(data[d], recv_data[recv_offset++]);
                 }
-            }
-            else {
-                ords_offset += num_entities;
             }
         }
     }

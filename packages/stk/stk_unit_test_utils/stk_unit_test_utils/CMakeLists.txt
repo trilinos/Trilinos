@@ -30,6 +30,7 @@ SET(HEADERS_NEED_IO
   TextMeshUtils.hpp
   TextMesh.hpp
   ioUtils.hpp
+  exampleMeshes.h
   )
 SET(SOURCES_NEED_IO
   BulkDataTester.cpp

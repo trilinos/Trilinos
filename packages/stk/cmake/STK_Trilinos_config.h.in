@@ -42,6 +42,8 @@
 
 #cmakedefine STK_HAVE_KOKKOS
 
+#cmakedefine STK_HAVE_INTREPID2
+
 #cmakedefine STK_HAVE_STKMESH
 
 #cmakedefine STK_HAVE_STKIO
@@ -79,5 +81,7 @@
 #endif
 
 #cmakedefine SIERRA_MIGRATION
+
+#cmakedefine STK_16BIT_UPWARDCONN_INDEX_TYPE
 
 #cmakedefine STK_BUILT_FOR_SIERRA

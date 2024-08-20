@@ -9,7 +9,7 @@ spack:
   - zlib
   - openmpi@4.1.6
   - kokkos~shared
-  - trilinos@develop~boost+exodus+kokkos~shared+stk+test
+  - trilinos@develop~boost+exodus+kokkos~shared+stk+test+gtest
   view: true
   concretizer:
     unify: true

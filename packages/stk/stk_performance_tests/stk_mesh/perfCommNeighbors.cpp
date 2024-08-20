@@ -277,13 +277,9 @@ protected:
     const stk::mesh::BucketVector& shared_not_owned = get_bulk().get_buckets(stk::topology::NODE_RANK, shared & !owned);
     const std::vector<int>& procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
     stk::CommNeighbors commNeighbors(get_bulk().parallel(), procs);
-    const stk::mesh::VolatileFastSharedCommMapOneRank& sharedCommMap = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK);
     for(int p : procs) {
-      size_t numEntities = 0;
-      const std::vector<stk::mesh::BucketInfo>& bktInfoVec = sharedCommMap[p].bucket_info;
-      for(const stk::mesh::BucketInfo& bktInfo : bktInfoVec) {
-        numEntities += bktInfo.num_entities_this_bucket;
-      }
+      const stk::mesh::HostCommMapIndices sharedCommMap = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK, p);
+      size_t numEntities = sharedCommMap.extent(0);
       commNeighbors.send_buffer(p).reserve(numEntities*sizeof(stk::mesh::EntityKey));
     }
 
