@@ -1939,7 +1939,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
 
   for (auto &owner_block : blocks) {
     int  owner_zone = owner_block->get_property("zone").get_int();
-    auto owner_ids  = owner_block->get_cell_node_ids(true);
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
       assert(zgc.m_donorProcessor >= 0);
       assert(zgc.m_ownerProcessor >= 0);
@@ -1952,9 +1951,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
         auto donor_block = region.get_structured_block(zgc.m_donorName);
         assert(donor_block != nullptr);
         int donor_zone = donor_block->get_property("zone").get_int();
-
-        auto donor_ids = donor_block->get_cell_node_ids(true);
-
         std::vector<int> i_range = zgc.get_range(1);
         std::vector<int> j_range = zgc.get_range(2);
         std::vector<int> k_range = zgc.get_range(3);
