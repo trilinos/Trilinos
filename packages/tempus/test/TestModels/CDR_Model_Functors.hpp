@@ -1,3 +1,12 @@
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
+//
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
+
 #ifndef TEMPUS_CDR_MODEL_FUNCTORS_HPP
 #define TEMPUS_CDR_MODEL_FUNCTORS_HPP
 

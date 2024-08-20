@@ -1,47 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <stdlib.h>                         // for exit, EXIT_FA...
@@ -69,9 +32,10 @@
 #include <Tpetra_Import_Util2.hpp>           // Import_Util::sortCrsEntries
 #include "Tpetra_Map_decl.hpp"               // for Map
 #include <Xpetra_IO.hpp>
-#include "Xpetra_BlockedMap.hpp"  // for LO, GO, NO
-#include "Xpetra_Map.hpp"         // for UnderlyingLib
-#include "Xpetra_Parameters.hpp"  // for Parameters
+#include "Xpetra_BlockedMap.hpp"    // for LO, GO, NO
+#include "Xpetra_Map.hpp"           // for UnderlyingLib
+#include "Xpetra_Parameters.hpp"    // for Parameters
+#include "Xpetra_MatrixMatrix.hpp"  //Xpetra SpGEMM
 namespace Teuchos {
 class ParameterList;
 }  // namespace Teuchos
@@ -194,6 +158,10 @@ std::chrono::steady_clock::time_point kk_def_copyout_start;
 std::chrono::steady_clock::time_point kk_def_mult_stop;
 std::chrono::steady_clock::time_point kk_def_copyout_stop;
 
+// Xpetra
+std::chrono::steady_clock::time_point xpetra_mult_start;
+std::chrono::steady_clock::time_point xpetra_mult_stop;
+
 #undef remove_pedantic_macro_warning_type
 #else
 #define DescriptiveTime(x) x
@@ -221,7 +189,8 @@ enum class Experiments { ViennaCL = 0,
                          KK_DENSE,
                          KK_DEFAULT,
                          LTG,
-                         SERIAL };
+                         SERIAL,
+                         XPETRA };
 
 static inline std::string to_string(const Experiments &experiment_id) {
   switch (experiment_id) {
@@ -239,6 +208,8 @@ static inline std::string to_string(const Experiments &experiment_id) {
       return ("LTG");
     case Experiments::SERIAL:
       return ("SERIAL");
+    case Experiments::XPETRA:
+      return ("XPETRA");
     default:
       return ("UNDEFINED");
   }
@@ -775,7 +746,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrd
 }
 
 // =========================================================================
-// Kokkos Kernels Testing
+// LTG Testing
 // =========================================================================
 #include "Tpetra_Import_Util2.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
@@ -925,6 +896,30 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::Kokk
   }
 };
 #endif  // HAVE OPENMP
+
+// =========================================================================
+// Xpetra Testing
+// =========================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Multiply_Xpetra(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &C, Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null) {
+#ifdef USE_DESCRIPTIVE_STATS
+  xpetra_mult_start = std::chrono::steady_clock::now();
+#endif
+  Teuchos::FancyOStream fos(Teuchos::rcpFromRef(std::cout));
+  Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(A, false, B, false, C, fos, true, true, std::string(""), params);
+#ifdef USE_DESCRIPTIVE_STATS
+  xpetra_mult_stop = std::chrono::steady_clock::now();
+  {
+    std::chrono::duration<double> ds;
+    ds = ltg_mult_stop - ltg_mult_start;
+    my_experiment_timings["Xpetra: Call"].push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(ds).count());
+  }
+#endif
+}
+
+// =========================================================================
+// Utilities
+// =========================================================================
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void dump_matrix(const std::string &prefix,
@@ -1079,12 +1074,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     clp.setOption("trackRssHWM", "noTrackRssHWM", &trackRssHWM, "Track the RSS high water mark (assumes no HP usage)");
 
     // the kernels
-    bool do_viennaCL   = true;
-    bool do_mkl        = true;
-    bool do_kk_mem     = true;
-    bool do_kk_dense   = true;
-    bool do_kk_default = true;
-    bool do_ltg        = true;
+    bool is_serial     = comm->getSize() == 1;
+    bool do_viennaCL   = is_serial;
+    bool do_mkl        = is_serial;
+    bool do_kk_mem     = is_serial;
+    bool do_kk_dense   = is_serial;
+    bool do_kk_default = is_serial;
+    bool do_ltg        = is_serial;
+    bool do_xpetra     = true;
 
 #ifndef HAVE_MUELU_VIENNACL
     do_viennaCL = false;
@@ -1099,6 +1096,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     clp.setOption("kk_dense", "nokk_dense", &do_kk_dense, "Evaluate KK Dense");
     clp.setOption("kk_default", "nokk_default", &do_kk_default, "Evaluate KK Default");
     clp.setOption("ltg", "noltg", &do_ltg, "Evaluate LTG");
+    clp.setOption("xpetra", "noxpetra", &do_ltg, "Evaluate Xpetra");
 
     std::string dump_result = "";
     clp.setOption("dump_result", &dump_result, "Dump the resulting matrices (once)");
@@ -1148,7 +1146,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     if (do_kk_dense) my_experiments.push_back(Experiments::KK_DENSE);      // KK Dense
     if (do_kk_default) my_experiments.push_back(Experiments::KK_DEFAULT);  // KK Default
     if (do_ltg) my_experiments.push_back(Experiments::LTG);                // LTG
-
+    if (do_xpetra) my_experiments.push_back(Experiments::XPETRA);          // Xpetra
     if (printTypes) {
       out << "========================================================" << endl
           << xpetraParameters
@@ -1174,9 +1172,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     //    if (dump_result != "") dump_matrices = true;
 
     // Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
-
-    // At the moment, this test only runs on one MPI rank
-    if (comm->getSize() != 1) exit(1);
 
     std::stringstream ss;
 
@@ -1246,7 +1241,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     RCP<Matrix> B;
 
     if (matrixFileNameB == "dupe") {
-      *B = *A;
+      B = A;
 
       if (verbose) out << "duplicating A" << endl;
     } else if (matrixFileNameB == "alias") {
@@ -1361,6 +1356,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
                 TimeMonitor t(*TimeMonitor::getNewTimer("MM LTG: Total"));
                 using ltg_tester = LTG_Tests<SC, LO, GO, Node>;
                 DescriptiveTime(ltg_tester::Multiply_LTG(*A, *B, *C));
+              }
+              break;
+            // Xpetra
+            case Experiments::XPETRA:
+              C = Xpetra::MatrixFactory<SC, LO, GO, Node>::Build(A->getRowMap(), 0);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MM XPETRA: Total"));
+                DescriptiveTime(Multiply_Xpetra(*A, *B, C));
               }
               break;
 

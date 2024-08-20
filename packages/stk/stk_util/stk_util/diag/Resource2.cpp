@@ -135,6 +135,9 @@ Resource::const_iterator Resource::end() const
 
 Resource Resource::create(const String& resource_name, AnyData* any_data)
 {
+  const auto d = std::find(resource_name.begin(), resource_name.end(), '.');
+  STK_ThrowRequireMsg(d == resource_name.end(), "Cannot use a '.' in a global variable name. Offending name = '" << resource_name << "'");
+
   auto& resource_list = getResourceMap(m_resource_);
 
   STK_ThrowRequireMsg(resource_list.find(resource_name) == resource_list.end(),

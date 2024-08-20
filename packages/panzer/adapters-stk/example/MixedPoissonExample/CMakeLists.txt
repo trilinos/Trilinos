@@ -59,7 +59,7 @@ FOREACH( ORDER 1 2 3)
       PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Hex-p${ORDER}-12
-    TEST_3 CMND python
+    TEST_3 CMND python3
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          ${ORDER}
          MPE-ConvTest-Hex-p${ORDER}-
@@ -90,7 +90,7 @@ FOREACH( ORDER 1)
       PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-Multiblock-ConvTest-Hex-p${ORDER}-12
-    TEST_2 CMND python
+    TEST_2 CMND python3
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          ${ORDER}
          MPE-Multiblock-ConvTest-Hex-p${ORDER}-

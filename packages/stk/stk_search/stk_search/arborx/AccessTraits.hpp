@@ -97,15 +97,17 @@ struct AccessTraits<ViewWrapperForArborXTraits<ViewType>, ArborX::PrimitivesTag>
 
   static KOKKOS_INLINE_FUNCTION ArborXShape get(ViewWrapperForArborXTraits<ViewType> const& primitives, std::size_t i)
   {
+    StkShape stkBox;
     if constexpr (stk::search::impl::is_pair_v<typename ViewType::value_type>)
     {
-      return stk::search::impl::StkToArborX<StkShape>(primitives.view(i).first);
+      stkBox = primitives.view(i).first;
     } else
     {
-      return stk::search::impl::StkToArborX<StkShape>(primitives.view(i).box);
+      stkBox = primitives.view(i).box;
     }
-  }
 
+  return stk::search::impl::StkToArborX<StkShape>(stkBox);
+  }
 };
 
 
@@ -124,15 +126,18 @@ struct AccessTraits<ViewWrapperForArborXTraits<ViewType>, ArborX::PredicatesTag>
 
   static KOKKOS_FUNCTION ArborXPredicateWithIndex get(ViewWrapperForArborXTraits<ViewType> const & predicates, std::size_t i)
   {
+
+    ArborXShape arborXBox;
+
     if constexpr (stk::search::impl::is_pair_v<typename ViewType::value_type>)
     {
-      ArborXShape arborXBox = stk::search::impl::StkToArborX<StkShape>(predicates.view(i).first);
-      return ArborXPredicateWithIndex(arborXBox, i);
+      arborXBox = stk::search::impl::StkToArborX<StkShape>(predicates.view(i).first);
     } else
     {
-      ArborXShape arborXBox = stk::search::impl::StkToArborX<StkShape>(predicates.view(i).box);
-      return ArborXPredicateWithIndex(arborXBox, i);
+      arborXBox = stk::search::impl::StkToArborX<StkShape>(predicates.view(i).box);
     }
+
+    return ArborXPredicateWithIndex(arborXBox, i);
   }
 };
 

@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_BLOCKTRIDICONTAINER_DEF_HPP
 #define IFPACK2_BLOCKTRIDICONTAINER_DEF_HPP
@@ -83,7 +50,8 @@ namespace Ifpack2 {
                   const Teuchos::RCP<const import_type>& importer,
                   const bool overlapCommAndComp,
                   const bool useSeqMethod,
-                  const int block_size) 
+                  const int block_size,
+                  const bool explicitConversion) 
   {
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initInternal");
 
@@ -99,15 +67,20 @@ namespace Ifpack2 {
 
     {
       IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA");
-      impl_->A = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
-      if (impl_->A.is_null()) {
-        TEUCHOS_TEST_FOR_EXCEPT_MSG
-          (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
-        {
-          IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA::convertToBlockCrsMatrix");
-          impl_->A = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(matrix), block_size, false);
-          IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
+      if (explicitConversion) {
+        impl_->A = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
+        if (impl_->A.is_null()) {
+          TEUCHOS_TEST_FOR_EXCEPT_MSG
+            (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
+          {
+            IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA::convertToBlockCrsMatrix");
+            impl_->A = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(matrix), block_size, false);
+            IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
+          }
         }
+      }
+      else {
+        impl_->A = matrix;
       }
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
@@ -197,6 +170,7 @@ namespace Ifpack2 {
     const bool overlapCommAndComp = false;
     initInternal(matrix, importer, overlapCommAndComp, useSeqMethod);
     n_subparts_per_part_ = -1;
+    block_size_ = -1;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }
 
@@ -207,12 +181,14 @@ namespace Ifpack2 {
                        const int n_subparts_per_part,
                        const bool overlapCommAndComp, 
                        const bool useSeqMethod,
-                       const int block_size)
+                       const int block_size,
+                       const bool explicitConversion)
     : Container<MatrixType>(matrix, partitions, false), partitions_(partitions)
   {
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer");
-    initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod, block_size);
+    initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod, block_size, explicitConversion);
     n_subparts_per_part_ = n_subparts_per_part;
+    block_size_ = block_size;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }
 
@@ -229,6 +205,8 @@ namespace Ifpack2 {
   {
     if (List.isType<int>("partitioner: subparts per part"))
       n_subparts_per_part_ = List.get<int>("partitioner: subparts per part");
+    if (List.isType<int>("partitioner: block size"))
+      block_size_ = List.get<int>("partitioner: block size");
   }
 
   template <typename MatrixType>
@@ -239,12 +217,30 @@ namespace Ifpack2 {
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initialize");
     this->IsInitialized_ = true;
     {
+      auto bA = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(impl_->A);
+      if (bA.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG
+          (block_size_ == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
+        {
+          IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initialize::getBlockCrsGraph");
+          auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(impl_->A);
+          impl_->blockGraph = Tpetra::getBlockCrsGraph(*A, block_size_, true);
+          IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
+        }
+      }
+      else {
+        impl_->blockGraph = Teuchos::rcpFromRef(bA->getCrsGraph());
+      }
+    }
+
+    {
       IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::createPartInterfaceBlockTridiagsNormManager");
-      impl_->part_interface  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(impl_->A, partitions_, n_subparts_per_part_);
+      impl_->part_interface  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(impl_->A, impl_->blockGraph, partitions_, n_subparts_per_part_);
       impl_->block_tridiags  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(impl_->part_interface);
       impl_->norm_manager    = BlockHelperDetails::NormManager<MatrixType>(impl_->A->getComm());
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
+
     // We assume that if you called this method, you intend to recompute
     // everything.
     this->IsComputed_ = false;
@@ -252,7 +248,9 @@ namespace Ifpack2 {
     {
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
         (impl_->A, 
-         impl_->part_interface, impl_->block_tridiags, 
+         impl_->blockGraph, 
+         impl_->part_interface, 
+         impl_->block_tridiags, 
          impl_->a_minus_d, 
          impl_->overlap_communication_and_computation);    
     }
@@ -270,7 +268,8 @@ namespace Ifpack2 {
       this->initialize();
     {
       BlockTriDiContainerDetails::performNumericPhase<MatrixType>
-        (impl_->A, 
+        (impl_->A,
+         impl_->blockGraph, 
          impl_->part_interface, impl_->block_tridiags, 
          Kokkos::ArithTraits<magnitude_type>::zero());
     }
@@ -303,6 +302,7 @@ namespace Ifpack2 {
 
     BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
       (impl_->A,
+       impl_->blockGraph,
        impl_->tpetra_importer, 
        impl_->async_importer, 
        impl_->overlap_communication_and_computation,
@@ -337,7 +337,8 @@ namespace Ifpack2 {
       this->initialize();
     {
       BlockTriDiContainerDetails::performNumericPhase<MatrixType>
-        (impl_->A, 
+        (impl_->A,
+         impl_->blockGraph, 
          impl_->part_interface, impl_->block_tridiags, 
          in.addRadiallyToDiagonal);
     }
@@ -366,6 +367,7 @@ namespace Ifpack2 {
     {
       r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
         (impl_->A,
+         impl_->blockGraph,
          impl_->tpetra_importer, 
          impl_->async_importer,
          impl_->overlap_communication_and_computation,

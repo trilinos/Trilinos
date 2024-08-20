@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include <math.h>
 #include <stdlib.h>
 #include "calc_decomp_cuts.h"

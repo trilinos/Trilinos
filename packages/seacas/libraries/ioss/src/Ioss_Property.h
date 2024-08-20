@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "ioss_export.h"
 #include "Ioss_CodeTypes.h"
+#include "ioss_export.h"
 
 #include <cstdint> // for int64_t
 #include <string>  // for string
@@ -47,14 +47,14 @@ namespace Ioss {
     // To set implicit property
     Property(const GroupingEntity *ge, std::string name, BasicType type);
 
-    IOSS_NODISCARD std::string         get_string() const;
-    IOSS_NODISCARD int64_t             get_int() const;
-    IOSS_NODISCARD double              get_real() const;
-    IOSS_NODISCARD void               *get_pointer() const;
+    IOSS_NODISCARD std::string get_string() const;
+    IOSS_NODISCARD int64_t     get_int() const;
+    IOSS_NODISCARD double      get_real() const;
+    IOSS_NODISCARD void       *get_pointer() const;
     IOSS_NODISCARD std::vector<double> get_vec_double() const;
-    IOSS_NODISCARD std::vector<int>    get_vec_int() const;
+    IOSS_NODISCARD std::vector<int> get_vec_int() const;
 
-    void   set_origin(Origin origin) { origin_ = origin; }
+    void                  set_origin(Origin origin) { origin_ = origin; }
     IOSS_NODISCARD Origin get_origin() const { return origin_; }
 
     /** \brief Tells whether the property is calculated, rather than stored.
@@ -98,8 +98,7 @@ namespace Ioss {
     IOSS_NODISCARD bool operator==(const Ioss::Property &rhs) const;
 
 #if 0
-    // Trilinos nvidia build doesn't like this...
-    friend void swap(Ioss::Property &first, Ioss::Property &second) // nothrow
+    friend void swap(Ioss::Property &first, Ioss::Property &second) noexcept
     {
       using std::swap;
       swap(first.name_, second.name_);
@@ -108,7 +107,6 @@ namespace Ioss {
       swap(first.data_, second.data_);
     }
 #endif
-
   private:
     std::string name_{};
     BasicType   type_{INVALID};

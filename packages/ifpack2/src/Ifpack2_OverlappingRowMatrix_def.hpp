@@ -1,50 +1,18 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
 #define IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
 
 #include <sstream>
 
+#include <Ifpack2_OverlappingRowMatrix_decl.hpp>
 #include <Ifpack2_Details_OverlappingRowGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Import.hpp>
@@ -179,9 +147,17 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   ExtImporter_ = rcp (new import_type (A_->getRowMap (), ExtMap_));
 
   {
-    ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
-    ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
-    ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
+    auto ExtMatrixDynGraph = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
+    ExtMatrixDynGraph->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+    ExtMatrixDynGraph->fillComplete (A_->getDomainMap (), RowMap_);
+    auto ExtLclMatrix = ExtMatrixDynGraph->getLocalMatrixDevice();
+    auto ExtMatrixStaticGraph = rcp (new crs_graph_type(ExtLclMatrix.graph,
+      ExtMap_,
+      ColMap_,
+      ExtMatrixDynGraph->getDomainMap(),
+      ExtMatrixDynGraph->getRangeMap()));
+    ExtMatrix_ = rcp (new crs_matrix_type(ExtMatrixStaticGraph, ExtLclMatrix.values));
+    ExtMatrix_->fillComplete ();
   }
 
   // fix indices for overlapping matrix
@@ -846,11 +822,8 @@ OverlappingRowMatrix<MatrixType>::getExtHaloStartsHost() const
 template<class MatrixType>
 void OverlappingRowMatrix<MatrixType>::doExtImport()
 {
-  //TODO: CrsMatrix can't doImport after resumeFill (see #9720). Ideally, this import could
-  //happen using combine mode REPLACE without reconstructing the matrix.
-  //Maybe even without another fillComplete since this doesn't change structure - see #9655.
-  ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
-  ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+  ExtMatrix_->resumeFill();
+  ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::REPLACE);
   ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
 }
 

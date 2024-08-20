@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef MiniEM_BC_STRATEGY_DIRICHLET_AuxCONSTANT_IMPL_HPP
 #define MiniEM_BC_STRATEGY_DIRICHLET_AuxCONSTANT_IMPL_HPP
 

@@ -60,14 +60,14 @@ namespace Ioss {
     return get_database()->get_zc_field(this, field, data, data_size);
   }
 
-  void ElementBlock::get_block_adjacencies(std::vector<std::string> &block_adjacency) const
+  void ElementBlock::get_block_adjacencies(Ioss::NameList &block_adjacency) const
   {
     get_database()->get_block_adjacencies(this, block_adjacency);
   }
 
-  std::vector<std::string> ElementBlock::get_block_adjacencies() const
+  Ioss::NameList ElementBlock::get_block_adjacencies() const
   {
-    std::vector<std::string> block_adjacency;
+    Ioss::NameList block_adjacency;
     get_database()->get_block_adjacencies(this, block_adjacency);
     return block_adjacency;
   }

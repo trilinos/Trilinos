@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // Program demonstrating the Teuchos::Comm issues causing #3331.
 // On waterman, this test passes if it skips the call to 
 // Teuchos::Comm::duplicate, but segfaults if Teuchos::Comm::duplicate 

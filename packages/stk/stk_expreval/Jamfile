@@ -76,8 +76,8 @@ local installed-developer-files =
 local xml-files =
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.

@@ -1,58 +1,24 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #include "Ifpack2_Parameters.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
-#include <Tpetra_MultiVector.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 namespace Ifpack2 {
 
-void getValidParameters(Teuchos::ParameterList& params)
-{
+void getValidParameters(Teuchos::ParameterList &params) {
   using STS = Teuchos::ScalarTraits<double>;
 
-  //params.clear();
+  // params.clear();
   Teuchos::ParameterList empty;
   params = empty;
 
@@ -80,6 +46,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
   params.set("chebyshev: use native spmv", false);
+  params.set("chebyshev: algorithm", "first");
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");
@@ -109,7 +76,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: relative threshold", 1.0);
   params.set("fact: relax value", 0.0);
   params.set("fact: type", "serial");
-  params.sublist("parallel ILUT options"); //FIXME this should be validated
+  params.sublist("parallel ILUT options"); // FIXME this should be validated
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");
@@ -140,27 +107,41 @@ void getValidParameters(Teuchos::ParameterList& params)
 
   // Ifpack2_SPARSKIT.cpp
   // ap 25 May 2016: all SPARSKIT for backwards compatibility ONLY
-  params.set("fact: sparskit: lfil",    0);
-  params.set("fact: sparskit: tol",     0.0);
+  params.set("fact: sparskit: lfil", 0);
+  params.set("fact: sparskit: tol", 0.0);
   params.set("fact: sparskit: droptol", 0.0);
   params.set("fact: sparskit: permtol", 0.1);
-  params.set("fact: sparskit: alph",    0.0);
-  params.set("fact: sparskit: mbloc",   -1);
-  params.set("fact: sparskit: type",    "ILUT");
+  params.set("fact: sparskit: alph", 0.0);
+  params.set("fact: sparskit: mbloc", -1);
+  params.set("fact: sparskit: type", "ILUT");
 
   // Additive Schwarz preconditioner
-  params.set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
+  params.set("schwarz: compute condest",
+             false); // mfh 24 Mar 2015: for backwards compatibility ONLY
   params.set("schwarz: combine mode", "ZERO"); // use string mode for this
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", 0);
   params.set("schwarz: num iterations", 1);
+
   params.set("subdomain solver name", "");
+  params.set("inner solver name", "");
+  params.set("schwarz: subdomain solver name", "");
+  params.set("schwarz: inner solver name", "");
+
   Teuchos::ParameterList dummyListSubdomain;
-  params.set("subdomain solver parameters",dummyListSubdomain);
-  params.sublist("subdomain solver parameters").disableRecursiveValidation();
+
+  const std::vector<std::string> subdomainSolverParameterNames = {
+      "inner preconditioner parameters", "subdomain solver parameters",
+      "schwarz: inner preconditioner parameters",
+      "schwarz: subdomain solver parameters"};
+  for (auto &subdomainSolverParameterName : subdomainSolverParameterNames) {
+    params.set(subdomainSolverParameterName, dummyListSubdomain);
+    params.sublist(subdomainSolverParameterName).disableRecursiveValidation();
+  }
+
   Teuchos::ParameterList dummyListReordering;
-  params.set("schwarz: reordering list",dummyListReordering);
+  params.set("schwarz: reordering list", dummyListReordering);
   // Ifpack2 doesn't attempt to validate options for Zoltan2
   params.sublist("schwarz: reordering list").disableRecursiveValidation();
 
@@ -184,7 +165,7 @@ void getValidParameters(Teuchos::ParameterList& params)
 
   // Ifpack2_Details_Amesos2Wrapper
   Teuchos::ParameterList dummyList;
-  params.set("Amesos2",dummyList);
+  params.set("Amesos2", dummyList);
   params.sublist("Amesos2").disableRecursiveValidation();
   params.set("Amesos2 solver name", "KLU2");
 
@@ -195,8 +176,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Ifpack2_LinePartitioner.hpp (FIXME)
   params.set("partitioner: line detection threshold", 0.0);
   params.set("partitioner: PDE equations", 1);
-  Teuchos::RCP<Tpetra::MultiVector<> > dummy;
-  params.set("partitioner: coordinates",dummy);
+  Teuchos::RCP<Tpetra::MultiVector<>> dummy;
+  params.set("partitioner: coordinates", dummy);
 
   // Ifpack2_Hypre.hpp
   params.set("hypre: Solver", "PCG");
@@ -204,7 +185,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("hypre: SolveOrPrecondition", "Solver");
   params.sublist("hypre: Solver functions").disableRecursiveValidation();
 
-  params.sublist("hypre: Preconditioner functions").disableRecursiveValidation();
+  params.sublist("hypre: Preconditioner functions")
+      .disableRecursiveValidation();
   params.sublist("Operators").disableRecursiveValidation();
   params.sublist("Coordinates").disableRecursiveValidation();
   params.set("hypre: Dump", false);
@@ -212,5 +194,4 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("hypre: NumFunctions", 0);
 }
 
-}//namespace Ifpack2
-
+} // namespace Ifpack2

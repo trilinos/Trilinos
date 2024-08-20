@@ -37,6 +37,13 @@
 #include "stk_util/diag/Resource2.h"
 #include <string>
 
+TEST(Resource2, invalid_name)
+{
+  sierra::String regionName("regionResource");
+  sierra::Rsrc2::ResourceRoot regionResource(regionName);
+  EXPECT_ANY_THROW(regionResource.create("foo.bar", nullptr));
+}
+
 TEST(Resource2, construct_list_and_find)
 {
   sierra::String parentName("parentResource");

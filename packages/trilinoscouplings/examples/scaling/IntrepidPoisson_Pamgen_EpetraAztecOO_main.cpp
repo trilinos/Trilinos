@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /** \file  example_IntrepidPoisson_Pamgen_EpetraAztecOO.cpp
     \brief Example setup of a discretization of a Poisson equation on
            a hexahedral mesh using nodal (Hgrad) elements.  The

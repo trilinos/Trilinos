@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -91,7 +91,7 @@ std::string Ioss::Invalid_Storage::label(int /*which*/, const char /*suffix_sep*
 }
 
 std::string Ioss::Invalid_Storage::label_name(const std::string &base, int /*which*/,
-                                              const char /*suffix_sep*/,
+                                              const char /*suffix_sep*/, const char /*suffix_sep*/,
                                               bool /*suffices_uppercase*/) const
 {
   return base;
@@ -115,7 +115,8 @@ std::string Ioss::Scalar::label(IOSS_MAYBE_UNUSED int which, const char /*suffix
 }
 
 std::string Ioss::Scalar::label_name(const std::string &base, int /*which*/,
-                                     const char /*suffix_sep*/, bool /*suffices_uppercase*/) const
+                                     const char /*suffix_sep*/, const char /*suffix_sep*/,
+                                     bool /*suffices_uppercase*/) const
 {
   return base;
 }

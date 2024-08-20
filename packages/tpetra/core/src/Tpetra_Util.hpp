@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_UTIL_HPP
@@ -57,6 +27,7 @@
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_Utils.hpp"
+#include <numeric>
 #include <algorithm>
 #include <iterator>
 #include <memory>
@@ -475,6 +446,92 @@ namespace Tpetra {
         }
    }
 
+  /**
+   * \brief Compute the permutation of the ordering that 
+   * sorts the array using a stable sort.
+   */
+  template<typename IT1>
+  std::vector<typename std::iterator_traits<IT1>::difference_type> sort_indexes(IT1 first, IT1 last) {
+
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+
+    DT length = last - first;
+    std::vector<DT> idx(length);
+    std::iota(idx.begin(), idx.end(), 0);
+
+    std::stable_sort(idx.begin(), idx.end(),
+        [&first](size_t i1, size_t i2) {return first[i1] < first[i2];});
+
+    return idx;
+  }
+
+  /**
+   * \brief Apply a permutation of the ordering of an array in place.
+   */
+  template<typename IT1, typename IT2>
+  void
+  apply_permutation(
+      IT1 first,
+      IT1 last,
+      IT2 indices)
+  {
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    typedef typename std::iterator_traits<IT1>::value_type T;
+
+    DT n = last - first;
+
+    Kokkos::View<T*, Kokkos::HostSpace> tmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp"), n);
+
+    Kokkos::parallel_for("apply_permutation_1",
+                        Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, n),
+                        [=](const int j) {
+                            tmp(j) = first[indices[j]];
+    });
+    Kokkos::parallel_for("apply_permutation_2",
+                        Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, n),
+                        [=](const int j) {
+                            first[j] = tmp(j);
+    });
+  }
+
+  /**
+   * \brief Sort the first array using std sort, and apply the resulting
+   * permutation to the second array.
+   *
+   * All of the input argument iterators are random access iterators.
+   */
+  template<class IT1, class IT2>
+  void std_sort2(const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2)
+   {
+    auto indices = sort_indexes(first1, last1);
+    apply_permutation(first1, last1, indices);
+    apply_permutation(first2, last2, indices);
+  }
+
+  /**
+   * \brief Sort the first array using std sort, and apply the resulting
+   * permutation to the second and third arrays.
+   *
+   * All of the input argument iterators are random access iterators.
+   */
+  template<class IT1, class IT2, class IT3>
+  void std_sort3(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2,
+    const IT3& first3,
+    const IT3& last3)
+   {
+    auto indices = sort_indexes(first1, last1);
+    apply_permutation(first1, last1, indices);
+    apply_permutation(first2, last2, indices);
+    apply_permutation(first3, last3, indices);
+   }
+
   } //end namespace SortDetails
 
 
@@ -497,7 +554,7 @@ namespace Tpetra {
    *   first N elements of the second array.
    */
   template<class IT1, class IT2>
-  void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
+  void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2, const bool stableSort=false) {
     // Quicksort uses best-case N log N time whether or not the input
     // data is sorted.  However, the common case in Tpetra is that the
     // input data are sorted, so we first check whether this is the
@@ -505,7 +562,10 @@ namespace Tpetra {
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
-    SortDetails::sh_sort2(first1, last1, first2, first2+(last1-first1));
+    if(stableSort)
+      SortDetails::std_sort2(first1, last1, first2, first2+(last1-first1));
+    else
+      SortDetails::sh_sort2(first1, last1, first2, first2+(last1-first1));
 #ifdef HAVE_TPETRA_DEBUG
     if(!SortDetails::isAlreadySorted(first1, last1)){
       std::cout << "Trouble: sort() did not sort !!" << std::endl;
@@ -597,7 +657,7 @@ namespace Tpetra {
    */
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2,
-    const IT3 &first3)
+    const IT3 &first3, const bool stableSort=false)
   {
     // Quicksort uses best-case N log N time whether or not the input
     // data is sorted.  However, the common case in Tpetra is that the
@@ -606,9 +666,12 @@ namespace Tpetra {
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
-    SortDetails::sh_sort3(first1, last1, first2, first2+(last1-first1), first3,
-                    first3+(last1-first1));
-
+    if(stableSort)
+      SortDetails::std_sort3(first1, last1, first2, first2+(last1-first1), first3,
+                      first3+(last1-first1));
+    else
+      SortDetails::sh_sort3(first1, last1, first2, first2+(last1-first1), first3,
+                      first3+(last1-first1));
 #ifdef HAVE_TPETRA_DEBUG
     if(!SortDetails::isAlreadySorted(first1, last1)){
         std::cout << " Trouble sort did not actually sort... !!!!!!" <<

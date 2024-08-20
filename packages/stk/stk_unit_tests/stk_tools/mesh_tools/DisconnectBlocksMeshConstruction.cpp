@@ -1344,6 +1344,70 @@ unsigned get_num_total_sides(const stk::mesh::BulkData & bulk)
   return get_num_total_entities(bulk, bulk.mesh_meta_data().side_rank());
 }
 
+stk::mesh::EntityVector get_element_side_nodes(stk::mesh::BulkData & bulk,
+                                               stk::mesh::Entity elem,
+                                               stk::mesh::ConnectivityOrdinal sideOrdinal)
+{
+  auto elemTopology = bulk.bucket(elem).topology();
+  auto sideTopology = elemTopology.side_topology(sideOrdinal);
+
+  std::vector<stk::mesh::ConnectivityOrdinal> elementSideNodeOrdinalVector(sideTopology.num_nodes());
+  elemTopology.side_node_ordinals(sideOrdinal, elementSideNodeOrdinalVector.data());
+
+  stk::mesh::EntityVector elementSideNodeVector;
+  auto elemNodes = bulk.begin_nodes(elem);
+  for(auto nodeIndex : elementSideNodeOrdinalVector) {
+    elementSideNodeVector.push_back(elemNodes[nodeIndex]);
+  }
+
+  return elementSideNodeVector;
+}
+
+bool verify_attached_faces(stk::mesh::BulkData & bulk)
+{
+  for (stk::mesh::Bucket * bucket : bulk.buckets(bulk.mesh_meta_data().side_rank())) {
+    for (stk::mesh::Entity face : *bucket) {
+      auto numElems = bulk.num_elements(face);
+      auto elems = bulk.begin_elements(face);
+      auto ordinals = bulk.begin_ordinals(face, stk::topology::ELEM_RANK);
+      stk::mesh::EntityVector faceNodes(bulk.begin_nodes(face), bulk.begin_nodes(face)+bulk.num_nodes(face));
+      std::sort(faceNodes.begin(), faceNodes.end());
+
+      for (unsigned i = 0; i < numElems; ++i) {
+        auto elem = elems[i];
+        auto sideOrdinal = ordinals[i];
+
+        stk::mesh::EntityVector elementSideNodeVector = get_element_side_nodes(bulk, elem, sideOrdinal);
+        std::sort(elementSideNodeVector.begin(), elementSideNodeVector.end());
+
+        if(faceNodes != elementSideNodeVector) {
+          std::ostringstream oss;
+
+          oss << "P" << bulk.parallel_rank()
+              << ": Could not match nodes on face: " << bulk.entity_key(face)
+              << " with element: " << bulk.entity_rank(elem)
+              << " on ordinal: " << sideOrdinal << std::endl;
+
+          oss << "\tFace nodes\n";
+          for(auto node : faceNodes) {
+            oss << "\t\t" << bulk.entity_key(node) << std::endl;
+          }
+
+          oss << "\n\tElement side nodes\n";
+          for(auto node : elementSideNodeVector) {
+            oss << "\t\t" << bulk.entity_key(node) << std::endl;
+          }
+
+          std::cout << oss.str();
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 bool check_orphaned_nodes(stk::mesh::BulkData & bulk)
 {
   bool foundOrphanedNode = false;
@@ -2262,14 +2326,23 @@ stk::mesh::PartVector setup_mesh_2block_2hex(stk::mesh::BulkData& bulk)
   return {block1, block2};
 }
 
-stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_sides(stk::mesh::BulkData& bulk)
+stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_sides(stk::mesh::BulkData& bulk, bool loadMeshFirst)
 {
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
+  stk::mesh::Part * block2 = nullptr;
+
+  if(!loadMeshFirst) {
+    block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
+    create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
+  }
 
   stk::io::fill_mesh("generated:1x1x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
 
+  if(loadMeshFirst) {
+    block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
+    create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
+  }
+
+  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
   move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
 
   create_sideset(bulk, "surface_1", {"block_1"});
@@ -2279,6 +2352,54 @@ stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_sides(stk::mesh::Bulk
   EXPECT_EQ( 1u, get_num_common_sides(bulk, {block1, block2}));
   EXPECT_EQ(12u, get_num_total_nodes(bulk));
   EXPECT_EQ( 1u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+
+  return {block1, block2};
+}
+
+stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_and_external_sides(stk::mesh::BulkData& bulk)
+{
+  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
+  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
+  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_2", 2);
+
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
+
+  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
+
+  create_sideset(bulk, "surface_1", {"block_1"});
+  create_sides_between_blocks(bulk, "block_1", "block_2", "surface_1");
+  create_all_boundary_sides(bulk, "surface_2");
+
+  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ( 1u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(12u, get_num_total_nodes(bulk));
+  EXPECT_EQ(11u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+
+  return {block1, block2};
+}
+
+stk::mesh::PartVector setup_mesh_2block_2hex_with_dual_internal_and_external_sides(stk::mesh::BulkData& bulk)
+{
+  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
+  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
+  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_2", 2);
+
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
+
+  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
+
+  create_sideset(bulk, "surface_1", {"block_1", "block_2"});
+  create_sides_between_blocks(bulk, "block_1", "block_2", "surface_1");
+  create_all_boundary_sides(bulk, "surface_2");
+
+  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ( 1u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(12u, get_num_total_nodes(bulk));
+  EXPECT_EQ(11u, get_num_total_sides(bulk));
   EXPECT_FALSE(check_orphaned_nodes(bulk));
 
   return {block1, block2};

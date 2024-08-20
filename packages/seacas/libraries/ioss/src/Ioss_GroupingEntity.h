@@ -128,7 +128,7 @@ namespace Ioss {
      * Entries are pushed onto the "block_members" vector, so it will be
      * appended to if it is not empty at entry to the function.
      */
-    virtual void block_membership(std::vector<std::string> & /* block_members */) {}
+    virtual void block_membership(Ioss::NameList & /* block_members */) {}
 
     IOSS_NODISCARD std::string get_filename() const;
 

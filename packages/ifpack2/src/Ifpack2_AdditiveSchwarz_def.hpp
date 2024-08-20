@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_AdditiveSchwarz_def.hpp
 /// \brief Definition of Ifpack2::AdditiveSchwarz, which implements
@@ -55,6 +22,7 @@
 #ifndef IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 #define IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 
+#include "Ifpack2_AdditiveSchwarz_decl.hpp"
 #include "Trilinos_Details_LinearSolverFactory.hpp"
 // We need Ifpack2's implementation of LinearSolver, because we use it
 // to wrap the user-provided Ifpack2::Preconditioner in
@@ -308,6 +276,14 @@ pointMapFromMeshMap(const Teuchos::RCP<const map_type> & meshMap,const typename 
   return Teuchos::RCP<const map_type>(new map_type(BMV::makePointMap (*meshMap,blockSize)));
 }
 
+template <typename MV, typename Map>
+void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const size_t numVectors, bool initialize)
+{
+  if(!mv_ptr || mv_ptr->getNumVectors() != numVectors) {
+    mv_ptr.reset(new MV(map, numVectors, initialize));
+  }
+}
+
 } // namespace
 
 template<class MatrixType,class LocalInverseType>
@@ -409,14 +385,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     {
       RCP<const map_type> B_and_Y_map = pointMapFromMeshMap<MatrixType>(IsOverlapping_ ?
         OverlappingMatrix_->getRowMap () : localMap_ , Matrix_->getBlockSize());
-      if (overlapping_B_.get () == nullptr ||
-          overlapping_B_->getNumVectors () != numVectors) {
-        overlapping_B_.reset (new MV (B_and_Y_map, numVectors, false));
-      }
-      if (overlapping_Y_.get () == nullptr ||
-          overlapping_Y_->getNumVectors () != numVectors) {
-        overlapping_Y_.reset (new MV (B_and_Y_map, numVectors, false));
-      }
+      resetMultiVecIfNeeded(overlapping_B_, B_and_Y_map, numVectors, false);
+      resetMultiVecIfNeeded(overlapping_Y_, B_and_Y_map, numVectors, false);
       OverlappingB = overlapping_B_.get ();
       OverlappingY = overlapping_Y_.get ();
       // FIXME (mfh 25 Jun 2019) It's not clear whether we really need
@@ -443,12 +413,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
     }
 
-    if (R_.get () == nullptr || R_->getNumVectors () != numVectors) {
-      R_.reset (new MV (B.getMap (), numVectors, false));
-    }
-    if (C_.get () == nullptr || C_->getNumVectors () != numVectors) {
-      C_.reset (new MV (Y.getMap (), numVectors, false));
-    }
+    resetMultiVecIfNeeded(R_, B.getMap(), numVectors, false);
+    resetMultiVecIfNeeded(C_, Y.getMap(), numVectors, false);
     // If taking averages in overlap region, we need to compute
     // the number of procs who have a copy of each overlap dof
     Teuchos::ArrayRCP<scalar_type>  dataNumOverlapCopies;
@@ -674,20 +640,20 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
     //  -SingletonFilter::SolveSingletons (solve entries of OverlappingY corresponding to singletons)
     //  -SingletonFilter::CreateReducedRHS (fill ReducedReorderedB from OverlappingB, with entries in singleton columns eliminated)
     //  -ReorderFilter::permuteOriginalToReordered (apply permutation to ReducedReorderedB)
-    MV ReducedReorderedB (additiveSchwarzFilter->getRowMap(), numVectors);
-    MV ReducedReorderedY (additiveSchwarzFilter->getRowMap(), numVectors);
-    additiveSchwarzFilter->CreateReducedProblem(OverlappingB, OverlappingY, ReducedReorderedB);
+    resetMultiVecIfNeeded(reduced_reordered_B_, additiveSchwarzFilter->getRowMap(), numVectors, true);
+    resetMultiVecIfNeeded(reduced_reordered_Y_, additiveSchwarzFilter->getRowMap(), numVectors, true);
+    additiveSchwarzFilter->CreateReducedProblem(OverlappingB, OverlappingY, *reduced_reordered_B_);
     //Apply inner solver
-    Inverse_->solve (ReducedReorderedY, ReducedReorderedB);
+    Inverse_->solve (*reduced_reordered_Y_, *reduced_reordered_B_);
     //Scatter ReducedY back to non-singleton rows of OverlappingY, according to the reordering.
-    additiveSchwarzFilter->UpdateLHS(ReducedReorderedY, OverlappingY);
+    additiveSchwarzFilter->UpdateLHS(*reduced_reordered_Y_, OverlappingY);
   }
   else
   {
     if (FilterSingletons_) {
       // process singleton filter
-      MV ReducedB (SingletonMatrix_->getRowMap (), numVectors);
-      MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
+      resetMultiVecIfNeeded(reduced_B_, SingletonMatrix_->getRowMap(), numVectors, true);
+      resetMultiVecIfNeeded(reduced_Y_, SingletonMatrix_->getRowMap(), numVectors, true);
 
       RCP<SingletonFilter<row_matrix_type> > singletonFilter =
         rcp_dynamic_cast<SingletonFilter<row_matrix_type> > (SingletonMatrix_);
@@ -698,11 +664,11 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
          "<row_matrix_type>.  This should never happen.  Please report this bug "
          "to the Ifpack2 developers.");
       singletonFilter->SolveSingletons (OverlappingB, OverlappingY);
-      singletonFilter->CreateReducedRHS (OverlappingY, OverlappingB, ReducedB);
+      singletonFilter->CreateReducedRHS (OverlappingY, OverlappingB, *reduced_B_);
 
       // process reordering
       if (! UseReordering_) {
-        Inverse_->solve (ReducedY, ReducedB);
+        Inverse_->solve (*reduced_Y_, *reduced_B_);
       }
       else {
         RCP<ReorderFilter<row_matrix_type> > rf =
@@ -712,15 +678,15 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
            "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
            "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
            "never happen.  Please report this bug to the Ifpack2 developers.");
-        MV ReorderedB (ReducedB, Teuchos::Copy);
-        MV ReorderedY (ReducedY, Teuchos::Copy);
-        rf->permuteOriginalToReordered (ReducedB, ReorderedB);
-        Inverse_->solve (ReorderedY, ReorderedB);
-        rf->permuteReorderedToOriginal (ReorderedY, ReducedY);
+        resetMultiVecIfNeeded(reordered_B_, reduced_B_->getMap(), numVectors, false);
+        resetMultiVecIfNeeded(reordered_Y_, reduced_Y_->getMap(), numVectors, false);
+        rf->permuteOriginalToReordered (*reduced_B_, *reordered_B_);
+        Inverse_->solve (*reordered_Y_, *reordered_B_);
+        rf->permuteReorderedToOriginal (*reordered_Y_, *reduced_Y_);
       }
 
       // finish up with singletons
-      singletonFilter->UpdateLHS (ReducedY, OverlappingY);
+      singletonFilter->UpdateLHS (*reduced_Y_, OverlappingY);
     }
     else {
       // process reordering
@@ -728,8 +694,8 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
         Inverse_->solve (OverlappingY, OverlappingB);
       }
       else {
-        MV ReorderedB (OverlappingB, Teuchos::Copy);
-        MV ReorderedY (OverlappingY, Teuchos::Copy);
+        resetMultiVecIfNeeded(reordered_B_, OverlappingB.getMap(), numVectors, false);
+        resetMultiVecIfNeeded(reordered_Y_, OverlappingY.getMap(), numVectors, false);
 
         RCP<ReorderFilter<row_matrix_type> > rf =
           rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
@@ -738,9 +704,9 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
            "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
            "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
            "never happen.  Please report this bug to the Ifpack2 developers.");
-        rf->permuteOriginalToReordered (OverlappingB, ReorderedB);
-        Inverse_->solve (ReorderedY, ReorderedB);
-        rf->permuteReorderedToOriginal (ReorderedY, OverlappingY);
+        rf->permuteOriginalToReordered (OverlappingB, *reordered_B_);
+        Inverse_->solve (*reordered_Y_, *reordered_B_);
+        rf->permuteReorderedToOriginal (*reordered_Y_, OverlappingY);
       }
     }
   }
@@ -1035,6 +1001,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
     overlapping_Y_.reset (nullptr);
     R_.reset (nullptr);
     C_.reset (nullptr);
+    reduced_reordered_B_.reset (nullptr);
+    reduced_reordered_Y_.reset (nullptr);
+    reduced_B_.reset (nullptr);
+    reduced_Y_.reset (nullptr);
+    reordered_B_.reset (nullptr);
+    reordered_Y_.reset (nullptr);
 
     RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
     RCP<const map_type> rowMap = Matrix_->getRowMap ();

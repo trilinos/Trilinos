@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//      Teko: A package for block and physics based preconditioning
+//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef __Teko_StratimikosFactory_hpp__
 #define __Teko_StratimikosFactory_hpp__
 

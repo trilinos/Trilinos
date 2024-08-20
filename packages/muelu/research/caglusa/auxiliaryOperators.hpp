@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef AUXILIARYOPERATORS_HPP
 #define AUXILIARYOPERATORS_HPP
 
@@ -153,18 +162,27 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::Operator<Scalar, LocalOrdinal, Globa
                                 RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > auxH,
                                 Teuchos::ParameterList& params,
                                 Teuchos::FancyOStream& out) {
+  using op_type  = Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using hop_type = Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using mat_type = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
   params.set("coarse: max size", 1);
   params.set("max levels", auxH->GetNumLevels());
 
   const bool implicitTranspose = params.get("transpose: use implicit", MueLu::MasterList::getDefault<bool>("transpose: use implicit"));
 
-  auto hop = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(op);
+  auto hop = rcp_dynamic_cast<hop_type>(op);
   if (!hop.is_null())
     op->describe(out, Teuchos::VERB_EXTREME);
 
   RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > H = rcp(new Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
   RCP<Level> lvl                                               = H->GetLevel(0);
-  lvl->Set("A", op);
+  auto op_mat                                                  = Teuchos::rcp_dynamic_cast<mat_type>(op);
+  if (!op_mat.is_null())
+    lvl->Set("A", op_mat);
+  else {
+    lvl->Set("A", Teuchos::rcp_dynamic_cast<op_type>(op, true));
+  }
   // lvl->Set("Coordinates", coords);
   for (int lvlNo = 1; lvlNo < auxH->GetNumLevels(); lvlNo++) {
     RCP<Level> fineLvl = H->GetLevel(lvlNo - 1);
@@ -174,21 +192,21 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::Operator<Scalar, LocalOrdinal, Globa
     // auto mgr = auxLvl->GetFactoryManager();
     // auxLvl->print(std::cout, MueLu::Debug);
 
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > P         = auxLvl->Get<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("P");
-    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > fineAOp = fineLvl->Get<RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("A");
+    RCP<mat_type> P = auxLvl->Get<RCP<mat_type> >("P");
     lvl->Set("P", P);
     params.sublist("level " + std::to_string(lvlNo)).set("P", P);
 
     if (!implicitTranspose) {
       TEUCHOS_ASSERT(auxLvl->IsAvailable("R"));
-      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > R = auxLvl->Get<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("R");
+      RCP<mat_type> R = auxLvl->Get<RCP<mat_type> >("R");
       lvl->Set("R", R);
       params.sublist("level " + std::to_string(lvlNo)).set("R", R);
     }
 
-    auto fineA = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(fineAOp);
-    if (!fineA.is_null()) {
-      auto coarseA = fineA->restrict(P);
+    if (fineLvl->IsType<RCP<op_type> >("A")) {
+      RCP<op_type> fineAOp = fineLvl->Get<RCP<op_type> >("A");
+      auto fineA           = rcp_dynamic_cast<hop_type>(fineAOp);
+      auto coarseA         = fineA->restrict(P);
 
 #ifdef MUELU_HIERARCHICAL_DEBUG
       {
@@ -251,11 +269,12 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::Operator<Scalar, LocalOrdinal, Globa
         lvl->Set("A", matA);
       } else {
         coarseA->describe(out, Teuchos::VERB_EXTREME, /*printHeader=*/false);
-        lvl->Set("A", rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(coarseA));
+        lvl->Set("A", rcp_dynamic_cast<op_type>(coarseA));
       }
     } else {
       // classical RAP
-      auto fineAmat = rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(fineAOp, true);
+      RCP<mat_type> fineAmat = fineLvl->Get<RCP<mat_type> >("A");
+      // auto fineAmat = rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(fineAOp, true);
       Level fineLevel, coarseLevel;
       fineLevel.SetFactoryManager(Teuchos::null);
       coarseLevel.SetFactoryManager(Teuchos::null);
@@ -269,7 +288,7 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::Operator<Scalar, LocalOrdinal, Globa
       rapList.set("transpose: use implicit", true);
       rapFact->SetParameterList(rapList);
       coarseLevel.Request("A", rapFact.get());
-      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matA = coarseLevel.Get<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("A", rapFact.get());
+      RCP<mat_type> matA = coarseLevel.Get<RCP<mat_type> >("A", rapFact.get());
 
       using std::endl;
       using std::setw;

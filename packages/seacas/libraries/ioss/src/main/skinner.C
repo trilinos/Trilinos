@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -51,7 +51,7 @@ namespace {
   std::string                  version = "1.02";
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                           Ioss::Field::RoleType role, const std::vector<int> &ref_nodes);
+                           Ioss::Field::RoleType role, const Ioss::IntVector &ref_nodes);
 
   void transfer_field_data(Ioss::EntityBlock *ige, Ioss::EntityBlock *oge,
                            Ioss::Field::RoleType          role,
@@ -85,13 +85,13 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
   }
 
-  std::vector<int> get_selected_steps(Ioss::Region &region, const Skinner::Interface &options)
+  Ioss::IntVector get_selected_steps(Ioss::Region &region, const Skinner::Interface &options)
   {
     // This routine checks all steps of the input database and selects those which
     // meet the requirements specified in `options`.  The returned (1-based) vector will have a
     // value of `1` if the step is to be output and `0` if skipped.
-    int              step_count = (int)region.get_property("state_count").get_int();
-    std::vector<int> selected_steps(step_count + 1);
+    int             step_count = (int)region.get_property("state_count").get_int();
+    Ioss::IntVector selected_steps(step_count + 1);
 
     // If user specified a list of times to transfer to output database,
     // process the list and find the times on the input database that are
@@ -242,8 +242,8 @@ namespace {
     }
 
     // Iterate the boundary faces and determine which nodes are referenced...
-    size_t           my_node_count = region.get_property("node_count").get_int();
-    std::vector<int> ref_nodes(my_node_count);
+    size_t          my_node_count = region.get_property("node_count").get_int();
+    Ioss::IntVector ref_nodes(my_node_count);
     for (const auto &boundaries : boundary_faces) {
       for (const auto &face : boundaries.second) {
         for (auto &gnode : face.connectivity_) {
@@ -263,15 +263,15 @@ namespace {
     Ioss::NodeBlock    *nb = region.get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", coord_in);
 
-    std::vector<INT> ids;
+    Ioss::IntVector ids;
     nb->get_field_data("ids", ids);
 
-    std::vector<int> owner;
+    Ioss::IntVector owner;
     nb->get_field_data("owning_processor", owner);
 
-    std::vector<INT>    ref_ids(ref_count);
+    Ioss::IntVector     ref_ids(ref_count);
     std::vector<double> coord_out(3 * ref_count);
-    std::vector<int>    owner_out(ref_count);
+    Ioss::IntVector     owner_out(ref_count);
 
     size_t j = 0;
     for (size_t i = 0; i < ref_nodes.size(); i++) {
@@ -357,8 +357,8 @@ namespace {
       auto              *block      = output_region.get_element_block(name);
       size_t             node_count = block->topology()->number_corner_nodes();
 
-      std::vector<INT> conn;
-      std::vector<INT> elids;
+      Ioss::IntVector conn;
+      Ioss::IntVector elids;
       conn.reserve(node_count * boundary.size());
       elids.reserve(boundary.size());
 
@@ -493,8 +493,7 @@ namespace {
   }
 
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string      &field_name,
-                                    const std::vector<int> &ref_nodes)
+                                    const std::string &field_name, const Ioss::IntVector &ref_nodes)
   {
     if (oge->field_exists(field_name)) {
       std::vector<double> in;
@@ -520,7 +519,7 @@ namespace {
   }
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                           Ioss::Field::RoleType role, const std::vector<int> &ref_nodes)
+                           Ioss::Field::RoleType role, const Ioss::IntVector &ref_nodes)
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.

@@ -154,7 +154,7 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
         }
       }
 
-      // In Iocgns::Utils::common_write_meta_data, there is code to make
+      // In Iocgns::Utils::common_write_metadata, there is code to make
       // sure that the zgc.m_connectionName  is unique for all zgc instances on
       // a zone / processor pair (if !parallel_io which is file-per-processor)
       // The uniquification appends a letter from 'A' to 'Z' to the name

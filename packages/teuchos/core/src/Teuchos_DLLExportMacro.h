@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #if defined (_WIN32) && defined (BUILD_SHARED_LIBS)
 #  if defined(TEUCHOSCORE_LIB_EXPORTS_MODE)

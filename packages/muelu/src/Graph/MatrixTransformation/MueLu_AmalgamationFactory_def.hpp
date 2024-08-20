@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_AMALGAMATIONFACTORY_DEF_HPP
 #define MUELU_AMALGAMATIONFACTORY_DEF_HPP
 
@@ -55,6 +19,12 @@
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamationFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AmalgamationFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
@@ -106,7 +76,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     RCP<const StridedMap> stridedRowMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
     TEUCHOS_TEST_FOR_EXCEPTION(stridedRowMap == Teuchos::null, Exceptions::BadCast, "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
     fullblocksize = stridedRowMap->getFixedBlockSize();
-    offset        = stridedRowMap->getOffset();
+    offset        = DOFGidOffset(stridedRowMap);
     blockid       = stridedRowMap->getStridedBlockId();
 
     if (blockid > -1) {
@@ -195,7 +165,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateM
     Teuchos::RCP<const Map> myMap         = A.getRowMap("stridedMaps");
     Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
     TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
-    offset  = strMap->getOffset();
+    offset  = DOFGidOffset(strMap);
     blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
   }
 
@@ -230,6 +200,21 @@ const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
                                                                                                   const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
   GlobalOrdinal globalblockid = ((GlobalOrdinal)gid - offset - indexBase) / blockSize + indexBase;
   return globalblockid;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DOFGidOffset(RCP<const StridedMap> stridedRowMap) {
+  GlobalOrdinal offset = stridedRowMap->getMinAllGlobalIndex();
+
+  size_t nStridedOffset = 0;
+  for (int j = 0; j < stridedRowMap->getStridedBlockId(); j++) {
+    nStridedOffset += stridedRowMap->getStridingData()[j];
+  }
+  const GO goStridedOffset = Teuchos::as<const GO>(nStridedOffset);
+
+  offset -= goStridedOffset + stridedRowMap->getIndexBase();
+
+  return offset;
 }
 
 }  // namespace MueLu

@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef DRIVERCORE_HPP
 #include <MueLu.hpp>
 
@@ -268,7 +232,8 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
                  bool scaleResidualHist,
                  bool solvePreconditioned,
                  int maxIts,
-                 double tol) {
+                 double tol,
+                 bool computeCondEst) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -373,6 +338,9 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
       }
 
+      std::string belosTypeUpper(belosType);
+      std::transform(belosTypeUpper.begin(), belosTypeUpper.end(), belosTypeUpper.begin(), ::toupper);
+
       // Belos parameter list
       RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
       belosList->set("Maximum Iterations", maxIts);  // Maximum number of iterations allowed
@@ -382,8 +350,12 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
       belosList->set("Output Style", Belos::Brief);
       if (!scaleResidualHist)
         belosList->set("Implicit Residual Scaling", "None");
+      if (computeCondEst && (belosTypeUpper == "CG" || belosTypeUpper == "PSEUDOBLOCK CG"))
+        belosList->set("Estimate Condition Number", true);
 
       int numIts;
+      Scalar conditionNumberEstimate = zero;
+      Teuchos::ArrayRCP<typename STS::magnitudeType> eigenvalueEstimates;
       Belos::ReturnType ret = Belos::Unconverged;
 
       constexpr bool verbose = false;
@@ -429,6 +401,13 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         ret    = solver->solve();
         numIts = solver->getNumIters();
 
+        if ((belosTypeUpper == "CG" || belosTypeUpper == "PSEUDOBLOCK CG") &&
+            belosList->isParameter("Estimate Condition Number") &&
+            belosList->get<bool>("Estimate Condition Number")) {
+          conditionNumberEstimate = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, tMV, tOP>>(solver)->getConditionEstimate();
+          eigenvalueEstimates     = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, tMV, tOP>>(solver)->getEigenEstimates();
+        }
+
       } catch (std::invalid_argument&) {
         // Construct a Belos LinearProblem object
         RCP<Belos::LinearProblem<SC, MV, OP>> belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
@@ -447,10 +426,22 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         // Perform solve
         ret    = solver->solve();
         numIts = solver->getNumIters();
+
+        if ((belosTypeUpper == "CG" || belosTypeUpper == "PSEUDOBLOCK CG") &&
+            belosList->isParameter("Estimate Condition Number") &&
+            belosList->get<bool>("Estimate Condition Number")) {
+          conditionNumberEstimate = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, MV, OP>>(solver)->getConditionEstimate();
+          eigenvalueEstimates     = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<SC, MV, OP>>(solver)->getEigenEstimates();
+        }
       }
 
       // Get the number of iterations for this solve.
       out << "Number of iterations performed for this solve: " << numIts << std::endl;
+
+      if (conditionNumberEstimate != zero) {
+        out << "Condition number estimate: " << conditionNumberEstimate << std::endl;
+        out << "Eigenvalue estimates: " << eigenvalueEstimates().toString() << std::endl;
+      }
 
       // Check convergence
       if (ret != Belos::Converged)

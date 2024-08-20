@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #ifndef topology_enumH
 #define topology_enumH
   enum Topo_Loc      {MINUS_I=0,PLUS_I,MINUS_J,PLUS_J,MINUS_K,PLUS_K,

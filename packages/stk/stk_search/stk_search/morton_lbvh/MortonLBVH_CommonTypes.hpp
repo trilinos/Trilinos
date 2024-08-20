@@ -54,14 +54,6 @@ struct MortonLbvhMemorySpace
   using memory_space = typename ExecutionSpace::memory_space;
 };
 
-#ifdef KOKKOS_ENABLE_CUDA
-template <>
-struct MortonLbvhMemorySpace<Kokkos::Cuda>
-{
-  using memory_space = Kokkos::CudaSpace;
-};
-#endif
-
 template <class ViewT>
 inline ViewT no_init(const std::string &name)
 {
@@ -83,8 +75,7 @@ inline ViewT with_init(const std::string &name, unsigned len)
 template <typename ExecutionSpace>
 struct MortonLbvhTypes
 {
-  using execution_space = ExecutionSpace;
-  using memory_space = typename MortonLbvhMemorySpace<ExecutionSpace>::memory_space;
+  using memory_space = typename ExecutionSpace::memory_space;
 
   // View of a single LocalOrdinal.
   using local_ordinal_scl_t   = Kokkos::View<LocalOrdinal, memory_space>;
@@ -101,29 +92,27 @@ struct MortonLbvhTypes
   using local_ordinal_pairs_hmt = typename local_ordinal_pairs_t::HostMirror;
   using local_ordinal_pairs_tmt = Kokkos::View<LocalOrdinal * [2], memory_space, Kokkos::MemoryRandomAccess>;
 
-  using aabb_morton_codes_t   = Kokkos::View<morton_code_t *, execution_space>;
+  using aabb_morton_codes_t   = Kokkos::View<morton_code_t *, ExecutionSpace>;
   using aabb_morton_codes_hmt = typename aabb_morton_codes_t::HostMirror;
-  using aabb_morton_codes_tmt = Kokkos::View<const morton_code_t *, execution_space, Kokkos::MemoryRandomAccess>;
+  using aabb_morton_codes_tmt = Kokkos::View<const morton_code_t *, ExecutionSpace, Kokkos::MemoryRandomAccess>;
 };
 
 template <typename RealType, typename ExecutionSpace>
 struct MortonAabbTypes
 {
-  using execution_space = typename MortonLbvhTypes<ExecutionSpace>::execution_space;
   using memory_space = typename MortonLbvhTypes<ExecutionSpace>::memory_space;
-  using real_type = RealType;
 
   // Points
-  using aabb_points_t         = Kokkos::View<real_type * [3], memory_space>;
+  using aabb_points_t         = Kokkos::View<RealType * [3], memory_space>;
   using aabb_points_hmt       = typename aabb_points_t::HostMirror;
-  using aabb_const_points_t   = Kokkos::View<const real_type * [3], memory_space>;
-  using aabb_const_points_tmt = Kokkos::View<const real_type * [3], memory_space, Kokkos::MemoryRandomAccess>;
+  using aabb_const_points_t   = Kokkos::View<const RealType * [3], memory_space>;
+  using aabb_const_points_tmt = Kokkos::View<const RealType * [3], memory_space, Kokkos::MemoryRandomAccess>;
 
   // We'll use these when convert from using (min_pt, max_pt) pairs.
-  using bboxes_3d_view_t       = Kokkos::View<real_type * [6], Kokkos::LayoutRight, memory_space>;
+  using bboxes_3d_view_t       = Kokkos::View<RealType * [6], Kokkos::LayoutRight, memory_space>;
   using bboxes_3d_view_hmt     = typename bboxes_3d_view_t::HostMirror;
-  using bboxes_const_3d_view_t = Kokkos::View<const real_type * [6], Kokkos::LayoutRight, memory_space>;
-  using bboxes_3d_view_amt     = Kokkos::View<real_type * [6], Kokkos::LayoutRight, memory_space,
+  using bboxes_const_3d_view_t = Kokkos::View<const RealType * [6], Kokkos::LayoutRight, memory_space>;
+  using bboxes_3d_view_amt     = Kokkos::View<RealType * [6], Kokkos::LayoutRight, memory_space,
                                               Kokkos::MemoryTraits<Kokkos::Atomic>>;
 };
 

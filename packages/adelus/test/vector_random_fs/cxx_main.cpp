@@ -1,46 +1,11 @@
 /*
 //@HEADER
-// ************************************************************************
+// *****************************************************************************
+//                        Adelus
 //
-//                        Adelus v. 1.0
-//       Copyright (2020) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of NTESS nor the names of the contributors may be
-// used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Vinh Dang (vqdang@sandia.gov)
-//                    Joseph Kotulski (jdkotul@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2020 NTESS and the Adelus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 //@HEADER
 */
 
@@ -64,7 +29,7 @@ int main(int argc, char *argv[])
   char processor_name[MPI_MAX_PROCESSOR_NAME];
   int name_len;
   int rank, size;
-  
+
   int  myrows;
   int  mycols;
   int  myfirstrow;
@@ -216,8 +181,8 @@ int main(int argc, char *argv[])
   if (nptile > gpu_count) {
     if( rank == 0 ) {
       std::cout << "Request more GPUs than the number of GPUs available "
-                << "to MPI processes (requested: " << nptile 
-                << " vs. available: " << gpu_count 
+                << "to MPI processes (requested: " << nptile
+                << " vs. available: " << gpu_count
                 << "). Exit without test." << std::endl;
     }
     MPI_Finalize() ;
@@ -226,7 +191,7 @@ int main(int argc, char *argv[])
 
   Kokkos::InitializationSettings args;
   args.set_num_threads(1);
-  std::cout << "   Processor  " << rank << " (" << processor_name << "), GPU: " 
+  std::cout << "   Processor  " << rank << " (" << processor_name << "), GPU: "
             << args.get_device_id() << "/" << gpu_count << std::endl;
   Kokkos::initialize( args );
 #else
@@ -234,7 +199,7 @@ int main(int argc, char *argv[])
 #endif
   {
   // Local size -- myrows  * (mycols + myrhs)
-  
+
   using Layout = Kokkos::LayoutLeft;
 #if defined(KOKKOS_ENABLE_CUDA)
   using TestSpace = Kokkos::CudaSpace;
@@ -290,7 +255,7 @@ int main(int argc, char *argv[])
   ViewMatrixType_Host temp3 ( "temp3", matrix_size, numrhs );
 
   ViewMatrixType_Host temp4 ( "temp4", matrix_size, numrhs );
-  
+
   ViewMatrixType_Host tempp ( "tempp", matrix_size, numrhs );
 
   ViewMatrixType_Host temp22( "temp22", matrix_size, numrhs );
@@ -305,7 +270,7 @@ int main(int argc, char *argv[])
 
   if( rank == 0 )
     std::cout << " ****   Setting Random Matrix    ****" << std::endl;
- 
+
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed+rank);
   Kokkos::fill_random(A, rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
 
@@ -383,7 +348,7 @@ int main(int argc, char *argv[])
 
 
   // Create handle
-  Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
+  Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space>
     ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
 
   // Now Factor the matrix
@@ -439,13 +404,13 @@ int main(int argc, char *argv[])
   // All processors get the answer
 
   MPI_Allreduce(tempp.data(), temp22.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
-  
+
   // Perform the Matrix vector product
 
   ScalarA alpha = 1.0;
   ScalarA beta  = 0.0;
 
-  KokkosBlas::gemm("N", "N", alpha, 
+  KokkosBlas::gemm("N", "N", alpha,
                    subview(h_A,Kokkos::ALL(),Kokkos::make_pair(0, mycols)),
                    subview(temp22,Kokkos::make_pair(myfirstcol - 1, myfirstcol - 1 + mycols),Kokkos::ALL()),
                    beta, subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),Kokkos::ALL()));

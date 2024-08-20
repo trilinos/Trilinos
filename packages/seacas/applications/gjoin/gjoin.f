@@ -551,13 +551,15 @@ C   --"Munch" the nodal point sets
          CALL MDRSRV ('NNNPO',  KNNNO,  NEWNPS)
          CALL MDRSRV ('ISCR',   KISCR,  NEWNPS)
          call mdrsrv ('nodscr', kndscr, newnp)
+         CALL MCFIND ('NAMNS',  IDUM,   LNAM)
+         CALL MCRSRV ('NAMSCR', KNMSC,  LNAM)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 140
 
          CALL MUNNPS (NEWNPS, IA(KINPSS), NEWNNL,
      &      IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS),
      &      IA(KLTNNO), A(KFACNO), IA(KIXNNO), IA(KNNNO), IA(KISCR),
-     *      IA(KNDSCR), NEWNP)
+     *      IA(KNDSCR), C(KNMNS), C(KNMSC), NEWNP)
 
          CALL MDDEL ('LTNNPO')
          CALL MDDEL ('FACNPO')
@@ -565,6 +567,7 @@ C   --"Munch" the nodal point sets
          CALL MDDEL ('NNNPO')
          CALL MDDEL ('ISCR')
          call mddel ('nodscr')
+         call mcdel ('NAMSCR')
 
 C      --Squeeze the nodal point sets
 
@@ -597,6 +600,8 @@ C   --"Munch" the element side sets
          CALL MDRSRV ('NEESO',  KNESO,  NEWESS)
          CALL MDRSRV ('NEDS0',  KNDS0,  NEWESS)
          CALL MDRSRV ('ISCR',   KISCR,  NEWESS)
+         CALL MCFIND ('NAMSS',  IDUM,   LNAM)
+         CALL MCRSRV ('NAMSCR', KNMSC,  LNAM)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 140
 
@@ -604,7 +609,8 @@ C   --"Munch" the element side sets
      &     IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS), IA(KIXDSS),
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
-     &     IA(KNESO), IA(KNDS0), IA(KISCR), USESDF)
+     &     IA(KNESO), IA(KNDS0), IA(KISCR), USESDF,
+     $     C(KNMSS), C(KNMSC))
 
          CALL MDDEL ('LTEESO')
          CALL MDDEL ('LTSSO')
@@ -614,6 +620,7 @@ C   --"Munch" the element side sets
          CALL MDDEL ('NEESO')
          CALL MDDEL ('NEDS0')
          CALL MDDEL ('ISCR')
+         CALL MCDEL ('NAMSCR')
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 140
 

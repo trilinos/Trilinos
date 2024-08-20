@@ -1,3 +1,11 @@
+# @HEADER
+# *****************************************************************************
+#                           Intrepid2 Package
+#
+# Copyright 2007 NTESS and the Intrepid2 contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
+# @HEADER
 psi0 = lambda x: 0.5 * x * ( x - 1.0 )
 psi1 = lambda x: ( 1.0 - x ) * ( 1.0 + x )
 psi2 = lambda x: 0.5 * x * ( 1.0 + x )

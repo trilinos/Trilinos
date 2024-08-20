@@ -1718,7 +1718,7 @@ namespace Ioss {
    *
    */
   int Region::get_aliases(const std::string &my_name, EntityType type,
-                          std::vector<std::string> &aliases) const
+                          Ioss::NameList &aliases) const
   {
     IOSS_FUNC_ENTER(m_);
     size_t size = aliases.size();
