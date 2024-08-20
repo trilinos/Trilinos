@@ -45,6 +45,7 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
 
   set(TEST_ARGS ${BTDS_ARGS} ${BTDS_SCHUR_ARGS} ${BTDS_DEFAULT_SCHUR_ARGS} ${BLOCK_JACOBI_ARGS})
   set(TEST_NAMES "BTDS" "BTDS_Schur" "BTDS_Schur_Default" "BTDS_Jacobi")
+  set(ARCHS "SERIAL" "CUDA" "HIP")
 
   list(LENGTH TEST_ARGS len1)
   math(EXPR N_TESTS "${len1} - 1")
@@ -55,105 +56,38 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
     Tpetra_INST_HIP
   )
 
-  IF (Tpetra_INST_SERIAL)
-    MESSAGE(STATUS "Ifpack2: BlockTriDiagonalSolver SERIAL test ENABLED")
-    set(COUNTER 2)
-    set(MAX_COUNT 8)
+  foreach(ARCH ${ARCHS})
+    IF (Tpetra_INST_${ARCH})
+      MESSAGE(STATUS "Ifpack2: BlockTriDiagonalSolver ${ARCH} test ENABLED")
+      set(COUNTER 2)
+      set(MAX_COUNT 8)
 
-    set(NP 1)
-    set(COUNTER_INIT 0)
-    WHILE(COUNTER_INIT LESS COUNTER)
-      math(EXPR NP "${NP} * 2")
-      math(EXPR COUNTER_INIT "${COUNTER_INIT} + 1")
-    ENDWHILE()
+      set(NP 1)
+      set(COUNTER_INIT 0)
+      WHILE(COUNTER_INIT LESS COUNTER)
+        math(EXPR NP "${NP} * 2")
+        math(EXPR COUNTER_INIT "${COUNTER_INIT} + 1")
+      ENDWHILE()
 
-    WHILE(COUNTER LESS MAX_COUNT)
-      foreach(I_TEST RANGE ${N_TESTS})
-        list(GET TEST_ARGS ${I_TEST} TEST_ARG)
-        list(GET TEST_NAMES ${I_TEST} TEST_NAME)      
-        TRIBITS_ADD_TEST(
-          BlockTriDiagonalSolver
-          NAME "${TEST_NAME}_Serial"
-          COMM mpi
-          ARGS ${TEST_ARG}
-          NUM_MPI_PROCS ${NP}
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
+      WHILE(COUNTER LESS MAX_COUNT)
+        foreach(I_TEST RANGE ${N_TESTS})
+          list(GET TEST_ARGS ${I_TEST} TEST_ARG)
+          list(GET TEST_NAMES ${I_TEST} TEST_NAME)      
+          TRIBITS_ADD_TEST(
+            BlockTriDiagonalSolver
+            NAME "${TEST_NAME}_${ARCH}"
+            COMM mpi
+            ARGS ${TEST_ARG}
+            NUM_MPI_PROCS ${NP}
+            RUN_SERIAL
+            CATEGORIES PERFORMANCE
+          )
 
-      endforeach()
+        endforeach()
 
-      math(EXPR NP "${NP} * 2")
-      math(EXPR COUNTER "${COUNTER} + 1")
-    ENDWHILE()
-
-  ENDIF()
-
-  IF (Tpetra_INST_CUDA)
-    MESSAGE(STATUS "Ifpack2: BlockTriDiagonalSolver CUDA test ENABLED")
-    set(COUNTER 2)
-    set(MAX_COUNT 8)
-
-    set(NP 1)
-    set(COUNTER_INIT 0)
-    WHILE(COUNTER_INIT LESS COUNTER)
-      math(EXPR NP "${NP} * 2")
-      math(EXPR COUNTER_INIT "${COUNTER_INIT} + 1")
-    ENDWHILE()
-
-    WHILE(COUNTER LESS MAX_COUNT)
-      foreach(I_TEST RANGE ${N_TESTS})
-        list(GET TEST_ARGS ${I_TEST} TEST_ARG)
-        list(GET TEST_NAMES ${I_TEST} TEST_NAME)      
-        TRIBITS_ADD_TEST(
-          BlockTriDiagonalSolver
-          NAME "${TEST_NAME}_CUDA"
-          COMM mpi
-          ARGS ${TEST_ARG}
-          NUM_MPI_PROCS ${NP}
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
-
-      endforeach()
-
-      math(EXPR NP "${NP} * 2")
-      math(EXPR COUNTER "${COUNTER} + 1")
-    ENDWHILE()
-
-  ENDIF()
-
-  IF (Tpetra_INST_HIP)
-    MESSAGE(STATUS "Ifpack2: BlockTriDiagonalSolver HIP test ENABLED")
-    set(COUNTER 2)
-    set(MAX_COUNT 8)
-
-    set(NP 1)
-    set(COUNTER_INIT 0)
-    WHILE(COUNTER_INIT LESS COUNTER)
-      math(EXPR NP "${NP} * 2")
-      math(EXPR COUNTER_INIT "${COUNTER_INIT} + 1")
-    ENDWHILE()
-
-    WHILE(COUNTER LESS MAX_COUNT)
-      foreach(I_TEST RANGE ${N_TESTS})
-        list(GET TEST_ARGS ${I_TEST} TEST_ARG)
-        list(GET TEST_NAMES ${I_TEST} TEST_NAME)      
-        TRIBITS_ADD_TEST(
-          BlockTriDiagonalSolver
-          NAME "${TEST_NAME}_HIP"
-          COMM mpi
-          ARGS ${TEST_ARG}
-          NUM_MPI_PROCS ${NP}
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
-
-      endforeach()
-
-      math(EXPR NP "${NP} * 2")
-      math(EXPR COUNTER "${COUNTER} + 1")
-    ENDWHILE()
-
-  ENDIF()
+        math(EXPR NP "${NP} * 2")
+        math(EXPR COUNTER "${COUNTER} + 1")
+      ENDWHILE()
+    ENDIF()
+  endforeach()
 ENDIF()
