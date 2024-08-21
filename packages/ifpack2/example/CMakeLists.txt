@@ -37,7 +37,12 @@ ASSERT_DEFINED (
 
 IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
 
-  set(COMMON_ARGS "--withoutOverlapCommAndComp --matrixType=Laplace3D --blockSize=11 --nx=256 --ny=128 --nz=128 --tol=0 --numIters=5 --withStackedTimer --numRepeats=5")
+  set(blockSize 11)
+  set(nx 256)
+  set(ny 128)
+  set(nz 128)
+
+  set(COMMON_ARGS "--withoutOverlapCommAndComp --matrixType=Laplace3D --blockSize=${blockSize} --nx=${nx} --ny=${ny} --nz=${nz} --tol=0 --numIters=5 --withStackedTimer --numRepeats=5")
   set(BTDS_ARGS "${COMMON_ARGS} --sublinesPerLine=1 --sublinesPerLineSchur=1")
   set(BTDS_SCHUR_ARGS "${COMMON_ARGS} --sublinesPerLine=1 --sublinesPerLineSchur=2")
   set(BTDS_DEFAULT_SCHUR_ARGS "${COMMON_ARGS} --sublinesPerLine=1 --sublinesPerLineSchur=-1")
@@ -70,7 +75,7 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
             BlockTriDiagonalSolver
             NAME "${TEST_NAME}_${ARCH}"
             COMM mpi
-            ARGS "${TEST_ARG} --problemName=${TEST_NAME}_${ARCH}"
+            ARGS "${TEST_ARG} --problemName=\"${TEST_NAME} ${ARCH} ${blockSize}x${nx}x${ny}x${nz} ${NP} ranks\""
             NUM_MPI_PROCS ${NP}
             RUN_SERIAL
             CATEGORIES PERFORMANCE
