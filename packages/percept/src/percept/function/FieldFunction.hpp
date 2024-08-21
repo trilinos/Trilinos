@@ -261,7 +261,7 @@
       BasisTable::BasisTypeRCP basis;
       if (m_cached_topo_key != cell_topo_data->key)
         {
-          basis = BasisTable::getBasis(topo);
+          basis = BasisTable::getInstance()->getBasis(topo);
           m_cached_basis = basis;
           m_cached_topo_key = cell_topo_data->key;
         }

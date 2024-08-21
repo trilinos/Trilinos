@@ -14,7 +14,7 @@
 
   namespace percept {
 
-    BasisTable::BasisTableMap BasisTable::m_basisTable;
+    BasisTable* BasisTable::instance;
     void BasisTable::setupBasisTable()
     {
       /// these are the cell topologies currently supported for inverse mappings

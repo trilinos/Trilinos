@@ -363,7 +363,7 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
     basisVals(1,0) = 0.5;    
   }
   else {
-    auto HGRAD_Basis = BasisTable::getBasis(topo);
+    auto HGRAD_Basis = BasisTable::getInstance()->getBasis(topo);
 
     HGRAD_Basis->getValues(basisVals, inputParametricPoints, Intrepid2::OPERATOR_VALUE);
   }

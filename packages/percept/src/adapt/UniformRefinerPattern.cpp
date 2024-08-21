@@ -1522,7 +1522,7 @@
         }
       else
         {
-          BasisTable::BasisTypeRCP basis = BasisTable::getBasis(cell_topo);
+          BasisTable::BasisTypeRCP basis = BasisTable::getInstance()->getBasis(cell_topo);
           basis->getValues(basis_val, input_param_coords, Intrepid2::OPERATOR_VALUE);
         }
       if (0)

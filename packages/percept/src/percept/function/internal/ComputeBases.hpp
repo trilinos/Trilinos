@@ -90,7 +90,7 @@
         //PerceptMesh::BasisTypeRCP basis;
         if (m_cached_topo_key != bucket_cell_topo_data->key)
           {
-            BasisTable::BasisTypeRCP basisRCP = BasisTable::getBasis(topo);
+            BasisTable::BasisTypeRCP basisRCP = BasisTable::getInstance()->getBasis(topo);
             basis = basisRCP.get();
             m_cached_basis = basis;
             m_cached_topo_key = bucket_cell_topo_data->key;

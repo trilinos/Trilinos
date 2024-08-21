@@ -137,7 +137,7 @@
     operator()(CellWorkSet& c, CubaturePoints& xi)
     {
       //Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3);
-      auto basis = BasisTable::getBasis(*m_im.m_topo);
+      auto basis = BasisTable::getInstance()->getBasis(*m_im.m_topo);
       Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(*this, xi, c, basis);
     }
 

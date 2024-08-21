@@ -16,8 +16,6 @@
 
 #include "MeshTransfer.hpp"
 
-#include <percept/element/intrepid/BasisTable.hpp>
-
 using namespace percept;
 
 int main(int argc,  char **argv)
@@ -28,8 +26,6 @@ int main(int argc,  char **argv)
   { // destroy object after run
     MeshTransfer ev(comm);
     ev.run(argc, argv);
-
-    BasisTable::destroyBasisTable();
   }
 
   Kokkos::finalize();

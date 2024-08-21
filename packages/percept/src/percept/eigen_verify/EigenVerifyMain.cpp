@@ -16,8 +16,6 @@
 
 #include "EigenVerify.hpp"
 
-#include <percept/element/intrepid/BasisTable.hpp>
-
 using namespace percept;
 
 int main(int argc,  char **argv)
@@ -28,7 +26,6 @@ int main(int argc,  char **argv)
   {
     EigenVerify ev(comm);
     ev.run(argc, argv);
-    BasisTable::destroyBasisTable();
   }
 
   Kokkos::finalize();
