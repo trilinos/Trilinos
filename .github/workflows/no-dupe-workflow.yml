@@ -1,0 +1,24 @@
+name: Test fixing duplicate workflows
+on:
+    pull_request:
+      types:
+        - opened
+        - synchronize
+    pull_request_review:
+      types: 
+        - submitted
+      branches:
+      - master
+      - develop
+    workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build and test changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+            echo "pretending to build some cool code!"
+            sleep 2m
+            echo "finished building cool code!"
