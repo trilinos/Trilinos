@@ -1641,22 +1641,6 @@ namespace {
                 for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
                   hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
                 }
-
-                for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-                  /* Find elements connected to both node '0' and node 'ncnt+1' */
-                  nelem = find_inter(Data(hold_elem), Data(graph->sur_elem[side_nodes[(ncnt + 1)]]),
-                                     nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(),
-                                     Data(pt_list));
-
-                  if (nelem < 2) {
-                    break;
-                  }
-
-                  nhold = nelem;
-                  for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
-                    hold_elem[ncnt2] = hold_elem[pt_list[ncnt2]];
-                  }
-                }
               }
             }
             else if (!((etype == BAR2 || etype == SHELL2) && side_nodes[0] == side_nodes[1])) {
