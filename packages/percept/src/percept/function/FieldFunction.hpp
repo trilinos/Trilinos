@@ -17,7 +17,7 @@
 
 #include <percept/Percept.hpp>
 
-#include <Intrepid_Basis.hpp>
+#include <Intrepid2_Basis.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -38,15 +38,13 @@
 #include <Shards_CellTopology.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <Intrepid_HGRAD_HEX_C1_FEM.hpp>
-
-#include <Intrepid_CellTools.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_CellTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 #include <percept/element/intrepid/BasisTable.hpp>
 
 //using namespace sierra;
-using namespace Intrepid;
+//using namespace Intrepid2;
 
   namespace percept
   {
@@ -54,10 +52,10 @@ using namespace Intrepid;
     //class Helper;
     /** Evaluate the function at this input point (or points) returning value(s) in output_field_values
      *
-     *   In the following, the arrays are dimensioned using the notation (from Intrepid's doc):
+     *   In the following, the arrays are dimensioned using the notation (from Intrepid2's doc):
      *
      *   [C]         - num. integration domains (cells/elements)
-     *   [F]         - num. Intrepid "fields" (number of bases within an element == num. nodes typically)
+     *   [F]         - num. Intrepid2 "fields" (number of bases within an element == num. nodes typically)
      *   [P]         - num. integration (or interpolation) points within the element
      *   [D]         - spatial dimension
      *   [D1], [D2]  - spatial dimension
@@ -108,7 +106,7 @@ using namespace Intrepid;
         m_deriv_spec = deriv_spec;
         Dimensions domain_dimensions = getDomainDimensions();
         Dimensions codomain_dimensions = getCodomainDimensions();
-        int num_grad = deriv_spec.dimension(0);
+        int num_grad = deriv_spec.extent_int(0);
         //domain_dimensions.push_back(num_grad);
         codomain_dimensions.back() = num_grad;
 
@@ -167,9 +165,8 @@ using namespace Intrepid;
       Searcher* m_searcher;
       //const CellTopologyData * m_cached_topo;
 
-      //typedef Intrepid::Basis<double, MDArray > IntrepidBasisType;
-      typedef Intrepid::Basis<double, MDArray > BasisType;
-      typedef Teuchos::RCP<BasisType>           BasisTypeRCP;
+      using BasisType = Intrepid2::Basis<Kokkos::HostSpace, double, double >;
+      using BasisTypeRCP = Intrepid2::BasisPtr<Kokkos::HostSpace, double, double >;
 
       unsigned m_cached_topo_key;
       BasisTypeRCP m_cached_basis;
@@ -195,10 +192,10 @@ using namespace Intrepid;
     void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
                                const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional)
     {
-      VERIFY_OP_ON(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
-      VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");
+      //VERIFY_OP_ON(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
+      //VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");
 
-      int numInterpPoints = parametric_coordinates.dimension(0);
+      int numInterpPoints = parametric_coordinates.extent_int(0);
       int spatialDim = m_bulkData->mesh_meta_data().spatial_dimension();
       int num_grad = getCodomainDimensions().back();
 
@@ -206,12 +203,12 @@ using namespace Intrepid;
 
       if (output_field_values.rank() == 2)
         {
-          VERIFY_OP_ON(output_field_values.dimension(0), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
+          VERIFY_OP_ON(output_field_values.extent_int(0), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
         }
       else if (output_field_values.rank() == 3)
         {
-          VERIFY_OP_ON(output_field_values.dimension(1), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
-          VERIFY_OP_ON(output_field_values.dimension(0), ==, numCells, "FieldFunction::operator() output_field_values bad dim(0)");
+          VERIFY_OP_ON(output_field_values.extent_int(1), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
+          VERIFY_OP_ON(output_field_values.extent_int(0), ==, numCells, "FieldFunction::operator() output_field_values bad dim(0)");
         }
 
       const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulk, bucket_or_element).topology()).getCellTopologyData();
@@ -264,7 +261,7 @@ using namespace Intrepid;
       BasisTable::BasisTypeRCP basis;
       if (m_cached_topo_key != cell_topo_data->key)
         {
-          basis = BasisTable::getBasis(topo);
+          basis = BasisTable::getInstance()->getBasis(topo);
           m_cached_basis = basis;
           m_cached_topo_key = cell_topo_data->key;
         }
@@ -290,58 +287,68 @@ using namespace Intrepid;
       //int numInterpPoints = 1;    // FIXME - this is now set based on parametric_coordinates dimensioning
 
       // ([F],[P]), or ([F],[P],[D]) for GRAD
-      MDArray basis_values(numBases, numInterpPoints);
+      MDArray basis_values;
       // ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
-      MDArray transformed_basis_values(numCells, numBases, numInterpPoints);
+      MDArray transformed_basis_values;
 
       MDArray Jac;
       MDArray JacInverse;
       if (m_get_derivative)
         {
-          basis_values.resize(numBases, numInterpPoints, spatialDim);
-          transformed_basis_values.resize(numCells, numBases, numInterpPoints, spatialDim);
-          MDArray cellWorkset(numCells, numNodes, spatialDim);
+          basis_values = MDArray("basis_gradient_values", numBases, numInterpPoints, spatialDim);
+          transformed_basis_values = MDArray("transformed_basis_gradient_values", numCells, numBases, numInterpPoints, spatialDim);
+          MDArray cellWorkset("cellWorkset", numCells, numNodes, spatialDim);
           PerceptMesh::fillCellNodes(*get_bulk_data(), bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
-          Jac.resize(numCells, numInterpPoints, spatialDim, spatialDim);
-          JacInverse.resize(numCells, numInterpPoints, spatialDim, spatialDim);
-          CellTools<double>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
-          CellTools<double>::setJacobianInv(JacInverse, Jac);
+          Jac = MDArray("Jac", numCells, numInterpPoints, spatialDim, spatialDim);
+          JacInverse = MDArray("JacInverse", numCells, numInterpPoints, spatialDim, spatialDim);
+          Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
+          Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianInv(JacInverse, Jac);
+        }
+      else 
+        {
+          basis_values = MDArray("basis_values", numBases, numInterpPoints);
+          transformed_basis_values = MDArray("transformed_basis_values", numCells, numBases, numInterpPoints);
         }
 
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 4" << std::endl;
 
-      // FIXME - it appears that Intrepid only supports the evaluation of scalar-valued fields, so we have
+      // FIXME - it appears that Intrepid2 only supports the evaluation of scalar-valued fields, so we have
       //   to copy the field one DOF at a time into a local array, evaluate, then copy back
       // ([C],[F])
-      MDArray field_data_values(numCells, numBases);
-      MDArray field_data_values_dof(numCells, numBases, nDOF);
+      MDArray field_data_values("field_data_values", numCells, numBases);
+      MDArray field_data_values_dof("field_data_values_dof", numCells, numBases, nDOF);
 
       // ([P],[D])  [P] points in [D] dimensions
-      if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) parametric_coordinates = \n " << parametric_coordinates << std::endl;
+      if (EXTRA_PRINT_FF_HELPER)              
+          std::cout << "FieldFunction::operator()(elem,...) parametric_coordinates = \n " << printContainer(parametric_coordinates) << std::endl;
 
       {
         EXCEPTWATCH;
-        basis->getValues(basis_values, parametric_coordinates, m_get_derivative ?  Intrepid::OPERATOR_GRAD : Intrepid::OPERATOR_VALUE );
+        basis->getValues(basis_values, parametric_coordinates, m_get_derivative ?  Intrepid2::OPERATOR_GRAD : Intrepid2::OPERATOR_VALUE );
       }
 
-      if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) basis_values = \n " << basis_values << std::endl;
+      if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) basis_values = \n " << printContainer(basis_values) << std::endl;
 
       // this function just spreads (copies) the values of the basis to all elements in the workset (numCells)
       if (m_get_derivative)
         {
-          FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_basis_values, JacInverse, basis_values);
+          Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::HGRADtransformGRAD(transformed_basis_values, JacInverse, basis_values);
         }
       else
         {
-          FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
+          Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::HGRADtransformVALUE(transformed_basis_values, basis_values);
         }
-      if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) transformed_basis_values =  " << transformed_basis_values << std::endl;
+      if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) transformed_basis_values =  " << printContainer(transformed_basis_values) << std::endl;
 
       // ([C],[P]) - place for results of evaluation
-      MDArray loc_output_field_values(numCells, numInterpPoints);
+      MDArray loc_output_field_values;
       if (m_get_derivative)
         {
-          loc_output_field_values.resize(numCells, numInterpPoints, spatialDim);
+          loc_output_field_values = MDArray("loc_output_field_grad_values", numCells, numInterpPoints, spatialDim);
+        }
+      else
+        {
+          loc_output_field_values = MDArray("loc_output_field_values", numCells, numInterpPoints);
         }
 
       PerceptMesh::fillCellNodes(*get_bulk_data(), bucket_or_element, m_my_field, field_data_values_dof);
@@ -360,8 +367,8 @@ using namespace Intrepid;
 
           /// NOTE: this is needed since FunctionSpaceTools::evaluate method assumes the output array is initialized to 0
           if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) evaluate ... " << std::endl;
-          loc_output_field_values.initialize(0.0);
-          FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
+          Kokkos::deep_copy(loc_output_field_values, 0.0);
+          Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::evaluate(loc_output_field_values, field_data_values, transformed_basis_values);
           if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) evaluate done " << std::endl;
 
           //VERIFY_OP_ON(numCells, ==, 1, "numCells...");
@@ -398,8 +405,10 @@ using namespace Intrepid;
                 {
                   for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
                     {
-                      if (output_field_values.rank() == 2)
-                        output_field_values(iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
+                      if (output_field_values.rank() == 1)
+                        output_field_values(iDOF) = loc_output_field_values(iCell, iPoint);
+                      else if (output_field_values.rank() == 2)
+                        output_field_values(iCell, iDOF) = loc_output_field_values(iCell, iPoint);
                       else if (output_field_values.rank() == 3)
                         output_field_values(iCell, iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
                       if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;

@@ -31,6 +31,8 @@ using namespace percept;
 
 int main(int argc,  char **argv)
 {
+  Kokkos::initialize(argc,argv);
+
   stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
 
   int proc_rank = stk::parallel_machine_rank(comm);

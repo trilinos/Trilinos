@@ -24,7 +24,7 @@
 
     public:
 
-      /// integrand tells what fields Intrepid should compute, etc.
+      /// integrand tells what fields Intrepid2 should compute, etc.
       H1_NormOp(Function& integrand, int spatialDim=3) : Function("H1_NormOp",integrand.getCodomainDimensions(), integrand.getCodomainDimensions()) , m_integrand(integrand), m_spatialDim(spatialDim) {
         m_grad_integrand = m_integrand.gradient(spatialDim);
         m_grad_codomain = m_grad_integrand->getNewCodomain();

@@ -52,7 +52,8 @@
       {
         EXCEPTWATCH;
         m_func1(domain, codomain, time_value_optional);
-        MDArray input = codomain;
+        MDArray input("input",codomain.layout());
+        Kokkos::deep_copy(input,codomain);
         m_func2(input, codomain, time_value_optional);
       }
       
@@ -60,7 +61,8 @@
       {
         EXCEPTWATCH;
         m_func1(domain, codomain, element, parametric_coords, time_value_optional);
-        MDArray input = codomain;
+        MDArray input("input",codomain.layout());
+        Kokkos::deep_copy(input,codomain);
         m_func2( input, codomain, element, parametric_coords, time_value_optional);
       }
 
@@ -69,7 +71,8 @@
       {
         EXCEPTWATCH;
         m_func1(domain, codomain, bucket, parametric_coords, time_value_optional);
-        MDArray input = codomain;
+        MDArray input("input",codomain.layout());
+        Kokkos::deep_copy(input,codomain);
         m_func2( input, codomain, bucket, parametric_coords, time_value_optional);
       }
 

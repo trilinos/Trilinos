@@ -16,6 +16,7 @@ using namespace percept;
 
 int main(int argc,  char **argv)
 {
+  Kokkos::initialize(argc,argv);
   
   MeshDifference md;
   md.run(argc, argv);

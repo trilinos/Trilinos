@@ -54,8 +54,6 @@ void MeshTransfer::process_options()
 
 void MeshTransfer::run(int argc, char** argv)
 {
-  stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
-
   process_options();
 
   bool found_help = false;
@@ -69,11 +67,7 @@ void MeshTransfer::run(int argc, char** argv)
   }
   if (!stk::parallel_machine_rank(comm) && found_help) {
     clp.printHelpMessage("mesh_transfer",std::cout);
-
-#if defined( STK_HAS_MPI )
-    stk::parallel_machine_finalize();
-#endif
-    std::exit(0);
+    return;
   }
   
   clp.parse( argc, argv );
@@ -120,11 +114,12 @@ void MeshTransfer::run(int argc, char** argv)
     srcFieldType = SRC_RZP_FIELD;
   }
 
-  PerceptMesh srcMesh(3,comm), dstMesh(3,comm);
-  srcMesh.open(src_mesh);
-  dstMesh.open(dst_mesh);
+  std::shared_ptr<PerceptMesh> srcMesh(new percept::PerceptMesh(3,comm));
+  std::shared_ptr<PerceptMesh> dstMesh(new percept::PerceptMesh(3,comm));
+  srcMesh->open(src_mesh);
+  dstMesh->open(dst_mesh);
 
-  stk::mesh::FieldBase * fromField = srcMesh.get_field(field_name);
+  stk::mesh::FieldBase * fromField = srcMesh->get_field(field_name);
 
   if (!stk::parallel_machine_rank(comm) && NULL==fromField) {
     std::cout << "Error: unknown src field: " << field_name << std::endl;
@@ -135,7 +130,7 @@ void MeshTransfer::run(int argc, char** argv)
 
   const int toDim = (srcFieldType == SRC_FIELD) ? 
       fromField->max_size()
-    : dstMesh.get_spatial_dim();
+    : dstMesh->get_spatial_dim();
 
   stk::mesh::EntityRank toRank = fromRank;
   if (dst_entity=="node")
@@ -149,9 +144,9 @@ void MeshTransfer::run(int argc, char** argv)
   if (dst_field_name.size()==0) dst_field_name = field_name;
 
   stk::mesh::FieldBase * toField = NULL;
-  stk::mesh::FieldBase * toField_init = dstMesh.get_fem_meta_data()->get_field(toRank, dst_field_name);
+  stk::mesh::FieldBase * toField_init = dstMesh->get_fem_meta_data()->get_field(toRank, dst_field_name);
   if (toField_init == NULL) {
-    toField = dstMesh.add_field(dst_field_name, toRank, toDim);
+    toField = dstMesh->add_field(dst_field_name, toRank, toDim);
     // Q: are fields init to zero?  
   }
   else {
@@ -159,18 +154,18 @@ void MeshTransfer::run(int argc, char** argv)
     // which we add back in after the transfer
     std::string dst_field_name_init = dst_field_name + "_init";
     toField = toField_init;
-    toField_init = dstMesh.add_field(dst_field_name_init, toRank, toDim, "universal_part",false); // false = no IO
+    toField_init = dstMesh->add_field(dst_field_name_init, toRank, toDim, "universal_part",false); // false = no IO
   }
   
-  srcMesh.commit();
-  dstMesh.commit();
+  srcMesh->commit();
+  dstMesh->commit();
 
   std::shared_ptr<STKMeshTransfer> mesh_transfer =
-    buildSTKMeshTransfer<STKMeshTransfer>(*(srcMesh.get_bulk_data()),
-			 srcMesh.get_coordinates_field(),
+    buildSTKMeshTransfer<STKMeshTransfer>(*(srcMesh->get_bulk_data()),
+			 srcMesh->get_coordinates_field(),
 			 fromField,
-			 *(dstMesh.get_bulk_data()),
-			 dstMesh.get_coordinates_field(),
+			 *(dstMesh->get_bulk_data()),
+			 dstMesh->get_coordinates_field(),
 			 toField,
              "transfer",
              srcFieldType,
@@ -181,11 +176,11 @@ void MeshTransfer::run(int argc, char** argv)
 
   initializeSTKMeshTransfer(&*mesh_transfer);
 
-  const int num_time_steps = srcMesh.get_database_time_step_count();
+  const int num_time_steps = srcMesh->get_database_time_step_count();
   double current_time;
   
   stk::io::StkMeshIoBroker mesh_data(comm);
-  mesh_data.set_bulk_data(*(dstMesh.get_bulk_data()));
+  mesh_data.set_bulk_data(*(dstMesh->get_bulk_data()));
 
   const size_t result_output_index = mesh_data.create_output_mesh(target_mesh, stk::io::WRITE_RESULTS);
   mesh_data.add_field(result_output_index, *toField);
@@ -200,16 +195,16 @@ void MeshTransfer::run(int argc, char** argv)
   }
 
   for (int ts=1; ts<=num_time_steps; ts++) { // Exodus is 1-based
-    srcMesh.read_database_at_step(ts); 
-    current_time = srcMesh.get_database_time_at_step(ts);
+    srcMesh->read_database_at_step(ts); 
+    current_time = srcMesh->get_database_time_at_step(ts);
 
     if (toField_init) {
       stk::mesh::field_copy(*toField, *toField_init, stk::mesh::selectField(*toField_init));
     }
 
     // load any existing fields from dstMesh
-    if (ts <= dstMesh.get_database_time_step_count()) {
-      dstMesh.read_database_at_step(ts);
+    if (ts <= dstMesh->get_database_time_step_count()) {
+      dstMesh->read_database_at_step(ts);
     }
 
     if (!stk::parallel_machine_rank(comm))
@@ -224,17 +219,18 @@ void MeshTransfer::run(int argc, char** argv)
     }
 
     // apply rotations/translations
-    applyRotation(dstMesh.get_coordinates_field(), xrot, yrot, zrot);
-    if (toDim==dstMesh.get_spatial_dim()) {
+    applyRotation(dstMesh->get_coordinates_field(), xrot, yrot, zrot);
+    if (toDim==dstMesh->get_spatial_dim()) {
       applyRotation(toField, xrot, yrot, zrot);
     }
 
-    applyTranslation(dstMesh.get_coordinates_field(), xtrans, ytrans, ztrans);
+    applyTranslation(dstMesh->get_coordinates_field(), xtrans, ytrans, ztrans);
 
     mesh_data.process_output_request(result_output_index, current_time);
   }
 
-  stk::parallel_machine_finalize();
+  srcMesh.reset();
+  dstMesh.reset();
 }
 
 } //namespace percept

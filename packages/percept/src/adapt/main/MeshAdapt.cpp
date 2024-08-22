@@ -45,7 +45,6 @@
 
 #endif
 
-
 namespace percept {
 
   MeshAdapt::MeshAdapt() :
@@ -109,12 +108,10 @@ namespace percept {
 
   void MeshAdapt::exit_safely(int exit_code)
   {
-
 #if defined( STK_HAS_MPI )
+    Kokkos::finalize();
     stk::parallel_machine_finalize();
 #endif
-
-    std::exit(exit_code);
   }      
 
   void MeshAdapt::fill_help_strings(int argc, char **argv)
@@ -2066,6 +2063,7 @@ namespace percept {
 
 #if defined( STK_HAS_MPI )
     m_comm = stk::ParallelMachine(stk::parallel_machine_init(&argc, &argv));
+    Kokkos::initialize(argc,argv);
 #endif
 
     EXCEPTWATCH;
