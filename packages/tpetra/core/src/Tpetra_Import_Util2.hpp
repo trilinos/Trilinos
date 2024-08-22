@@ -1125,12 +1125,13 @@ lowCommunicationMakeColMapAndReindex (
     bin_sort2.sort(exec, ColIndices_subview);
   
     // Deep copy back from device to host
-    Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
+    Kokkos::deep_copy(exec, PIDList_host, PIDList_view);
   
     // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
     // Note: If Teuchos::Array had a shrink_to_fit like std::vector,
     // we'd call it here.
     
+    exec.fence("fence before setting PIDList");
     Teuchos::Array<int> PIDList(NumRemoteColGIDs);
     for(LO i = 0; i < NumRemoteColGIDs; ++i) {
       PIDList[i] = PIDList_host[i];
