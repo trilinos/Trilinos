@@ -17,6 +17,17 @@ permissions:
   contents: read
 
 jobs:
+  # Jobs depend on the output of pre-checks to run
+  pre-checks:
+        runs-on: ubuntu-latest
+        outputs:
+            should_skip: ${{ steps.skip_check.outputs.should_skip }}
+        steps:
+        - id: skip_check
+          uses: fkirc/skip-duplicate-actions@v5
+          with:
+            skip_after_successful_duplicate: 'true'
+
   gcc10-openmpi416-EXPERIMENTAL:
     runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
     if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
@@ -174,8 +185,9 @@ jobs:
             --filename-packageenables ./packageEnables.cmake
 
   cuda11-uvm-EXPERIMENTAL:
+    needs: pre-checks
     runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
         env:
