@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <numeric>
 
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -427,9 +428,9 @@ namespace Ioss {
                  m_method, fmt::group_digits(m_globalElementCount), m_processorCount);
 
       if (!m_decompExtra.empty()) {
-	fmt::print(Ioss::OUTPUT(), "\tDecomposition extra data: '{}'.\n", m_decompExtra);
+        fmt::print(Ioss::OUTPUT(), "\tDecomposition extra data: '{}'.\n", m_decompExtra);
       }
-      
+
       if ((size_t)m_processorCount > m_globalElementCount) {
         fmt::print(Ioss::WarnOut(),
                    "Decomposing {} elements across {} mpi ranks will "

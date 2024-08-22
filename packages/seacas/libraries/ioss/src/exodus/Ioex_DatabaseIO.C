@@ -171,6 +171,9 @@ namespace Ioex {
         IOSS_ERROR(errmsg);
       }
     }
+
+    open_root_group_nl();
+    open_child_group_nl(0);
   }
 
   bool DatabaseIO::check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
@@ -642,13 +645,12 @@ namespace Ioex {
   {
     bool                exists         = false;
     double              last_time      = DBL_MAX;
-    int                 timestep_count = 0;
     std::vector<double> tsteps(0);
 
     if (dbUsage == Ioss::WRITE_HISTORY) {
       if (myProcessor == 0) {
-        timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-        if (timestep_count <= 0) {
+        m_timestepCount = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+        if (m_timestepCount <= 0) {
           return;
         }
 
@@ -657,15 +659,15 @@ namespace Ioex {
         // Read the timesteps and add them to the region.
         // Since we can't access the Region's stateCount directly, we just add
         // all of the steps and assume the Region is dealing with them directly...
-        tsteps.resize(timestep_count);
+        tsteps.resize(m_timestepCount);
 
         int error = ex_get_all_times(get_file_pointer(), Data(tsteps));
         if (error < 0) {
           Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
         }
 
-        int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", timestep_count);
-        max_step     = std::min(max_step, timestep_count);
+        int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", m_timestepCount);
+        max_step     = std::min(max_step, m_timestepCount);
 
         double max_time =
             properties.get_optional("APPEND_OUTPUT_AFTER_TIME", std::numeric_limits<double>::max());
@@ -681,14 +683,32 @@ namespace Ioex {
     else {
       {
         Ioss::SerializeIO serializeIO_(this);
-        timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-        if (timestep_count <= 0) {
+        m_timestepCount = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+	// Need to sync timestep count across ranks if parallel...
+	if (isParallel) {
+	  auto min_timestep_count = util().global_minmax(m_timestepCount, Ioss::ParallelUtils::DO_MIN);
+	  if (min_timestep_count == 0) {
+	    auto max_timestep_count = util().global_minmax(m_timestepCount, Ioss::ParallelUtils::DO_MAX);
+	    if (max_timestep_count != 0) {
+	      if (myProcessor == 0) {
+		// NOTE: Don't want to warn on all processors if the
+		// timestep count is zero on some, but not all ranks.
+		fmt::print(Ioss::WarnOut(),
+			   "At least one database has no timesteps.  No times will be read on ANY"
+			   " database for consistency.\n");
+	      }
+	    }
+	  }
+	  m_timestepCount = min_timestep_count;
+	}
+	
+        if (m_timestepCount <= 0) {
           return;
         }
 
         // For an exodus file, timesteps are global and are stored in the region.
         // Read the timesteps and add to the region
-        tsteps.resize(timestep_count, -std::numeric_limits<double>::max());
+        tsteps.resize(m_timestepCount, -std::numeric_limits<double>::max());
 
         // The `EXODUS_CALL_GET_ALL_TIMES=NO` is typically only used in
         // isSerialParallel mode and the client is responsible for
@@ -734,8 +754,8 @@ namespace Ioex {
       // One use case is that job is restarting at a time prior to what has been
       // written to the results file, so want to start appending after
       // restart time instead of at end time on database.
-      int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", timestep_count);
-      max_step     = std::min(max_step, timestep_count);
+      int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", m_timestepCount);
+      max_step     = std::min(max_step, m_timestepCount);
 
       double max_time =
           properties.get_optional("APPEND_OUTPUT_AFTER_TIME", std::numeric_limits<double>::max());
@@ -1125,12 +1145,11 @@ namespace Ioex {
     Ioss::Int64Vector counts(m_groupCount[entity_type] * 4);
     Ioss::Int64Vector local_X_count(m_groupCount[entity_type]);
     Ioss::Int64Vector global_X_count(m_groupCount[entity_type]);
-    int               iblk;
 
     {
       Ioss::SerializeIO serializeIO_(this);
 
-      for (iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
+      for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
         int     index = 4 * iblk;
         int64_t id    = X_block_ids[iblk];
 
@@ -1184,7 +1203,7 @@ namespace Ioex {
                                                 // querying if none.
     int nmap = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to skip
                                                 // querying if none.
-    for (iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
+    for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
       int     index       = 4 * iblk;
       int64_t nodes_per_X = counts[index + 0];
       int64_t edges_per_X = counts[index + 1];

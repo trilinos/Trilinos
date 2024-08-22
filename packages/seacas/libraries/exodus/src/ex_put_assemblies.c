@@ -45,7 +45,7 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
       /* Assembly has not already been defined */
       /* put netcdf file into define mode  */
       if (!in_define) {
-        if ((status = nc_redef(exoid)) != NC_NOERR) {
+        if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode",
                    exoid);
           ex_err_fn(exoid, __func__, errmsg, status);

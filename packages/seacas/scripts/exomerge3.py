@@ -57,11 +57,11 @@ if sys.version_info[0] < 3:
 import exodus3 as exodus
 
 # informal version number of this module
-__version__ = "8.6.1"
+__version__ = "8.6.2"
 VERSION = __version__
 
 # contact person for issues
-CONTACT = "Tim Kostka <tdkostk@sandia.gov>"
+CONTACT = "Sierra Help <sierra-help@sandia.gov>"
 
 # show the banner on first use
 SHOW_BANNER = True
@@ -555,6 +555,7 @@ class ExodusModel(object):
         self.qa_records = []
         # title of the database
         self.title = None
+        self.num_dimension = 3
 
     def __getattr__(self, name):
         """
@@ -7797,6 +7798,9 @@ class ExodusModel(object):
         exodus_file = exodus.exodus(filename, mode="r")
         if SUPPRESS_EXODUS_OUTPUT:
             sys.stdout = save_stdout
+
+        self.num_dimension = exodus_file.num_dimensions()
+
         # format timesteps to retrieve
         file_timesteps = list(exodus_file.get_times())
         if timesteps == "last_if_any":
@@ -8232,7 +8236,7 @@ class ExodusModel(object):
             "w",
             "ctype",
             self.title,
-            3,
+            self.num_dimension,
             len(self.nodes),
             self.get_element_count(element_block_ids),
             len(element_block_ids),

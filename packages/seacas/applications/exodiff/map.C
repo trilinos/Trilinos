@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -23,9 +23,9 @@ namespace {
   double find_range(const double *x, size_t num_nodes);
 
   template <typename INT>
-  INT Find(double x0, double y0, double z0, const std::vector<double> &x,
-           const std::vector<double> &y, const std::vector<double> &z, const std::vector<INT> &id,
-           int dim, bool ignore_dups);
+  int64_t Find(double x0, double y0, double z0, const std::vector<double> &x,
+               const std::vector<double> &y, const std::vector<double> &z,
+               const std::vector<INT> &id, int dim, bool ignore_dups);
 
   template <typename INT>
   void Compute_Node_Map(std::vector<INT> &node_map, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
@@ -164,7 +164,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
       }
 
       // Locate midpoint in sorted array.
-      INT sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, dim, interFace.ignore_dups);
+      int64_t sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, dim, interFace.ignore_dups);
 
       if (sort_idx < 0) {
         Error(fmt::format("Files are different (couldn't match element {} from block {} from first "
@@ -457,7 +457,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
       }
 
       // Locate midpoint in sorted array.
-      INT sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, dim, interFace.ignore_dups);
+      int64_t sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, dim, interFace.ignore_dups);
       if (sort_idx < 0) {
         unmatched++;
         if (first && interFace.show_unmatched) {
@@ -826,9 +826,9 @@ namespace {
   }
 
   template <typename INT>
-  INT Find(double x0, double y0, double z0, const std::vector<double> &x,
-           const std::vector<double> &y, const std::vector<double> &z, const std::vector<INT> &id,
-           int dim, bool ignore_dups)
+  int64_t Find(double x0, double y0, double z0, const std::vector<double> &x,
+               const std::vector<double> &y, const std::vector<double> &z,
+               const std::vector<INT> &id, int dim, bool ignore_dups)
   {
     if (x.empty()) {
       return -1;
@@ -856,7 +856,7 @@ namespace {
       }
     }
 
-    INT i = low == N ? N - 1 : low; // Make sure index falls within array bounds.
+    int64_t i = low == N ? N - 1 : low; // Make sure index falls within array bounds.
 
     if (i == 0 && interFace.coord_tol.Diff(x[id[i]], x0)) {
       // Could not find an index within tolerance on x coordinate.
@@ -871,7 +871,7 @@ namespace {
     // Search until tolerance between the x coordinate fails or a match is found.
     // If a match is found, the loop continues in order to check for dups.
 
-    INT index = -1;
+    int64_t index = -1;
     do {
       if (dim == 1 || (dim == 2 && !interFace.coord_tol.Diff(y[id[i]], y0)) ||
           (dim == 3 && !interFace.coord_tol.Diff(y[id[i]], y0) &&
@@ -900,7 +900,7 @@ namespace {
 
         index = i;
       }
-    } while (++i < (INT)N && !interFace.coord_tol.Diff(x[id[i]], x0));
+    } while (++i < (int64_t)N && !interFace.coord_tol.Diff(x[id[i]], x0));
 
     interFace.coord_tol.type = save_tolerance_type;
     return index;

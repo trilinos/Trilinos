@@ -279,6 +279,30 @@ namespace Ioss {
       return create_subgroup_nl(group_name);
     }
 
+    bool open_root_group()
+    {
+      IOSS_FUNC_ENTER(m_);
+      return open_root_group_nl();
+    }
+
+    int num_child_group()
+    {
+      IOSS_FUNC_ENTER(m_);
+      return num_child_group_nl();
+    }
+
+    bool open_child_group(int index)
+    {
+      IOSS_FUNC_ENTER(m_);
+      return open_child_group_nl(index);
+    }
+
+    Ioss::NameList groups_describe(bool return_full_names = false)
+    {
+      IOSS_FUNC_ENTER(m_);
+      return groups_describe_nl(return_full_names);
+    }
+
     /** \brief Set the database to the given State.
      *
      *  All transitions must begin from the 'STATE_CLOSED' state or be to
@@ -502,6 +526,7 @@ namespace Ioss {
     IOSS_NODISCARD virtual int int_byte_size_db() const = 0; //! Returns 4 or 8
     IOSS_NODISCARD int         int_byte_size_api() const;    //! Returns 4 or 8
     virtual void               set_int_byte_size_api(Ioss::DataSize size) const;
+    IOSS_NODISCARD Ioss::DataSize int_byte_size_data_size() const;
 
     /*!
      * The owning region of this database.
@@ -737,6 +762,14 @@ namespace Ioss {
     virtual void closeDatabase_nl() const;
     virtual void flush_database_nl() const {}
 
+    virtual void release_memory_nl()
+    {
+      nodeMap.release_memory();
+      edgeMap.release_memory();
+      faceMap.release_memory();
+      elemMap.release_memory();
+    }
+
   private:
     virtual bool ok_nl(bool /* write_message */, std::string * /* error_message */,
                        int *bad_count) const
@@ -757,16 +790,15 @@ namespace Ioss {
       return elemMap.global_to_local(global);
     }
 
-    virtual void release_memory_nl()
-    {
-      nodeMap.release_memory();
-      edgeMap.release_memory();
-      faceMap.release_memory();
-      elemMap.release_memory();
-    }
-
+    virtual int  num_child_group_nl() { return 0; }
+    virtual bool open_child_group_nl(int /* index */) { return false; }
+    virtual bool open_root_group_nl() { return false; }
     virtual bool open_group_nl(const std::string & /* group_name */) { return false; }
     virtual bool create_subgroup_nl(const std::string & /* group_name */) { return false; }
+    virtual Ioss::NameList groups_describe_nl(bool /* return_full_names */)
+    {
+      return Ioss::NameList();
+    }
 
     virtual bool begin_nl(Ioss::State state) = 0;
     virtual bool end_nl(Ioss::State state)   = 0;

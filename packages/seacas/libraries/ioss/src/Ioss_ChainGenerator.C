@@ -86,7 +86,7 @@ namespace {
   void get_line_front(Ioss::SideSet *fs, const Ioss::ElementBlock *block,
                       Ioss::chain_t<INT> &element_chains, front_t<INT> &front)
   {
-    const auto     adj_block_name = block->name();
+    const auto    &adj_block_name = block->name();
     Ioss::NameList blocks;
     fs->block_membership(blocks);
     for (const auto &fs_block : blocks) {
@@ -148,7 +148,7 @@ namespace {
                                   connectivity_t &face_connectivity)
   {
     for (const auto &face : faces) {
-      for (int i = 0; i < face.elementCount_; i++) {
+      for (int i = 0; i < face.element_count(); i++) {
         auto element                     = face.element[i] / 10 - offset;
         auto side                        = face.element[i] % 10; // 0-based side
         face_connectivity[element][side] = &face;
@@ -162,11 +162,11 @@ namespace {
         for (size_t j = 0; j < 6; j++) {
           const auto *face = face_connectivity[i][j];
           assert(face != nullptr);
-          int  k       = (face->elementCount_ > 1 && face->element[0] / 10 - offset != i) ? 1 : 0;
+          int  k       = (face->element_count() > 1 && face->element[0] / 10 - offset != i) ? 1 : 0;
           auto element = face->element[k] / 10;
           auto side    = face->element[k] % 10;
           assert(side == j);
-          if (face->elementCount_ > 1) {
+          if (face->element_count() > 1) {
             fmt::print(
                 "[{:3}] Element {}, Side {}/{} is Face {}.\tAdjacent to Element {}, Side {}.\n",
                 l++, element, side, j, face->hashId_, face->element[1 - k] / 10,
@@ -193,8 +193,10 @@ namespace Ioss {
   Ioss::chain_t<INT> generate_element_chains(Ioss::Region &region, const std::string &surface_list,
                                              int debug_level, INT /*dummy*/)
   {
-    debug                    = debug_level;
-    size_t             numel = region.get_property("element_count").get_int();
+    region.get_database()->progress(__func__);
+
+    debug        = debug_level;
+    size_t numel = region.get_property("element_count").get_int();
 
     // Determine which element block(s) are adjacent to the faceset specifying "lines"
     // The `adjacent_blocks` contains the names of all element blocks that are adjacent to the
@@ -223,6 +225,7 @@ namespace Ioss {
     // Generate the faces for use later... (only generate on the blocks touching the front)
     Ioss::FaceGenerator face_generator(region);
     face_generator.generate_block_faces(adjacent_blocks, (INT)0, true);
+    region.get_database()->progress("\tAfter generate_block_faces");
 
     Ioss::chain_t<INT> element_chains(numel);
     for (const auto *block : adjacent_blocks) {
@@ -258,7 +261,7 @@ namespace Ioss {
           assert(opp_side >= 0);
           auto *opp_face = face_connectivity[element - offset][opp_side];
           // See if there is an element attached to the `opp_side`
-          if (opp_face->elementCount_ > 1) {
+          if (opp_face->element_count() > 1) {
             // Determine which is current element and which is adjacent element...
             int  index       = (opp_face->element[0] / 10 ==
                          static_cast<typename decltype(opp_face->element)::value_type>(element))
@@ -296,6 +299,7 @@ namespace Ioss {
         next_front.clear();
       }
     } // End of block loop
+    region.get_database()->progress("\tAfter generating chains");
     return element_chains;
   }
 } // namespace Ioss

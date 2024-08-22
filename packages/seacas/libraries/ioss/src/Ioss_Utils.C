@@ -1369,7 +1369,7 @@ void Ioss::Utils::info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::Role
   for (const auto &field_name : fields) {
     if (detail) {
       const auto &field_ref = ige->get_fieldref(field_name);
-      std::cout << field_ref << suffix;
+      fmt::print("{}{}", field_ref, suffix);
     }
     else {
       const Ioss::VariableType *var_type   = ige->get_field(field_name).raw_storage();
@@ -1377,7 +1377,7 @@ void Ioss::Utils::info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::Role
       fmt::print("{1:>{0}s}:{2}  ", max_width, field_name, comp_count);
       cur_out += max_width + 4;
       if (cur_out + max_width >= width) {
-        fmt::print(suffix);
+        fmt::print("{}", suffix);
         cur_out = 8;
       }
     }

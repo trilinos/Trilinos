@@ -18,6 +18,7 @@
 #if IOSS_DEBUG_OUTPUT
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #endif
 
 #ifdef SEACAS_HAVE_MPI

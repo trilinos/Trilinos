@@ -20,7 +20,9 @@
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
@@ -42,6 +44,11 @@
 #include <string>
 #include <tuple>
 #include <vector>
+
+#include <assert.h>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #include "Ioss_MeshType.h"
 #include "Ioss_ParallelUtils.h"
@@ -95,18 +102,28 @@ namespace {
     return count;
   }
 
+  void update_database(Ioss::DatabaseIO *db, Ioss::GroupingEntity *entity)
+  {
+    entity->reset_database(db);
+  }
+
   void update_database(const Ioss::Region *region, Ioss::GroupingEntity *entity)
   {
-    entity->reset_database(region->get_database());
+    update_database(region->get_database(), entity);
+  }
+
+  void update_database(Ioss::DatabaseIO *db, Ioss::SideSet *sset)
+  {
+    sset->reset_database(db);
+    const auto &blocks = sset->get_side_blocks();
+    for (const auto &block : blocks) {
+      block->reset_database(db);
+    }
   }
 
   void update_database(const Ioss::Region *region, Ioss::SideSet *sset)
   {
-    sset->reset_database(region->get_database());
-    const auto &blocks = sset->get_side_blocks();
-    for (const auto &block : blocks) {
-      block->reset_database(region->get_database());
-    }
+    update_database(region->get_database(), sset);
   }
 
   constexpr unsigned numberOfBits(unsigned x) { return x < 2 ? x : 1 + numberOfBits(x >> 1); }
@@ -348,6 +365,10 @@ namespace Ioss {
     properties.add(Property(this, "state_count", Property::INTEGER));
     properties.add(Property(this, "current_state", Property::INTEGER));
     properties.add(Property(this, "database_name", Property::STRING));
+
+    property_add(Property("base_filename", iodatabase->get_filename()));
+    property_add(Property("database_type",
+                          iodatabase->get_property_manager().get_optional("database_type", "")));
   }
 
   Region::~Region()
@@ -358,63 +379,96 @@ namespace Ioss {
     // Region owns all sub-grouping entities it contains...
     try {
       IOSS_FUNC_ENTER(m_);
-      for (const auto &nb : nodeBlocks) {
-        delete (nb);
-      }
-
-      for (const auto &eb : edgeBlocks) {
-        delete (eb);
-      }
-
-      for (const auto &fb : faceBlocks) {
-        delete (fb);
-      }
-
-      for (const auto &eb : elementBlocks) {
-        delete (eb);
-      }
-
-      for (const auto &sb : structuredBlocks) {
-        delete (sb);
-      }
-
-      for (const auto &ss : sideSets) {
-        delete (ss);
-      }
-
-      for (const auto &ns : nodeSets) {
-        delete (ns);
-      }
-
-      for (const auto &es : edgeSets) {
-        delete (es);
-      }
-
-      for (const auto &fs : faceSets) {
-        delete (fs);
-      }
-
-      for (const auto &es : elementSets) {
-        delete (es);
-      }
-
-      for (const auto &cs : commSets) {
-        delete (cs);
-      }
-
-      for (const auto &as : assemblies) {
-        delete (as);
-      }
-
-      for (const auto &bl : blobs) {
-        delete (bl);
-      }
+      reset_region();
 
       // Region owns the database pointer even though other entities use it.
       GroupingEntity::really_delete_database();
     }
     catch (...) {
     }
+
+    if(topologyObserver) {
+      topologyObserver->register_region(nullptr);
+    }
+  }
+
+  void Region::reset_region()
+  {
+    for (const auto &nb : nodeBlocks) {
+      delete (nb);
+    }
+    nodeBlocks.clear();
+
+    for (const auto &eb : edgeBlocks) {
+      delete (eb);
+    }
+    edgeBlocks.clear();
+
+    for (const auto &fb : faceBlocks) {
+      delete (fb);
+    }
+    faceBlocks.clear();
+
+    for (const auto &eb : elementBlocks) {
+      delete (eb);
+    }
+    elementBlocks.clear();
+
+    for (const auto &sb : structuredBlocks) {
+      delete (sb);
+    }
+    structuredBlocks.clear();
+
+    for (const auto &ss : sideSets) {
+      delete (ss);
+    }
+    sideSets.clear();
+
+    for (const auto &ns : nodeSets) {
+      delete (ns);
+    }
+    nodeSets.clear();
+
+    for (const auto &es : edgeSets) {
+      delete (es);
+    }
+    edgeSets.clear();
+
+    for (const auto &fs : faceSets) {
+      delete (fs);
+    }
+    faceSets.clear();
+
+    for (const auto &es : elementSets) {
+      delete (es);
+    }
+    elementSets.clear();
+
+    for (const auto &cs : commSets) {
+      delete (cs);
+    }
+    commSets.clear();
+
+    for (const auto &as : assemblies) {
+      delete (as);
+    }
+    assemblies.clear();
+
+    for (const auto &bl : blobs) {
+      delete (bl);
+    }
+    blobs.clear();
+
+    stateTimes.clear();
+
+    currentState = -1;
+    stateCount   = 0;
+
+    modelDefined     = false;
+    transientDefined = false;
+
+    // Ioex:DatabaseIO::read_communication_metadata() adds comm fields that need to be cleared
+    erase_fields(Field::COMMUNICATION);
   }
 
   void Region::delete_database() { GroupingEntity::really_delete_database(); }
@@ -652,6 +706,23 @@ namespace Ioss {
       success = set_state(new_state);
     }
     else {
+      bool has_output_observer = topologyObserver && !get_database()->is_input();
+
+      if (new_state == STATE_DEFINE_MODEL) {
+        if (has_output_observer &&
+            (topologyObserver->get_control_option() == FileControlOption::CONTROL_AUTO_GROUP_FILE)) {
+          if (!fileGroupsStarted) {
+            int  steps          = get_property("state_count").get_int();
+            bool force_addition = true;
+            add_output_database_group(steps, force_addition);
+
+            fileGroupsStarted = true;
+          }
+        }
+      }
+      else if (new_state == STATE_TRANSIENT) {
+        update_dynamic_topology();
+      }
       switch (get_state()) {
       case STATE_CLOSED:
         // Make sure we can go to the specified state.
@@ -784,6 +855,12 @@ namespace Ioss {
     }
     else if (current_state == STATE_DEFINE_TRANSIENT) {
       transientDefined = true;
+    }
+    else if (current_state == STATE_MODEL) {
+      modelWritten = true;
+    }
+    else if (current_state == STATE_TRANSIENT) {
+      transientWritten = true;
     }
 
     return success;
@@ -1002,6 +1079,9 @@ namespace Ioss {
         }
         currentState = state;
       }
+
+      update_dynamic_topology();
+
       DatabaseIO *db = get_database();
       db->begin_state(state, time);
     }
@@ -2741,4 +2821,238 @@ namespace Ioss {
     }
   }
 
+  void
+  Region::register_mesh_modification_observer(std::shared_ptr<DynamicTopologyObserver> observer)
+  {
+    if (observer) {
+      if (observer->get_control_option() == FileControlOption::CONTROL_AUTO_GROUP_FILE) {
+        const Ioss::PropertyManager &db_properties = get_database()->get_property_manager();
+        if (!db_properties.exists("ENABLE_FILE_GROUPS")) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: File groups are not enabled in the database file '{}'.\n",
+                     get_database()->get_filename());
+          IOSS_ERROR(errmsg);
+        }
+      }
+
+      topologyObserver = observer;
+      topologyObserver->register_region(this);
+    }
+  }
+
+  void Region::start_new_output_database_entry(int steps)
+  {
+    if (get_database()->is_input())
+      return;
+
+    if (!topologyObserver)
+      return;
+
+    switch (topologyObserver->get_control_option()) {
+    case FileControlOption::CONTROL_AUTO_MULTI_FILE:
+      clone_and_replace_output_database(steps);
+      break;
+    case FileControlOption::CONTROL_AUTO_GROUP_FILE: add_output_database_group(steps); break;
+    case FileControlOption::CONTROL_NONE:
+    default: return; break;
+    }
+  }
+
+  void Region::add_output_database_group(int steps, bool force_addition)
+  {
+    if (get_database()->is_input())
+      return;
+
+    const Ioss::PropertyManager &db_properties = get_database()->get_property_manager();
+    if (!db_properties.exists("ENABLE_FILE_GROUPS")) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: File groups are not enabled in the database file '{}'.\n",
+                 get_database()->get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    if (topologyObserver &&
+        (topologyObserver->get_control_option() == FileControlOption::CONTROL_AUTO_MULTI_FILE)) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: TopologyObserver for database file '{}' does not support file groups.\n",
+                 get_database()->get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    int state = steps;
+    if ((topologyObserver && topologyObserver->is_topology_modified()) || force_addition) {
+      // Determine how many steps have been written already...
+      state = get_property("state_count").get_int();
+
+      if (state == 0)
+        state = steps;
+
+      // See if this is a continuation database...
+      if (property_exists("state_offset"))
+        state += get_property("state_offset").get_int();
+
+      state++; // For the state we are going to write.
+
+      reset_region();
+      DynamicTopologyFileControl fileControl(this, fileCyclicCount, ifDatabaseExists,
+                                             dbChangeCount);
+      fileControl.add_output_database_group(state);
+    }
+  }
+
+  void Region::clone_and_replace_output_database(int steps)
+  {
+    if (get_database()->is_input())
+      return;
+
+    if (!topologyObserver)
+      return;
+
+    int state = steps;
+    if (topologyObserver->is_topology_modified() || fileCyclicCount > 0) {
+      // Determine how many steps have been written already...
+      state = get_property("state_count").get_int();
+
+      // Needed for automatic restart... The current database has not
+      // been written to, but we want to open a new one instead of
+      // (possibly) overwriting the current one...
+      // If this is not an automatic restart, then we don't need a new database...
+      if (state == 0 && topologyObserver->is_automatic_restart())
+        return;
+
+      if (topologyObserver->is_automatic_restart() && ifDatabaseExists == Ioss::DB_APPEND)
+        return;
+
+      if (state == 0)
+        state = steps;
+
+      // See if this is a continuation database...
+      if (property_exists("state_offset"))
+        state += get_property("state_offset").get_int();
+
+      state++; // For the state we are going to write.
+
+      reset_region();
+      DynamicTopologyFileControl fileControl(this, fileCyclicCount, ifDatabaseExists,
+                                             dbChangeCount);
+      fileControl.clone_and_replace_output_database(state);
+    }
+  }
+
+  void Region::reset_topology_modification()
+  {
+    if(topologyObserver) {
+      topologyObserver->reset_topology_modification();
+    }
+  }
+
+  void Region::set_topology_modification(unsigned int type)
+  {
+    if(topologyObserver) {
+      topologyObserver->set_topology_modification(type);
+    }
+  }
+
+  unsigned int Region::get_topology_modification() const
+  {
+    if(topologyObserver) {
+      return topologyObserver->get_topology_modification();
+    }
+
+    return TOPOLOGY_SAME;
+  }
+
+  bool Region::load_group_mesh(const std::string &child_group_name)
+  {
+    // Check name for '/' which is not allowed since it is the
+    // separator character in a full group path
+    if (child_group_name.find('/') != std::string::npos) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Invalid group name '{}' contains a '/' which is not allowed.\n",
+                 child_group_name);
+      IOSS_ERROR(errmsg);
+    }
+
+    DatabaseIO *iodatabase = get_database();
+
+    if (!iodatabase->is_input())
+      return false;
+
+    if (!iodatabase->open_root_group())
+      return false;
+
+    if (!iodatabase->open_group(child_group_name))
+      return false;
+
+    reset_region();
+    iodatabase->release_memory();
+
+    Region::set_state(STATE_CLOSED);
+    modelDefined     = false;
+    transientDefined = false;
+
+    Region::begin_mode(STATE_DEFINE_MODEL);
+    iodatabase->read_meta_data();
+    Region::end_mode(STATE_DEFINE_MODEL);
+    if (iodatabase->open_create_behavior() != Ioss::DB_APPEND &&
+        iodatabase->open_create_behavior() != Ioss::DB_MODIFY) {
+      modelDefined     = true;
+      transientDefined = true;
+      Region::begin_mode(STATE_READONLY);
+    }
+
+    return true;
+  }
+
+  bool Region::load_group_mesh(const int child_group_index)
+  {
+    DatabaseIO *iodatabase = get_database();
+
+    if (!iodatabase->is_input())
+      return false;
+
+    if (!iodatabase->open_root_group())
+      return false;
+
+    if (!iodatabase->open_child_group(child_group_index))
+      return false;
+
+    reset_region();
+    iodatabase->release_memory();
+
+    Region::set_state(STATE_CLOSED);
+    modelDefined     = false;
+    transientDefined = false;
+
+    Region::begin_mode(STATE_DEFINE_MODEL);
+    iodatabase->read_meta_data();
+    Region::end_mode(STATE_DEFINE_MODEL);
+    if (iodatabase->open_create_behavior() != Ioss::DB_APPEND &&
+        iodatabase->open_create_behavior() != Ioss::DB_MODIFY) {
+      modelDefined     = true;
+      transientDefined = true;
+      Region::begin_mode(STATE_READONLY);
+    }
+
+    return true;
+  }
+
+  void Region::update_dynamic_topology()
+  {
+    auto topologyObserver = get_mesh_modification_observer();
+
+    bool has_output_observer = topologyObserver && !get_database()->is_input();
+    if (has_output_observer && topologyObserver->is_topology_modified()) {
+      if(topologyObserver->get_control_option() != FileControlOption::CONTROL_NONE) {
+        int steps = get_property("state_count").get_int();
+        start_new_output_database_entry(steps);
+
+        topologyObserver->define_model();
+        topologyObserver->write_model();
+        topologyObserver->define_transient();
+      }
+      topologyObserver->reset_topology_modification();
+    }
+  }
 } // namespace Ioss

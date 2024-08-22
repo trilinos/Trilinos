@@ -230,7 +230,7 @@ namespace {
       auto              &boundary = boundary_faces[name];
       auto              &faces    = face_generator.faces(name);
       for (auto &face : faces) {
-        if (face.elementCount_ == 1) {
+        if (face.element_count() == 1) {
           boundary.push_back(face);
         }
       }

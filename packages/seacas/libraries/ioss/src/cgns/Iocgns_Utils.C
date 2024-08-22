@@ -1939,7 +1939,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
 
   for (auto &owner_block : blocks) {
     int  owner_zone = owner_block->get_property("zone").get_int();
-    auto owner_ids  = owner_block->get_cell_node_ids(true);
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
       assert(zgc.m_donorProcessor >= 0);
       assert(zgc.m_ownerProcessor >= 0);
@@ -1952,9 +1951,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
         auto donor_block = region.get_structured_block(zgc.m_donorName);
         assert(donor_block != nullptr);
         int donor_zone = donor_block->get_property("zone").get_int();
-
-        auto donor_ids = donor_block->get_cell_node_ids(true);
-
         std::vector<int> i_range = zgc.get_range(1);
         std::vector<int> j_range = zgc.get_range(2);
         std::vector<int> k_range = zgc.get_range(3);
@@ -2101,7 +2097,7 @@ void Iocgns::Utils::generate_boundary_faces(
     auto              &boundary = boundary_faces[name];
     auto              &faces    = face_generator.faces(name);
     for (auto &face : faces) {
-      if (face.elementCount_ == 1) {
+      if (face.element_count() == 1) {
         boundary.insert(face);
       }
     }
@@ -3102,7 +3098,7 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
 
   // All faces generated for this element block; now extract boundary faces...
   for (auto &face : all_faces) {
-    if (face.elementCount_ == 1) {
+    if (face.element_count() == 1) {
       boundary.insert(face);
     }
   }
