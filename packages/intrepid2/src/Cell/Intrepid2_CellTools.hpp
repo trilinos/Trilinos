@@ -1417,7 +1417,7 @@ public:
              typename InputViewType>
     static void checkPointwiseInclusion(       OutputViewType inCell, 
                                          const InputViewType points,
-                                         const double threshold = threshold()); 
+                                         const double thresh = threshold()); 
 
 
 
