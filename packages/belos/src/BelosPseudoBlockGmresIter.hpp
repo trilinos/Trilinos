@@ -404,8 +404,6 @@ namespace Belos {
   PseudoBlockGmresIter<ScalarType,MV,OP,DM>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const 
   {
-    typedef typename Teuchos::ScalarTraits<ScalarType> STS;
-
     if (norms)
       { // Resize the incoming std::vector if necessary.  The type
 	// cast avoids the compiler warning resulting from a signed /
@@ -413,12 +411,11 @@ namespace Belos {
 	if (static_cast<int> (norms->size()) < numRHS_)
 	  norms->resize (numRHS_); 
 
-	Teuchos::BLAS<int, ScalarType> blas;
 	for (int j = 0; j < numRHS_; ++j) 
 	  {
             DMT::SyncDeviceToHost( *Z_[j] );
 	    const ScalarType curNativeResid = DMT::ValueConst(*Z_[j],curDim_,0);
-	    (*norms)[j] = STS::magnitude (curNativeResid);
+	    (*norms)[j] = SCT::magnitude (curNativeResid);
 	  }
     }
     return Teuchos::null;
