@@ -803,7 +803,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         //
         for (i=0; i<curDim+j; i++) {
           sigma = blas.DOT( blockSize_, &DMT::Value(*R_,i+1,i), 1, &DMT::Value(*R_,i+1,curDim+j), 1);
-          sigma += DMT::Value(*R_,i,curDim+j);
+          sigma += DMT::ValueConst(*R_,i,curDim+j);
           sigma *= SCT::conjugate(beta[i]);
           blas.AXPY(blockSize_, ScalarType(-sigma), &DMT::Value(*R_,i+1,i), 1, &DMT::Value(*R_,i+1,curDim+j), 1);
           DMT::Value(*R_,i,curDim+j) -= sigma;
@@ -823,7 +823,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
           beta[curDim + j] = zero;
         } else {
           mu = SCT::squareroot(SCT::conjugate(DMT::Value(*R_,curDim+j,curDim+j))*DMT::Value(*R_,curDim+j,curDim+j)+sigma);
-          vscale = DMT::Value(*R_,curDim+j,curDim+j) - Teuchos::as<ScalarType>(sign_Rjj)*mu;
+          vscale = DMT::ValueConst(*R_,curDim+j,curDim+j) - Teuchos::as<ScalarType>(sign_Rjj)*mu;
           beta[curDim+j] = -Teuchos::as<ScalarType>(sign_Rjj) * vscale / mu;
           DMT::Value(*R_,curDim+j,curDim+j) = Teuchos::as<ScalarType>(sign_Rjj)*maxelem*mu;
           for (i=0; i<blockSize_; i++)
@@ -835,7 +835,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         for (i=0; i<blockSize_; i++) {
           sigma = blas.DOT( blockSize_, &DMT::Value(*R_,curDim+j+1,curDim+j),
                             1, &DMT::Value(*z_,curDim+j+1,i), 1);
-          sigma += DMT::Value(*z_,curDim+j,i);
+          sigma += DMT::ValueConst(*z_,curDim+j,i);
           sigma *= SCT::conjugate(beta[curDim+j]);
           blas.AXPY(blockSize_, ScalarType(-sigma), &DMT::Value(*R_,curDim+j+1,curDim+j),
                     1, &DMT::Value(*z_,curDim+j+1,i), 1);

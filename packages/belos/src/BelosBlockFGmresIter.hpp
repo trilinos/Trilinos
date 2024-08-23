@@ -747,7 +747,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         // Apply previous Householder reflectors to new block of Hessenberg matrix
         for (int i = 0; i < curDim + j; ++i) {
           sigma = blas.DOT (blockSize_, &DMT::Value(*H_,i+1,i), 1, &DMT::Value(*H_,i+1,curDim+j), 1);
-          sigma += DMT::Value(*H_,i,curDim+j);
+          sigma += DMT::ValueConst(*H_,i,curDim+j);
           sigma *= beta[i];
           blas.AXPY (blockSize_, ScalarType(-sigma), &DMT::Value(*H_,i+1,i), 1, &DMT::Value(*H_,i+1,curDim+j), 1);
           DMT::Value(*H_,i,curDim+j) -= sigma;
@@ -755,7 +755,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
         // Compute new Householder reflector
         const int maxidx = blas.IAMAX (blockSize_+1, &DMT::Value(*H_,curDim+j,curDim+j), 1);
-        maxelem = DMT::Value(*H_,curDim + j + maxidx - 1, curDim + j);
+        maxelem = DMT::ValueConst(*H_,curDim + j + maxidx - 1, curDim + j);
         for (int i = 0; i < blockSize_ + 1; ++i) {
           DMT::Value(*H_,curDim+j+i,curDim+j) /= maxelem;
         }
@@ -766,7 +766,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         } else {
           mu = STS::squareroot (DMT::Value(*H_,curDim+j,curDim+j)*DMT::Value(*H_,curDim+j,curDim+j)+sigma);
           if (STS::real (DMT::Value(*H_,curDim + j, curDim + j)) < STM::zero ()) {
-            vscale = DMT::Value(*H_,curDim+j,curDim+j) - mu;
+            vscale = DMT::ValueConst(*H_,curDim+j,curDim+j) - mu;
           } else {
             vscale = -sigma / (DMT::Value(*H_,curDim+j, curDim+j) + mu);
           }
@@ -781,7 +781,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         for (int i = 0; i < blockSize_; ++i) {
           sigma = blas.DOT (blockSize_, &DMT::Value(*H_,curDim+j+1,curDim+j),
                             1, &DMT::Value(*z_,curDim+j+1,i), 1);
-          sigma += DMT::Value(*z_,curDim+j,i);
+          sigma += DMT::ValueConst(*z_,curDim+j,i);
           sigma *= beta[curDim+j];
           blas.AXPY (blockSize_, ScalarType(-sigma), &DMT::Value(*H_,curDim+j+1,curDim+j),
                      1, &DMT::Value(*z_,curDim+j+1,i), 1);
