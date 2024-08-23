@@ -293,9 +293,6 @@ namespace Belos{
 	//! Get the maximum dimension allocated for the search subspace.
        int getMaxSubspaceDim() const { return numBlocks_*blockSize_; };
 
-	//! \brief Set the maximum number of recycled blocks used by the iterative solver.
-       int getRecycledBlocks() const { return recycledBlocks_; };
-
 	//@}
 
 
@@ -306,9 +303,6 @@ namespace Belos{
 
        //! \brief Set the blocksize.
        void setBlockSize(int blockSize){ blockSize_ = blockSize; }
-
-       //! \brief Set the maximum number of recycled blocks used by the iterative solver.
-       void setRecycledBlocks(int recycledBlocks) { setSize( recycledBlocks, numBlocks_ ); };
 
        //! \brief Set the maximum number of blocks used by the iterative solver.
        void setNumBlocks(int numBlocks) { setSize( recycledBlocks_, numBlocks ); };
