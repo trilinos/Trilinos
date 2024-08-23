@@ -843,13 +843,13 @@ namespace phalanx_test {
     static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
     static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
 
-    std::cout << "\n\nscalar_view_layout = " << PHX::print<scalar_view_layout>() << std::endl;
-    std::cout << "scalar_dev_layout  = " << PHX::print<scalar_dev_layout>() << std::endl;
-    std::cout << "DefaultDevLayout   = " << PHX::print<DefaultDevLayout>() << "\n" << std::endl;
+    out << "\n\nscalar_view_layout = " << PHX::print<scalar_view_layout>() << std::endl;
+    out << "scalar_dev_layout  = " << PHX::print<scalar_dev_layout>() << std::endl;
+    out << "DefaultDevLayout   = " << PHX::print<DefaultDevLayout>() << "\n" << std::endl;
 
-    std::cout << "fad_view_layout    = " << PHX::print<fad_view_layout>() << std::endl;
-    std::cout << "fad_dev_layout     = " << PHX::print<fad_dev_layout>() << std::endl;
-    std::cout << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
+    out << "fad_view_layout    = " << PHX::print<fad_view_layout>() << std::endl;
+    out << "fad_dev_layout     = " << PHX::print<fad_dev_layout>() << std::endl;
+    out << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
 
     // Tests for assignments from static View to DynRankView
     Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
@@ -984,28 +984,14 @@ namespace phalanx_test {
   {
     Kokkos::print_configuration(out);
 
-    // Set to false for typical unit testing. If set to true, the cuda
-    // and hip concurrency can be really large on modern hardware and
-    // can require a lot of memory. It still runs fast but memory
-    // requirements might cause issues if overloading gpus with
-    // multiple unit tests.
-    const bool use_all_concurrency = false;
-    size_t scratch_space_size = 10;
-    if (use_all_concurrency)
-      scratch_space_size = Kokkos::DefaultExecutionSpace().concurrency();
+    using ExecutionSpace = PHX::exec_space;
 
-    Kokkos::Experimental::UniqueToken<Kokkos::DefaultExecutionSpace,
-                                      Kokkos::Experimental::UniqueTokenScope::Instance> token(scratch_space_size);
+    Kokkos::Experimental::UniqueToken<ExecutionSpace> token;
 
-    out << "\nconcurrency = " << Kokkos::DefaultExecutionSpace().concurrency() << std::endl;
+    out << "\nExecutionSpace.concurrency() = " << ExecutionSpace().concurrency() << std::endl;
     out << "UniqueToken.size() = " << token.size() << std::endl;
 
-    if (use_all_concurrency) {
-      TEST_EQUALITY(Kokkos::DefaultExecutionSpace().concurrency(), token.size());
-    }
-    else {
-      TEST_EQUALITY(scratch_space_size, static_cast<size_t>(token.size()));
-    }
+    TEST_EQUALITY(ExecutionSpace().concurrency(), token.size());
 
     const size_t num_elements = token.size()+10;
     Outer o;
