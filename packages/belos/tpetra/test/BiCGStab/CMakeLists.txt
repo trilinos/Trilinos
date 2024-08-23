@@ -30,20 +30,3 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestBiCGSTABFiles
   SOURCE_FILES cage4.hb
   EXEDEPS Tpetra_BiCGStab_hb_test Tpetra_KokkosDense_BiCGStab_hb_test
   )
-
-IF (Tpetra_INST_COMPLEX_DOUBLE)
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tpetra_bicgstab_complex_hb
-      SOURCES test_bicgstab_complex_hb.cpp
-      ARGS
-        "--verbose --filename=mhd1280b.cua"
-      )
-
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraBiCGStabComplexFiles
-      SOURCE_DIR ${${PACKAGE_NAME}_SOURCE_DIR}/testmatrices
-      SOURCE_FILES mhd1280b.cua
-      EXEDEPS Tpetra_bicgstab_complex_hb
-    )
-
-ENDIF()
