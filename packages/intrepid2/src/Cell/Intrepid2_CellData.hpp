@@ -315,6 +315,101 @@ private:
   //! whether the center coordinates have been already set using the method set()
   static bool isReferenceCellCenterDataSet_;
 };
+
+//============================================================================================//
+//                                                                                            //
+//                                       PointInclusion                                       //
+//                                                                                            //
+//============================================================================================//
+
+
+/** \class  Intrepid2::PointInclusion
+    \brief  This class implements a <var>check</var> function that determines whether a given point is 
+            inside or outside the reference cell for a specific topology.
+            The class has a template argument for the key of the shards topology
+ */
+
+template<unsigned CellTopologyKey>
+  struct PointInclusion;
+  
+  /** 
+   \brief Line topology
+  */
+  template<>
+  struct PointInclusion<shards::Line<>::key> {
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);   
+  };
+  
+  /** 
+   \brief Triangle topology
+  */
+  template<>
+  struct PointInclusion<shards::Triangle<>::key> {
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);
+  };
+  
+  /** 
+   \brief Quadrilateral topology
+  */
+  template<>
+  struct PointInclusion<shards::Quadrilateral<>::key> {
+
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);
+  };
+    
+  /** 
+   \brief Tetrahedron topology
+  */
+  template<>
+  struct PointInclusion<shards::Tetrahedron<>::key> {
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);
+  };
+
+  /** 
+   \brief Hexahedron topology
+  */
+  template<>
+  struct PointInclusion<shards::Hexahedron<>::key> {
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);
+  };
+  
+  /** 
+   \brief Pyramid topology
+  */
+  template<>
+  struct PointInclusion<shards::Pyramid<>::key> {
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);
+  };
+
+  /** 
+   \brief Wedge topology
+  */
+  template<>
+  struct PointInclusion<shards::Wedge<>::key> {
+    template<typename PointViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool
+    check(const PointViewType &point, const double threshold);
+  };
+
 }
 
 #include "Intrepid2_CellDataDef.hpp"
