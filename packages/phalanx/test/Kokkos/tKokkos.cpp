@@ -1,6 +1,6 @@
 // @HEADER
 // *****************************************************************************
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //
 // Copyright 2008 NTESS and the Phalanx contributors.
@@ -828,6 +828,8 @@ namespace phalanx_test {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_HIP)
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
 #else
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
 #endif
@@ -969,4 +971,52 @@ namespace phalanx_test {
     TEST_FLOATING_EQUALITY(mean,mean_gold,tol);
     TEST_FLOATING_EQUALITY(stddev,stddev_gold,tol);
   }
+
+  struct Inner {
+    Kokkos::Experimental::UniqueToken<Kokkos::DefaultExecutionSpace> token_;
+  };
+
+  struct Outer {
+    Inner inner_;
+  };
+
+  TEUCHOS_UNIT_TEST(kokkos, UniqueToken)
+  {
+    Kokkos::print_configuration(out);
+
+    // Set to false for typical unit testing. If set to true, the cuda
+    // and hip concurrency can be really large on modern hardware and
+    // can require a lot of memory. It still runs fast but memory
+    // requirements might cause issues if overloading gpus with
+    // multiple unit tests.
+    const bool use_all_concurrency = false;
+    size_t scratch_space_size = 10;
+    if (use_all_concurrency)
+      scratch_space_size = Kokkos::DefaultExecutionSpace().concurrency();
+
+    Kokkos::Experimental::UniqueToken<Kokkos::DefaultExecutionSpace,
+                                      Kokkos::Experimental::UniqueTokenScope::Instance> token(scratch_space_size);
+
+    out << "\nconcurrency = " << Kokkos::DefaultExecutionSpace().concurrency() << std::endl;
+    out << "UniqueToken.size() = " << token.size() << std::endl;
+
+    if (use_all_concurrency) {
+      TEST_EQUALITY(Kokkos::DefaultExecutionSpace().concurrency(), token.size());
+    }
+    else {
+      TEST_EQUALITY(scratch_space_size, token.size());
+    }
+
+    const size_t num_elements = token.size()+10;
+    Outer o;
+
+    Kokkos::View<int*> scratch_space("scratch space",token.size());
+    Kokkos::parallel_for("unique token",num_elements,KOKKOS_LAMBDA(const int cell){
+        Kokkos::Experimental::AcquireUniqueToken lock(o.inner_.token_);
+        const auto t = lock.value();
+	scratch_space(t) = cell;
+	// printf("cell=%d, t=%u, equal=%u\n",cell,t,unsigned(cell == t));
+    });
+  }
+
 }
