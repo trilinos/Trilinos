@@ -12,7 +12,6 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_ZoneConnectivity.h"
-#include <fmt/ostream.h>
 #include <array>
 #include <cassert>
 #include <iosfwd>
@@ -350,10 +349,3 @@ namespace Ioss {
   };
 } // namespace Ioss
 
-#if FMT_VERSION >= 90000
-namespace fmt {
-  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
-  {
-  };
-} // namespace fmt
-#endif
