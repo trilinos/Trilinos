@@ -1004,7 +1004,7 @@ namespace phalanx_test {
       TEST_EQUALITY(Kokkos::DefaultExecutionSpace().concurrency(), token.size());
     }
     else {
-      TEST_EQUALITY(scratch_space_size, token.size());
+      TEST_EQUALITY(scratch_space_size, static_cast<size_t>(token.size()));
     }
 
     const size_t num_elements = token.size()+10;
@@ -1017,6 +1017,70 @@ namespace phalanx_test {
 	scratch_space(t) = cell;
 	// printf("cell=%d, t=%u, equal=%u\n",cell,t,unsigned(cell == t));
     });
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, ReduceCheck)
+  {
+    constexpr int size = 10;
+    double gold_sum = 0.0;
+    Kokkos::View<double*> parts("parts",size);
+    auto parts_host = Kokkos::create_mirror_view(parts);
+    for (int i=0; i < size; ++i) {
+      parts_host(i) = double(i);
+
+      if (i%2 == 0)
+        gold_sum += double(i);
+    }
+    Kokkos::deep_copy(parts,parts_host);
+
+    double sum = 0.0;
+    Kokkos::parallel_reduce("sum",10,KOKKOS_LAMBDA(const int i, double& tmp){
+      if (i%2 == 0)
+        tmp += parts(i);
+      // printf("tmp(%d)=%f \n",i,tmp);
+    },sum);
+    out << "sum = " << sum << std::endl;
+    const double tol = Teuchos::ScalarTraits<double>::eps()*1000.0;
+    TEST_FLOATING_EQUALITY(sum,gold_sum,tol);
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, ScanCheck)
+  {
+    constexpr int size = 10;
+    Kokkos::View<double*> parts("parts",size);
+    auto parts_host = Kokkos::create_mirror_view(parts);
+    for (int i=0; i < size; ++i)
+      parts_host(i)=double(i);
+    Kokkos::deep_copy(parts,parts_host);
+
+    Kokkos::View<double*> inclusive_scan("inclusive",size);
+    Kokkos::View<double*> exclusive_scan("exclusive",size);
+    double result = 0.0;
+    Kokkos::parallel_scan("sum",10,KOKKOS_LAMBDA(const int i, double& partial_sum, const bool is_final){
+      if (is_final)
+        exclusive_scan(i) = partial_sum;
+
+      partial_sum += parts(i);
+
+      if (is_final)
+        inclusive_scan(i) += partial_sum;
+
+      // printf("partial_sum(%d)=%f, is_final=%d \n",i,partial_sum,int(is_final));
+     },result);
+
+    auto is_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),inclusive_scan);
+    auto es_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),exclusive_scan);
+
+    for (int i=0; i < size; ++i)
+      out << "inclusive_scan(" << i << ") = " << is_host(i) << ", parts(" << i << ") = " << parts_host(i) << std::endl;
+    for (int i=0; i < size; ++i)
+      out << "exclusive_scan(" << i << ") = " << es_host(i) << ", parts(" << i << ") = " << parts_host(i) << std::endl;
+    out << "result (exclusive end) = " << result << std::endl;
+
+    const double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
+    for (int i=0; i < size; ++i) {
+      TEST_FLOATING_EQUALITY(is_host(i)-es_host(i), parts_host(i), tol);
+    }
   }
 
 }
