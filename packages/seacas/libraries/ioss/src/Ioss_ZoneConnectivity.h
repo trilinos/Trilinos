@@ -10,8 +10,6 @@
 #include <array>
 #include <cassert>
 #include <cmath>
-#include <fmt/core.h>
-#include <fmt/ostream.h>
 #include <iosfwd>
 #include <stdlib.h>
 #include <string>
@@ -142,11 +140,3 @@ namespace Ioss {
 
   IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
 } // namespace Ioss
-
-#if FMT_VERSION >= 90000
-namespace fmt {
-  template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
-  {
-  };
-} // namespace fmt
-#endif
