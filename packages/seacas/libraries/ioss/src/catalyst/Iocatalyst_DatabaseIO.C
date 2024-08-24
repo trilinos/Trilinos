@@ -39,7 +39,6 @@
 #include <cstdlib>
 #include <fmt/ostream.h>
 #include <map>
-#include <cstdlib>
 
 #include <catalyst.hpp>
 #include <catalyst/Iocatalyst_DatabaseIO.h>
@@ -72,6 +71,8 @@ namespace Iocatalyst {
     inline static const std::string CATCONDNODE        = "CATALYST_CONDUIT_NODE";
     inline static const std::string CATDUMPDIR         = "CATALYST_DATA_DUMP_DIRECTORY";
     inline static const std::string CATREADTIMESTEP    = "CATALYST_READER_TIME_STEP";
+    inline static const std::string CELLIDS            = "cell_ids";
+    inline static const std::string CELLNODEIDS        = "cell_node_ids";
     inline static const std::string COMPONENTCOUNT     = "component_count";
     inline static const std::string COMPONENTDEGREE    = "component_degree";
     inline static const std::string COUNT              = "count";
@@ -587,6 +588,41 @@ namespace Iocatalyst {
     }
 
     std::string getTimePath() { return detail::DATABASE + detail::FS + detail::TIME; }
+
+    int64_t getStructuredBlockIDS(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                                  void *data, size_t data_size)
+    {
+      auto num_to_get = field.verify(data_size);
+
+      if (num_to_get > 0) {
+        switch (field.get_type()) {
+        case Ioss::Field::BasicType::INT32:
+          copyIDS(sb, field, reinterpret_cast<int32_t *>(data));
+          break;
+
+        case Ioss::Field::BasicType::INT64:
+          copyIDS(sb, field, reinterpret_cast<int64_t *>(data));
+          break;
+        default:
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR in {}: {} ({}), unsupported field type: {}\n", __func__,
+                     field.get_name(), num_to_get, field.type_string());
+          IOSS_ERROR(errmsg);
+        }
+      }
+      return num_to_get;
+    }
+
+    template <typename INT_t>
+    void copyIDS(const Ioss::StructuredBlock *sb, const Ioss::Field &field, INT_t *data)
+    {
+      if (field.get_name() == detail::CELLIDS) {
+        sb->get_cell_ids(data, true);
+      }
+      else {
+        sb->get_cell_node_ids(data, true);
+      }
+    }
 
     Ioss::Map &get_node_map(const Ioss::DatabaseIO *dbase) const
     {
@@ -1249,13 +1285,20 @@ namespace Iocatalyst {
         if (pm.exists(detail::CATREADTIMESTEP)) {
           timestep = pm.get(detail::CATREADTIMESTEP).get_int();
         }
-        else if(const char* ts = std::getenv(detail::CATREADTIMESTEP.c_str())) {
+        else if (const char *ts = std::getenv(detail::CATREADTIMESTEP.c_str())) {
           timestep = std::stoi(std::string(ts));
         }
+
+        int proc_count = util().parallel_size();
+        int my_proc    = util().parallel_rank();
+        if (properties.exists("processor_count") && properties.exists("my_processor")) {
+          proc_count = properties.get("processor_count").get_int();
+          my_proc    = properties.get("my_processor").get_int();
+        }
+
         std::ostringstream path;
         path << get_catalyst_dump_dir() << detail::EXECUTE_INVC << timestep
-             << detail::PARAMS_CONDUIT_BIN << util().parallel_size() << detail::DOT
-             << util().parallel_rank();
+             << detail::PARAMS_CONDUIT_BIN << proc_count << detail::DOT << my_proc;
         auto &root  = this->Impl->root();
         auto &dbase = this->Impl->databaseNode();
         conduit_node_load(conduit_cpp::c_node(&root), path.str().c_str(), "conduit_bin");
@@ -1672,6 +1715,9 @@ namespace Iocatalyst {
     auto       &impl      = (*this->Impl.get());
     if (impl.hasField(blockPath, sb, field.get_name())) {
       return impl.getField(blockPath, sb, field, data, data_size);
+    }
+    else if (field.get_name() == detail::CELLIDS || field.get_name() == detail::CELLNODEIDS) {
+      return impl.getStructuredBlockIDS(sb, field, data, data_size);
     }
     else if ((field.get_name() == detail::MESHMODCO) &&
              (impl.hasField(blockPath, sb, detail::MESHMODCOX) &&

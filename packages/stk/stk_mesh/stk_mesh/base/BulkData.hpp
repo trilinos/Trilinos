@@ -65,6 +65,7 @@
 #include "NgpProfilingBlock.hpp"
 #include "stk_mesh/baseImpl/SoloSideIdGenerator.hpp"
 #include "stk_mesh/baseImpl/SideSetImpl.hpp"
+#include "stk_mesh/baseImpl/DeviceMeshHostData.hpp"
 
 namespace stk { namespace mesh { class EntityLess; } }
 namespace stk { namespace mesh { class FieldBase; } }
@@ -84,6 +85,7 @@ namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
 namespace stk { namespace mesh { namespace impl { NgpMeshBase* get_ngp_mesh(const BulkData & bulk); } } }
 namespace stk { namespace mesh { namespace impl { void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh); } } }
+namespace stk { namespace mesh { namespace impl { DeviceMeshHostData* get_ngp_mesh_host_data(const BulkData & bulk); } } }
 
 namespace stk {
 namespace tools {
@@ -572,7 +574,10 @@ public:
   // Check if entity has a specific relation to an entity of subcell_rank
   inline bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id );
 
-  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
+  STK_DEPRECATED inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;
+#endif
+  inline HostCommMapIndices volatile_fast_shared_comm_map(EntityRank rank, int proc) const;
 
   const std::vector<int>& all_sharing_procs(stk::mesh::EntityRank rank) const;
 
@@ -1182,7 +1187,10 @@ protected: //functions
   void internal_remove_aura();
 
   void require_ok_to_modify() const ;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
   void internal_update_fast_comm_maps() const;
+#endif
+  void internal_update_ngp_fast_comm_maps() const;
   void internal_update_all_sharing_procs() const;
 
   void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GhostingId ghostingId, int sharingProc);
@@ -1464,6 +1472,7 @@ private:
                                                    stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
   friend NgpMeshBase * impl::get_ngp_mesh(const BulkData & bulk);
   friend void impl::set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh);
+  friend impl::DeviceMeshHostData* impl::get_ngp_mesh_host_data(const BulkData & bulk);
 
   template<typename T>
   friend void stk::tools::replace_bulk_data(const stk::mesh::BulkData & in_mesh, T & out_mesh, std::function<void(T& outMesh)> op);
@@ -1543,6 +1552,7 @@ protected: //data
 private: // data
   mutable VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   mutable unsigned m_volatile_fast_shared_comm_map_sync_count;
+  mutable std::shared_ptr<impl::DeviceMeshHostData> m_ngpMeshHostData;
   mutable std::vector<std::vector<int> > m_all_sharing_procs;
   mutable unsigned m_all_sharing_procs_sync_count;
   PartVector m_ghost_parts;
@@ -2030,15 +2040,32 @@ BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, Relation
   return found;
 }
 
-inline VolatileFastSharedCommMapOneRank const&
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
+STK_DEPRECATED inline VolatileFastSharedCommMapOneRank const&
 BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 {
   STK_ThrowAssert(this->in_synchronized_state());
-  STK_ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
+  STK_ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot share entities of rank: " << rank);
   if (m_volatile_fast_shared_comm_map_sync_count < synchronized_count()) {
     internal_update_fast_comm_maps();
   }
   return m_volatile_fast_shared_comm_map[rank];
+}
+#endif
+
+inline HostCommMapIndices
+BulkData::volatile_fast_shared_comm_map(EntityRank rank, int proc) const
+{
+  STK_ThrowAssert(this->in_synchronized_state());
+  STK_ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot share entities of rank: " << rank);
+  if (m_ngpMeshHostData == nullptr ||
+      m_ngpMeshHostData->volatileFastSharedCommMapSyncCount < synchronized_count()) {
+    internal_update_ngp_fast_comm_maps();
+  }
+
+  const size_t dataBegin = m_ngpMeshHostData->hostVolatileFastSharedCommMapOffset[rank](proc);
+  const size_t dataEnd = m_ngpMeshHostData->hostVolatileFastSharedCommMapOffset[rank](proc+1);
+  return Kokkos::subview(m_ngpMeshHostData->hostVolatileFastSharedCommMap[rank], Kokkos::pair<size_t,size_t>(dataBegin, dataEnd));
 }
 
 inline Part&
@@ -2275,6 +2302,15 @@ inline NgpMeshBase * get_ngp_mesh(const BulkData & bulk) {
 inline void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh) {
   bulk.set_ngp_mesh(ngpMesh);
 }
+
+inline impl::DeviceMeshHostData* get_ngp_mesh_host_data(const BulkData& bulk)
+{
+  if (bulk.m_ngpMeshHostData == nullptr) {
+    bulk.m_ngpMeshHostData = std::make_shared<impl::DeviceMeshHostData>();
+  }
+  return bulk.m_ngpMeshHostData.get();
+}
+
 }
 
 } // namespace mesh

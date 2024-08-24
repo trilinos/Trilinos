@@ -9,6 +9,6 @@
 
 static const std::array<std::string, 3> qainfo{
     "slice",
-    "2024/06/10",
-    "2.3.00",
+    "2024/07/17",
+    "2.3.01",
 };

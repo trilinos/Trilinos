@@ -172,7 +172,7 @@ using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::Hos
 
 NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) return;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) { GTEST_SKIP(); }
 
   setup_mesh(1, 1, 4);
 
@@ -180,21 +180,9 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {
-    const stk::mesh::BucketIndices & stkBktIndices = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK)[proc];
-    stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", stkBktIndices.ords.size());
-    stk::mesh::DeviceCommMapIndices::HostMirror hostNgpMeshIndices = Kokkos::create_mirror_view(deviceNgpMeshIndices);
+    stk::mesh::DeviceCommMapIndices::HostMirror hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
+    stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", hostNgpMeshIndices.extent(0));
 
-    size_t entryIndex = 0;
-    size_t stkOrdinalIndex = 0;
-    for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
-      const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
-      const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
-      for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
-        const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex++];
-        const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
-        hostNgpMeshIndices[entryIndex++] = stkFastMeshIndex;
-      }
-    }
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
     check_volatile_fast_shared_comm_map_values_on_device(ngpMesh, proc, deviceNgpMeshIndices);
   }

@@ -125,7 +125,7 @@ WriterParser::parseArg(
         m_optionMask |= mask_hex;
       else
       {
-        throw std::runtime_error("Error: Unrecognized option flag argument" + name + "\n");
+        throw std::runtime_error("Error: Unrecognized option flag argument: " + name + "\n");
       }
     }
   }

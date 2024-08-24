@@ -353,8 +353,8 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     // Copy the row for a global node index into a local vector
     node_to_cell->getGlobalRowCopy(global_node_index,indices,values,numEntries);
 
-    for(size_t i=0; i<indices.extent(0); ++i) {
-      auto index = indices(i);
+    for(size_t j=0; j<indices.extent(0); ++j) {
+      auto index = indices(j);
       // if this is a new index (not owned, not previously found ghstd index
       // add it to the list of ghstd cells
       if(unique_cells.find(index)==unique_cells.end()) {

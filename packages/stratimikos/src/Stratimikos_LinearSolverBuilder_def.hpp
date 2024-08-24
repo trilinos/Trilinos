@@ -88,7 +88,7 @@ LinearSolverBuilder<Scalar>::LinearSolverBuilder(
 
 
 template<class Scalar>
-LinearSolverBuilder<Scalar>::~LinearSolverBuilder<Scalar>()
+LinearSolverBuilder<Scalar>::~LinearSolverBuilder()
 {
 #ifdef TEUCHOS_DEBUG
   // Validate that we read the parameters correctly!

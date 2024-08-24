@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <iostream>
 #include <string>
 #include <vector>

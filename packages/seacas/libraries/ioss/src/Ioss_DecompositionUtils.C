@@ -337,9 +337,9 @@ namespace Ioss {
   }
 
   template <typename INT>
-  int DecompUtils::line_decompose(Region &region, size_t num_ranks, const std::string &method,
-                                  const std::string &surface_list,
-                                  std::vector<int> &element_to_proc, INT dummy)
+  void DecompUtils::line_decompose(Region &region, size_t num_ranks, const std::string &method,
+                                   const std::string &surface_list,
+                                   std::vector<int> &element_to_proc, INT dummy)
   {
 
     Ioss::chain_t<INT> element_chains =
@@ -359,20 +359,18 @@ namespace Ioss {
 
     // Make sure all elements on a chain are on the same processor rank...
     line_decomp_modify(element_chains, element_to_proc, num_ranks);
-
-    return 1;
   }
 
-  template IOSS_EXPORT int DecompUtils::line_decompose(Region &region, size_t num_ranks,
-                                                       const std::string &method,
-                                                       const std::string &surface_list,
-                                                       std::vector<int>  &element_to_proc,
-                                                       int                dummy);
-  template IOSS_EXPORT int DecompUtils::line_decompose(Region &region, size_t num_ranks,
-                                                       const std::string &method,
-                                                       const std::string &surface_list,
-                                                       std::vector<int>  &element_to_proc,
-                                                       int64_t            dummy);
+  template IOSS_EXPORT void DecompUtils::line_decompose(Region &region, size_t num_ranks,
+                                                        const std::string &method,
+                                                        const std::string &surface_list,
+                                                        std::vector<int>  &element_to_proc,
+                                                        int                dummy);
+  template IOSS_EXPORT void DecompUtils::line_decompose(Region &region, size_t num_ranks,
+                                                        const std::string &method,
+                                                        const std::string &surface_list,
+                                                        std::vector<int>  &element_to_proc,
+                                                        int64_t            dummy);
 
   template <typename INT>
   std::vector<float> DecompUtils::line_decomp_weights(const Ioss::chain_t<INT> &element_chains,
@@ -466,7 +464,7 @@ namespace Ioss {
                                   std::vector<int> &elem_to_proc, int proc_count);
 
   void DecompUtils::output_decomposition_statistics(const std::vector<int> &elem_to_proc,
-                                                    int proc_count)
+                                                    int                     proc_count)
   {
     // Output histogram of elements / rank...
     std::vector<size_t> elem_per_rank(proc_count);
@@ -475,8 +473,8 @@ namespace Ioss {
     }
 
     size_t number_elements = elem_to_proc.size();
-    size_t proc_width = Ioss::Utils::number_width(proc_count, false);
-    size_t work_width = Ioss::Utils::number_width(number_elements, true);
+    size_t proc_width      = Ioss::Utils::number_width(proc_count, false);
+    size_t work_width      = Ioss::Utils::number_width(number_elements, true);
 
     auto   min_work = *std::min_element(elem_per_rank.begin(), elem_per_rank.end());
     auto   max_work = *std::max_element(elem_per_rank.begin(), elem_per_rank.end());

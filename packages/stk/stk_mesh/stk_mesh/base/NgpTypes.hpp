@@ -43,6 +43,7 @@ namespace stk {
 namespace mesh {
 
 using DeviceCommMapIndices        = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
+using HostCommMapIndices          = DeviceCommMapIndices::HostMirror;
 using EntityKeyViewType           = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
 using EntityViewType              = Kokkos::View<Entity*, stk::ngp::MemSpace>;
 using HostEntityViewType          = Kokkos::View<const Entity*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -54,7 +55,7 @@ using OrdinalViewType             = Kokkos::View<ConnectivityOrdinal*, stk::ngp:
 using PartOrdinalViewType         = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
 using HostPartOrdinalViewType     = Kokkos::View<const PartOrdinal*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
-using FastSharedCommMapViewType   = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
+using FastSharedCommMapViewType   = DeviceCommMapIndices;
 using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
 using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;

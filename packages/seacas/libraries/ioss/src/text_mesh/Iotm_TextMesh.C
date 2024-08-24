@@ -938,6 +938,7 @@ namespace Iotm {
 
       for (const std::string &assemblyName : m_data.assemblies.get_part_names()) {
         const AssemblyData *assembly = m_data.assemblies.get_group_data(assemblyName);
+        ThrowRequireMsg(nullptr != assembly, "Could not find assembly with name" << assemblyName);
 
         bool omitAssembly =
             std::binary_search(assemblyOmissions.begin(), assemblyOmissions.end(), assembly->name);

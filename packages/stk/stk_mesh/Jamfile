@@ -52,9 +52,11 @@ project votd
     <define>STK_SHOW_DEPRECATED_WARNINGS
     <define>STK_HIDE_DEPRECATED_CODE
     <define>SIERRA_MIGRATION
+    <define>STK_16BIT_UPWARDCONN_INDEX_TYPE
     <include>$(stk_mesh-root-inc)
   : usage-requirements
     <define>SIERRA_MIGRATION
+    <define>STK_16BIT_UPWARDCONN_INDEX_TYPE
     <include>$(stk_mesh-root-inc)
   : build-dir $(stk_mesh-builddir)
   ;

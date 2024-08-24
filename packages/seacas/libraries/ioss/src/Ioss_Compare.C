@@ -959,6 +959,11 @@ namespace {
         // the filenames match.
         continue;
       }
+      if (property == "base_filename") {
+        // IGNORE the base_filename.  This is generally the base portion of the filename; we don't
+        // care whether the filenames match.
+        continue;
+      }
 
       // ALLOW the regions to have different names (when copying between databases, io_shell
       // will create "region_1" (input) and "region_2" (output))

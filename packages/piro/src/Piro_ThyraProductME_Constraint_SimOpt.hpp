@@ -207,7 +207,6 @@ public:
       }
     }
     else {
-      Thyra::ModelEvaluatorBase::Derivative<Real> dfdp_dv = outArgs.get_DfDp(0);
       auto dfdp_op = dfdp_dv.getLinearOp();
       auto dfdp = dfdp_dv.getMultiVector();
 

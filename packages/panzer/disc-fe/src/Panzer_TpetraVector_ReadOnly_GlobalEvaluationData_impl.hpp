@@ -103,7 +103,6 @@ initializeData()
    ghostedVector_->putScalar(0.0);
    PHX::ExecSpace().fence();
 
-   typedef typename VectorType::dual_view_type::t_dev::memory_space DMS;
    auto values = ghostedVector_->getLocalViewHost(Tpetra::Access::OverwriteAll);
 
    // initialize some ghosted values to the user specified values

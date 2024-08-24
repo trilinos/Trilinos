@@ -9,7 +9,6 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include <assert.h>
-#include <math.h>
 #define _GNU_SOURCE
 #include <string.h>
 
@@ -43,13 +42,19 @@ static size_t my_strlcat(char *restrict dst, const char *restrict src, size_t ma
   return dstlen + srclen;
 }
 
-static int number_width(const size_t number)
+static int number_width(size_t number)
 {
+  /* Could use `(int)floor(log10(number)) + 1`, but that requires math library... */
   if (number == 0) {
     return 1;
   }
-  int width = (int)floor(log10(number)) + 1;
-  return width;
+  int count = 0;
+  // Iterate till n has digits remaining
+  while (number != 0) {
+    number /= 10;
+    ++count;
+  }
+  return count;
 }
 
 static void verify_valid_component(int component, size_t cardinality, size_t suffix_size)

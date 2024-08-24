@@ -247,7 +247,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   /* put file into define mode */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

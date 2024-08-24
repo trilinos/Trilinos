@@ -8,8 +8,8 @@
 
 #include <percept/Percept.hpp>
 
-#include <Intrepid_CellTools.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_CellTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 #include <percept/FieldTypes.hpp>
 
@@ -31,7 +31,7 @@
                                                          unsigned& found_it, const stk::mesh::Entity hint_element )
     {
       VERIFY_OP(input_phy_points.rank(), ==, found_parametric_coordinates.rank(), "SimpleSearcher::findElement bad dims");
-      VERIFY_OP(input_phy_points.rank(), ==, 2, "SimpleSearcher::findElement bad rank");
+      //VERIFY_OP(input_phy_points.rank(), ==, 2, "SimpleSearcher::findElement bad rank");
 
       const stk::mesh::MetaData& metaData = m_bulk->mesh_meta_data();
       stk::mesh::BulkData& bulkData = *m_bulk;

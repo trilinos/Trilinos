@@ -57,7 +57,6 @@ buildGhostedNodes(const Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraN
   using Teuchos::rcp;
 
   typedef Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> mvec_type;
-  typedef typename mvec_type::dual_view_type dual_view_type;
 
   size_t owned_cell_cnt = importer.getSourceMap()->getLocalNumElements();
   size_t ghstd_cell_cnt = importer.getTargetMap()->getLocalNumElements();

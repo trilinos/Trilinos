@@ -2374,12 +2374,12 @@
           //std::cout << "setupSearch...done" << std::endl;
         }
 
-      static MDArray input_phy_points_one(1,get_spatial_dim());
-      static MDArray output_field_values_one(1,get_spatial_dim());
-      static MDArray found_parametric_coordinates_one(1, get_spatial_dim());
-      input_phy_points_one(0,0) = x;
-      input_phy_points_one(0,1) = y;
-      if (get_spatial_dim()==3) input_phy_points_one(0,2) = z;
+      MDArray input_phy_points_one("input_phy_points_one",1,1,get_spatial_dim());
+      MDArray output_field_values_one("output_field_values_one",1,1,get_spatial_dim());
+      MDArray found_parametric_coordinates_one("found_parametric_coordinates_one",1, 1,get_spatial_dim());
+      input_phy_points_one(0,0,0) = x;
+      input_phy_points_one(0,0,1) = y;
+      if (get_spatial_dim()==3) input_phy_points_one(0,0,2) = z;
 
       unsigned found_it = 0;
       stk::mesh::Entity found_element = stk::mesh::Entity();
@@ -3051,7 +3051,7 @@
     // static
     void PerceptMesh::
     findMinMaxEdgeLength(stk::mesh::BulkData& bulkData, const stk::mesh::Bucket &bucket,  stk::mesh::FieldBase& coord_field,
-                         FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
+                         MDArray& elem_min_edge_length, MDArray& elem_max_edge_length)
     {
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket.topology()).getCellTopologyData();
 

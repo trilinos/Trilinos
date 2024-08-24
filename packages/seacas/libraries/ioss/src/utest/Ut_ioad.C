@@ -23,7 +23,7 @@
 #include <vector>
 
 //////// Global constants ////////////
-std::vector<std::string> ignored_properties = {"database_name"};
+std::vector<std::string> ignored_properties = {"database_name", "base_filename", "database_type"};
 std::vector<std::string> ignored_fields     = {"implicit_ids"};
 std::vector<std::string> ignore_errors      = {"owning_processor"};
 

@@ -41,7 +41,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t

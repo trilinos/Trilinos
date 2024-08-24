@@ -170,8 +170,8 @@ public:
                            Permutation perm = INVALID_PERMUTATION)
   {
     IndexRange& indices = m_offsets[bktOrdinal];
-    ConnectivityOrdinal idx = indices.second;
-    for(ConnectivityOrdinal i=indices.first; i<indices.second; ++i) {
+    UpwardConnIndexType idx = indices.second;
+    for(UpwardConnIndexType i=indices.first; i<indices.second; ++i) {
       if (m_connectivity[i] == entity && m_ordinals[i] == ordinal) {
         idx = i;
         break;
@@ -179,7 +179,7 @@ public:
     }
 
     if (idx < indices.second) {
-      for(ConnectivityOrdinal i=idx; i<indices.second - 1; ++i) {
+      for(UpwardConnIndexType i=idx; i<indices.second - 1; ++i) {
         m_connectivity[i] = m_connectivity[i+1];
         m_ordinals[i] = m_ordinals[i+1];
         if (m_hasPermutations) {
@@ -199,11 +199,11 @@ public:
   bool remove_connectivity(unsigned bktOrdinal)
   {
     IndexRange& indices = m_offsets[bktOrdinal];
-    for(ConnectivityOrdinal i=indices.first; i<indices.second; ++i) {
+    for(UpwardConnIndexType i=indices.first; i<indices.second; ++i) {
       m_ordinals[i] = INVALID_CONNECTIVITY_ORDINAL;
     }
 
-    ConnectivityOrdinal numRemoved = indices.second - indices.first;
+    UpwardConnIndexType numRemoved = indices.second - indices.first;
     indices.second = indices.first;
     m_numUnusedEntries += numRemoved;
     return true;
@@ -328,7 +328,7 @@ public:
   }
 
 private:
-  using IndexRange = std::pair<ConnectivityOrdinal,ConnectivityOrdinal>;
+  using IndexRange = std::pair<UpwardConnIndexType,UpwardConnIndexType>;
 
   bool is_valid(ConnectivityOrdinal ordinal)
   {
@@ -375,6 +375,9 @@ private:
       if (m_hasPermutations) {
         m_permutations.emplace_back();
       }
+
+      STK_ThrowRequireMsg(m_connectivity.size() < INVALID_UPWARDCONN_INDEX,"Internal error, BucketConnDynamic size exceeds limitation of index type");
+
       return insert_connectivity_at_idx(indices, insertIdx, entity, ordinal, perm);
     }
 
@@ -391,12 +394,14 @@ private:
         return false;
       }
 
-      const ConnectivityOrdinal distanceMoved = move_connectivity_to_end(bktOrdinal);
+      const UpwardConnIndexType distanceMoved = move_connectivity_to_end(bktOrdinal);
       m_connectivity.emplace_back();
       m_ordinals.emplace_back();
       if (m_hasPermutations) {
         m_permutations.emplace_back();
       }
+
+      STK_ThrowRequireMsg(m_connectivity.size() < INVALID_UPWARDCONN_INDEX,"Internal error, BucketConnDynamic size exceeds limitation of index type");
 
       return insert_connectivity_at_idx(indices, (insertIdx+distanceMoved), entity, ordinal, perm);
     }
@@ -414,7 +419,7 @@ private:
     if (it != end) {
       int idx = indices.first + (it - beg);
       if (*it==ordinal) {
-        for(; idx<indices.second && m_ordinals[idx]==ordinal; ++idx) {
+        for(; static_cast<unsigned>(idx)<indices.second && m_ordinals[idx]==ordinal; ++idx) {
           if (m_connectivity[idx] > entity) {
             return idx;
           }
@@ -438,7 +443,7 @@ private:
       return false;
     }
     unsigned uinsertIdx = static_cast<unsigned>(insertIdx);
-    for(ConnectivityOrdinal i=indices.second; i>uinsertIdx; --i) {
+    for(UpwardConnIndexType i=indices.second; i>uinsertIdx; --i) {
       m_connectivity[i] = m_connectivity[i-1];
       m_ordinals[i] = m_ordinals[i-1];
       if (m_hasPermutations) {
@@ -466,13 +471,12 @@ private:
                                       entity, ordinal, perm);
   }
   
-  ConnectivityOrdinal move_connectivity_to_end(unsigned bktOrdinal)
+  UpwardConnIndexType move_connectivity_to_end(unsigned bktOrdinal)
   {
     IndexRange& indices = m_offsets[bktOrdinal];
-    STK_ThrowAssertMsg(m_connectivity.size() < INVALID_CONNECTIVITY_ORDINAL,"Internal error, bucket-connectivity size exceeds limitation of ConnectivityOrdinal type");
-    const ConnectivityOrdinal newStartIdx = m_connectivity.size();
+    const UpwardConnIndexType newStartIdx = m_connectivity.size();
 
-    for(ConnectivityOrdinal i=indices.first; i<indices.second; ++i) {
+    for(UpwardConnIndexType i=indices.first; i<indices.second; ++i) {
       m_connectivity.push_back(m_connectivity[i]);
       m_ordinals.push_back(m_ordinals[i]);
       m_ordinals[i] = INVALID_CONNECTIVITY_ORDINAL;
@@ -481,8 +485,10 @@ private:
       }
     }
 
+    STK_ThrowRequireMsg(m_connectivity.size() < INVALID_UPWARDCONN_INDEX,"Internal error, BucketConnDynamic size exceeds limitation of index type");
+
     m_numUnusedEntries += indices.second - indices.first;
-    const ConnectivityOrdinal distanceMoved = newStartIdx - indices.first;
+    const UpwardConnIndexType distanceMoved = newStartIdx - indices.first;
     m_offsets[bktOrdinal] = IndexRange(newStartIdx, m_connectivity.size());
     return distanceMoved;
   }

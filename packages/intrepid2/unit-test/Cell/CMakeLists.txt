@@ -63,7 +63,7 @@ IF (${ETI_DEVICE_COUNT} GREATER_EQUAL 0)
 ENDIF()
 
 # Device test
-SET(Intrepid2_TEST_ETI_FILE "test_01;test_02;test_03;test_04;test_06")
+SET(Intrepid2_TEST_ETI_FILE "test_01;test_02;test_03;test_04;test_05;test_06;test_07")
 
 SET(Intrepid2_TEST_ETI_DEVICE_NAME "")
 SET(Intrepid2_TEST_ETI_DEVICE "")

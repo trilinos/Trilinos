@@ -174,10 +174,10 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   std::string time     = fmt::format("{:%H:%M:%S}", *lt);
   std::string date     = fmt::format("{:%Y/%m/%d}", *lt);
 
-  char qa_date[15];
-  char qa_time[10];
+  char qa_date[32];
+  char qa_time[32];
   char qa_name[MAX_STR_LENGTH];
-  char qa_vers[10];
+  char qa_vers[32];
 
   copy_string(qa_time, time);
   copy_string(qa_date, date);

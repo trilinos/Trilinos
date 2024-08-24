@@ -326,8 +326,8 @@ int get_elem_info(const int req, const E_Type etype)
   case BAR2:
     switch (req) {
     case NNODES: answer = 2; break;
-    case NSIDE_NODES: answer = 2; break;
-    case NSIDES: answer = 1; break;
+    case NSIDE_NODES: answer = 1; break;
+    case NSIDES: answer = 2; break;
     case NDIM: /* number of physical dimensions */ answer = 1; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
@@ -365,8 +365,8 @@ int get_elem_info(const int req, const E_Type etype)
   case BAR3:
     switch (req) {
     case NNODES: answer = 3; break;
-    case NSIDE_NODES: answer = 2; break;
-    case NSIDES: answer = 1; break;
+    case NSIDE_NODES: answer = 1; break;
+    case NSIDES: answer = 2; break;
     case NDIM: /* number of physical dimensions */ answer = 1; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
@@ -945,6 +945,15 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
   switch (etype) {
   case BAR2:
   case BAR3:
+    /* SIDE 1 */
+    if (side_nodes[0] == connect[0]) {
+      return 1;
+    }
+    if (side_nodes[0] == connect[1]) {
+      return 2;
+    }
+    break;
+
   case SHELL2:
   case SHELL3:
     /* SIDE 1 */
@@ -1661,26 +1670,33 @@ int ss_to_node_list(const E_Type etype,    /* The element type */
       {1, 4, 3, 2, 9, 8, 7, 6, 14}    // side 5 (quad)
   };
 
-  static int bar_table[1][3] = {{1, 2, 3}};
+  static int shell_bar_table[1][3] = {{1, 2, 3}};
+  static int bar_table[2][1]       = {{1}, {2}};
 
   /* Locally decrement side_num */
   side_num--;
 
   /* Switch over the element type. */
   switch (etype) {
+  case BAR3:
   case BAR2:
-  case SHELL2:
-    /* Bar1 has 1 side */
-    for (i = 0; i < 2; i++) {
+    /* Bar1 has 2 sides, each is a single node */
+    for (i = 0; i < 1; i++) {
       ss_node_list[i] = connect[(bar_table[side_num][i] - 1)];
     }
     break;
 
-  case BAR3:
+  case SHELL2:
+    /* Bar1 has 1 side */
+    for (i = 0; i < 2; i++) {
+      ss_node_list[i] = connect[(shell_bar_table[side_num][i] - 1)];
+    }
+    break;
+
   case SHELL3:
     /* Bar has 1 side */
     for (i = 0; i < 3; i++) {
-      ss_node_list[i] = connect[(bar_table[side_num][i] - 1)];
+      ss_node_list[i] = connect[(shell_bar_table[side_num][i] - 1)];
     }
     break;
 

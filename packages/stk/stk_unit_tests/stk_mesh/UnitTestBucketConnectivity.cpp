@@ -891,3 +891,23 @@ TEST(BucketConnDynamic, replaceConnectivity_shorter)
   EXPECT_EQ(newOrdinals[0], conn.begin_ordinals(1)[0]);
 }
 
+void add_100k_connectivities()
+{
+  constexpr unsigned bucketCapacity = 50000;
+  stk::mesh::impl::BucketConnDynamic conn(bucketCapacity);
+
+  for(unsigned i=0; i<bucketCapacity; ++i) {
+    conn.add_connectivity(i, stk::mesh::Entity(1), stk::mesh::ConnectivityOrdinal(0));
+    conn.add_connectivity(i, stk::mesh::Entity(2), stk::mesh::ConnectivityOrdinal(1));
+  }
+}
+
+TEST(BucketConnDynamic, test_65k_limit)
+{
+#ifdef STK_16BIT_UPWARDCONN_INDEX_TYPE
+  EXPECT_ANY_THROW(add_100k_connectivities());
+#else
+  EXPECT_NO_THROW(add_100k_connectivities());
+#endif
+}
+

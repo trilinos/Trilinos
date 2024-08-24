@@ -19,7 +19,7 @@ namespace percept {
 void  GregoryPatch::
 fitCubic(MDArray& c, const MDArray& pi, const MDArray& pj, const MDArray& ni, const MDArray& nj)
 {
-  MDArray ci(3), cj(3);
+  MDArray ci("ci",3), cj("cj",3);
 
   
       ci(0) = (2*pi(0) + pj(0))/3. ;
@@ -67,12 +67,13 @@ fitCubic(MDArray& c, const MDArray& pi, const MDArray& pj, const MDArray& ni, co
 bool  GregoryPatch::
 fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool rIsTri)
 {
-  MDArray p = pin, r = rin;
+  MDArray p("ploc",pin.layout()), r("rloc",rin.layout());
+  Kokkos::deep_copy(p,pin);
+  Kokkos::deep_copy(r,rin);
   double Lam0, Lam1, Mu0, Mu1, DetAAtLhs;
-  //MDArray pt = p, rt = r;
-  MDArray pe(4,3), re(4,3);
-  MDArray m0(3,3), m1(3,3), R0(3), R1(3);
-  MDArray b(3,3), a(3,4), aat(3,3), aatI(3,3), d(3,3), d1(3,3);
+  MDArray pe("pe",4,3), re("re",4,3);
+  MDArray m0("m0",3,3), m1("m1",3,3), R0("R0",3), R1("R1",3);
+  MDArray b("b",3,3), a("a",3,4), aat("aat",3,3), aatI("aatI",3,3), d("d",3,3), d1("d1",3,3);
   double mpe = 1.e-6, Anorm=0;
 
   //
@@ -228,8 +229,8 @@ fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool
 
      double dd1, dd2, diffnc, det0, det1, localScaleFactor;
   double bdd1, bdd2, bdiffnc;
-  MDArray nc1(3), nc2(3);
-  MDArray bnc1(3), bnc2(3);
+  MDArray nc1("nc1",3), nc2("nc2",3);
+  MDArray bnc1("bnc1",3), bnc2("bnc2",3);
   
       localScaleFactor = 0.16666666666666666*(MyPow(MyPow2(p(0,0) - qh(0,0)) + MyPow2(p(0,1) - qh(0,1)) + MyPow2(p(0,2)\
  
@@ -328,7 +329,7 @@ fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool
   MyPow2(m1(1,1))*MyPow2(m1(2,0)) + MyPow2(m1(0,0))*MyPow2(m1(2,1)) + MyPow2(m1(1,0))*MyPow2(m1(2,1)) ;
      if (DEBUG_PRINT) std::cout << "\n\n ======================================================================= \n"
                                 << "\npIsTri= " << pIsTri << " rIsTri= " << rIsTri << std::endl;
-    if (DEBUG_PRINT) std::cout << "m0=\n" << m0 << " m1=\n" << m1 << std::endl;
+    if (DEBUG_PRINT) std::cout << "m0=\n" << printContainer(m0) << " m1=\n" << printContainer(m1) << std::endl;
 
     if (DEBUG_PRINT) std::cout << "det0 = " << det0 << " det1= " << det1 << std::endl;
 
@@ -595,8 +596,9 @@ fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool
 void  GregoryPatch::
 fitRibbonNoNeighbor(MDArray& pin, MDArray& q, MDArray& qh, bool pIsTri)
 {
-  MDArray p = pin;
-  MDArray pe(4,3);
+  MDArray p("ploc",pin.layout());
+  Kokkos::deep_copy(p,pin);
+  MDArray pe("pe",4,3);
 
   //
   if (pIsTri)

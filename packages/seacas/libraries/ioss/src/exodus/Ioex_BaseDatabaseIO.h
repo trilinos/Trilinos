@@ -99,8 +99,14 @@ namespace Ioex {
     IOSS_NODISCARD bool ok_nl(bool write_message = false, std::string *error_message = nullptr,
                               int *bad_count = nullptr) const override;
 
+    void release_memory_nl() override;
+
+    int  num_child_group_nl() override;
+    bool open_child_group_nl(int index) override;
+    bool open_root_group_nl() override;
     bool open_group_nl(const std::string &group_name) override;
     bool create_subgroup_nl(const std::string &group_name) override;
+    Ioss::NameList groups_describe_nl(bool return_full_names) override;
 
     bool begin_nl(Ioss::State state) override;
     bool end_nl(Ioss::State state) override;
@@ -320,6 +326,7 @@ namespace Ioex {
 
     time_t timeLastFlush{0};
     int    flushInterval{-1};
+    int    m_timestepCount{0};
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};

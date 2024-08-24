@@ -39,6 +39,10 @@ message("starting STK cmake configuration, CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}"
 option(STK_BUILT_FOR_SIERRA "Enable SIERRA capability" OFF)
 set(SIERRA_MIGRATION ${STK_BUILT_FOR_SIERRA} CACHE BOOL "Enable SIERRA capability")
 
+if(STK_BUILT_FOR_SIERRA)
+set(STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE ON)
+endif()
+
 IF(COMMAND TRIBITS_PACKAGE_DECL)
   SET(HAVE_STK_Trilinos ON)
   TRIBITS_PACKAGE_DECL(STK)
@@ -153,8 +157,21 @@ if(SEACAS_ENABLE_SEACASNemesis)
   SET(STK_HAS_SEACAS_NEMESIS ON)
 endif()
 
+if (Trilinos_ENABLE_Intrepid2)
+  message("Intrepid2 is enabled, setting STK_HAVE_INTREPID2")
+  SET(STK_HAVE_INTREPID2 ON)
+endif()
+
 if(NOT HAVE_STK_Trilinos)
   stk_process_enables()
+endif()
+
+if(STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE)
+  set(STK_16BIT_UPWARDCONN_INDEX_TYPE ON)
+  message("STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE is ON, upward-connectivity tables limited to ~65K entries per bucket.")
+else()
+  set(STK_16BIT_UPWARDCONN_INDEX_TYPE OFF)
+  message("STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE is OFF, upward-connectivity tables using 32bit indexing, (allows ~4B entries per bucket).")
 endif()
 
 IF (TPL_ENABLE_Boost)
