@@ -591,13 +591,27 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
           //move from host to device
           auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
-          auto boundaryNodesDevice = Kokkos::create_mirror_view_and_copy(ExecSpace(), boundaryNodes);
           auto thresholdKokkos = static_cast<impl_scalar_type>(threshold);
           auto realThresholdKokkos = implATS::magnitude(thresholdKokkos);
           auto columnsDevice = Kokkos::create_mirror_view(ExecSpace(), columns);
 
-          auto At = Utilities::Op2TpetraCrs(A);
-          auto A_device = At->getLocalMatrixDevice();
+          auto A_device = A->getLocalMatrixDevice();
+          RCP<LWGraph> graph = rcp(new LWGraph(A->getCrsGraph(), "graph of A"));
+          RCP<const Import> importer = A->getCrsGraph()->getImporter();
+          RCP<LocalOrdinalVector> boundaryNodesVector = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(graph->GetDomainMap());
+          RCP<LocalOrdinalVector> boundaryColumnVector;
+          for(size_t i = 0; i < graph->GetNodeNumVertices(); i++) {
+            boundaryNodesVector->getDataNonConst(0)[i] = boundaryNodes[i];
+          }
+          if(!importer.is_null()) {
+            boundaryColumnVector = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(graph->GetImportMap());
+            boundaryColumnVector->doImport(*boundaryNodesVector, *importer, Xpetra::INSERT);
+          }
+          else {
+            boundaryColumnVector = boundaryNodesVector;
+          }
+          auto boundaryColumn = boundaryColumnVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+          auto boundary = Kokkos::subview(boundaryColumn, Kokkos::ALL(), 0);
 
           Kokkos::View<LO*, ExecSpace>rownnzView("rownnzView", A_device.numRows());
           auto drop_views = Kokkos::View<bool*, ExecSpace>("drop_views", A_device.nnz());
@@ -608,30 +622,24 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             auto rowView = A_device.rowConst(row);
             size_t nnz = rowView.length;
 
-            size_t dropSize = 0;
             auto drop_view = Kokkos::subview(drop_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row+1)));
             auto index_view = Kokkos::subview(index_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row+1)));
 
             //find magnitudes
-            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, (LO)nnz), [&](const LO colID, size_t &count) {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, (LO)nnz), [&](const LO colID) {
               index_view(colID) = colID;
               LO col = rowView.colidx(colID);
               //ignore diagonals for now, they are checked again later
-              if(row == col) {
-                drop_view(colID) = true;
-                count++;
-              }
               //Don't aggregate boundaries
-              else if(boundaryNodesDevice(colID)) {
+              if(row == col || boundary(col)) {
                 drop_view(colID) = true;
               }
               else {
                 drop_view(colID) = false;
-                count++;
               }
-            }, dropSize);
+            });
 
-            size_t dropStart = dropSize;
+            size_t dropStart = nnz;
             if (classicalAlgo == unscaled_cut) {
               //push diagonals and boundaries to the right, sort everything else by aij on the left
               Kokkos::Experimental::sort_team(teamMember, index_view, [=](size_t& x, size_t& y) -> bool {
@@ -646,7 +654,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               });
 
               //find index where dropping starts
-              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, dropSize), [=](size_t i, size_t& min) {
+              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, nnz), [=](size_t i, size_t& min) {
                 auto const& x = index_view(i - 1);
                 auto const& y = index_view(i);
                 typename implATS::magnitudeType x_aij = 0;
@@ -658,7 +666,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                   y_aij    = implATS::magnitude(rowView.value(y) * rowView.value(y));
                 }
 
-                if(x_aij > realThresholdKokkos * y_aij) {
+                if(realThresholdKokkos * realThresholdKokkos * x_aij > y_aij) {
                   if(i < min) {
                     min = i;
                   }
@@ -673,30 +681,30 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                 else {
                   auto x_aij    = implATS::magnitude(rowView.value(x) * rowView.value(x));
                   auto y_aij    = implATS::magnitude(rowView.value(y) * rowView.value(y));
-                  auto x_aiiajj = implATS::magnitude(thresholdKokkos * thresholdKokkos * ghostedDiagValsView(rowView.colidx(x)) * ghostedDiagValsView(row));
-                  auto y_aiiajj = implATS::magnitude(thresholdKokkos * thresholdKokkos * ghostedDiagValsView(rowView.colidx(y)) * ghostedDiagValsView(row));
+                  auto x_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(x)) * ghostedDiagValsView(row));
+                  auto y_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(y)) * ghostedDiagValsView(row));
                   return (x_aij / x_aiiajj) > (y_aij / y_aiiajj);
                 }
               });
 
               //find index where dropping starts
-              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, dropSize), [=](size_t i, size_t& min) {
+              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, 1, nnz), [=](size_t i, size_t& min) {
                 auto const& x = index_view(i - 1);
                 auto const& y = index_view(i);
                 typename implATS::magnitudeType x_val = 0;
                 typename implATS::magnitudeType y_val = 0;
                 if(!drop_view(x)) {
                   typename implATS::magnitudeType x_aij    = implATS::magnitude(rowView.value(x) * rowView.value(x));
-                  typename implATS::magnitudeType x_aiiajj = implATS::magnitude(thresholdKokkos * thresholdKokkos * ghostedDiagValsView(rowView.colidx(x)) * ghostedDiagValsView(row));
+                  typename implATS::magnitudeType x_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(x)) * ghostedDiagValsView(row));
                   x_val = x_aij / x_aiiajj;
                 }
                 if(!drop_view(y)) {
                   typename implATS::magnitudeType y_aij    = implATS::magnitude(rowView.value(y) * rowView.value(y));
-                  typename implATS::magnitudeType y_aiiajj = implATS::magnitude(thresholdKokkos * thresholdKokkos * ghostedDiagValsView(rowView.colidx(y)) * ghostedDiagValsView(row));
+                  typename implATS::magnitudeType y_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(y)) * ghostedDiagValsView(row));
                   y_val = y_aij / y_aiiajj;
                 }
 
-                if(x_val > realThresholdKokkos * y_val) {
+                if(realThresholdKokkos * realThresholdKokkos * x_val > y_val) {
                   if(i < min) {
                     min = i;
                   }
@@ -705,15 +713,15 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             }
 
             //drop everything to the right of where values stop passing threshold
-            if(dropStart < dropSize) {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, dropSize), [=](size_t i) {
+            if(dropStart < nnz) {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, nnz), [=](size_t i) {
                 drop_view(index_view(i)) = true;
               });
             }
 
             LO rownnz = 0;
             GO rowDropped = 0;
-            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, dropSize), [=](const size_t idxID, LO& keep, GO& drop) {
+            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, nnz), [=](const size_t idxID, LO& keep, GO& drop) {
               LO col = rowView.colidx(idxID);
               //don't drop diagonal
               if(row == col || !drop_view(idxID)) {
@@ -1381,7 +1389,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                       auto const& y = drop_vec[i];
                       auto a        = x.val;
                       auto b        = y.val;
-                      if (a > realThreshold * b) {
+                      if (realThreshold * realThreshold * a > b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -1404,7 +1412,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                       auto const& y = drop_vec[i];
                       auto a        = x.val / x.diag;
                       auto b        = y.val / y.diag;
-                      if (a > realThreshold * b) {
+                      if (realThreshold * realThreshold * a > b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
