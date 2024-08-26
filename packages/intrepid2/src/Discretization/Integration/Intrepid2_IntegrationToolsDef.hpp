@@ -1966,7 +1966,6 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
   
   if (leftIsVectorValued)
   {
-    const bool rightIsVectorValued = basisValuesRight.vectorData().isValid();
     const auto &refVectorLeft   = basisValuesLeft.vectorData();
     int numFamiliesLeft         = refVectorLeft.numFamilies();
     int numVectorComponentsLeft = refVectorLeft.numComponents();
