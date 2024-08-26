@@ -7,14 +7,20 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_gcrodr_hb_test
   SOURCES test_gcrodr_hb.cpp
-  ARGS "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75"
+  ARGS
+  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=ICGS"
+  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=IMGS"
+  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=DGKS"
   COMM serial mpi
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_KokkosDense_gcrodr_hb_test
   SOURCES test_kokkos_gcrodr_hb.cpp
-  ARGS "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75"
+  ARGS 
+  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=ICGS"
+  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=IMGS"
+  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=DGKS"
   COMM serial mpi
   )
 
