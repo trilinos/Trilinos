@@ -34,9 +34,9 @@ namespace Intrepid2 {
   template<typename PointViewType>
   bool 
   CellTools<DeviceType>::
-  checkPointInclusion( const PointViewType        point,
-                       const shards::CellTopology cellTopo,
-                       const double               threshold) {
+  checkPointInclusion( const PointViewType          point,
+                       const shards::CellTopology   cellTopo,
+                       const typename ScalarTraits<typename PointViewType::value_type>::scalar_type threshold) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( point.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Point must have rank 1. ");
@@ -94,12 +94,13 @@ namespace Intrepid2 {
   struct checkPointInclusionFunctor {
     OutputViewType output_;
     InputViewType input_;
-    double threshold_;
+    using ScalarType = typename ScalarTraits<typename InputViewType::value_type>::scalar_type;
+    ScalarType threshold_;
 
     KOKKOS_INLINE_FUNCTION
-    checkPointInclusionFunctor(       OutputViewType output,
-                               const  InputViewType  input,
-                               const  double         threshold)
+    checkPointInclusionFunctor(       OutputViewType                      output,
+                               const  InputViewType                       input,
+                               const  ScalarType threshold)
       : output_(output), 
         input_(input),
         threshold_(threshold) {}
@@ -129,7 +130,7 @@ namespace Intrepid2 {
   void CellTools<DeviceType>::
   checkPointwiseInclusion(      OutputViewType inCell, 
                           const InputViewType  points,
-                          const double         threshold) {     
+                          const typename ScalarTraits<typename InputViewType::value_type>::scalar_type threshold) {     
 
      using FunctorType = checkPointInclusionFunctor<cellTopologyKey,decltype(inCell),decltype(points)>;
     if (points.rank() == 2) {     // inCell.rank() == 1
@@ -144,13 +145,13 @@ namespace Intrepid2 {
 
   template<typename DeviceType>
   template<typename InCellViewType,
-           typename PointViewType>
+           typename InputViewType>
   void
   CellTools<DeviceType>::
-  checkPointwiseInclusion(       InCellViewType       inCell,
-                           const PointViewType        points,
-                           const shards::CellTopology cellTopo,
-                           const double               threshold ) {
+  checkPointwiseInclusion(       InCellViewType         inCell,
+                           const InputViewType          points,
+                           const shards::CellTopology   cellTopo,
+                           const typename ScalarTraits<typename InputViewType::value_type>::scalar_type threshold ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
       INTREPID2_TEST_FOR_EXCEPTION( (inCell.rank() != 1) && (inCell.rank() != 2), std::invalid_argument,
@@ -218,7 +219,7 @@ namespace Intrepid2 {
                            const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                            const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,
                            const shards::CellTopology cellTopo,
-                           const double threshold ) {
+                           const typename ScalarTraits<pointValueType>::scalar_type threshold ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
       const auto key = cellTopo.getBaseKey();
