@@ -79,7 +79,7 @@ namespace Sacado {
       //! Constructor
       SACADO_INLINE_FUNCTION
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
-        sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*stride_.value), dx_(v) {}
+        sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*static_cast<int>(stride_.value)), dx_(v) {}
 
       //! Constructor
       SACADO_INLINE_FUNCTION
