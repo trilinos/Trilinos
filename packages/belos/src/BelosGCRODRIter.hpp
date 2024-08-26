@@ -34,7 +34,7 @@
   \class Belos::GCRODRIter
   
   \brief This class implements the GCRODR iteration, where a
-  single-std::vector Krylov subspace is constructed.  The QR decomposition of 
+  single-vector Krylov subspace is constructed.  The QR decomposition of 
   block, upper Hessenberg matrix is performed each iteration to update
   the least squares system and give the current linear system residuals.
   \ingroup belos_solver_framework
@@ -65,6 +65,10 @@ namespace Belos {
     /*! \brief The recycled subspace and its projection. */
     Teuchos::RCP<MV> U, C;
 
+    /*! \brief The global projection matrix including Krylov subpace and recycled subspace
+     */
+    Teuchos::RCP<DM> H2;
+
     /*! \brief The current Hessenberg matrix.
      *
      * The \c curDim by \c curDim leading submatrix of H is the
@@ -78,7 +82,8 @@ namespace Belos {
 
     GCRODRIterState() : curDim(0), V(Teuchos::null), 
 			U(Teuchos::null), C(Teuchos::null),
-			H(Teuchos::null), B(Teuchos::null)
+			H2(Teuchos::null), H(Teuchos::null), 
+			B(Teuchos::null)
     {}
   };
   
@@ -223,18 +228,10 @@ namespace Belos {
       state.V = V_;
       state.U = U_;
       state.C = C_;
+      state.H2 = H2_;
       state.H = H_;
       state.B = B_;
-      
-      om_->stream(Debug) << "Calling getState()" << std::endl;
-/*
-      om_->stream(Debug) << "getState() printing H and R" << std::endl;
-      DMT::SyncDeviceToHost( *H_ );
-      DMT::SyncDeviceToHost( *R_ );
-      for (int ii=0; ii<curDim_; ++ii)
-        for (int jj=0; jj<curDim_; ++jj)
-           om_->stream(Debug) << DMT::ValueConst(*H_,ii,jj) << "\t" << DMT::ValueConst(*R_,ii,jj) << std::endl;
-*/
+
       return state;
     }
     
@@ -257,7 +254,7 @@ namespace Belos {
     //! Get the current update to the linear system.
     /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
       This method forces its computation.  Other solvers, like CG, update the solution
-      each iteration, so this method will return a zero std::vector indicating that the linear
+      each iteration, so this method will return a zero vector indicating that the linear
       problem contains the current solution.
     */
     Teuchos::RCP<MV> getCurrentUpdate() const;
@@ -292,12 +289,6 @@ namespace Belos {
     //! \brief Set the maximum number of blocks used by the iterative solver.
     void setNumBlocks(int numBlocks) { setSize( recycledBlocks_, numBlocks ); };
     
-    //! \brief Get the maximum number of recycled blocks used by the iterative solver in solving this linear problem.
-    int getRecycledBlocks() const { return recycledBlocks_; }
-
-    //! \brief Set the maximum number of recycled blocks used by the iterative solver.
-    void setRecycledBlocks(int recycledBlocks) { setSize( recycledBlocks, numBlocks_ ); };
-    
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
     
@@ -309,8 +300,9 @@ namespace Belos {
     //! \brief Set the maximum number of blocks used by the iterative solver and the number of recycled vectors.
     void setSize( int recycledBlocks, int numBlocks ) {
       // only call resize if size changed
-      if ( (recycledBlocks_ != recycledBlocks) || (numBlocks_ != numBlocks) ) {
+      if ( recycledBlocks_ != recycledBlocks )
         recycledBlocks_ = recycledBlocks;
+      if ( numBlocks_ != numBlocks ) {
         numBlocks_ = numBlocks;
         cs_.resize( numBlocks_+1 );
         sn_.resize( numBlocks_+1 );
@@ -361,7 +353,9 @@ namespace Belos {
     
     // Current subspace dimension, and number of iterations performed.
     int curDim_, iter_;
-    
+   
+    // Pointer to the (0,0) position of the upper Hessenberg matrix.
+    int ptrH00_; 
     // 
     // State Storage
     //
@@ -370,6 +364,9 @@ namespace Belos {
     //
     // Recycled subspace vectors.
     Teuchos::RCP<MV> U_, C_;
+    //
+    // Global projected matrix, including H_ and B_
+    Teuchos::RCP<DM> H2_;
     //
     // Projected matrices
     // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
@@ -399,9 +396,11 @@ namespace Belos {
     initialized_    = false;
     curDim_         = 0;
     iter_           = 0;
+    ptrH00_         = 0;
     V_              = Teuchos::null;
     U_              = Teuchos::null;
     C_              = Teuchos::null;
+    H2_             = Teuchos::null;
     H_              = Teuchos::null;
     B_              = Teuchos::null;
 
@@ -417,7 +416,6 @@ namespace Belos {
 
     numBlocks_ = nb;
     recycledBlocks_ = rb;
-
     cs_.resize( numBlocks_+1 );
     sn_.resize( numBlocks_+1 );
     z_ = DMT::Create( numBlocks_+1, 1, false );
@@ -457,9 +455,6 @@ namespace Belos {
       //
       //  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
       //
-      DMT::SyncHostToDevice( *y );
-      DMT::SyncHostToDevice( *R_ );
-      //
       std::vector<int> index(curDim_);
       for ( int i=0; i<curDim_; i++ ) index[i] = i;
       Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
@@ -469,12 +464,10 @@ namespace Belos {
       //
       if (U_ != Teuchos::null) {
 	Teuchos::RCP<DM> z = DMT::Create( recycledBlocks_, 1 );
-	DMT::SyncDeviceToHost( *B_ );
-	DMT::SyncDeviceToHost( *y );
-        Teuchos::RCP<const DM> subB = DMT::SubviewConst( *B_, recycledBlocks_, curDim_ );
+	DMT::SyncDeviceToHost( *H2_ );
         blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycledBlocks_, 1, curDim_, one, 
-		   DMT::GetConstRawHostPtr(*subB), DMT::GetStride(*subB),
-		   DMT::GetRawHostPtr(*y), DMT::GetStride(*y),
+		   DMT::GetConstRawHostPtr(*B_), DMT::GetStride(*B_),
+		   DMT::GetConstRawHostPtr(*y), DMT::GetStride(*y),
 		   zero, DMT::GetRawHostPtr(*z), DMT::GetStride(*z));
         DMT::SyncHostToDevice( *z );
         MVT::MvTimesMatAddMv( -one, *U_, *z, one, *currentUpdate );
@@ -482,7 +475,6 @@ namespace Belos {
     }
     std::vector<MagnitudeType> normUpdate( 1 );
     MVT::MvNorm( *currentUpdate, normUpdate );
-    std::cout << "Norm of update: " << normUpdate[0] << std::endl;
 
     return currentUpdate;
   }
@@ -501,8 +493,8 @@ namespace Belos {
     
     if (norms) {
       DMT::SyncDeviceToHost( *z_ );
-      Teuchos::BLAS<int,ScalarType> blas;
-      (*norms)[0] = blas.NRM2( 1, &(DMT::ValueConst(*z_,curDim_,0)), 1);
+      const ScalarType curNativeResid = DMT::ValueConst(*z_,curDim_,0);
+      (*norms)[0] = SCT::magnitude (curNativeResid);
     }
     return Teuchos::null;
   }
@@ -513,18 +505,28 @@ namespace Belos {
   // Initialize this iteration object
   template<class ScalarType, class MV, class OP, class DM>
   void GCRODRIter<ScalarType,MV,OP,DM>::initialize(GCRODRIterState<ScalarType,MV,DM>& newstate) {
-    
-    if (newstate.V != Teuchos::null &&  newstate.H != Teuchos::null) {
+   
+    if (newstate.V != Teuchos::null && newstate.H2 != Teuchos::null) {
       curDim_ = newstate.curDim;
       V_      = newstate.V;
       U_      = newstate.U;
       C_      = newstate.C;
-      H_      = newstate.H;
-      B_      = newstate.B;
+      H2_     = newstate.H2;
+      // There is no recycled space, so this iteration is creating the first one.
+      if (newstate.U == Teuchos::null) {
+        ptrH00_ = recycledBlocks_+1;
+        H_ = DMT::Subview( *H2_, numBlocks_+1, numBlocks_, ptrH00_, ptrH00_ );
+        B_ = Teuchos::null;
+      }
+      else {	      
+        ptrH00_ = recycledBlocks_;
+        H_ = DMT::Subview( *H2_, numBlocks_+1, numBlocks_, ptrH00_, ptrH00_ );
+        B_ = DMT::Subview( *H2_, recycledBlocks_, numBlocks_, 0, ptrH00_ );
+      }
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have V initialized.");
-      TEUCHOS_TEST_FOR_EXCEPTION(newstate.H == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have H initialized.");
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.H2 == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have H2 initialized.");
     }
 
     // the solver is initialized
@@ -557,8 +559,6 @@ namespace Belos {
     // First, get a view of the first element of z_ to hold the orthonormalization coefficients
     Teuchos::RCP<DM> z0 = DMT::Subview( *z_, 1, 1 );
     int rank = ortho_->normalize( *Vnext, z0 );
-    DMT::SyncDeviceToHost( *z0 );
-    om_->stream(Debug) << "Norm of V_0: " << DMT::ValueConst( *z0, 0, 0 ) << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
 
     std::vector<int> prevind(numBlocks_+1);
@@ -593,23 +593,18 @@ namespace Belos {
         Teuchos::Array<Teuchos::RCP<const MV> > AVprev(1, Vprev);
 
         // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-        Teuchos::RCP<DM> subH = DMT::Subview(*H_, lclDim, 1, 0, curDim_);
+	Teuchos::RCP<DM> subH = DMT::Subview(*H2_, lclDim, 1, ptrH00_, ptrH00_+curDim_);
         Teuchos::Array<Teuchos::RCP<DM> > AsubH( 1, subH );
 
         // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-        Teuchos::RCP<DM> subR = DMT::Subview(*H_, 1, 1, lclDim, curDim_);
+        Teuchos::RCP<DM> subR = DMT::Subview(*H2_, 1, 1, ptrH00_+lclDim, ptrH00_+curDim_);
 
         // Project out the previous Krylov vectors and normalize the next vector.
-        rank = ortho_->projectAndNormalize(*Vnext, AsubH, subR, AVprev);
-      /* 
-        om_->stream(Debug) << "getState() printing H for step " << curDim_ << std::endl;
-        DMT::SyncDeviceToHost(*H_);
-	for (int i=0; i<lclDim+1; ++i)
-          om_->stream(Debug) << "H [ " << i << ", " << curDim_ << " ] = " << DMT::ValueConst(*H_, i, curDim_) << std::endl;
-      */  
-        // Copy over the coefficients to R just in case we run into an error.
+	rank = ortho_->projectAndNormalize(*Vnext, AsubH, subR, AVprev);
+
+	// Copy over the coefficients to R just in case we run into an error.
 	Teuchos::RCP<DM> subR2 = DMT::Subview(*R_, lclDim+1, 1, 0, curDim_);
-        Teuchos::RCP<const DM> subH2 = DMT::SubviewConst(*H_, lclDim+1, 1, 0, curDim_);
+        Teuchos::RCP<const DM> subH2 = DMT::SubviewConst(*H2_, lclDim+1, 1, ptrH00_, ptrH00_+curDim_);
 	DMT::Assign(*subR2, *subH2);
 	subR2 = Teuchos::null;
 
@@ -640,10 +635,13 @@ namespace Belos {
         lp_->apply(*Vprev,*Vnext);
         Vprev = Teuchos::null;
 
+	DMT::SyncHostToDevice(*H2_);
+
         // First, remove the recycled subspace (C) from Vnext and put coefficients in B.
         Teuchos::Array<Teuchos::RCP<const MV> > C(1, C_);
-        Teuchos::RCP<DM> subB = DMT::Subview(*B_, recycledBlocks_, 1, 0, curDim_);
-        Teuchos::Array<Teuchos::RCP<DM> > AsubB( 1, subB );
+        Teuchos::RCP<DM> subB = DMT::Subview(*H2_, recycledBlocks_, 1, 0, ptrH00_+curDim_);
+        Teuchos::RCP<DM> tmpB = DMT::Create(recycledBlocks_, 1);
+	Teuchos::Array<Teuchos::RCP<DM> > AsubB( 1, subB );
 
         // Project out the recycled subspace.
         ortho_->project( *Vnext, AsubB, C );
@@ -656,23 +654,18 @@ namespace Belos {
         Teuchos::Array<Teuchos::RCP<const MV> > AVprev(1, Vprev);
 	
         // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-        Teuchos::RCP<DM> subH = DMT::Subview(*H_, lclDim, 1, 0, curDim_);
+        Teuchos::RCP<DM> subH = DMT::Subview(*H2_, lclDim, 1, ptrH00_, ptrH00_+curDim_);
         Teuchos::Array<Teuchos::RCP<DM> > AsubH(1, subH);
       
         // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-        Teuchos::RCP<DM> subR = DMT::Subview(*H_, 1, 1, lclDim, curDim_);
+        Teuchos::RCP<DM> subR = DMT::Subview(*H2_, 1, 1, ptrH00_+lclDim, ptrH00_+curDim_);
 
         // Project out the previous Krylov vectors and normalize the next vector.
         rank = ortho_->projectAndNormalize(*Vnext, AsubH, subR, AVprev);
-/*
-        om_->stream(Debug) << "getState() printing H for step " << curDim_ << std::endl;
-	DMT::SyncDeviceToHost(*H_);
-	for (int i=0; i<lclDim+1; ++i)
-          om_->stream(Debug) << "H [ " << i << ", " << curDim_ << " ] = " << DMT::ValueConst(*H_, i, curDim_) << std::endl;
-*/ 
+ 
         // Copy over the coefficients to R just in case we run into an error.
 	Teuchos::RCP<DM> subR2 = DMT::Subview(*R_, lclDim+1, 1, 0, curDim_);
-        Teuchos::RCP<const DM> subH2 = DMT::SubviewConst(*H_, lclDim+1, 1, 0, curDim_);
+        Teuchos::RCP<const DM> subH2 = DMT::SubviewConst(*H2_, lclDim+1, 1, ptrH00_, ptrH00_+curDim_);
 	DMT::Assign(*subR2, *subH2);
 	subR2 = Teuchos::null;
       
@@ -696,7 +689,6 @@ namespace Belos {
     int i;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
    
-    om_->stream(Debug) << "Calling update LSQR!" << std::endl; 
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
     // Therefore, it is possible that dim == curDim_.
@@ -725,7 +717,6 @@ namespace Belos {
     // Calculate new Givens rotation
     //
     blas.ROTG( &(DMT::Value(*R_,curDim,curDim)), &(DMT::Value(*R_,curDim+1,curDim)), &cs_[curDim], &sn_[curDim] );
-    om_->stream(Debug) << "R_[ " << curDim << ", " << curDim << " ] = " << DMT::Value(*R_,curDim,curDim) << std::endl;
     DMT::Value(*R_,curDim+1,curDim) = zero;
     //
     // Update RHS w/ new transformation
