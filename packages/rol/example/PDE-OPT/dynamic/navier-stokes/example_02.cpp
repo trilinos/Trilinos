@@ -311,39 +311,41 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     z->zero();
     if (useParametricControl) {
-      // Linearly interpolate between optimal values for angular velocity
-      // amplitude and Strouhal number obtained for Re=200, 1000 in
-      //     JW He, R Glowinski, R Metcalfe, A Nordlander, J Periaux
-      //     Active Control and Drag Optimization for Flow Past a
-      //     Circular Cylinder
-      //     Journal of Computation Physics, 163, pg. 83-117, 2000.
-      RealT Re   = parlist->sublist("Problem").get("Reynolds Number",200.0);
-      RealT amp0 = 6.0 - (Re - 200.0)/1600.0;
-      RealT Se0  = 0.74 - (Re - 200.0) * (0.115/800.0);
-      RealT amp  = parlist->sublist("Problem").sublist("Initial Guess").get("Amplitude", amp0);
-      RealT Se   = parlist->sublist("Problem").sublist("Initial Guess").get("Strouhal Number", Se0);
-      RealT ph   = parlist->sublist("Problem").sublist("Initial Guess").get("Phase Shift", 0.0);
-      for( int k=0; k<nt; ++k ) {
-        ROL::Ptr<std::vector<RealT>> zn
-          = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k))->getParameter()->getVector();
-        (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
+      bool readFromFile = parlist->sublist("Initial Guess").get("Read From File",false);
+      if (!readFromFile) {
+        // Linearly interpolate between optimal values for angular velocity
+        // amplitude and Strouhal number obtained for Re=200, 1000 in
+        //     JW He, R Glowinski, R Metcalfe, A Nordlander, J Periaux
+        //     Active Control and Drag Optimization for Flow Past a
+        //     Circular Cylinder
+        //     Journal of Computation Physics, 163, pg. 83-117, 2000.
+        RealT Re   = parlist->sublist("Problem").get("Reynolds Number",200.0);
+        RealT amp0 = 6.0 - (Re - 200.0)/1600.0;
+        RealT Se0  = 0.74 - (Re - 200.0) * (0.115/800.0);
+        RealT amp  = parlist->sublist("Problem").sublist("Initial Guess").get("Amplitude", amp0);
+        RealT Se   = parlist->sublist("Problem").sublist("Initial Guess").get("Strouhal Number", Se0);
+        RealT ph   = parlist->sublist("Problem").sublist("Initial Guess").get("Phase Shift", 0.0);
+        for( int k=0; k<nt; ++k ) {
+          ROL::Ptr<std::vector<RealT>> zn
+            = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k))->getParameter()->getVector();
+          (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
+        }
+      }
+      else {
+        for (int k = 1; k < nt; ++k) {
+          std::stringstream zname;
+          zname << "initial_control." << k-1 << ".txt";
+          std::fstream zfile;
+          zfile.open(zname.str(),std::ios::in);
+	  if (!zfile.is_open()) std::cout << "CANNOT OPEN " << zname.str() << std::endl;
+          zfile >> (*(ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k-1))->getParameter()->getVector()))[0];
+          zfile.close();
+        }
       }
     }
     //parlist->sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG"); 
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
     //algo = ROL::makePtr<ROL::TypeP::ProxGradientAlgorithm<RealT>>(*parlist); 	
-    ROL::Ptr<ROL::Vector<RealT>> ztemp = z->clone(); 
-    ztemp->randomize(); 
-    ROL::Ptr<ROL::Vector<RealT>> pztemp = z->clone(); 
-
-//    RealT ptol = 1.0; 
-//    nobj->prox(*pztemp, *ztemp, 1.0, ptol); 
-//
-//    pztemp->axpy(-1.0, *ztemp); 
-//
-//    *outStream << "Error = "
-//               << pztemp->norm() << std::endl; 
-//
     //ROL::OptimizationProblem<RealT> problem(obj,z);// need to change this
     //ROL::OptimizationSolver<RealT> solver(problem,*parlist);// need to change this
     std::clock_t timer = std::clock();
