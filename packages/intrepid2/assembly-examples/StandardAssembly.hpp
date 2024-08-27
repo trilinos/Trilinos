@@ -178,25 +178,25 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   {
     // the un-transformed values have shape (F,P): scalar values
     // if vector weights supplied, these will increase the rank
-    ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? ultimateBasis1Rank = 3 : 4; // (C,F,P) or (C,F,P,D)
+    ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? 3 : 4; // (C,F,P) or (C,F,P,D)
   }
   else if (basis1Values.rank() == 3)
   {
     // the un-transformed values have shape (F,P,D): vector values
     // if vector weights supplied, these will decrease the rank (we interpret as a dot product)
-    ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? ultimateBasis1Rank = 4 : 3; // (C,F,P,D) or (C,F,P)
+    ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? 4 : 3; // (C,F,P,D) or (C,F,P)
   }
   if (basis2Values.rank() == 2)
   {
     // the un-transformed values have shape (F,P): scalar values
     // if vector weights supplied, these will increase the rank
-    ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? ultimateBasis2Rank = 3 : 4; // (C,F,P) or (C,F,P,D)
+    ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? 3 : 4; // (C,F,P) or (C,F,P,D)
   }
   else if (basis2Values.rank() == 3)
   {
     // the un-transformed values have shape (F,P,D): vector values
     // if vector weights supplied, these will decrease the rank (we interpret as a dot product)
-    ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? ultimateBasis2Rank = 4 : 3; // (C,F,P,D) or (C,F,P)
+    ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? 4 : 3; // (C,F,P,D) or (C,F,P)
   }
   
   INTREPID2_TEST_FOR_EXCEPTION(ultimateBasis1Rank != ultimateBasis2Rank, std::invalid_argument, "basis1 and basis2 must agree on their rank under the respective operators");
