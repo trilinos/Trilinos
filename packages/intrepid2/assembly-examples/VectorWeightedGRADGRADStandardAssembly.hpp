@@ -1,36 +1,32 @@
-// @HEADER
-// *****************************************************************************
-//                           Intrepid2 Package
 //
-// Copyright 2007 NTESS and the Intrepid2 contributors.
-// SPDX-License-Identifier: BSD-3-Clause
-// *****************************************************************************
-// @HEADER
-//
-//  H1StandardAssembly.hpp
+//  VectorWeightedGRADGRADStandardAssembly.hpp
 //  Trilinos
 //
-//  Created by Roberts, Nathan V on 3/1/22.
+//  Created by Roberts, Nathan V on 5/13/24.
 //
 
-#ifndef Intrepid2_H1StandardAssembly_hpp
-#define Intrepid2_H1StandardAssembly_hpp
+#ifndef Intrepid2_VectorWeightedGRADGRADStandardAssembly_hpp
+#define Intrepid2_VectorWeightedGRADGRADStandardAssembly_hpp
 
 #include "JacobianFlopEstimate.hpp"
+#include "Intrepid2_OrientationTools.hpp"
 
-/** \file   H1StandardAssembly.hpp
-    \brief  Locally assembles a matrix with the H^1 natural norm -- an array of shape (C,F,F), with formulation (e_i, e_j) + (grad e_i, grad e_j), using standard Intrepid2 methods; these do not algorithmically exploit geometric structure.
+/** \file   VectorWeightedGRADGRADStandardAssembly.hpp
+    \brief  Locally assembles a vector-weighted Poisson matrix -- an array of shape (C,F,F), with formulation (a dot grad e_i, b dot grad e_j), using standard Intrepid2 methods; these do not algorithmically exploit geometric structure.
  */
 
 //! Version that uses the classic, generic Intrepid2 paths.
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
-Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry,
-                                                                     const int &polyOrder, int worksetSize,
-                                                                     double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2 = spaceDim>
+Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureVectorWeightedGRADGRAD(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry,
+                                                                                         const int &polyOrder, int worksetSize,
+                                                                                         Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight1,
+                                                                                         Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight2,
+                                                                                         double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
-  using namespace Intrepid2;
-  using ExecutionSpace = typename DeviceType::execution_space;
+  INTREPID2_TEST_FOR_EXCEPTION(vectorWeight1 == Teuchos::null, std::invalid_argument, "vectorWeight1 cannot be null");
+  INTREPID2_TEST_FOR_EXCEPTION(vectorWeight2 == Teuchos::null, std::invalid_argument, "vectorWeight2 cannot be null");
   
+  using ExecutionSpace = typename DeviceType::execution_space;
   int numVertices = 1;
   for (int d=0; d<spaceDim; d++)
   {
@@ -42,8 +38,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
   auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
   initialSetupTimer->start();
   
-  using CellTools = CellTools<DeviceType>;
-  using FunctionSpaceTools = FunctionSpaceTools<DeviceType>;
+  using CellTools = Intrepid2::CellTools<DeviceType>;
+  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<DeviceType>;
+  
+  using namespace Intrepid2;
   
   using namespace std;
   // dimensions of the returned view are (C,F,F)
@@ -82,10 +80,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
   ScalarView<Scalar,DeviceType> unorientedTransformedGradValues("unoriented transformed grad values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
-  
-  ScalarView<Scalar,DeviceType> unorientedTransformedBasisValues("unoriented transformed basis values", worksetSize, numFields, numPoints);
-  ScalarView<Scalar,DeviceType> transformedBasisValues("transformed basis values", worksetSize, numFields, numPoints);
-  ScalarView<Scalar,DeviceType> transformedWeightedBasisValues("transformed weighted basis values", worksetSize, numFields, numPoints);
+  ScalarView<Scalar,DeviceType> vectorWeightedTransformedGradValues("vector-weighted transformed grad values", worksetSize, numFields, numPoints);
+  ScalarView<Scalar,DeviceType> vectorWeightedTransformedWeightedGradValues("vector-weighted transformed weighted grad values", worksetSize, numFields, numPoints);
   
   basis->getValues(basisValues,     cubaturePoints, OPERATOR_VALUE );
   basis->getValues(basisGradValues, cubaturePoints, OPERATOR_GRAD  );
@@ -108,6 +104,23 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
   ScalarView<Scalar,DeviceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
   ScalarView<Scalar,DeviceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
 
+  auto auView = getView<Scalar,DeviceType>("a_u", spaceDim);
+  auto auViewHost = Kokkos::create_mirror(auView);
+
+  for (int d=0; d<spaceDim; d++)
+  {
+    auViewHost(d) = (*vectorWeight1)[d];
+  }
+  Kokkos::deep_copy(auView, auViewHost);
+  
+  auto avView = getView<Scalar,DeviceType>("a_v", spaceDim);
+  auto avViewHost = Kokkos::create_mirror(avView);
+  for (int d=0; d<spaceDim; d++)
+  {
+    avViewHost(d) = (*vectorWeight2)[d];
+  }
+  Kokkos::deep_copy(avView, avViewHost);
+  
   initialSetupTimer->stop();
   
   transformIntegrateFlopCount  = 0;
@@ -123,21 +136,18 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
     int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
     
     std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
-    auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
+    auto cellWorkset         = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
     auto orientationsWorkset = Kokkos::subview(orientations, cellRange);
     
     if (numCellsInWorkset != worksetSize)
     {
-      Kokkos::resize(jacobian,                         numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianInverse,                  numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianDeterminant,              numCellsInWorkset, numPoints);
-      Kokkos::resize(cellMeasures,                     numCellsInWorkset, numPoints);
-      Kokkos::resize(unorientedTransformedGradValues,  numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(unorientedTransformedBasisValues, numCellsInWorkset, numFields, numPoints);
-      Kokkos::resize(transformedBasisValues,           numCellsInWorkset, numFields, numPoints);
-      Kokkos::resize(transformedGradValues,            numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedWeightedBasisValues,   numCellsInWorkset, numFields, numPoints);
-      Kokkos::resize(transformedWeightedGradValues,    numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(jacobian,                        numCellsInWorkset, numPoints, spaceDim, spaceDim);
+      Kokkos::resize(jacobianInverse,                 numCellsInWorkset, numPoints, spaceDim, spaceDim);
+      Kokkos::resize(jacobianDeterminant,             numCellsInWorkset, numPoints);
+      Kokkos::resize(cellMeasures,                    numCellsInWorkset, numPoints);
+      Kokkos::resize(unorientedTransformedGradValues, numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedGradValues,           numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedWeightedGradValues,   numCellsInWorkset, numFields, numPoints, spaceDim);
     }
     jacobianAndCellMeasureTimer->start();
     CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo); // accounted for outside loop, as numCells * flopsPerJacobianPerCell.
@@ -151,36 +161,40 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
     FunctionSpaceTools::HGRADtransformGRAD(unorientedTransformedGradValues, jacobianInverse, basisGradValues);
-    // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
+        // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
     fstIntegrateCall->stop();
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedGradValues, unorientedTransformedGradValues,
                                                            orientationsWorkset, basis.get());
     fstIntegrateCall->start();
+    
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
         
+    auto policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields,numPoints});
+    Kokkos::parallel_for("compute expanded_{u,v}TransformedGradValues", policy3,
+    KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+    {
+      Scalar u_result = 0;
+      Scalar v_result_weighted = 0;
+      for (int d=0; d<spaceDim; d++)
+      {
+        u_result          += auView(d) *         transformedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+        v_result_weighted += avView(d) * transformedWeightedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+      }
+      vectorWeightedTransformedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal) = u_result;
+      vectorWeightedTransformedWeightedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal) = v_result_weighted;
+    });
+    
+    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim * 2 * 2); // 2 * 2: one multiply, one add per (D) entry, times 2 containers u and v
+    
     auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
     
-    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedGradValues, transformedWeightedGradValues);
-    ExecutionSpace().fence();
-    
-    FunctionSpaceTools::HGRADtransformVALUE(unorientedTransformedBasisValues, basisValues);
-    // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
-    fstIntegrateCall->stop();
-    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedBasisValues, unorientedTransformedBasisValues,
-                                                           orientationsWorkset, basis.get());
-    fstIntegrateCall->start();
-    FunctionSpaceTools::multiplyMeasure(transformedWeightedBasisValues, cellMeasures, transformedBasisValues);
-    bool sumInto = true; // add the (value,value) integral to the (grad,grad) that we've already integrated
-    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedBasisValues, transformedWeightedBasisValues, sumInto);
+    FunctionSpaceTools::integrate(cellStiffnessSubview, vectorWeightedTransformedGradValues, vectorWeightedTransformedWeightedGradValues);
     ExecutionSpace().fence();
     fstIntegrateCall->stop();
     
-    // record flops for (grad,grad)
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numFields) * double(numPoints * spaceDim * 2 - 1); // 2: one multiply, one add per (P,D) entry in the contraction; but you do one less add than the number of multiplies, hence the minus 1.
-    // for (value,value):
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numFields) * double(numPoints * 2 - 1); // one multiply, add for each (P) entry in the contraction.
+    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numFields) * double(numPoints * 2); // 2: one multiply, one add per P entry in the contraction.
     
     cellOffset += worksetSize;
   }
@@ -188,4 +202,4 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
   return cellStiffness;
 }
 
-#endif /* H1StandardAssembly_h */
+#endif /* VectorWeightedGRADGRADStandardAssembly_h */
