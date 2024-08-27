@@ -35,6 +35,19 @@
 
 unsigned int debug_level = 0;
 
+#if FMT_VERSION >= 90000
+namespace fmt {
+  template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
+  {
+  };
+} // namespace fmt
+namespace fmt {
+  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
+  {
+  };
+} // namespace fmt
+#endif
+
 namespace {
   std::string tsFormat = "[{:%H:%M:%S}] ";
 
