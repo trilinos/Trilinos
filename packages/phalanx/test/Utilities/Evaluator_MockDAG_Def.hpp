@@ -48,8 +48,8 @@ namespace PHX {
   }
 
   template<typename EvalT,typename Traits>
-  void MockDAG<EvalT,Traits>::requires(const std::string& n,
-                                       const bool use_dynamic_layout)
+  void MockDAG<EvalT,Traits>::depends(const std::string& n,
+                                      const bool use_dynamic_layout)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;

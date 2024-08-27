@@ -45,7 +45,7 @@ namespace PHX {
   }
 
   template<typename EvalT,typename Traits>
-  void EvaluatorWithMacros1<EvalT,Traits>::requires(const std::string& n)
+  void EvaluatorWithMacros1<EvalT,Traits>::depends(const std::string& n)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -105,7 +105,7 @@ namespace PHX {
   }
 
   template<typename EvalT,typename Traits>
-  void EvaluatorWithMacros2<EvalT,Traits>::requires(const std::string& n)
+  void EvaluatorWithMacros2<EvalT,Traits>::depends(const std::string& n)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
