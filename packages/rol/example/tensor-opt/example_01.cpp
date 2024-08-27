@@ -431,6 +431,14 @@ private:
 
       ehv.scale(DT2_(0.5), ev);
     }
+
+    void precond (ROL::Vector<DT2_> &       hv,
+                  const ROL::Vector<DT2_> & v,
+                  const ROL::Vector<DT2_> & x,
+                  DT2_ &                    tol) override
+    {
+      invHessVec(hv,v,x,tol);
+    }
   };
 
   /******************************************************************************/
@@ -663,9 +671,8 @@ public:
     _problem->addConstraint("Inequality Constraint 1", _icon[1], _imul[1], _ibnd[1]);
     _problem->addConstraint("Inequality Constraint 2", _icon[2], _imul[2], _ibnd[2]);
     _problem->addConstraint("Inequality Constraint 3", _icon[3], _imul[3], _ibnd[3]);
+    _problem->finalize(false,true,std::cout);
     _solver = ROL::makePtr<ROL::Solver<DT_>>(_problem, * _parlist);
-    //_problem = ROL::makePtr<ROL::OptimizationProblem<DT_>>(_obj, _x, _bnd, _icon, _imul, _ibnd);
-    //_solver = ROL::makePtr<ROL::OptimizationSolver<DT_>>(* _problem, * _parlist);
     _x->zero();
   }
 
@@ -723,8 +730,9 @@ public:
   {
     _x->wrap(x);
     for (auto& it : _imul) it->zero();
-    _solver->reset();
-    //_problem->reset();
+    _problem->edit();
+    _problem->finalize(false,true,std::cout);
+    _solver = ROL::makePtr<ROL::Solver<DT_>>(_problem, * _parlist);
     _solver->solve(outStream);
 
     return _x->data();
@@ -840,21 +848,22 @@ int main(int argc, char *argv[]) {
       // start from zero solution
       DataType y[] = {0.0, 0.0, 0.0};
       sp.solve(y);
-      std::cout << "y = [" << y[0] << ", " << y[1] << ", " << y[2] << "]" << std::endl;
+      std::cout << std::setprecision(16) << "y = [" << y[0] << ", " << y[1] << ", " << y[2] << "]" << std::endl;
       // solve one more time
       DataType z[] = {0.0, 0.0, 0.0};
       sp.solve(z);
-      std::cout << "z = [" << z[0] << ", " << z[1] << ", " << z[2] << "]" << std::endl;
+      std::cout << std::setprecision(16) << "z = [" << z[0] << ", " << z[1] << ", " << z[2] << "]" << std::endl;
       // perform checks
+      DataType tol = std::sqrt(ROL::ROL_EPSILON<DataType>()); // * xnorm;
       ROL::CArrayVector<DataType> xx(&x[0],dim), yy(&y[0],dim), zz(&z[0],dim);
       xx.axpy(static_cast<DataType>(-1), yy);
-      if (xx.norm() > std::sqrt(ROL::ROL_EPSILON<DataType>())) {
-        *outStream << "\n\nxx.norm() = " << xx.norm() << "\n"; 
+      if (xx.norm() > tol) {
+        *outStream << std::endl << "xx.norm() = " << xx.norm() << std::endl;
         errorFlag = 1000;
       }
       yy.axpy(static_cast<DataType>(-1), zz);
-      if (yy.norm() > ROL::ROL_EPSILON<DataType>()) {
-        *outStream << "\n\nyy.norm() = " << yy.norm() << "\n"; 
+      if (yy.norm() > tol) {
+        *outStream << std::endl << "yy.norm() = " << yy.norm() << std::endl;
         errorFlag = 1000;
       }
     }
