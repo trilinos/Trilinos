@@ -31,10 +31,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-// MLP Remove after debugging
-#include <fstream>
-#include <iomanip>
-
 /*!
   \class Belos::RCGIter
 
@@ -86,7 +82,7 @@ namespace Belos {
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Alpha;
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Beta;
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > D;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > rTz_old;
+    Teuchos::RCP<std::vector<ScalarType> > rTz_old;
 
     /*! \brief Solutions to local least-squares problems */
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Delta;
@@ -230,12 +226,6 @@ namespace Belos {
     //! \brief Set the maximum number of blocks used by the iterative solver.
     void setNumBlocks(int numBlocks) { setSize( recycleBlocks_, numBlocks ); };
 
-    //! Get the maximum number of recycled blocks used by the iterative solver in solving this linear problem.
-    int getRecycledBlocks() const { return recycleBlocks_; }
-
-    //! \brief Set the maximum number of recycled blocks used by the iterative solver.
-    void setRecycledBlocks(int recycleBlocks) { setSize( recycleBlocks, numBlocks_ ); };
-
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
 
@@ -319,7 +309,7 @@ namespace Belos {
     Teuchos::RCP<std::vector<int> > ipiv_;
     //
     // The scalar r'*z
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > rTz_old_;
+    Teuchos::RCP<std::vector<ScalarType> > rTz_old_;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -468,7 +458,8 @@ namespace Belos {
 
     // Allocate memory for scalars
     std::vector<int> index(1);
-    Teuchos::SerialDenseMatrix<int,ScalarType> pAp(1,1), rTz(1,1);
+    std::vector<ScalarType> pAp(1);
+    std::vector<ScalarType> rTz(1);
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -499,14 +490,14 @@ namespace Belos {
       lp_->applyOp( *p_, *Ap_ );
 
       // d = p'*Ap;
-      MVT::MvTransMv( one, *p_, *Ap_, pAp );
-      (*D_)(i_,0) = pAp(0,0);
+      MVT::MvDot( *p_, *Ap_, pAp );
+      (*D_)(i_,0) = pAp[0];
 
       // alpha = rTz_old / pAp
-      (*Alpha_)(i_,0) = (*rTz_old_)(0,0) / pAp(0,0);
+      (*Alpha_)(i_,0) = (*rTz_old_)[0] / pAp[0];
 
       // Check that alpha is a positive number
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp(0,0)) <= zero, CGPositiveDefiniteFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp[0]) <= zero, CGPositiveDefiniteFailure,
                                   "Belos::RCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // x = x + (alpha * p);
@@ -532,13 +523,13 @@ namespace Belos {
       }
 
       // rTz_new = r'*z;
-      MVT::MvTransMv( one, *r_, *z_, rTz );
+      MVT::MvDot( *r_, *z_, rTz );
 
       // beta = rTz_new/rTz_old;
-      (*Beta_)(i_,0) = rTz(0,0) / (*rTz_old_)(0,0);
+      (*Beta_)(i_,0) = rTz[0] / (*rTz_old_)[0];
 
       // rTz_old = rTz_new;
-      (*rTz_old_)(0,0) = rTz(0,0);
+      (*rTz_old_) = rTz;
 
       // get pointer for next p
       index.resize( 1 );
