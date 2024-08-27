@@ -94,7 +94,11 @@ namespace std {
   static constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
 }
 
+#if KOKKOS_VERSION >= 40499
+#include "View/Kokkos_ViewMapping.hpp"
+#else
 #include "impl/Kokkos_ViewMapping.hpp"
+#endif
 
 namespace Kokkos {
 namespace Impl {
