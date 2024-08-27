@@ -409,7 +409,7 @@ namespace Belos {
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > AUTAU_;
     //
     // The scalar r'*z
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > rTz_old_;
+    Teuchos::RCP<std::vector<ScalarType> > rTz_old_;
     //
     // Matrices needed for calculation of harmonic Ritz eigenproblem
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > F_,G_,Y_;
@@ -877,10 +877,10 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 
       // Generate rTz_old_ only if it doesn't exist
       if (rTz_old_ == Teuchos::null)
-        rTz_old_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 ) );
+        rTz_old_ = Teuchos::rcp( new std::vector<ScalarType>(1) );
       else {
-        if ( (rTz_old_->numRows() != 1) || (rTz_old_->numCols() != 1) )
-          rTz_old_->reshape( 1, 1 );
+        if ( (rTz_old_->size() != 1) )
+          rTz_old_->resize( 1 );
       }
 
       // Generate F_ only if it doesn't exist
@@ -1189,7 +1189,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       }
 
       // rTz_old = r'*z
-      MVT::MvTransMv( one, *r_, *z_, *rTz_old_ );
+      MVT::MvDot( *r_, *z_, *rTz_old_ );
 
       if ( existU_ ) {
         // mu = UTAU\(AU'*z);
