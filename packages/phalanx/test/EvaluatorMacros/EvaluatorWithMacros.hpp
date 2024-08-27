@@ -19,7 +19,7 @@ namespace PHX {
   PHX_EVALUATOR_CLASS(EvaluatorWithMacros1)
   public:
     void evaluates(const std::string& field_name);
-    void requires(const std::string& field_name);
+    void depends(const std::string& field_name);
     void bindField(const PHX::FieldTag& ft, const std::any& f);
   PHX_EVALUATOR_CLASS_END
   
@@ -27,7 +27,7 @@ namespace PHX {
   PHX_EVALUATOR_CLASS_PP(EvaluatorWithMacros2)
   public:
     void evaluates(const std::string& field_name);
-    void requires(const std::string& field_name);
+    void depends(const std::string& field_name);
     void bindField(const PHX::FieldTag& ft, const std::any& f);
   PHX_EVALUATOR_CLASS_END
 

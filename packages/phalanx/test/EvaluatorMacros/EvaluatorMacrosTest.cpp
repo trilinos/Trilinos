@@ -46,8 +46,8 @@ TEUCHOS_UNIT_TEST(evaluator_macros, basic)
     RCP<Ev1> a = rcp(new Ev1(*plist_a));
     a->setName("Eval_A");
     a->evaluates("A");
-    a->requires("B");
-    a->requires("C");
+    a->depends("B");
+    a->depends("C");
     fm.registerEvaluator<MyTraits::Residual>(a);
   }
   {
@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST(evaluator_macros, basic)
     RCP<Ev2> b = rcp(new Ev2(*plist_b));
     b->setName("Eval_B");
     b->evaluates("B");
-    b->requires("D");
+    b->depends("D");
     fm.registerEvaluator<MyTraits::Residual>(b);
   }
   {
@@ -63,7 +63,7 @@ TEUCHOS_UNIT_TEST(evaluator_macros, basic)
     RCP<Ev2> c = rcp(new Ev2(*plist_c));
     c->setName("Eval_C");
     c->evaluates("C");
-    c->requires("D");
+    c->depends("D");
     fm.registerEvaluator<MyTraits::Residual>(c);
   }
   {

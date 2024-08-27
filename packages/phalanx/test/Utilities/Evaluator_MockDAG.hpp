@@ -25,7 +25,7 @@ namespace PHX {
 			       PHX::FieldManager<Traits>& fm);
     void evaluateFields(typename Traits::EvalData d);
     void evaluates(const std::string& field_name, const bool use_dynamic_layout=false);
-    void requires(const std::string& field_name, const bool use_dynamic_layout=false);
+    void depends(const std::string& field_name, const bool use_dynamic_layout=false);
     void contributes(const std::string& field_name, const bool use_dynamic_layout=false);
     void unshared(const std::string& field_name);
   };
