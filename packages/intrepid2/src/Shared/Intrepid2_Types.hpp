@@ -65,14 +65,26 @@ namespace Intrepid2 {
     return epsilon<double>();
   }
 
+  template<typename ValueType>
+  KOKKOS_FORCEINLINE_FUNCTION
+  ValueType tolerence() {
+    return 100.0*epsilon<ValueType>();
+  }
+
   KOKKOS_FORCEINLINE_FUNCTION
   double tolerence() {
-    return 100.0*epsilon();
+    return tolerence<double>();
+  }
+
+  template<typename ValueType>
+  KOKKOS_FORCEINLINE_FUNCTION
+  ValueType threshold() {
+    return 10.0*epsilon<ValueType>();
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
   double threshold() {
-    return 10.0*epsilon();
+    return threshold<double>();
   }
 
   /// Define constants

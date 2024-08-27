@@ -337,10 +337,10 @@ template<unsigned CellTopologyKey>
   */
   template<>
   struct PointInclusion<shards::Line<>::key> {
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);   
+    check(const PointViewType &point, const ScalarType threshold);   
   };
   
   /** 
@@ -348,10 +348,10 @@ template<unsigned CellTopologyKey>
   */
   template<>
   struct PointInclusion<shards::Triangle<>::key> {
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);
+    check(const PointViewType &point, const ScalarType threshold);
   };
   
   /** 
@@ -360,10 +360,10 @@ template<unsigned CellTopologyKey>
   template<>
   struct PointInclusion<shards::Quadrilateral<>::key> {
 
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);
+    check(const PointViewType &point, const ScalarType threshold);
   };
     
   /** 
@@ -371,10 +371,10 @@ template<unsigned CellTopologyKey>
   */
   template<>
   struct PointInclusion<shards::Tetrahedron<>::key> {
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);
+    check(const PointViewType &point, const ScalarType threshold);
   };
 
   /** 
@@ -382,10 +382,10 @@ template<unsigned CellTopologyKey>
   */
   template<>
   struct PointInclusion<shards::Hexahedron<>::key> {
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);
+    check(const PointViewType &point, const ScalarType threshold);
   };
   
   /** 
@@ -393,10 +393,10 @@ template<unsigned CellTopologyKey>
   */
   template<>
   struct PointInclusion<shards::Pyramid<>::key> {
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);
+    check(const PointViewType &point, const ScalarType threshold);
   };
 
   /** 
@@ -404,10 +404,10 @@ template<unsigned CellTopologyKey>
   */
   template<>
   struct PointInclusion<shards::Wedge<>::key> {
-    template<typename PointViewType>
+    template<typename PointViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static bool
-    check(const PointViewType &point, const double threshold);
+    check(const PointViewType &point, const ScalarType threshold);
   };
 
 }

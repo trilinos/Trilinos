@@ -203,7 +203,7 @@ namespace Intrepid2
   template<typename ValueType, typename DeviceType, class ... DimArgs>
   inline ViewType<ValueType,DeviceType> getView(const std::string &label, DimArgs... dims)
   {
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    const bool allocateFadStorage = !(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value);
     if (!allocateFadStorage)
     {
       return ViewType<ValueType,DeviceType>(label,dims...);
@@ -218,7 +218,7 @@ namespace Intrepid2
   template<typename ValueType, class ... DimArgs>
   inline FixedRankViewType< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type, DefaultTestDeviceType > getFixedRankView(const std::string &label, DimArgs... dims)
   {
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    const bool allocateFadStorage = !(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value);
     using value_type = typename RankExpander<ValueType, sizeof...(dims) >::value_type;
     if (!allocateFadStorage)
     {

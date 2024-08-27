@@ -123,7 +123,7 @@ namespace Intrepid2 {
         // prepare for allocation of temporary storage
         // note: tempStorage goes "backward", starting from the final component, which needs just one entry
         
-        const bool allocateFadStorage = !std::is_pod<Scalar>::value;
+        const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);  
         if (allocateFadStorage)
         {
           fad_size_output_ = dimension_scalar(integralView_);
@@ -1063,7 +1063,7 @@ namespace Intrepid2 {
         // prepare for allocation of temporary storage
         // note: tempStorage goes "backward", starting from the final component, which needs just one entry
 
-        const bool allocateFadStorage = !std::is_pod<Scalar>::value;
+        const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
         if (allocateFadStorage)
         {
           fad_size_output_ = dimension_scalar(integralView_);
@@ -2127,7 +2127,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               {
                 ScalarView<Scalar,DeviceType> componentIntegralView;
                 
-                const bool allocateFadStorage = !std::is_pod<Scalar>::value;
+                const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
                 if (allocateFadStorage)
                 {
                   auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
