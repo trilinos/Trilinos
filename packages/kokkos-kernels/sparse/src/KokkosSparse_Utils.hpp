@@ -848,6 +848,19 @@ ordinal_t graph_max_degree(const rowmap_t &rowmap) {
   return val;
 }
 
+template <typename execution_space, typename rowmap_t>
+typename rowmap_t::non_const_value_type graph_max_degree(const execution_space &exec, const rowmap_t &rowmap) {
+  using Offset  = typename rowmap_t::non_const_value_type;
+  using Reducer = Kokkos::Max<Offset>;
+  Offset nrows  = rowmap.extent(0);
+  if (nrows) nrows--;
+  if (nrows == 0) return 0;
+  Offset val;
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(exec, 0, nrows),
+                          MaxDegreeFunctor<Reducer, Offset, rowmap_t>(rowmap), Reducer(val));
+  return val;
+}
+
 template <typename device_t, typename ordinal_t, typename rowmap_t>
 void graph_min_max_degree(const rowmap_t &rowmap, ordinal_t &min_degree, ordinal_t &max_degree) {
   using Reducer   = Kokkos::MinMax<ordinal_t>;
