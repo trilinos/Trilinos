@@ -44,6 +44,12 @@
 #ifndef _AZ_Y12M_WRAPPERS_H_
 #define _AZ_Y12M_WRAPPERS_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "az_f77func.h"
 
 #   define Y12MBF_F77                 F77_FUNC(y12mbf,Y12MBF)
@@ -71,10 +77,3 @@ void PREFIX Y12MDF_F77(int *n, double val[], int *nn, double b[], double pivot[]
 #endif
 
 #endif /* _AZ_Y12M_WRAPPERS_H_ */
-
-#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The AztecOO package is deprecated"
-#endif
-#endif
-

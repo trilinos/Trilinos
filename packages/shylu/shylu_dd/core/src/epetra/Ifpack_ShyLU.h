@@ -18,6 +18,12 @@
 #ifndef IFPACK_SHYLU_H
 #define IFPACK_SHYLU_H
 
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+
 #include <assert.h>
 #include <iostream>
 #include <sstream>
@@ -340,10 +346,3 @@ int JustTryIt() ;
 };
 
 #endif /* IFPACK_SHYLU_H */
-
-#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ShyLU_DDCore package is deprecated"
-#endif
-#endif
-

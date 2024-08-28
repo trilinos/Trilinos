@@ -5,6 +5,12 @@
 #ifndef ML_BLAS_LAPACK_WRAPPERS_H
 #define ML_BLAS_LAPACK_WRAPPERS_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* Wrappers for blas & lapack routines.   This file is the result of merging
  * Epetra_BLAS_wrappers.h & Epetra_LAPACK_wrappers.h and a few cosmetic
  * changes.  */
@@ -679,10 +685,3 @@ void PREFIX XERBLA_F77(ml_fcd, int *info);
 #endif
 
 #endif /* ML_BLAS_LAPACK_WRAPPERS_H */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

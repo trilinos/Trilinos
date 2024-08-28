@@ -10,6 +10,12 @@
 #ifndef __MLAGGVBMETIS__
 #define __MLAGGVBMETIS__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 
 /* ------------------------------------------------------------------------ */
 /*!
@@ -96,10 +102,3 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
 #endif
 
 #endif /* #ifndef __MLAGGVBMETIS__ */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

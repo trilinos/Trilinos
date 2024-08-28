@@ -42,6 +42,12 @@
 #ifndef EpetraExt_MULTIVECTOR_REINDEX_H
 #define EpetraExt_MULTIVECTOR_REINDEX_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 
 class Epetra_MultiVector;
@@ -82,10 +88,3 @@ class MultiVector_Reindex : public ViewTransform<Epetra_MultiVector> {
 } //namespace EpetraExt
 
 #endif //EpetraExt_MULTIVECTOR_REINDEX_H
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

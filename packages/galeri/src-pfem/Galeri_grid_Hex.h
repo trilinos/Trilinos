@@ -53,5 +53,3 @@ class Hex : public Element
 } // namespace grid
 } // namespace Galeri
 #endif
-
-

@@ -45,6 +45,12 @@
 #ifndef __PCOMMH__
 #define __PCOMMH__
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,10 +62,3 @@ double max_all(double , int );
 }
 #endif
 #endif
-
-#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Pliris package is deprecated"
-#endif
-#endif
-

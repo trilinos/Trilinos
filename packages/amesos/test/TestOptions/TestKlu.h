@@ -21,4 +21,3 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 #warning "The Amesos package is deprecated"
 #endif
 #endif
-

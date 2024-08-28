@@ -44,6 +44,14 @@
 #ifndef EPETRA_IMPORT_H
 #define EPETRA_IMPORT_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_Object.h"
 #include "Epetra_BlockMap.h"
 class Epetra_Distributor;
@@ -349,10 +357,3 @@ in the above example to do an export operation to y, adding the contributions th
 };
 
 #endif /* EPETRA_IMPORT_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

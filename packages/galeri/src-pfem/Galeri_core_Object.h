@@ -125,4 +125,3 @@ inline ostream& operator<<(ostream& os, const Object& obj)
 }; // namespace Galeri
 
 #endif
-

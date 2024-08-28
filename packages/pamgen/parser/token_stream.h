@@ -187,4 +187,3 @@ Token Get_Identifier_Token(Token_Stream *, int);
 Token Get_No_Token(Token_Stream *, int);
 }//end namespace PAMGEN_NEVADA
 #endif
-
