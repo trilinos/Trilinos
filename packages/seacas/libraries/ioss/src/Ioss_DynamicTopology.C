@@ -432,7 +432,7 @@ std::string DynamicTopologyFileControl::construct_database_filename(int& step, I
       error_message += "The database FILENAME has not been defined\n";
     }
     std::ostringstream errmsg;
-    fmt::print(errmsg, error_message);
+    fmt::print(errmsg, fmt::runtime(error_message));
     IOSS_ERROR(errmsg);
   }
   assert(!m_ioDB.empty());
