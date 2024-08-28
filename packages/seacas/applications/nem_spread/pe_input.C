@@ -243,13 +243,13 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
             /* "{" defines the beginning of the group designator */
             cptr2 = strchr(cptr, '{');
             if (cptr2 == nullptr) {
-              fmt::print(stderr, "fatal: list start designator \"{\" not found");
+              fmt::print(stderr, fmt::runtime("fatal: list start designator \"{\" not found"));
               exit(1);
             }
             cptr2++;
             cptr3 = strchr(cptr, '}');
             if (cptr3 == nullptr) {
-              fmt::print(stderr, "fatal: list end designator \"}\" not found");
+              fmt::print(stderr, fmt::runtime("fatal: list end designator \"}\" not found"));
               exit(1);
             }
             *cptr3 = '\0';
