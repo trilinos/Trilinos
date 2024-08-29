@@ -268,15 +268,18 @@ namespace Amesos2 {
     /// number of righthand-side vectors
     mutable int_t nrhs_;
 
+    bool use_zoltan2_;
+    bool use_parmetis_;
+
     bool css_initialized_;
     bool is_contiguous_;
+
+    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
+    int_t msglvl_;
 
     /// CssMKL parameter vector.  Note that the documentation uses
     /// 1-based indexing, but our interface must use 0-based indexing
     int_t iparm_[64];
-
-    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
-    static const int_t msglvl_;
 
     // We will deal with 1 factor at a time
     static const int_t maxfct_;

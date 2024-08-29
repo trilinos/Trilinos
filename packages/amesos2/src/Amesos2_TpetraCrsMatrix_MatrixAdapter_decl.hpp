@@ -88,6 +88,11 @@ namespace Amesos2 {
 
     RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
 
+    //! Print a description of this adapter to the given output stream
+    void
+    describe (Teuchos::FancyOStream& os,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
   };
 
 } // end namespace Amesos2
