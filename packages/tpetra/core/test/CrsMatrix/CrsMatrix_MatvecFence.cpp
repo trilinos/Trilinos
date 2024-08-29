@@ -200,9 +200,17 @@ namespace {
         // Did not test the case of Serial node in build with Serial and OpenMP and GPU-aware
         expectedGlobalCount = iter_num;
         if (Tpetra::Details::Behavior::debug()) {
-          expectedInstanceCount = 4*iter_num;
-        } else {
+#if KOKKOS_VERSION >= 40499
           expectedInstanceCount = 3*iter_num;
+#else
+          expectedInstanceCount = 4*iter_num;
+#endif
+        } else {
+#if KOKKOS_VERSION >= 40499
+          expectedInstanceCount = 2*iter_num;
+#else
+          expectedInstanceCount = 3*iter_num;
+#endif
         }
       }
 #endif
