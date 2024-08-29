@@ -442,6 +442,18 @@ TEUCHOS_UNIT_TEST( ParameterList, set_get_string )
 
 }
 
+TEUCHOS_UNIT_TEST( ParameterList, set_string_move_semantics)
+{
+  ParameterList pl;
+
+  ECHO(std::string my_string{"my text"});
+  ECHO(pl.set("my string", std::move(my_string)));
+
+  // Check that the parameter value was moved by checking that my_string is now empty.
+  TEST_ASSERT(my_string.empty());
+
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string"), "my text");
+}
 
 TEUCHOS_UNIT_TEST( ParameterList, get_nonexisting_param )
 {
