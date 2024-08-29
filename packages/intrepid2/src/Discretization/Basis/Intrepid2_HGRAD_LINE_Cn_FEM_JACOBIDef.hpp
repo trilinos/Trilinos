@@ -181,12 +181,12 @@ namespace Intrepid2 {
   Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order,
                                   const double alpha,
                                   const double beta ) {
-    this->basisCardinality_  = order+1;
-    this->basisDegree_       = order;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
-    this->basisType_         = BASIS_FEM_HIERARCHICAL;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    this->basisCardinality_     = order+1;
+    this->basisDegree_          = order;
+    this->basisCellTopologyKey_ = shards::Line<>::key;
+    this->basisType_            = BASIS_FEM_HIERARCHICAL;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
     // jacobi
     this->alpha_ = alpha;

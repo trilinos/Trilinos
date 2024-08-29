@@ -101,12 +101,12 @@ namespace Intrepid2 {
   Basis_HVOL_C0_FEM(const shards::CellTopology& cellTopo) {
     const ordinal_type spaceDim = cellTopo.getDimension();
 
-    this->basisCardinality_  = 1;
-    this->basisDegree_       = 0;
-    this->basisCellTopology_ = cellTopo;
-    this->basisType_         = Intrepid2::BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = Intrepid2::COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HVOL;
+    this->basisCardinality_     = 1;
+    this->basisDegree_          = 0;
+    this->basisCellTopologyKey_ = cellTopo.getKey();
+    this->basisType_            = Intrepid2::BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = Intrepid2::COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HVOL;
     
     basisName_ = "Intrepid2_HVOL_";
     basisName_ += cellTopo.getName();

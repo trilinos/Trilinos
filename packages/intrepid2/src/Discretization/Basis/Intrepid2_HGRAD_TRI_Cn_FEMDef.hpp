@@ -222,12 +222,12 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
     const EPointType   pointType ) {
   constexpr ordinal_type spaceDim = 2;
 
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
-  this->basisDegree_       = order; // small n
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_LAGRANGIAN;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
+  this->basisDegree_          = order; // small n
+  this->basisCellTopologyKey_ = shards::Triangle<3>::key;
+  this->basisType_            = BASIS_FEM_LAGRANGIAN;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
   pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
   const ordinal_type card = this->basisCardinality_;
@@ -237,9 +237,10 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   dofCoords("Hgrad::Tri::Cn::dofCoords", card, spaceDim);
 
   // construct lattice
+  const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Triangle<3>>());
   const ordinal_type offset = 0;
   PointTools::getLattice( dofCoords,
-      this->basisCellTopology_,
+      cellTop,
       order, offset,
       pointType_ );
 

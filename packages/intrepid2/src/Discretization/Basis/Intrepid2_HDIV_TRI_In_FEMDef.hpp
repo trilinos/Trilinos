@@ -159,12 +159,12 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
 
   constexpr ordinal_type spaceDim = 2;
-  this->basisCardinality_  = CardinalityHDivTri(order);
-  this->basisDegree_       = order; // small n
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_LAGRANGIAN;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HDIV;
+  this->basisCardinality_     = CardinalityHDivTri(order);
+  this->basisDegree_          = order; // small n
+  this->basisCellTopologyKey_ = shards::Triangle<3>::key;
+  this->basisType_            = BASIS_FEM_LAGRANGIAN;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HDIV;
   pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
   const ordinal_type card = this->basisCardinality_;
@@ -245,8 +245,8 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V2("Hdiv::Tri::In::V2", card ,cardVecPn);
 
-  const ordinal_type numEdges = this->basisCellTopology_.getEdgeCount();
-
+  const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Triangle<3>>());
+  const ordinal_type numEdges = cellTop.getEdgeCount();
   shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
 
   const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
@@ -273,13 +273,13 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   for (ordinal_type edge=0;edge<numEdges;edge++) {  // loop over edges
     CellTools<Kokkos::HostSpace>::getReferenceSideNormal( edgeNormal ,
         edge ,
-        this->basisCellTopology_ );
+        cellTop);
 
     CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( edgePts ,
         linePts ,
         1 ,
         edge ,
-        this->basisCellTopology_ );
+        cellTop );
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                        phisAtEdgePoints,
@@ -322,7 +322,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   // the degree == 1 space corresponds classicaly to RT0 and so gets
   // no internal nodes, and degree == 2 corresponds to RT1 and needs
   // one internal node per vector component.
-  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( cellTop ,
       order + 1 ,
       1 );
 
@@ -330,7 +330,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     internalPoints( "Hdiv::Tri::In::internalPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( internalPoints ,
-        this->basisCellTopology_ ,
+        cellTop ,
         order + 1 ,
         1 ,
         pointType_ );

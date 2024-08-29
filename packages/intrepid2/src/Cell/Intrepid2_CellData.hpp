@@ -410,6 +410,8 @@ template<unsigned CellTopologyKey>
     check(const PointViewType &point, const ScalarType threshold);
   };
 
+  const CellTopologyData* getCellTopologyData(const unsigned& cellTopologyKey);
+  
 }
 
 #include "Intrepid2_CellDataDef.hpp"
