@@ -83,7 +83,11 @@ namespace std {
   };
 
   template <class Layout, unsigned Stride>
+#if defined(KOKKOS_COMPILER_INTEL)
+  inline constexpr bool is_same_v< Kokkos::LayoutContiguous<Layout,Stride>, Layout> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#else
   static constexpr bool is_same_v< Kokkos::LayoutContiguous<Layout,Stride>, Layout> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#endif
 
   template <class Layout, unsigned Stride>
   struct is_same< Layout, Kokkos::LayoutContiguous<Layout,Stride> > {
@@ -91,7 +95,11 @@ namespace std {
   };
 
   template <class Layout, unsigned Stride>
+#if defined(KOKKOS_COMPILER_INTEL)
+  inline constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#else
   static constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#endif
 }
 
 #if KOKKOS_VERSION >= 40499
