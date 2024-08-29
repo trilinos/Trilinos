@@ -49,7 +49,7 @@
 #endif
 
 #ifdef HAVE_MUELU_DEPRECATED_CODE
-#ifndef TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS
+#ifdef MueLu_SHOW_DEPRECATED_WARNINGS
 #warning "The header file MueLu_MLParameterListInterpreter.hpp is deprecated"
 #endif
 #else
