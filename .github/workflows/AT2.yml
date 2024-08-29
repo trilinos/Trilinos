@@ -13,7 +13,9 @@ on:
     - develop
   workflow_dispatch:
 
+# actions: write needed by skip-duplicate-actions
 permissions:
+  actions: write
   contents: read
 
 jobs:
