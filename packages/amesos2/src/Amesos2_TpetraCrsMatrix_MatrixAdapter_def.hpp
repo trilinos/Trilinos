@@ -84,6 +84,19 @@ namespace Amesos2 {
       return rcp (new ConcreteMatrixAdapter<matrix_t> (t_mat));
     }
 
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node>
+  void
+  ConcreteMatrixAdapter<
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+    >::describe (Teuchos::FancyOStream& os,
+                 const Teuchos::EVerbosityLevel verbLevel) const
+    {
+      this->mat_->describe(os, verbLevel);
+    }
 } // end namespace Amesos2
 
 #endif  // AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP
