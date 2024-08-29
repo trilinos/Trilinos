@@ -21,7 +21,6 @@
 #include "BelosTypes.hpp"
 
 #include "BelosGCRODRIter.hpp"
-#include "BelosBlockFGmresIter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
