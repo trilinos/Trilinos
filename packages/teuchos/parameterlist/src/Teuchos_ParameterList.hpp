@@ -251,7 +251,7 @@ public:
   */
   template<typename T>
   ParameterList& set (std::string const& name, 
-		      T const& value, 
+		      T&& value, 
 		      std::string const& docString = "",
 		      RCP<const ParameterEntryValidator> const& validator = null);
 
@@ -921,7 +921,7 @@ ParameterList& ParameterList::setName( const std::string &name_in )
 template<typename T>
 inline
 ParameterList& ParameterList::set(
-  std::string const& name_in, T const& value_in, std::string const& docString_in,
+  std::string const& name_in, T&& value_in, std::string const& docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
@@ -934,7 +934,7 @@ ParameterList& ParameterList::set(
     const RCP<const ParameterEntryValidator> validator =
       (nonnull(validator_in) ? validator_in : param->validator());
      // Create temp param to validate before setting
-    ParameterEntry param_new(value_in, false, false, docString, validator );
+    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString, validator );
     if (nonnull(validator)) {
       validator->validate(param_new, name_in, this->name());
     }
@@ -942,7 +942,7 @@ ParameterList& ParameterList::set(
     *param = param_new;
   }
   else {
-    ParameterEntry param_new(value_in, false, false, docString_in, validator_in);
+    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString_in, validator_in);
     if (nonnull(param_new.validator())) {
       param_new.validator()->validate(param_new, name_in, this->name());
     }
