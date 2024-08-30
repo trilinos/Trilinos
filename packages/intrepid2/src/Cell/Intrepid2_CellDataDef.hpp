@@ -840,7 +840,7 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Triangle<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
-    const ScalarType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1.0 );
+    const ScalarType distance = max( max( -point(0), -point(1) ), ScalarType( point(0) + point(1) - 1.0 ) );
     return distance < threshold;
   }
   
