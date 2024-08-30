@@ -310,17 +310,12 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   }
 
   // Evaluate response at final state
-  const int num_g = thyra_model_->get_g_space(g_index_)->dim();
   MEB::InArgs<Real> modelInArgs   = inArgs;
   MEB::OutArgs<Real> modelOutArgs = outArgs;
   modelInArgs.set_x(x);
   if (modelInArgs.supports(MEB::IN_ARG_x_dot)) modelInArgs.set_x_dot(x_dot);
   if (modelInArgs.supports(MEB::IN_ARG_t)) modelInArgs.set_t(t);
   RCP<Thyra::MultiVectorBase<Real> > dgdx, dgdxdot;
-  MEB::EDerivativeMultiVectorOrientation dgdx_orientation =
-    MEB::DERIV_MV_JACOBIAN_FORM;
-  MEB::EDerivativeMultiVectorOrientation dgdxdot_orientation =
-    MEB::DERIV_MV_JACOBIAN_FORM;
   if (compute_dgdp && sensitivity_method_ == "Adjoint") {
     // Clear dg/dp as an out arg since it was already computed by the adjoint
     // integrator
