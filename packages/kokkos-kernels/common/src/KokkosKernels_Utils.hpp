@@ -1076,6 +1076,12 @@ void view_reduce_max(size_t num_elements, view_type view_to_reduce,
   kk_view_reduce_max<view_type, MyExecSpace>(num_elements, view_to_reduce, max_reduction);
 }
 
+template <typename view_type, typename MyExecSpace>
+void view_reduce_max(const MyExecSpace &exec, size_t num_elements, view_type view_to_reduce,
+                     typename view_type::non_const_value_type &max_reduction) {
+  kk_view_reduce_max<view_type, MyExecSpace>(exec, num_elements, view_to_reduce, max_reduction);
+}
+
 template <typename size_type>
 struct ReduceRowSizeFunctor {
   const size_type *rowmap_view_begins;

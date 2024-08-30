@@ -116,6 +116,15 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_mdf.cpp
 )
 
+# For the sake of build times, don't build this CRS sorting perf test by default.
+# It can be enabled if needed by setting -DKokkosKernels_ENABLE_SORT_CRS_PERFTEST=ON.
+if (KokkosKernels_ENABLE_SORT_CRS_PERFTEST)
+  KOKKOSKERNELS_ADD_EXECUTABLE(
+    sparse_sort_crs
+    SOURCES KokkosSparse_sort_crs.cpp
+)
+endif ()
+
 if (KokkosKernels_ENABLE_BENCHMARK)
   KOKKOSKERNELS_ADD_BENCHMARK(
     sparse_par_ilut
