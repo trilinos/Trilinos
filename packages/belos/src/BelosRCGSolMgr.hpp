@@ -1215,7 +1215,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       newstate.Beta = Beta_;
       newstate.Beta_i = 0;
       newstate.D = D_;
-      newstate.Delta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_, 0, 1 ) );
+      newstate.Delta = Delta_;
       newstate.LUUTAU = LUUTAU_;
       // assign the rest of the values in the struct
       newstate.curDim = 1; // We have initialized the first search vector
@@ -1593,8 +1593,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
             newstate.Beta = Beta_;
             newstate.Beta_i = 1;
 
-            newstate.Delta = Teuchos::null;
-            newstate.Delta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_, 0, 1 ) );
+            newstate.Delta = Delta_;
 
             newstate.curDim = 1; // We have initialized the first search vector
 
