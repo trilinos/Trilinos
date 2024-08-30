@@ -545,7 +545,7 @@ namespace Belos {
 
       if (existU_) {
         // mu = UTAU \ (AU'*z);
-        Teuchos::RCP<DM> mu = DMT::Subview( *Delta_, recycleBlocks_, 1, 0, i_ );
+        Teuchos::RCP<DM> mu = DMT::Subview( *Delta_, recycleBlocks_, 1, 0, i_+1 );
         MVT::MvTransMv( one, *AU_, *z_, *mu );
 
         DMT::SyncDeviceToHost( *mu );
