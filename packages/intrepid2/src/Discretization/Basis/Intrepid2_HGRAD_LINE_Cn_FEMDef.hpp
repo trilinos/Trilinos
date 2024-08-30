@@ -186,10 +186,10 @@ namespace Intrepid2 {
     case POINTTYPE_WARPBLEND: {
       // lattice ordering 
       {
-        shards::CellTopology cellTop(shards::getCellTopologyData<shards::Line<2>>());
+        shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Line<2>>());
         const ordinal_type offset = 0;
         PointTools::getLattice( dofCoords,
-                                cellTop, 
+                                cellTopo, 
                                 order, offset, 
                                 pointT );
         

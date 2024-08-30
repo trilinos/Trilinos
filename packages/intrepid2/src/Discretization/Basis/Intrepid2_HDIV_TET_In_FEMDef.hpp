@@ -249,12 +249,12 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V2("Hdiv::Tet::In::V2", card ,cardVecPn);
 
-  const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Tetrahedron<4>>());
-  const ordinal_type numFaces = cellTop.getFaceCount();
+  const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4>>());
+  const ordinal_type numFaces = cellTopo.getFaceCount();
 
-  shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+  shards::CellTopology faceTopo(shards::getCellTopologyData<shards::Triangle<3> >() );
 
-  const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+  const int numPtsPerFace = PointTools::getLatticeSize( faceTopo ,
       order+2 ,
       1 );
 
@@ -264,7 +264,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   // construct lattice
   const ordinal_type offset = 1;
   PointTools::getLattice( triPts,
-      faceTop,
+      faceTopo,
       order+2,
       offset,
       pointType );
@@ -280,13 +280,13 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     // these are normal scaled by the appropriate face areas.
     CellTools<Kokkos::HostSpace>::getReferenceSideNormal( faceNormal ,
         face ,
-        cellTop );
+        cellTopo );
 
     CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( facePts ,
         triPts ,
         2 ,
         face ,
-        cellTop );
+        cellTopo );
 
     // get phi values at face points
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
@@ -325,7 +325,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   // points of a lattice of degree+2
   // This way, RT0 --> degree = 1 and internal lattice has no points
   // RT1 --> degree = 2, and internal lattice has one point (inside of quartic)
-  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( cellTop ,
+  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order + 2 ,
       1 );
 
@@ -333,7 +333,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     internalPoints( "Hdiv::Tet::In::internalPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( internalPoints ,
-        cellTop ,
+        cellTopo ,
         order + 2 ,
         1 ,
         pointType );

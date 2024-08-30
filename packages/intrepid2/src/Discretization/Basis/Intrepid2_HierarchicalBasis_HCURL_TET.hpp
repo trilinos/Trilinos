@@ -705,9 +705,9 @@ namespace Intrepid2
     polyOrder_(polyOrder)
     {
       this->basisCellTopologyKey_ = shards::Tetrahedron<>::key;
-      const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Tetrahedron<>>());
-      const int numEdges          = cellTop.getEdgeCount();
-      const int numFaces          = cellTop.getFaceCount();
+      const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<>>());
+      const int numEdges          = cellTopo.getEdgeCount();
+      const int numFaces          = cellTopo.getFaceCount();
       
       const int numEdgeFunctions     = polyOrder * numEdges;
       const int numFaceFunctions     = polyOrder * (polyOrder-1) * numFaces;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face

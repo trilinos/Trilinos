@@ -237,10 +237,10 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   dofCoords("Hgrad::Tri::Cn::dofCoords", card, spaceDim);
 
   // construct lattice
-  const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Triangle<3>>());
+  const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Triangle<3>>());
   const ordinal_type offset = 0;
   PointTools::getLattice( dofCoords,
-      cellTop,
+      cellTopo,
       order, offset,
       pointType_ );
 

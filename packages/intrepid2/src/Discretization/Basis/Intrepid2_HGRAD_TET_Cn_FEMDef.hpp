@@ -221,26 +221,26 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
   // construct lattice
 
-  shards::CellTopology cellTop(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  const ordinal_type numEdges = cellTop.getEdgeCount();
-  const ordinal_type numFaces = cellTop.getFaceCount();
+  shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+  const ordinal_type numEdges = cellTopo.getEdgeCount();
+  const ordinal_type numFaces = cellTopo.getFaceCount();
 
-  shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
-  shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+  shards::CellTopology edgeTopo(shards::getCellTopologyData<shards::Line<2> >() );
+  shards::CellTopology faceTopo(shards::getCellTopologyData<shards::Triangle<3> >() );
 
-  const int numVertexes = PointTools::getLatticeSize( cellTop ,
+  const int numVertexes = PointTools::getLatticeSize( cellTopo ,
       1 ,
       0 );
 
-  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTopo ,
       order ,
       1 );
 
-  const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+  const int numPtsPerFace = PointTools::getLatticeSize( faceTopo ,
       order ,
       1 );
 
-  const int numPtsPerCell = PointTools::getLatticeSize( cellTop ,
+  const int numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order ,
       1 );
 
@@ -253,17 +253,17 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
 
   PointTools::getLattice( vertexes,
-      cellTop ,
+      cellTopo ,
       1, 0,
       this->pointType_ );
 
   PointTools::getLattice( linePts,
-      edgeTop,
+      edgeTopo,
       order, offset,
       this->pointType_ );
 
   PointTools::getLattice( triPts,
-      faceTop,
+      faceTopo,
       order, offset,
       this->pointType_ );
 
@@ -288,7 +288,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
         linePts ,
         1 ,
         i ,
-        cellTop );
+        cellTopo );
 
 
     // loop over points (rows of V2)
@@ -316,7 +316,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
           triPts ,
           2 ,
           i ,
-          cellTop );
+          cellTopo );
       for (ordinal_type j=0;j<numPtsPerFace;j++) {
 
         const ordinal_type i_card = numVertexes+numEdges*numPtsPerEdge+numPtsPerFace*i+j;
@@ -339,7 +339,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     cellPoints( "Hcurl::Tet::In::cellPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( cellPoints ,
-        cellTop ,
+        cellTopo ,
         order,
         1 ,
         this->pointType_ );

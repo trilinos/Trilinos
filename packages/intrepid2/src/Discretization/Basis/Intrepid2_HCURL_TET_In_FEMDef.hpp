@@ -292,25 +292,25 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V2("Hcurl::Tet::In::V2", card ,cardVecPn);
 
-  shards::CellTopology cellTop(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-  const ordinal_type numEdges = cellTop.getEdgeCount();
-  const ordinal_type numFaces = cellTop.getFaceCount();
+  shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+  const ordinal_type numEdges = cellTopo.getEdgeCount();
+  const ordinal_type numFaces = cellTopo.getFaceCount();
 
   // first numEdges * degree nodes are normals at each edge
   // get the points on the line
 
-  shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
-  shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+  shards::CellTopology edgeTopo(shards::getCellTopologyData<shards::Line<2> >() );
+  shards::CellTopology faceTopo(shards::getCellTopologyData<shards::Triangle<3> >() );
 
-  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTopo ,
       order+1 ,
       1 );
 
-  const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+  const int numPtsPerFace = PointTools::getLatticeSize( faceTopo ,
       order+1 ,
       1 );
 
-  const int numPtsPerCell = PointTools::getLatticeSize( cellTop ,
+  const int numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order+1 ,
       1 );
 
@@ -323,12 +323,12 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 
 
   PointTools::getLattice( linePts,
-      edgeTop,
+      edgeTopo,
       order+1, offset,
       pointType );
 
   PointTools::getLattice( triPts,
-      faceTop,
+      faceTopo,
       order+1, offset,
       pointType );
 
@@ -344,13 +344,13 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
   for (ordinal_type i=0;i<numEdges;i++) {  // loop over edges
     CellTools<Kokkos::HostSpace>::getReferenceEdgeTangent( edgeTan ,
         i ,
-        cellTop );
+        cellTopo );
 
     CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( edgePts ,
         linePts ,
         1 ,
         i ,
-        cellTop );
+        cellTopo );
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                        phisAtEdgePoints,
@@ -390,13 +390,13 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
       CellTools<Kokkos::HostSpace>::getReferenceFaceTangents( faceTan1 ,
           faceTan2,
           i ,
-          cellTop );
+          cellTopo );
 
       CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( facePts ,
           triPts ,
           2 ,
           i ,
-          cellTop );
+          cellTopo );
 
       Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                          phisAtFacePoints,
@@ -445,7 +445,7 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     cellPoints( "Hcurl::Tet::In::cellPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( cellPoints ,
-        cellTop ,
+        cellTopo ,
         order + 1 ,
         1 ,
         pointType );

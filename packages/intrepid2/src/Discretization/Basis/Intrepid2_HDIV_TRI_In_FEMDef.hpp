@@ -245,11 +245,11 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V2("Hdiv::Tri::In::V2", card ,cardVecPn);
 
-  const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Triangle<3>>());
-  const ordinal_type numEdges = cellTop.getEdgeCount();
-  shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
+  const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Triangle<3>>());
+  const ordinal_type numEdges = cellTopo.getEdgeCount();
+  shards::CellTopology edgeTopo(shards::getCellTopologyData<shards::Line<2> >() );
 
-  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTopo ,
       order+1 ,
       1 );
 
@@ -260,7 +260,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   // construct lattice
   const ordinal_type offset = 1;
   PointTools::getLattice( linePts,
-      edgeTop,
+      edgeTopo,
       order+1, offset,
       pointType_ );
 
@@ -273,13 +273,13 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   for (ordinal_type edge=0;edge<numEdges;edge++) {  // loop over edges
     CellTools<Kokkos::HostSpace>::getReferenceSideNormal( edgeNormal ,
         edge ,
-        cellTop);
+        cellTopo);
 
     CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( edgePts ,
         linePts ,
         1 ,
         edge ,
-        cellTop );
+        cellTopo );
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                        phisAtEdgePoints,
@@ -322,7 +322,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   // the degree == 1 space corresponds classicaly to RT0 and so gets
   // no internal nodes, and degree == 2 corresponds to RT1 and needs
   // one internal node per vector component.
-  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( cellTop ,
+  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order + 1 ,
       1 );
 
@@ -330,7 +330,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     internalPoints( "Hdiv::Tri::In::internalPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( internalPoints ,
-        cellTop ,
+        cellTopo ,
         order + 1 ,
         1 ,
         pointType_ );

@@ -209,9 +209,9 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
 
   // construct lattice (only internal nodes for HVOL element)
   const ordinal_type offset = 1;
-  const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Triangle<3> >());
+  const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Triangle<3> >());
   PointTools::getLattice( dofCoords,
-      cellTop,
+      cellTopo,
       order+spaceDim+offset, offset,
       this->pointType_ );
 

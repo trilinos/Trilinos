@@ -215,9 +215,9 @@ namespace Intrepid2 {
 
     // construct lattice (only internal nodes for HVOL element)
     const ordinal_type offset = 1;
-    const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+    const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     PointTools::getLattice( dofCoords,
-                            cellTop,
+                            cellTopo,
                             order+spaceDim+offset, offset,
                             pointType );
 

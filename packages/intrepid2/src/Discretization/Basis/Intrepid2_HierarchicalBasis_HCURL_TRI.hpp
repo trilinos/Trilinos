@@ -371,9 +371,9 @@ namespace Intrepid2
       // no vertex functions in H(curl)
       
       // **** edge functions **** //
-      const shards::CellTopology cellTop(shards::getCellTopologyData<shards::Triangle<> >());
+      const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Triangle<> >());
       const int numFunctionsPerEdge = polyOrder; // p functions associated with each edge
-      const int numEdges            = cellTop.getEdgeCount();
+      const int numEdges            = cellTopo.getEdgeCount();
       for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
       {
         for (int i=0; i<numFunctionsPerEdge; i++)
