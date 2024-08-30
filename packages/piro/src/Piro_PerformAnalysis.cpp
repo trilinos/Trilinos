@@ -917,7 +917,7 @@ Piro::PerformROLTransientAnalysis(
 
   if(useTempusDriver) {
 
-    Piro::ThyraProductME_TempusFinalObjective<double> tempus_obj(model, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, nt, analysisVerbosityLevel, observer);
+    Piro::ThyraProductME_TempusFinalObjective<double> tempus_obj(model, piroTempusSolver, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, nt, analysisVerbosityLevel, observer);
 
     ROL::Ptr<ROL::Objective<double> > obj_ptr = ROL::makePtrFromRef(tempus_obj);
 

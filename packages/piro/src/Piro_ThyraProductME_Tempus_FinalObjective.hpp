@@ -30,6 +30,8 @@
 #include "ROL_Vector.hpp"
 #include "ROL_ThyraVector.hpp"
 
+#include "Piro_TempusIntegrator.hpp"
+
 namespace Piro {
 
 template <typename Real>
@@ -38,6 +40,7 @@ public:
 
   ThyraProductME_TempusFinalObjective(
     const Teuchos::RCP<Thyra::ModelEvaluator<Real>> & model,
+    const Teuchos::RCP<Piro::TempusSolver<Real>> & piroTempusSolver,
     const Teuchos::RCP<Tempus::Integrator<Real> >& integrator,
     const Teuchos::RCP<Tempus::Integrator<Real>> & adjoint_integrator,
     const Teuchos::RCP<Thyra::ModelEvaluator<Real>> & modelAdjoin,
@@ -50,9 +53,9 @@ public:
   virtual ~ThyraProductME_TempusFinalObjective() {}
 
   //! Compute value of objective
-  Real value( const ROL::Vector<Real> &p, Real &tol );
+  Real value( const ROL::Vector<Real> &p, Real &tol ) override;
 
-  void gradient( ROL::Vector<Real> &grad, const ROL::Vector<Real> &p, Real &tol ) const;
+  void gradient( ROL::Vector<Real> &grad, const ROL::Vector<Real> &p, Real &tol ) override;
 
   //! Helper function to run tempus, computing responses and derivatives
   void run_tempus(ROL::Vector<Real>& r, const ROL::Vector<Real>& p) const;
@@ -87,6 +90,7 @@ private:
   const Teuchos::RCP<Tempus::Integrator<Real> > integrator_;
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> thyra_model_;
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> thyra_adjoint_model_;
+  Teuchos::RCP<Piro::TempusIntegrator<Real>> piroTempusIntegrator_;
   std::string sensitivity_method_;
   const int g_index_;
   int Nt_;
@@ -108,6 +112,7 @@ template <typename Real>
 ThyraProductME_TempusFinalObjective<Real>::
 ThyraProductME_TempusFinalObjective(
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> & model,
+  const Teuchos::RCP<Piro::TempusSolver<Real>> & piroTempusSolver,
   const Teuchos::RCP<Tempus::Integrator<Real> >& integrator,
   const Teuchos::RCP<Tempus::Integrator<Real>> & adjoint_integrator,
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> & modelAdjoin,
@@ -119,6 +124,7 @@ ThyraProductME_TempusFinalObjective(
   integrator_(integrator),
   thyra_model_(model),
   thyra_adjoint_model_(modelAdjoin),
+  piroTempusIntegrator_(piroTempusSolver->getNonconstPiroTempusIntegrator()),
   sensitivity_method_("Adjoint"),
   g_index_(g_index),
   Nt_(Nt),
@@ -160,7 +166,7 @@ value( const ROL::Vector<Real> &p, Real &tol )
 template <typename Real>
 void
 ThyraProductME_TempusFinalObjective<Real>::
-gradient( ROL::Vector<Real> &grad, const ROL::Vector<Real> &p, Real &tol ) const
+gradient( ROL::Vector<Real> &grad, const ROL::Vector<Real> &p, Real &tol )
 {
   *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient" << std::endl;
 
@@ -260,30 +266,85 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   RCP<const Thyra::VectorBase<Real> > x, x_dot;
   RCP<const Thyra::MultiVectorBase<double> > dxdp, dxdotdp;
   RCP<Thyra::VectorBase<Real> > g = outArgs.get_g(g_index_);
+  const bool compute_dgdp = !outArgs.get_DgDp(g_index_, 0).isEmpty();
+
+
+  RCP<Thyra::MultiVectorBase<Real> > dgdp_mv =
+    outArgs.get_DgDp(g_index_, 0).getMultiVector();
+  MEB::EDerivativeMultiVectorOrientation dgdp_orientation =
+    outArgs.get_DgDp(g_index_, 0).getMultiVectorOrientation();
+  Teko::BlockedLinearOp dgdp_op =
+    Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(outArgs.get_DgDp(g_index_, 0).getLinearOp());
+
+  piroTempusIntegrator_->clearSolutionHistory();
 
   // Create and run integrator
-  SENS_METHOD sens_method = Piro::NONE; 
-  Teuchos::RCP<Piro::TempusIntegrator<Real> > integrator 
-    = Teuchos::rcp(new Piro::TempusIntegrator<Real>(tempus_params_, wrapped_model, sens_method));
-  const bool integratorStatus = integrator->advanceTime(time_final_);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !integratorStatus, std::logic_error, "Integrator failed!");
+  if (compute_dgdp && sensitivity_method_ == "Adjoint") {
+    const bool integratorStatus = piroTempusIntegrator_->advanceTime(time_final_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !integratorStatus, std::logic_error, "Integrator failed!");
 
-  // Get final state
-  t = integrator->getTime();
-  x = integrator->getX();
-  x_dot = integrator->getXDot();
+    // Get final state
+    t = piroTempusIntegrator_->getTime();
+    x = piroTempusIntegrator_->getX();
+    x_dot = piroTempusIntegrator_->getXDot();
+    if(!dgdp_mv.is_null())
+      Thyra::assign(dgdp_mv.ptr(), *(piroTempusIntegrator_->getDgDp()));
+    else {
+      //dgdp_op->setBlock(0, 0, piroTempusIntegrator->getDgDp());
+      dgdp_mv = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Real>>( Teuchos::rcp_dynamic_cast<Thyra::DefaultScaledAdjointLinearOp<Real>>(dgdp_op->getNonconstBlock(0, 0))->getNonconstOp() );
+      Thyra::assign(dgdp_mv.ptr(), *(piroTempusIntegrator_->getDgDp()));
+    }
+  }
+  else {
+    RCP<Tempus::IntegratorBasic<Real> > integrator =
+      Tempus::createIntegratorBasic<Real>(tempus_params_, wrapped_model);
+    const bool integratorStatus = integrator->advanceTime();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !integratorStatus, std::logic_error, "Integrator failed!");
 
+    // Get final state
+    t = integrator->getTime();
+    x = integrator->getX();
+    x_dot = integrator->getXDot();
+  }
 
   // Evaluate response at final state
+  const int num_g = thyra_model_->get_g_space(g_index_)->dim();
   MEB::InArgs<Real> modelInArgs   = inArgs;
   MEB::OutArgs<Real> modelOutArgs = outArgs;
   modelInArgs.set_x(x);
   if (modelInArgs.supports(MEB::IN_ARG_x_dot)) modelInArgs.set_x_dot(x_dot);
   if (modelInArgs.supports(MEB::IN_ARG_t)) modelInArgs.set_t(t);
   RCP<Thyra::MultiVectorBase<Real> > dgdx, dgdxdot;
+  MEB::EDerivativeMultiVectorOrientation dgdx_orientation =
+    MEB::DERIV_MV_JACOBIAN_FORM;
+  MEB::EDerivativeMultiVectorOrientation dgdxdot_orientation =
+    MEB::DERIV_MV_JACOBIAN_FORM;
+  if (compute_dgdp && sensitivity_method_ == "Adjoint") {
+    // Clear dg/dp as an out arg since it was already computed by the adjoint
+    // integrator
+    modelOutArgs.set_DgDp(g_index_, 0,
+                          MEB::Derivative<Real>());
+  }
 
   thyra_model_->evalModel(modelInArgs, modelOutArgs);
+
+  // dg/dp = dg/dp + dg/dx*dx/dp + dg/dx_dot*dx_dot/dp
+  // We assume dg/dx, dg/dxdot are in gradient form while dxdp, dxdotdp are in
+  // Jacobian form
+  if (compute_dgdp && dgdx != Teuchos::null) {
+    if (dgdp_orientation == MEB::DERIV_MV_JACOBIAN_FORM)
+      dgdx->apply(Thyra::TRANS, *dxdp, dgdp_mv.ptr(), Real(1.0), Real(1.0));
+    else
+      dxdp->apply(Thyra::TRANS, *dgdx, dgdp_mv.ptr(), Real(1.0), Real(1.0));
+  }
+  if (compute_dgdp && dgdxdot != Teuchos::null) {
+    if (dgdp_orientation == MEB::DERIV_MV_JACOBIAN_FORM)
+      dgdxdot->apply(Thyra::TRANS, *dxdotdp, dgdp_mv.ptr(), Real(1.0), Real(1.0));
+    else
+      dxdotdp->apply(Thyra::TRANS, *dgdxdot, dgdp_mv.ptr(), Real(1.0), Real(1.0));
+  }
 }
 
 
