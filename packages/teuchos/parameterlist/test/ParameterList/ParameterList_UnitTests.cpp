@@ -446,13 +446,38 @@ TEUCHOS_UNIT_TEST( ParameterList, set_string_move_semantics)
 {
   ParameterList pl;
 
-  ECHO(std::string my_string{"my text"});
-  ECHO(pl.set("my string", std::move(my_string)));
+  ECHO(std::string my_str_1{"my text 1"});
+  ECHO(pl.set("my string 1", std::move(my_str_1)));
 
-  // Check that the parameter value was moved by checking that my_string is now empty.
-  TEST_ASSERT(my_string.empty());
+  // Check that the parameter value was moved by checking that my_str_1 is now empty.
+  TEST_ASSERT(my_str_1.empty());
 
-  TEST_EQUALITY_CONST(pl.get<std::string>("my string"), "my text");
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 1"), "my text 1");
+
+  ECHO(std::string my_str_2{"my text 2"});
+  ECHO(pl.set<std::string>("my string 2", std::move(my_str_2)));
+  TEST_ASSERT(my_str_2.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 2"), "my text 2");
+  
+  ECHO(std::string my_str_3{"my text 3"});
+  ECHO(pl.set("my string 3", my_str_3));
+  TEST_ASSERT( ! my_str_3.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 3"), "my text 3");
+
+  ECHO(std::string my_str_4{"my text 4"});
+  ECHO(pl.set<std::string>("my string 4", my_str_4));
+  TEST_ASSERT( ! my_str_4.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 4"), "my text 4");
+
+  ECHO(const std::string my_str_5{"my text 5"});
+  ECHO(pl.set("my string 5", my_str_5));
+  TEST_ASSERT( ! my_str_5.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 5"), "my text 5");
+
+  ECHO(const std::string my_str_6{"my text 6"});
+  ECHO(pl.set<std::string>("my string 6", my_str_6));
+  TEST_ASSERT( ! my_str_6.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 6"), "my text 6");
 }
 
 TEUCHOS_UNIT_TEST( ParameterList, get_nonexisting_param )

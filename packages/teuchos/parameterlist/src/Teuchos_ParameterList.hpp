@@ -251,6 +251,13 @@ public:
   */
   template<typename T>
   ParameterList& set (std::string const& name, 
+		      const T& value, 
+		      std::string const& docString = "",
+		      RCP<const ParameterEntryValidator> const& validator = null);
+  
+  //! \overload
+  template<typename T, typename = std::enable_if_t<std::is_same_v<T, std::decay_t<T>>>>
+  ParameterList& set (std::string const& name, 
 		      T&& value, 
 		      std::string const& docString = "",
 		      RCP<const ParameterEntryValidator> const& validator = null);
@@ -921,6 +928,39 @@ ParameterList& ParameterList::setName( const std::string &name_in )
 template<typename T>
 inline
 ParameterList& ParameterList::set(
+  std::string const& name_in, const T& value_in, std::string const& docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
+  )
+{
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    Ptr<ParameterEntry> param = params_.getNonconstObjPtr(param_idx);
+    const std::string docString =
+      (docString_in.length() ? docString_in : param->docString());
+    const RCP<const ParameterEntryValidator> validator =
+      (nonnull(validator_in) ? validator_in : param->validator());
+     // Create temp param to validate before setting
+    ParameterEntry param_new(value_in, false, false, docString, validator );
+    if (nonnull(validator)) {
+      validator->validate(param_new, name_in, this->name());
+    }
+    // Strong guarantee: (if exception is thrown, the value is not changed)
+    *param = param_new;
+  }
+  else {
+    ParameterEntry param_new(value_in, false, false, docString_in, validator_in);
+    if (nonnull(param_new.validator())) {
+      param_new.validator()->validate(param_new, name_in, this->name());
+    }
+    params_.setObj(name_in, param_new);
+  }
+  return *this;
+}
+
+template<typename T, typename>
+inline
+ParameterList& ParameterList::set(
   std::string const& name_in, T&& value_in, std::string const& docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
@@ -934,7 +974,7 @@ ParameterList& ParameterList::set(
     const RCP<const ParameterEntryValidator> validator =
       (nonnull(validator_in) ? validator_in : param->validator());
      // Create temp param to validate before setting
-    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString, validator );
+    ParameterEntry param_new(std::move(value_in), false, false, docString, validator );
     if (nonnull(validator)) {
       validator->validate(param_new, name_in, this->name());
     }
@@ -942,7 +982,7 @@ ParameterList& ParameterList::set(
     *param = param_new;
   }
   else {
-    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString_in, validator_in);
+    ParameterEntry param_new(std::move(value_in), false, false, docString_in, validator_in);
     if (nonnull(param_new.validator())) {
       param_new.validator()->validate(param_new, name_in, this->name());
     }
@@ -950,7 +990,6 @@ ParameterList& ParameterList::set(
   }
   return *this;
 }
-
 
 inline
 ParameterList& ParameterList::set(
