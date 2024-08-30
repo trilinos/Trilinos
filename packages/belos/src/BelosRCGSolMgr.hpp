@@ -903,8 +903,8 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (Y_ == Teuchos::null)
         Y_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycleBlocks_, recycleBlocks_ ) );
       else {
-        if ( (Y_->numRows() != (numBlocks_+recycleBlocks_)) || (Y_->numCols() != numBlocks_+recycleBlocks_) )
-          Y_->reshape( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
+        if ( (Y_->numRows() != (numBlocks_+recycleBlocks_)) || (Y_->numCols() != recycleBlocks_) )
+          Y_->reshape( numBlocks_+recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate L2_ only if it doesn't exist
@@ -919,7 +919,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (DeltaL2_ == Teuchos::null)
         DeltaL2_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
       else {
-        if ( (DeltaL2_->numRows() != (recycleBlocks_)) || (DeltaL2_->numCols() != (numBlocks_) ) )
+        if ( (DeltaL2_->numRows() != recycleBlocks_) || (DeltaL2_->numCols() != numBlocks_ ) )
           DeltaL2_->reshape( recycleBlocks_, numBlocks_ );
       }
 
@@ -927,7 +927,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (AU1TUDeltaL2_ == Teuchos::null)
         AU1TUDeltaL2_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
       else {
-        if ( (AU1TUDeltaL2_->numRows() != (recycleBlocks_)) || (AU1TUDeltaL2_->numCols() != (numBlocks_) ) )
+        if ( (AU1TUDeltaL2_->numRows() != recycleBlocks_) || (AU1TUDeltaL2_->numCols() != numBlocks_ ) )
           AU1TUDeltaL2_->reshape( recycleBlocks_, numBlocks_ );
       }
 
@@ -935,7 +935,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (AU1TAU1_ == Teuchos::null)
         AU1TAU1_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
       else {
-        if ( (AU1TAU1_->numRows() != (recycleBlocks_)) || (AU1TAU1_->numCols() != (recycleBlocks_) ) )
+        if ( (AU1TAU1_->numRows() != recycleBlocks_) || (AU1TAU1_->numCols() != recycleBlocks_ ) )
           AU1TAU1_->reshape( recycleBlocks_, recycleBlocks_ );
       }
 
@@ -943,7 +943,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (GY_ == Teuchos::null)
         GY_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_ + recycleBlocks_, recycleBlocks_ ) );
       else {
-        if ( (GY_->numRows() != (numBlocks_ + recycleBlocks_)) || (GY_->numCols() != (recycleBlocks_) ) )
+        if ( (GY_->numRows() != (numBlocks_ + recycleBlocks_)) || (GY_->numCols() != recycleBlocks_ ) )
           GY_->reshape( numBlocks_+recycleBlocks_, recycleBlocks_ );
       }
 
@@ -951,7 +951,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (AU1TU1_ == Teuchos::null)
         AU1TU1_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
       else {
-        if ( (AU1TU1_->numRows() != (recycleBlocks_)) || (AU1TU1_->numCols() != (recycleBlocks_) ) )
+        if ( (AU1TU1_->numRows() != recycleBlocks_) || (AU1TU1_->numCols() != recycleBlocks_ ) )
           AU1TU1_->reshape( recycleBlocks_, recycleBlocks_ );
       }
 
@@ -959,7 +959,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (FY_ == Teuchos::null)
         FY_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_ + recycleBlocks_, recycleBlocks_ ) );
       else {
-        if ( (FY_->numRows() != (numBlocks_ + recycleBlocks_)) || (FY_->numCols() != (recycleBlocks_) ) )
+        if ( (FY_->numRows() != (numBlocks_ + recycleBlocks_)) || (FY_->numCols() != recycleBlocks_ ) )
           FY_->reshape( numBlocks_+recycleBlocks_, recycleBlocks_ );
       }
 
@@ -967,7 +967,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (AU1TAP_ == Teuchos::null)
         AU1TAP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
       else {
-        if ( (AU1TAP_->numRows() != (recycleBlocks_)) || (AU1TAP_->numCols() != (numBlocks_) ) )
+        if ( (AU1TAP_->numRows() != recycleBlocks_) || (AU1TAP_->numCols() != numBlocks_ ) )
           AU1TAP_->reshape( recycleBlocks_, numBlocks_ );
       }
 
@@ -975,7 +975,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (APTAP_ == Teuchos::null)
         APTAP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_, numBlocks_ ) );
       else {
-        if ( (APTAP_->numRows() != (numBlocks_)) || (APTAP_->numCols() != (numBlocks_) ) )
+        if ( (APTAP_->numRows() != numBlocks_) || (APTAP_->numCols() != (numBlocks_) ) )
           APTAP_->reshape( numBlocks_, numBlocks_ );
       }
 
@@ -1007,7 +1007,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (AUTAP_ == Teuchos::null)
         AUTAP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
       else {
-        if ( (AUTAP_->numRows() != (recycleBlocks_)) || (AUTAP_->numCols() != (numBlocks_) ) )
+        if ( (AUTAP_->numRows() != recycleBlocks_) || (AUTAP_->numCols() != numBlocks_ ) )
           AUTAP_->reshape( recycleBlocks_, numBlocks_ );
       }
 
@@ -1015,7 +1015,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
       if (AU1TU_ == Teuchos::null)
         AU1TU_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
       else {
-        if ( (AU1TU_->numRows() != (recycleBlocks_)) || (AU1TU_->numCols() != (recycleBlocks_) ) )
+        if ( (AU1TU_->numRows() != recycleBlocks_) || (AU1TU_->numCols() != recycleBlocks_ ) )
           AU1TU_->reshape( recycleBlocks_, recycleBlocks_ );
       }
 
@@ -1027,9 +1027,12 @@ template<class ScalarType, class MV, class OP, class DM>
 ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   Teuchos::LAPACK<int,ScalarType> lapack;
-  std::vector<int> index(recycleBlocks_);
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
+  std::vector<int> index(1), rindex(recycleBlocks_), nindex(numBlocks_);
+  for (int i=0; i<recycleBlocks_; ++i) { rindex[i] = i; }
+  for (int i=0; i<numBlocks_; ++i) { nindex[i] = i; }
 
   // Count of number of cycles performed on current rhs
   int cycle = 0;
@@ -1092,29 +1095,19 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   // Compute AU = A*U, UTAU = U'*AU, AUTAU = (AU)'*(AU)
   if (existU_) {
-    index.resize(recycleBlocks_);
-    for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
-    Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  index );
-    index.resize(recycleBlocks_);
-    for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
-    Teuchos::RCP<MV> AUtmp = MVT::CloneViewNonConst( *AU_, index );
+    Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  rindex );
+    Teuchos::RCP<MV> AUtmp = MVT::CloneViewNonConst( *AU_, rindex );
     // Initialize AU
     problem_->applyOp( *Utmp, *AUtmp );
     // Initialize UTAU
-    Teuchos::SerialDenseMatrix<int,ScalarType> UTAUtmp( Teuchos::View, *UTAU_, recycleBlocks_, recycleBlocks_ );
-    MVT::MvTransMv( one, *Utmp, *AUtmp, UTAUtmp );
+    MVT::MvTransMv( one, *Utmp, *AUtmp, *UTAU_ );
     // Initialize AUTAU  ( AUTAU = AU'*(M\AU) )
-    Teuchos::SerialDenseMatrix<int,ScalarType> AUTAUtmp( Teuchos::View, *AUTAU_, recycleBlocks_, recycleBlocks_ );
     if ( precObj != Teuchos::null ) {
-      index.resize(recycleBlocks_);
-      for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
-      index.resize(recycleBlocks_);
-      for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-      Teuchos::RCP<MV> PCAU = MVT::CloneViewNonConst( *U1_, index ); // use U1 as temp storage
+      Teuchos::RCP<MV> PCAU = MVT::CloneViewNonConst( *U1_, rindex ); // use U1 as temp storage
       OPT::Apply( *precObj, *AUtmp, *PCAU );
-      MVT::MvTransMv( one, *AUtmp, *PCAU, AUTAUtmp );
+      MVT::MvTransMv( one, *AUtmp, *PCAU, *AUTAU_ );
     } else {
-      MVT::MvTransMv( one, *AUtmp, *AUtmp, AUTAUtmp );
+      MVT::MvTransMv( one, *AUtmp, *AUtmp, *AUTAU_ );
     }
   }
 
@@ -1160,15 +1153,11 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       if (existU_) {
         // Solve linear system UTAU * y = (U'*r)
         Teuchos::SerialDenseMatrix<int,ScalarType> Utr(recycleBlocks_,1);
-        index.resize(recycleBlocks_);
-        for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-        Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  index );
+        Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  rindex );
         MVT::MvTransMv( one, *Utmp, *r_, Utr );
-        Teuchos::SerialDenseMatrix<int,ScalarType> UTAUtmp( Teuchos::View, *UTAU_, recycleBlocks_, recycleBlocks_ );
-        Teuchos::SerialDenseMatrix<int,ScalarType> LUUTAUtmp( Teuchos::View, *LUUTAU_, recycleBlocks_, recycleBlocks_ );
-        LUUTAUtmp.assign(UTAUtmp);
+        LUUTAU_->assign(*UTAU_);
         int info = 0;
-        lapack.GESV(recycleBlocks_, 1, LUUTAUtmp.values(), LUUTAUtmp.stride(), &(*ipiv_)[0], Utr.values(), Utr.stride(), &info);
+        lapack.GESV(recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], Utr.values(), Utr.stride(), &info);
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                            "Belos::RCGSolMgr::solve(): LAPACK GESV failed to compute a solution.");
 
@@ -1176,9 +1165,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
         MVT::MvTimesMatAddMv( one, *Utmp, Utr, one, *problem_->getCurrLHSVec() );
 
         // Update residual ( r = r - AU*y )
-        index.resize(recycleBlocks_);
-        for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-        Teuchos::RCP<const MV> AUtmp  = MVT::CloneView( *AU_, index );
+        Teuchos::RCP<const MV> AUtmp  = MVT::CloneView( *AU_, rindex );
         MVT::MvTimesMatAddMv( -one, *AUtmp, Utr, one, *r_ );
       }
 
@@ -1194,14 +1181,11 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       if ( existU_ ) {
         // mu = UTAU\(AU'*z);
         Teuchos::SerialDenseMatrix<int,ScalarType> mu( Teuchos::View, *Delta_, recycleBlocks_, 1);
-        index.resize(recycleBlocks_);
-        for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-        Teuchos::RCP<const MV> AUtmp  = MVT::CloneView( *AU_, index );
+        Teuchos::RCP<const MV> AUtmp  = MVT::CloneView( *AU_, rindex );
         MVT::MvTransMv( one, *AUtmp, *z_, mu );
-        Teuchos::SerialDenseMatrix<int,ScalarType> LUUTAUtmp( Teuchos::View, *LUUTAU_, recycleBlocks_, recycleBlocks_ );
         char TRANS = 'N';
         int info;
-        lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAUtmp.values(), LUUTAUtmp.stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
+        lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                            "Belos::RCGSolMgr::solve(): LAPACK GETRS failed to compute a solution.");
         // p  = z - U*mu;
@@ -1225,18 +1209,14 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       index.resize( numBlocks_+1 );
       for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
       newstate.P  = MVT::CloneViewNonConst( *P_,  index );
-      index.resize( recycleBlocks_ );
-      for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-      newstate.U  = MVT::CloneViewNonConst( *U_,  index );
-      index.resize( recycleBlocks_ );
-      for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-      newstate.AU  = MVT::CloneViewNonConst( *AU_,  index );
+      newstate.U  = MVT::CloneViewNonConst( *U_,  rindex );
+      newstate.AU  = MVT::CloneViewNonConst( *AU_,  rindex );
       newstate.Alpha = Alpha_;
       newstate.Beta = Beta_;
       newstate.Beta_i = 0;
       newstate.D = D_;
       newstate.Delta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_, 0, 1 ) );
-      newstate.LUUTAU = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *LUUTAU_, recycleBlocks_, recycleBlocks_ ) );
+      newstate.LUUTAU = LUUTAU_;
       // assign the rest of the values in the struct
       newstate.curDim = 1; // We have initialized the first search vector
       newstate.Ap = Ap_;
@@ -1305,12 +1285,8 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    getHarmonicVecs(Ftmp,Gtmp,Ytmp);
 
                    // U1 = [P(:,1:end-1)*Y];
-                   index.resize( numBlocks_ );
-                   for (int ii=0; ii<numBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  index );
+                   Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  nindex );
+                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
                    MVT::MvTimesMatAddMv( one, *Ptmp, Ytmp, zero, *U1tmp );
 
                    // Precompute some variables for next cycle
@@ -1318,14 +1294,12 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    // AU1TAU1     = Y'*G*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, numBlocks_, recycleBlocks_ );
                    GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAU1tmp( Teuchos::View, *AU1TAU1_, recycleBlocks_, recycleBlocks_ );
-                   AU1TAU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
+                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
 
                    // AU1TU1      = Y'*F*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, numBlocks_, recycleBlocks_ );
                    FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TU1tmp( Teuchos::View, *AU1TU1_, recycleBlocks_, recycleBlocks_ );
-                   AU1TU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
+                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
 
                    Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAPtmp( Teuchos::View, *AU1TAP_, recycleBlocks_, 1 );
                    // Must reinitialize AU1TAP; can become dense later
@@ -1348,68 +1322,51 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // Finish computation of subblocks
                    // AU1TAP = AU1TAP * D(1);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAPtmp( Teuchos::View, *AU1TAP_, recycleBlocks_, numBlocks_ );
-                   AU1TAPtmp.scale((*D_)[0]);
+                   AU1TAP_->scale((*D_)[0]);
 
-                   Teuchos::SerialDenseMatrix<int,ScalarType> APTAPtmp( Teuchos::View, *APTAP_, numBlocks_, numBlocks_ );
-                   APTAPtmp.putScalar(zero);
+                   APTAP_->putScalar(zero);
                    for (int ii=0; ii<numBlocks_; ii++) {
-                     APTAPtmp(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
+                     (*APTAP_)(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
                      if (ii > 0) {
-                       APTAPtmp(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       APTAPtmp(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       (*APTAP_)(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       (*APTAP_)(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
                    }
 
                    // F = [AU1TU1 zeros(k,m); zeros(m,k) diag(D)];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ftmp( Teuchos::View, *F_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
+                   F_->putScalar(zero);
                    Teuchos::SerialDenseMatrix<int,ScalarType> F11( Teuchos::View, *F_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F12( Teuchos::View, *F_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F21( Teuchos::View, *F_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    Teuchos::SerialDenseMatrix<int,ScalarType> F22( Teuchos::View, *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TU1tmp( Teuchos::View, *AU1TU1_, recycleBlocks_, recycleBlocks_ );
-                   F11.assign(AU1TU1tmp);
-                   F12.putScalar(zero);
-                   F21.putScalar(zero);
-                   F22.putScalar(zero);
+                   F11.assign(*AU1TU1_);
                    for(int ii=0;ii<numBlocks_;ii++) {
                      F22(ii,ii) = (*D_)[ii];
                    }
 
                    // G = [AU1TAU1 AU1TAP; AU1TAP' APTAP];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Gtmp( Teuchos::View, *G_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAU1tmp( Teuchos::View, *AU1TAU1_, recycleBlocks_, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G12( Teuchos::View, *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G21( Teuchos::View, *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G22( Teuchos::View, *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   G11.assign(AU1TAU1tmp);
-                   G12.assign(AU1TAPtmp);
+                   G11.assign(*AU1TAU1_);
+                   G12.assign(*AU1TAP_);
                    // G21 = G12'; (no transpose operator exists for SerialDenseMatrix; Do copy manually)
                    for (int ii=0;ii<recycleBlocks_;++ii)
                      for (int jj=0;jj<numBlocks_;++jj)
                        G21(jj,ii) = G12(ii,jj);
-                   G22.assign(APTAPtmp);
+                   G22.assign(*APTAP_);
 
                    // compute harmonic Ritz vectors
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ytmp( Teuchos::View, *Y_, (recycleBlocks_+numBlocks_), recycleBlocks_ );
-                   getHarmonicVecs(Ftmp,Gtmp,Ytmp);
+                   getHarmonicVecs(*F_,*G_,*Y_);
 
                    // U1 = [U1 P(:,2:end-1)]*Y;
                    index.resize( numBlocks_ );
                    for (int ii=0; ii<numBlocks_; ++ii) { index[ii] = ii+1; }
                    Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  index );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  index );
+                   Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
+                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
+                   Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
                    Teuchos::SerialDenseMatrix<int,ScalarType> Y1( Teuchos::View, *Y_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
                    MVT::MvTimesMatAddMv( one, *U1tmp, Y1, zero, *U1Y1tmp );
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
@@ -1417,23 +1374,20 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    // Precompute some variables for next cycle
 
                    // AU1TAU1     = Y'*G*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
-                   GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
-                   AU1TAU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
+                   GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
+                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
 
                    // AU1TAP      = zeros(k,m);
                    // AU1TAP(:,1) = Y(end,:)' * (-1/Alpha(end));
-                   AU1TAPtmp.putScalar(zero);
+                   AU1TAP_->putScalar(zero);
                    ScalarType alphatmp = -1.0 / (*Alpha_)[numBlocks_-1];
                    for (int ii=0; ii<recycleBlocks_; ++ii) {
-                      AU1TAPtmp(ii,0) = Ytmp(numBlocks_+recycleBlocks_-1,ii) * alphatmp;
+                      (*AU1TAP_)(ii,0) = (*Y_)(numBlocks_+recycleBlocks_-1,ii) * alphatmp;
                    }
 
                    // AU1TU1      = Y'*F*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
-                   FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
-                   //Teuchos::SerialDenseMatrix<int,ScalarType> AU1TU1tmp( Teuchos::View, *AU1TU1_, recycleBlocks_, recycleBlocks_ );
-                   AU1TU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
+                   FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
+                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
 
                    // Indicate the size of the P, Beta structures generated this cycle
                    lastp = numBlocks_+1;
@@ -1443,82 +1397,58 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
               } // if (!existU_)
               else { // U exists
                 if (cycle == 0) { // No U1, but U exists
-                   Teuchos::SerialDenseMatrix<int,ScalarType> APTAPtmp( Teuchos::View, *APTAP_, numBlocks_, numBlocks_ );
-                   APTAPtmp.putScalar(zero);
+                   APTAP_->putScalar(zero);
                    for (int ii=0; ii<numBlocks_; ii++) {
-                     APTAPtmp(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii]);
+                     (*APTAP_)(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii]);
                      if (ii > 0) {
-                       APTAPtmp(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       APTAPtmp(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       (*APTAP_)(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       (*APTAP_)(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
                    }
 
-                   Teuchos::SerialDenseMatrix<int,ScalarType> L2tmp( Teuchos::View, *L2_, numBlocks_+1, numBlocks_ );
-                   L2tmp.putScalar(zero);
+                   L2_->putScalar(zero);
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     L2tmp(ii,ii)   = 1./(*Alpha_)[ii];
-                     L2tmp(ii+1,ii) = -1./(*Alpha_)[ii];
+                     (*L2_)(ii,ii)   = 1./(*Alpha_)[ii];
+                     (*L2_)(ii+1,ii) = -1./(*Alpha_)[ii];
                    }
 
                    // AUTAP = UTAU*Delta*L2;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AUTAPtmp( Teuchos::View, *AUTAP_, recycleBlocks_, numBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> UTAUtmp( Teuchos::View, *UTAU_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Deltatmp( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_+1 );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> DeltaL2tmp( Teuchos::View, *DeltaL2_, recycleBlocks_, numBlocks_ );
-                   DeltaL2tmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Deltatmp,L2tmp,zero);
-                   AUTAPtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,UTAUtmp,DeltaL2tmp,zero);
+                   DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
+                   AUTAP_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*UTAU_,*DeltaL2_,zero);
 
                    // F = [UTAU zeros(k,m); zeros(m,k) diag(D)];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ftmp( Teuchos::View, *F_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
+                   F_->putScalar(zero);
                    Teuchos::SerialDenseMatrix<int,ScalarType> F11( Teuchos::View, *F_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F12( Teuchos::View, *F_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F21( Teuchos::View, *F_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    Teuchos::SerialDenseMatrix<int,ScalarType> F22( Teuchos::View, *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   F11.assign(UTAUtmp);
-                   F12.putScalar(zero);
-                   F21.putScalar(zero);
-                   F22.putScalar(zero);
+                   F11.assign(*UTAU_);
                    for(int ii=0;ii<numBlocks_;ii++) {
                      F22(ii,ii) = (*D_)[ii];
                    }
 
                    // G = [AUTAU AUTAP; AUTAP' APTAP];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Gtmp( Teuchos::View, *G_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G12( Teuchos::View, *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G21( Teuchos::View, *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G22( Teuchos::View, *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AUTAUtmp( Teuchos::View, *AUTAU_, recycleBlocks_, recycleBlocks_ );
-                   G11.assign(AUTAUtmp);
-                   G12.assign(AUTAPtmp);
+                   G11.assign(*AUTAU_);
+                   G12.assign(*AUTAP_);
                    // G21 = G12'; (no transpose operator exists for SerialDenseMatrix; Do copy manually)
                    for (int ii=0;ii<recycleBlocks_;++ii)
                      for (int jj=0;jj<numBlocks_;++jj)
                        G21(jj,ii) = G12(ii,jj);
-                   G22.assign(APTAPtmp);
+                   G22.assign(*APTAP_);
 
                    // compute harmonic Ritz vectors
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ytmp( Teuchos::View, *Y_, (recycleBlocks_+numBlocks_), recycleBlocks_ );
-                   getHarmonicVecs(Ftmp,Gtmp,Ytmp);
+                   getHarmonicVecs(*F_,*G_,*Y_);
 
                    // U1 = [U P(:,1:end-1)]*Y;
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<(recycleBlocks_); ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<const MV> Utmp = MVT::CloneView( *U_,  index );
-                   index.resize( numBlocks_ );
-                   for (int ii=0; ii<numBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  index );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> UY1tmp  = MVT::CloneViewNonConst( *U1Y1_,  index );
+                   Teuchos::RCP<const MV> Utmp = MVT::CloneView( *U_,  rindex );
+                   Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  nindex );
+                   Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
+                   Teuchos::RCP<MV> UY1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
+                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
                    Teuchos::SerialDenseMatrix<int,ScalarType> Y1( Teuchos::View, *Y_, recycleBlocks_, recycleBlocks_ );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  index );
+                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
                    MVT::MvTimesMatAddMv( one, *Utmp, Y1, zero, *UY1tmp );
                    MVT::MvAddMv(one,*UY1tmp, one, *PY2tmp, *U1tmp);
@@ -1526,20 +1456,15 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    // Precompute some variables for next cycle
 
                    // AU1TAU1     = Y'*G*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
-                   GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAU1tmp( Teuchos::View, *AU1TAU1_, recycleBlocks_, recycleBlocks_ );
-                   AU1TAU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
+                   GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
+                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
 
                    // AU1TU1      = Y'*F*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
-                   FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TU1tmp( Teuchos::View, *AU1TU1_, recycleBlocks_, recycleBlocks_ );
-                   AU1TU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
+                   FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
+                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
 
                    // AU1TU   = UTAU;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TUtmp( Teuchos::View, *AU1TU_, recycleBlocks_, recycleBlocks_ );
-                   AU1TUtmp.assign(UTAUtmp);
+                   AU1TU_->assign(*UTAU_);
 
                    // dold    = D(end);
                    dold = (*D_)[numBlocks_-1];
@@ -1552,88 +1477,69 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    lastBeta = numBlocks_-1;
                 }
                 else { // Have U and U1
-                   Teuchos::SerialDenseMatrix<int,ScalarType> APTAPtmp( Teuchos::View, *APTAP_, numBlocks_, numBlocks_ );
                    for (int ii=0; ii<numBlocks_; ii++) {
-                     APTAPtmp(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
+                     (*APTAP_)(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
                      if (ii > 0) {
-                       APTAPtmp(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       APTAPtmp(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       (*APTAP_)(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       (*APTAP_)(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
                    }
 
-                   Teuchos::SerialDenseMatrix<int,ScalarType> L2tmp( Teuchos::View, *L2_, numBlocks_+1, numBlocks_ );
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     L2tmp(ii,ii)   = 1./(*Alpha_)[ii];
-                     L2tmp(ii+1,ii) = -1./(*Alpha_)[ii];
+                     (*L2_)(ii,ii)   = 1./(*Alpha_)[ii];
+                     (*L2_)(ii+1,ii) = -1./(*Alpha_)[ii];
                    }
 
                    // M(end,1) = dold*(-Beta(1)/Alpha(1));
                    // AU1TAP = Y'*[AU1TU*Delta*L2; M];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> DeltaL2( Teuchos::View, *DeltaL2_, recycleBlocks_, numBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Deltatmp( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_+1 );
-                   DeltaL2.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Deltatmp,L2tmp,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TUDeltaL2( Teuchos::View, *AU1TUDeltaL2_, recycleBlocks_, numBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TUtmp( Teuchos::View, *AU1TU_, recycleBlocks_, recycleBlocks_ );
-                   AU1TUDeltaL2.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,AU1TUtmp,DeltaL2,zero);
+                   DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
+                   AU1TUDeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*AU1TU_,*DeltaL2_,zero);
                    Teuchos::SerialDenseMatrix<int,ScalarType> Y1( Teuchos::View, *Y_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAPtmp( Teuchos::View, *AU1TAP_, recycleBlocks_, numBlocks_ );
-                   AU1TAPtmp.putScalar(zero);
-                   AU1TAPtmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Y1,AU1TUDeltaL2,zero);
+                   AU1TAP_->putScalar(zero);
+                   AU1TAP_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Y1,*AU1TUDeltaL2_,zero);
                    Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    ScalarType val = dold * (-(*Beta_)[0]/(*Alpha_)[0]);
                    for(int ii=0;ii<recycleBlocks_;ii++) {
-                     AU1TAPtmp(ii,0) += Y2(numBlocks_-1,ii)*val;
+                     (*AU1TAP_)(ii,0) += Y2(numBlocks_-1,ii)*val;
                    }
 
                    // AU1TU = Y1'*AU1TU
                    Teuchos::SerialDenseMatrix<int,ScalarType> Y1TAU1TU( Teuchos::View, *GY_, recycleBlocks_, recycleBlocks_ );
-                   Y1TAU1TU.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Y1,AU1TUtmp,zero);
-                   AU1TUtmp.assign(Y1TAU1TU);
+                   Y1TAU1TU.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Y1,*AU1TU_,zero);
+                   AU1TU_->assign(Y1TAU1TU);
 
                    // F = [AU1TU1 zeros(k,m); zeros(m,k) diag(D)];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ftmp( Teuchos::View, *F_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
+                   F_->putScalar(zero);
                    Teuchos::SerialDenseMatrix<int,ScalarType> F11( Teuchos::View, *F_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F12( Teuchos::View, *F_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F21( Teuchos::View, *F_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    Teuchos::SerialDenseMatrix<int,ScalarType> F22( Teuchos::View, *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TU1tmp( Teuchos::View, *AU1TU1_, recycleBlocks_, recycleBlocks_ );
-                   F11.assign(AU1TU1tmp);
+                   F11.assign(*AU1TU1_);
                    for(int ii=0;ii<numBlocks_;ii++) {
                      F22(ii,ii) = (*D_)[ii];
                    }
 
                    // G = [AU1TAU1 AU1TAP; AU1TAP' APTAP];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Gtmp( Teuchos::View, *G_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G12( Teuchos::View, *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G21( Teuchos::View, *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G22( Teuchos::View, *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAU1tmp( Teuchos::View, *AU1TAU1_, recycleBlocks_, recycleBlocks_ );
-                   G11.assign(AU1TAU1tmp);
-                   G12.assign(AU1TAPtmp);
+                   G11.assign(*AU1TAU1_);
+                   G12.assign(*AU1TAP_);
                    // G21 = G12'; (no transpose operator exists for SerialDenseMatrix; Do copy manually)
                    for (int ii=0;ii<recycleBlocks_;++ii)
                      for (int jj=0;jj<numBlocks_;++jj)
                        G21(jj,ii) = G12(ii,jj);
-                   G22.assign(APTAPtmp);
+                   G22.assign(*APTAP_);
 
                    // compute harmonic Ritz vectors
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ytmp( Teuchos::View, *Y_, (recycleBlocks_+numBlocks_), recycleBlocks_ );
-                   getHarmonicVecs(Ftmp,Gtmp,Ytmp);
+                   getHarmonicVecs(*F_,*G_,*Y_);
 
                    // U1 = [U1 P(:,2:end-1)]*Y;
                    index.resize( numBlocks_ );
                    for (int ii=0; ii<numBlocks_; ++ii) { index[ii] = ii+1; }
                    Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  index );
-                   index.resize( recycleBlocks_ );
-                   for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-                   Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  index );
+                   Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
+                   Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
+                   Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
                    MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
                    MVT::MvTimesMatAddMv( one, *U1tmp, Y1, zero, *U1Y1tmp );
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
@@ -1641,14 +1547,12 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    // Precompute some variables for next cycle
 
                    // AU1TAU1     = Y'*G*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
-                   GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
-                   AU1TAU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
+                   GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
+                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
 
                    // AU1TU1      = Y'*F*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
-                   FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
-                   AU1TU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
+                   FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
+                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
 
                    // dold    = D(end);
                    dold = (*D_)[numBlocks_-1];
@@ -1688,8 +1592,6 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
             newstate.Beta = Beta_;
             newstate.Beta_i = 1;
-           // Teuchos::null;
-           // newstate.Beta = Teuchos::rcp( new std::vector<ScalarType>Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Beta_, numBlocks_, 1, 1, 0 ) );
 
             newstate.Delta = Teuchos::null;
             newstate.Delta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_, 0, 1 ) );
@@ -1748,9 +1650,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       // Update the recycle space for the next linear system
       if (existU1_) { // be sure updated recycle space was created
         // U = U1
-        index.resize(recycleBlocks_);
-        for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-        MVT::SetBlock(*U1_,index,*U_);
+        MVT::SetBlock(*U1_,rindex,*U_);
         // Set flag indicating recycle space is now defined
         existU_ = true;
         if (numRHS2Solve > 0) { // also update AU, UTAU, and AUTAU
@@ -1771,29 +1671,19 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           newstate.rTz_old = Teuchos::null;
 
           // Reinitialize AU, UTAU, AUTAU
-          index.resize(recycleBlocks_);
-          for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
-          Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  index );
-          index.resize(recycleBlocks_);
-          for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
-          Teuchos::RCP<MV> AUtmp = MVT::CloneViewNonConst( *AU_, index );
+          Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  rindex );
+          Teuchos::RCP<MV> AUtmp = MVT::CloneViewNonConst( *AU_, rindex );
           // Initialize AU
           problem_->applyOp( *Utmp, *AUtmp );
           // Initialize UTAU
-          Teuchos::SerialDenseMatrix<int,ScalarType> UTAUtmp( Teuchos::View, *UTAU_, recycleBlocks_, recycleBlocks_ );
-          MVT::MvTransMv( one, *Utmp, *AUtmp, UTAUtmp );
+          MVT::MvTransMv( one, *Utmp, *AUtmp, *UTAU_ );
           // Initialize AUTAU  ( AUTAU = AU'*(M\AU) )
-          Teuchos::SerialDenseMatrix<int,ScalarType> AUTAUtmp( Teuchos::View, *AUTAU_, recycleBlocks_, recycleBlocks_ );
           if ( precObj != Teuchos::null ) {
-            index.resize(recycleBlocks_);
-            for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
-            index.resize(recycleBlocks_);
-            for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-            Teuchos::RCP<MV> LeftPCAU = MVT::CloneViewNonConst( *U1_, index ); // use U1 as temp storage
+            Teuchos::RCP<MV> LeftPCAU = MVT::CloneViewNonConst( *U1_, rindex ); // use U1 as temp storage
             OPT::Apply( *precObj, *AUtmp, *LeftPCAU );
-            MVT::MvTransMv( one, *AUtmp, *LeftPCAU, AUTAUtmp );
+            MVT::MvTransMv( one, *AUtmp, *LeftPCAU, *AUTAU_ );
           } else {
-            MVT::MvTransMv( one, *AUtmp, *AUtmp, AUTAUtmp );
+            MVT::MvTransMv( one, *AUtmp, *AUtmp, *AUTAU_ );
           }
         } // if (numRHS2Solve > 0)
 
