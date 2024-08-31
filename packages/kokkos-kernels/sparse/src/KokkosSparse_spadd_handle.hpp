@@ -102,10 +102,6 @@ class SPADDHandle {
    */
   size_type get_c_nnz() { return this->result_nnz_size; }
 
-  void set_sort_option(int option) { this->sort_option = option; }
-
-  int get_sort_option() { return this->sort_option; }
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   SpaddCusparseData cusparseData;
 #endif

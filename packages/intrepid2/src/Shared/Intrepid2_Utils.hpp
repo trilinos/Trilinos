@@ -281,13 +281,13 @@ namespace Intrepid2 {
   template<typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   constexpr typename
-  std::enable_if< !std::is_pod<T>::value, typename ScalarTraits<T>::scalar_type >::type
+  std::enable_if< !(std::is_standard_layout<T>::value && std::is_trivial<T>::value), typename ScalarTraits<T>::scalar_type >::type
   get_scalar_value(const T& obj) {return obj.val();}
 
   template<typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod<T>::value, typename ScalarTraits<T>::scalar_type >::type
+  std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, typename ScalarTraits<T>::scalar_type >::type
   get_scalar_value(const T& obj){return obj;}
 
 
@@ -300,13 +300,13 @@ namespace Intrepid2 {
   template<typename T, typename ...P>
   KOKKOS_INLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod<T>::value, unsigned >::type
+  std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, unsigned >::type
   dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
 
   template<typename T, typename ...P>
   KOKKOS_INLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod< typename Kokkos::View<T, P...>::value_type >::value, unsigned >::type
+  std::enable_if< std::is_standard_layout<typename Kokkos::View<T, P...>::value_type>::value && std::is_trivial<typename Kokkos::View<T, P...>::value_type>::value, unsigned >::type
   dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
 
   template<typename T, typename ...P>
@@ -339,7 +339,7 @@ namespace Intrepid2 {
     using DeviceType         = typename ViewType::device_type;
     using ViewTypeWithLayout = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
     
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    const bool allocateFadStorage = !(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value);
     if (!allocateFadStorage)
     {
       return ViewTypeWithLayout(label,dims...);
@@ -766,7 +766,7 @@ namespace Intrepid2 {
   template <typename ValueType>
   struct NaturalLayoutForType {
     using layout  =
-    typename std::conditional<std::is_pod<ValueType>::value,
+    typename std::conditional<(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value),
       Kokkos::LayoutLeft, // for POD types, use LayoutLeft
       Kokkos::LayoutNatural<Kokkos::LayoutLeft> >::type; // For FAD types, use LayoutNatural
   };
@@ -791,7 +791,7 @@ namespace Intrepid2 {
   template<typename Scalar>
   constexpr int getVectorSizeForHierarchicalParallelism()
   {
-    return std::is_pod<Scalar>::value ? VECTOR_SIZE : FAD_VECTOR_SIZE;
+    return (std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value) ? VECTOR_SIZE : FAD_VECTOR_SIZE;
   }
   
   /**
@@ -803,7 +803,7 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   constexpr unsigned getScalarDimensionForView(const ViewType &view)
   {
-    return (std::is_pod<typename ViewType::value_type>::value) ? 0 : get_dimension_scalar(view);
+    return (std::is_standard_layout<typename ViewType::value_type>::value && std::is_trivial<typename ViewType::value_type>::value) ? 0 : get_dimension_scalar(view);
   }
 } // end namespace Intrepid2
 

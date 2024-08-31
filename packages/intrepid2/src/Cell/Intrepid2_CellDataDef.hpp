@@ -826,76 +826,76 @@ refCenterDataStatic_ = {
 // Point Inclusion 
 
 
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Line<>::key>::
-  check(const PointViewType &point, const double threshold) {
-    const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+  check(const PointViewType &point, const ScalarType threshold) {
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
     return (minus_one <= point(0) && point(0) <= plus_one);
   }  
 
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Triangle<>::key>::
-  check(const PointViewType &point, const double threshold) {
-    const double distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1.0 );
+  check(const PointViewType &point, const ScalarType threshold) {
+    const ScalarType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1.0 );
     return distance < threshold;
   }
   
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Quadrilateral<>::key>::
   check(const PointViewType &point, 
-                      const double threshold) {
-    const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+                      const ScalarType threshold) {
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
     return ((minus_one <= point(0) && point(0) <= plus_one) &&
             (minus_one <= point(1) && point(1) <= plus_one));
   }  
 
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Tetrahedron<>::key>::
-  check(const PointViewType &point, const double threshold) {
-    const double distance = max( max(-point(0),-point(1)),
+  check(const PointViewType &point, const ScalarType threshold) {
+    const ScalarType distance = max( max(-point(0),-point(1)),
                                   max(-point(2), point(0) + point(1) + point(2) - 1) );
     return distance < threshold;
   }
 
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Hexahedron<>::key>::
-  check(const PointViewType &point, const double threshold) {
-    const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+  check(const PointViewType &point, const ScalarType threshold) {
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
     return ((minus_one <= point(0) && point(0) <= plus_one) &&
             (minus_one <= point(1) && point(1) <= plus_one) &&
             (minus_one <= point(2) && point(2) <= plus_one));
   }
   
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Pyramid<>::key>::
-  check(const PointViewType &point, const double threshold) {
-    const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold, minus_zero = -threshold;
-    const double left  = minus_one + point(2);
-    const double right =  plus_one - point(2);
+  check(const PointViewType &point, const ScalarType threshold) {
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold, minus_zero = -threshold;
+    const ScalarType left  = minus_one + point(2);
+    const ScalarType right =  plus_one - point(2);
     return ((left       <= point(0) && point(0) <= right) &&
             (left       <= point(1) && point(1) <= right) &&
             (minus_zero <= point(2) && point(2) <= plus_one));
   }
 
-  template<typename PointViewType>
+  template<typename PointViewType, typename ScalarType>
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Wedge<>::key>::
-  check(const PointViewType &point, const double threshold) {
-    const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
-    const double distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1 );
+  check(const PointViewType &point, const ScalarType threshold) {
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+    const ScalarType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1 );
     return (distance < threshold && (minus_one <= point(2) && point(2) <= plus_one));
   }
 

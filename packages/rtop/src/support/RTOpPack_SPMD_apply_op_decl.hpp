@@ -156,7 +156,7 @@ private:
   Teuchos::RCP<const RTOpT<Scalar> >  op_;
   // Not defined and not to be called!
   ReductTargetReductionOp();
-  ReductTargetReductionOp<Scalar>(const ReductTargetReductionOp<Scalar>&);
+  ReductTargetReductionOp(const ReductTargetReductionOp<Scalar>&);
   ReductTargetReductionOp<Scalar>& operator=(const ReductTargetReductionOp<Scalar>&);
 };
 

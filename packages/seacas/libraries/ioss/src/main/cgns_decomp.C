@@ -633,13 +633,13 @@ namespace {
           int star_cnt =
               (double)(proc_work[i] - min_work) / (max_work - min_work) * delta + min_star;
           std::string stars(star_cnt, '*');
-          std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
+          const std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
           if (proc_work[i] == max_work) {
             fmt::print(
 #if !defined __NVCC__
                 fg(fmt::color::red),
 #endif
-                format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                 proc_work[i] / avg_work, stars);
           }
           else if (proc_work[i] == min_work) {
@@ -647,11 +647,11 @@ namespace {
 #if !defined __NVCC__
                 fg(fmt::color::green),
 #endif
-                format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                 proc_work[i] / avg_work, stars);
           }
           else {
-            fmt::print(format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+            fmt::print(fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                        proc_work[i] / avg_work, stars);
           }
           if (verbose) {

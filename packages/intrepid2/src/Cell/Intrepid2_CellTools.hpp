@@ -352,11 +352,11 @@ public:
     
     /** \brief  Computes reciprocals of determinants corresponding to the Jacobians in the Data container provided
 
-        \param  jacobianDet   [out]  - data with shape (C,P), as returned by CellTools::allocateJacobianDet()
-        \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+        \param  jacobianDetInv   [out]  - data with shape (C,P), as returned by CellTools::allocateJacobianDet()
+        \param  jacobian                 [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
     */
     template<class PointScalar>
-    static void setJacobianDetInv( Data<PointScalar,DeviceType> & jacobianDet,
+    static void setJacobianDetInv( Data<PointScalar,DeviceType> & jacobianDetInv,
                                   const Data<PointScalar,DeviceType> & jacobian);
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
@@ -1396,11 +1396,13 @@ public:
         \param  threshold         [in]  - "tightness" of the inclusion test
         \return true if the point is in the closure of the specified reference cell and false otherwise.
     */
-    template<typename pointViewType>
+    template<typename PointViewType>
     static bool 
-    checkPointInclusion( const pointViewType        point,
+    checkPointInclusion( const PointViewType        point,
                          const shards::CellTopology cellTopo,
-                         const double               thres = threshold() );
+                         const typename ScalarTraits<typename PointViewType::value_type>::scalar_type thres = 
+                               threshold<typename ScalarTraits<typename PointViewType::value_type>::scalar_type>() );
+
 
 
     /** \brief  Checks every point for inclusion in the reference cell of a given topology.
@@ -1417,7 +1419,8 @@ public:
              typename InputViewType>
     static void checkPointwiseInclusion(       OutputViewType inCell, 
                                          const InputViewType points,
-                                         const double thresh = threshold()); 
+                                         const typename ScalarTraits<typename InputViewType::value_type>::scalar_type thresh =
+                                               threshold<typename ScalarTraits<typename InputViewType::value_type>::scalar_type>()); 
 
 
 
@@ -1434,7 +1437,8 @@ public:
     static void checkPointwiseInclusion(       InCellViewType inCell,                     
                                          const PointViewType points,                       
                                          const shards::CellTopology cellTopo,                                                       
-                                         const double thres = threshold() );
+                                         const typename ScalarTraits<typename PointViewType::value_type>::scalar_type thres = 
+                                               threshold<typename ScalarTraits<typename PointViewType::value_type>::scalar_type>() );
 
     /** \brief  Checks every points for inclusion in physical cells from a cell workset.
                 The points can belong to a global set and stored in a rank-2 (P,D) view,
@@ -1454,7 +1458,8 @@ public:
                                          const Kokkos::DynRankView<pointValueType,pointProperties...> points,                       
                                          const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,      
                                          const shards::CellTopology cellTopo,                                                       
-                                         const double thres = threshold() );
+                                         const typename ScalarTraits<pointValueType>::scalar_type thres = 
+                                               threshold<typename ScalarTraits<pointValueType>::scalar_type>() );
 
 
     // //============================================================================================//

@@ -148,7 +148,11 @@ namespace Sacado {
 
 #include "Sacado_Traits.hpp"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40499
+#include "View/Kokkos_ViewMapping.hpp"
+#else
 #include "impl/Kokkos_ViewMapping.hpp"
+#endif
 
 //----------------------------------------------------------------------------
 

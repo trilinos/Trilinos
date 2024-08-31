@@ -31,18 +31,18 @@
 
 namespace Intrepid2
 {
-  template<class Scalar, typename ExecSpaceType>
+  template<class Scalar, typename DeviceType>
   class BasisValues
   {
-    using TensorDataType = TensorData<Scalar,ExecSpaceType>;
-    using VectorDataType = VectorData<Scalar,ExecSpaceType>;
+    using TensorDataType = TensorData<Scalar,DeviceType>;
+    using VectorDataType = VectorData<Scalar,DeviceType>;
     
     Kokkos::Array<TensorDataType,Parameters::MaxTensorComponents> tensorDataFamilies_;
     VectorDataType vectorData_;
     
     int numTensorDataFamilies_ = -1;
     
-    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter_;
+    Kokkos::View<ordinal_type*,DeviceType> ordinalFilter_;
   public:
     //! Constructor for scalar-valued BasisValues with a single family of values.
     BasisValues(TensorDataType tensorData)
@@ -76,8 +76,8 @@ namespace Intrepid2
     
     
     //! copy-like constructor for differing execution spaces.  This does a deep copy of underlying views.
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    BasisValues(const BasisValues<Scalar,OtherExecSpaceType> &basisValues)
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>
+    BasisValues(const BasisValues<Scalar,OtherDeviceType> &basisValues)
     :
     vectorData_(basisValues.vectorData()),
     numTensorDataFamilies_(basisValues.numTensorDataFamilies())
@@ -85,16 +85,16 @@ namespace Intrepid2
       auto otherFamilies = basisValues.tensorDataFamilies();
       for (int family=0; family<numTensorDataFamilies_; family++)
       {
-        tensorDataFamilies_[family] = TensorData<Scalar,ExecSpaceType>(otherFamilies[family]);
+        tensorDataFamilies_[family] = TensorData<Scalar,DeviceType>(otherFamilies[family]);
       }
       auto otherOrdinalFilter = basisValues.ordinalFilter();
-      ordinalFilter_ = Kokkos::View<ordinal_type*,ExecSpaceType>("BasisValues::ordinalFilter_",otherOrdinalFilter.extent(0));
+      ordinalFilter_ = Kokkos::View<ordinal_type*,DeviceType>("BasisValues::ordinalFilter_",otherOrdinalFilter.extent(0));
       
       Kokkos::deep_copy(ordinalFilter_, otherOrdinalFilter);
     }
     
     //! field start and length must align with families in vectorData_ or tensorDataFamilies_ (whichever is valid).
-    BasisValues<Scalar,ExecSpaceType> basisValuesForFields(const int &fieldStartOrdinal, const int &numFields)
+    BasisValues<Scalar,DeviceType> basisValuesForFields(const int &fieldStartOrdinal, const int &numFields)
     {
       int familyStartOrdinal = -1, familyEndOrdinal = -1;
       const int familyCount = this->numFamilies();
@@ -118,12 +118,12 @@ namespace Intrepid2
         {
           tensorDataFamilies[i-familyStartOrdinal] = tensorDataFamilies_[i];
         }
-        return BasisValues<Scalar,ExecSpaceType>(tensorDataFamilies);
+        return BasisValues<Scalar,DeviceType>(tensorDataFamilies);
       }
       else
       {
         const int componentCount = vectorData_.numComponents();
-        std::vector< std::vector<TensorData<Scalar,ExecSpaceType> > > vectorComponents(numFamiliesInFieldSpan, std::vector<TensorData<Scalar,ExecSpaceType> >(componentCount));
+        std::vector< std::vector<TensorData<Scalar,DeviceType> > > vectorComponents(numFamiliesInFieldSpan, std::vector<TensorData<Scalar,DeviceType> >(componentCount));
         for (int i=familyStartOrdinal; i<=familyEndOrdinal; i++)
         {
           for (int j=0; j<componentCount; j++)
@@ -131,7 +131,7 @@ namespace Intrepid2
             vectorComponents[i-familyStartOrdinal][j] = vectorData_.getComponent(i,j);
           }
         }
-        return BasisValues<Scalar,ExecSpaceType>(vectorComponents);
+        return BasisValues<Scalar,DeviceType>(vectorComponents);
       }
     }
     
@@ -327,16 +327,22 @@ namespace Intrepid2
       }
     }
     
-    void setOrdinalFilter(Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter)
+    void setOrdinalFilter(Kokkos::View<ordinal_type*,DeviceType> ordinalFilter)
     {
       ordinalFilter_ = ordinalFilter;
     }
     
-    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter() const
+    Kokkos::View<ordinal_type*,DeviceType> ordinalFilter() const
     {
       return ordinalFilter_;
     }
   };
-}
+
+  template<class Scalar, typename DeviceType>
+  KOKKOS_INLINE_FUNCTION unsigned rank(const BasisValues<Scalar,DeviceType> &basisValues)
+  {
+    return basisValues.rank();
+  }
+} // namespace Intrepid2
 
 #endif /* Intrepid2_BasisValues_h */

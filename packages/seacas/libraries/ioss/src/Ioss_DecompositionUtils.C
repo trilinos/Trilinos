@@ -501,14 +501,14 @@ namespace Ioss {
       for (size_t i = 0; i < elem_per_rank.size(); i++) {
         int star_cnt =
             (double)(elem_per_rank[i] - min_work) / (max_work - min_work) * delta + min_star;
-        std::string stars(star_cnt, '*');
-        std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
+        std::string       stars(star_cnt, '*');
+        const std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
         if (elem_per_rank[i] == max_work) {
           fmt::print(
 #if !defined __NVCC__
               fg(fmt::color::red),
 #endif
-              format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
+              fmt::runtime(format), i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
               (double)elem_per_rank[i] / avg_work, stars);
         }
         else if (elem_per_rank[i] == min_work) {
@@ -516,12 +516,12 @@ namespace Ioss {
 #if !defined __NVCC__
               fg(fmt::color::green),
 #endif
-              format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
+              fmt::runtime(format), i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
               elem_per_rank[i] / avg_work, stars);
         }
         else {
-          fmt::print(format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
-                     elem_per_rank[i] / avg_work, stars);
+          fmt::print(fmt::runtime(format), i, proc_width, fmt::group_digits(elem_per_rank[i]),
+                     work_width, elem_per_rank[i] / avg_work, stars);
         }
       }
 

@@ -23,7 +23,8 @@ enum FormulationChoice
   Hgrad,   // (grad, grad) + (value, value)
   Hdiv,    // (div, div)   + (value, value)
   Hcurl,   // (curl, curl) + (value, value)
-  L2       // (value, value)
+  L2,      // (value, value)
+  VectorWeightedPoisson // (a dot grad, b dot grad)
 };
 
 enum AlgorithmChoice
@@ -63,6 +64,10 @@ public:
 class L2Formulation {
 public:
   static const FormulationChoice formulation = L2;
+};
+class VectorWeightedPoissonFormulation {
+public:
+  static const FormulationChoice formulation = VectorWeightedPoisson;
 };
 class StandardAlgorithm
 {
