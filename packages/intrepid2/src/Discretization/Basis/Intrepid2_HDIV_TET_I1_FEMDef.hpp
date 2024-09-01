@@ -160,12 +160,13 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   Basis_HDIV_TET_I1_FEM<DT,OT,PT>::
   Basis_HDIV_TET_I1_FEM() {
-    this->basisCardinality_  = 4;
-    this->basisDegree_       = 1;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HDIV;
+    this->basisCardinality_         = 4;
+    this->basisDegree_              = 1;
+    constexpr ordinal_type spaceDim = 3;
+    this->basisCellTopologyKey_     = shards::Tetrahedron<4>::key;
+    this->basisType_                = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_         = COORDINATES_CARTESIAN;
+    this->functionSpace_            = FUNCTION_SPACE_HDIV;
 
     // initialize tags
     {
@@ -205,7 +206,7 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,spaceDim);
 
     dofCoords(0,0) =  1.0/3.0;   dofCoords(0,1) =  0.0;       dofCoords(0,2) = 1.0/3.0;
     dofCoords(1,0) =  1.0/3.0;   dofCoords(1,1) =  1.0/3.0;   dofCoords(1,2) = 1.0/3.0;
@@ -217,7 +218,7 @@ namespace Intrepid2 {
 
     // dofCoeffs on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoeffs("dofCoeffsHost", this->basisCardinality_,spaceDim);
 
     // dofCoeffs are normals to faces, having magnitude equal to faces' measures
     dofCoeffs(0,0) =  0.0;   dofCoeffs(0,1) = -1.0;   dofCoeffs(0,2) =  0.0;

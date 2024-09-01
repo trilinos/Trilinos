@@ -1271,13 +1271,13 @@ namespace Intrepid2
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
-      const auto & p           = polyOrder;
-      this->basisCardinality_  = p * p + 2 * p * (p+1) + 3 * p * p * (p-1);
-      this->basisDegree_       = p;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<> >() );
-      this->basisType_         = BASIS_FEM_HIERARCHICAL;
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
-      this->functionSpace_     = FUNCTION_SPACE_HDIV;
+      const auto & p              = polyOrder;
+      this->basisCardinality_     = p * p + 2 * p * (p+1) + 3 * p * p * (p-1);
+      this->basisDegree_          = p;
+      this->basisCellTopologyKey_ = shards::Pyramid<>::key;
+      this->basisType_            = BASIS_FEM_HIERARCHICAL;
+      this->basisCoordinates_     = COORDINATES_CARTESIAN;
+      this->functionSpace_        = FUNCTION_SPACE_HDIV;
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(div) pyramid polynomial degree lookup", this->basisCardinality_, degreeLength);

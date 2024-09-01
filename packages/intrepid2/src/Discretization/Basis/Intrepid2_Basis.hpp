@@ -24,6 +24,7 @@
 #include "Intrepid2_CellTopologyTags.hpp"
 #include "Intrepid2_TensorPoints.hpp"
 #include "Shards_CellTopology.hpp"
+#include "Intrepid2_CellData.hpp"
 #include <Teuchos_RCPDecl.hpp>
 #include <Kokkos_Core.hpp>
 
@@ -164,14 +165,14 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
      */
     ordinal_type basisDegree_;
 
-    /** \brief  Base topology of the cells for which the basis is defined. See
+    /** \brief Identifier of the base topology of the cells for which the basis is defined. See
          the <a href="https://trilinos.org/packages/shards/">Shards</a> package
          for definition of base cell topology.  For TensorBasis subclasses, by default this the cell topology that is extruded (i.e., it is a lower-dimensional CellTopology than
          the space on which the tensor basis is defined).  This allows tensor bases to be defined in higher dimensions than shards::CellTopology supports.  TensorBasis subclasses can
-         opt to use an equivalent shards CellTopology for basisCellTopology_, as well as using Intrepid2's tagging for tensor bases in dimensions up to 3, by calling
+         opt to use an equivalent shards CellTopology for base topology, as well as using Intrepid2's tagging for tensor bases in dimensions up to 3, by calling
          TensorBasis::setShardsTopologyAndTags().
     */
-    shards::CellTopology basisCellTopology_;
+    unsigned basisCellTopologyKey_;
 
     /** \brief  Type of the basis
      */
@@ -776,7 +777,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     */
     shards::CellTopology
     getBaseCellTopology() const {
-      return basisCellTopology_;
+      return getCellTopologyData(basisCellTopologyKey_);
     }
 
 

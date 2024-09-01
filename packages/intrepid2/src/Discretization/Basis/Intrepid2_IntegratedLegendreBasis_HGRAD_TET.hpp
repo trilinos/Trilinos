@@ -610,12 +610,12 @@ namespace Intrepid2
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
-      this->basisCardinality_  = ((polyOrder+1) * (polyOrder+2) * (polyOrder+3)) / 6;
-      this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
-      this->basisType_         = BASIS_FEM_HIERARCHICAL;
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
-      this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+      this->basisCardinality_     = ((polyOrder+1) * (polyOrder+2) * (polyOrder+3)) / 6;
+      this->basisDegree_          = polyOrder;
+      this->basisCellTopologyKey_ = shards::Tetrahedron<>::key;
+      this->basisType_            = BASIS_FEM_HIERARCHICAL;
+      this->basisCoordinates_     = COORDINATES_CARTESIAN;
+      this->functionSpace_        = FUNCTION_SPACE_HGRAD;
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) tetrahedron polynomial degree lookup", this->basisCardinality_, degreeLength);
@@ -623,7 +623,7 @@ namespace Intrepid2
       
       int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
-      const int numVertices = this->basisCellTopology_.getVertexCount();
+      const int numVertices = this->getBaseCellTopology().getVertexCount();
       const int numFunctionsPerVertex = 1;
       const int numVertexFunctions = numVertices * numFunctionsPerVertex;
       for (int i=0; i<numVertexFunctions; i++)
@@ -642,7 +642,7 @@ namespace Intrepid2
       
       // **** edge functions **** //
       const int numFunctionsPerEdge = polyOrder - 1; // bubble functions: all but the vertices
-      const int numEdges            = this->basisCellTopology_.getEdgeCount();
+      const int numEdges            = this->getBaseCellTopology().getEdgeCount();
       for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
       {
         for (int i=0; i<numFunctionsPerEdge; i++)

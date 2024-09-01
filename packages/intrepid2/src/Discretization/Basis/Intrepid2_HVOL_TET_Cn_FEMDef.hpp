@@ -199,13 +199,13 @@ namespace Intrepid2 {
                           const EPointType   pointType ) {
     constexpr ordinal_type spaceDim = 3;
 
-    this->pointType_         = pointType;
-    this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
-    this->basisDegree_       = order; // small n
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-    this->basisType_         = BASIS_FEM_LAGRANGIAN;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HVOL;
+    this->pointType_            = pointType;
+    this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
+    this->basisDegree_          = order; // small n
+    this->basisCellTopologyKey_ = shards::Tetrahedron<4>::key;
+    this->basisType_            = BASIS_FEM_LAGRANGIAN;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HVOL;
 
     const ordinal_type card = this->basisCardinality_;
 
@@ -215,8 +215,9 @@ namespace Intrepid2 {
 
     // construct lattice (only internal nodes for HVOL element)
     const ordinal_type offset = 1;
+    const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     PointTools::getLattice( dofCoords,
-                            this->basisCellTopology_,
+                            cellTopo,
                             order+spaceDim+offset, offset,
                             pointType );
 

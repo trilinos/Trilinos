@@ -361,12 +361,12 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH<DT,OT,PT>::
 Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
 
   constexpr ordinal_type spaceDim = 2;
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order);
-  this->basisDegree_       = order;
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_HIERARCHICAL;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order);
+  this->basisDegree_          = order;
+  this->basisCellTopologyKey_ = shards::Triangle<3>::key;
+  this->basisType_            = BASIS_FEM_HIERARCHICAL;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
   // initialize tags
   {

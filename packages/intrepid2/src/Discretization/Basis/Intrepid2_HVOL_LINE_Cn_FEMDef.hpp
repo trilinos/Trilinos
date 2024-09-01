@@ -163,13 +163,13 @@ namespace Intrepid2 {
   Basis_HVOL_LINE_Cn_FEM<DT,OT,PT>::
   Basis_HVOL_LINE_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
-    this->pointType_         = pointType;
-    this->basisCardinality_  = order+1;
-    this->basisDegree_       = order;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
-    this->basisType_         = BASIS_FEM_LAGRANGIAN;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HVOL;
+    this->pointType_            = pointType;
+    this->basisCardinality_     = order+1;
+    this->basisDegree_          = order;
+    this->basisCellTopologyKey_ = shards::Line<2>::key;
+    this->basisType_            = BASIS_FEM_LAGRANGIAN;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HVOL;
 
     const ordinal_type card = this->basisCardinality_;
     
@@ -185,9 +185,10 @@ namespace Intrepid2 {
     case POINTTYPE_WARPBLEND: {
       // lattice ordering 
       {
+        const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Line<2> >());
         const ordinal_type offset = 1;
         PointTools::getLattice( dofCoords,
-                                this->basisCellTopology_, 
+                                cellTopo, 
                                 order+1+offset, offset,
                                 pointT );
         
