@@ -453,31 +453,35 @@ TEUCHOS_UNIT_TEST( ParameterList, set_string_move_semantics)
   TEST_ASSERT(my_str_1.empty());
 
   TEST_EQUALITY_CONST(pl.get<std::string>("my string 1"), "my text 1");
+}
 
+TEUCHOS_UNIT_TEST( ParameterList, set_string_specified_template_argument)
+{
+  // Check the templated set method and its overload when the template argument is specified.
+
+   ParameterList pl;
+
+  // The parameter value can be passed by rvalue reference.
+  // The main templated set method is called, and the parameter value is moved.
   ECHO(std::string my_str_2{"my text 2"});
   ECHO(pl.set<std::string>("my string 2", std::move(my_str_2)));
   TEST_ASSERT(my_str_2.empty());
   TEST_EQUALITY_CONST(pl.get<std::string>("my string 2"), "my text 2");
   
+  // The parameter value cannot be passed by rvalue reference.
+  // The overload of the templated set method is called, and the parameter value is not moved.
   ECHO(std::string my_str_3{"my text 3"});
-  ECHO(pl.set("my string 3", my_str_3));
+  ECHO(pl.set<std::string>("my string 3", my_str_3));
   TEST_ASSERT( ! my_str_3.empty());
   TEST_EQUALITY_CONST(pl.get<std::string>("my string 3"), "my text 3");
 
-  ECHO(std::string my_str_4{"my text 4"});
+  ECHO(const std::string my_str_4{"my text 4"});
   ECHO(pl.set<std::string>("my string 4", my_str_4));
   TEST_ASSERT( ! my_str_4.empty());
   TEST_EQUALITY_CONST(pl.get<std::string>("my string 4"), "my text 4");
 
-  ECHO(const std::string my_str_5{"my text 5"});
-  ECHO(pl.set("my string 5", my_str_5));
-  TEST_ASSERT( ! my_str_5.empty());
+  ECHO(pl.set<std::string>("my string 5", "my text 5"));
   TEST_EQUALITY_CONST(pl.get<std::string>("my string 5"), "my text 5");
-
-  ECHO(const std::string my_str_6{"my text 6"});
-  ECHO(pl.set<std::string>("my string 6", my_str_6));
-  TEST_ASSERT( ! my_str_6.empty());
-  TEST_EQUALITY_CONST(pl.get<std::string>("my string 6"), "my text 6");
 }
 
 TEUCHOS_UNIT_TEST( ParameterList, get_nonexisting_param )
