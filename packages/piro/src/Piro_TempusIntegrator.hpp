@@ -60,6 +60,8 @@ public:
 
   void setObserver(Teuchos::RCP<Tempus::IntegratorObserver<Scalar>> obs = Teuchos::null);
 
+  void clearSolutionHistory();
+
   void initialize();
 
   void initializeSolutionHistory(Scalar t0,

@@ -6,6 +6,12 @@
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />
     <ParameterList name="Tempus">
+      <ParameterList name="Stratimikos">
+      </ParameterList>
+      <ParameterList name="NonLinear Solver">
+      </ParameterList>
+      <ParameterList name="Sensitivities">
+      </ParameterList>
       <Parameter name="Integrator Name" type="string" value="Demo Integrator" />
       <ParameterList name="Demo Integrator">
         <Parameter name="Integrator Type" type="string" value="Integrator Basic" />

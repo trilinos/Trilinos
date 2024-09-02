@@ -3,6 +3,16 @@
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />
     <ParameterList name="Tempus">
+      <ParameterList name="Stratimikos">
+      </ParameterList>
+      <ParameterList name="NonLinear Solver">
+      </ParameterList>
+      <ParameterList name="Sensitivities">
+      </ParameterList>
+      <Parameter name="Lump Mass Matrix" type="bool" value="false" />
+      <Parameter name="Invert Mass Matrix" type="bool" value="true" />
+      <Parameter name="Constant Mass Matrix" type="bool" value="false" />
+      <Parameter name="Abort on Failure" type="bool" value="true" />
       <Parameter name="Integrator Name" type="string" value="Demo Integrator" />
       <ParameterList name="Demo Integrator">
         <Parameter name="Integrator Type" type="string" value="Integrator Basic" />
@@ -18,7 +28,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="Demo Stepper">
-        <Parameter name="Stepper Type" type="string" value="RK Crank-Nicolson" />
+        <Parameter name="Stepper Type" type="string" value="Backward Euler" />
         <Parameter name="Zero Initial Guess" type="bool" value="false" />
         <Parameter name="Solver Name" type="string" value="Demo Solver" />
         <ParameterList name="Demo Solver">
@@ -178,6 +188,7 @@
       <Parameter name="Output Level" type="int" value="3" />
       <Parameter name="Analysis Package" type="string" value="ROL" />
       <ParameterList name="ROL">
+        <Parameter name="Redirect Tempus Output" type="bool" value="true" />
         <Parameter name="Response Vector Index" type="int" value="0" />
         <Parameter name="Parameter Vector Index 0" type="int" value="0" />
         <Parameter name="Response Depends Only On Final Time" type="bool" value="true" />
