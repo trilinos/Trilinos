@@ -109,8 +109,9 @@ def parse_args():
     required.add_argument('--jenkins-job-number',
                           dest="jenkins_job_number",
                           action='store',
+                          default="UNKNOWN",
                           help='The Jenkins build number',
-                          required=True)
+                          required=False)
 
     optional.add_argument('--dashboard-build-name',
                           dest="dashboard_build_name",
