@@ -104,6 +104,12 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
+  void ModelEvaluatorFactory<ScalarT>::setStratimikosList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
+  {
+    m_stratimikos_params = paramList;
+  }
+
+  template<typename ScalarT>
   Teuchos::RCP<const Teuchos::ParameterList> ModelEvaluatorFactory<ScalarT>::getValidParameters() const
   {
     static Teuchos::RCP<const Teuchos::ParameterList> validPL;
@@ -1563,10 +1569,16 @@ namespace panzer_stk {
     const Teuchos::ParameterList & p = *this->getParameterList();
     const Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
 
-    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
-    Teuchos::RCP<Teuchos::ParameterList> strat_params
-       = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params.sublist("NOX").sublist("Direction").
-                      sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")));
+    // Build stratimikos solver (note that this defaults to a hard
+    // coded path to linear solver options in nox list!)
+    Teuchos::RCP<Teuchos::ParameterList> strat_params;
+    if (nonnull(m_stratimikos_params)) {
+      strat_params = m_stratimikos_params;
+    }
+    else {
+      strat_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params.sublist("NOX").sublist("Direction").
+                       sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")));
+    }
 
     bool writeCoordinates = false;
     if(p.sublist("Options").isType<bool>("Write Coordinates"))
