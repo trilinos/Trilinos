@@ -1993,7 +1993,7 @@ BulkData::in_send_ghost( Entity entity) const
 inline void
 BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank rank) const
 {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(__HIP_DEVICE_COMPILE__)
   if (m_check_invalid_rels) {
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;

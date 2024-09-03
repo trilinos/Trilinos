@@ -85,9 +85,9 @@ public:
   const ConnectedEntities get_connected_entities(unsigned bktOrdinal) const
   {
     STK_ThrowAssertMsg(bktOrdinal < m_bucketCapacity,"BucketConnDynamic::get_connected_entities: bktOrdinal("<<bktOrdinal<<") must be less than bucketCapacity("<<m_bucketCapacity<<")");
-    auto [first, second] = m_offsets[bktOrdinal];
+    auto [first, second] = m_connectivity.empty() ? IndexRange{0, 0} : m_offsets[bktOrdinal];
     const unsigned len = second - first;
-    const Entity* ptr = m_connectivity.empty() || len==0 ? nullptr : m_connectivity.data()+first;
+    const Entity* ptr = len==0 ? nullptr : m_connectivity.data()+first;
     return ConnectedEntities(ptr, len);
   }
 

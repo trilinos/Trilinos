@@ -212,10 +212,7 @@ bool
 Eval::undefinedFunction() const
 {
   /* Check for an undefined function in any allocated node */
-  for (const auto& node : m_nodes) {
-    if (node->m_data.function.undefinedFunction) return true;
-  }
-  return false;
+  return !m_undefinedFunctionSet.empty();
 }
 
 bool

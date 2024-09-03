@@ -41,6 +41,7 @@
 #include <string>                   // for string
 #include <vector>                   // for vector
 #include "stk_mesh/base/Types.hpp"  // for EntityRank
+#include "stk_mesh/base/Entity.hpp"
 namespace Ioss { class GroupingEntity; }
 namespace Ioss { class Region; }
 namespace stk { namespace io { class DBStepTimeInterval; } }

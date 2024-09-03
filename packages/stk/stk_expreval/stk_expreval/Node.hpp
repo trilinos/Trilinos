@@ -145,8 +145,8 @@ using NodeWeightMap = std::map<Node*, int>;
 class Node
 {
 public:
-  enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
-  enum { MAXIMUM_FUNCTION_NAME_LENGTH = 32 };
+  static constexpr int MAXIMUM_FUNCTION_NAME_LENGTH = 32;
+  static constexpr int MAXIMUM_NUMBER_OF_FUNCTION_ARGS = 20;
 
   explicit Node(Opcode opcode, Eval* owner);
 
@@ -162,6 +162,8 @@ public:
 
   void computeNodeWeight(NodeWeightMap & nodeWeights);
   void evalTrace(const NodeWeightMap & nodeWeights, EvalNodesType & evaluationNodes);
+
+  int countNumFunctionArgs();
 
   int getNextNodeIndex();
 
@@ -185,8 +187,7 @@ public:
 
     struct _function
     {
-      CFunctionBase * function[MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES];
-      bool undefinedFunction;
+      CFunctionBase * function;
       char functionName[MAXIMUM_FUNCTION_NAME_LENGTH];
       FunctionType functionType;
     } function;

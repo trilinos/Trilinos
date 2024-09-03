@@ -75,4 +75,3 @@ T get_command_line_option(const std::string &option, const T &defaultValue) {
 }
 
 #endif
-

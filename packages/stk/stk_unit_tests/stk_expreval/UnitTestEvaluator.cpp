@@ -1159,7 +1159,7 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isValidFunction("sin(1)"));
   EXPECT_TRUE(isValidFunction("SIN(1)"));
   EXPECT_TRUE(isValidFunction("rand()"));
-  EXPECT_TRUE(isValidFunction("srand()"));
+  EXPECT_TRUE(isValidFunction("srand(1)"));
   EXPECT_TRUE(isValidFunction("time()"));
   EXPECT_TRUE(isValidFunction("random()"));
   EXPECT_TRUE(isValidFunction("random(1)"));
@@ -1174,6 +1174,28 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isInvalidFunction("stress(1)"));
   EXPECT_TRUE(isInvalidFunction("gamma(1)"));
 }
+
+class OneArgFunction : public stk::expreval::CFunctionBase
+{
+  public:
+    explicit OneArgFunction() :
+      CFunctionBase(1)
+    {}
+
+    double operator()(int argc, const double * argv) override
+    {
+      STK_ThrowRequire(argc == 1);
+      return argv[0];
+    }
+};
+
+TEST(UnitTestEvaluator, testFunctionArgumentCountCheck)
+{
+  stk::expreval::addFunction("my_function", new OneArgFunction());
+  EXPECT_TRUE(isValidFunction("my_function(1)"));
+  EXPECT_TRUE(isInvalidFunction("my_function(1, 2)"));
+}
+
 
 #if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
 TEST(UnitTestEvaluator, deviceVariableMap_too_small)

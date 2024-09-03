@@ -1,5 +1,8 @@
 # CHANGELOG
 
+5.21.4 (STK_VERSION 5210400) 8/29/2024
+   minor fixes, no signficant API changes
+
 5.21.3-1 (STK_VERSION 5210301) 8/19/2024
    stk_mesh: fix ~65K limitation on per-bucket size of upward-connectivity tables
     - This is an implementation detail that only arises if user sets large bucket

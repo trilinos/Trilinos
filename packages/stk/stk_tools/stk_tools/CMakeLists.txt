@@ -44,7 +44,7 @@ FILE(GLOB BLOCK_EXTRACTOR_HEADERS block_extractor/*.hpp)
 FILE(GLOB BLOCK_EXTRACTOR_SOURCES block_extractor/*.cpp)
 FILE(GLOB TRANSFER_UTILS_HEADERS transfer_utils/*.hpp)
 FILE(GLOB TRANSFER_UTILS_SOURCES transfer_utils/*.cpp)
-FILE(GLOB PMESH_LIB_HEADERS pmesh_lib/*.hpp)
+FILE(GLOB PMESH_LIB_HEADERS pmesh_lib/*.hpp pmesh_lib/*.H)
 FILE(GLOB PMESH_LIB_SOURCES pmesh_lib/*.cpp)
 LIST(REMOVE_ITEM BLOCK_EXTRACTOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp)
 

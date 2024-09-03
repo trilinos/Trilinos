@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,30 +30,61 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#ifndef STK_MESH_BASE_CREATE_EDGES_ON_FACES_H
+#define STK_MESH_BASE_CREATE_EDGES_ON_FACES_H
 
-#include <stk_util/registry/ProductRegistry.hpp>
-
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
-
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
-
-#define STK_VERSION 5210400
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
 
 
-namespace stk
+namespace stk {
+namespace mesh {
+namespace impl {
+
+class EdgesOnFacesCreator
 {
+  public:
+    EdgesOnFacesCreator(BulkData& bulkData, const Selector& surfaceSelector, Part* edgePart=nullptr) :
+      m_bulk(bulkData),
+      m_surfaceSelector(surfaceSelector),
+      m_surfaceAndOwned(m_surfaceSelector & bulkData.mesh_meta_data().locally_owned_part()),
+      m_edgePart(edgePart)
+    {}
 
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
+    Part* create_edges();
 
-} // namespace stk
+  public:
 
-#endif /* stk_util_Version_hpp */
+    void create_surface_edges();
 
+    void attach_edges_to_non_owned_faces();
+
+    [[nodiscard]] stk::topology get_edge_topology() const;
+
+    stk::mesh::Part* create_edge_part_if_needed() const;
+
+    void check_edge_part_topology();
+
+    int compute_upper_bound_on_num_edges() const;
+
+    void check_face_topology(stk::topology faceTopo);
+
+    [[nodiscard]] stk::mesh::Entity get_common_edge(stk::mesh::Entity entity1, stk::mesh::Entity entity2) const;
+
+    void sort_nodes_for_global_consistency(std::vector<Entity>& edgeNodes) const;
+
+    BulkData& m_bulk;
+    Selector m_surfaceSelector;
+    Selector m_surfaceAndOwned;
+    Part* m_edgePart;
+
+};
+
+
+}
+}
+}
+
+#endif
