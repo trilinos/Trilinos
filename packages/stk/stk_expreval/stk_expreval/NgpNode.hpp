@@ -54,9 +54,6 @@ class DeviceVariableMap;
 class NgpNode
 {
 public:
-  enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
-  enum { MAXIMUM_FUNCTION_NAME_LENGTH = 32 };
-
   KOKKOS_FUNCTION
   NgpNode()
   : m_opcode(OPCODE_UNDEFINED),
@@ -684,7 +681,7 @@ public:
       break;
     }
     }
-  
+
     return 0.0;
   }
 };

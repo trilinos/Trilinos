@@ -102,7 +102,7 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
           }
         }
       }
-    }    
+    }
   ); // for_each_entity_run
 }
 

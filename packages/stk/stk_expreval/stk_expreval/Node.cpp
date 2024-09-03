@@ -53,10 +53,7 @@ Node::Node(Opcode opcode, Eval* owner)
     m_owner(owner),
     m_hasBeenEvaluated(false)
 {
-  m_data.function.undefinedFunction = false;
-  for (unsigned i=0; i<MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i) {
-    m_data.function.function[i] = nullptr;
-  }
+  m_data.function.function = nullptr;
 }
 
 int
@@ -200,29 +197,14 @@ Node::eval()
     break;
   }
   case OPCODE_FUNCTION: {
-    double argv[20];
+    double argv[MAXIMUM_NUMBER_OF_FUNCTION_ARGS];
 
     int argc = 0;
     for (Node *arg = m_right; arg; arg = arg->m_right) {
       argv[argc++] = arg->getResult();
     }
 
-    bool foundMatchingFunction = false;
-    unsigned i = 0;
-    while (!foundMatchingFunction && (i < Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES)) {
-      if (nullptr == m_data.function.function[i]) {
-        throw expression_undefined_exception(m_data.function.functionName, argc);
-      }
-
-      if ( m_data.function.function[i]->getArgCount() == argc) {
-        setResult() = (*m_data.function.function[i])(argc, argv);
-        foundMatchingFunction = true;
-      }
-
-      ++i;
-    }
-
-    STK_ThrowRequireMsg(foundMatchingFunction, "Function had wrong number of arguments");
+    setResult() = (*m_data.function.function)(argc, argv);
     break;
   }
   default: {

@@ -255,6 +255,7 @@ void host_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod,
   LocalSearchResults intersections;
 
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
+  std::sort(intersections.begin(), intersections.end());
 
   ASSERT_EQ(intersections.size(), expectedNumOverlap);
 
@@ -286,6 +287,7 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
 
   Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::sort(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);

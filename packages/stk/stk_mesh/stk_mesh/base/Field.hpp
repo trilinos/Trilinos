@@ -232,7 +232,7 @@ public:
       const int len_suffix = std::strlen(reserved_state_suffix[i]);
       const int offset     = len_name - len_suffix ;
       if ( 0 <= offset ) {
-        const char * const name_suffix = name().c_str() + offset;
+        [[maybe_unused]] const char * const name_suffix = name().c_str() + offset;
         STK_ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
                         "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
                         reserved_state_suffix[i] << "\"");

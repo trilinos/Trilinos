@@ -186,6 +186,9 @@ inline void local_coarse_search_arborx(const std::vector<std::pair<DomainBoxType
 
     if (!(isSphere) || intersects(domainBoxIdent.first, rangeBoxIdent.first))
     {
+#ifdef _OPENMP
+      #pragma omp critical
+#endif
       searchResults.emplace_back(domainBoxIdent.second, rangeBoxIdent.second);
     }
   };

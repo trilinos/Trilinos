@@ -41,6 +41,7 @@
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequire
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <vector>                       // for allocator, vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -77,9 +78,30 @@ public:
         }
     }
 
+    virtual void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    {
+      if (bulkData.entity_rank(from) == stk::topology::ELEM_RANK &&
+          bulkData.entity_rank(to) == stk::topology::NODE_RANK &&
+          bulkData.bucket(from).owned()) {
+        elementsDeleted.push_back({from, bulkData.identifier(from), bulkData.bucket(from).topology().is_shell()});
+      }
+    }
+
+    virtual void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    {
+      if (bulkData.entity_rank(from) == stk::topology::ELEM_RANK &&
+          bulkData.entity_rank(to) == stk::topology::NODE_RANK &&
+          bulkData.bucket(from).owned()) {
+        elementsDeleted.push_back({from, bulkData.identifier(from), bulkData.bucket(from).topology().is_shell()});
+        elementsAdded.push_back(from);
+      }
+    }
+
     virtual void finished_modification_end_notification()
     {
         if (changeEntityOwnerInProgress) {
+            elementsAdded.clear();
+            elementsDeleted.clear();
             elemGraph.fill_from_mesh();
             changeEntityOwnerInProgress = false;
         }
@@ -91,6 +113,7 @@ public:
 
     virtual void started_modification_end_notification()
     {
+        stk::util::sort_and_unique(elementsDeleted);
         if (get_global_sum(bulkData.parallel(), elementsDeleted.size()) > 0) {
             elemGraph.delete_elements(elementsDeleted);
             elementsDeleted.clear();
@@ -100,6 +123,7 @@ public:
     virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
     {
         valuesToReduce.clear();
+        stk::util::sort_and_unique(elementsAdded);
         unsigned value = any_added_elements_are_owned(elementsAdded) ? 1 : 0;
         if (value == 0) {
           elementsAdded.clear();

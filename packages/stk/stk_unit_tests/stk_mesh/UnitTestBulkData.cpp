@@ -2768,11 +2768,8 @@ TEST(BulkData, newSharedNodeGetMergedPartsFromElements)
 TEST(BulkData, mayCreateRelationsToNodesDifferently)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
-  int numProcs = stk::parallel_machine_size(communicator);
-  if(numProcs != 2)
-  {
-    return;
-  }
+  const int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs != 2) { GTEST_SKIP(); }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
   const std::string generatedMeshSpecification = "generated:1x1x2";
@@ -2827,7 +2824,9 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
     {
       stkMeshBulkData.declare_relation(element1, filler_node, filler_rel_id);
     }
-  }EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+  }
+  EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+
   {
     stk::mesh::Bucket & nodeBucket = stkMeshBulkData.bucket(sharedNode0);
     EXPECT_TRUE( nodeBucket.member(partA));
@@ -2846,8 +2845,8 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
   {
     stk::mesh::RelationIdentifier node_rel_id = 1;
     stkMeshBulkData.declare_relation(element1, sharedNode1, node_rel_id);
-
-  }EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+  }
+  EXPECT_NO_THROW( stkMeshBulkData.modification_end());
 
   {
     stk::mesh::Bucket & nodeBucket = stkMeshBulkData.bucket(sharedNode1);

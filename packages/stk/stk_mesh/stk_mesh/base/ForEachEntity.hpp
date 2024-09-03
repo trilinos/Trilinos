@@ -63,6 +63,24 @@ void for_each_entity_run(const BulkData &mesh,
 }
 
 template <typename ALGORITHM_TO_RUN_PER_ENTITY>
+void for_each_entity_run_no_threads(const BulkData &mesh,
+                         stk::topology::rank_t rank,
+                         const Selector& selector,
+                         const ALGORITHM_TO_RUN_PER_ENTITY &functor)
+{
+    impl::for_each_selected_entity_run_no_threads(mesh, rank, selector, functor);
+}
+
+template <typename ALGORITHM_TO_RUN_PER_ENTITY>
+void for_each_entity_run_no_threads(const BulkData &mesh,
+                         stk::topology::rank_t rank,
+                         const ALGORITHM_TO_RUN_PER_ENTITY &functor)
+{
+    Selector selectAll = mesh.mesh_meta_data().universal_part();
+    impl::for_each_selected_entity_run_no_threads(mesh, rank, selectAll, functor);
+}
+
+template <typename ALGORITHM_TO_RUN_PER_ENTITY>
 void for_each_entity_run_with_nodes(const BulkData &mesh,
                                     stk::topology::rank_t rank,
                                     const Selector& selector,

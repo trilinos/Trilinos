@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,30 +30,38 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#ifndef STK_MESH_BASE_DELETE_EDGES_ON_FACES_H
+#define STK_MESH_BASE_DELETE_EDGES_ON_FACES_H
 
-#include <stk_util/registry/ProductRegistry.hpp>
+#include "stk_mesh/base/BulkData.hpp"
 
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
+namespace stk {
+namespace mesh {
+namespace impl {
 
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
-
-#define STK_VERSION 5210400
-
-
-namespace stk
+class EdgesOnFacesDeleter
 {
+  public:
+    EdgesOnFacesDeleter(BulkData& bulk, Part* edgePart);
 
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
+    void delete_surface_edges();
 
-} // namespace stk
+  private:
+    void delete_edge_to_node_relations(Entity edge, const std::vector<Entity>& nodes, const std::vector<int>& ordinals);
 
-#endif /* stk_util_Version_hpp */
+    void delete_face_to_edge_relations(const std::vector<Entity>& faces, Entity edge);
 
+    int get_edge_idx(Entity face, Entity edge);
+
+    BulkData& m_bulk;
+    Part* m_edgePart;
+};
+
+
+}
+}
+}
+
+#endif

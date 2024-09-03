@@ -1310,10 +1310,10 @@ uint64_t  BulkData::get_max_allowed_id() const {
 
 const RelationVector&
 BulkData::aux_relations(Entity entity) const
-{ 
-  STK_ThrowAssert(add_fmwk_data());
+{
+  STK_ThrowAssert(m_add_fmwk_data);
   STK_ThrowAssert(entity.local_offset() > 0);
-  
+
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
   }
@@ -1322,10 +1322,10 @@ BulkData::aux_relations(Entity entity) const
 
 RelationVector&
 BulkData::aux_relations(Entity entity)
-{ 
-  STK_ThrowAssert(add_fmwk_data());
+{
+  STK_ThrowAssert(m_add_fmwk_data);
   STK_ThrowAssert(entity.local_offset() > 0);
-  
+
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
   }

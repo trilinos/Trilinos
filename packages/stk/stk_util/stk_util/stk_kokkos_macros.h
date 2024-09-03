@@ -23,4 +23,3 @@
 #define STK_FUNCTION KOKKOS_FUNCTION
 
 #endif
-
