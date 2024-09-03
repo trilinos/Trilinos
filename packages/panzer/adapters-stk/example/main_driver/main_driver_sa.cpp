@@ -17,6 +17,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_YamlParameterListHelpers.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
@@ -26,7 +27,6 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
-#include "Panzer_PauseToAttach.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
@@ -85,8 +85,7 @@ int main(int argc, char *argv[])
     // Parse the command line arguments
     std::string input_file_name = "user_app.xml";
     int exodus_io_num_procs = 0;
-    bool pauseToAttachOn = false;
-    bool pointCalculation = false;
+    bool pointCalculation = true;
     bool printTimers = true;
     bool printInputPL = false;
     bool overrideNoxOutput = true;
@@ -95,10 +94,9 @@ int main(int argc, char *argv[])
 
       clp.setOption("i", &input_file_name, "User_App input xml filename");
       clp.setOption("exodus-io-num-procs", &exodus_io_num_procs, "Number of processes that can access the file system at the same time to read their portion of a sliced exodus file in parallel.  Defaults to 0 - implies all processes for the run can access the file system at the same time.");
-      clp.setOption("pause-to-attach","disable-pause-to-attach", &pauseToAttachOn, "Call pause to attach, default is off.");
       clp.setOption("point-calc","disable-point-calc", &pointCalculation, "Enable the probe evaluator unit test.");
       clp.setOption("time","no-time", &printTimers, "Print the timing information.");
-      clp.setOption("pl","no-pl", &printTimers, "Print the input ParameterList at the start of the run.");
+      clp.setOption("pl","no-pl", &printInputPL, "Print the input ParameterList at the start of the run.");
       clp.setOption("override-nox-output","default-nox-output", &overrideNoxOutput, "Override default nox printing with new print observer.");
 
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
@@ -108,17 +106,22 @@ int main(int argc, char *argv[])
 			 std::runtime_error, "Failed to parse command line!");
     }
 
-    if(pauseToAttachOn)
-       panzer::pauseToAttach();
-
     TEUCHOS_ASSERT(exodus_io_num_procs <= comm->getSize());
     if (exodus_io_num_procs != 0)
       Ioss::SerializeIO::setGroupFactor(exodus_io_num_procs);
 
     // Parse the input file and broadcast to other processes
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
-    Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
-
+    {
+      const std::string check_yaml = ".yaml";
+      const auto search_yaml = input_file_name.find(check_yaml);
+      if (search_yaml != std::string::npos) {
+        Teuchos::updateParametersFromYamlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
+      } else {
+        Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
+      }
+    }
+    
     if (printInputPL)
       *out << *input_params << std::endl;
 
@@ -157,6 +160,9 @@ int main(int argc, char *argv[])
 
       panzer_stk::ModelEvaluatorFactory<double> me_factory;
       me_factory.setParameterList(input_params);
+      auto strat_list = Teuchos::parameterList();
+      *strat_list = input_params->sublist("Solution Control",true).sublist("Tempus",true).sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Direction",true).sublist("Newton",true).sublist("Stratimikos Linear Solver",true).sublist("Stratimikos",true);
+      me_factory.setStratimikosList(strat_list);
       me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
 
       // add a volume response functional for each field
@@ -170,7 +176,6 @@ int main(int argc, char *argv[])
         builder.comm = MPI_COMM_WORLD; // good enough
         builder.cubatureDegree = 2;
         builder.requiresCellIntegral = lst.isType<bool>("Requires Cell Integral") ? lst.get<bool>("Requires Cell Integral"): false;
-        std::cout << "ROGER requires ce=" << builder.requiresCellIntegral << std::endl;
         builder.quadPointField = lst.get<std::string>("Field Name");
 
         // add the response
@@ -287,17 +292,24 @@ int main(int argc, char *argv[])
 
     if (overrideNoxOutput) {
       auto nox_utils = Teuchos::rcp(new NOX::Utils(NOX::Utils::Error,comm->getRank(),0,3));
-      auto print_nonlinear = Teuchos::rcp(new NOX::ObserverPrint(nox_utils));
+      auto print_nonlinear = Teuchos::rcp(new NOX::ObserverPrint(nox_utils,10));
       tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Solver Options",true).set<RCP<NOX::Observer>>("Observer",print_nonlinear);
     }
-    
-    auto integrator = createIntegratorBasic<double>(tempus_pl, physics, false);
 
-    std::cout <<  "ROGER solver=" << integrator->getStepper()->getSolver() << std::endl;
+    // Tempus is overriding NOX parameters with its own defaults. Need
+    // to fix this. It also does not validate because of arbitrary
+    // solver name. Should validate but use
+    // disableRecursiveValidation() to avoid errors with arbitrary
+    // names.
 
+    const bool doInitialization = false;
+    auto integrator = createIntegratorBasic<double>(tempus_pl, physics, doInitialization);
+
+    RCP<ParameterList> noxList = parameterList("Correct NOX Params");
+    *noxList = tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true);
+    noxList->print(std::cout);
+    integrator->getStepper()->getSolver()->setParameterList(noxList);
     integrator->initialize();
-
-    std::cout <<  "ROGER solver=" << integrator->getStepper()->getSolver() << std::endl;
     
     RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
     integrator->initializeSolutionHistory(0.0, x0);
