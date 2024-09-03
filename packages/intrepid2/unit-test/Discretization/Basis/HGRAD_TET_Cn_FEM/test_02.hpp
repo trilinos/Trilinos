@@ -38,14 +38,15 @@ namespace Intrepid2 {
 
       try { 
         for (int order=1;order<Parameters::MaxOrder;++order) {
-          Basis_HGRAD_TET_Cn_FEM<DeviceType,OutValueType,PointValueType> basis(order);
+          using TetBasisType = Basis_HGRAD_TET_Cn_FEM<DeviceType,OutValueType,PointValueType>;
+          auto tetBasisPtr = Teuchos::rcp(new TetBasisType(order));
           
           // problem setup 
           //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
           //   A is compuated via serial interface and B is computed with top-level interface.
-          const int npts = 1000, ndim = 3;
-          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesA("outputValuesA", basis.getCardinality(), npts);
-          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesB("outputValuesB", basis.getCardinality(), npts);
+          const int ncells = 20, npts = 50, ndim = 3;
+          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesA("outputValuesA", ncells, tetBasisPtr->getCardinality(), npts);
+          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesB("outputValuesB", tetBasisPtr->getCardinality(), npts);
           
           Kokkos::View<PointValueType**,DeviceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
           Kokkos::DynRankView<PointValueType,DeviceType> inputPoints (inputPointsViewToUseRandom.data(),  npts, ndim);
@@ -54,66 +55,50 @@ namespace Intrepid2 {
           Kokkos::Random_XorShift64_Pool<DeviceType> random(13718);
           Kokkos::fill_random(inputPointsViewToUseRandom, random, 1.0);
           
-          // compute setup
-          //   we need vinv and workspace
-          const auto vinv = basis.getVandermondeInverse();
-          
-          // worksize 
-          //   workspace per thread is required for serial interface. 
-          //   parallel_for with range policy would be good to use stack workspace 
-          //   as team policy only can create shared memory 
-          //   this part would be tricky as the max size should be determined at compile time
-          //   let's think about this and find out the best practice. for now I use the following.
-          constexpr int worksize = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+1)*(Parameters::MaxOrder+1);
-          
-          // if you use team policy, worksize can be gathered from the basis object and use 
-          // kokkos shmem_size APIs to create workspace per team or per thread.
-          //const auto worksize_for_teampolicy = basis.getWorksizePerPoint(OPERATOR_VALUE);
-          
-          // extract point range to be evaluated in each thread
-          typedef Kokkos::pair<int,int> range_type;
-          
-          // parallel execution with serial interface
-          Kokkos::RangePolicy<DeviceSpaceType> policy(0, npts);
-          Kokkos::parallel_for(policy, KOKKOS_LAMBDA(int i) {
-              // we evaluate a single point 
-              const range_type pointRange = range_type(i,i+1);
-              
-              // out (# dofs, # pts), input (# pts, # dims)
-              auto output = Kokkos::subview(outputValuesA, Kokkos::ALL(), pointRange);
-              auto input  = Kokkos::subview(inputPoints,   pointRange, Kokkos::ALL());
-              
-              // wrap static workspace with a view; serial interface has a template view interface.
-              // either view or dynrankview with a right size is okay.
-              OutValueType workbuf[worksize];
-              Kokkos::View<OutValueType*,Kokkos::AnonymousSpace> work(&workbuf[0], worksize);
-              
-              // evaluate basis using serial interface
-              Impl::Basis_HGRAD_TET_Cn_FEM
-                ::Serial<OPERATOR_VALUE>::getValues(output, input, work, vinv);
-            });
-          
+
+          { // evaluation using parallel loop over cell
+            auto tetBasisPtr_device = copy_virtual_class_to_device<DeviceType,TetBasisType>(*tetBasisPtr);
+            auto tetBasisRawPtr_device = tetBasisPtr_device.get();
+
+            int scratch_space_level =1;
+            auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
+                auto valsACell = Kokkos::subview(outputValuesA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+                tetBasisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
+              };
+
+            const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
+            Kokkos::TeamPolicy<DeviceSpaceType> teamPolicy(ncells, Kokkos::AUTO,vectorSize);
+            //Get the required size of the scratch space per team and per thread.
+            int perThreadSpaceSize(0), perTeamSpaceSize(0);
+            tetBasisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints);
+            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+
+            Kokkos::parallel_for (teamPolicy,functor);
+          }
+
+
           // evaluation using high level interface
-          basis.getValues(outputValuesB, inputPoints, OPERATOR_VALUE);
+          tetBasisPtr->getValues(outputValuesB, inputPoints, OPERATOR_VALUE);
           
           // compare 
           const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
           const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
           
           double sum = 0, diff = 0;
-          for (size_t i=0;i<outputValuesA_Host.extent(0);++i)
-            for (size_t j=0;j<outputValuesA_Host.extent(1);++j) {
-              sum += std::abs(outputValuesB_Host(i,j));
-              diff += std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(i,j));
-              if (verbose) {
-                std::cout << " order = " << order
-                          << " i = " << i << " j = " << j 
-                          << " val A = " << outputValuesA_Host(i,j) 
-                          << " val B = " << outputValuesB_Host(i,j) 
-                          << " diff  = " << (outputValuesA_Host(i,j) - outputValuesB_Host(i,j)) 
-                          << std::endl;
+          for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
+            for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
+              for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
+                sum += std::abs(outputValuesB_Host(i,j));
+                diff += std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(ic,i,j));
+                if (verbose) {
+                  std::cout << " order = " << order
+                            << " i = " << i << " j = " << j 
+                            << " val A = " << outputValuesA_Host(ic,i,j) 
+                            << " val B = " << outputValuesB_Host(i,j) 
+                            << " diff  = " << (outputValuesA_Host(ic,i,j) - outputValuesB_Host(i,j)) 
+                            << std::endl;
+                }
               }
-            }
           if (diff/sum > 1.0e-9) {
             errorFlag = -1;
           }

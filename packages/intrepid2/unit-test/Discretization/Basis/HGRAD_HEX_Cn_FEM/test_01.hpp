@@ -438,6 +438,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     constexpr ordinal_type order = 2;
     if(order < maxOrder) {
       HexBasisType hexBasis(order);
+      auto hexBasisPtr = Teuchos::rcp(new HexBasisType(order));
 
       DynRankViewHostScalarValueType ConstructWithLabel(hexNodesHost, 27, 3);
       DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 27, 3);
@@ -510,6 +511,54 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
           }
         }
       }
+
+      {
+        // Check VALUE of basis functions: resize vals to rank-2 container:
+        const ordinal_type numCells = 200;
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numCells, numFields, numPoints);
+
+        auto hexBasisPtr_device = copy_virtual_class_to_device<DeviceType,HexBasisType>(*hexBasisPtr);
+        auto hexBasisRawPtr_device = hexBasisPtr_device.get();
+
+        int scratch_space_level =1; //level 0 memory is too small
+
+        auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type team_member) {
+            auto vals_cell = Kokkos::subview(vals, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+            hexBasisRawPtr_device->getValues(vals_cell, hexNodes, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
+          };
+
+        const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
+        Kokkos::TeamPolicy<typename DeviceType::execution_space> teamPolicy(numCells, Kokkos::AUTO,vectorSize);
+        //Get the required size of the scratch space per team and per thread.
+        int perThreadSpaceSize(0), perTeamSpaceSize(0);
+        hexBasisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,hexNodes);
+        teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+
+        Kokkos::parallel_for (teamPolicy,functor);
+          
+        auto vals_host = Kokkos::create_mirror_view(vals);
+        Kokkos::deep_copy(vals_host, vals);
+        for (ordinal_type ic = 0; ic < numCells; ++ic) {
+          for (ordinal_type i = 0; i < numFields; ++i) {
+            for (ordinal_type j = 0; j < numPoints; ++j) {
+
+              // Compute offset for (F,P) container
+              ordinal_type l =  j + i * numPoints;
+              if (std::abs(vals_host(ic,i,j) - basisValues[l]) > tol) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+                // Output the multi-index of the value where the error is:
+                *outStream << " At multi-index { ";
+                *outStream << ic << " ";*outStream << i << " ";*outStream << j << " ";
+                *outStream << "}  computed value: " << vals_host(ic,i,j)
+                                << " but reference value: " << basisValues[l] << "\n";
+              }
+            }
+          }
+        }
+      }
+
 
       *outStream << " -- Testing OPERATOR_GRAD \n";
       {
