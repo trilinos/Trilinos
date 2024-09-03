@@ -21,12 +21,12 @@ using namespace Teuchos;
 int main(int argc, char *argv[]) {
 
   TEUCHOS_ASSERT(argc == 2);
-  
+
   std::string file_prefix(argv[1]);
 
   std::string input_xml_file_name(file_prefix+".xml");
-  auto pList = getParametersFromXmlFile(input_xml_file_name);  
-  
+  auto pList = getParametersFromXmlFile(input_xml_file_name);
+
   std::string output_yaml_file_name(file_prefix+".yaml");
   writeParameterListToYamlFile(*pList,output_yaml_file_name);
 
