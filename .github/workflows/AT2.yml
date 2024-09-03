@@ -31,8 +31,9 @@ jobs:
             skip_after_successful_duplicate: 'true'
 
   gcc10-openmpi416-EXPERIMENTAL:
+    needs: pre-checks
     runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
         env:
@@ -109,8 +110,9 @@ jobs:
             --filename-packageenables ./packageEnables.cmake
 
   gcc830-serial-EXPERIMENTAL:
+    needs: pre-checks
     runs-on: [self-hosted, gcc-8.3.0_serial]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
         env:
