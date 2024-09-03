@@ -190,10 +190,7 @@ print_banner "Launch the Test Driver"
 
 # Prepare the command for the TEST operation
 test_cmd_options=(
-    --source-repo-url=${TRILINOS_SOURCE_REPO:?}
-    --target-repo-url=${TRILINOS_TARGET_REPO:?}
     --target-branch-name=${TRILINOS_TARGET_BRANCH:?}
-    --pullrequest-build-name=${JOB_BASE_NAME:?}
     --genconfig-build-name=${GENCONFIG_BUILD_NAME:?}
     --pullrequest-env-config-file=${LOADENV_CONFIG_FILE:?}
     --pullrequest-gen-config-file=${GENCONFIG_CONFIG_FILE:?}
