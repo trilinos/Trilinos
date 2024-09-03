@@ -71,7 +71,6 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
@@ -149,7 +148,6 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
@@ -226,7 +224,6 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
