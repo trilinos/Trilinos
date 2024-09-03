@@ -20,6 +20,11 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES main_driver_sa.cpp ${main_driver_SOURCES}
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  xml_to_yaml
+  SOURCES Panzer_xml_to_yaml.cpp
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   SOURCE_FILES
     energy-ss.xml
