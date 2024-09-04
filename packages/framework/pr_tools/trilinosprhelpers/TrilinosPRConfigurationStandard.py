@@ -86,7 +86,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
             gpu_indices = gpu_utils.list_nvidia_gpus()
             self.message(f"-- REMARK: Using {slots_per_gpu} slots per GPU")
             self.message(f"-- REMARK: Using GPUs {gpu_indices}")
-            cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING=-DTrilinos_AUTOGENERATE_TEST_RESOURCE_FILE:BOOL=ON; -DTrilinos_CUDA_NUM_GPUS:STRING={len(gpu_indices)}; -DTrilinos_CUDA_SLOTS_PER_GPU:STRING={slots_per_gpu}")
+            self.arg_extra_configure_args = f"-DTrilinos_AUTOGENERATE_TEST_RESOURCE_FILE:BOOL=ON;-DTrilinos_CUDA_NUM_GPUS:STRING={len(gpu_indices)};-DTrilinos_CUDA_SLOTS_PER_GPU:STRING={slots_per_gpu}" + (";" + self.arg_extra_configure_args if self.arg_extra_configure_args else "")
 
         if self.arg_extra_configure_args:
             cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING={self.arg_extra_configure_args}")
