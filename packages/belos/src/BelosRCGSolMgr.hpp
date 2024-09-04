@@ -148,6 +148,7 @@ namespace Belos {
   private:
     typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
@@ -301,9 +302,9 @@ namespace Belos {
 
     //  Computes harmonic eigenpairs of projected matrix created during one cycle.
     //  Y contains the harmonic Ritz vectors corresponding to the recycleBlocks eigenvalues of smallest magnitude.
-    void getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType> &F,
-                         const Teuchos::SerialDenseMatrix<int,ScalarType> &G,
-                         Teuchos::SerialDenseMatrix<int,ScalarType>& Y);
+    void getHarmonicVecs(const DM& F,
+                         const DM& G,
+                         DM& Y);
 
     // Sort list of n floating-point numbers and return permutation vector
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
@@ -319,10 +320,10 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -394,33 +395,33 @@ namespace Belos {
     Teuchos::RCP<std::vector<ScalarType> > D_;
     //
     // Solutions to local least-squares problems
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Delta_;
+    Teuchos::RCP<DM> Delta_;
     //
     // The matrix U^T A U
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > UTAU_;
+    Teuchos::RCP<DM> UTAU_;
     //
     // LU factorization of U^T A U
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > LUUTAU_;
+    Teuchos::RCP<DM> LUUTAU_;
     //
     // Data from LU factorization of UTAU
     Teuchos::RCP<std::vector<int> > ipiv_;
     //
     // The matrix (AU)^T AU
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > AUTAU_;
+    Teuchos::RCP<DM> AUTAU_;
     //
     // The scalar r'*z
     Teuchos::RCP<std::vector<ScalarType> > rTz_old_;
     //
     // Matrices needed for calculation of harmonic Ritz eigenproblem
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > F_,G_,Y_;
+    Teuchos::RCP<DM> F_,G_,Y_;
     //
     // Matrices needed for updating recycle space
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > L2_,DeltaL2_,AU1TUDeltaL2_;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > AU1TAU1_, AU1TU1_, AU1TAP_;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > FY_,GY_;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > APTAP_;
+    Teuchos::RCP<DM> L2_,DeltaL2_,AU1TUDeltaL2_;
+    Teuchos::RCP<DM> AU1TAU1_, AU1TU1_, AU1TAP_;
+    Teuchos::RCP<DM> FY_,GY_;
+    Teuchos::RCP<DM> APTAP_;
     Teuchos::RCP<MV> U1Y1_, PY2_;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > AUTAP_, AU1TU_;
+    Teuchos::RCP<DM> AUTAP_, AU1TU_;
     ScalarType dold;
     /////////////////////////////////////////////////////////////////////////
 
@@ -626,8 +627,8 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teuc
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
@@ -658,7 +659,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teuc
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_ == Teuchos::null)
@@ -671,7 +672,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teuc
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+    StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
     // Set the solver string for the output test
@@ -837,26 +838,26 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 
       // Generate Delta_ only if it doesn't exist, otherwise resize it.
       if (Delta_ == Teuchos::null)
-        Delta_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ + 1 ) );
+        Delta_ = DMT::Create( recycleBlocks_, numBlocks_ + 1 );
       else {
-        if ( (Delta_->numRows() != recycleBlocks_) || (Delta_->numCols() != (numBlocks_ + 1)) )
-          Delta_->reshape( recycleBlocks_, numBlocks_ + 1 );
+        if ( (DMT::GetNumRows(*Delta_) != recycleBlocks_) || (DMT::GetNumCols(*Delta_)!= (numBlocks_ + 1)) )
+          DMT::Reshape( *Delta_, recycleBlocks_, numBlocks_ + 1 );
       }
 
       // Generate UTAU_ only if it doesn't exist, otherwise resize it.
       if (UTAU_ == Teuchos::null)
-        UTAU_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
+        UTAU_ = DMT::Create( recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (UTAU_->numRows() != recycleBlocks_) || (UTAU_->numCols() != recycleBlocks_) )
-          UTAU_->reshape( recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*UTAU_) != recycleBlocks_) || (DMT::GetNumCols(*UTAU_) != recycleBlocks_) )
+          DMT::Reshape( *UTAU_, recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate LUUTAU_ only if it doesn't exist, otherwise resize it.
       if (LUUTAU_ == Teuchos::null)
-        LUUTAU_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
+        LUUTAU_ = DMT::Create( recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (LUUTAU_->numRows() != recycleBlocks_) || (LUUTAU_->numCols() != recycleBlocks_) )
-          LUUTAU_->reshape( recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*LUUTAU_) != recycleBlocks_) || (DMT::GetNumCols(*LUUTAU_) != recycleBlocks_) )
+          DMT::Reshape( *LUUTAU_, recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate ipiv_ only if it doesn't exist, otherwise resize it.
@@ -869,10 +870,10 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 
       // Generate AUTAU_ only if it doesn't exist, otherwise resize it.
       if (AUTAU_ == Teuchos::null)
-        AUTAU_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
+        AUTAU_ = DMT::Create( recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (AUTAU_->numRows() != recycleBlocks_) || (AUTAU_->numCols() != recycleBlocks_) )
-          AUTAU_->reshape( recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*AUTAU_) != recycleBlocks_) || (DMT::GetNumCols(*AUTAU_) != recycleBlocks_) )
+          DMT::Reshape( *AUTAU_, recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate rTz_old_ only if it doesn't exist
@@ -885,98 +886,98 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 
       // Generate F_ only if it doesn't exist
       if (F_ == Teuchos::null)
-        F_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ ) );
+        F_ = DMT::Create( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
       else {
-        if ( (F_->numRows() != (numBlocks_+recycleBlocks_)) || (F_->numCols() != numBlocks_+recycleBlocks_) )
-          F_->reshape( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
+        if ( (DMT::GetNumRows(*F_) != (numBlocks_+recycleBlocks_)) || (DMT::GetNumCols(*F_) != numBlocks_+recycleBlocks_) )
+          DMT::Reshape( *F_, numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
       }
 
       // Generate G_ only if it doesn't exist
       if (G_ == Teuchos::null)
-        G_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ ) );
+        G_ = DMT::Create( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
       else {
-        if ( (G_->numRows() != (numBlocks_+recycleBlocks_)) || (G_->numCols() != numBlocks_+recycleBlocks_) )
-          G_->reshape( numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
+        if ( (DMT::GetNumRows(*G_) != (numBlocks_+recycleBlocks_)) || (DMT::GetNumCols(*G_) != numBlocks_+recycleBlocks_) )
+          DMT::Reshape( *G_, numBlocks_+recycleBlocks_, numBlocks_+recycleBlocks_ );
       }
 
       // Generate Y_ only if it doesn't exist
       if (Y_ == Teuchos::null)
-        Y_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycleBlocks_, recycleBlocks_ ) );
+        Y_ = DMT::Create( numBlocks_+recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (Y_->numRows() != (numBlocks_+recycleBlocks_)) || (Y_->numCols() != recycleBlocks_) )
-          Y_->reshape( numBlocks_+recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*Y_) != (numBlocks_+recycleBlocks_)) || (DMT::GetNumCols(*Y_) != recycleBlocks_) )
+          DMT::Reshape( *Y_, numBlocks_+recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate L2_ only if it doesn't exist
       if (L2_ == Teuchos::null)
-        L2_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+1, numBlocks_ ) );
+        L2_ = DMT::Create( numBlocks_+1, numBlocks_ );
       else {
-        if ( (L2_->numRows() != (numBlocks_+1)) || (L2_->numCols() != numBlocks_) )
-          L2_->reshape( numBlocks_+1, numBlocks_ );
+        if ( (DMT::GetNumRows(*L2_) != (numBlocks_+1)) || (DMT::GetNumCols(*L2_) != numBlocks_) )
+          DMT::Reshape( *L2_, numBlocks_+1, numBlocks_ );
       }
 
       // Generate DeltaL2_ only if it doesn't exist
       if (DeltaL2_ == Teuchos::null)
-        DeltaL2_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
+        DeltaL2_ = DMT::Create( recycleBlocks_, numBlocks_ );
       else {
-        if ( (DeltaL2_->numRows() != recycleBlocks_) || (DeltaL2_->numCols() != numBlocks_ ) )
-          DeltaL2_->reshape( recycleBlocks_, numBlocks_ );
+        if ( (DMT::GetNumRows(*DeltaL2_) != recycleBlocks_) || (DMT::GetNumCols(*DeltaL2_) != numBlocks_ ) )
+          DMT::Reshape( *DeltaL2_, recycleBlocks_, numBlocks_ );
       }
 
       // Generate AU1TUDeltaL2_ only if it doesn't exist
       if (AU1TUDeltaL2_ == Teuchos::null)
-        AU1TUDeltaL2_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
+        AU1TUDeltaL2_ = DMT::Create( recycleBlocks_, numBlocks_ );
       else {
-        if ( (AU1TUDeltaL2_->numRows() != recycleBlocks_) || (AU1TUDeltaL2_->numCols() != numBlocks_ ) )
-          AU1TUDeltaL2_->reshape( recycleBlocks_, numBlocks_ );
+        if ( (DMT::GetNumRows(*AU1TUDeltaL2_) != recycleBlocks_) || (DMT::GetNumCols(*AU1TUDeltaL2_) != numBlocks_ ) )
+          DMT::Reshape( *AU1TUDeltaL2_, recycleBlocks_, numBlocks_ );
       }
 
       // Generate AU1TAU1_ only if it doesn't exist
       if (AU1TAU1_ == Teuchos::null)
-        AU1TAU1_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
+        AU1TAU1_ = DMT::Create( recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (AU1TAU1_->numRows() != recycleBlocks_) || (AU1TAU1_->numCols() != recycleBlocks_ ) )
-          AU1TAU1_->reshape( recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*AU1TAU1_) != recycleBlocks_) || (DMT::GetNumCols(*AU1TAU1_) != recycleBlocks_ ) )
+          DMT::Reshape( *AU1TAU1_, recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate GY_ only if it doesn't exist
       if (GY_ == Teuchos::null)
-        GY_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_ + recycleBlocks_, recycleBlocks_ ) );
+        GY_ = DMT::Create( numBlocks_ + recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (GY_->numRows() != (numBlocks_ + recycleBlocks_)) || (GY_->numCols() != recycleBlocks_ ) )
-          GY_->reshape( numBlocks_+recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*GY_) != (numBlocks_ + recycleBlocks_)) || (DMT::GetNumCols(*GY_) != recycleBlocks_ ) )
+          DMT::Reshape( *GY_, numBlocks_+recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate AU1TU1_ only if it doesn't exist
       if (AU1TU1_ == Teuchos::null)
-        AU1TU1_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
+        AU1TU1_ = DMT::Create( recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (AU1TU1_->numRows() != recycleBlocks_) || (AU1TU1_->numCols() != recycleBlocks_ ) )
-          AU1TU1_->reshape( recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*AU1TU1_) != recycleBlocks_) || (DMT::GetNumCols(*AU1TU1_) != recycleBlocks_ ) )
+          DMT::Reshape( *AU1TU1_, recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate FY_ only if it doesn't exist
       if (FY_ == Teuchos::null)
-        FY_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_ + recycleBlocks_, recycleBlocks_ ) );
+        FY_ = DMT::Create( numBlocks_ + recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (FY_->numRows() != (numBlocks_ + recycleBlocks_)) || (FY_->numCols() != recycleBlocks_ ) )
-          FY_->reshape( numBlocks_+recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*FY_) != (numBlocks_ + recycleBlocks_)) || (DMT::GetNumCols(*FY_) != recycleBlocks_ ) )
+          DMT::Reshape( *FY_, numBlocks_+recycleBlocks_, recycleBlocks_ );
       }
 
       // Generate AU1TAP_ only if it doesn't exist
       if (AU1TAP_ == Teuchos::null)
-        AU1TAP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
+        AU1TAP_ = DMT::Create( recycleBlocks_, numBlocks_ );
       else {
-        if ( (AU1TAP_->numRows() != recycleBlocks_) || (AU1TAP_->numCols() != numBlocks_ ) )
-          AU1TAP_->reshape( recycleBlocks_, numBlocks_ );
+        if ( (DMT::GetNumRows(*AU1TAP_) != recycleBlocks_) || (DMT::GetNumCols(*AU1TAP_) != numBlocks_ ) )
+          DMT::Reshape( *AU1TAP_, recycleBlocks_, numBlocks_ );
       }
 
       // Generate APTAP_ only if it doesn't exist
       if (APTAP_ == Teuchos::null)
-        APTAP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_, numBlocks_ ) );
+        APTAP_ = DMT::Create( numBlocks_, numBlocks_ );
       else {
-        if ( (APTAP_->numRows() != numBlocks_) || (APTAP_->numCols() != (numBlocks_) ) )
-          APTAP_->reshape( numBlocks_, numBlocks_ );
+        if ( (DMT::GetNumRows(*APTAP_) != numBlocks_) || (DMT::GetNumCols(*APTAP_) != (numBlocks_) ) )
+          DMT::Reshape( *APTAP_, numBlocks_, numBlocks_ );
       }
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1005,18 +1006,18 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 
       // Generate AUTAP_ only if it doesn't exist
       if (AUTAP_ == Teuchos::null)
-        AUTAP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, numBlocks_ ) );
+        AUTAP_ = DMT::Create( recycleBlocks_, numBlocks_ );
       else {
-        if ( (AUTAP_->numRows() != recycleBlocks_) || (AUTAP_->numCols() != numBlocks_ ) )
-          AUTAP_->reshape( recycleBlocks_, numBlocks_ );
+        if ( (DMT::GetNumRows(*AUTAP_) != recycleBlocks_) || (DMT::GetNumCols(*AUTAP_) != numBlocks_ ) )
+          DMT::Reshape( *AUTAP_, recycleBlocks_, numBlocks_ );
       }
 
       // Generate AU1TU_ only if it doesn't exist
       if (AU1TU_ == Teuchos::null)
-        AU1TU_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycleBlocks_, recycleBlocks_ ) );
+        AU1TU_ = DMT::Create( recycleBlocks_, recycleBlocks_ );
       else {
-        if ( (AU1TU_->numRows() != recycleBlocks_) || (AU1TU_->numCols() != recycleBlocks_ ) )
-          AU1TU_->reshape( recycleBlocks_, recycleBlocks_ );
+        if ( (DMT::GetNumRows(*AU1TU_) != recycleBlocks_) || (DMT::GetNumCols(*AU1TU_) != recycleBlocks_ ) )
+          DMT::Reshape( *AU1TU_, recycleBlocks_, recycleBlocks_ );
       }
 
 
@@ -1152,21 +1153,26 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       // If U exists, find best soln over this space first
       if (existU_) {
         // Solve linear system UTAU * y = (U'*r)
-        Teuchos::SerialDenseMatrix<int,ScalarType> Utr(recycleBlocks_,1);
+        Teuchos::RCP<DM> Utr = DMT::Create(recycleBlocks_,1);
         Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  rindex );
-        MVT::MvTransMv( one, *Utmp, *r_, Utr );
-        LUUTAU_->assign(*UTAU_);
+        MVT::MvTransMv( one, *Utmp, *r_, *Utr );
+        DMT::Assign(*LUUTAU_,*UTAU_);
+
+        DMT::SyncDeviceToHost( *LUUTAU_ );
+        DMT::SyncDeviceToHost( *Utr );
         int info = 0;
-        lapack.GESV(recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], Utr.values(), Utr.stride(), &info);
+        lapack.GESV(recycleBlocks_, 1, DMT::GetRawHostPtr(*LUUTAU_), DMT::GetStride(*LUUTAU_), 
+                    &(*ipiv_)[0], DMT::GetRawHostPtr(*Utr), DMT::GetStride(*Utr), &info);
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                            "Belos::RCGSolMgr::solve(): LAPACK GESV failed to compute a solution.");
+        DMT::SyncHostToDevice( *Utr );
 
         // Update solution (x = x + U*y)
-        MVT::MvTimesMatAddMv( one, *Utmp, Utr, one, *problem_->getCurrLHSVec() );
+        MVT::MvTimesMatAddMv( one, *Utmp, *Utr, one, *problem_->getCurrLHSVec() );
 
         // Update residual ( r = r - AU*y )
         Teuchos::RCP<const MV> AUtmp  = MVT::CloneView( *AU_, rindex );
-        MVT::MvTimesMatAddMv( -one, *AUtmp, Utr, one, *r_ );
+        MVT::MvTimesMatAddMv( -one, *AUtmp, *Utr, one, *r_ );
       }
 
       if ( precObj != Teuchos::null ) {
@@ -1180,20 +1186,25 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
       if ( existU_ ) {
         // mu = UTAU\(AU'*z);
-        Teuchos::SerialDenseMatrix<int,ScalarType> mu( Teuchos::View, *Delta_, recycleBlocks_, 1);
+        Teuchos::RCP<DM> mu = DMT::Subview(*Delta_, recycleBlocks_, 1);
         Teuchos::RCP<const MV> AUtmp  = MVT::CloneView( *AU_, rindex );
-        MVT::MvTransMv( one, *AUtmp, *z_, mu );
+        MVT::MvTransMv( one, *AUtmp, *z_, *mu );
+
+        DMT::SyncDeviceToHost( *mu );
         char TRANS = 'N';
         int info;
-        lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
+        lapack.GETRS( TRANS, recycleBlocks_, 1, DMT::GetConstRawHostPtr(*LUUTAU_), DMT::GetStride(*LUUTAU_), 
+                      &(*ipiv_)[0], DMT::GetRawHostPtr(*mu), DMT::GetStride(*mu), &info );
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                            "Belos::RCGSolMgr::solve(): LAPACK GETRS failed to compute a solution.");
+        DMT::SyncHostToDevice( *mu );
+
         // p  = z - U*mu;
         index.resize( 1 );
         index[0] = 0;
         Teuchos::RCP<MV> Ptmp  = MVT::CloneViewNonConst( *P_, index );
         MVT::MvAddMv(one,*z_,zero,*z_,*Ptmp);
-        MVT::MvTimesMatAddMv( -one, *U_, mu, one, *Ptmp );
+        MVT::MvTimesMatAddMv( -one, *U_, *mu, one, *Ptmp );
       } else {
         // p = z;
         index.resize( 1 );
@@ -1267,48 +1278,55 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
               if (!existU_) {
                 if (cycle == 0) { // No U, no U1
 
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ftmp( Teuchos::View, *F_, numBlocks_, numBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Gtmp( Teuchos::View, *G_, numBlocks_, numBlocks_ );
-                   Ftmp.putScalar(zero);
-                   Gtmp.putScalar(zero);
+                   DMT::SyncDeviceToHost( *F_ );
+                   DMT::SyncDeviceToHost( *G_ );
+                   Teuchos::RCP<DM> Ftmp = DMT::Subview( *F_, numBlocks_, numBlocks_ );
+                   Teuchos::RCP<DM> Gtmp = DMT::Subview( *G_, numBlocks_, numBlocks_ );
+                   DMT::PutScalar( *Ftmp, zero );
+                   DMT::PutScalar( *Gtmp, zero );
                    for (int ii=0;ii<numBlocks_;ii++) {
-                     Gtmp(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii]);
+                     DMT::Value(*Gtmp,ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii]);
                      if (ii > 0) {
-                       Gtmp(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       Gtmp(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*Gtmp,ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*Gtmp,ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
-                     Ftmp(ii,ii) = (*D_)[ii];
+                     DMT::Value(*Ftmp,ii,ii) = (*D_)[ii];
                    }
+                   DMT::SyncHostToDevice( *F_ );
+                   DMT::SyncHostToDevice( *G_ );
 
                    // compute harmonic Ritz vectors
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Ytmp( Teuchos::View, *Y_, numBlocks_, recycleBlocks_ );
-                   getHarmonicVecs(Ftmp,Gtmp,Ytmp);
+                   Teuchos::RCP<DM> Ytmp = DMT::Subview( *Y_, numBlocks_, recycleBlocks_ );
+                   getHarmonicVecs(*Ftmp,*Gtmp,*Ytmp);
 
                    // U1 = [P(:,1:end-1)*Y];
                    Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  nindex );
                    Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
-                   MVT::MvTimesMatAddMv( one, *Ptmp, Ytmp, zero, *U1tmp );
+                   MVT::MvTimesMatAddMv( one, *Ptmp, *Ytmp, zero, *U1tmp );
 
                    // Precompute some variables for next cycle
 
                    // AU1TAU1     = Y'*G*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, numBlocks_, recycleBlocks_ );
-                   GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
-                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
+                   Teuchos::RCP<DM> GYtmp = DMT::Subview( *GY_, numBlocks_, recycleBlocks_ );
+                   GYtmp->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Gtmp,*Ytmp,zero);
+                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Ytmp,*GYtmp,zero);
 
                    // AU1TU1      = Y'*F*Y;
-                   Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, numBlocks_, recycleBlocks_ );
-                   FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
-                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
+                   Teuchos::RCP<DM> FYtmp = DMT::Subview( *FY_, numBlocks_, recycleBlocks_ );
+                   FYtmp->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Ftmp,*Ytmp,zero);
+                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Ytmp,*FYtmp,zero);
 
-                   Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAPtmp( Teuchos::View, *AU1TAP_, recycleBlocks_, 1 );
+                   DMT::SyncHostToDevice(*AU1TAP_);
+                   DMT::SyncHostToDevice(*Y_);
+                   Teuchos::RCP<DM> AU1TAPtmp = DMT::Subview( *AU1TAP_, recycleBlocks_, 1 );
                    // Must reinitialize AU1TAP; can become dense later
-                   AU1TAPtmp.putScalar(zero);
+                   DMT::PutScalar( *AU1TAPtmp, zero );
                    // AU1TAP(:,1) = Y(end,:)' * (-1/Alpha(end));
                    ScalarType alphatmp = -1.0 / (*Alpha_)[numBlocks_-1];
                    for (int ii=0; ii<recycleBlocks_; ++ii) {
-                      AU1TAPtmp(ii,0) = Ytmp(numBlocks_-1,ii) * alphatmp;
+                      DMT::Value(*AU1TAPtmp,ii,0) = DMT::ValueConst(*Ytmp,numBlocks_-1,ii) * alphatmp;
                    }
+                   DMT::SyncDeviceToHost(*AU1TAP_);
 
                    // indicate that updated recycle space now defined
                    existU1_ = true;
@@ -1322,38 +1340,44 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // Finish computation of subblocks
                    // AU1TAP = AU1TAP * D(1);
-                   AU1TAP_->scale((*D_)[0]);
+                   DMT::Scale(*AU1TAP_,(*D_)[0]);
 
-                   APTAP_->putScalar(zero);
+                   DMT::PutScalar(*APTAP_,zero);
+                   DMT::SyncDeviceToHost(*APTAP_);
                    for (int ii=0; ii<numBlocks_; ii++) {
-                     (*APTAP_)(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
+                     DMT::Value(*APTAP_,ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
                      if (ii > 0) {
-                       (*APTAP_)(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       (*APTAP_)(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*APTAP_,ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*APTAP_,ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
                    }
+                   DMT::SyncHostToDevice(*APTAP_);
 
                    // F = [AU1TU1 zeros(k,m); zeros(m,k) diag(D)];
                    F_->putScalar(zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F11( Teuchos::View, *F_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F22( Teuchos::View, *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   F11.assign(*AU1TU1_);
+                   Teuchos::RCP<DM> F11 = DMT::Subview( *F_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> F22 = DMT::Subview( *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
+                   DMT::Assign(*F11,*AU1TU1_);
+                   DMT::SyncDeviceToHost(*F_);
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     F22(ii,ii) = (*D_)[ii];
+                     DMT::Value(*F22,ii,ii) = (*D_)[ii];
                    }
+                   DMT::SyncHostToDevice(*F_);
 
                    // G = [AU1TAU1 AU1TAP; AU1TAP' APTAP];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G12( Teuchos::View, *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G21( Teuchos::View, *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G22( Teuchos::View, *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   G11.assign(*AU1TAU1_);
-                   G12.assign(*AU1TAP_);
-                   // G21 = G12'; (no transpose operator exists for SerialDenseMatrix; Do copy manually)
+                   Teuchos::RCP<DM> G11 = DMT::Subview( *G_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> G12 = DMT::Subview( *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
+                   Teuchos::RCP<DM> G21 = DMT::Subview( *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   Teuchos::RCP<DM> G22 = DMT::Subview( *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
+                   DMT::Assign(*G11, *AU1TAU1_);
+                   DMT::Assign(*G12, *AU1TAP_);
+                   DMT::Assign(*G22, *APTAP_);
+                   DMT::SyncDeviceToHost( *G_ );
+                   // G21 = G12'; (no transpose operator exists for DM; Do copy manually)
                    for (int ii=0;ii<recycleBlocks_;++ii)
                      for (int jj=0;jj<numBlocks_;++jj)
-                       G21(jj,ii) = G12(ii,jj);
-                   G22.assign(*APTAP_);
+                       DMT::Value(*G21,jj,ii) = DMT::ValueConst(*G12,ii,jj);
+                   DMT::SyncHostToDevice( *G_ );
 
                    // compute harmonic Ritz vectors
                    getHarmonicVecs(*F_,*G_,*Y_);
@@ -1365,10 +1389,10 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
                    Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
                    Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y1( Teuchos::View, *Y_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
-                   MVT::MvTimesMatAddMv( one, *U1tmp, Y1, zero, *U1Y1tmp );
+                   Teuchos::RCP<DM> Y1 = DMT::Subview( *Y_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> Y2 = DMT::Subview( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   MVT::MvTimesMatAddMv( one, *Ptmp, *Y2, zero, *PY2tmp );
+                   MVT::MvTimesMatAddMv( one, *U1tmp, *Y1, zero, *U1Y1tmp );
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
@@ -1379,11 +1403,13 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // AU1TAP      = zeros(k,m);
                    // AU1TAP(:,1) = Y(end,:)' * (-1/Alpha(end));
-                   AU1TAP_->putScalar(zero);
+                   DMT::PutScalar(*AU1TAP_,zero);
                    ScalarType alphatmp = -1.0 / (*Alpha_)[numBlocks_-1];
+                   DMT::SyncDeviceToHost(*AU1TAP_);
                    for (int ii=0; ii<recycleBlocks_; ++ii) {
-                      (*AU1TAP_)(ii,0) = (*Y_)(numBlocks_+recycleBlocks_-1,ii) * alphatmp;
+                      DMT::Value(*AU1TAP_,ii,0) = DMT::ValueConst(*Y_,numBlocks_+recycleBlocks_-1,ii) * alphatmp;
                    }
+                   DMT::SyncHostToDevice(*AU1TAP_);
 
                    // AU1TU1      = Y'*F*Y;
                    FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
@@ -1397,46 +1423,54 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
               } // if (!existU_)
               else { // U exists
                 if (cycle == 0) { // No U1, but U exists
-                   APTAP_->putScalar(zero);
+                   DMT::PutScalar(*APTAP_,zero);
+                   DMT::SyncDeviceToHost(*APTAP_);
                    for (int ii=0; ii<numBlocks_; ii++) {
-                     (*APTAP_)(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii]);
+                     DMT::Value(*APTAP_,ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii]);
                      if (ii > 0) {
-                       (*APTAP_)(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       (*APTAP_)(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*APTAP_,ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*APTAP_,ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
                    }
+                   DMT::SyncHostToDevice(*APTAP_);
 
-                   L2_->putScalar(zero);
+                   DMT::PutScalar(*L2_,zero);
+                   DMT::SyncDeviceToHost(*L2_);
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     (*L2_)(ii,ii)   = 1./(*Alpha_)[ii];
-                     (*L2_)(ii+1,ii) = -1./(*Alpha_)[ii];
+                     DMT::Value(*L2_,ii,ii)   = 1./(*Alpha_)[ii];
+                     DMT::Value(*L2_,ii+1,ii) = -1./(*Alpha_)[ii];
                    }
+                   DMT::SyncHostToDevice(*L2_);
 
                    // AUTAP = UTAU*Delta*L2;
                    DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
                    AUTAP_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*UTAU_,*DeltaL2_,zero);
 
                    // F = [UTAU zeros(k,m); zeros(m,k) diag(D)];
-                   F_->putScalar(zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F11( Teuchos::View, *F_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F22( Teuchos::View, *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   F11.assign(*UTAU_);
+                   DMT::PutScalar(*F_,zero);
+                   Teuchos::RCP<DM> F11 = DMT::Subview( *F_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> F22 = DMT::Subview( *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
+                   DMT::Assign(*F11,*UTAU_);
+                   DMT::SyncDeviceToHost(*F_);
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     F22(ii,ii) = (*D_)[ii];
+                     DMT::Value(*F22,ii,ii) = (*D_)[ii];
                    }
+                   DMT::SyncHostToDevice(*F_);
 
                    // G = [AUTAU AUTAP; AUTAP' APTAP];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G12( Teuchos::View, *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G21( Teuchos::View, *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G22( Teuchos::View, *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   G11.assign(*AUTAU_);
-                   G12.assign(*AUTAP_);
-                   // G21 = G12'; (no transpose operator exists for SerialDenseMatrix; Do copy manually)
+                   Teuchos::RCP<DM> G11 = DMT::Subview( *G_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> G12 = DMT::Subview( *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
+                   Teuchos::RCP<DM> G21 = DMT::Subview( *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   Teuchos::RCP<DM> G22 = DMT::Subview( *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
+                   DMT::Assign(*G11,*AUTAU_);
+                   DMT::Assign(*G12,*AUTAP_);
+                   DMT::Assign(*G22,*APTAP_);
+                   DMT::SyncDeviceToHost(*G_);
+                   // G21 = G12'; (no transpose operator exists for DM; Do copy manually)
                    for (int ii=0;ii<recycleBlocks_;++ii)
                      for (int jj=0;jj<numBlocks_;++jj)
-                       G21(jj,ii) = G12(ii,jj);
-                   G22.assign(*APTAP_);
+                       DMT::Value(*G21,jj,ii) = DMT::ValueConst(*G12,ii,jj);
+                   DMT::SyncHostToDevice(*G_);
 
                    // compute harmonic Ritz vectors
                    getHarmonicVecs(*F_,*G_,*Y_);
@@ -1447,10 +1481,10 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
                    Teuchos::RCP<MV> UY1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
                    Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y1( Teuchos::View, *Y_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
-                   MVT::MvTimesMatAddMv( one, *Utmp, Y1, zero, *UY1tmp );
+                   Teuchos::RCP<DM> Y1 = DMT::Subview( *Y_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> Y2 = DMT::Subview( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   MVT::MvTimesMatAddMv( one, *Ptmp, *Y2, zero, *PY2tmp );
+                   MVT::MvTimesMatAddMv( one, *Utmp, *Y1, zero, *UY1tmp );
                    MVT::MvAddMv(one,*UY1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
@@ -1464,7 +1498,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
 
                    // AU1TU   = UTAU;
-                   AU1TU_->assign(*UTAU_);
+                   DMT::Assign(*AU1TU_,*UTAU_);
 
                    // dold    = D(end);
                    dold = (*D_)[numBlocks_-1];
@@ -1477,58 +1511,70 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    lastBeta = numBlocks_-1;
                 }
                 else { // Have U and U1
+
+                   DMT::SyncDeviceToHost(*APTAP_);
                    for (int ii=0; ii<numBlocks_; ii++) {
-                     (*APTAP_)(ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
+                     DMT::Value(*APTAP_,ii,ii) = ((*D_)[ii] / (*Alpha_)[ii])*(1 + (*Beta_)[ii+1]);
                      if (ii > 0) {
-                       (*APTAP_)(ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
-                       (*APTAP_)(ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*APTAP_,ii-1,ii) = -(*D_)[ii]/(*Alpha_)[ii-1];
+                       DMT::Value(*APTAP_,ii,ii-1) = -(*D_)[ii]/(*Alpha_)[ii-1];
                      }
                    }
+                   DMT::SyncHostToDevice(*APTAP_);
 
+                   DMT::SyncDeviceToHost(*L2_);
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     (*L2_)(ii,ii)   = 1./(*Alpha_)[ii];
-                     (*L2_)(ii+1,ii) = -1./(*Alpha_)[ii];
+                     DMT::Value(*L2_,ii,ii)   = 1./(*Alpha_)[ii];
+                     DMT::Value(*L2_,ii+1,ii) = -1./(*Alpha_)[ii];
                    }
+                   DMT::SyncHostToDevice(*L2_);
 
                    // M(end,1) = dold*(-Beta(1)/Alpha(1));
                    // AU1TAP = Y'*[AU1TU*Delta*L2; M];
                    DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
                    AU1TUDeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*AU1TU_,*DeltaL2_,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y1( Teuchos::View, *Y_, recycleBlocks_, recycleBlocks_ );
-                   AU1TAP_->putScalar(zero);
-                   AU1TAP_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Y1,*AU1TUDeltaL2_,zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y2( Teuchos::View, *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   Teuchos::RCP<DM> Y1 = DMT::Subview( *Y_, recycleBlocks_, recycleBlocks_ );
+                   DMT::PutScalar(*AU1TAP_,zero);
+                   AU1TAP_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y1,*AU1TUDeltaL2_,zero);
+                   Teuchos::RCP<DM> Y2 = DMT::Subview( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    ScalarType val = dold * (-(*Beta_)[0]/(*Alpha_)[0]);
+                   DMT::SyncDeviceToHost(*AU1TAP_);
+                   DMT::SyncDeviceToHost(*Y_);
                    for(int ii=0;ii<recycleBlocks_;ii++) {
-                     (*AU1TAP_)(ii,0) += Y2(numBlocks_-1,ii)*val;
+                     DMT::Value(*AU1TAP_,ii,0) += DMT::ValueConst(*Y2,numBlocks_-1,ii)*val;
                    }
+                   DMT::SyncHostToDevice(*AU1TAP_);
 
                    // AU1TU = Y1'*AU1TU
-                   Teuchos::SerialDenseMatrix<int,ScalarType> Y1TAU1TU( Teuchos::View, *GY_, recycleBlocks_, recycleBlocks_ );
-                   Y1TAU1TU.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Y1,*AU1TU_,zero);
-                   AU1TU_->assign(Y1TAU1TU);
+                   Teuchos::RCP<DM> Y1TAU1TU = DMT::Subview( *GY_, recycleBlocks_, recycleBlocks_ );
+                   Y1TAU1TU->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y1,*AU1TU_,zero);
+                   DMT::Assign(*AU1TU_,*Y1TAU1TU);
 
                    // F = [AU1TU1 zeros(k,m); zeros(m,k) diag(D)];
-                   F_->putScalar(zero);
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F11( Teuchos::View, *F_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> F22( Teuchos::View, *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   F11.assign(*AU1TU1_);
+                   DMT::PutScalar(*F_,zero);
+                   Teuchos::RCP<DM> F11 = DMT::Subview( *F_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> F22 = DMT::Subview( *F_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
+                   DMT::Assign(*F11,*AU1TU1_);
+                   DMT::SyncDeviceToHost(*F_);
                    for(int ii=0;ii<numBlocks_;ii++) {
-                     F22(ii,ii) = (*D_)[ii];
+                     DMT::Value(*F22,ii,ii) = (*D_)[ii];
                    }
+                   DMT::SyncHostToDevice(*F_);
 
                    // G = [AU1TAU1 AU1TAP; AU1TAP' APTAP];
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G12( Teuchos::View, *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G21( Teuchos::View, *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
-                   Teuchos::SerialDenseMatrix<int,ScalarType> G22( Teuchos::View, *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
-                   G11.assign(*AU1TAU1_);
-                   G12.assign(*AU1TAP_);
-                   // G21 = G12'; (no transpose operator exists for SerialDenseMatrix; Do copy manually)
+                   Teuchos::RCP<DM> G11 = DMT::Subview( *G_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<DM> G12 = DMT::Subview( *G_, recycleBlocks_, numBlocks_, 0, recycleBlocks_ );
+                   Teuchos::RCP<DM> G21 = DMT::Subview( *G_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   Teuchos::RCP<DM> G22 = DMT::Subview( *G_, numBlocks_, numBlocks_, recycleBlocks_, recycleBlocks_ );
+                   DMT::Assign(*G11,*AU1TAU1_);
+                   DMT::Assign(*G12,*AU1TAP_);
+                   DMT::Assign(*G22,*APTAP_);
+                   DMT::SyncDeviceToHost(*G_);
+                   // G21 = G12'; (no transpose operator exists for DM; Do copy manually)
                    for (int ii=0;ii<recycleBlocks_;++ii)
                      for (int jj=0;jj<numBlocks_;++jj)
-                       G21(jj,ii) = G12(ii,jj);
-                   G22.assign(*APTAP_);
+                       DMT::Value(*G21,jj,ii) = DMT::ValueConst(*G12,ii,jj);
+                   DMT::SyncHostToDevice(*G_);
 
                    // compute harmonic Ritz vectors
                    getHarmonicVecs(*F_,*G_,*Y_);
@@ -1540,8 +1586,8 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
                    Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
                    Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
-                   MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
-                   MVT::MvTimesMatAddMv( one, *U1tmp, Y1, zero, *U1Y1tmp );
+                   MVT::MvTimesMatAddMv( one, *Ptmp, *Y2, zero, *PY2tmp );
+                   MVT::MvTimesMatAddMv( one, *U1tmp, *Y1, zero, *U1Y1tmp );
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
@@ -1579,9 +1625,9 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
             // Delta = Delta(:,end);
             if (existU_) { // Delta only initialized if U exists
-              Teuchos::SerialDenseMatrix<int,ScalarType> mu1( Teuchos::View, *Delta_, recycleBlocks_, 1, 0, 0 );
-              Teuchos::SerialDenseMatrix<int,ScalarType> mu2( Teuchos::View, *Delta_, recycleBlocks_, 1, 0, numBlocks_ );
-              mu1.assign(mu2);
+              Teuchos::RCP<DM> mu1 = DMT::Subview( *Delta_, recycleBlocks_, 1, 0, 0 );
+              Teuchos::RCP<DM> mu2 = DMT::Subview( *Delta_, recycleBlocks_, 1, 0, numBlocks_ );
+              DMT::Assign(*mu1,*mu2);
             }
 
             // Now reinitialize state variables for next cycle
@@ -1709,7 +1755,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
     using Teuchos::rcp_dynamic_cast;
-    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
+    typedef StatusTestGenResNorm<ScalarType,MV,OP,DM> conv_test_type;
     // testValues is nonnull and not persistent.
     const std::vector<MagnitudeType>* pTestValues =
       rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
@@ -1737,9 +1783,9 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP, class DM>
-void RCGSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType>& F,
-                                                  const Teuchos::SerialDenseMatrix<int,ScalarType>& /* G */,
-                                                        Teuchos::SerialDenseMatrix<int,ScalarType>& Y) {
+void RCGSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs(const DM& F,
+                                                          const DM& G,
+                                                          DM& Y ) {
   // order of F,G
   int n = F.numCols();
 
@@ -1761,16 +1807,21 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs(const Teuchos::SerialD
   int lwork = -1;
   int info = 0;
   // since SYGV destroys workspace, create copies of F,G
-  Teuchos::SerialDenseMatrix<int,ScalarType> F2( Teuchos::Copy, *F_ );
-  Teuchos::SerialDenseMatrix<int,ScalarType> G2( Teuchos::Copy, *G_ );
+  Teuchos::RCP<DM> F2 = DMT::CreateCopy( *F_ );
+  Teuchos::RCP<DM> G2 = DMT::CreateCopy( *G_ );
+
+  DMT::SyncDeviceToHost(*F2);
+  DMT::SyncDeviceToHost(*G2);
 
   // query for optimal workspace size
-  lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info);
+  lapack.SYGV(itype, jobz, uplo, n, DMT::GetRawHostPtr(*G2), DMT::GetStride(*G2), 
+              DMT::GetRawHostPtr(*F2), DMT::GetStride(*F2), &w[0], &work[0], lwork, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                      "Belos::RCGSolMgr::solve(): LAPACK SYGV failed to query optimal work size.");
   lwork = (int)work[0];
   work.resize(lwork);
-  lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info);
+  lapack.SYGV(itype, jobz, uplo, n, DMT::GetRawHostPtr(*G2), DMT::GetStride(*G2), 
+              DMT::GetRawHostPtr(*F2), DMT::GetStride(*F2), &w[0], &work[0], lwork, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                      "Belos::RCGSolMgr::solve(): LAPACK SYGV failed to compute eigensolutions.");
 
@@ -1781,7 +1832,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs(const Teuchos::SerialD
   // Select recycledBlocks_ smallest eigenvectors
   for( int i=0; i<recycleBlocks_; i++ ) {
     for( int j=0; j<n; j++ ) {
-      Y(j,i) = G2(j,iperm[i]);
+      DMT::Value(Y,j,i) = DMT::ValueConst(*G2,j,iperm[i]);
     }
   }
 
