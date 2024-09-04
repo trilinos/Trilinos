@@ -45,6 +45,20 @@
         <Parameter name="Use Tpetra" type="bool" value="true"/>
     </ParameterList>
 
+    <ParameterList name="Active Parameters">
+        <Parameter name="Number of Parameter Vectors" type="int" value="2"/>
+        <ParameterList name="Parameter Vector 0">
+            <Parameter name="Number" type="int" value="1"/>
+            <Parameter name="Parameter 0" type="string" value="SOURCE_TEMPERATURE"/>
+            <Parameter name="Initial Value 0" type="double" value="2.0"/>
+        </ParameterList>
+        <ParameterList name="Parameter Vector 1">
+            <Parameter name="Number" type="int" value="1"/>
+            <Parameter name="Parameter 0" type="string" value="SOURCE_TEST_TEMPERATURE"/>
+            <Parameter name="Initial Value 0" type="double" value="3.0"/>
+        </ParameterList>
+    </ParameterList>
+
     <ParameterList name="Responses">
       <ParameterList name="TEMPERATURE Integral">
          <Parameter name="Type" type="string" value="Functional"/>
@@ -255,6 +269,7 @@
       <Parameter name="Method" type="string" value="Newton"/>
       <ParameterList name="Newton">
         <Parameter name="Forcing Term Method" type="string" value="Type 1"/>
+        <Parameter name="Forcing Term Minimum Tolerance" type="double" value="1e-8"/>
         <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
         <ParameterList name="Linear Solver">
            <Parameter name="Tolerance" type="double" value="1e-4"/>
@@ -315,6 +330,7 @@
       <Parameter name="Method" type="string" value="Full Step"/>
     </ParameterList>
     <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+    <!--<Parameter name="Nonlinear Solver" type="string" value="Trust Region Based"/>-->
     <ParameterList name="Printing">
       <Parameter name="Output Precision" type="int" value="3"/>
       <Parameter name="Output Processor" type="int" value="0"/>

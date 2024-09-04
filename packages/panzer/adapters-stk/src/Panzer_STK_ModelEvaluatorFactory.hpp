@@ -344,7 +344,7 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
     return ep_panzer_me->addResponse(responseName,wkstDesc,builder);
   }
   else if(panzer_me!=Teuchos::null && thyra_ep_me==Teuchos::null) {
-    return panzer_me->addResponse(responseName,wkstDesc,builder);
+    return panzer_me->addFlexibleResponse(responseName,wkstDesc,builder);
   }
 #else
   Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);

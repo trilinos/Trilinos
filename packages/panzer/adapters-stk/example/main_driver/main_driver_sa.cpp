@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
         Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
       }
     }
-    
+
     if (printInputPL)
       *out << *input_params << std::endl;
 
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
         Teuchos::RCP<user_app::NOXObserverFactory> nof;
         {
           nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
-          
+
           Teuchos::RCP<Teuchos::ParameterList> observers_to_build =
             Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
 
@@ -282,11 +282,11 @@ int main(int argc, char *argv[])
         resp->setVector(vec);
       }
     }
-    
+
     // Tempus stepper
     using namespace Teuchos;
     using namespace Tempus;
-    
+
     RCP<ParameterList> tempus_pl = parameterList(std::string("Tempus"));
     *tempus_pl = input_params->sublist("Solution Control").sublist("Tempus");
 
@@ -310,17 +310,17 @@ int main(int argc, char *argv[])
     noxList->print(std::cout);
     integrator->getStepper()->getSolver()->setParameterList(noxList);
     integrator->initialize();
-    
+
     RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
     integrator->initializeSolutionHistory(0.0, x0);
-    
+
     bool integratorStatus = integrator->advanceTime();
     TEUCHOS_ASSERT(integratorStatus);
-    
+
     auto x = integrator->getSolutionHistory()->getCurrentState()->getX();
     auto x_dot = integrator->getSolutionHistory()->getCurrentState()->getXDot();
-    
-    {    
+
+    {
       // get responses if there are any
       //////////////////////////////////////////////
       if(physics->Ng()>0) {
@@ -333,22 +333,34 @@ int main(int argc, char *argv[])
          respInArgs.set_x(x);
          respInArgs.set_x_dot(x_dot);
 
-         // set up response out args
          for(int i=0;i<respOutArgs.Ng();i++) {
 	   Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
            respOutArgs.set_g(i,response);
          }
 
-         // Now, solve the problem and return the responses
          physics->evalModel(respInArgs, respOutArgs);
 
-         // loop over out args for printing
-         for(int i=0;i<respOutArgs.Ng();i++) {
+         {
+           auto parameter_library = global_data->pl;
+           TEUCHOS_ASSERT(nonnull(parameter_library));
+           for (auto i=parameter_library->begin();i != parameter_library->end(); ++i) {
+             *out << "Sacado::ParameterLibrary: " << i->first << std::endl;
+           }
+         }
+
+         {
+           auto nominalValues = physics->getNominalValues();
+           for (int i=0; i < respInArgs.Np();++i) {
+             auto p = nominalValues.get_p(i);
+             auto p_names = physics->get_p_names(i);
+             *out << "ModelEvaluator::NominalValues Parameter Value: \"" << (*p_names)[0] << "\" = " << Thyra::get_ele(*p,0) << std::endl;
+           }
+         }
+
+         for (int i=0;i<respOutArgs.Ng();i++) {
 	   Teuchos::RCP<Thyra::VectorBase<double> > response = respOutArgs.get_g(i);
-
-            TEUCHOS_ASSERT(response!=Teuchos::null); // should not be null!
-
-            *out << "Response Value \"" << responseIndexToName[i] << "\": " << Thyra::get_ele(*response,0) << std::endl;
+           TEUCHOS_ASSERT(response!=Teuchos::null);
+           *out << "Response Value: \"" << responseIndexToName[i] << "\" = " << Thyra::get_ele(*response,0) << std::endl;
          }
       }
 
