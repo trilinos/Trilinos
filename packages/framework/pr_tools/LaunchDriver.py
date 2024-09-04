@@ -82,7 +82,9 @@ def main(argv):
   parser.add_argument('--in-container', default=False, action="store_true",
                       help="Build is happening in a container")
   parser.add_argument("--kokkos-develop", default=False, action="store_true",
-                       help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
+                      help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
+  parser.add_argument("--extra-configure-args",
+                      help="Extra arguments that will be passed to CMake for configuring Trilinos.")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -113,6 +115,9 @@ def main(argv):
 
   if args.kokkos_develop:
      cmd += " --kokkos-develop"
+
+  if args.extra_configure_args:
+     cmd += f" --extra-configure-args=\"{args.extra_configure_args}\""
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 
