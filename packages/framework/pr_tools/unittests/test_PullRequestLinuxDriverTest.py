@@ -116,12 +116,13 @@ class Test_parse_args(unittest.TestCase):
                 ''')
 
         self.help_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url
-                                   TARGET_REPO_URL --target-branch-name TARGET_BRANCH_NAME
-                                   --pullrequest-build-name PULLREQUEST_BUILD_NAME
+                usage: programName [-h] [--source-repo-url SOURCE_REPO_URL]
+                                   [--target-repo-url TARGET_REPO_URL] --target-branch-name
+                                   TARGET_BRANCH_NAME
+                                   [--pullrequest-build-name PULLREQUEST_BUILD_NAME]
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
-                                   --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--jenkins-job-number JENKINS_JOB_NUMBER]
                                    [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
@@ -225,12 +226,12 @@ class Test_parse_args(unittest.TestCase):
                 ''')
 
         self.usage_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
+                usage: programName [-h] [--source-repo-url SOURCE_REPO_URL] [--target-repo-url TARGET_REPO_URL]
                                    --target-branch-name TARGET_BRANCH_NAME
-                                   --pullrequest-build-name PULLREQUEST_BUILD_NAME
+                                   [--pullrequest-build-name PULLREQUEST_BUILD_NAME]
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
-                                   --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--jenkins-job-number JENKINS_JOB_NUMBER]
                                    [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
@@ -246,7 +247,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
-                programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
+                programName: error: the following arguments are required: --target-branch-name, --genconfig-build-name, --pullrequest-number
                 ''')
 
         self.m_cwd = mock.patch('PullRequestLinuxDriverTest.os.getcwd',
