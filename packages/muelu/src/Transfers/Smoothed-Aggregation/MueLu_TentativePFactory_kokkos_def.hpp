@@ -429,11 +429,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         KOKKOS_LAMBDA(const LO row) {
           rowsAux(row) = row * NSDim;
         });
-    Kokkos::parallel_for(
-        "MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
-        KOKKOS_LAMBDA(const LO j) {
-          colsAux(j) = INVALID;
-        });
+    Kokkos::deep_copy(colsAux, INVALID);
   }
 
   if (NSDim == 1) {
@@ -556,13 +552,16 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                decltype(aggDofSizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO),
                                                                decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux),
                                                                decltype(valsAux)>;
-      int scratchLevel         = 0;
+      int scratchLevel         = -1;
       if (doQRStep) {
-        using shared_matrix = LocalQrFunctorType::shared_matrix;
+        using shared_matrix = typename LocalQrFunctorType::shared_matrix;
+        using shared_vector = typename LocalQrFunctorType::shared_vector;
         int m               = maxAggSize;
         int n               = fineNSRandom.extent(1);
         int size            = shared_matrix::shmem_size(m, n) +  // r
-                   shared_matrix::shmem_size(m, m);              // q
+                   shared_matrix::shmem_size(m, m) +             // q
+                   shared_vector::shmem_size(m) +                // work
+                   shared_vector::shmem_size(n);                 // tau
 
         if (size < policy.scratch_size_max(/*level=*/(int)0))
           scratchLevel = 0;

@@ -5,6 +5,14 @@
 #include <KokkosKernels_ArithTraits.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 
+#include "KokkosBlas1_set.hpp"
+#include "KokkosBatched_ApplyQ_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Impl.hpp"
+#include "Kokkos_DualView.hpp"
+#include "Kokkos_Pair.hpp"
+#include "KokkosBatched_QR_Decl.hpp"
+
 namespace MueLu::LocalQR {
 
 template <class LocalOrdinal, class View>
@@ -85,118 +93,56 @@ class LocalQRDecompFunctor {
   void operator()(const typename Kokkos::TeamPolicy<execution_space>::member_type& thread, size_t& nnz) const {
     auto agg = thread.league_rank();
 
+    const auto aggOffset = aggRows(agg);
     // size of aggregate: number of DOFs in aggregate
-    auto aggSize = aggRows(agg + 1) - aggRows(agg);
+    const auto aggSize = aggRows(agg + 1) - aggOffset;
 
     const impl_SC one  = impl_ATS::one();
-    const impl_SC two  = one + one;
     const impl_SC zero = impl_ATS::zero();
-    const auto zeroM   = impl_ATS::magnitude(zero);
 
-    int m = aggSize;
-    int n = fineNS.extent(1);
+    const int m = aggSize;
+    const int n = fineNS.extent(1);
 
     // calculate row offset for coarse nullspace
     Xpetra::global_size_t offset = agg * n;
 
     if (doQRStep) {
+      // A is m x n
+      // Q is m x m
+      // R is m x n
+
+      // A (initially) gets overwritten with R in QR
+      shared_matrix r(thread.team_scratch(scratchLevel), m, n);
+      // Q
+      shared_matrix q(thread.team_scratch(scratchLevel), m, m);
+
       // Extract the piece of the nullspace corresponding to the aggregate
-      shared_matrix r(thread.team_scratch(scratchLevel), m, n);  // A (initially), R (at the end)
       for (int j = 0; j < n; j++)
         for (int k = 0; k < m; k++)
-          r(k, j) = fineNS(agg2RowMapLO(aggRows(agg) + k), j);
-#if 0
-          printf("A\n");
-          for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++)
-              printf(" %5.3lf ", r(i,j));
-            printf("\n");
-          }
-#endif
+          r(k, j) = fineNS(agg2RowMapLO(aggOffset + k), j);
 
-      // Calculate QR decomposition (standard)
-      shared_matrix q(thread.team_scratch(scratchLevel), m, m);  // Q
       if (m >= n) {
-        bool isSingular = false;
+        // tau has size n
+        shared_vector tau(thread.team_scratch(scratchLevel), n);
 
-        // Initialize Q^T
-        auto qt = q;
-        for (int i = 0; i < m; i++) {
-          for (int j = 0; j < m; j++)
-            qt(i, j) = zero;
-          qt(i, i) = one;
-        }
+        // work has size m
+        shared_vector work(thread.team_scratch(scratchLevel), m);
 
-        for (int k = 0; k < n; k++) {  // we ignore "n" instead of "n-1" to normalize
-          // FIXME_KOKKOS: use team
-          Magnitude s = zeroM, norm, norm_x;
-          for (int i = k + 1; i < m; i++)
-            s += pow(impl_ATS::magnitude(r(i, k)), 2);
-          norm = sqrt(pow(impl_ATS::magnitude(r(k, k)), 2) + s);
+        // Calculate QR. After this call R will be in the upper triangular part of r.
+        // Q is in encoded in the strictly lower triangular part of r and tau. We will
+        // need to explicitly form Q as a matrix below.
+        KokkosBatched::SerialQR<KokkosBlas::Algo::QR::Unblocked>::invoke(r, tau, work);
 
-          if (norm == zero) {
-            isSingular = true;
-            break;
-          }
+        // Initialize Q to an identity matrix
+        KokkosBatched::SerialSetIdentity::invoke(q);
 
-          r(k, k) -= norm * one;
-
-          norm_x = sqrt(pow(impl_ATS::magnitude(r(k, k)), 2) + s);
-          if (norm_x == zeroM) {
-            // We have a single diagonal element in the column.
-            // No reflections required. Just need to restor r(k,k).
-            r(k, k) = norm * one;
-            continue;
-          }
-
-          // FIXME_KOKKOS: use team
-          for (int i = k; i < m; i++)
-            r(i, k) /= norm_x;
-
-          // Update R(k:m,k+1:n)
-          for (int j = k + 1; j < n; j++) {
-            // FIXME_KOKKOS: use team in the loops
-            impl_SC si = zero;
-            for (int i = k; i < m; i++)
-              si += r(i, k) * r(i, j);
-            for (int i = k; i < m; i++)
-              r(i, j) -= two * si * r(i, k);
-          }
-
-          // Update Q^T (k:m,k:m)
-          for (int j = k; j < m; j++) {
-            // FIXME_KOKKOS: use team in the loops
-            impl_SC si = zero;
-            for (int i = k; i < m; i++)
-              si += r(i, k) * qt(i, j);
-            for (int i = k; i < m; i++)
-              qt(i, j) -= two * si * r(i, k);
-          }
-
-          // Fix R(k:m,k)
-          r(k, k) = norm * one;
-          for (int i = k + 1; i < m; i++)
-            r(i, k) = zero;
-        }
-
-#if 0
-            // Q = (Q^T)^T
-            for (int i = 0; i < m; i++)
-              for (int j = 0; j < i; j++) {
-                impl_SC tmp  = qt(i,j);
-                qt(i,j) = qt(j,i);
-                qt(j,i) = tmp;
-              }
-#endif
+        // Form Q as a matrix but multiplying against the identity
+        KokkosBatched::SerialApplyQ<KokkosBatched::Side::Left, KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::ApplyQ::Unblocked>::invoke(r, tau, q, work);
 
         // Build coarse nullspace using the upper triangular part of R
-        for (int j = 0; j < n; j++)
-          for (int k = 0; k <= j; k++)
-            coarseNS(offset + k, j) = r(k, j);
-
-        if (isSingular) {
-          statusAtomic(1) = true;
-          return;
+        for (int j = 0; j < n; j++) {
+          for (int k = 0; k < n; k++)
+            coarseNS(offset + k, j) = (k <= j) ? r(k, j) : zero;
         }
 
       } else {
@@ -259,22 +205,6 @@ class LocalQRDecompFunctor {
         rows(localRow + 1) = lnnz;
         nnz += lnnz;
       }
-
-#if 0
-          printf("R\n");
-          for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++)
-              printf(" %5.3lf ", coarseNS(i,j));
-            printf("\n");
-          }
-
-          printf("Q\n");
-          for (int i = 0; i < aggSize; i++) {
-            for (int j = 0; j < aggSize; j++)
-              printf(" %5.3lf ", q(i,j));
-            printf("\n");
-          }
-#endif
     } else {
       /////////////////////////////
       //      "no-QR" option     //
