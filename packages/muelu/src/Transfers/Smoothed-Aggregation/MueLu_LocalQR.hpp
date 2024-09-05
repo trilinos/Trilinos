@@ -5,6 +5,21 @@
 #include <Kokkos_ArithTraits.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 
+#include "KokkosBlas1_set.hpp"
+#include "KokkosBatched_QR_FormQ_TeamVector_Internal.hpp"
+#include "KokkosBatched_ApplyQ_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Impl.hpp"
+#include "Kokkos_DualView.hpp"
+#include "Kokkos_Pair.hpp"
+#include "Kokkos_UnorderedMap.hpp"
+#include "KokkosBatched_QR_Decl.hpp"
+#include "KokkosBatched_QR_Serial_Impl.hpp"
+#include "KokkosBatched_QR_TeamVector_Impl.hpp"
+#include "KokkosBatched_QR_FormQ_TeamVector_Internal.hpp"
+
+// #define MUELU_DEBUG_QR 1
+
 namespace MueLu::LocalQR {
 
 template <class LocalOrdinal, class View>
@@ -36,6 +51,7 @@ class ReduceMaxFunctor {
 };
 
 // local QR decomposition
+// local QR decomposition
 template <class LOType, class GOType, class SCType, class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
 class LocalQRDecompFunctor {
  private:
@@ -51,6 +67,9 @@ class LocalQRDecompFunctor {
   using shared_matrix = Kokkos::View<impl_SC**, typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
   using shared_vector = Kokkos::View<impl_SC*, typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
 
+  using temp_view_type1 = Kokkos::View<impl_SC*, execution_space>;
+  using temp_view_type  = Kokkos::View<impl_SC**, execution_space>;
+
   NspType fineNS;
   NspType coarseNS;
   aggRowsType aggRows;
@@ -62,6 +81,8 @@ class LocalQRDecompFunctor {
   colsAuxType colsAux;
   valsAuxType valsAux;
   bool doQRStep;
+  temp_view_type1 tau;
+  temp_view_type work;
 
  public:
   LocalQRDecompFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_, bool doQRStep_)
@@ -75,126 +96,126 @@ class LocalQRDecompFunctor {
     , rowsAux(rowsAux_)
     , colsAux(colsAux_)
     , valsAux(valsAux_)
-    , doQRStep(doQRStep_) {}
+    , doQRStep(doQRStep_) {
+    work = temp_view_type("work", aggRows_.extent(0), maxAggDofSize_);
+    tau  = temp_view_type1("tau", fineNS.extent(0));
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const typename Kokkos::TeamPolicy<execution_space>::member_type& thread, size_t& nnz) const {
+    using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
+
     auto agg = thread.league_rank();
 
+    const auto aggOffset = aggRows(agg);
     // size of aggregate: number of DOFs in aggregate
-    auto aggSize = aggRows(agg + 1) - aggRows(agg);
+    const auto aggSize = aggRows(agg + 1) - aggOffset;
 
     const impl_SC one  = impl_ATS::one();
-    const impl_SC two  = one + one;
     const impl_SC zero = impl_ATS::zero();
-    const auto zeroM   = impl_ATS::magnitude(zero);
 
-    int m = aggSize;
-    int n = fineNS.extent(1);
+    const int m = aggSize;
+    const int n = fineNS.extent(1);
 
     // calculate row offset for coarse nullspace
     Xpetra::global_size_t offset = agg * n;
 
     if (doQRStep) {
+      // A is m x n
+      // Q is m x m
+      // R is m x n
+
+      // A (initially) gets overwritten with R in QR
+      shared_matrix r(thread.team_shmem(), m, n);
+      // Q
+      shared_matrix q(thread.team_shmem(), m, m);
+
       // Extract the piece of the nullspace corresponding to the aggregate
-      shared_matrix r(thread.team_shmem(), m, n);  // A (initially), R (at the end)
       for (int j = 0; j < n; j++)
         for (int k = 0; k < m; k++)
-          r(k, j) = fineNS(agg2RowMapLO(aggRows(agg) + k), j);
-#if 0
-          printf("A\n");
-          for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++)
-              printf(" %5.3lf ", r(i,j));
-            printf("\n");
-          }
+          r(k, j) = fineNS(agg2RowMapLO(aggOffset + k), j);
+
+#ifdef MUELU_DEBUG_QR
+      Kokkos::printf("\nA %d x %d\n", m, n);
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++)
+          Kokkos::printf(" %5.3lf ", r(i, j));
+        Kokkos::printf("\n");
+      }
+#endif
+      thread.team_barrier();
+
+      if (m >= n) {
+        // team_tau has size n
+        auto team_tau = Kokkos::subview(tau, Kokkos::make_pair(aggOffset, aggOffset + n));
+        KokkosBlas::TeamVectorSet<member_type>::invoke(thread, zero, team_tau);
+
+        // team_work has size m
+        auto team_work = Kokkos::subview(work, agg, Kokkos::make_pair(0, m));
+        KokkosBlas::TeamVectorSet<member_type>::invoke(thread, zero, team_work);
+
+        // Calculate QR
+        KokkosBatched::TeamVectorQR<member_type, KokkosBlas::Algo::QR::Unblocked>::invoke(thread, r, team_tau, team_work);
+        thread.team_barrier();
+
+#ifdef MUELU_DEBUG_QR
+        Kokkos::printf("\nQR %d x %d\n", m, n);
+        for (int i = 0; i < m; i++) {
+          for (int j = 0; j < n; j++)
+            Kokkos::printf(" %5.3lf ", r(i, j));
+          Kokkos::printf("\n");
+        }
 #endif
 
-      // Calculate QR decomposition (standard)
-      shared_matrix q(thread.team_shmem(), m, m);  // Q
-      if (m >= n) {
-        bool isSingular = false;
+        // Initialize Q to identity
+        KokkosBatched::TeamSetIdentity<member_type>::invoke(thread, q);
+        thread.team_barrier();
 
-        // Initialize Q^T
-        auto qt = q;
+        // Form Q
+        KokkosBatched::TeamVectorApplyQ<member_type, KokkosBatched::Side::Left, KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::ApplyQ::Unblocked>::invoke(thread, r, team_tau, q, team_work);
+        thread.team_barrier();
+
+#ifdef MUELU_DEBUG_QR
+        Kokkos::printf("\nQ1 %d x %d\n", m, m);
         for (int i = 0; i < m; i++) {
           for (int j = 0; j < m; j++)
-            qt(i, j) = zero;
-          qt(i, i) = one;
+            Kokkos::printf(" %5.3lf ", q(i, j));
+          Kokkos::printf("\n");
         }
 
-        for (int k = 0; k < n; k++) {  // we ignore "n" instead of "n-1" to normalize
-          // FIXME_KOKKOS: use team
-          Magnitude s = zeroM;
-          Magnitude norm;
-          Magnitude norm_x;
-          for (int i = k + 1; i < m; i++)
-            s += pow(impl_ATS::magnitude(r(i, k)), 2);
-          norm = sqrt(pow(impl_ATS::magnitude(r(k, k)), 2) + s);
+        // Initialize Q to identity
+        KokkosBatched::TeamSetIdentity<member_type>::invoke(thread, q);
+        thread.team_barrier();
 
-          if (norm == zero) {
-            isSingular = true;
-            break;
-          }
-
-          r(k, k) -= norm * one;
-
-          norm_x = sqrt(pow(impl_ATS::magnitude(r(k, k)), 2) + s);
-          if (norm_x == zeroM) {
-            // We have a single diagonal element in the column.
-            // No reflections required. Just need to restor r(k,k).
-            r(k, k) = norm * one;
-            continue;
-          }
-
-          // FIXME_KOKKOS: use team
-          for (int i = k; i < m; i++)
-            r(i, k) /= norm_x;
-
-          // Update R(k:m,k+1:n)
-          for (int j = k + 1; j < n; j++) {
-            // FIXME_KOKKOS: use team in the loops
-            impl_SC si = zero;
-            for (int i = k; i < m; i++)
-              si += r(i, k) * r(i, j);
-            for (int i = k; i < m; i++)
-              r(i, j) -= two * si * r(i, k);
-          }
-
-          // Update Q^T (k:m,k:m)
-          for (int j = k; j < m; j++) {
-            // FIXME_KOKKOS: use team in the loops
-            impl_SC si = zero;
-            for (int i = k; i < m; i++)
-              si += r(i, k) * qt(i, j);
-            for (int i = k; i < m; i++)
-              qt(i, j) -= two * si * r(i, k);
-          }
-
-          // Fix R(k:m,k)
-          r(k, k) = norm * one;
-          for (int i = k + 1; i < m; i++)
-            r(i, k) = zero;
+        for (int k = 0; k < m; ++k) {
+          auto q_col = Kokkos::subview(q, Kokkos::ALL(), k);
+          KokkosBatched::TeamVectorApplyQ<member_type, KokkosBatched::Side::Left, KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::ApplyQ::Unblocked>::invoke(thread, r, team_tau, q_col, team_work);
         }
 
-#if 0
-            // Q = (Q^T)^T
-            for (int i = 0; i < m; i++)
-              for (int j = 0; j < i; j++) {
-                impl_SC tmp  = qt(i,j);
-                qt(i,j) = qt(j,i);
-                qt(j,i) = tmp;
-              }
+        Kokkos::printf("\nQ2 %d x %d\n", m, m);
+        for (int i = 0; i < m; i++) {
+          for (int j = 0; j < m; j++)
+            Kokkos::printf(" %5.3lf ", q(i, j));
+          Kokkos::printf("\n");
+        }
+
+        Kokkos::printf("\ntau %d \n", n);
+        for (int i = 0; i < n; i++) {
+          Kokkos::printf(" %5.3lf ", team_tau(i));
+          Kokkos::printf("\n");
+        }
+
+        Kokkos::printf("\work %d \n", team_work.extent(0));
+        for (int i = 0; i < team_work.extent(0); i++) {
+          Kokkos::printf(" %5.3lf ", team_work(i));
+          Kokkos::printf("\n");
+        }
 #endif
 
         // Build coarse nullspace using the upper triangular part of R
-        for (int j = 0; j < n; j++)
-          for (int k = 0; k <= j; k++)
-            coarseNS(offset + k, j) = r(k, j);
-
-        if (isSingular) {
-          statusAtomic(1) = true;
-          return;
+        for (int j = 0; j < n; j++) {
+          for (int k = 0; k < n; k++)
+            coarseNS(offset + k, j) = (k <= j) ? r(k, j) : zero;
         }
 
       } else {
@@ -241,6 +262,23 @@ class LocalQRDecompFunctor {
             q(i, j) = (j == i ? one : zero);
       }
 
+#ifdef MUELU_DEBUG_QR
+      // Kokkos::printf("\nQ3 %d x %d\n", m, m);
+      // for (int i = 0; i < m; i++) {
+      //   for (int j = 0; j < m; j++)
+      //     Kokkos::printf(" %5.3lf ", q(i, j));
+      //   Kokkos::printf("\n");
+      // }
+
+      Kokkos::printf("\nR %d x %d\n", m, n);
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++)
+          Kokkos::printf(" %5.3lf ", i <= j ? r(i, j) : zero);
+        Kokkos::printf("\n");
+      }
+
+#endif
+
       // Process each row in the local Q factor and fill helper arrays to assemble P
       for (int j = 0; j < m; j++) {
         LO localRow     = agg2RowMapLO(aggRows(agg) + j);
@@ -257,22 +295,6 @@ class LocalQRDecompFunctor {
         rows(localRow + 1) = lnnz;
         nnz += lnnz;
       }
-
-#if 0
-          printf("R\n");
-          for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++)
-              printf(" %5.3lf ", coarseNS(i,j));
-            printf("\n");
-          }
-
-          printf("Q\n");
-          for (int i = 0; i < aggSize; i++) {
-            for (int j = 0; j < aggSize; j++)
-              printf(" %5.3lf ", q(i,j));
-            printf("\n");
-          }
-#endif
     } else {
       /////////////////////////////
       //      "no-QR" option     //
