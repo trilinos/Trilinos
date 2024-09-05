@@ -85,7 +85,7 @@ namespace Intrepid2 {
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
       using DynRankViewHost = Kokkos::DynRankView<ValueType,Kokkos::HostSpace>;
 
-      const ValueType tol = tolerence()*100.0;
+      const ValueType tol = tolerence<ValueType>()*100.0;
 
       int errorFlag = 0;
 

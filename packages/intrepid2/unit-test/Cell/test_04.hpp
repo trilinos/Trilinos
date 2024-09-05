@@ -79,7 +79,7 @@ namespace Intrepid2 {
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
 
-      const ValueType tol = tolerence()*100.0;
+      const ValueType tol = tolerence<ValueType>()*100.0;
 
       int errorFlag  = 0;
 
@@ -132,7 +132,7 @@ namespace Intrepid2 {
               continue;
       
             // 1.   Define a single reference point set using cubature factory with order 4 cubature
-            const auto cellCubature = cubFactory.create<DeviceType>(cell, testAccuracy);
+            const auto cellCubature = cubFactory.create<DeviceType,ValueType,ValueType>(cell, testAccuracy);
             const auto cubDim = cellCubature->getDimension();
             const auto cubNumPoints = cellCubature->getNumPoints();
             

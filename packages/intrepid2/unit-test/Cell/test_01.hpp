@@ -200,7 +200,7 @@ namespace Intrepid2 {
         typedef CellTools<DeviceType> ct;
         typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
-        const value_type tol = tolerence()*100.0;
+        const value_type tol = tolerence<value_type>()*100.0;
 
         int errorFlag = 0;
       

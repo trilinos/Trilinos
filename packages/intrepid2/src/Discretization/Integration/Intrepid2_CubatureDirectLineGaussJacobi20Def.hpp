@@ -18,7 +18,7 @@ namespace Intrepid2 {
   template <typename DT, typename PT, typename WT>
   CubatureDirectLineGaussJacobi20<DT,PT,WT>::
   CubatureDirectLineGaussJacobi20(const ordinal_type degree)
-    : CubatureDirect<DT>(degree, 1) {
+    : CubatureDirect<DT,PT,WT>(degree, 1) {
     
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 ||
                                   degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreePyr), std::out_of_range,

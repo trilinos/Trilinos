@@ -18,7 +18,7 @@ namespace Intrepid2 {
   template <typename DT, typename PT, typename WT>
   CubatureDirectTriSymmetric<DT,PT,WT>::
   CubatureDirectTriSymmetric(const ordinal_type degree)
-    : CubatureDirect<DT>(degree, 2) {
+    : CubatureDirect<DT,PT,WT>(degree, 2) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 ||
                                   degree >= cubatureDataStaticSize, std::out_of_range,
