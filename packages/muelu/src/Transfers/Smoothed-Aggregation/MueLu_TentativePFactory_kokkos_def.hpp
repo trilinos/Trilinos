@@ -433,11 +433,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         KOKKOS_LAMBDA(const LO row) {
           rowsAux(row) = row * NSDim;
         });
-    Kokkos::parallel_for(
-        "MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
-        KOKKOS_LAMBDA(const LO j) {
-          colsAux(j) = INVALID;
-        });
+    Kokkos::deep_copy(colsAux, INVALID);
   }
 
   if (NSDim == 1) {

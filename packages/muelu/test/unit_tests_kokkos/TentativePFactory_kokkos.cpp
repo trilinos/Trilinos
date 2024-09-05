@@ -286,6 +286,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorB
 
   // coarseNullspace->describe(out, Teuchos::VERB_EXTREME);
 
+  // Ptent->describe(out, Teuchos::VERB_EXTREME);
+
   // Check interpolation by computing ||fineNS - P*coarseNS||
   auto PtN = MultiVectorFactory::Build(Ptent->getRangeMap(), NSdim);
   Ptent->apply(*coarseNullspace, *PtN, Teuchos::NO_TRANS, 1.0, 0.0);
