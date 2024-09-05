@@ -674,7 +674,63 @@ class TestFactory {
       }
 #endif
 #endif
-};  // class TestFactory
+
+  // Create a matrix as specified by parameter list options
+  static RCP<Matrix> BuildBlockMatrixAsPoint(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) {
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    GO GO_INVALID                       = Teuchos::OrdinalTraits<GO>::invalid();
+    RCP<Matrix> Op;
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers_kokkos::Parameters::getLib();
+
+    // Make the base graph
+    RCP<Matrix> old_matrix        = TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList, lib);
+    RCP<const CrsGraph> old_graph = old_matrix->getCrsGraph();
+    RCP<const Map> old_rowmap     = old_graph->getRowMap();
+    RCP<const Map> old_colmap     = old_graph->getColMap();
+    int blocksize                 = 3;
+
+    // Block Map
+    LO orig_num_rows = (LO)old_graph->getRowMap()->getLocalNumElements();
+    Teuchos::Array<GlobalOrdinal> owned_rows(blocksize * orig_num_rows);
+    for (LO i = 0; i < orig_num_rows; i++) {
+      GO old_gid = old_rowmap->getGlobalElement(i);
+      for (int j = 0; j < blocksize; j++) {
+        owned_rows[i * blocksize + j] = old_gid * blocksize + j;
+      }
+    }
+    RCP<Map> new_map = Xpetra::MapFactory<LO, GO, NO>::Build(lib, GO_INVALID, owned_rows(), 0, comm);
+    if (new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: Map constructor failed");
+
+    // Block Graph / Matrix
+    RCP<CrsMatrix> new_matrix = Xpetra::CrsMatrixFactory<SC, LO, GO, NO>::Build(new_map, blocksize * old_graph->getLocalMaxNumRowEntries());
+    if (new_matrix.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: Matrix constructor failed");
+    for (LO i = 0; i < orig_num_rows; i++) {
+      Teuchos::ArrayView<const LO> old_indices;
+      Teuchos::ArrayView<const SC> old_values;
+      Teuchos::Array<GO> new_indices(1);
+      Teuchos::Array<SC> new_values(1);
+      old_matrix->getLocalRowView(i, old_indices, old_values);
+      for (int ii = 0; ii < blocksize; ii++) {
+        GO GRID = new_map->getGlobalElement(i * blocksize + ii);
+        for (LO j = 0; j < (LO)old_indices.size(); j++) {
+          for (int jj = 0; jj < blocksize; jj++) {
+            new_indices[0] = old_colmap->getGlobalElement(old_indices[j]) * blocksize + jj;
+            new_values[0]  = old_values[j] * (SC)((ii == jj && i == old_indices[j]) ? blocksize * blocksize : 1);
+            new_matrix->insertGlobalValues(GRID, new_indices(), new_values);
+          }
+        }
+      }
+    }
+    new_matrix->fillComplete();
+    Op = rcp(new CrsMatrixWrap(new_matrix));
+    if (new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: CrsMatrixWrap constructor failed");
+    Op->SetFixedBlockSize(blocksize);
+
+    return Op;
+  }  // BuildBlockMatrixAsPoint()
+};   // class TestFactory
 
 // Helper class which has some Tpetra specific code inside
 // We put this into an extra helper class as we need partial specializations and
