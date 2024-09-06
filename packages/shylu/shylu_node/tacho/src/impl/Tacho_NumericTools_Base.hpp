@@ -46,9 +46,9 @@ public:
   using host_space = typename host_device_type::execution_space;
   using host_memory_space = typename host_device_type::memory_space;
 
-  using ordinal_type_array_host = typename ordinal_type_array::HostMirror;
-  using size_type_array_host = typename size_type_array::HostMirror;
-  using supernode_type_array_host = typename supernode_type_array::HostMirror;
+  using ordinal_type_array_host = Kokkos::View<ordinal_type *, host_device_type>;
+  using size_type_array_host = Kokkos::View<size_type *, host_device_type>;
+  using supernode_type_array_host = Kokkos::View<typename supernode_info_type::supernode_type *, host_device_type>;
 
 protected:
   ///

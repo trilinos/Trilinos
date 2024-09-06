@@ -95,7 +95,6 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
 /// WARNING: This is not the center of mass.
 ///
 template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
 Vector<T, N>
 centroid(std::vector<Vector<T, N>> const & points);
 
