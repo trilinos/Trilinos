@@ -50,6 +50,8 @@ public:
   KOKKOS_DEFAULTED_FUNCTION virtual ~ParsedEvalBase() = default;
 
   virtual int get_result_buffer_size() = 0;
+
+  virtual void check_for_errors(bool will_run_on_device) const = 0;
 };
 
 }

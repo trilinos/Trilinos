@@ -111,6 +111,37 @@ void field_copy(const FieldBase& xField,
 }
 
 template<class DataType, typename EXEC_SPACE>
+inline void field_axpby(const stk::mesh::BulkData& mesh,
+    const DataType alpha,
+    const stk::mesh::FieldBase & xField,
+    const DataType beta,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  // y = a*x + b*y
+
+   if constexpr (ngp_field_blas::impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+     ngp_field_blas::impl::apply_functor_on_field<double, stk::ngp_field_blas::impl::FieldAXPBYFunctor>(
+      mesh, yField, xField, yField, alpha, beta, selector);
+   }
+   else {
+    xField.sync_to_host();
+    yField.sync_to_host();
+    stk::mesh::field_axpby(alpha, xField, beta, yField, selector);
+  }
+
+  yField.clear_sync_state();
+  if (ngp_field_blas::impl::mark_modified_on_device(execSpace, IsDeviceExecSpaceUserOverride)) {
+    yField.modify_on_device();
+  }
+  else {
+    yField.modify_on_host();
+  }
+}
+
+template<class DataType, typename EXEC_SPACE>
 inline void field_axpbyz(const stk::mesh::BulkData& mesh,
     const DataType alpha,
     const stk::mesh::FieldBase & xField,

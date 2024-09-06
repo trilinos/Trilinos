@@ -1196,6 +1196,21 @@ TEST(UnitTestEvaluator, testFunctionArgumentCountCheck)
   EXPECT_TRUE(isInvalidFunction("my_function(1, 2)"));
 }
 
+TEST(UnitTestEvaluator, testParsedEvalNoUserDefinedFunctions)
+{
+  stk::expreval::addFunction("my_function", new OneArgFunction());
+  stk::expreval::Eval eval("my_function(1)");
+  EXPECT_ANY_THROW(eval.get_parsed_eval().check_for_errors(false));
+  EXPECT_ANY_THROW(eval.get_parsed_eval().check_for_errors(true));
+}
+
+TEST(UnitTestEvaluator, testParsedEvalNoRandom)
+{
+  stk::expreval::Eval eval("rand()");
+  EXPECT_ANY_THROW(eval.get_parsed_eval().check_for_errors(false));
+  EXPECT_ANY_THROW(eval.get_parsed_eval().check_for_errors(true));
+}
+
 
 #if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
 TEST(UnitTestEvaluator, deviceVariableMap_too_small)
