@@ -939,8 +939,9 @@ Piro::PerformROLTransientAnalysis(
         auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
 
         std::streambuf *coutbuf;
+        std::ofstream out_file;
         if(rolParams.get<bool>("Redirect Tempus Output", true)) {
-          std::ofstream out_file(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
+          out_file.open(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
           coutbuf = std::cout.rdbuf();
           std::cout.rdbuf(out_file.rdbuf());
         }
@@ -955,8 +956,9 @@ Piro::PerformROLTransientAnalysis(
         auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
         
         std::streambuf *coutbuf;
-        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
-          std::ofstream out_file(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
+        std::ofstream out_file;
+        if(rolParams.get<bool>("", true)) {
+          out_file.open(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
           coutbuf = std::cout.rdbuf();
           std::cout.rdbuf(out_file.rdbuf());
         }
@@ -1044,8 +1046,9 @@ Piro::PerformROLTransientAnalysis(
         }
 
         std::streambuf *coutbuf;
+        std::ofstream out_file;
         if(rolParams.get<bool>("Redirect Tempus Output", true)) {
-          std::ofstream out_file(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
+          out_file.open(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
           coutbuf = std::cout.rdbuf();
           std::cout.rdbuf(out_file.rdbuf());
         }

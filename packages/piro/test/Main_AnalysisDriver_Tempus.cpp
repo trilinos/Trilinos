@@ -244,7 +244,6 @@ int main(int argc, char *argv[]) {
           if (mockModel=="MassSpringDamperModel") {
             p_exact[0] = 1.;
             p_exact[1] = 0.5;
-            tol = 1e-3;
           }
 
           double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
