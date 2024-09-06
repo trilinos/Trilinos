@@ -130,7 +130,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
   
-      const ValueType tol = tolerence()*100.0;
+      const ValueType tol = tolerence<ValueType>()*100.0;
 
       int errorFlag = 0;
       

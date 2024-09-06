@@ -184,6 +184,10 @@ namespace Intrepid2 {
       checkPointwiseInclusion<shards::Quadrilateral<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
       break;
 
+    case shards::Tetrahedron<>::key :
+      checkPointwiseInclusion<shards::Tetrahedron<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
+      break;
+
     case shards::Hexahedron<>::key :
       checkPointwiseInclusion<shards::Hexahedron<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
       break;
@@ -197,13 +201,7 @@ namespace Intrepid2 {
       break;
       
     default:
-      INTREPID2_TEST_FOR_EXCEPTION( !( (key == shards::Line<>::key ) ||
-                                       (key == shards::Triangle<>::key)  ||
-                                       (key == shards::Quadrilateral<>::key) ||
-                                       (key == shards::Tetrahedron<>::key)  ||
-                                       (key == shards::Hexahedron<>::key)  ||
-                                       (key == shards::Wedge<>::key)  ||
-                                       (key == shards::Pyramid<>::key) ),
+      INTREPID2_TEST_FOR_EXCEPTION( false,
                                     std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Invalid cell topology. ");
     }

@@ -831,6 +831,7 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Line<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
     const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
     return (minus_one <= point(0) && point(0) <= plus_one);
   }  
@@ -840,7 +841,10 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Triangle<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
-    const ScalarType distance = max( max( -point(0), -point(1) ), ScalarType( point(0) + point(1) - 1.0 ) );
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const PointType one = 1.0;
+    const PointType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - one );
     return distance < threshold;
   }
   
@@ -848,8 +852,8 @@ refCenterDataStatic_ = {
   KOKKOS_INLINE_FUNCTION
   bool
   PointInclusion<shards::Quadrilateral<>::key>::
-  check(const PointViewType &point, 
-                      const ScalarType threshold) {
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
     const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
     return ((minus_one <= point(0) && point(0) <= plus_one) &&
             (minus_one <= point(1) && point(1) <= plus_one));
@@ -860,8 +864,11 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Tetrahedron<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
-    const ScalarType distance = max( max(-point(0),-point(1)),
-                                  max(-point(2), point(0) + point(1) + point(2) - 1) );
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const PointType one = 1.0;
+    const PointType distance = max( max(-point(0),-point(1)),
+                                  max(-point(2), point(0) + point(1) + point(2) - one) );
     return distance < threshold;
   }
 
@@ -870,6 +877,7 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Hexahedron<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
     const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
     return ((minus_one <= point(0) && point(0) <= plus_one) &&
             (minus_one <= point(1) && point(1) <= plus_one) &&
@@ -881,9 +889,11 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Pyramid<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
-    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold, minus_zero = -threshold;
-    const ScalarType left  = minus_one + point(2);
-    const ScalarType right =  plus_one - point(2);
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const PointType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold, minus_zero = -threshold;
+    const PointType left = minus_one + point(2);
+    const PointType right =  plus_one - point(2);
     return ((left       <= point(0) && point(0) <= right) &&
             (left       <= point(1) && point(1) <= right) &&
             (minus_zero <= point(2) && point(2) <= plus_one));
@@ -894,8 +904,11 @@ refCenterDataStatic_ = {
   bool
   PointInclusion<shards::Wedge<>::key>::
   check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
     const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
-    const ScalarType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1 );
+    const PointType one = 1.0;
+    const PointType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - one );
     return (distance < threshold && (minus_one <= point(2) && point(2) <= plus_one));
   }
 
