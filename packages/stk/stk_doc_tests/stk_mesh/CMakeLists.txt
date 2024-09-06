@@ -56,8 +56,10 @@ else()
   add_test("stk_mesh_doc_tests" sh -c "mpiexec --np 1 ${CMAKE_CURRENT_BINARY_DIR}/stk_mesh_doc_tests --gtest_filter=StkMeshHowTo.iterate*")
 endif()
 
-target_include_directories(stk_mesh_doc_tests PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+if(TARGET stk_mesh_doc_tests)
+  target_include_directories(stk_mesh_doc_tests PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()
 

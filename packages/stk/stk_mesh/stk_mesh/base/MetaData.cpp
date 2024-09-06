@@ -606,9 +606,16 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_topology(stk::topology::SHELL_TRI_3);
     register_topology(stk::topology::SHELL_TRI_6);
 
+    register_topology(stk::topology::SHELL_TRI_3_ALL_FACE_SIDES);
+    register_topology(stk::topology::SHELL_TRI_6_ALL_FACE_SIDES);
+
     register_topology(stk::topology::SHELL_QUAD_4);
     register_topology(stk::topology::SHELL_QUAD_8);
     register_topology(stk::topology::SHELL_QUAD_9);
+
+    register_topology(stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES);
+    register_topology(stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES);
+    register_topology(stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES);
   }
 }
 
@@ -1261,22 +1268,32 @@ stk::topology get_topology( shards::CellTopology shards_topology, unsigned spati
   //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Spring<3> >()) )
   //  t = stk::topology::SPRING_3;
 
-  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()) ) {
     t = stk::topology::SHELL_TRI_3;
+    // t = stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  }
 
   //NOTE: shards does not define a shell triangle 4
   //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<4> >()) )
   //  t = stk::topology::SHELL_TRI_4;
 
-  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()) ) {
     t = stk::topology::SHELL_TRI_6;
+    // t = stk::topology::SHELL_TRI_6_ALL_FACE_SIDES;
+  }
 
-  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()) ) {
     t = stk::topology::SHELL_QUAD_4;
-  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()) )
+  //   t = stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+  }
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()) ) {
     t = stk::topology::SHELL_QUAD_8;
-  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()) )
+  //   t = stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES;
+  }
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()) ) {
     t = stk::topology::SHELL_QUAD_9;
+  //   t = stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES;
+  }
 
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()) )
     t = stk::topology::TET_4;
@@ -1389,11 +1406,24 @@ shards::CellTopology get_cell_topology(stk::topology t)
     //return shards::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<4>>());
   case stk::topology::SHELL_TRI_6:
     return shards::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<6>>());
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    return shards::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>>());
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES: break;
+    //NOTE: shards does not define a topology for a 4-noded triangular shell
+    //return shards::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<4>>());
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    return shards::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<6>>());
   case stk::topology::SHELL_QUAD_4:
     return shards::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4>>());
   case stk::topology::SHELL_QUAD_8:
     return shards::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<8>>());
   case stk::topology::SHELL_QUAD_9:
+    return shards::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<9>>());
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+    return shards::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4>>());
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
+    return shards::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<8>>());
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     return shards::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<9>>());
   case stk::topology::TET_4:
     return shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4>>());

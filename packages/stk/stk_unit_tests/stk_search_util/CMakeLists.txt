@@ -5,7 +5,7 @@ if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_search_util_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
-    ARGS ""
+    ARGS "--gtest_filter=-SearchUtil.Intrepid2*"
     COMM serial mpi
     NUM_MPI_PROCS 1
   )

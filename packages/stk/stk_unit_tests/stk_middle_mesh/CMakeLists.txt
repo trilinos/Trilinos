@@ -24,7 +24,9 @@ else()
   add_test(NAME "stk_middle_mesh_utest" COMMAND stk_middle_mesh_utest)
 endif()
 
-target_include_directories(stk_middle_mesh_utest PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+if(TARGET stk_middle_mesh_utest)
+  target_include_directories(stk_middle_mesh_utest PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()

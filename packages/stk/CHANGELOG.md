@@ -1,5 +1,8 @@
 # CHANGELOG
 
+5.21.4-1 (STK_VERSION 5210401) 9/04/2024
+   Fix cmake configuration errors that occurred on AMD MI300A platform
+
 5.21.4 (STK_VERSION 5210400) 8/29/2024
    minor fixes, no signficant API changes
 

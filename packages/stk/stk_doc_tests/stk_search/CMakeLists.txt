@@ -58,7 +58,9 @@ else()
   add_test(NAME "stk_search_doc_tests" COMMAND stk_search_doc_tests)
 endif()
 
-target_include_directories(stk_search_doc_tests PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+if(TARGET stk_search_doc_tests)
+  target_include_directories(stk_search_doc_tests PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()

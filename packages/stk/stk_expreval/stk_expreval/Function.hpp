@@ -121,6 +121,15 @@ enum class FunctionType {
   UNDEFINED
 };
 
+constexpr bool is_function_supported_on_device(FunctionType type)
+{
+  return type != FunctionType::RAND &&
+         type != FunctionType::SRAND &&
+         type != FunctionType::RANDOM &&
+         type != FunctionType::TIME &&
+         type != FunctionType::UNDEFINED;
+}
+
 KOKKOS_INLINE_FUNCTION
 double cycloidal_ramp(double t, double t1, double t2)
 {
