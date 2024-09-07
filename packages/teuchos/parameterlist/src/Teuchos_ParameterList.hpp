@@ -231,7 +231,7 @@ public:
    */
   ParameterList& disableRecursiveAll();
 
-  /*! \brief Set a parameter whose value has type T.
+  /*! \brief Templated set method.
 
     \param name [in] The parameter's name.
     \param value [in] The parameter's value.  This determines the
@@ -250,10 +250,21 @@ public:
     </ul>
   */
   template<typename T>
-  ParameterList& set (std::string const& name, 
-		      T const& value, 
-		      std::string const& docString = "",
-		      RCP<const ParameterEntryValidator> const& validator = null);
+  ParameterList& set (std::string const& name,
+                      T&& value,
+                      std::string const& docString = "",
+                      RCP<const ParameterEntryValidator> const& validator = null);
+  
+  /*! \overload
+    
+    \note This fallback is necessary to support legacy use cases that specify the type
+          of the parameter at the call site, and the type is hence not deduced.  
+  */
+  template<typename T, typename S, typename = std::enable_if_t< ! std::is_same_v<T, S> && std::is_same_v<T, std::decay_t<S>>>>
+  ParameterList& set (std::string const& name,
+                      S&& value,
+                      std::string const& docString = "",
+                      RCP<const ParameterEntryValidator> const& validator = null);
 
   /// \brief Specialization of set() for a parameter which is a <tt>char[]</tt>.
   ///
@@ -921,7 +932,7 @@ ParameterList& ParameterList::setName( const std::string &name_in )
 template<typename T>
 inline
 ParameterList& ParameterList::set(
-  std::string const& name_in, T const& value_in, std::string const& docString_in,
+  std::string const& name_in, T&& value_in, std::string const& docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
@@ -934,7 +945,7 @@ ParameterList& ParameterList::set(
     const RCP<const ParameterEntryValidator> validator =
       (nonnull(validator_in) ? validator_in : param->validator());
      // Create temp param to validate before setting
-    ParameterEntry param_new(value_in, false, false, docString, validator );
+    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString, validator );
     if (nonnull(validator)) {
       validator->validate(param_new, name_in, this->name());
     }
@@ -942,7 +953,7 @@ ParameterList& ParameterList::set(
     *param = param_new;
   }
   else {
-    ParameterEntry param_new(value_in, false, false, docString_in, validator_in);
+    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString_in, validator_in);
     if (nonnull(param_new.validator())) {
       param_new.validator()->validate(param_new, name_in, this->name());
     }
@@ -951,6 +962,15 @@ ParameterList& ParameterList::set(
   return *this;
 }
 
+template<typename T, typename S, typename>
+inline
+ParameterList& ParameterList::set(
+  std::string const& name_in, S&& value_in, std::string const& docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
+  )
+{
+  return set<S>(name_in, std::forward<S>(value_in), docString_in, validator_in);
+}
 
 inline
 ParameterList& ParameterList::set(
