@@ -46,47 +46,11 @@
 #endif
 
 const Teuchos::RCP<Piro::TempusSolver<double> > solverNew(
+    const Teuchos::RCP<Teuchos::ParameterList>  piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraAdjointModel,
-    double finalTime, 
-    const std::string sens_method_string)
+    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraAdjointModel)
 {
-  Teuchos::RCP<Teuchos::ParameterList> analysisPL =
-    Teuchos::rcp(new Teuchos::ParameterList("Analysis"));
-  auto tempusPL = analysisPL->sublist("Tempus");
-  analysisPL->sublist("Tempus").sublist("Tempus", false, "");
-  /*
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Initial Time", 0.0, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Initial Time Step", 0.1, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Minimum Time Step", 0.1, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Maximum Time Step", 0.1, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Final Time", 1.0, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Reduction Factor", 1.0, "");
-  analysisPL->sublist("Tempus").sublist("Albany Time Step Control Options", false, "").set<double>("Amplification Factor", 1.0, "");
-  */
-  analysisPL->sublist("Tempus").sublist("Stratimikos", false, "");
-  analysisPL->sublist("Tempus").sublist("NonLinear Solver", false, "");
-  //analysisPL->sublist("Tempus").set<std::string>("Verbosity Level", "", "");
-  analysisPL->sublist("Tempus").set<bool>("Lump Mass Matrix", false, "Boolean to tell code whether to lump mass matrix");
-  analysisPL->sublist("Tempus").set<bool>("Invert Mass Matrix", true, "Boolean to tell code whether or not to invert mass matrix");
-  analysisPL->sublist("Tempus").set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
-  analysisPL->sublist("Tempus").set<bool>("Abort on Failure", true, "");
-  analysisPL->sublist("Tempus").set("Integrator Name", "Tempus Integrator");
-  analysisPL->sublist("Tempus").sublist("Tempus Integrator").set("Integrator Type", "Integrator Basic");
-  analysisPL->sublist("Tempus").sublist("Tempus Integrator").set("Stepper Name", "Tempus Stepper");
-  analysisPL->sublist("Tempus").sublist("Tempus Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
-  analysisPL->sublist("Tempus").sublist("Tempus Integrator").sublist("Solution History").set("Storage Limit", 20);
-  analysisPL->sublist("Tempus").sublist("Tempus Integrator").sublist("Time Step Control").set("Initial Time", 0.0);
-  analysisPL->sublist("Tempus").sublist("Tempus Integrator").sublist("Time Step Control").set("Final Time", finalTime);
-  analysisPL->sublist("Tempus").sublist("Tempus Stepper").set("Stepper Type", "Backward Euler");
-  analysisPL->sublist("Tempus").sublist("Tempus Stepper").set("Zero Initial Guess", false);
-  analysisPL->sublist("Tempus").sublist("Tempus Stepper").set("Solver Name", "Demo Solver");
-  analysisPL->sublist("Tempus").sublist("Tempus Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  analysisPL->sublist("Tempus").sublist("Sensitivities", false, "");
-  analysisPL->set("Sensitivity Method", "Adjoint");
-
-  return Teuchos::rcp(new Piro::TempusSolver<double>(analysisPL, thyraModel, thyraAdjointModel));
+  return Teuchos::rcp(new Piro::TempusSolver<double>(piroParams, thyraModel, thyraAdjointModel));
 }
 
 
@@ -251,7 +215,11 @@ int main(int argc, char *argv[]) {
         if(Teuchos::nonnull(adjointModel))
           adjointModelWithSolve= rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(adjointModel, lowsFactory));
 
-        const RCP<Thyra::ModelEvaluatorDefaultBase<double>> piro = solverNew(Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(modelWithSolve), Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(adjointModelWithSolve), 10., "Adjoint");
+        const RCP<Thyra::ModelEvaluatorDefaultBase<double>> piro = 
+          solverNew(
+            piroParams,
+            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(modelWithSolve), 
+            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(adjointModelWithSolve));
 
         // Call the analysis routine
         RCP<Thyra::VectorBase<double>> p;
@@ -260,6 +228,7 @@ int main(int argc, char *argv[]) {
         if (Teuchos::nonnull(p)) { //p might be null if the package ROL is not enabled
           Thyra::DetachedVectorView<double> p_view(p);
           double p_exact[2];
+          double tol = 1e-5;
           if (mockModel=="MockModelEval_A_Tpetra") {
             p_exact[0] = 1;
             p_exact[1] = 3;
@@ -275,8 +244,8 @@ int main(int argc, char *argv[]) {
           if (mockModel=="MassSpringDamperModel") {
             p_exact[0] = 1.;
             p_exact[1] = 0.5;
+            tol = 1e-3;
           }
-          double tol = 1e-5;
 
           double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
           if(l2_diff > tol) {

@@ -193,13 +193,13 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
 
   constexpr ordinal_type spaceDim = 2;
 
-  this->pointType_         = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
-  this->basisDegree_       = order; // small n
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_LAGRANGIAN;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HVOL;
+  this->pointType_            = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
+  this->basisDegree_          = order; // small n
+  this->basisCellTopologyKey_ = shards::Triangle<3>::key;
+  this->basisType_            = BASIS_FEM_LAGRANGIAN;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HVOL;
 
   const ordinal_type card = this->basisCardinality_;
 
@@ -209,8 +209,9 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
 
   // construct lattice (only internal nodes for HVOL element)
   const ordinal_type offset = 1;
+  const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Triangle<3> >());
   PointTools::getLattice( dofCoords,
-      this->basisCellTopology_,
+      cellTopo,
       order+spaceDim+offset, offset,
       this->pointType_ );
 

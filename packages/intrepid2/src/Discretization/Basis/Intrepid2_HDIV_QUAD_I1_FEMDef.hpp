@@ -153,12 +153,13 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   Basis_HDIV_QUAD_I1_FEM<DT,OT,PT>::
   Basis_HDIV_QUAD_I1_FEM() {
-    this->basisCardinality_  = 4;
-    this->basisDegree_       = 1;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HDIV;
+    const ordinal_type spaceDim = 2; 
+    this->basisCardinality_     = 4;
+    this->basisDegree_          = 1;
+    this->basisCellTopologyKey_ = shards::Quadrilateral<4>::key;
+    this->basisType_            = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HDIV;
 
     // initialize tags
     {
@@ -190,7 +191,7 @@ namespace Intrepid2 {
     }
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,spaceDim);
 
     dofCoords(0,0)  =  0.0;   dofCoords(0,1)  = -1.0;
     dofCoords(1,0)  =  1.0;   dofCoords(1,1)  =  0.0;
@@ -202,7 +203,7 @@ namespace Intrepid2 {
 
     // dofCoeffs on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoeffs("dofCoeffsHost", this->basisCardinality_,spaceDim);
 
     // for HDIV_QUAD_I1 dofCoeffs are the normals on the quadrilateral edges (with normals magnitude equal to edges' lengths)
     dofCoeffs(0,0)  =  0.0;   dofCoeffs(0,1)  = -1.0;

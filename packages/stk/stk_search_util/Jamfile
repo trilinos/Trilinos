@@ -143,6 +143,7 @@ lib stk_search_util_base
     /sierra/stk_search//stk_search
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_diag
+    /tpl/trilinos//intrepid2
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

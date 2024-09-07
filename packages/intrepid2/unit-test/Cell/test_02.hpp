@@ -81,7 +81,7 @@ namespace Intrepid2 {
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
 
-      const ValueType tol = tolerence()*100.0;
+      const ValueType tol = tolerence<ValueType>()*100.0;
 
       int errorFlag = 0;
 
@@ -112,7 +112,7 @@ namespace Intrepid2 {
         {
           // Define cubature on the edge parametrization domain:
           const auto testAccuracy = 6;
-          CubatureDirectLineGauss<DeviceType> edgeCubature(testAccuracy);
+          CubatureDirectLineGauss<DeviceType,ValueType,ValueType> edgeCubature(testAccuracy);
 
           const auto cubDim       = edgeCubature.getDimension();
           const auto numCubPoints = edgeCubature.getNumPoints();

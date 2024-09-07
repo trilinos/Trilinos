@@ -42,6 +42,7 @@ cmake \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DSTK_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_Intrepid2:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMesh:BOOL=ON \
 -DTrilinos_ENABLE_STKIO:BOOL=OFF \

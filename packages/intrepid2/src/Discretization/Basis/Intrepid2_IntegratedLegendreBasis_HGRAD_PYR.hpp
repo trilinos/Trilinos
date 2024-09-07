@@ -701,12 +701,12 @@ namespace Intrepid2
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
-      this->basisCardinality_  = polyOrder * polyOrder * polyOrder + 3 * polyOrder + 1;
-      this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<> >() );
-      this->basisType_         = BASIS_FEM_HIERARCHICAL;
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
-      this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+      this->basisCardinality_     = polyOrder * polyOrder * polyOrder + 3 * polyOrder + 1;
+      this->basisDegree_          = polyOrder;
+      this->basisCellTopologyKey_ = shards::Pyramid<>::key;
+      this->basisType_            = BASIS_FEM_HIERARCHICAL;
+      this->basisCoordinates_     = COORDINATES_CARTESIAN;
+      this->functionSpace_        = FUNCTION_SPACE_HGRAD;
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) pyramid polynomial degree lookup", this->basisCardinality_, degreeLength);
@@ -714,7 +714,7 @@ namespace Intrepid2
       
       int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
-      const int numVertices = this->basisCellTopology_.getVertexCount();
+      const int numVertices = this->getBaseCellTopology().getVertexCount();
       for (int i=0; i<numVertices; i++)
       {
         // for H(grad) on Pyramid, if defineVertexFunctions is false, first five basis members are linear
@@ -731,7 +731,7 @@ namespace Intrepid2
       
       // **** edge functions **** //
       const int numFunctionsPerEdge = polyOrder - 1; // bubble functions: all but the vertices
-      const int numEdges            = this->basisCellTopology_.getEdgeCount();
+      const int numEdges            = this->getBaseCellTopology().getEdgeCount();
       for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
       {
         for (int i=0; i<numFunctionsPerEdge; i++)

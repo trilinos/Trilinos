@@ -84,7 +84,7 @@ bool is_face_fully_connected(const stk::mesh::BulkData& mesh, stk::mesh::Entity 
 bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
 {
     bool fully_connected = true;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::ELEMENT_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::ELEMENT_RANK,
         [&fully_connected](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
         {
           fully_connected &= is_face_fully_connected(mesh, elem);
@@ -121,7 +121,7 @@ bool is_face_shared_between_different_elements(const stk::mesh::BulkData& mesh, 
 unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData& bulk)
 {
     unsigned shared_face_count = 0;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::FACE_RANK,
         [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
         {
           if (is_face_shared_between_different_elements(mesh, face))
@@ -159,7 +159,7 @@ bool is_face_shared_between_same_element(const stk::mesh::BulkData& mesh, stk::m
 unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk)
 {
     unsigned shared_face_count = 0;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::FACE_RANK,
       [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
       {
         if (is_face_shared_between_same_element(mesh,face))
@@ -202,7 +202,7 @@ bool is_face_at_x_equal_half(const stk::mesh::BulkData& mesh, stk::mesh::Entity 
 stk::mesh::EntityVector get_faces_at_x_equal_half(const stk::mesh::BulkData& bulk)
 {
     stk::mesh::EntityVector faces_at_x_equal_half;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::FACE_RANK,
       [&faces_at_x_equal_half](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
       {
         if (is_face_at_x_equal_half(mesh, face))
@@ -281,7 +281,7 @@ unsigned read_file_count_sides(std::string filename)
 bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
 {
     bool fully_connected = true;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::ELEMENT_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::ELEMENT_RANK,
         [&fully_connected](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
         {
           fully_connected &= is_face_fully_connected(mesh, elem);
@@ -308,7 +308,7 @@ unsigned read_file_fully_connected_stk(std::string filename)
 unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData& bulk)
 {
     unsigned shared_face_count = 0;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::FACE_RANK,
         [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
         {
           if (::is_face_shared_between_different_elements(mesh, face))
@@ -336,7 +336,7 @@ unsigned read_file_shared_faces_different_elements_stk(std::string filename)
 unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk)
 {
     unsigned shared_face_count = 0;
-    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::FACE_RANK,
       [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
       {
         if (::is_face_shared_between_same_element(mesh,face))

@@ -27,7 +27,7 @@ bool MeshModification::modification_begin(const std::string description)
     {
         m_bulkData.mesh_meta_data().set_mesh_on_fields(&m_bulkData);
         m_bulkData.m_entityKeyMapping->update_num_ranks(m_bulkData.mesh_meta_data().entity_rank_count());
-        const unsigned numRanks = m_bulkData.mesh_meta_data().entity_rank_count(); 
+        const unsigned numRanks = m_bulkData.mesh_meta_data().entity_rank_count();
         if (numRanks > m_bulkData.m_selector_to_buckets_maps.size()) {
           m_bulkData.m_selector_to_buckets_maps.resize(numRanks);
         }
@@ -592,7 +592,7 @@ void MeshModification::internal_resolve_shared_modify_delete(
     internal_resolve_formerly_shared_entities(entitiesNoLongerShared);
 
     stk::util::sort_and_unique(auraEntitiesToDestroy, EntityLess(m_bulkData));
-  
+
     for(EntityVector::const_reverse_iterator iter = auraEntitiesToDestroy.rbegin();
         iter != auraEntitiesToDestroy.rend(); ++iter) {
       m_bulkData.destroy_entity(*iter);
@@ -636,7 +636,7 @@ void MeshModification::internal_update_parts_for_shared_entity(Entity entity,
   }
   else {
     parts_to_remove_entity_from.push_back(m_bulkData.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
-  }    
+  }
 
   if (should_remove_aura_part) {
     parts_to_remove_entity_from.push_back(m_bulkData.mesh_meta_data().aura_part().mesh_meta_data_ordinal());
@@ -644,11 +644,11 @@ void MeshModification::internal_update_parts_for_shared_entity(Entity entity,
 
   if ( did_i_just_become_owner ) {
     parts_to_add_entity_to.push_back(m_bulkData.mesh_meta_data().locally_owned_part().mesh_meta_data_ordinal());
-  }    
+  }
 
   if ( ! parts_to_add_entity_to.empty() || ! parts_to_remove_entity_from.empty() ) {
     m_bulkData.internal_change_entity_parts( entity , parts_to_add_entity_to , parts_to_remove_entity_from, scratchOrdinalVec, scratchSpace );
-  }    
+  }
 }
 
 void MeshModification::destroy_dependent_ghosts(Entity entity,
@@ -661,21 +661,21 @@ void MeshModification::destroy_dependent_ghosts(Entity entity,
   {
     int num_rels = m_bulkData.num_connectivity(entity, irank);
     const Entity* rels     = m_bulkData.begin(entity, irank);
-  
+
     for (int r = num_rels - 1; r >= 0; --r)
-    { 
+    {
       Entity e = rels[r];
 
       const bool upwardRelationOfEntityIsInClosure = m_bulkData.owned_closure(e);
       STK_ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, m_bulkData.entity_rank(e) << " with id " << m_bulkData.identifier(e) << " should not be in closure." );
-  
+
       // Recursion
       if (m_bulkData.is_valid(e) && m_bulkData.bucket(e).in_aura()) {
           destroy_dependent_ghosts(e, entitiesToRemoveFromSharing, auraEntitiesToDestroy);
       }
     }
-  }  
-     
+  }
+
   for(EntityRank downwardRank=stk::topology::NODE_RANK; downwardRank < entity_rank; ++downwardRank) {
     const unsigned numConnected = m_bulkData.num_connectivity(entity, downwardRank);
     const Entity* connected = m_bulkData.begin(entity, downwardRank);
@@ -707,9 +707,9 @@ void MeshModification::remove_dependent_ghosts(Entity entity,
   {
     int num_rels = m_bulkData.num_connectivity(entity, irank);
     const Entity* rels     = m_bulkData.begin(entity, irank);
-  
+
     for (int r = num_rels - 1; r >= 0; --r)
-    { 
+    {
       Entity e = rels[r];
 
       // Recursion
@@ -717,8 +717,8 @@ void MeshModification::remove_dependent_ghosts(Entity entity,
         remove_dependent_ghosts(e, remoteProc, entitiesToRemoveFromSharing, auraEntitiesToDestroy);
       }
     }
-  }  
-     
+  }
+
   for(EntityRank downwardRank=stk::topology::NODE_RANK; downwardRank < entity_rank; ++downwardRank) {
     const unsigned numConnected = m_bulkData.num_connectivity(entity, downwardRank);
     const Entity* connected = m_bulkData.begin(entity, downwardRank);
@@ -752,7 +752,7 @@ void MeshModification::delete_shared_entities_which_are_no_longer_in_owned_closu
 
   for ( EntityCommListInfoVector::const_reverse_iterator
         i =  m_bulkData.internal_comm_list().rbegin() ;
-        i != m_bulkData.internal_comm_list().rend() ; ++i) 
+        i != m_bulkData.internal_comm_list().rend() ; ++i)
   {
     Entity entity = i->entity;
     if (m_bulkData.is_valid(entity) && !m_bulkData.owned_closure(entity)) {
@@ -796,7 +796,7 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
   // Resolve modifications for ghosted entities:
 
   const size_t ghosting_count = m_bulkData.m_ghosting.size();
-  const size_t ghosting_count_minus_shared = ghosting_count - 1; 
+  const size_t ghosting_count_minus_shared = ghosting_count - 1;
 
   std::vector<Entity> promotingToShared;
 
@@ -822,9 +822,9 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
         // remove from ghost-send list
 
         for ( size_t j = ghosting_count_minus_shared ; j>=1 ; --j) {
-          m_bulkData.entity_comm_map_erase( key, EntityCommInfo( j , remote_proc ) ); 
+          m_bulkData.entity_comm_map_erase( key, EntityCommInfo( j , remote_proc ) );
         }
-      }    
+      }
       else {
         const bool shouldPromoteToShared = !isAlreadyDestroyed && i->remote_owned_closure==1 && key.rank() < stk::topology::ELEM_RANK;
         if ((shouldPromoteToShared || !isAlreadyDestroyed) && m_bulkData.state(entity)==Unchanged) {
@@ -835,8 +835,8 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
           m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(BulkData::SHARED, remote_proc));
           promotingToShared.push_back(entity);
         }
-      }    
-    }    
+      }
+    }
     else if (remote_proc_is_owner) { // Receiving from 'remote_proc' for ghosting
 
       const bool hasBeenPromotedToSharedOrOwned = m_bulkData.owned_closure(entity);
@@ -922,7 +922,7 @@ void MeshModification::add_entity_to_same_ghosting(Entity entity, Entity connect
   for(PairIterEntityComm ec(m_bulkData.internal_entity_comm_map(connectedGhost)); ! ec.empty(); ++ec) {
     if (ec->ghost_id > BulkData::AURA) {
       to_insert.emplace_back(ec->ghost_id, ec->proc);
-    }    
+    }
   }
   if(!to_insert.empty()) {
     m_bulkData.entity_comm_list_insert(entity);

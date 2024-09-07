@@ -176,7 +176,7 @@ namespace Intrepid2 {
 
     virtual HostBasisPtr<outputValueType,pointValueType>
     getHostBasis() const override{
-      return Teuchos::rcp(new Basis_HVOL_C0_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisCellTopology_));
+      return Teuchos::rcp(new Basis_HVOL_C0_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->getBaseCellTopology()));
     }
   };
 }

@@ -428,7 +428,7 @@ struct SortByCode
 {
   static void apply(const MortonAabbTree<RealType, ExecutionSpace> &tree, ExecutionSpace const& execSpace)
   {
-    if constexpr (std::is_same_v<ExecutionSpace, Kokkos::DefaultHostExecutionSpace>) {
+    if constexpr (Kokkos::SpaceAccessibility<ExecutionSpace, Kokkos::HostSpace>::accessible) {
       SortByCodeIdPair<RealType, ExecutionSpace>::apply(tree);
     }
     else {

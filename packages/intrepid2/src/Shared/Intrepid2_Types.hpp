@@ -56,7 +56,7 @@ namespace Intrepid2 {
 
     flt_32 s;
     s.f32 = 1;
-    s.f32++;
+    s.i32++;
     return (s.i32 < 0 ? 1 - s.f32 : s.f32 - 1);
   }
 

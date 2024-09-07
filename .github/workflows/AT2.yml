@@ -13,13 +13,27 @@ on:
     - develop
   workflow_dispatch:
 
+# actions: write needed by skip-duplicate-actions
 permissions:
+  actions: write
   contents: read
 
 jobs:
+  # Jobs depend on the output of pre-checks to run
+  pre-checks:
+        runs-on: ubuntu-latest
+        outputs:
+            should_skip: ${{ steps.skip_check.outputs.should_skip }}
+        steps:
+        - id: skip_check
+          uses: fkirc/skip-duplicate-actions@v5
+          with:
+            skip_after_successful_duplicate: 'true'
+
   gcc10-openmpi416-EXPERIMENTAL:
+    needs: pre-checks
     runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
         env:
@@ -71,19 +85,14 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --source-repo-url ${GITHUB_WORKSPACE} \
-            --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
             --genconfig-build-name rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
             --pullrequest-number ${{ github.event.pull_request.number }} \
-            --jenkins-job-number 0 \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
             --workspace-dir /home/runner/_work/Trilinos \
@@ -96,8 +105,9 @@ jobs:
             --filename-packageenables ./packageEnables.cmake
 
   gcc830-serial-EXPERIMENTAL:
+    needs: pre-checks
     runs-on: [self-hosted, gcc-8.3.0_serial]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
         env:
@@ -149,19 +159,14 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --source-repo-url ${GITHUB_WORKSPACE} \
-            --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
             --genconfig-build-name rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
             --pullrequest-number ${{ github.event.pull_request.number }} \
-            --jenkins-job-number 0 \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
             --workspace-dir /home/runner/_work/Trilinos \
@@ -174,8 +179,9 @@ jobs:
             --filename-packageenables ./packageEnables.cmake
 
   cuda11-uvm-EXPERIMENTAL:
+    needs: pre-checks
     runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
         env:
@@ -226,19 +232,14 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --source-repo-url ${GITHUB_WORKSPACE} \
-            --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
             --genconfig-build-name rhel8_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables \
             --pullrequest-number ${{ github.event.pull_request.number }} \
-            --jenkins-job-number 0 \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
             --workspace-dir /home/runner/_work/Trilinos \

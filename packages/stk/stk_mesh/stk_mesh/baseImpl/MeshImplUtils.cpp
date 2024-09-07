@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -485,7 +485,7 @@ bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMac
                             }
                         }
                     }
-                    else { 
+                    else {
                         local_any_shared_entities_modified = true;
                         break;
                     }
@@ -858,7 +858,7 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
 
 
     int verified_ok = all_ok ? 1 : 0;
-    if (mesh.parallel_size() > 1) 
+    if (mesh.parallel_size() > 1)
     {
         all_reduce( mesh.parallel() , ReduceMin<1>( & verified_ok ) );
     }
@@ -952,7 +952,7 @@ void comm_sync_send_recv(const BulkData & mesh ,
       // Erase it from my processor's ghosting responsibility:
       // The iterator passed to the erase method will be invalidated.
       entProc.first = Entity();
-    }      
+    }
   }
 
   auto shouldRemove = [&](const EntityProc& ep){ return ep.first.local_offset() == 0; };
@@ -1056,14 +1056,14 @@ public:
 
     m_commSparse.allocate_buffers();
   }
-  
+
   void pack_and_communicate_buffers(const std::vector<Entity>& removeRecvGhosts)
   {
     unsigned idx = 0;
 
     for(int p=0; p<m_commSparse.parallel_size(); ++p) {
       stk::CommBuffer& buf = m_commSparse.send_buffer(p);
-  
+
       buf.pack<unsigned>(m_rmRecvCounts[p]);
       if (m_rmRecvCounts[p] > 0) {
         for(Entity entity : removeRecvGhosts) {
@@ -1073,7 +1073,7 @@ public:
           }
         }
       }
-  
+
       buf.pack<unsigned>(m_nonOwnedSendCounts[p]);
       if (m_nonOwnedSendCounts[p] > 0) {
         for(unsigned i=idx; i<idx+m_nonOwnedSendCounts[p]; ++i) {
@@ -1090,7 +1090,7 @@ public:
 
     m_commSparse.communicate();
   }
-  
+
   void unpack_recv_buffers(EntityProcVec& newSendGhosts,
                            std::set<EntityKeyProc>& removeSendGhosts)
   {
@@ -1098,13 +1098,13 @@ public:
       CommBuffer & buf = m_commSparse.recv_buffer(p);
       unsigned numRemoveSends = 0;
       buf.unpack<unsigned>(numRemoveSends);
-  
+
       for(unsigned i=0; i<numRemoveSends; ++i) {
         EntityKey key;
         buf.unpack<EntityKey>(key);
         removeSendGhosts.insert(EntityKeyProc(key,p));
       }
-  
+
       unsigned numReferredSends = 0;
       buf.unpack<unsigned>(numReferredSends);
       for(unsigned i=0; i<numReferredSends; ++i) {
@@ -1446,10 +1446,10 @@ void filter_out( OrdinalVector & vec ,
       }
       ++j ;
       ++ip ;
-    }    
+    }
   }
 
-  if ( i != j ) { vec.erase( i , j ); } 
+  if ( i != j ) { vec.erase( i , j ); }
 }
 
 void merge_in( OrdinalVector & vec , const OrdinalVector & parts )
@@ -1459,16 +1459,16 @@ void merge_in( OrdinalVector & vec , const OrdinalVector & parts )
 
   for ( ; i != vec.end() && ip != parts.end() ; ++i ) {
 
-    const unsigned ord = *ip; 
+    const unsigned ord = *ip;
 
     if ( ord <= *i ) {
-      if ( ord < *i ) { i = vec.insert( i , ord ); } 
+      if ( ord < *i ) { i = vec.insert( i , ord ); }
       ++ip ;
-    }    
+    }
   }
 
   for ( ; ip != parts.end() ; ++ip ) {
-    const unsigned ord = *ip; 
+    const unsigned ord = *ip;
     vec.push_back( ord );
   }
 }
@@ -1618,11 +1618,11 @@ EntityId get_global_max_id_in_use(const BulkData& mesh,
   EntityId localMaxReserved = reservedIds.empty() ? 0 : *std::max_element(reservedIds.begin(), reservedIds.end());
   localMax = std::max(localMax, localMaxReserved);
 
-  for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {    
+  for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {
     stk::mesh::Entity entity(local_offset);
     if ( mesh.is_valid(entity) && mesh.entity_rank(entity) == rank ) {
       localMax = std::max(localMax, mesh.entity_key(entity).id());
-    }        
+    }
   }
 
   return stk::get_global_max(mesh.parallel(), localMax);
@@ -1673,7 +1673,7 @@ bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh:
                                                                                             entityRank, entityNodes);
 
     if(ordinalAndPerm.first == stk::mesh::INVALID_CONNECTIVITY_ORDINAL) { return false; }
-    
+
     stk::mesh::impl::connect_element_to_entity(bulk, elem, entity, ordinalAndPerm.first, stk::mesh::PartVector{}, entityTopo);
   }
   return true;
@@ -1762,7 +1762,7 @@ bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entit
 {
   return bulk.is_valid(entity) && !impl::has_upward_connectivity(bulk, entity);
 }
-  
+
 void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
                                             stk::mesh::Entity connectedEntity,
                                             EntityVector& scratchSpace)

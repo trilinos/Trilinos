@@ -212,12 +212,12 @@ namespace Intrepid2
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
 
-      this->basisCardinality_  = ((polyOrder+3) * (polyOrder+2) * (polyOrder+1)) / 6;
-      this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
-      this->basisType_         = BASIS_FEM_HIERARCHICAL;
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
-      this->functionSpace_     = FUNCTION_SPACE_HVOL;
+      this->basisCardinality_     = ((polyOrder+3) * (polyOrder+2) * (polyOrder+1)) / 6;
+      this->basisDegree_          = polyOrder;
+      this->basisCellTopologyKey_ = shards::Tetrahedron<>::key;
+      this->basisType_            = BASIS_FEM_HIERARCHICAL;
+      this->basisCoordinates_     = COORDINATES_CARTESIAN;
+      this->functionSpace_        = FUNCTION_SPACE_HVOL;
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);

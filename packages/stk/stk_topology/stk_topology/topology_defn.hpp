@@ -10,6 +10,21 @@
 
 namespace stk {
 
+namespace impl {
+
+// Temporary function used to identify the new SHELL_[TRI|QUAD]_ALL_FACE_SIDES
+// Will be removed once a proper conversion is available
+STK_INLINE_FUNCTION
+bool is_temporary_shell_with_all_face_sides(topology::topology_t m_value) {
+  return (m_value == topology::topology_t::SHELL_QUAD_4_ALL_FACE_SIDES ||
+          m_value == topology::topology_t::SHELL_QUAD_8_ALL_FACE_SIDES ||
+          m_value == topology::topology_t::SHELL_QUAD_9_ALL_FACE_SIDES ||
+          m_value == topology::topology_t::SHELL_TRI_3_ALL_FACE_SIDES ||
+          m_value == topology::topology_t::SHELL_TRI_4_ALL_FACE_SIDES ||
+          m_value == topology::topology_t::SHELL_TRI_6_ALL_FACE_SIDES);
+}
+}
+
 STK_INLINE_FUNCTION
 unsigned topology::num_nodes() const
 {
@@ -165,7 +180,8 @@ unsigned topology::num_sides() const
   if (side_rank() != INVALID_RANK) {
     num_sides_out = side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
 
-    if (is_shell_with_face_sides())
+    if (is_shell_with_face_sides() &&
+        !impl::is_temporary_shell_with_all_face_sides(m_value))
       num_sides_out += num_sub_topology(EDGE_RANK);
   }
   return num_sides_out;
@@ -174,7 +190,7 @@ unsigned topology::num_sides() const
 STK_INLINE_FUNCTION
 topology topology::side_topology(unsigned side_ordinal) const
 {
-  if (is_shell_side_ordinal(side_ordinal))
+  if (is_shell_side_ordinal(side_ordinal) && !impl::is_temporary_shell_with_all_face_sides(m_value))
     return shell_side_topology(side_ordinal-num_faces());
 
   return sub_topology(side_rank(), side_ordinal);

@@ -506,7 +506,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
     meta.declare_part_subset(part_1, part_2);
   }
 
-  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 subset ordinals (41 ) does not match Part part_1 subset ordinals () on root processor\n");
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 subset ordinals (46 ) does not match Part part_1 subset ordinals () on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFew)

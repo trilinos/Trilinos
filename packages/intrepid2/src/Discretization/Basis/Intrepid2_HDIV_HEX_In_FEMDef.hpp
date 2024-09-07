@@ -309,12 +309,13 @@ namespace Intrepid2 {
     lineBasis.getVandermondeInverse(this->vinvLine_);
     bubbleBasis.getVandermondeInverse(this->vinvBubble_);
 
-    this->basisCardinality_  = 3*cardLine*cardBubble*cardBubble;
-    this->basisDegree_       = order;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
-    this->basisType_         = BASIS_FEM_LAGRANGIAN;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HDIV;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = 3*cardLine*cardBubble*cardBubble;
+    this->basisDegree_          = order;
+    this->basisCellTopologyKey_ = shards::Hexahedron<8>::key;
+    this->basisType_            = BASIS_FEM_LAGRANGIAN;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HDIV;
     pointType_ = pointType;
 
     // initialize tags
@@ -443,11 +444,11 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+      dofCoordsHost("dofCoordsHost", this->basisCardinality_, spaceDim);
 
     // dofCoeffs on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+      dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, spaceDim);
 
     Kokkos::DynRankView<typename ScalarViewType::value_type,DT>
       dofCoordsLine("dofCoordsLine", cardLine, 1),

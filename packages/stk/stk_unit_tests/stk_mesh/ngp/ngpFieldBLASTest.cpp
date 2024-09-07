@@ -425,5 +425,24 @@ TEST_F(NgpFieldBLAS, field_axpbyz)
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField3, selector, expectedValue);
 }
 
+TEST_F(NgpFieldBLAS, field_axpby)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  stk::mesh::field_fill(3.0, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_fill(10.0, *stkField2, stk::ngp::ExecSpace());
+
+  double alpha = 2.0;
+  double beta = 5.0;
+  stk::mesh::Selector selectRule(*stkField1);
+
+  stk::mesh::field_axpby(get_bulk(), alpha, *stkField1, beta, *stkField2, selectRule, stk::ngp::ExecSpace());
+
+  stkField2->sync_to_host();
+  stk::mesh::Selector selector(*stkField2);
+  constexpr double expectedValue = 56.0;
+  ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField2, selector, expectedValue);
+}
+
 }
 

@@ -241,6 +241,21 @@ Piro::TempusIntegrator<Scalar>::setObserver(Teuchos::RCP<Tempus::IntegratorObser
 
 template <typename Scalar>
 void
+Piro::TempusIntegrator<Scalar>::clearSolutionHistory()
+{
+  if (basicIntegrator_ != Teuchos::null) {
+    basicIntegrator_->getNonConstSolutionHistory()->clear();
+  }
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    fwdSensIntegrator_->getNonConstSolutionHistory()->clear();
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
+    adjSensIntegrator_->getNonConstSolutionHistory()->clear();
+  }
+}
+
+template <typename Scalar>
+void
 Piro::TempusIntegrator<Scalar>::initialize()
 {
   if (basicIntegrator_ != Teuchos::null) {

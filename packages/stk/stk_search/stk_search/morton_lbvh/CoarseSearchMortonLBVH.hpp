@@ -104,12 +104,19 @@ class MortonCoarseSearchVectorCallback
   private:
     void insert_result(int domainIdx, int rangeIdx) const
     {
+#ifdef _OPENMP      
+      #pragma omp critical
+      {
+#endif        
       if (rangeIdx < m_numLocalRange) {
         m_searchResults.emplace_back(m_localDomain[domainIdx].second, m_localRange[rangeIdx].second);
       }
       else {
         m_searchResults.emplace_back(m_localDomain[domainIdx].second, m_remoteRangeIdentProcs[rangeIdx - m_numLocalRange]);
       }
+#ifdef _OPENMP
+      }
+#endif
     }
 
     const DomainVec& m_localDomain;

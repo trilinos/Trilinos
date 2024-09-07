@@ -361,6 +361,8 @@ void host_local_test_coarse_search_for_algorithm(stk::search::SearchMethod algor
   LocalSearchResults intersections;
 
   stk::search::local_coarse_search(domain, range, algorithm, intersections);
+  std::sort(intersections.begin(), intersections.end());
+
 
   local_expect_search_results(intersections);
 }
@@ -386,6 +388,7 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
   auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
   stk::search::local_coarse_search(domain, range, algorithm, intersections);
+  Kokkos::sort(intersections);
 
   Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
@@ -459,6 +462,7 @@ void local_test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod
   auto intersections = Kokkos::View<IdentIntersection*, ExecSpace>("intersections", 0);
 
   stk::search::local_coarse_search(domain, range, algorithm, intersections);
+  Kokkos::sort(intersections);
 
   auto hostIntersections = Kokkos::create_mirror_view(HostSpace{}, intersections);
   Kokkos::deep_copy(hostIntersections, intersections);

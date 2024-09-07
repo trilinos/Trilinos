@@ -108,7 +108,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
     abort_on_failure_ = tempusPL->get<bool>("Abort on Failure", true); 
 
-    RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, "Tempus Integrator", true);
+    RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, tempusPL->get<std::string>("Integrator Name", "Tempus Integrator"), true);
     //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but
     //Curt will add this at some point.  When this option is added, set Verbosity
     //based on that sublist, rather than hard-coding it here.
@@ -162,7 +162,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       t_final_ = timeStepControlPL->get<Scalar>("Final Time", t_initial_);
     }
     //*out_ << "tempusPL = " << *tempusPL << "\n";
-    RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
+    RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, integratorPL->get<std::string>("Stepper Name", "Tempus Stepper"), true);
     //*out_ << "stepperPL = " << *stepperPL << "\n";
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
     //*out_ << "Stepper Type = " << stepperType << "\n";
@@ -180,7 +180,10 @@ void Piro::TempusSolver<Scalar>::initialize(
 #endif
 
     linearSolverBuilder.setParameterList(sublist(tempusPL, "Stratimikos", true));
-    tempusPL->validateParameters(*getValidTempusParameters(),0);
+    tempusPL->validateParameters(*getValidTempusParameters(
+      tempusPL->get<std::string>("Integrator Name", "Tempus Integrator"), 
+      integratorPL->get<std::string>("Stepper Name", "Tempus Stepper")
+    ), 0);
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     //
@@ -544,7 +547,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
 
 template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TempusSolver<Scalar>::getValidTempusParameters() const
+Piro::TempusSolver<Scalar>::getValidTempusParameters(const std::string integratorName, const std::string stepperName) const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
     Teuchos::rcp(new Teuchos::ParameterList("ValidTempusSolverParams"));
@@ -564,9 +567,9 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   validPL->set<bool>("Invert Mass Matrix", true, "Boolean to tell code whether or not to invert mass matrix");
   validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   validPL->set<bool>("Abort on Failure", true, "");
-  validPL->set<std::string>("Integrator Name", "Tempus Integrator", "");
-  validPL->sublist("Tempus Integrator", false, "");
-  validPL->sublist("Tempus Stepper", false, "");
+  validPL->set<std::string>("Integrator Name", integratorName, "");
+  validPL->sublist(integratorName, false, "");
+  validPL->sublist(stepperName, false, "");
   validPL->sublist("Time Step Control", false, "");
   validPL->sublist("Sensitivities", false, "");
   return validPL;

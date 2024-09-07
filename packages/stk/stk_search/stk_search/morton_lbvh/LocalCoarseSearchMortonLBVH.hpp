@@ -69,6 +69,10 @@ class LocalMortonCoarseSearchVectorCallback
 
     void operator()(int domainIdx, int rangeIdx) const
     {
+#ifdef _OPENMP      
+      #pragma omp critical
+      {
+#endif
       if constexpr (isSearchExact)
       {
         m_searchResults.push_back({m_domain[domainIdx].second, m_range[rangeIdx].second});
@@ -79,6 +83,9 @@ class LocalMortonCoarseSearchVectorCallback
           m_searchResults.push_back({m_domain[domainIdx].second, m_range[rangeIdx].second});
         }
       }
+#ifdef _OPENMP
+      }
+#endif
     }
 
     bool resize_for_second_pass()
