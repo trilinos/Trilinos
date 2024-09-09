@@ -177,11 +177,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   // needs to be sorted
   // Try to mirror the Kokkos Kernels internal SpGEMM TPL use logic
   // inspired by https://github.com/trilinos/Trilinos/pull/11709
+  // and https://github.com/kokkos/kokkos-kernels/pull/2008
 #if defined(KOKKOS_ENABLE_CUDA) \
  && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) \
  && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
   if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::Cuda>) {
-    KokkosSparse::sort_crs_matrix(Bmerged);
+    if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
+      KokkosSparse::sort_crs_matrix(Bmerged);
+    }
   }
 #endif
 
