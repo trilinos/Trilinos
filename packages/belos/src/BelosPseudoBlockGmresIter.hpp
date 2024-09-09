@@ -522,7 +522,7 @@ namespace Belos {
         RCP<MV> lclV = MVT::CloneViewNonConst( *V_[i], nevind );
         const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
         const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-        MVT::MvAddMv (one, *newV, zero, *newV, *lclV);
+        MVT::Assign(*newV, *lclV);
 
         // Done with local pointers
         lclV = Teuchos::null;
@@ -656,7 +656,7 @@ namespace Belos {
       index2[0] = i;
       Teuchos::RCP<const MV> tmp_vec = MVT::CloneView( *V_[i], index );
       Teuchos::RCP<MV> U_vec_view = MVT::CloneViewNonConst( *U_vec, index2 );
-      MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *U_vec_view );
+      MVT::Assign( *tmp_vec, *U_vec_view );
     }
     
     ////////////////////////////////////////////////////////////////
@@ -712,7 +712,7 @@ namespace Belos {
 	//
 	index2[0] = curDim_+1;
 	Teuchos::RCP<MV> tmp_vec = MVT::CloneViewNonConst( *V_[i], index2 );
-	MVT::MvAddMv( one, *V_new, zero, *V_new, *tmp_vec );
+	MVT::Assign( *V_new, *tmp_vec );
       }
       // 
       // Now _AU_vec is the new _U_vec, so swap these two vectors.

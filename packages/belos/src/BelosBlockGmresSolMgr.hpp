@@ -1151,7 +1151,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
         if ( !Teuchos::is_null(expConvTest_->getSolution()) ) {
           Teuchos::RCP<MV> newX = expConvTest_->getSolution();
           Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
-          MVT::MvAddMv( 0.0, *newX, 1.0, *newX, *curX );
+          MVT::Assign( *newX, *curX );
         }
         else {
           Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
