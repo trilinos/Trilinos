@@ -60,67 +60,59 @@ namespace Kokkos {
 // Declare overloads of create_mirror() so they are in scope
 // Kokkos_Core.hpp is included below
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-    Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(const Kokkos::View<T,P...> & src);
+template <class T, class... P, class... ViewCtorArgs>
+inline auto create_mirror(
+  const Impl::ViewCtorProp<ViewCtorArgs...>& arg_prop,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>* = nullptr
+);
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-    Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(const Kokkos::View<T,P...> & src);
+template <class T, class... P>
+inline auto create_mirror(
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>* = nullptr
+);
 
-template<class Space, class T, class ... P,
-         typename Enable = std::enable_if_t<Kokkos::is_space<Space>::value>>
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-create_mirror(const Space&,
-              const Kokkos::View<T,P...> & src);
+template <class Space, class T, class... P, typename Enable = std::enable_if_t<Kokkos::is_space<Space>::value>>
+inline auto create_mirror(
+  const Space& space,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>* = nullptr
+);
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-      Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
-              const Kokkos::View<T,P...> & src);
+template <class T, class... P>
+inline auto create_mirror(
+  Impl::WithoutInitializing_t wi,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>* = nullptr
+);
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-    Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
-              const Kokkos::View<T,P...> & src);
+template <class Space, class T, class... P, typename Enable = std::enable_if_t<is_space<Space>::value>>
+inline auto create_mirror(
+  Impl::WithoutInitializing_t wi,
+  const Space& space,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>* = nullptr
+);
 
-template<class Space, class T, class ... P,
-          typename Enable = std::enable_if_t<Kokkos::is_space<Space>::value>>
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
- create_mirror(
-  Kokkos::Impl::WithoutInitializing_t wi,
-   const Space&,
-  const Kokkos::View<T,P...> & src);
+template <class T, class... P, class... ViewCtorArgs>
+inline auto create_mirror_view(
+  const Impl::ViewCtorProp<ViewCtorArgs...>& arg_prop,
+  const Kokkos::View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>* = nullptr
+);
 
 template <class Space, class T, class... P>
 typename Impl::MirrorViewType<Space, T, P...>::view_type
