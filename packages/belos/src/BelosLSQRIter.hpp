@@ -340,7 +340,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
     RCP<const MV> rhsMV = lp_->getInitPrecResVec();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    MVT::MvAddMv( one, *rhsMV, zero, *U_, *U_);
+    MVT::Assign( *rhsMV, *U_);
 
     RCP<const OP> M_left = lp_->getLeftPrec();
     RCP<const OP> A = lp_->getOperator();
@@ -384,7 +384,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
       }
 
     // W := V (copy the vector)
-    MVT::MvAddMv( one, *V_, zero, *V_, *W_);
+    MVT::Assign( *V_, *W_);
 
     frob_mat_norm_ = zero; // These are
     mat_cond_num_ = one;   // lower

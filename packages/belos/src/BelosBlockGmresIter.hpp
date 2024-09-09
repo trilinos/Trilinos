@@ -597,7 +597,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
         Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V, nevind );
         Teuchos::RCP<MV> lclV = MVT::CloneViewNonConst( *V_, nevind );
-        MVT::MvAddMv( one, *newV, zero, *newV, *lclV );
+        MVT::Assign( *newV, *lclV );
 
         // done with local pointers
         lclV = Teuchos::null;
