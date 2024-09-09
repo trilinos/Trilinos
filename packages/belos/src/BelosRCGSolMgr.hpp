@@ -26,6 +26,7 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
+#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -46,7 +47,7 @@
 
 \section Belos_RCGSol_summary Summary
 
-This class implements the GCRODR (Recycling GMRES) iterative linear
+This class implements the RCG (Recycling CG) iterative linear
 solver.  This solver is suited for solving sequences of related linear
 systems \f$A_i x_i = b_i\f$, where each matrix \f$A_i\f$ is symmetric
 positive definite.
@@ -1027,6 +1028,7 @@ void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 template<class ScalarType, class MV, class OP, class DM>
 ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
+  Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1203,14 +1205,14 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
         index.resize( 1 );
         index[0] = 0;
         Teuchos::RCP<MV> Ptmp  = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv(one,*z_,zero,*z_,*Ptmp);
+        MVT::Assign(*z_,*Ptmp);
         MVT::MvTimesMatAddMv( -one, *U_, *mu, one, *Ptmp );
       } else {
         // p = z;
         index.resize( 1 );
         index[0] = 0;
         Teuchos::RCP<MV> Ptmp  = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv(one,*z_,zero,*z_,*Ptmp);
+        MVT::Assign(*z_,*Ptmp);
       }
 
       // Set the new state and initialize the solver.
@@ -1298,6 +1300,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    // compute harmonic Ritz vectors
                    Teuchos::RCP<DM> Ytmp = DMT::Subview( *Y_, numBlocks_, recycleBlocks_ );
                    getHarmonicVecs(*Ftmp,*Gtmp,*Ytmp);
+                   DMT::SyncHostToDevice( *Y_ );
 
                    // U1 = [P(:,1:end-1)*Y];
                    Teuchos::RCP<const MV> Ptmp = MVT::CloneView( *P_,  nindex );
@@ -1308,16 +1311,35 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // AU1TAU1     = Y'*G*Y;
                    Teuchos::RCP<DM> GYtmp = DMT::Subview( *GY_, numBlocks_, recycleBlocks_ );
-                   GYtmp->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Gtmp,*Ytmp,zero);
-                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Ytmp,*GYtmp,zero);
+                   //GYtmp->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Gtmp,*Ytmp,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_, recycleBlocks_, numBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*Gtmp), DMT::GetStride(*Gtmp),
+                              DMT::GetConstRawHostPtr(*Ytmp), DMT::GetStride(*Ytmp),
+                              zero, DMT::GetRawHostPtr(*GYtmp), DMT::GetStride(*GYtmp));
+                   //AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Ytmp,*GYtmp,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, numBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Ytmp), DMT::GetStride(*Ytmp),
+                              DMT::GetConstRawHostPtr(*GYtmp), DMT::GetStride(*GYtmp),
+                              zero, DMT::GetRawHostPtr(*AU1TAU1_), DMT::GetStride(*AU1TAU1_));
+
 
                    // AU1TU1      = Y'*F*Y;
                    Teuchos::RCP<DM> FYtmp = DMT::Subview( *FY_, numBlocks_, recycleBlocks_ );
-                   FYtmp->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Ftmp,*Ytmp,zero);
-                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Ytmp,*FYtmp,zero);
+                   //FYtmp->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Ftmp,*Ytmp,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_, recycleBlocks_, numBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*Ftmp), DMT::GetStride(*Ftmp),
+                              DMT::GetConstRawHostPtr(*Ytmp), DMT::GetStride(*Ytmp),
+                              zero, DMT::GetRawHostPtr(*FYtmp), DMT::GetStride(*FYtmp));
+                   //AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Ytmp,*FYtmp,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, numBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Ytmp), DMT::GetStride(*Ytmp),
+                              DMT::GetConstRawHostPtr(*FYtmp), DMT::GetStride(*FYtmp),
+                              zero, DMT::GetRawHostPtr(*AU1TU1_), DMT::GetStride(*AU1TU1_));
 
+                   DMT::SyncHostToDevice(*AU1TAU1_);
+                   DMT::SyncHostToDevice(*AU1TU1_);
                    DMT::SyncHostToDevice(*AU1TAP_);
-                   DMT::SyncHostToDevice(*Y_);
+                   
                    Teuchos::RCP<DM> AU1TAPtmp = DMT::Subview( *AU1TAP_, recycleBlocks_, 1 );
                    // Must reinitialize AU1TAP; can become dense later
                    DMT::PutScalar( *AU1TAPtmp, zero );
@@ -1381,6 +1403,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // compute harmonic Ritz vectors
                    getHarmonicVecs(*F_,*G_,*Y_);
+                   DMT::SyncHostToDevice( *Y_ );
 
                    // U1 = [U1 P(:,2:end-1)]*Y;
                    index.resize( numBlocks_ );
@@ -1389,17 +1412,32 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
                    Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
                    Teuchos::RCP<MV> U1Y1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
-                   Teuchos::RCP<DM> Y1 = DMT::Subview( *Y_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::RCP<DM> Y2 = DMT::Subview( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   Teuchos::RCP<const DM> Y1 = DMT::SubviewConst( *Y_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<const DM> Y2 = DMT::SubviewConst( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    MVT::MvTimesMatAddMv( one, *Ptmp, *Y2, zero, *PY2tmp );
                    MVT::MvTimesMatAddMv( one, *U1tmp, *Y1, zero, *U1Y1tmp );
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
+                   DMT::SyncDeviceToHost(*GY_);
+                   DMT::SyncDeviceToHost(*AU1TAU1_);
 
                    // AU1TAU1     = Y'*G*Y;
-                   GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
-                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
+                   //GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_+recycleBlocks_, 
+                              recycleBlocks_, numBlocks_+recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*G_), DMT::GetStride(*G_),
+                              DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              zero, DMT::GetRawHostPtr(*GY_), DMT::GetStride(*GY_));
+                   //AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, 
+                              numBlocks_+recycleBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              DMT::GetConstRawHostPtr(*GY_), DMT::GetStride(*GY_),
+                              zero, DMT::GetRawHostPtr(*AU1TAU1_), DMT::GetStride(*AU1TAU1_));
+
+                   DMT::SyncHostToDevice(*GY_);
+                   DMT::SyncHostToDevice(*AU1TAU1_);
 
                    // AU1TAP      = zeros(k,m);
                    // AU1TAP(:,1) = Y(end,:)' * (-1/Alpha(end));
@@ -1411,9 +1449,25 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    }
                    DMT::SyncHostToDevice(*AU1TAP_);
 
+                   DMT::SyncDeviceToHost(*FY_);
+                   DMT::SyncDeviceToHost(*AU1TU1_);
+
                    // AU1TU1      = Y'*F*Y;
-                   FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
-                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
+                   //FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_+recycleBlocks_, 
+                              recycleBlocks_, numBlocks_+recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*F_), DMT::GetStride(*F_),
+                              DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              zero, DMT::GetRawHostPtr(*FY_), DMT::GetStride(*FY_));
+                   //AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, 
+                              numBlocks_+recycleBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              DMT::GetConstRawHostPtr(*FY_), DMT::GetStride(*FY_),
+                              zero, DMT::GetRawHostPtr(*AU1TU1_), DMT::GetStride(*AU1TU1_));
+
+                   DMT::SyncHostToDevice(*FY_);
+                   DMT::SyncHostToDevice(*AU1TU1_);
 
                    // Indicate the size of the P, Beta structures generated this cycle
                    lastp = numBlocks_+1;
@@ -1443,8 +1497,22 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    DMT::SyncHostToDevice(*L2_);
 
                    // AUTAP = UTAU*Delta*L2;
-                   DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
-                   AUTAP_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*UTAU_,*DeltaL2_,zero);
+                   DMT::SyncDeviceToHost(*DeltaL2_);
+                   DMT::SyncDeviceToHost(*AUTAP_);
+
+                   //DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycleBlocks_, numBlocks_, numBlocks_+1,
+                              one, DMT::GetConstRawHostPtr(*Delta_), DMT::GetStride(*Delta_),
+                              DMT::GetConstRawHostPtr(*L2_), DMT::GetStride(*L2_),
+                              zero, DMT::GetRawHostPtr(*DeltaL2_), DMT::GetStride(*DeltaL2_));
+                   //AUTAP_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*UTAU_,*DeltaL2_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycleBlocks_, numBlocks_, recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*UTAU_), DMT::GetStride(*UTAU_),
+                              DMT::GetConstRawHostPtr(*DeltaL2_), DMT::GetStride(*DeltaL2_),
+                              zero, DMT::GetRawHostPtr(*AUTAP_), DMT::GetStride(*AUTAP_));
+
+                   DMT::SyncHostToDevice(*DeltaL2_);
+                   DMT::SyncHostToDevice(*AUTAP_);
 
                    // F = [UTAU zeros(k,m); zeros(m,k) diag(D)];
                    DMT::PutScalar(*F_,zero);
@@ -1474,6 +1542,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // compute harmonic Ritz vectors
                    getHarmonicVecs(*F_,*G_,*Y_);
+                   DMT::SyncHostToDevice(*Y_);
 
                    // U1 = [U P(:,1:end-1)]*Y;
                    Teuchos::RCP<const MV> Utmp = MVT::CloneView( *U_,  rindex );
@@ -1481,21 +1550,50 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    Teuchos::RCP<MV> PY2tmp = MVT::CloneViewNonConst( *PY2_,  rindex );
                    Teuchos::RCP<MV> UY1tmp  = MVT::CloneViewNonConst( *U1Y1_,  rindex );
                    Teuchos::RCP<MV> U1tmp  = MVT::CloneViewNonConst( *U1_,  rindex );
-                   Teuchos::RCP<DM> Y1 = DMT::Subview( *Y_, recycleBlocks_, recycleBlocks_ );
-                   Teuchos::RCP<DM> Y2 = DMT::Subview( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   Teuchos::RCP<const DM> Y1 = DMT::SubviewConst( *Y_, recycleBlocks_, recycleBlocks_ );
+                   Teuchos::RCP<const DM> Y2 = DMT::SubviewConst( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    MVT::MvTimesMatAddMv( one, *Ptmp, *Y2, zero, *PY2tmp );
                    MVT::MvTimesMatAddMv( one, *Utmp, *Y1, zero, *UY1tmp );
                    MVT::MvAddMv(one,*UY1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
+                   DMT::SyncDeviceToHost(*GY_);
+                   DMT::SyncDeviceToHost(*AU1TAU1_);
+                   DMT::SyncDeviceToHost(*FY_);
+                   DMT::SyncDeviceToHost(*AU1TU1_);
 
                    // AU1TAU1     = Y'*G*Y;
-                   GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
-                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
+                   //GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_+recycleBlocks_, 
+                              recycleBlocks_, numBlocks_+recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*G_), DMT::GetStride(*G_),
+                              DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              zero, DMT::GetRawHostPtr(*GY_), DMT::GetStride(*GY_));
+                   //AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, 
+                              numBlocks_+recycleBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              DMT::GetConstRawHostPtr(*GY_), DMT::GetStride(*GY_),
+                              zero, DMT::GetRawHostPtr(*AU1TAU1_), DMT::GetStride(*AU1TAU1_));
 
                    // AU1TU1      = Y'*F*Y;
-                   FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
-                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
+                   //FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_+recycleBlocks_, 
+                              recycleBlocks_, numBlocks_+recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*F_), DMT::GetStride(*F_),
+                              DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              zero, DMT::GetRawHostPtr(*FY_), DMT::GetStride(*FY_));
+                   //AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, 
+                              numBlocks_+recycleBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              DMT::GetConstRawHostPtr(*FY_), DMT::GetStride(*FY_),
+                              zero, DMT::GetRawHostPtr(*AU1TU1_), DMT::GetStride(*AU1TU1_));
+
+                   DMT::SyncHostToDevice(*GY_);
+                   DMT::SyncHostToDevice(*AU1TAU1_);
+                   DMT::SyncHostToDevice(*FY_);
+                   DMT::SyncHostToDevice(*AU1TU1_);
 
                    // AU1TU   = UTAU;
                    DMT::Assign(*AU1TU_,*UTAU_);
@@ -1527,19 +1625,31 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                      DMT::Value(*L2_,ii,ii)   = 1./(*Alpha_)[ii];
                      DMT::Value(*L2_,ii+1,ii) = -1./(*Alpha_)[ii];
                    }
-                   DMT::SyncHostToDevice(*L2_);
+
+                   DMT::SyncDeviceToHost(*DeltaL2_);
+                   DMT::SyncDeviceToHost(*AU1TUDeltaL2_);
+                   DMT::SyncDeviceToHost(*AU1TAP_);
 
                    // M(end,1) = dold*(-Beta(1)/Alpha(1));
                    // AU1TAP = Y'*[AU1TU*Delta*L2; M];
-                   DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
-                   AU1TUDeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*AU1TU_,*DeltaL2_,zero);
-                   Teuchos::RCP<DM> Y1 = DMT::Subview( *Y_, recycleBlocks_, recycleBlocks_ );
-                   DMT::PutScalar(*AU1TAP_,zero);
-                   AU1TAP_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y1,*AU1TUDeltaL2_,zero);
-                   Teuchos::RCP<DM> Y2 = DMT::Subview( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
+                   //DeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*Delta_,*L2_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycleBlocks_, numBlocks_, numBlocks_+1,
+                              one, DMT::GetConstRawHostPtr(*Delta_), DMT::GetStride(*Delta_),
+                              DMT::GetConstRawHostPtr(*L2_), DMT::GetStride(*L2_),
+                              zero, DMT::GetRawHostPtr(*DeltaL2_), DMT::GetStride(*DeltaL2_));
+                   //AU1TUDeltaL2_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*AU1TU_,*DeltaL2_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycleBlocks_, numBlocks_, recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*AU1TU_), DMT::GetStride(*AU1TU_),
+                              DMT::GetConstRawHostPtr(*DeltaL2_), DMT::GetStride(*DeltaL2_),
+                              zero, DMT::GetRawHostPtr(*AU1TUDeltaL2_), DMT::GetStride(*AU1TUDeltaL2_));
+                   Teuchos::RCP<const DM> Y1 = DMT::SubviewConst( *Y_, recycleBlocks_, recycleBlocks_ );
+                   //AU1TAP_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y1,*AU1TUDeltaL2_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, numBlocks_, recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*Y1), DMT::GetStride(*Y1),
+                              DMT::GetConstRawHostPtr(*AU1TUDeltaL2_), DMT::GetStride(*AU1TUDeltaL2_),
+                              zero, DMT::GetRawHostPtr(*AU1TAP_), DMT::GetStride(*AU1TAP_));
+                   Teuchos::RCP<const DM> Y2 = DMT::SubviewConst( *Y_, numBlocks_, recycleBlocks_, recycleBlocks_, 0 );
                    ScalarType val = dold * (-(*Beta_)[0]/(*Alpha_)[0]);
-                   DMT::SyncDeviceToHost(*AU1TAP_);
-                   DMT::SyncDeviceToHost(*Y_);
                    for(int ii=0;ii<recycleBlocks_;ii++) {
                      DMT::Value(*AU1TAP_,ii,0) += DMT::ValueConst(*Y2,numBlocks_-1,ii)*val;
                    }
@@ -1547,7 +1657,12 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // AU1TU = Y1'*AU1TU
                    Teuchos::RCP<DM> Y1TAU1TU = DMT::Subview( *GY_, recycleBlocks_, recycleBlocks_ );
-                   Y1TAU1TU->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y1,*AU1TU_,zero);
+                   //Y1TAU1TU->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y1,*AU1TU_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*Y1), DMT::GetStride(*Y1),
+                              DMT::GetConstRawHostPtr(*AU1TU_), DMT::GetStride(*AU1TU_),
+                              zero, DMT::GetRawHostPtr(*Y1TAU1TU), DMT::GetStride(*Y1TAU1TU));
+                   DMT::SyncHostToDevice(*GY_);
                    DMT::Assign(*AU1TU_,*Y1TAU1TU);
 
                    // F = [AU1TU1 zeros(k,m); zeros(m,k) diag(D)];
@@ -1578,6 +1693,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
                    // compute harmonic Ritz vectors
                    getHarmonicVecs(*F_,*G_,*Y_);
+                   DMT::SyncHostToDevice(*Y_);
 
                    // U1 = [U1 P(:,2:end-1)]*Y;
                    index.resize( numBlocks_ );
@@ -1591,14 +1707,43 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
+                   DMT::SyncDeviceToHost(*GY_);
+                   DMT::SyncDeviceToHost(*AU1TAU1_);
+                   DMT::SyncDeviceToHost(*FY_);
+                   DMT::SyncDeviceToHost(*AU1TU1_);
 
                    // AU1TAU1     = Y'*G*Y;
-                   GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
-                   AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
+                   //GY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*G_,*Y_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_+recycleBlocks_, 
+                              recycleBlocks_, numBlocks_+recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*G_), DMT::GetStride(*G_),
+                              DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              zero, DMT::GetRawHostPtr(*GY_), DMT::GetStride(*GY_));
+                   //AU1TAU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*GY_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, 
+                              numBlocks_+recycleBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              DMT::GetConstRawHostPtr(*GY_), DMT::GetStride(*GY_),
+                              zero, DMT::GetRawHostPtr(*AU1TAU1_), DMT::GetStride(*AU1TAU1_));
 
                    // AU1TU1      = Y'*F*Y;
-                   FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
-                   AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
+                   //FY_->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*F_,*Y_,zero);
+                   blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, numBlocks_+recycleBlocks_, 
+                              recycleBlocks_, numBlocks_+recycleBlocks_, 
+                              one, DMT::GetConstRawHostPtr(*F_), DMT::GetStride(*F_),
+                              DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              zero, DMT::GetRawHostPtr(*FY_), DMT::GetStride(*FY_));
+                   //AU1TU1_->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*Y_,*FY_,zero);
+                   blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, recycleBlocks_, recycleBlocks_, 
+                              numBlocks_+recycleBlocks_,
+                              one, DMT::GetConstRawHostPtr(*Y_), DMT::GetStride(*Y_),
+                              DMT::GetConstRawHostPtr(*FY_), DMT::GetStride(*FY_),
+                              zero, DMT::GetRawHostPtr(*AU1TU1_), DMT::GetStride(*AU1TU1_));
+
+                   DMT::SyncHostToDevice(*GY_);
+                   DMT::SyncHostToDevice(*AU1TAU1_);
+                   DMT::SyncHostToDevice(*FY_);
+                   DMT::SyncHostToDevice(*AU1TU1_);
 
                    // dold    = D(end);
                    dold = (*D_)[numBlocks_-1];
