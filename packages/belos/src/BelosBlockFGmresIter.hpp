@@ -582,7 +582,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         }
         RCP<const MV> newV = MVT::CloneView (*newstate.V, nevind);
         RCP<MV> lclV = MVT::CloneViewNonConst (*V_, nevind);
-        MVT::MvAddMv (ONE, *newV, ZERO, *newV, *lclV);
+        MVT::Assign(*newV, *lclV);
 
         // done with local pointers
         lclV = Teuchos::null;

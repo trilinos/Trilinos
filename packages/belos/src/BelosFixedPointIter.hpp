@@ -323,7 +323,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP,DM> {
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+        MVT::Assign( *newstate.R, *R_ );
       }
 
     }

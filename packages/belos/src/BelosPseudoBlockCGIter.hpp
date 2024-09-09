@@ -339,7 +339,7 @@ namespace Belos {
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+        MVT::Assign( *newstate.R, *R_ );
       }
 
       // Compute initial direction vectors
@@ -359,7 +359,7 @@ namespace Belos {
       else {
         Z_ = R_;
       }
-      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
+      MVT::Assign( *Z_, *P_ );
     }
     else {
 
