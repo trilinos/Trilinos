@@ -1562,8 +1562,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
           Teuchos::BLAS<int,ScalarType> blas;
 	  blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, p+1, keff, p, one,
-                   DMT::GetRawHostPtr(*Htmp), DMT::GetStride(*Htmp),
-                   DMT::GetRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
+                   DMT::GetConstRawHostPtr(*Htmp), DMT::GetStride(*Htmp),
+                   DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
                    zero, DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
 
 	  // Step #1.5: Perform workspace size query for QR
