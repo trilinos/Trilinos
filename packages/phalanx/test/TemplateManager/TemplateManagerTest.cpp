@@ -1,6 +1,6 @@
 // @HEADER
 // *****************************************************************************
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //
 // Copyright 2008 NTESS and the Phalanx contributors.
@@ -57,4 +57,28 @@ TEUCHOS_UNIT_TEST(template_manager_test, basic)
   tm.deleteType<R>();
   auto r2 = tm.getAsObject<R>();
   TEST_ASSERT(r2.is_null());
+}
+
+TEUCHOS_UNIT_TEST(template_manager_test, iterator_ops)
+{
+  using namespace PHX;
+  DummyTemplateManager<MyTraits> tm;
+
+  auto start = tm.begin();
+  auto start_again = tm.begin();
+  auto end = tm.end();
+
+  TEST_ASSERT(start == start_again);
+  TEST_ASSERT(start != end);
+
+  ++start;
+  TEST_ASSERT(start != start_again);
+
+  start_again++;
+  TEST_ASSERT(start == start_again);
+
+  ++start;
+  start_again++;
+  TEST_ASSERT(start == end);
+  TEST_ASSERT(start_again == end);
 }
