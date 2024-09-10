@@ -164,7 +164,7 @@
 
                 <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                 <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
-                <Parameter name="aggregation: drop tol" type="double" value="8.0"/>
+                <Parameter name="aggregation: drop tol" type="double" value="0.35"/>
 
                 <ParameterList name="matvec params">
                   <!-- <Parameter name="Send type" type="string" value="Send"/> -->
@@ -209,7 +209,7 @@
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
-                  <Parameter name="aggregation: drop tol" type="double" value="8.0"/>
+                  <Parameter name="aggregation: drop tol" type="double" value="0.35"/>
 
                   <ParameterList name="matvec params">
                     <!-- <Parameter name="Send type" type="string" value="Send"/> -->
@@ -269,7 +269,7 @@
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
-                  <Parameter name="aggregation: drop tol" type="double" value="8.0"/>
+                  <Parameter name="aggregation: drop tol" type="double" value="0.35"/>
 
                   <ParameterList name="matvec params">
                     <!-- <Parameter name="Send type" type="string" value="Send"/> -->
@@ -412,7 +412,7 @@
 
                 <!-- <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/> -->
                 <!-- <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/> -->
-                <!-- <Parameter name="aggregation: drop tol" type="double" value="8.0"/> -->
+                <!-- <Parameter name="aggregation: drop tol" type="double" value="0.35"/> -->
 
                 <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
                 <Parameter name="aggregation: match ML phase2a" type="bool" value="true"/>
@@ -465,7 +465,7 @@
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
-                  <Parameter name="aggregation: drop tol" type="double" value="8.0"/>
+                  <Parameter name="aggregation: drop tol" type="double" value="0.35"/>
 
                   <ParameterList name="matvec params">
                     <!-- <Parameter name="Send type" type="string" value="Send"/> -->
@@ -531,7 +531,7 @@
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
-                  <Parameter name="aggregation: drop tol" type="double" value="8.0"/>
+                  <Parameter name="aggregation: drop tol" type="double" value="0.35"/>
 
                   <ParameterList name="matvec params">
                     <!-- <Parameter name="Send type" type="string" value="Send"/> -->
