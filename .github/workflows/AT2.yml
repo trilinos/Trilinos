@@ -293,8 +293,8 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
-            --max-cores-allowed=96 \
-            --num-concurrent-tests=96
+            --max-cores-allowed=48 \
+            --num-concurrent-tests=48
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
@@ -402,4 +402,3 @@ jobs:
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
-
