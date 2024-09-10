@@ -170,7 +170,23 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   // Merge the B and Bimport matrices
-  const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getLocalNumElements());
+  KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getLocalNumElements());
+
+
+  // if Kokkos Kernels is going to use the cuSparse TPL for SpGEMM, this matrix
+  // needs to be sorted
+  // Try to mirror the Kokkos Kernels internal SpGEMM TPL use logic
+  // inspired by https://github.com/trilinos/Trilinos/pull/11709
+  // and https://github.com/kokkos/kokkos-kernels/pull/2008
+#if defined(KOKKOS_ENABLE_CUDA) \
+ && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) \
+ && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
+  if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::Cuda>) {
+    if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
+      KokkosSparse::sort_crs_matrix(Bmerged);
+    }
+  }
+#endif
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
