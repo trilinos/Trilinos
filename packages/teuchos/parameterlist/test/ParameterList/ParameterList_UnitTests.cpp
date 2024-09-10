@@ -484,6 +484,24 @@ TEUCHOS_UNIT_TEST( ParameterList, set_string_specified_template_argument)
   TEST_EQUALITY_CONST(pl.get<std::string>("my string 5"), "my text 5");
 }
 
+struct MyWrappedInt
+{
+    operator const int&() const { return value; }
+
+    int value;
+};
+
+TEUCHOS_UNIT_TEST( ParameterList, set_int_user_defined_conversion_function)
+{
+  // Check the templated set method and its overload when the template argument is specified
+  // and the parameter is set via a user defined conversion function. 
+  ParameterList pl;
+
+  ECHO(MyWrappedInt my_wrapped_int{42});
+  ECHO(pl.set<int>("my int", my_wrapped_int));
+  TEST_EQUALITY_CONST(pl.get<int>("my int"), my_wrapped_int.value);
+}
+
 TEUCHOS_UNIT_TEST( ParameterList, get_nonexisting_param )
 {
   ParameterList pl;
