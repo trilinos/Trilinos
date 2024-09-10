@@ -1187,7 +1187,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, DistanceLaplacianScaledCu
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.35));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
   coalesceDropFact.SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(std::string("scaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1253,7 +1253,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, DistanceLaplacianUnscaled
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.35));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
   coalesceDropFact.SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(std::string("unscaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1319,7 +1319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, DistanceLaplacianCutSym, 
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.35));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
   coalesceDropFact.SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(std::string("scaled cut symmetric")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1378,7 +1378,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.1));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("classical")));
   coalesceDropFact.SetParameter("aggregation: classical algo", Teuchos::ParameterEntry(std::string("scaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1437,7 +1437,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Sca
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.1));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("classical")));
   coalesceDropFact.SetParameter("aggregation: classical algo", Teuchos::ParameterEntry(std::string("unscaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1554,7 +1554,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, SignaledScaledCutClassica
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.1));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical")));
   coalesceDropFact.SetParameter("aggregation: classical algo", Teuchos::ParameterEntry(std::string("scaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1613,7 +1613,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, SignaledUnscaledCutClassi
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.1));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical")));
   coalesceDropFact.SetParameter("aggregation: classical algo", Teuchos::ParameterEntry(std::string("unscaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);

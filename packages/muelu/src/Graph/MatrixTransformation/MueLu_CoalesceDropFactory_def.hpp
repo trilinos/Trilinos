@@ -49,7 +49,7 @@
 
 // If defined, read environment variables.
 // Should be removed once we are confident that this works.
-//#define DJS_READ_ENV_VARIABLES
+// #define DJS_READ_ENV_VARIABLES
 
 namespace MueLu {
 
@@ -561,8 +561,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
               // Don't aggregate boundaries
               if (boundaryNodes[colID]) continue;
-              typename STS::magnitudeType aiiajj = STS::magnitude(threshold * threshold * ghostedDiagVals[col] * ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
-              typename STS::magnitudeType aij    = STS::magnitude(vals[colID] * vals[colID]);                                            // |a_ij|^2
+              typename STS::magnitudeType aiiajj = STS::magnitude(ghostedDiagVals[col] * ghostedDiagVals[row]);  // |a_ii|*|a_jj|
+              typename STS::magnitudeType aij    = STS::magnitude(vals[colID] * vals[colID]);                    // |a_ij|^2
               drop_vec.emplace_back(aij, aiiajj, colID, false);
             }
 
@@ -580,7 +580,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                   auto const& y = drop_vec[i];
                   auto a        = x.val;
                   auto b        = y.val;
-                  if (a > realThreshold * b) {
+                  if (realThreshold * realThreshold * a > b) {
                     drop = true;
 #ifdef HAVE_MUELU_DEBUG
                     if (distanceLaplacianCutVerbose) {
@@ -604,7 +604,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                   auto const& y = drop_vec[i];
                   auto a        = x.val / x.diag;
                   auto b        = y.val / y.diag;
-                  if (a > realThreshold * b) {
+                  if (realThreshold * realThreshold * a > b) {
                     drop = true;
 
 #ifdef HAVE_MUELU_DEBUG
@@ -1281,7 +1281,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                       auto const& y = drop_vec[i];
                       auto a        = x.val;
                       auto b        = y.val;
-                      if (a > realThreshold * b) {
+                      if (realThreshold * realThreshold * a > b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -1304,7 +1304,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                       auto const& y = drop_vec[i];
                       auto a        = x.val / x.diag;
                       auto b        = y.val / y.diag;
-                      if (a > realThreshold * b) {
+                      if (realThreshold * realThreshold * a > b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
