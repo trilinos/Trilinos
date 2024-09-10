@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
 
   // Say hello
-  out << myRank << " : " << Amesos2::version() << std::endl << std::endl;
+  out << myRank << " : " << Amesos2::version() << " on " << comm->getSize() << " MPIs" << std::endl << std::endl;
 
   const size_t numVectors = 1;
 

@@ -76,7 +76,7 @@ namespace Amesos2 {
 
     // This may be PMKL::_INTEGER_t or long long int depending on the
     // mapping and input ordinal
-    typedef typename TypeMap<Amesos2::PardisoMKL,local_ordinal_type>::type int_t;
+    typedef typename TypeMap<Amesos2::PardisoMKL,global_ordinal_type>::type int_t;
 
     /* For CssMKL we dispatch based on the integer type instead of
      * the scalar type:
