@@ -88,6 +88,7 @@ ARGS=$(getopt -n PullRequestLinuxDriver.sh \
  --longoptions on-weaver,on_weaver \
  --longoptions on-ats2,on_ats2 \
  --longoptions kokkos-develop \
+ --longoptions extra-configure-args: \
  --longoptions no-bootstrap -- "${@}") || exit $?
 
 eval set -- "${ARGS}"
@@ -114,6 +115,10 @@ do
     (--no-bootstrap)
         bootstrap=0
         shift
+        ;;
+    (--extra-configure-args)
+        extra_configure_args=$2
+        shift 2
         ;;
     (-h|--help)
         # When help is requested echo it to stdout.
@@ -166,8 +171,9 @@ sig_script_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReque
 sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
 
 if [[ ${on_kokkos_develop} == "1" ]]; then
-    message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
+    message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop and pointing at them"
     "${SCRIPTPATH}"/SetKokkosDevelop.sh
+    extra_configure_args="\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\"${extra_configure_args:+;${extra_configure_args}}"
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
@@ -273,9 +279,9 @@ test_cmd_options=(
     --dashboard-build-name=${DASHBOARD_BUILD_NAME}
 )
 
-if [[ ${on_kokkos_develop} == "1" ]]
+if [[ ${extra_configure_args} ]]
 then
-    test_cmd_options+=( "--extra-configure-args=\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\" ")
+    test_cmd_options+=( "--extra-configure-args=\"${extra_configure_args}\"")
 fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
