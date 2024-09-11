@@ -1,7 +1,7 @@
 macro(disable_warnings_for_deprecated_packages)
     message(STATUS "Disabling all warnings/errors for deprecated packages")
-    foreach(package deprecated_packages)
-        set(${package}_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
+    foreach(package ${deprecated_packages})
+        set(${package}_CXX_FLAGS "-w ${${package}_CXX_FLAGS}")
     endforeach()
 endmacro()
 
