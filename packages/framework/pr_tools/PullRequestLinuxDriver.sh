@@ -2,15 +2,7 @@
 SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
-# set -x  # echo commands
 
-# Fetch arguments
-on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
-on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
-on_kokkos_develop=$(echo "$@" | grep '\-\-kokkos\-develop' &> /dev/null && echo "1")
-on_rhel8=$(echo "$@" | grep '\-\-on_rhel8' &> /dev/null && echo "1")
-
-bootstrap=$(echo "$@" | grep '\-\-\no\-bootstrap' &> /dev/null && echo "0" || echo "1")
 
 # Configure ccache via environment variables
 function configure_ccache() {
@@ -25,6 +17,7 @@ function configure_ccache() {
 
     message_std "PRDriver> " "$(ccache --show-stats --verbose)"
 }
+
 
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
@@ -76,7 +69,74 @@ function bootstrap_modules() {
     print_banner "Bootstrap environment modules complete"
 }
 
+
 print_banner "PullRequestLinuxDriver.sh"
+
+# Argument defaults
+on_weaver=0
+on_ats2=0
+on_kokkos_develop=0
+on_rhel8=0
+bootstrap=1
+
+original_args=$@
+
+# Do POSIXLY_CORRECT option handling.
+ARGS=$(getopt -n PullRequestLinuxDriver.sh \
+ --options '+x' \
+ --longoptions on-rhel8,on_rhel8 \
+ --longoptions on-weaver,on_weaver \
+ --longoptions on-ats2,on_ats2 \
+ --longoptions kokkos-develop \
+ --longoptions no-bootstrap -- "${@}") || exit $?
+
+eval set -- "${ARGS}"
+
+while [ "$#" -gt 0 ]
+do
+    case "${1}" in
+    (--on_weaver|--on-weaver)
+        on_weaver=1
+        shift
+        ;;
+    (--on_rhel8|--on-rhel8)
+        on_rhel8=1
+        shift
+        ;;
+    (--on_ats2|--on-ats2)
+        on_ats2=1
+        shift
+        ;;
+    (--kokkos-develop)
+        on_kokkos_develop=1
+        shift
+        ;;
+    (--no-bootstrap)
+        bootstrap=0
+        shift
+        ;;
+    (-h|--help)
+        # When help is requested echo it to stdout.
+        echo -e "$USAGE"
+        exit 0
+        ;;
+    (-x)
+        set -x
+        shift
+        ;;
+    (--) # This is an explicit directive to stop processing options.
+        shift
+        break
+        ;;
+    (-*) # Catch options which are defined but not implemented.
+        echo >&2 "${toolName}: ${1}: Unimplemented option passed."
+        exit 1
+        ;;
+    (*) # The first parameter terminates option processing.
+        break
+        ;;
+    esac
+done
 
 # Set up Sandia PROXY environment vars
 envvar_set_or_create https_proxy 'http://proxy.sandia.gov:80'
@@ -161,7 +221,7 @@ else
         message_std "PRDriver> " ""
         message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
         message_std "PRDriver> " ""
-        ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh
+        ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh $original_args
         exit $?
     fi
 
@@ -221,7 +281,7 @@ fi
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
 then
     test_cmd_options+=( "--use-explicit-cachefile ")
-fi 
+fi
 
 # Execute the TEST operation
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
