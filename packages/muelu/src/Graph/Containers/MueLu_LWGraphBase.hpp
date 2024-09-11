@@ -187,7 +187,7 @@ class LWGraphBase {
 
   //! Return number of graph edges
   KOKKOS_INLINE_FUNCTION size_type GetNodeNumEdges() const {
-    return graph_.row_map(GetNodeNumVertices());
+    return graph_.entries.extent(0);
   }
 
   //! Return global number of graph edges
