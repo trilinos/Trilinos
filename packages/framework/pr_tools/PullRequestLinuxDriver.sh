@@ -147,9 +147,6 @@ done
 envvar_set_or_create https_proxy 'http://proxy.sandia.gov:80'
 envvar_set_or_create http_proxy  'http://proxy.sandia.gov:80'
 envvar_set_or_create no_proxy    'localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
-#export https_proxy=http://proxy.sandia.gov:80
-#export http_proxy=http://proxy.sandia.gov:80
-#export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 # bootstrap the python and git modules for this system
 if [[ ${bootstrap} == "1" ]]; then
@@ -195,18 +192,12 @@ else
     message_std "PRDriver> " "Execute Merge Command: ${merge_cmd:?}"
     message_std "PRDriver> " ""
     execute_command_checked "${merge_cmd:?}"
-    #err=$?
-    #if [ $err != 0 ]; then
-    #    print_banner "An error occurred during merge"
-    #    exit $err
-    #fi
     print_banner "Merge completed"
 
 
     print_banner "Check for PR Driver Script Modifications"
 
     # Get the md5 checksum of this script:
-    #sig_script_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
     sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
     message_std "PRDriver> " ""
     message_std "PRDriver> " "Script File: ${SCRIPTFILE:?}"
@@ -214,7 +205,6 @@ else
     message_std "PRDriver> " "New md5sum : ${sig_script_new:?}"
 
     # Get the md5 checksum of the Merge script
-    #sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
     export MERGE_SCRIPT=${SCRIPTPATH:?}/PullRequestLinuxDriverMerge.py
     sig_merge_new=$(get_md5sum ${MERGE_SCRIPT:?})
     message_std "PRDriver> " ""
@@ -242,17 +232,9 @@ if [[ "${JOB_BASE_NAME:?}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testi
     mode="installation"
 fi
 
-
 envvar_set_or_create TRILINOS_BUILD_DIR ${WORKSPACE}/pull_request_test
 
-#message_std "PRDriver> " "Create build directory if it does not exist."
-#message_std "PRDriver> " "Build Dir: ${TRILINOS_BUILD_DIR:?}"
-#mkdir -p ${TRILINOS_BUILD_DIR:?}
-
-
-
 print_banner "Launch the Test Driver"
-
 
 # Prepare the command for the TEST operation
 test_cmd_options=(
@@ -289,7 +271,6 @@ then
     test_cmd_options+=( "--use-explicit-cachefile ")
 fi
 
-# Execute the TEST operation
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 # Call the script to launch the tests
@@ -297,6 +278,3 @@ print_banner "Execute Test Command"
 message_std "PRDriver> " "cd $(pwd)"
 message_std "PRDriver> " "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
 execute_command_checked "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
-
-#${test_cmd} --pullrequest-cdash-track="${PULLREQUEST_CDASH_TRACK:?}"
-#exit $?
