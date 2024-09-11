@@ -1114,39 +1114,23 @@ getBasisValues(const bool weighted,
       // it serially on host until the function supports multiple
       // reference cells to avoid a kernel launch per cell.
 
-      // UVM mirror views can't be used with intrepid basis. Let's do an inefficient copy if using UVM.
+      // Mirror views on host can't be used with intrepid basis
+      // getValues() call when UVM or UNIFIED_MEMORY is
+      // enabled. getHostBasis() returns a "HostSpace" basis object
+      // while create_mirror_view creates views in UVMSpace or
+      // HIPSpace. These are not "assignable" in kokkos. We do an
+      // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_basis_scalar.get_view())::memory_space>::value) {
+#else
+      if constexpr (std::is_same<Kokkos::HIPSpace,typename decltype(tmp_basis_scalar.get_view())::memory_space>::value) {
+#endif
         auto cubature_points_ref_host = Kokkos::create_mirror(Kokkos::HostSpace{},cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_basis_scalar_host = Kokkos::create_mirror(Kokkos::HostSpace{},tmp_basis_scalar.get_view());
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
-        
-        for(int cell=0; cell<num_evaluate_cells_; ++cell) {
-          auto my_cell_basis_host = Kokkos::subview(tmp_basis_scalar_host,cell,Kokkos::ALL(),Kokkos::ALL());
-          auto my_cell_cub_points_ref_host = Kokkos::subview(cubature_points_ref_host,cell,Kokkos::ALL(),Kokkos::ALL());
-          intrepid_basis_host->getValues(my_cell_basis_host,my_cell_cub_points_ref_host);
-        }
-        auto tmp_basis_scalar_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_basis_scalar_ref",num_cells,num_card,num_points);
-        Kokkos::deep_copy(tmp_basis_scalar_ref.get_view(),tmp_basis_scalar_host);
-        const std::pair<int,int> cell_range(0,num_evaluate_cells_);
-        auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
-        auto s_ref = Kokkos::subview(tmp_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
-        
-        using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
-        if(element_space == PureBasis::HVOL){
-          auto s_cjd = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
-          fst::HVOLtransformVALUE(s_aux,s_cjd,s_ref);
-        } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST) {
-          fst::HGRADtransformVALUE(s_aux,s_ref);
-        }
-      } else {
-#endif
-        auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
-        Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
-        auto tmp_basis_scalar_host = Kokkos::create_mirror_view(tmp_basis_scalar.get_view());
-        auto intrepid_basis_host = intrepid_basis->getHostBasis();
-        
+
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_basis_host = Kokkos::subview(tmp_basis_scalar_host,cell,Kokkos::ALL(),Kokkos::ALL());
           auto my_cell_cub_points_ref_host = Kokkos::subview(cubature_points_ref_host,cell,Kokkos::ALL(),Kokkos::ALL());
@@ -1165,7 +1149,32 @@ getBasisValues(const bool weighted,
         } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST) {
           fst::HGRADtransformVALUE(s_aux,s_ref);
         }
-#ifdef KOKKOS_ENABLE_CUDA
+      } else {
+#endif
+        auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
+        Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
+        auto tmp_basis_scalar_host = Kokkos::create_mirror_view(tmp_basis_scalar.get_view());
+        auto intrepid_basis_host = intrepid_basis->getHostBasis();
+
+        for(int cell=0; cell<num_evaluate_cells_; ++cell) {
+          auto my_cell_basis_host = Kokkos::subview(tmp_basis_scalar_host,cell,Kokkos::ALL(),Kokkos::ALL());
+          auto my_cell_cub_points_ref_host = Kokkos::subview(cubature_points_ref_host,cell,Kokkos::ALL(),Kokkos::ALL());
+          intrepid_basis_host->getValues(my_cell_basis_host,my_cell_cub_points_ref_host);
+        }
+        auto tmp_basis_scalar_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_basis_scalar_ref",num_cells,num_card,num_points);
+        Kokkos::deep_copy(tmp_basis_scalar_ref.get_view(),tmp_basis_scalar_host);
+        const std::pair<int,int> cell_range(0,num_evaluate_cells_);
+        auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
+
+        using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
+        if(element_space == PureBasis::HVOL){
+          auto s_cjd = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+          fst::HVOLtransformVALUE(s_aux,s_cjd,s_ref);
+        } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST) {
+          fst::HGRADtransformVALUE(s_aux,s_ref);
+        }
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1277,13 +1286,22 @@ getVectorBasisValues(const bool weighted,
       // it serially on host until the function supports multiple
       // reference cells to avoid a kernel launch per cell.
 
-      // UVM mirror views can't be used with intrepid basis. Let's do an inefficient copy if using UVM.
+      // Mirror views on host can't be used with intrepid basis
+      // getValues() call when UVM or UNIFIED_MEMORY is
+      // enabled. getHostBasis() returns a "HostSpace" basis object
+      // while create_mirror_view creates views in UVMSpace or
+      // HIPSpace. These are not "assignable" in kokkos. We do an
+      // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_basis_vector.get_view())::memory_space>::value) {
+#else
+      if constexpr (std::is_same<Kokkos::HIPSpace,typename decltype(tmp_basis_vector.get_view())::memory_space>::value) {
+#endif
         auto cubature_points_ref_host = Kokkos::create_mirror(Kokkos::HostSpace{},cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_basis_vector_host = Kokkos::create_mirror(Kokkos::HostSpace{},tmp_basis_vector.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_basis_host = Kokkos::subview(tmp_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1292,11 +1310,11 @@ getVectorBasisValues(const bool weighted,
         }
         auto tmp_basis_vector_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("tmp_basis_vector_ref",num_cells,num_card,num_points,num_dim);
         Kokkos::deep_copy(tmp_basis_vector_ref.get_view(),tmp_basis_vector_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        
+
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
         if(element_space == PureBasis::HCURL){
           auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1311,7 +1329,7 @@ getVectorBasisValues(const bool weighted,
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_basis_vector_host = Kokkos::create_mirror_view(tmp_basis_vector.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_basis_host = Kokkos::subview(tmp_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1320,11 +1338,11 @@ getVectorBasisValues(const bool weighted,
         }
         auto tmp_basis_vector_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("tmp_basis_vector_ref",num_cells,num_card,num_points,num_dim);
         Kokkos::deep_copy(tmp_basis_vector_ref.get_view(),tmp_basis_vector_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        
+
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
         if(element_space == PureBasis::HCURL){
           auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1334,7 +1352,7 @@ getVectorBasisValues(const bool weighted,
           auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
           fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, s_ref);
         }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1432,13 +1450,22 @@ getGradBasisValues(const bool weighted,
       // it serially on host until the function supports multiple
       // reference cells to avoid a kernel launch per cell.
 
-      // UVM mirror views can't be used with intrepid basis. Let's do an inefficient copy if using UVM.
+      // Mirror views on host can't be used with intrepid basis
+      // getValues() call when UVM or UNIFIED_MEMORY is
+      // enabled. getHostBasis() returns a "HostSpace" basis object
+      // while create_mirror_view creates views in UVMSpace or
+      // HIPSpace. These are not "assignable" in kokkos. We do an
+      // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_grad_basis.get_view())::memory_space>::value) {
+#else
+      if constexpr (std::is_same<Kokkos::HIPSpace,typename decltype(tmp_grad_basis.get_view())::memory_space>::value) {
+#endif
         auto cubature_points_ref_host = Kokkos::create_mirror(Kokkos::HostSpace{},cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_grad_basis_host = Kokkos::create_mirror(Kokkos::HostSpace{},tmp_grad_basis.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_grad_basis_host = Kokkos::subview(tmp_grad_basis_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1447,12 +1474,12 @@ getGradBasisValues(const bool weighted,
         }
         auto tmp_grad_basis_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("tmp_grad_basis_ref",num_cells,num_card,num_points,num_dim);
         Kokkos::deep_copy(tmp_grad_basis_ref.get_view(),tmp_grad_basis_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_grad_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_grad_basis_ref.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-        
+
         // Apply transformation
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HGRADtransformGRAD(s_aux, s_jac_inv, s_ref);
@@ -1461,7 +1488,7 @@ getGradBasisValues(const bool weighted,
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_grad_basis_host = Kokkos::create_mirror_view(tmp_grad_basis.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_grad_basis_host = Kokkos::subview(tmp_grad_basis_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1470,16 +1497,16 @@ getGradBasisValues(const bool weighted,
         }
         auto tmp_grad_basis_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("tmp_grad_basis_ref",num_cells,num_card,num_points,num_dim);
         Kokkos::deep_copy(tmp_grad_basis_ref.get_view(),tmp_grad_basis_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_grad_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_grad_basis_ref.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-        
+
         // Apply transformation
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HGRADtransformGRAD(s_aux, s_jac_inv, s_ref);
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1578,13 +1605,22 @@ getCurl2DVectorBasis(const bool weighted,
       // it serially on host until the function supports multiple
       // reference cells to avoid a kernel launch per cell.
 
-      // UVM mirror views can't be used with intrepid basis. Let's do an inefficient copy if using UVM.
+      // Mirror views on host can't be used with intrepid basis
+      // getValues() call when UVM or UNIFIED_MEMORY is
+      // enabled. getHostBasis() returns a "HostSpace" basis object
+      // while create_mirror_view creates views in UVMSpace or
+      // HIPSpace. These are not "assignable" in kokkos. We do an
+      // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_curl_basis_scalar.get_view())::memory_space>::value) {
+#else
+      if constexpr (std::is_same<Kokkos::HIPSpace,typename decltype(tmp_curl_basis_scalar.get_view())::memory_space>::value) {
+#endif
         auto cubature_points_ref_host = Kokkos::create_mirror(Kokkos::HostSpace{},cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_curl_basis_scalar_host = Kokkos::create_mirror(Kokkos::HostSpace{},tmp_curl_basis_scalar.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_scalar_host,cell,Kokkos::ALL(),Kokkos::ALL());
@@ -1593,12 +1629,12 @@ getCurl2DVectorBasis(const bool weighted,
         }
         auto tmp_curl_basis_scalar_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_curl_basis_scalar_ref",num_cells,num_card,num_points);
         Kokkos::deep_copy(tmp_curl_basis_scalar_ref.get_view(),tmp_curl_basis_scalar_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_curl_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_curl_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
-        
+
         // note only volume deformation is needed!
         // this relates directly to this being in
         // the divergence space in 2D!
@@ -1609,7 +1645,7 @@ getCurl2DVectorBasis(const bool weighted,
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_curl_basis_scalar_host = Kokkos::create_mirror_view(tmp_curl_basis_scalar.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_scalar_host,cell,Kokkos::ALL(),Kokkos::ALL());
@@ -1618,18 +1654,18 @@ getCurl2DVectorBasis(const bool weighted,
         }
         auto tmp_curl_basis_scalar_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_curl_basis_scalar_ref",num_cells,num_card,num_points);
         Kokkos::deep_copy(tmp_curl_basis_scalar_ref.get_view(),tmp_curl_basis_scalar_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_curl_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_curl_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
-        
+
         // note only volume deformation is needed!
         // this relates directly to this being in
         // the divergence space in 2D!
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1725,13 +1761,22 @@ getCurlVectorBasis(const bool weighted,
       // it serially on host until the function supports multiple
       // reference cells to avoid a kernel launch per cell.
 
-      // UVM mirror views can't be used with intrepid basis. Let's do an inefficient copy if using UVM.
+      // Mirror views on host can't be used with intrepid basis
+      // getValues() call when UVM or UNIFIED_MEMORY is
+      // enabled. getHostBasis() returns a "HostSpace" basis object
+      // while create_mirror_view creates views in UVMSpace or
+      // HIPSpace. These are not "assignable" in kokkos. We do an
+      // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_curl_basis_vector.get_view())::memory_space>::value) {
+#else
+      if constexpr (std::is_same<Kokkos::HIPSpace,typename decltype(tmp_curl_basis_vector.get_view())::memory_space>::value) {
+#endif
         auto cubature_points_ref_host = Kokkos::create_mirror(Kokkos::HostSpace{},cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_curl_basis_vector_host = Kokkos::create_mirror(Kokkos::HostSpace{},tmp_curl_basis_vector.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1740,13 +1785,13 @@ getCurlVectorBasis(const bool weighted,
         }
         auto tmp_curl_basis_vector_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("tmp_curl_basis_scalar_ref",num_cells,num_card,num_points,num_dim);
         Kokkos::deep_copy(tmp_curl_basis_vector_ref.get_view(),tmp_curl_basis_vector_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_curl_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac = Kokkos::subview(cubature_jacobian_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_curl_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        
+
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, s_ref);
       } else {
@@ -1754,7 +1799,7 @@ getCurlVectorBasis(const bool weighted,
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_curl_basis_vector_host = Kokkos::create_mirror_view(tmp_curl_basis_vector.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1763,16 +1808,16 @@ getCurlVectorBasis(const bool weighted,
         }
         auto tmp_curl_basis_vector_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("tmp_curl_basis_scalar_ref",num_cells,num_card,num_points,num_dim);
         Kokkos::deep_copy(tmp_curl_basis_vector_ref.get_view(),tmp_curl_basis_vector_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_curl_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac = Kokkos::subview(cubature_jacobian_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_curl_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        
+
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, s_ref);
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1866,13 +1911,22 @@ getDivVectorBasis(const bool weighted,
       // it serially on host until the function supports multiple
       // reference cells to avoid a kernel launch per cell.
 
-      // UVM mirror views can't be used with intrepid basis. Let's do an inefficient copy if using UVM.
+      // Mirror views on host can't be used with intrepid basis
+      // getValues() call when UVM or UNIFIED_MEMORY is
+      // enabled. getHostBasis() returns a "HostSpace" basis object
+      // while create_mirror_view creates views in UVMSpace or
+      // HIPSpace. These are not "assignable" in kokkos. We do an
+      // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_div_basis.get_view())::memory_space>::value) {
+#else
+      if constexpr (std::is_same<Kokkos::HIPSpace,typename decltype(tmp_div_basis.get_view())::memory_space>::value) {
+#endif
         auto cubature_points_ref_host = Kokkos::create_mirror(Kokkos::HostSpace{},cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_div_basis_host = Kokkos::create_mirror(Kokkos::HostSpace{},tmp_div_basis.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_div_basis_host = Kokkos::subview(tmp_div_basis_host,cell,Kokkos::ALL(),Kokkos::ALL());
@@ -1881,12 +1935,12 @@ getDivVectorBasis(const bool weighted,
         }
         auto tmp_div_basis_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_div_basis_ref",num_cells,num_card,num_points);
         Kokkos::deep_copy(tmp_div_basis_ref.get_view(),tmp_div_basis_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_div_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_div_basis_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
-        
+
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
       } else {
@@ -1894,7 +1948,7 @@ getDivVectorBasis(const bool weighted,
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
         Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
         auto tmp_div_basis_host = Kokkos::create_mirror_view(tmp_div_basis.get_view());
-        
+
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
           auto my_cell_div_basis_host = Kokkos::subview(tmp_div_basis_host,cell,Kokkos::ALL(),Kokkos::ALL());
@@ -1903,15 +1957,15 @@ getDivVectorBasis(const bool weighted,
         }
         auto tmp_div_basis_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_div_basis_ref",num_cells,num_card,num_points);
         Kokkos::deep_copy(tmp_div_basis_ref.get_view(),tmp_div_basis_host);
-        
+
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_div_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         auto s_ref = Kokkos::subview(tmp_div_basis_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
-        
+
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
