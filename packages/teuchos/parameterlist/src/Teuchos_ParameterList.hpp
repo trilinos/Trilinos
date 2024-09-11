@@ -260,9 +260,9 @@ public:
     \note This fallback is necessary to support legacy use cases that specify the type
           of the parameter at the call site, and the type is hence not deduced.  
   */
-  template<typename T, typename S, typename = std::enable_if_t< ! std::is_same_v<T, S> && std::is_same_v<T, std::decay_t<S>>>>
+  template<typename T, typename S, typename = std::enable_if_t<std::is_convertible_v<S, std::remove_const_t<T>>>>
   ParameterList& set (std::string const& name,
-                      S&& value,
+                      const S& value,
                       std::string const& docString = "",
                       RCP<const ParameterEntryValidator> const& validator = null);
 
@@ -965,11 +965,11 @@ ParameterList& ParameterList::set(
 template<typename T, typename S, typename>
 inline
 ParameterList& ParameterList::set(
-  std::string const& name_in, S&& value_in, std::string const& docString_in,
+  std::string const& name_in, const S& value_in, std::string const& docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  return set<S>(name_in, std::forward<S>(value_in), docString_in, validator_in);
+  return set(name_in, static_cast<const T&>(value_in), docString_in, validator_in);
 }
 
 inline
