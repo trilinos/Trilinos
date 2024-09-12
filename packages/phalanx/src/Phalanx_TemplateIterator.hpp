@@ -50,7 +50,7 @@ namespace PHX {
 
     //! Equal operator
     bool operator==(const TemplateIterator& t) const {
-      return object_iterator == t.objectIterator;
+      return object_iterator == t.object_iterator;
     }
 
     //! Not equal operator
@@ -128,7 +128,7 @@ namespace PHX {
 
     //! Equal operator
     bool operator==(const ConstTemplateIterator& t) const {
-      return object_iterator == t.objectIterator;
+      return object_iterator == t.object_iterator;
     }
 
     //! Not equal operator
