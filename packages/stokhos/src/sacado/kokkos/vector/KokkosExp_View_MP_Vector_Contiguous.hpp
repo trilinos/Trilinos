@@ -326,7 +326,7 @@ void deep_copy(
 /* Specialize for deep copy of MP::Vector */
 template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
-void deep_copy( const ExecSpace &,
+void deep_copy( const ExecSpace & exec,
                 const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
@@ -359,7 +359,7 @@ void deep_copy( const ExecSpace &,
   //   typename View<ST,SP...>::array_type( src ) );
 
   Kokkos::deep_copy(
-    ExecSpace() ,
+    exec ,
     typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
     typename FlatArrayType< View<ST,SP...> >::type( src ) );
 }
