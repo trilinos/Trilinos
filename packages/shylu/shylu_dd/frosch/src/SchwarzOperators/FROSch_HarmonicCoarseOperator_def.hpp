@@ -121,26 +121,19 @@ namespace FROSch {
     int HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap)
     {
         FROSCH_DETAILTIMER_START_LEVELID(addZeroCoarseSpaceBlockTime,"HarmonicCoarseOperator::addZeroCoarseSpaceBlock");
+        /////
+        int blockId = NumberOfBlocks_-1;
+
+        // Process the parameter list
+        stringstream blockIdStringstream;
+        blockIdStringstream << blockId+1;
+        string blockIdString = blockIdStringstream.str();
+        RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
 
 	if (useForCoarseSpace) {
             // Das könnte man noch ändern
-            GammaDofs_->resize(GammaDofs_.size()+1);
-            IDofs_->resize(IDofs_.size()+1);
-            InterfaceCoarseSpaces_->resize(InterfaceCoarseSpaces_.size()+1);
-            DofsMaps_->resize(DofsMaps_.size()+1);
-            DofsPerNode_->resize(DofsPerNode_.size()+1);
-
             NumberOfBlocks_++;
-
-            /////
-            int blockId = NumberOfBlocks_-1;
-
-            // Process the parameter list
-            stringstream blockIdStringstream;
-            blockIdStringstream << blockId+1;
-            string blockIdString = blockIdStringstream.str();
-            RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
             GammaDofs_[blockId] = LOVecPtr(0);
 
@@ -161,6 +154,12 @@ namespace FROSch {
                     mVPhiGamma->replaceLocalValue(i,i,ScalarTraits<SC>::one());
                 }
             }
+
+            GammaDofs_->resize(GammaDofs_.size()+1);
+            IDofs_->resize(IDofs_.size()+1);
+            InterfaceCoarseSpaces_->resize(InterfaceCoarseSpaces_.size()+1);
+            DofsMaps_->resize(DofsMaps_.size()+1);
+            DofsPerNode_->resize(DofsPerNode_.size()+1);
 
             IDofs_[blockId] = LOVecPtr(0);
 
