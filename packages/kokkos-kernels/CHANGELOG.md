@@ -1,5 +1,19 @@
 # Change Log
 
+## [4.4.01](https://github.com/kokkos/kokkos-kernels/tree/4.4.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.4.00...4.4.01)
+
+### Build System:
+- Restore size_t as default offset, in Tribits builds [\#2313](https://github.com/kokkos/kokkos-kernels/pull/2313)
+
+### Enhancements:
+- Improve crs/bsr sorting performance [\#2293](https://github.com/kokkos/kokkos-kernels/pull/2293)
+
+### Bug Fixes:
+- SpAdd handle: delete sort_option getter/setter [\#2296](https://github.com/kokkos/kokkos-kernels/pull/2296)
+- Improve GH action to produce release artifacts [\#2312](https://github.com/kokkos/kokkos-kernels/pull/2312)
+- coo2csr: add parens to function calls [\#2318](https://github.com/kokkos/kokkos-kernels/pull/2318)
+
 ## [4.4.00](https://github.com/kokkos/kokkos-kernels/tree/4.4.00)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.3.01...4.4.00)
 
