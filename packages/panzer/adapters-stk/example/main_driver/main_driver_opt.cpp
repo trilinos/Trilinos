@@ -35,6 +35,8 @@
 #include "NOX_Observer_Print.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorObserverComposite.hpp"
+#include "Tempus_IntegratorObserverBasic.hpp"
 #include "Tempus_StepperFactory.hpp"
 
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -228,9 +230,16 @@ int main(int argc, char *argv[])
     integrator->getStepper()->getSolver()->setParameterList(noxList);
     integrator->initialize();
 
-    RCP<const panzer_stk::TempusObserverFactory> tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
-    auto tempus_observers = tof->buildTempusObserver(mesh,globalIndexer,linObjFactory);
-    integrator->setObserver(tempus_observers);
+    // Setting observers on tempus breaks the screen output of the
+    // time steps! It replaces IntegratorObserverBasic which handles
+    // IO. Is this at least documented?
+    {
+      RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
+      RCP<const panzer_stk::TempusObserverFactory> tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
+      tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
+      tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
+      integrator->setObserver(tempus_observers);
+    }
 
     RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
     integrator->initializeSolutionHistory(0.0, x0);
@@ -290,6 +299,9 @@ int main(int argc, char *argv[])
 
   return status;
 }
+
+// *************************************************
+// *************************************************
 
 void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList& responses,
                                                    panzer_stk::ModelEvaluatorFactory<double>& me_factory)
