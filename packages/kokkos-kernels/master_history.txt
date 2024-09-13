@@ -27,3 +27,4 @@ tag: 4.2.01     date: 01/30/2024  master: f429f6ec    release: bcf9854b
 tag: 4.3.00     date: 04/03/2024  master: afd65f03    release: ebbf4b78
 tag: 4.3.01     date: 05/07/2024  master: 1b0a15f5    release: 58785c1b
 tag: 4.4.00     date: 08/08/2024  master: d1a91b8a    release: 1145f529
+tag: 4.4.01     date: 09/12/2024  master: 0608a337    release: 6b340287
