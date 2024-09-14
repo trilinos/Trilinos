@@ -17,9 +17,7 @@ PROJECT(${PROJECT_NAME} NONE)
 # Set up to use ccache
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/UseCCache.cmake")
 
-set(deprecated_packages Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
-
-include("${CMAKE_CURRENT_LIST_DIR}/cmake/WarningsErrorsPolicy.cmake")
+set(DEPRECATED_PACKAGES Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
 
 # Set an env so we know we are in configure
 set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
@@ -61,7 +59,7 @@ IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
 ENDIF()
 
 set(enabled_deprecated_packages "")
-FOREACH(package ${deprecated_packages})
+FOREACH(package ${DEPRECATED_PACKAGES})
   IF(Trilinos_ENABLE_${package})
     set(enabled_deprecated_packages ${package} ${enabled_deprecated_packages})
   ENDIF()
