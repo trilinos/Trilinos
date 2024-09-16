@@ -43,10 +43,7 @@ KOKKOS_DEVICE_OPTION(OPENMP ${OMP_DEFAULT} HOST "Whether to build OpenMP backend
 
 # We want this to default to OFF for cache reasons, but if no
 # host space is given, then activate serial
-IF (KOKKOS_HAS_TRILINOS)
-  #However, Trilinos always wants Serial ON
-  SET(SERIAL_DEFAULT ON)
-ELSEIF (KOKKOS_HAS_HOST)
+IF (KOKKOS_HAS_HOST)
   SET(SERIAL_DEFAULT OFF)
 ELSE()
   SET(SERIAL_DEFAULT ON)
@@ -63,7 +60,7 @@ KOKKOS_DEVICE_OPTION(HPX OFF HOST "Whether to build HPX backend (experimental)")
 KOKKOS_DEVICE_OPTION(OPENACC OFF DEVICE "Whether to build the OpenACC backend")
 IF (KOKKOS_ENABLE_OPENACC)
   COMPILER_SPECIFIC_FLAGS(
-    Clang -fopenacc -fopenacc-fake-async-wait
+    Clang -fopenacc -fopenacc-fake-async-wait -fopenacc-implicit-worker=vector
           -Wno-openacc-and-cxx -Wno-openmp-mapping -Wno-unknown-cuda-version
           -Wno-pass-failed
   )

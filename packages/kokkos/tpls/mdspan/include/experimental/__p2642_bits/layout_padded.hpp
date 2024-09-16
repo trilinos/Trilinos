@@ -60,7 +60,7 @@ MDSPAN_INLINE_FUNCTION constexpr size_t get_actual_static_padding_value() {
     return dynamic_extent;
   }
   // Missing return statement warning from NVCC and ICC
-#if defined(__NVCC__) || defined(__INTEL_COMPILER)
+#if (defined(__NVCC__) || defined(__INTEL_COMPILER)) && !defined(__NVCOMPILER)
   return 0;
 #endif
 }
@@ -95,6 +95,7 @@ struct padded_extent {
   using static_array_type = typename static_array_type_for_padded_extent<
       padding_value, _Extents, _ExtentToPadIdx, _Extents::rank()>::type;
 
+  MDSPAN_INLINE_FUNCTION
   static constexpr auto static_value() { return static_array_type::static_value(0); }
 
   MDSPAN_INLINE_FUNCTION
@@ -106,7 +107,7 @@ struct padded_extent {
       return init_padding(exts, padding_value);
     }
     // Missing return statement warning from NVCC and ICC
-#if defined(__NVCC__) || defined(__INTEL_COMPILER)
+#if (defined(__NVCC__) || defined(__INTEL_COMPILER)) && !defined(__NVCOMPILER)
     return {};
 #endif
   }
@@ -121,7 +122,7 @@ struct padded_extent {
       return {};
     }
     // Missing return statement warning from NVCC and ICC
-#if defined(__NVCC__) || defined(__INTEL_COMPILER)
+#if (defined(__NVCC__) || defined(__INTEL_COMPILER)) && !defined(__NVCOMPILER)
     return {};
 #endif
   }
@@ -136,7 +137,7 @@ struct padded_extent {
       return {};
     }
     // Missing return statement warning from NVCC and ICC
-#if defined(__NVCC__) || defined(__INTEL_COMPILER)
+#if (defined(__NVCC__) || defined(__INTEL_COMPILER)) && !defined(__NVCOMPILER)
     return {};
 #endif
   }
@@ -203,7 +204,7 @@ private:
   }
 
 public:
-#if !MDSPAN_HAS_CXX_20
+#if !MDSPAN_HAS_CXX_20 || defined(__NVCC__)
   MDSPAN_INLINE_FUNCTION_DEFAULTED
   constexpr mapping()
       : mapping(extents_type{})
@@ -347,7 +348,7 @@ public:
   MDSPAN_INLINE_FUNCTION
   constexpr mapping(const _Mapping &other_mapping) noexcept
       : padded_stride(padded_stride_type::init_padding(
-            other_mapping.extents(),
+            static_cast<extents_type>(other_mapping.extents()),
             other_mapping.extents().extent(extent_to_pad_idx))),
         exts(other_mapping.extents()) {}
 
@@ -566,7 +567,7 @@ public:
   }
 
 public:
-#if !MDSPAN_HAS_CXX_20
+#if !MDSPAN_HAS_CXX_20 || defined(__NVCC__)
   MDSPAN_INLINE_FUNCTION_DEFAULTED
       constexpr mapping()
       : mapping(extents_type{})
@@ -707,7 +708,7 @@ public:
   MDSPAN_INLINE_FUNCTION
   constexpr mapping(const _Mapping &other_mapping) noexcept
       : padded_stride(padded_stride_type::init_padding(
-            other_mapping.extents(),
+            static_cast<extents_type>(other_mapping.extents()),
             other_mapping.extents().extent(extent_to_pad_idx))),
         exts(other_mapping.extents()) {}
 

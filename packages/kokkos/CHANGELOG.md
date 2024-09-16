@@ -1,20 +1,5 @@
 # CHANGELOG
 
-## [4.4.01](https://github.com/kokkos/kokkos/tree/4.4.01)
-[Full Changelog](https://github.com/kokkos/kokkos/compare/4.0.00...4.4.01)
-
-### Features:
-* Introduce new SequentialHostInit view allocation property [\#7229](https://github.com/kokkos/kokkos/pull/7229)
-
-### Backend and Architecture Enhancements:
-
-#### CUDA:
-* Experimental support for unified memory mode (intended for Grace-Hopper etc.) [\#6823](https://github.com/kokkos/kokkos/pull/6823)
-
-### Bug Fixes
-* OpenMP: Fix issue related to the visibility of an internal symbol with shared libraries that affected `ScatterView` in particular [\#7284](https://github.com/kokkos/kokkos/pull/7284)
-* Fix implicit copy assignment operators in few AVX2 masks being deleted [#7296](https://github.com/kokkos/kokkos/pull/7296)
-
 ## [4.4.00](https://github.com/kokkos/kokkos/tree/4.4.00)
 [Full Changelog](https://github.com/kokkos/kokkos/compare/4.3.01...4.4.00)
 
@@ -1388,7 +1373,7 @@
 **Closed issues:**
 
 - Silent error (Validate storage level arg to set_scratch_size) [\#3097](https://github.com/kokkos/kokkos/issues/3097)
-- Remove KOKKKOS\_ENABLE\_PROFILING Option [\#3095](https://github.com/kokkos/kokkos/issues/3095)
+- Remove KOKKOS\_ENABLE\_PROFILING Option [\#3095](https://github.com/kokkos/kokkos/issues/3095)
 - Cuda 11 -\> allow C++17 [\#3083](https://github.com/kokkos/kokkos/issues/3083)
 - In source build failure not explained [\#3081](https://github.com/kokkos/kokkos/issues/3081)
 - Allow naming of Views for initialization kernel [\#3070](https://github.com/kokkos/kokkos/issues/3070)

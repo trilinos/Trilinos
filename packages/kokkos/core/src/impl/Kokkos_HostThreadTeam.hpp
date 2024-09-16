@@ -430,11 +430,11 @@ class HostThreadTeamMember {
         m_league_rank(arg_league_rank),
         m_league_size(arg_league_size) {}
 
-  ~HostThreadTeamMember()                           = default;
-  HostThreadTeamMember()                            = delete;
-  HostThreadTeamMember(HostThreadTeamMember&&)      = default;
-  HostThreadTeamMember(HostThreadTeamMember const&) = default;
-  HostThreadTeamMember& operator=(HostThreadTeamMember&&) = default;
+  ~HostThreadTeamMember()                                      = default;
+  HostThreadTeamMember()                                       = delete;
+  HostThreadTeamMember(HostThreadTeamMember&&)                 = default;
+  HostThreadTeamMember(HostThreadTeamMember const&)            = default;
+  HostThreadTeamMember& operator=(HostThreadTeamMember&&)      = default;
   HostThreadTeamMember& operator=(HostThreadTeamMember const&) = default;
 
   //----------------------------------------
@@ -481,9 +481,8 @@ class HostThreadTeamMember {
   //--------------------------------------------------------------------------
 
   template <typename T>
-  KOKKOS_INLINE_FUNCTION void team_broadcast(T& value,
-                                             const int source_team_rank) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION void team_broadcast(
+      T& value, const int source_team_rank) const noexcept {
     KOKKOS_IF_ON_HOST((if (1 < m_data.m_team_size) {
       T* const shared_value = (T*)m_data.team_reduce();
 
@@ -513,9 +512,8 @@ class HostThreadTeamMember {
   //--------------------------------------------------------------------------
 
   template <class Closure, typename T>
-  KOKKOS_INLINE_FUNCTION void team_broadcast(Closure const& f, T& value,
-                                             const int source_team_rank) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION void team_broadcast(
+      Closure const& f, T& value, const int source_team_rank) const noexcept {
     KOKKOS_IF_ON_HOST((
         T* const shared_value = (T*)m_data.team_reduce();
 
@@ -889,7 +887,7 @@ KOKKOS_INLINE_FUNCTION
   using ClosureValueType = typename Kokkos::Impl::FunctorAnalysis<
       Kokkos::Impl::FunctorPatternInterface::SCAN, void, Closure,
       void>::value_type;
-  static_assert(std::is_same<ClosureValueType, ValueType>::value,
+  static_assert(std::is_same_v<ClosureValueType, ValueType>,
                 "Non-matching value types of closure and return type");
 
   ValueType accum = ValueType();
@@ -941,7 +939,7 @@ KOKKOS_INLINE_FUNCTION
   using ClosureValueType = typename Kokkos::Impl::FunctorAnalysis<
       Kokkos::Impl::FunctorPatternInterface::SCAN, void, ClosureType,
       void>::value_type;
-  static_assert(std::is_same<ClosureValueType, ValueType>::value,
+  static_assert(std::is_same_v<ClosureValueType, ValueType>,
                 "Non-matching value types of closure and return type");
 
   ValueType scan_val = ValueType();
