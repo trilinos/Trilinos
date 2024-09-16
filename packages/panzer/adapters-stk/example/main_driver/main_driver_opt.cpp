@@ -196,6 +196,13 @@ int main(int argc, char *argv[])
       Teuchos::ParameterList user_data(input_params->sublist("User Data"));
       user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
 
+      std::vector<std::string> eBlocks;
+      mesh->getElementBlockNames(eBlocks);
+
+      panzer_stk::RespFactorySolnWriter_Builder builder;
+      builder.mesh = mesh;
+      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+
       stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                                     cm_factory,
                                                     input_params->sublist("Closure Models"),
