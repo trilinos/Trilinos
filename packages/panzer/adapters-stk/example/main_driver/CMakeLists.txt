@@ -29,7 +29,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-ss-loca-eigenvalue.xml
     energy-ss-blocked.xml
     energy-transient-tempus-blocked.xml
-    energy-transient-tempus-sa-blocked.xml
     energy-transient-tempus-opt-blocked.xml
     rol_params.xml
     energy-neumann.xml
@@ -115,18 +114,6 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
       main_driver_energy-transient-tempus-blocked
       TEST_0 EXEC main_driver
         ARGS  --i=energy-transient-tempus-blocked.xml
-        PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-      )
-
-    # Transient Sensitivity Analysis
-    TRIBITS_ADD_EXECUTABLE(
-      main_driver_sa
-      SOURCES main_driver_sa.cpp ${main_driver_SOURCES}
-      )
-    TRIBITS_ADD_ADVANCED_TEST(
-      main_driver_energy-transient-tempus-sa-blocked
-      TEST_0 EXEC main_driver_sa
-        ARGS  --i=energy-transient-tempus-sa-blocked.xml --point-calc
         PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
       )
 
