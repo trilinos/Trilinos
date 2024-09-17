@@ -525,8 +525,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     using Teuchos::rcp;
     using std::endl;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
-    const ScalarType ZERO = STS::zero ();
-    const ScalarType ONE = STS::one ();
 
     // Initialize the state storage if it isn't already.
     if (! stateStorageInitialized_) {
