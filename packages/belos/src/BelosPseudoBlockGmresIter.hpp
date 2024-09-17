@@ -520,8 +520,6 @@ namespace Belos {
 
         RCP<const MV> newV = MVT::CloneView (*newstate.V[i], nevind);
         RCP<MV> lclV = MVT::CloneViewNonConst( *V_[i], nevind );
-        const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-        const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
         MVT::Assign(*newV, *lclV);
 
         // Done with local pointers
@@ -635,9 +633,6 @@ namespace Belos {
       initialize();
     }
 
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    
     // Compute the current search dimension. 
     int searchDim = numBlocks_;
     //
