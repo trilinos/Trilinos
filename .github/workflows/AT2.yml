@@ -103,6 +103,23 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
   gcc830-serial-EXPERIMENTAL:
     needs: pre-checks
@@ -177,6 +194,23 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
   cuda11-uvm-EXPERIMENTAL:
     needs: pre-checks
@@ -252,3 +286,20 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=96 \
             --num-concurrent-tests=96
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
