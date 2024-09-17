@@ -307,10 +307,6 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP,DM> {
     //
     std::string errstr("Belos::FixedPointIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-
     if (newstate.R != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*R_) != MVT::GetNumberVecs(*newstate.R),
                                   std::invalid_argument, errstr );

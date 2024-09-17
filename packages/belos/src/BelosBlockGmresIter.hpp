@@ -559,8 +559,6 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
                                "Belos::BlockGmresIter::initialize(): Cannot initialize state storage!");
 
-    const ScalarType zero = SCT::zero(), one = SCT::one();
-
     // NOTE:  In BlockGmresIter, V and Z are required!!!
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
