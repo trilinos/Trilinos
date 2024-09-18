@@ -338,10 +338,6 @@ namespace Belos {
     //
     std::string errstr("Belos::BlockPseudoStochasticCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-
     if (!Teuchos::is_null(newstate.R)) {
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
