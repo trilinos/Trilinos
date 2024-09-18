@@ -52,10 +52,15 @@
 
 #include "Panzer_ResponseEvaluatorFactory_Probe.hpp"
 
+#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_RandomVector.hpp"
+
 #include <Ioss_SerializeIO.h>
 
 #include <string>
 #include <iostream>
+#include <tuple>
 
 // *************************************************
 // applicaiton functions defined in this file
@@ -63,12 +68,20 @@
 namespace user_app {
   void addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList& response_sublist,
                                            panzer_stk::ModelEvaluatorFactory<double>& me_factory);
+
   void computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator<double>>& me,
                                 const auto& x,
                                 const auto& x_dot,
                                 const auto& t,
                                 const auto& global_data,
                                 std::ostream& out);
+
+  std::tuple<Teuchos::RCP<Tempus::IntegratorBasic<double>>,
+             Teuchos::RCP<panzer::GlobalData>,
+             Teuchos::RCP<Thyra::ModelEvaluator<double>>>
+  buildTempusIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
+                        const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+                        const bool overrideNoxOutput);
 }
 
 // *************************************************
@@ -80,6 +93,9 @@ namespace user_app {
 
 int main(int argc, char *argv[])
 {
+  using namespace Teuchos;
+  using namespace Tempus;
+
   int status = 0;
 
   std::ostream blackhole{nullptr};
@@ -139,118 +155,10 @@ int main(int argc, char *argv[])
     if (printInputPL)
       *out << *input_params << std::endl;
 
-    Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
-    input_params->remove("Solver Factories");
 
-    // Add in the application specific equation set factory
-    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-
-    // Add in the application specific closure model factory
-    user_app::MyModelFactory_TemplateBuilder cm_builder;
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
-    cm_factory.buildObjects(cm_builder);
-
-    // Add in the application specific bc factory
-    user_app::BCFactory bc_factory;
-
-    // Create the global data
-    Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
-    input_params->sublist("User Data").set("Comm", comm); // Required for GlobalStatistics
-
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
-       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
-
-    Teuchos::RCP<Thyra::ModelEvaluator<double> > physics;
-    Teuchos::RCP<Thyra::ModelEvaluator<double> > solver;
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
-    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-    Teuchos::RCP<panzer::GlobalIndexer> globalIndexer;
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh;
-    {
-      Teuchos::ParameterList responses = input_params->sublist("Responses");
-      input_params->remove("Responses");
-
-      panzer_stk::ModelEvaluatorFactory<double> me_factory;
-      me_factory.setParameterList(input_params);
-      auto strat_list = Teuchos::parameterList();
-      *strat_list = input_params->sublist("Solution Control",true).sublist("Tempus",true).sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Direction",true).sublist("Newton",true).sublist("Stratimikos Linear Solver",true).sublist("Stratimikos",true);
-      me_factory.setStratimikosList(strat_list);
-      me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
-
-      user_app::addResponsesToModelEvaluatorFactory(responses,me_factory);
-      me_factory.buildResponses(cm_factory);
-
-      physicsBlocks = me_factory.getPhysicsBlocks();
-      physics = me_factory.getPhysicsModelEvaluator();
-      rLibrary = me_factory.getResponseLibrary();
-      linObjFactory = me_factory.getLinearObjFactory();
-      globalIndexer = me_factory.getGlobalIndexer();
-      mesh = me_factory.getMesh();
-    }
-
-    // setup outputs to mesh on the stkIOResponseLibrary
-    {
-      stkIOResponseLibrary->initialize(*rLibrary);
-
-      Teuchos::ParameterList user_data(input_params->sublist("User Data"));
-      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
-
-      std::vector<std::string> eBlocks;
-      mesh->getElementBlockNames(eBlocks);
-
-      panzer_stk::RespFactorySolnWriter_Builder builder;
-      builder.mesh = mesh;
-      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
-
-      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
-                                                    cm_factory,
-                                                    input_params->sublist("Closure Models"),
-                                                    user_data);
-    }
-
-    // Tempus stepper
-    using namespace Teuchos;
-    using namespace Tempus;
-
-    RCP<ParameterList> tempus_pl = parameterList(std::string("Tempus"));
-    *tempus_pl = input_params->sublist("Solution Control").sublist("Tempus");
-
-    if (overrideNoxOutput) {
-      auto nox_utils = Teuchos::rcp(new NOX::Utils(NOX::Utils::Error,comm->getRank(),0,3));
-      auto print_nonlinear = Teuchos::rcp(new NOX::ObserverPrint(nox_utils,10));
-      tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Solver Options",true).set<RCP<NOX::Observer>>("Observer",print_nonlinear);
-    }
-
-    // Tempus is overriding NOX parameters with its own defaults. Need
-    // to fix this. It also does not validate because of arbitrary
-    // solver name. Should validate but use
-    // disableRecursiveValidation() to avoid errors with arbitrary
-    // names.
-
-    const bool doInitialization = false;
-    auto integrator = createIntegratorBasic<double>(tempus_pl, physics, doInitialization);
-
-    RCP<ParameterList> noxList = parameterList("Correct NOX Params");
-    *noxList = tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true);
-    // noxList->print(std::cout);
-    integrator->getStepper()->getSolver()->setParameterList(noxList);
-    integrator->initialize();
-
-    // Setting observers on tempus breaks the screen output of the
-    // time steps! It replaces IntegratorObserverBasic which handles
-    // IO. Is this at least documented?
-    {
-      RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
-      RCP<const panzer_stk::TempusObserverFactory> tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
-      tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
-      tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
-      integrator->setObserver(tempus_observers);
-    }
-
-    RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
-    integrator->initializeSolutionHistory(0.0, x0);
-
+    RCP<ParameterList> params_copy = parameterList(*input_params);
+    auto [integrator,global_data,physics] = user_app::buildTempusIntegrator(params_copy,comm,overrideNoxOutput);
+    
     bool integratorStatus = integrator->advanceTime();
     TEUCHOS_ASSERT(integratorStatus);
 
@@ -259,7 +167,7 @@ int main(int argc, char *argv[])
     auto t = integrator->getSolutionHistory()->getCurrentState()->getTime();
 
     user_app::computeAndPrintResponses(physics,x,x_dot,t,global_data,*out);
-
+    
     {
       Teuchos::RCP<Teuchos::ParameterList> rol_params = Teuchos::rcp(new Teuchos::ParameterList("ROL Parameters"));
       {
@@ -272,13 +180,17 @@ int main(int argc, char *argv[])
           ROL::makePtr<ROL::TempusReducedObjective<double> >(physics, pl, objective_params);
 
         // Create target -- do forward integration with perturbed parameter values
-        // RCP<ROL::Vector<double> > zs = objective->create_design_vector();
-        // zs->setScalar(1.5);
-        // RCP<ROL::Vector<double> > r = objective->create_response_vector();
-        // objective->run_tempus(*r, *zs);
-        // objective->set_target(r);
+        RCP<ROL::Vector<double> > zs = objective->create_design_vector();
+        zs->setScalar(1.5);
+        RCP<ROL::Vector<double> > r = objective->create_response_vector();
+        objective->run_tempus(*r, *zs);
+        objective->set_target(r);
 
       }
+
+      ROL::Ptr<std::ostream> outStream = ROL::makePtrFromRef(std::cout);
+
+      
     }
 
     stackedTimer->stopBaseTimer();
@@ -420,4 +332,125 @@ void user_app::computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator
       }
     }
   }
+}
+
+std::tuple<Teuchos::RCP<Tempus::IntegratorBasic<double>>,
+           Teuchos::RCP<panzer::GlobalData>,
+           Teuchos::RCP<Thyra::ModelEvaluator<double>>>
+user_app::buildTempusIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
+                                const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+                                const bool overrideNoxOutput)
+{
+  using namespace Teuchos;
+  using namespace Tempus;
+
+  Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
+    input_params->remove("Solver Factories");
+
+    // Add in the application specific equation set factory
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+
+    // Add in the application specific closure model factory
+    user_app::MyModelFactory_TemplateBuilder cm_builder;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    cm_factory.buildObjects(cm_builder);
+
+    // Add in the application specific bc factory
+    user_app::BCFactory bc_factory;
+
+    // Create the global data
+    Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
+    input_params->sublist("User Data").set("Comm", comm); // Required for GlobalStatistics
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
+       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
+
+    Teuchos::RCP<Thyra::ModelEvaluator<double>> physics;
+    Teuchos::RCP<Thyra::ModelEvaluator<double>> solver;
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits>> rLibrary;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock>> physicsBlocks;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>> linObjFactory;
+    Teuchos::RCP<panzer::GlobalIndexer> globalIndexer;
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh;
+    {
+      Teuchos::ParameterList responses = input_params->sublist("Responses");
+      input_params->remove("Responses");
+
+      panzer_stk::ModelEvaluatorFactory<double> me_factory;
+      me_factory.setParameterList(input_params);
+      auto strat_list = Teuchos::parameterList();
+      *strat_list = input_params->sublist("Solution Control",true).sublist("Tempus",true).sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Direction",true).sublist("Newton",true).sublist("Stratimikos Linear Solver",true).sublist("Stratimikos",true);
+      me_factory.setStratimikosList(strat_list);
+      me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
+
+      user_app::addResponsesToModelEvaluatorFactory(responses,me_factory);
+      me_factory.buildResponses(cm_factory);
+
+      physicsBlocks = me_factory.getPhysicsBlocks();
+      physics = me_factory.getPhysicsModelEvaluator();
+      rLibrary = me_factory.getResponseLibrary();
+      linObjFactory = me_factory.getLinearObjFactory();
+      globalIndexer = me_factory.getGlobalIndexer();
+      mesh = me_factory.getMesh();
+    }
+
+    // setup outputs to mesh on the stkIOResponseLibrary
+    {
+      stkIOResponseLibrary->initialize(*rLibrary);
+
+      Teuchos::ParameterList user_data(input_params->sublist("User Data"));
+      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
+
+      std::vector<std::string> eBlocks;
+      mesh->getElementBlockNames(eBlocks);
+
+      panzer_stk::RespFactorySolnWriter_Builder builder;
+      builder.mesh = mesh;
+      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+
+      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                                    cm_factory,
+                                                    input_params->sublist("Closure Models"),
+                                                    user_data);
+    }
+
+    RCP<ParameterList> tempus_pl = parameterList(std::string("Tempus"));
+    *tempus_pl = input_params->sublist("Solution Control").sublist("Tempus");
+
+    if (overrideNoxOutput) {
+      auto nox_utils = Teuchos::rcp(new NOX::Utils(NOX::Utils::Error,comm->getRank(),0,3));
+      auto print_nonlinear = Teuchos::rcp(new NOX::ObserverPrint(nox_utils,10));
+      tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Solver Options",true).set<RCP<NOX::Observer>>("Observer",print_nonlinear);
+    }
+
+    // Tempus is overriding NOX parameters with its own defaults. Need
+    // to fix this. It also does not validate because of arbitrary
+    // solver name. Should validate but use
+    // disableRecursiveValidation() to avoid errors with arbitrary
+    // names.
+
+    const bool doInitialization = false;
+    auto integrator = createIntegratorBasic<double>(tempus_pl, physics, doInitialization);
+
+    RCP<ParameterList> noxList = parameterList("Correct NOX Params");
+    *noxList = tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true);
+    // noxList->print(std::cout);
+    integrator->getStepper()->getSolver()->setParameterList(noxList);
+    integrator->initialize();
+
+    // Setting observers on tempus breaks the screen output of the
+    // time steps! It replaces IntegratorObserverBasic which handles
+    // IO. Is this at least documented?
+    {
+      RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
+      RCP<const panzer_stk::TempusObserverFactory> tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
+      tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
+      tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
+      integrator->setObserver(tempus_observers);
+    }
+
+    RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
+    integrator->initializeSolutionHistory(0.0, x0);
+
+    return {integrator,global_data,physics};
 }

@@ -121,7 +121,7 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
     IF(${PACKAGE_NAME}_ENABLE_ROL)
       TRIBITS_ADD_EXECUTABLE(
         main_driver_opt
-        SOURCES main_driver_opt.cpp ${main_driver_SOURCES}
+        SOURCES main_driver_opt.cpp ${main_driver_SOURCES} user_app_ROLTempusReducedObjective.hpp
         )
       TRIBITS_ADD_ADVANCED_TEST(
         main_driver_energy-transient-tempus-opt-blocked
