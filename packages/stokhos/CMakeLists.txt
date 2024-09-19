@@ -10,6 +10,14 @@ TRIBITS_PACKAGE(Stokhos)
 
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
+SET (Stokhos_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Stokhos_ENABLE_DEPRECATED_CODE
+  STOKHOS_ENABLE_DEPRECATED_CODE
+  "Whether Stokhos enables deprecated code (that is, anything marked with the STOKHOS_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled)."
+  ${Stokhos_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   STOKHOS_DEBUG
   "Enable debug code in stokhos"
@@ -48,8 +56,12 @@ IF(HAVE_STOKHOS_ENSEMBLE_GEMV)
 ENDIF()
 
 SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)
+SET(Stokhos_ENABLE_PCE_Scalar_Type_Default OFF)
 IF(Stokhos_ENABLE_Sacado)
   SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default ON)
+  IF(Stokhos_ENABLE_DEPRECATED_CODE)
+    SET(Stokhos_ENABLE_PCE_Scalar_Type_Default ON)
+  ENDIF()
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_Ensemble_Scalar_Type
@@ -60,7 +72,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_Ensemble_Scalar_Type
 TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_PCE_Scalar_Type
   HAVE_STOKHOS_PCE_SCALAR_TYPE
   "Enable use of the PCE UQ scalar type in stokhos"
-  ${Stokhos_ENABLE_Ensemble_Scalar_Type_Default} )
+  ${Stokhos_ENABLE_PCE_Scalar_Type_Default}  )
+
+IF(Stokhos_ENABLE_PCE_Scalar_Type)
+  IF(Stokhos_ENABLE_DEPRECATED_CODE)
+    MESSAGE(WARNING "The PCE scalar type is deprecated in Stokhos but Stokhos_ENABLE_DEPRECATED_CODE=ON.")
+  ELSE()
+    MESSAGE(FATAL_ERROR "The PCE scalar type is deprecated in Stokhos but Stokhos_ENABLE_DEPRECATED_CODE=OFF.  You must set Stokhos_ENABLE_PCE_Scalar_Type=OFF or Stokhos_ENABLE_DEPRECATED_CODE=ON.")
+  ENDIF()
+ENDIF()
 
 IF(Stokhos_ENABLE_Ensemble_Scalar_Type AND NOT Stokhos_ENABLE_Sacado)
   MESSAGE(FATAL_ERROR "Ensemble scalar type cannot be enabled unless Sacado is enabled!")

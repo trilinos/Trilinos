@@ -12,6 +12,8 @@
 
 #include "Stokhos_ConfigDefs.h"
 
+#warning "The PCE scalar type is deprecated."
+
 #include "Kokkos_Macros.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
