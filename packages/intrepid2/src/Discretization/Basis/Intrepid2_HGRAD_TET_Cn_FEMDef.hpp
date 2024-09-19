@@ -24,14 +24,14 @@ namespace Intrepid2 {
 // -------------------------------------------------------------------------------------
 namespace Impl {
 
-template<EOperator opType>
+template<EOperator OpType>
 template<typename OutputViewType,
 typename InputViewType,
 typename WorkViewType,
 typename VinvViewType>
 KOKKOS_INLINE_FUNCTION
 void
-Basis_HGRAD_TET_Cn_FEM::Serial<opType>::
+Basis_HGRAD_TET_Cn_FEM::Serial<OpType>::
 getValues(       OutputViewType output,
     const InputViewType  input,
     WorkViewType         work,
@@ -47,13 +47,13 @@ getValues(       OutputViewType output,
   auto vcprop = Kokkos::common_view_alloc_prop(input);
   auto ptr = work.data();
 
-  switch (opType) {
+  switch (OpType) {
   case OPERATOR_VALUE: {
     const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
     ViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, dummyView, order);
+    Serial<OpType>::getValues(phis, input, dummyView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
@@ -69,7 +69,7 @@ getValues(       OutputViewType output,
     ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, workView, order);
+    Serial<OpType>::getValues(phis, input, workView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
@@ -89,12 +89,12 @@ getValues(       OutputViewType output,
   case OPERATOR_D8:
   case OPERATOR_D9:
   case OPERATOR_D10: {
-    const ordinal_type dkcard = getDkCardinality<opType,spaceDim>(); //(orDn + 1);
+    const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
     const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
     ViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, dummyView, order);
+    Serial<OpType>::getValues(phis, input, dummyView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)

@@ -62,30 +62,30 @@ namespace Intrepid2 {
       /**
          \brief See Intrepid2::Basis_HGRAD_TET_Cn_FEM
       */
-      template<EOperator opType>
+      template<EOperator OpType>
       struct Serial {
-        template<typename outputValueViewType,
-                 typename inputPointViewType,
-                 typename workViewType,
-                 typename vinvViewType>
+        template<typename OutputValueViewType,
+                 typename InputPointViewType,
+                 typename WorkViewType,
+                 typename VinvViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues(       outputValueViewType outputValues,
-                         const inputPointViewType  inputPoints,
-                         workViewType              work,
-                         const vinvViewType        vinv,
+        getValues(       OutputValueViewType outputValues,
+                         const InputPointViewType  inputPoints,
+                         WorkViewType              work,
+                         const VinvViewType        vinv,
                          const ordinal_type        order);
       };
 
       template<typename DeviceType, ordinal_type numPtsPerEval,
-               typename outputValueValueType, class ...outputValueProperties,
-               typename inputPointValueType,  class ...inputPointProperties,
-               typename vinvValueType,        class ...vinvProperties>
+               typename OutputValueValueType, class ...OutputValueProperties,
+               typename InputPointValueType,  class ...InputPointProperties,
+               typename VinvValueType,        class ...VinvProperties>
       static void
       getValues( const typename DeviceType::execution_space& space,
-                       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                 const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+                       Kokkos::DynRankView<OutputValueValueType,OutputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<InputPointValueType, InputPointProperties...>  inputPoints,
+                 const Kokkos::DynRankView<VinvValueType,       VinvProperties...>        vinv,
                  const ordinal_type order,
                  const EOperator operatorType);
 
@@ -96,7 +96,7 @@ namespace Intrepid2 {
                typename InputPointViewType,
                typename VinvViewType,
                typename WorkViewType,
-               EOperator opType,
+               EOperator OpType,
                ordinal_type numPtsEval>
       struct Functor {
         OutputValueViewType _outputValues;
@@ -127,10 +127,10 @@ namespace Intrepid2 {
           auto vcprop = Kokkos::common_view_alloc_prop(_work);
           WorkViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
+          switch (OpType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
-            Serial<opType>::getValues( output, input, work, _vinv, _order );
+            Serial<OpType>::getValues( output, input, work, _vinv, _order );
             break;
           }
           case OPERATOR_GRAD :
@@ -139,7 +139,7 @@ namespace Intrepid2 {
             //case OPERATOR_D3 :
             {
               auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-              Serial<opType>::getValues( output, input, work, _vinv, _order );
+              Serial<OpType>::getValues( output, input, work, _vinv, _order );
               break;
             }
           default: {
