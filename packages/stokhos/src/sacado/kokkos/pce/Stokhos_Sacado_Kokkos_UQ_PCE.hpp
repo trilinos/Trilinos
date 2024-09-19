@@ -12,7 +12,11 @@
 
 #include "Stokhos_ConfigDefs.h"
 
+#if defined(Stokhos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
 #warning "The PCE scalar type is deprecated."
+#endif
+#endif
 
 #include "Kokkos_Macros.hpp"
 
