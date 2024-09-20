@@ -5688,6 +5688,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       verbose ? prefix.get()->c_str() : nullptr;
 
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
+    const bool targetIsLocallyIndexed = this->isLocallyIndexed ();
     //
     // Copy the first numSame row from source to target (this matrix).
     // This involves copying rows corresponding to LIDs [0, numSame-1].
@@ -5696,17 +5697,65 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     nonconst_global_inds_host_view_type rowInds;
     nonconst_values_host_view_type rowVals;
     const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
-    for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
-      // Global ID for the current row index in the source matrix.
-      // The first numSameIDs GIDs in the two input lists are the
-      // same, so sourceGID == targetGID in this case.
-      const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
-      const GO targetGID = sourceGID;
 
-      ArrayView<const GO>rowIndsConstView;
-      ArrayView<const Scalar> rowValsConstView;
+    if (targetIsLocallyIndexed && sourceIsLocallyIndexed) {
+      // Create a mapping from the source's local column id's to my local column ids
+      using DT = typename Node::device_type;
+      const map_type& src_col_map = *(srcMat.getColMap());
+      const map_type& tgt_col_map = *(this->getColMap());
 
-      if (sourceIsLocallyIndexed) {
+      auto local_src_col_map = src_col_map.getLocalMap();
+      auto local_tgt_col_map = tgt_col_map.getLocalMap();
+
+      auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
+      auto num_src_cols = src_col_map.getLocalNumElements();
+      Kokkos::UnorderedMap<LO, LO, DT> lid_map(num_src_cols);
+      for (int src_local_col_idx=0; src_local_col_idx<num_src_cols; src_local_col_idx++)
+      {
+        auto global_idx = local_src_col_map.getGlobalElement(src_local_col_idx);
+        auto tgt_local_col_idx = local_tgt_col_map.getLocalElement(global_idx);
+        if (tgt_local_col_idx != invalid) {
+          lid_map.insert(src_local_col_idx, tgt_local_col_idx);
+        }
+      }
+      for (LO local_row=0; local_row<numSameIDs; local_row++)
+      {
+        values_host_view_type src_local_vals;
+        local_inds_host_view_type src_local_cols;
+        srcMat.getLocalRowView(local_row, src_local_cols, src_local_vals);
+
+        values_host_view_type tgt_local_vals;
+        local_inds_host_view_type tgt_local_cols;
+        this->getLocalRowView(local_row, tgt_local_cols, tgt_local_vals);
+
+        Kokkos::View<LO*, DT> indices("tgt_local_cols", src_local_cols.extent(0));
+        Kokkos::View<Scalar*, DT> values("tgt_local_vals", src_local_cols.extent(0));
+        int idx = 0;
+        for (int offset=0; offset<src_local_cols.extent(0); offset++) {
+          auto src_local_col_idx = src_local_cols(offset);
+          if (lid_map.exists(src_local_col_idx)) {
+            auto j = lid_map.find(src_local_col_idx);
+            auto tgt_local_idx = lid_map.value_at(j);
+            indices(idx) = tgt_local_idx;
+            values(idx) = src_local_vals(offset);
+            idx += 1;
+          }
+        }
+        auto inds = Kokkos::subview(indices, Kokkos::make_pair(0, idx));
+        auto vals = Kokkos::subview(values, Kokkos::make_pair(0, idx));
+        this->replaceLocalValues(local_row, inds, vals);
+      }
+    } else if (sourceIsLocallyIndexed) {
+      for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
+        // Global ID for the current row index in the source matrix.
+        // The first numSameIDs GIDs in the two input lists are the
+        // same, so sourceGID == targetGID in this case.
+        const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
+        const GO targetGID = sourceGID;
+
+        ArrayView<const GO>rowIndsConstView;
+        ArrayView<const Scalar> rowValsConstView;
+
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
         if (rowLength > static_cast<size_t> (rowInds.size())) {
           Kokkos::resize(rowInds,rowLength);
@@ -5744,8 +5793,23 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
+        // Applying a permutation to a matrix with a static graph
+        // means REPLACE-ing entries.
+        combineGlobalValues(targetGID, rowIndsConstView,
+                            rowValsConstView, REPLACE,
+                            prefix_raw, debug, verbose);
       }
-      else { // source matrix is globally indexed.
+    } else {
+      for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
+        // Global ID for the current row index in the source matrix.
+        // The first numSameIDs GIDs in the two input lists are the
+        // same, so sourceGID == targetGID in this case.
+        const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
+        const GO targetGID = sourceGID;
+
+        ArrayView<const GO>rowIndsConstView;
+        ArrayView<const Scalar> rowValsConstView;
+
         global_inds_host_view_type rowIndsView;
         values_host_view_type rowValsView;
         srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
@@ -5762,13 +5826,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
 
+        // Applying a permutation to a matrix with a static graph
+        // means REPLACE-ing entries.
+        combineGlobalValues(targetGID, rowIndsConstView,
+                            rowValsConstView, REPLACE,
+                            prefix_raw, debug, verbose);
       }
-
-      // Applying a permutation to a matrix with a static graph
-      // means REPLACE-ing entries.
-      combineGlobalValues(targetGID, rowIndsConstView,
-                          rowValsConstView, REPLACE,
-                          prefix_raw, debug, verbose);
     }
 
     if (verbose) {
