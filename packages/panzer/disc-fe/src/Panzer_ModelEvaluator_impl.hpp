@@ -1647,6 +1647,7 @@ void panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_g()");
   // optional sanity check
   // TEUCHOS_ASSERT(required_basic_g(outArgs));
 
@@ -1684,6 +1685,7 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                          const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_dgdx()");
   typedef Thyra::ModelEvaluatorBase MEB;
 
   // optional sanity check
@@ -1730,6 +1732,7 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_dgdp_scalar()");
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -1818,6 +1821,7 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_dgdp_distro()");
   typedef Thyra::ModelEvaluatorBase MEB;
 
   // optional sanity check
@@ -1877,6 +1881,7 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_dfdp_scalar()");
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
@@ -1982,7 +1987,7 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
    ///////////////////////////////////////////////////////////////////////////////////////
 
    if(totalParameterCount>0) {
-     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(df/dp)");
+     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::ModelEvaluator::evalModel(df/dp)",dfdp_eval);
      ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
    }
 }
@@ -1993,7 +1998,7 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
-   PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(df/dp)");
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_dfdp_scalar_fd()");
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -2097,6 +2102,7 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModelImpl_basic_dfdp_distro()");
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;

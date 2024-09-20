@@ -117,11 +117,11 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
         PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
       )
 
-    # Optimization with ROL
-    IF(${PACKAGE_NAME}_ENABLE_ROL)
+    # Optimization with ROL (currently doesn't support GPU devices)
+    IF(${PACKAGE_NAME}_ENABLE_ROL AND NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_HIP)
       TRIBITS_ADD_EXECUTABLE(
         main_driver_opt
-        SOURCES main_driver_opt.cpp ${main_driver_SOURCES} user_app_ROLTempusReducedObjective.hpp
+        SOURCES main_driver_opt.cpp ${main_driver_SOURCES} user_app_ROLTempusReducedObjective.hpp user_app_TransientObjective.hpp user_app_TransientObjective_impl.hpp user_app_TransientObjective.cpp user_app_Utilities.hpp user_app_Utilities.cpp
         )
       TRIBITS_ADD_ADVANCED_TEST(
         main_driver_energy-transient-tempus-opt-blocked
