@@ -308,7 +308,16 @@ namespace Intrepid2 {
             Impl::Basis_HGRAD_TRI_C2_FEM::Serial<OPERATOR_GRAD>::getValues( output, input);
           });
           break;
-        default: {}
+        case OPERATOR_CURL:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_TRI_C2_FEM::Serial<OPERATOR_CURL>::getValues( output, input);
+          });
+          break;
+        default: {
+          INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_C2_FEM::getValues), Operator Type not supported.");
+        }
     }
   }
   

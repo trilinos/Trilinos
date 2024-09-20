@@ -30,12 +30,13 @@ namespace Intrepid2 {
     Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::Serial<opType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
+      typedef typename inputViewType::value_type value_type;
       switch (opType) {
       case OPERATOR_VALUE: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
-        const auto w = 1.0 - x - y;
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
+        const value_type w = 1.0 - x - y;
 
         // output is a rank-1 array with dimensions (basisCardinality_)
         if constexpr (!serendipity) {
@@ -80,9 +81,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_GRAD: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
 
         if constexpr (!serendipity) {
           output.access(0, 0) = ((-3 + 4*x + 4*y)*(-1 + z)*z)/2.;
@@ -158,7 +159,7 @@ namespace Intrepid2 {
           output.access(17, 1) =  4*(-1 + x + 2*y)*(-1 + z*z);
           output.access(17, 2) =  8*y*(-1 + x + y)*z;
         } else {
-          const auto w = 1.0 - x - y;
+          const value_type w = 1.0 - x - y;
       
           output.access(0, 0) = -(2.0*w - 1.0 - 0.5*z)*(1.0 - z);
           output.access(0, 1) = -(2.0*w - 1.0 - 0.5*z)*(1.0 - z);
@@ -223,9 +224,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_D2: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
 
         if constexpr (!serendipity) {
           output.access(0, 0) =  2.*(-1. + z)*z;
@@ -356,7 +357,7 @@ namespace Intrepid2 {
 
         } else { //serendipity element
         
-          const auto w = 1.0 - x - y;
+          const value_type w = 1.0 - x - y;
           output.access(0, 0) =  2.0*(1.0 - z);     
           output.access(0, 1) =  2.0*(1.0 - z);     
           output.access(0, 2) =  2.0*w - 0.5 - z;
@@ -466,9 +467,9 @@ namespace Intrepid2 {
       }
       case OPERATOR_D3: {
         if constexpr (!serendipity) {
-          const auto x = input(0);
-          const auto y = input(1);
-          const auto z = input(2);
+          const value_type x = input(0);
+          const value_type y = input(1);
+          const value_type z = input(2);
 
           output.access(0, 0) =  0.;
           output.access(0, 1) =  0.;

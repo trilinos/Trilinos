@@ -604,7 +604,17 @@ namespace Intrepid2 {
             SerialGrad::getValues( output, input);
           });
           break;
-        default: {}
+        case OPERATOR_CURL:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            using SerialCurl = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::Serial<OPERATOR_CURL>;
+            SerialCurl::getValues( output, input);
+          });
+          break;
+        default: {
+          INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_DEG2_FEM::getValues), Operator Type not supported.");
+        }
     }
   }
   

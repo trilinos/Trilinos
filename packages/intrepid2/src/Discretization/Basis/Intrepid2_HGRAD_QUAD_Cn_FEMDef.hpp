@@ -416,10 +416,13 @@ namespace Intrepid2 {
             Impl::Basis_HGRAD_QUAD_Cn_FEM::Serial<OPERATOR_CURL>::getValues( output, input, work, this->vinv_ );
           });
           break;
-        default: {}
+        default: {          
+          INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): getValues not implemented for this operator");
+          }
     }
   }
-  
-}// namespace Intrepid2
+
+} // namespace Intrepid2
 
 #endif

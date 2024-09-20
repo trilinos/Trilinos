@@ -423,6 +423,14 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
             Impl::Basis_HGRAD_TRI_Cn_FEM::Serial<OPERATOR_GRAD>::getValues( output, input, work, this->vinv_, this->basisDegree_);
           });
           break;
+          case OPERATOR_CURL:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_TRI_Cn_FEM::Serial<OPERATOR_CURL>::getValues( output, input, work, this->vinv_, this->basisDegree_);
+          });
+          break;
         default: {          
           INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): getValues not implemented for this operator");
@@ -431,4 +439,5 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   }
 
 } // namespace Intrepid2
+
 #endif

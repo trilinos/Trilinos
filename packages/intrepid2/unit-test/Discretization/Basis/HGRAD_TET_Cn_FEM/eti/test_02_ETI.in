@@ -8,7 +8,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit test of serial interface Intrepid2::Basis_HGRAD_TET_Cn_FEM.
+    \brief  Unit test of Intrepid2::Basis_HGRAD_TET_Cn_FEM team-level getValues.
     \author Kyungjoo Kim
 */
 

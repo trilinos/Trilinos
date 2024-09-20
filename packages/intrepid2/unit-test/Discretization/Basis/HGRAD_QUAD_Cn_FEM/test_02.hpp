@@ -63,6 +63,10 @@ namespace Intrepid2 {
 
           Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputGradsA, ncells, basisPtr->getCardinality(), npts, ndim);
           Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputGradsB, basisPtr->getCardinality(), npts, ndim);
+
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputCurlsA, ncells, basisPtr->getCardinality(), npts, ndim);
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputCurlsB, basisPtr->getCardinality(), npts, ndim);
+
           Kokkos::DynRankView<PointValueType,DeviceType> ConstructWithLabelPointView(point, 1);
           
           using ScalarType = typename ScalarTraits<PointValueType>::scalar_type;
@@ -113,6 +117,20 @@ namespace Intrepid2 {
 
               Kokkos::parallel_for (teamPolicy,functor);
             }
+
+            { //compute curls
+              auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
+                  auto curlsACell = Kokkos::subview(outputCurlsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+                  basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, team_member.team_scratch(scratch_space_level));
+              };              
+              
+              //Get the required size of the scratch space per team and per thread.
+              int perThreadSpaceSize(0), perTeamSpaceSize(0);
+              basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
+              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+
+              Kokkos::parallel_for (teamPolicy,functor);
+            }
           }
 
           *outStream << "Order: " << order << ": Computing values and gradients for " << npts << " points using high-level getValues function" <<std::endl;
@@ -121,6 +139,7 @@ namespace Intrepid2 {
           // evaluation using high level interface (on one cell)
           basisPtr->getValues(outputValuesB, inputPoints, OPERATOR_VALUE);
           basisPtr->getValues(outputGradsB, inputPoints, OPERATOR_GRAD);
+          basisPtr->getValues(outputCurlsB, inputPoints, OPERATOR_CURL);
           
           *outStream << "Order: " << order << ": Comparing values and gradients on host" <<std::endl;
           { // compare values
@@ -163,8 +182,34 @@ namespace Intrepid2 {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
-                              << ", grads A: [" << outputGradsA_Host(ic,i,j,0) << ", " << outputGradsA_Host(ic,i,j,1) << ", " <<  outputGradsA_Host(ic,i,j,2) <<"]"
-                              << ", grads B: [" << outputGradsB_Host(i,j,0) << ", " <<  outputGradsB_Host(i,j,1) << ", " << outputGradsB_Host(i,j,2) <<"]"
+                              << ", grads A: [" << outputGradsA_Host(ic,i,j,0) << ", " << outputGradsA_Host(ic,i,j,1) << "]"
+                              << ", grads B: [" << outputGradsB_Host(i,j,0) << ", " <<  outputGradsB_Host(i,j,1) << "]"
+                              << ", |diff|: " << diff
+                              << ", tol: " << tol
+                              << std::endl;
+                  }
+                }
+          }
+
+          { 
+            // compare curls
+            const auto outputCurlsA_Host = Kokkos::create_mirror_view(outputCurlsA); Kokkos::deep_copy(outputCurlsA_Host, outputCurlsA);
+            const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
+            
+            OutValueType diff = 0;
+            auto tol = epsilon<double>();
+            for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
+              for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
+                for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
+                  diff = 0;
+                  for (int d=0;d<ndim;++d)
+                    diff += std::abs(outputCurlsB_Host(i,j,d) - outputCurlsA_Host(ic,i,j,d));
+                  if (diff > tol) {
+                    ++errorFlag;
+                    std::cout << " order: " << order
+                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                              << ", curls A: [" << outputCurlsA_Host(ic,i,j,0) << ", " << outputCurlsA_Host(ic,i,j,1) <<"]"
+                              << ", curls B: [" << outputCurlsB_Host(i,j,0) << ", " <<  outputCurlsB_Host(i,j,1) << "]"
                               << ", |diff|: " << diff
                               << ", tol: " << tol
                               << std::endl;
