@@ -19,7 +19,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_YamlParameterListHelpers.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
@@ -49,6 +48,7 @@
 #include "user_app_ResponseEvaluatorFactory_HOFlux.hpp"
 
 #include "Panzer_ROLTempusReducedObjective.hpp"
+#include "user_app_TransientObjective.hpp"
 
 #include "Panzer_ResponseEvaluatorFactory_Probe.hpp"
 
@@ -58,37 +58,15 @@
 
 #include <Ioss_SerializeIO.h>
 
+#include "user_app_Utilities.hpp"
+
 #include <string>
 #include <iostream>
 #include <tuple>
 
 // *************************************************
-// applicaiton functions defined in this file
-// *************************************************
-namespace user_app {
-  void addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList& response_sublist,
-                                           panzer_stk::ModelEvaluatorFactory<double>& me_factory);
-
-  void computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator<double>>& me,
-                                const auto& x,
-                                const auto& x_dot,
-                                const auto& t,
-                                const auto& global_data,
-                                std::ostream& out);
-
-  std::tuple<Teuchos::RCP<Tempus::IntegratorBasic<double>>,
-             Teuchos::RCP<panzer::GlobalData>,
-             Teuchos::RCP<Thyra::ModelEvaluator<double>>>
-  buildTempusIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
-                        const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-                        const bool overrideNoxOutput);
-}
-
-// *************************************************
-// *************************************************
 //  Main Driver for a transient optimization problem using ROL and
 //  Tempus
-// *************************************************
 // *************************************************
 
 int main(int argc, char *argv[])
@@ -98,8 +76,8 @@ int main(int argc, char *argv[])
 
   int status = 0;
 
-  std::ostream blackhole{nullptr};
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
+  std::ostream os_dev_null{nullptr};
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &os_dev_null);
   Kokkos::initialize(argc,argv);
 
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
@@ -155,43 +133,42 @@ int main(int argc, char *argv[])
     if (printInputPL)
       *out << *input_params << std::endl;
 
+    // Pull off objective and rol lists so the panzer validation does not fail
+    RCP<ParameterList> objective_params = parameterList(input_params->sublist("Objective",true));
+    RCP<ParameterList> rol_params = parameterList(input_params->sublist("ROL", true));
+    input_params->remove("Objective");
+    input_params->remove("ROL");
 
-    RCP<ParameterList> params_copy = parameterList(*input_params);
-    auto [integrator,global_data,physics] = user_app::buildTempusIntegrator(params_copy,comm,overrideNoxOutput);
-    
-    bool integratorStatus = integrator->advanceTime();
-    TEUCHOS_ASSERT(integratorStatus);
-
-    auto x = integrator->getSolutionHistory()->getCurrentState()->getX();
-    auto x_dot = integrator->getSolutionHistory()->getCurrentState()->getXDot();
-    auto t = integrator->getSolutionHistory()->getCurrentState()->getTime();
-
-    user_app::computeAndPrintResponses(physics,x,x_dot,t,global_data,*out);
-    
     {
-      Teuchos::RCP<Teuchos::ParameterList> rol_params = Teuchos::rcp(new Teuchos::ParameterList("ROL Parameters"));
-      {
-        const std::string rol_input_file = "rol_params.xml";
-        Teuchos::updateParametersFromXmlFileAndBroadcast(rol_input_file, rol_params.ptr(), *comm);
+      RCP<ParameterList> tempus_params = parameterList(input_params->sublist("Solution Control",true).sublist("Tempus",true));
+      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,comm,objective_params,out);
 
-        RCP<ParameterList> pl = sublist(rol_params, "Tempus", true);
-        RCP<ParameterList> objective_params = sublist(rol_params, "Objective", true);
-        ROL::Ptr<ROL::TempusReducedObjective<double> > objective =
-          ROL::makePtr<ROL::TempusReducedObjective<double> >(physics, pl, objective_params);
+      // Create target -- do forward integration with perturbed parameter values
+      RCP<ROL::Vector<double>> p = objective->create_design_vector();
+      p->setScalar(2.0);
+      RCP<ROL::Vector<double>> r = objective->create_response_vector();
+      objective->run_tempus(*r, *p);
+      objective->set_target(r);
 
-        // Create target -- do forward integration with perturbed parameter values
-        RCP<ROL::Vector<double> > zs = objective->create_design_vector();
-        zs->setScalar(1.5);
-        RCP<ROL::Vector<double> > r = objective->create_response_vector();
-        objective->run_tempus(*r, *zs);
-        objective->set_target(r);
-
-      }
-
+      p->setScalar(1.5);
+      ROL::OptimizationProblem<double> problem(objective, p);
+      ROL::OptimizationSolver<double> solver(problem, *rol_params);
       ROL::Ptr<std::ostream> outStream = ROL::makePtrFromRef(std::cout);
+      if (comm->getRank() == 0)
+        solver.solve(*outStream);
+      else
+        solver.solve(os_dev_null);
 
-      
+      {
+        const ROL::ThyraVector<double>& thyra_p = dyn_cast<const ROL::ThyraVector<double> >(*p);
+        ROL::ThyraVector<double>& thyra_r = dyn_cast<ROL::ThyraVector<double> >(*r);
+        *out << "Final Values: p = " << Thyra::get_ele(*(thyra_p.getVector()),0)
+             << ", g = " << Thyra::get_ele(*(thyra_r.getVector()),0)
+             << std::endl;
+      }
     }
+
+    // user_app::computeAndPrintResponses(physics,x,x_dot,t,global_data,*out);
 
     stackedTimer->stopBaseTimer();
     if (printTimers) {
@@ -217,240 +194,4 @@ int main(int argc, char *argv[])
     *out << "panzer::MainDriver run completed." << std::endl;
 
   return status;
-}
-
-// *************************************************
-// *************************************************
-
-void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList& responses,
-                                                   panzer_stk::ModelEvaluatorFactory<double>& me_factory)
-{
-  for(Teuchos::ParameterList::ConstIterator itr=responses.begin();itr!=responses.end();++itr) {
-    const std::string name = responses.name(itr);
-    TEUCHOS_ASSERT(responses.entry(itr).isList());
-    Teuchos::ParameterList & lst = Teuchos::getValue<Teuchos::ParameterList>(responses.entry(itr));
-
-    if (lst.get<std::string>("Type") == "Functional") {
-
-      panzer::FunctionalResponse_Builder<int,int> builder;
-      builder.comm = MPI_COMM_WORLD;
-      builder.cubatureDegree = 2;
-      builder.requiresCellIntegral = true;
-      builder.quadPointField = lst.get<std::string>("Field Name");
-
-      std::vector<std::string> eblocks;
-      panzer::StringTokenizer(eblocks,lst.get<std::string>("Element Blocks"),",",true);
-
-      std::vector<panzer::WorksetDescriptor> wkst_descs;
-      for(std::size_t i=0;i<eblocks.size();i++)
-        wkst_descs.push_back(panzer::blockDescriptor(eblocks[i]));
-
-      me_factory.addResponse(name,wkst_descs,builder);
-    }
-    else if (lst.get<std::string>("Type") == "Point Value") {
-      panzer::ProbeResponse_Builder<panzer::LocalOrdinal,panzer::GlobalOrdinal> builder;
-      builder.comm = MPI_COMM_WORLD;
-      builder.point = Teuchos::Array<double>{0.5,0.5};
-      builder.cubatureDegree = 2;
-      builder.fieldName = lst.get<std::string>("Field Name");
-      builder.applyDirichletToDerivative = false;
-
-      std::vector<std::string> eblocks;
-      panzer::StringTokenizer(eblocks,lst.get<std::string>("Element Blocks"),",",true);
-
-      std::vector<panzer::WorksetDescriptor> descriptors;
-      for(std::size_t i=0;i<eblocks.size();i++)
-        descriptors.push_back(panzer::blockDescriptor(eblocks[i]));
-
-      me_factory.addResponse("Value In Middle",descriptors,builder);
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Error: Response type of \"" << lst.get<std::string>("Type") << "\" is not supported!");
-    }
-  }
-}
-
-void user_app::computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator<double>>& physics,
-                                        const auto& x,
-                                        const auto& x_dot,
-                                        const auto& t,
-                                        const auto& global_data,
-                                        std::ostream& os)
-{
-  if(physics->Ng()>0) {
-
-    os << "Ng = " << physics->Ng() << std::endl;
-    os << "Np = " << physics->Np() << std::endl;
-    Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
-    Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
-
-    TEUCHOS_ASSERT(physics->Ng()==respOutArgs.Ng());
-
-    respInArgs.set_x(x);
-    respInArgs.set_x_dot(x_dot);
-
-    for(int g=0;g<respOutArgs.Ng();++g) {
-      Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(g));
-      respOutArgs.set_g(g,response);
-
-      for (int p = 0; p < physics->Np(); ++p) {
-        bool derivative_supported = respOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,g,p).supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-        os << "DgDp(" << g << "," << p << ") supports = " << derivative_supported << std::endl;
-        if (derivative_supported) {
-          auto dgdp = physics->create_DgDp_op(g,p);
-          respOutArgs.set_DgDp(g,p,Thyra::ModelEvaluatorBase::Derivative<double>(dgdp));
-        }
-      }
-    }
-
-    physics->evalModel(respInArgs, respOutArgs);
-
-    {
-      auto parameter_library = global_data->pl;
-      TEUCHOS_ASSERT(nonnull(parameter_library));
-      for (auto i=parameter_library->begin();i != parameter_library->end(); ++i) {
-        os << "Sacado::ParameterLibrary: " << i->first << std::endl;
-      }
-    }
-
-    {
-      auto nominalValues = physics->getNominalValues();
-      for (int i=0; i < respInArgs.Np();++i) {
-        auto p = nominalValues.get_p(i);
-        auto p_names = physics->get_p_names(i);
-        os << "ModelEvaluator::NominalValues Parameter Value: \"" << (*p_names)[0] << "\" = " << Thyra::get_ele(*p,0) << std::endl;
-      }
-    }
-
-    for (int i=0;i<respOutArgs.Ng();i++) {
-      Teuchos::RCP<Thyra::VectorBase<double> > response = respOutArgs.get_g(i);
-      TEUCHOS_ASSERT(response!=Teuchos::null);
-      os << "Response Value: \"" << physics->get_g_names(i)[0] << "\" = " << Thyra::get_ele(*response,0) << std::endl;
-      for (int j=0; j < respOutArgs.Np(); ++j) {
-        // os << "  dg(" << i << ")/dp(" << j << ") supports(GRAD_FORM) = " << respOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,i,j).supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) << std::endl;
-        // os << "  dg(" << i << ")/dp(" << j << ") supports(JAC_FORM)  = " << respOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,i,j).supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) << std::endl;
-      }
-    }
-  }
-}
-
-std::tuple<Teuchos::RCP<Tempus::IntegratorBasic<double>>,
-           Teuchos::RCP<panzer::GlobalData>,
-           Teuchos::RCP<Thyra::ModelEvaluator<double>>>
-user_app::buildTempusIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
-                                const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-                                const bool overrideNoxOutput)
-{
-  using namespace Teuchos;
-  using namespace Tempus;
-
-  Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
-    input_params->remove("Solver Factories");
-
-    // Add in the application specific equation set factory
-    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-
-    // Add in the application specific closure model factory
-    user_app::MyModelFactory_TemplateBuilder cm_builder;
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
-    cm_factory.buildObjects(cm_builder);
-
-    // Add in the application specific bc factory
-    user_app::BCFactory bc_factory;
-
-    // Create the global data
-    Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
-    input_params->sublist("User Data").set("Comm", comm); // Required for GlobalStatistics
-
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
-       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
-
-    Teuchos::RCP<Thyra::ModelEvaluator<double>> physics;
-    Teuchos::RCP<Thyra::ModelEvaluator<double>> solver;
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits>> rLibrary;
-    std::vector<Teuchos::RCP<panzer::PhysicsBlock>> physicsBlocks;
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>> linObjFactory;
-    Teuchos::RCP<panzer::GlobalIndexer> globalIndexer;
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh;
-    {
-      Teuchos::ParameterList responses = input_params->sublist("Responses");
-      input_params->remove("Responses");
-
-      panzer_stk::ModelEvaluatorFactory<double> me_factory;
-      me_factory.setParameterList(input_params);
-      auto strat_list = Teuchos::parameterList();
-      *strat_list = input_params->sublist("Solution Control",true).sublist("Tempus",true).sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Direction",true).sublist("Newton",true).sublist("Stratimikos Linear Solver",true).sublist("Stratimikos",true);
-      me_factory.setStratimikosList(strat_list);
-      me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
-
-      user_app::addResponsesToModelEvaluatorFactory(responses,me_factory);
-      me_factory.buildResponses(cm_factory);
-
-      physicsBlocks = me_factory.getPhysicsBlocks();
-      physics = me_factory.getPhysicsModelEvaluator();
-      rLibrary = me_factory.getResponseLibrary();
-      linObjFactory = me_factory.getLinearObjFactory();
-      globalIndexer = me_factory.getGlobalIndexer();
-      mesh = me_factory.getMesh();
-    }
-
-    // setup outputs to mesh on the stkIOResponseLibrary
-    {
-      stkIOResponseLibrary->initialize(*rLibrary);
-
-      Teuchos::ParameterList user_data(input_params->sublist("User Data"));
-      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
-
-      std::vector<std::string> eBlocks;
-      mesh->getElementBlockNames(eBlocks);
-
-      panzer_stk::RespFactorySolnWriter_Builder builder;
-      builder.mesh = mesh;
-      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
-
-      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
-                                                    cm_factory,
-                                                    input_params->sublist("Closure Models"),
-                                                    user_data);
-    }
-
-    RCP<ParameterList> tempus_pl = parameterList(std::string("Tempus"));
-    *tempus_pl = input_params->sublist("Solution Control").sublist("Tempus");
-
-    if (overrideNoxOutput) {
-      auto nox_utils = Teuchos::rcp(new NOX::Utils(NOX::Utils::Error,comm->getRank(),0,3));
-      auto print_nonlinear = Teuchos::rcp(new NOX::ObserverPrint(nox_utils,10));
-      tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true).sublist("Solver Options",true).set<RCP<NOX::Observer>>("Observer",print_nonlinear);
-    }
-
-    // Tempus is overriding NOX parameters with its own defaults. Need
-    // to fix this. It also does not validate because of arbitrary
-    // solver name. Should validate but use
-    // disableRecursiveValidation() to avoid errors with arbitrary
-    // names.
-
-    const bool doInitialization = false;
-    auto integrator = createIntegratorBasic<double>(tempus_pl, physics, doInitialization);
-
-    RCP<ParameterList> noxList = parameterList("Correct NOX Params");
-    *noxList = tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true);
-    // noxList->print(std::cout);
-    integrator->getStepper()->getSolver()->setParameterList(noxList);
-    integrator->initialize();
-
-    // Setting observers on tempus breaks the screen output of the
-    // time steps! It replaces IntegratorObserverBasic which handles
-    // IO. Is this at least documented?
-    {
-      RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
-      RCP<const panzer_stk::TempusObserverFactory> tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
-      tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
-      tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
-      integrator->setObserver(tempus_observers);
-    }
-
-    RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
-    integrator->initializeSolutionHistory(0.0, x0);
-
-    return {integrator,global_data,physics};
 }

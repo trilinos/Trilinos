@@ -15,6 +15,8 @@
 #include "Tempus_IntegratorObserver.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_GlobalIndexer.hpp"
