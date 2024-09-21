@@ -261,6 +261,8 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
 
   // Override nominal values in model to supplied inArgs
   RCP<DNBOME> wrapped_model = rcp(new DNBOME(thyra_model_, rcpFromRef(inArgs)));
+  RCP<DNBOME> wrapped_adjoint_model = rcp(new DNBOME(thyra_adjoint_model_, rcpFromRef(inArgs)));
+
 
   Real t;
   RCP<const Thyra::VectorBase<Real> > x, x_dot;
@@ -280,26 +282,28 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
 
   // Create and run integrator
   if (compute_dgdp && sensitivity_method_ == "Adjoint") {
-    const bool integratorStatus = piroTempusIntegrator_->advanceTime(time_final_);
+    RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
+      Tempus::createIntegratorAdjointSensitivity<Real>(tempus_params_, wrapped_model, wrapped_adjoint_model);
+    const bool integratorStatus = integrator->advanceTime(time_final_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       !integratorStatus, std::logic_error, "Integrator failed!");
 
     // Get final state
-    t = piroTempusIntegrator_->getTime();
-    x = piroTempusIntegrator_->getX();
-    x_dot = piroTempusIntegrator_->getXDot();
+    t = integrator->getTime();
+    x = integrator->getX();
+    x_dot = integrator->getXDot();
     if(!dgdp_mv.is_null())
-      Thyra::assign(dgdp_mv.ptr(), *(piroTempusIntegrator_->getDgDp()));
+      Thyra::assign(dgdp_mv.ptr(), *(integrator->getDgDp()));
     else {
       //dgdp_op->setBlock(0, 0, piroTempusIntegrator->getDgDp());
       dgdp_mv = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Real>>( Teuchos::rcp_dynamic_cast<Thyra::DefaultScaledAdjointLinearOp<Real>>(dgdp_op->getNonconstBlock(0, 0))->getNonconstOp() );
-      Thyra::assign(dgdp_mv.ptr(), *(piroTempusIntegrator_->getDgDp()));
+      Thyra::assign(dgdp_mv.ptr(), *(integrator->getDgDp()));
     }
   }
   else {
     RCP<Tempus::IntegratorBasic<Real> > integrator =
       Tempus::createIntegratorBasic<Real>(tempus_params_, wrapped_model);
-    const bool integratorStatus = integrator->advanceTime();
+    const bool integratorStatus = integrator->advanceTime(time_final_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       !integratorStatus, std::logic_error, "Integrator failed!");
 

@@ -79,7 +79,7 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewTyp
 // clang-format on
 template <typename ScalarType, typename OrdinalType, class DeviceType, class MemoryTraitsType, typename SizeType>
 auto coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &cooMatrix) {
-  return coo2crs(cooMatrix.numRows(), cooMatrix.numCols(), cooMatrix.row, cooMatrix.col, cooMatrix.data);
+  return coo2crs(cooMatrix.numRows(), cooMatrix.numCols(), cooMatrix.row(), cooMatrix.col(), cooMatrix.data());
 }
 }  // namespace KokkosSparse
 #endif  //  _KOKKOSSPARSE_COO2CRS_HPP

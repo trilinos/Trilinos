@@ -44,11 +44,11 @@ jobs:
       uses: srggrs/assign-one-project-github-action@65a8ddab497df42ef268001e67bbf976f8fd39e1 # 1.3.1
       if: contains(github.event.label.name, 'MueLu') || contains(github.event.issue.title, 'MueLu')
       with:
-        project: 'https://github.com/trilinos/Trilinos/projects/5'
+        project: 'https://github.com/orgs/trilinos/projects/8'
         column_name: 'Backlog'
     - name: Add to Tpetra Project
       uses: srggrs/assign-one-project-github-action@65a8ddab497df42ef268001e67bbf976f8fd39e1 # 1.3.1
       if: contains(github.event.label.name, 'Tpetra') || contains(github.event.issue.title, 'Tpetra')
       with:
-        project: 'https://github.com/trilinos/Trilinos/projects/2'
+        project: 'https://github.com/orgs/trilinos/projects/9'
         column_name: 'Needs Triage'
