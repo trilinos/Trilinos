@@ -36,6 +36,9 @@
 unsigned int debug_level = 0;
 
 #if FMT_VERSION >= 90000
+#include "Ioss_ZoneConnectivity.h"
+#include "Ioss_StructuredBlock.h"
+
 namespace fmt {
   template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
   {
