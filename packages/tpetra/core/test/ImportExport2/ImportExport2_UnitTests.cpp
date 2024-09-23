@@ -2356,7 +2356,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 4-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
+    using char_host_mirror_view = typename Kokkos::View<char*, typename map_type::node_type::memory_space>::HostMirror;
+    char_host_mirror_view importsView(imports.data(), imports.size());
     distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
     auto importsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(), importsView);
     deep_copy(importsView_d,importsView);
