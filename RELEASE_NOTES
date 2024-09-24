@@ -1,7 +1,55 @@
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 16.0 Release Notes                      TBD May/June, 2024 #
+# Trilinos Release 16.1 Release Notes                               TBD, 2024 #
+#                                                                             #
+###############################################################################
+
+A large number of packages have been marked as deprecated in this release.
+We are planning to remove them in the fall of 2025. The list of packages is
+
+  - Amesos
+  - AztecOO
+  - Epetra
+  - EpetraExt
+  - Ifpack
+  - Intrepid
+  - Isorropia
+  - ML
+  - NewPackage
+  - Pliris
+  - PyTrilinos
+  - ShyLU_DDCore
+  - ThyraEpetraAdapters
+  - ThyraEpetraExtAdapters
+  - Triutils
+
+If you are a user of one of these packages, please transition to the newer
+software stack. If you need guidance with finding an adequate replacement
+or are missing a particular feature, please open an issue or a discussion
+on Github.
+
+
+Framework
+
+  - Added option `Trilinos_WARNINGS_MODE` that can control warnings useful
+    for development.  There is a list of warnings in
+    `cmake/WarningsErrorsPolicy.cmake` that can be applied as warnings or
+    errors by passing the `WARN` or `ERROR` value for that variable.  Turning
+    either of those settings on will also turn on a set of 'promoted' warnings
+    that will always be errors in any mode other than the default.  The Pull
+    Request testing will currently use the `WARN` setting for this mode,
+    meaning that any 'upcoming' warnings will show up as warnings, and any
+    'promoted' warnings will show up as errors.  You can also pass additional
+    'upcoming' warnings via the `Trilinos_ADDITIONAL_WARNINGS` option.  Lastly,
+    if either of these modes are enabled, all warnings are disabled for any
+    deprecated packages, in the interest of not spending effort cleaning them.
+    By default, no warnings or errors are added.
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.0 Release Notes                           July 22, 2024 #
 #                                                                             #
 ###############################################################################
 
