@@ -22,12 +22,15 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include <map>
+#include <utility>
+#include <vector>
 
 #ifdef HAVE_BELOS_TSQR
 #  include "Tpetra_TsqrAdaptor.hpp"
 #endif // HAVE_BELOS_TSQR
 
-namespace { // (anonymous)
+namespace impl {
 
 // MapType: a Tpetra::Map specialization.
 //
@@ -88,7 +91,60 @@ makeStaticLocalMultiVector (const MultiVectorType& gblMv,
   return MultiVectorType (lclMap, dv);
 }
 
-} // namespace (anonymous)
+template<class Scalar, class LO, class GO, class Node>
+class MultiVecPool
+{
+public:
+  MultiVecPool() {
+    Kokkos::push_finalize_hook([this]() { this->availableDVs.clear(); });
+  }
+
+  using MV = ::Tpetra::MultiVector<Scalar, LO, GO, Node>;
+
+  Teuchos::RCP<MV> getMV(const Teuchos::RCP<const ::Tpetra::Map<LO, GO, Node>> & map, const int numVecs) {
+    auto key = std::make_pair(map->getLocalNumElements(), numVecs);
+    auto & available = availableDVs[key];
+    if(!available.empty()) {
+      auto dv = available.back();
+      available.pop_back();
+      return Teuchos::rcpWithDealloc(new MV(map, dv), RCPDeleter{available, dv});
+    }
+
+    dv_t dv("Belos::MultiVecPool DV", key.first, key.second);
+    return Teuchos::rcpWithDealloc(new MV(map, dv), RCPDeleter{available, dv});
+  }
+
+private:
+  using dv_t = typename MV::dual_view_type;
+  struct RCPDeleter
+  {
+    void free(MV * mv_ptr) {
+      if(mv_ptr) {
+        dv_pool.push_back(dv);
+        delete mv_ptr;
+      }
+    }
+    std::vector<dv_t> & dv_pool;
+    dv_t dv;
+  };
+  std::map<std::pair<size_t, int>, std::vector<dv_t>> availableDVs;
+};
+
+
+template<class Scalar, class LO, class GO, class Node>
+inline MultiVecPool<Scalar, LO, GO, Node> & getPool()
+{
+  static MultiVecPool<Scalar, LO, GO, Node> static_pool;
+  return static_pool;
+}
+
+template<class Scalar, class LO, class GO, class Node>
+inline Teuchos::RCP<::Tpetra::MultiVector<Scalar, LO, GO, Node>> getMultiVectorFromPool(const Teuchos::RCP<const ::Tpetra::Map<LO, GO, Node>> & map, const int numVecs)
+{
+  return getPool<Scalar, LO, GO, Node>().getMV(map, numVecs);
+}
+
+} // namespace impl
 
 namespace Belos {
 
@@ -118,7 +174,7 @@ namespace Belos {
     /// (distribution over one or more parallel processes) as \c X.
     /// Its entries are not initialized and have undefined values.
     static Teuchos::RCP<MV> Clone (const MV& X, const int numVecs) {
-      Teuchos::RCP<MV> Y (new MV (X.getMap (), numVecs, false));
+      auto Y = impl::getMultiVectorFromPool<Scalar>(X.getMap(), numVecs);
       Y->setCopyOrView (Teuchos::View);
       return Y;
     }
@@ -129,7 +185,8 @@ namespace Belos {
       // Make a deep copy of X.  The one-argument copy constructor
       // does a shallow copy by default; the second argument tells it
       // to do a deep copy.
-      Teuchos::RCP<MV> X_copy (new MV (X, Teuchos::Copy));
+      auto X_copy = impl::getMultiVectorFromPool<Scalar>(X.getMap(), X.getNumVectors());
+      Tpetra::deep_copy(*X_copy, X);
       // Make Tpetra::MultiVector use the new view semantics.  This is
       // a no-op for the Kokkos refactor version of Tpetra; it only
       // does something for the "classic" version of Tpetra.  This
@@ -176,8 +233,9 @@ namespace Belos {
       // mfh 14 Aug 2014: Tpetra already detects and optimizes for a
       // continuous column index range in MultiVector::subCopy, so we
       // don't have to check here.
-      Teuchos::RCP<MV> X_copy = mv.subCopy (columns ());
+      auto X_copy = impl::getMultiVectorFromPool<Scalar>(mv.getMap(), index.size());
       X_copy->setCopyOrView (Teuchos::View);
+      X_copy->assign(*mv.subView(columns()));
       return X_copy;
     }
 
@@ -211,8 +269,9 @@ namespace Belos {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           os.str() << "Should never get here!");
       }
-      Teuchos::RCP<MV> X_copy = mv.subCopy (index);
+      auto X_copy = impl::getMultiVectorFromPool<Scalar>(mv.getMap(), index.size());
       X_copy->setCopyOrView (Teuchos::View);
+      X_copy->assign(*mv.subView(index));
       return X_copy;
     }
 
@@ -374,7 +433,7 @@ namespace Belos {
         mv.update (alpha*B(0,0), A, beta);
       }
       else {
-        MV B_mv = makeStaticLocalMultiVector (A, B_numRows, B_numCols);
+        MV B_mv = impl::makeStaticLocalMultiVector (A, B_numRows, B_numCols);
         Tpetra::deep_copy (B_mv, B);
         mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                      alpha, A, B_mv, beta);
@@ -442,7 +501,7 @@ namespace Belos {
         return;
       }
 
-      MV C_mv = makeStaticLocalMultiVector (A, numRowsC, numColsC);
+      MV C_mv = impl::makeStaticLocalMultiVector (A, numRowsC, numColsC);
       // Filling with zero should be unnecessary, in theory, but not
       // in practice, alas (Issue_3235 test fails).
       C_mv.putScalar (ZERO);
