@@ -21,14 +21,14 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename InputViewType,
              typename WorkViewType,
              typename VinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_QUAD_Cn_FEM::Serial<opType>::
+    Basis_HGRAD_QUAD_Cn_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const InputViewType  input,
                      WorkViewType   work,
@@ -51,7 +51,7 @@ namespace Intrepid2 {
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
       auto vcprop = Kokkos::common_view_alloc_prop(input);
       
-      switch (opType) {
+      switch (OpType) {
       case OPERATOR_VALUE: {
         ViewType work_line(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
         ViewType output_x(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
@@ -122,7 +122,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-        opDn = getOperatorOrder(opType);
+        opDn = getOperatorOrder(OpType);
       case OPERATOR_Dn: {
         const auto dkcard = opDn + 1;
         for (auto l=0;l<dkcard;++l) {
