@@ -24,10 +24,10 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_toString.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
-#include <Teuchos_oblackholestream.hpp>
 
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_CssMKL_decl.hpp"
+
 
 namespace Amesos2 {
 

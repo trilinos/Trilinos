@@ -154,7 +154,6 @@ namespace Amesos2 {
                  const Teuchos::EVerbosityLevel verbLevel) const
     {
       this->mat_->describe(os, verbLevel);
-      Tpetra::MatrixMarket::Writer<matrix_t>::writeSparseFile ("matA.dat", this->mat_);
     }
 } // end namespace Amesos2
 
