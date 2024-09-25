@@ -107,59 +107,59 @@ IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
       ENDIF()
 
       IF (BUILD_SHARED_LIBS OR SEACASExodus_ENABLE_SHARED)
-		 FILE(GLOB_RECURSE EXODUSIIH "${CMAKE_SOURCE_DIR}/packages/seacas/*exodusII.h")
-		 FILE(STRINGS "${EXODUSIIH}" EXODUS_VERSION REGEX "#define EXODUS_VERSION .*")
-	 CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/exodus2.in.py
-		   ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py
-		   @ONLY
-		   )
-	 CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/exodus3.in.py
-		   ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py
-		   @ONLY
-		   )
-	 CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/tests/exomerge_unit_test.py
-		   ${CMAKE_CURRENT_BINARY_DIR}/tests/exomerge_unit_test.py
-		   @ONLY
-		   )
-	CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/exomerge3.py
-		   ${CMAKE_CURRENT_BINARY_DIR}/exomerge3.py
-		   @ONLY
-		   )
-	CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/exomerge2.py
-		   ${CMAKE_CURRENT_BINARY_DIR}/exomerge2.py
-		   @ONLY
-		   )
-	 CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exodus3.py
-		   ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py
-		   @ONLY
-		   )
-	 CONFIGURE_FILE(
-		   ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo
-		   ${CMAKE_CURRENT_BINARY_DIR}/tests/test-assembly.exo
-		   COPYONLY
-		   )
+         FILE(GLOB_RECURSE EXODUSIIH "${CMAKE_SOURCE_DIR}/packages/seacas/*exodusII.h")
+         FILE(STRINGS "${EXODUSIIH}" EXODUS_VERSION REGEX "#define EXODUS_VERSION .*")
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/exodus2.in.py
+             ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py
+             @ONLY
+             )
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/exodus3.in.py
+             ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py
+             @ONLY
+             )
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/tests/exomerge_unit_test.py
+             ${CMAKE_CURRENT_BINARY_DIR}/tests/exomerge_unit_test.py
+             @ONLY
+             )
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/exomerge3.py
+             ${CMAKE_CURRENT_BINARY_DIR}/exomerge3.py
+             @ONLY
+             )
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/exomerge2.py
+             ${CMAKE_CURRENT_BINARY_DIR}/exomerge2.py
+             @ONLY
+             )
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exodus3.py
+             ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py
+             @ONLY
+             )
+         CONFIGURE_FILE(
+             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo
+             ${CMAKE_CURRENT_BINARY_DIR}/tests/test-assembly.exo
+             COPYONLY
+             )
 
-       INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/exomerge_unit_test.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/exomerge_unit_test.e DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exomerge2.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
-	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exomerge3.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/exomerge_unit_test.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/exomerge_unit_test.e DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests/)
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exomerge2.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
+         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exomerge3.py DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-	 if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas" AND NOT WIN32)
-	    InstallSymLink(${EXODUSPY} ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/exodus.py)
-	    InstallSymLink(${EXOMERGE} ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/exomerge.py)
-	 endif()
+         if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas" AND NOT WIN32)
+            InstallSymLink(${EXODUSPY} ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/exodus.py)
+            InstallSymLink(${EXOMERGE} ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/exomerge.py)
+         endif()
       ELSE()
-	 MESSAGE(STATUS "Exodus.py and exomerge.py NOT installed since shared exodus library is not available.")
+         MESSAGE(STATUS "Exodus.py and exomerge.py NOT installed since shared exodus library is not available.")
       ENDIF()
    else()
       MESSAGE(STATUS "Exodus.py and exomerge.py NOT installed since Python could not be found.")
