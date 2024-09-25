@@ -145,6 +145,11 @@ public:
   virtual ~BlockGCRODRSolMgr() {};
   //@}
 
+  //! clone for Inverted Injection (DII)
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+    return Teuchos::rcp(new BlockGCRODRSolMgr<ScalarType,MV,OP,DM>);
+  }
+
   /** \name Implementation of the Teuchos::Describable interface */
   //@{
 
@@ -389,24 +394,24 @@ private:
   //
   // Set default solver values
   //
-  template<class ScalarType, class MV, class OP>
-  const bool BlockGCRODRSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
+  template<class ScalarType, class MV, class OP, class DM>
+  const bool BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::adaptiveBlockSize_default_ = true;
 
-  template<class ScalarType, class MV, class OP>
-  const std::string BlockGCRODRSolMgr<ScalarType,MV,OP>::recycleMethod_default_ = "harmvecs";
+  template<class ScalarType, class MV, class OP, class DM>
+  const std::string BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::recycleMethod_default_ = "harmvecs";
 
   //
   // Method definitions
   //
 
-  template<class ScalarType, class MV, class OP>
-  BlockGCRODRSolMgr<ScalarType,MV,OP>::BlockGCRODRSolMgr() {
+  template<class ScalarType, class MV, class OP, class DM>
+  BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::BlockGCRODRSolMgr() {
     init();
   }
 
   //Basic Constructor
-  template<class ScalarType, class MV, class OP>
-  BlockGCRODRSolMgr<ScalarType,MV,OP>::
+  template<class ScalarType, class MV, class OP, class DM>
+  BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::
   BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) {
     // Initialize local pointers to null, and initialize local
@@ -425,8 +430,8 @@ private:
       setParameters (pl);
   }
 
-  template<class ScalarType, class MV, class OP>
-  void BlockGCRODRSolMgr<ScalarType,MV,OP>::init() {
+  template<class ScalarType, class MV, class OP, class DM>
+  void BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::init() {
     adaptiveBlockSize_ = adaptiveBlockSize_default_;
     recycleMethod_ = recycleMethod_default_;
     isSet_ = false;
@@ -502,8 +507,8 @@ private:
   }
 
   //  This method requires the solver manager to return a string that describes itself.
-  template<class ScalarType, class MV, class OP>
-  std::string BlockGCRODRSolMgr<ScalarType,MV,OP>::description() const {
+  template<class ScalarType, class MV, class OP, class DM>
+  std::string BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::description() const {
     std::ostringstream oss;
     oss << "Belos::BlockGCRODRSolMgr<" << SCT::name() << ", ...>";
     oss << "{";
@@ -516,9 +521,9 @@ private:
     return oss.str();
   }
 
-   template<class ScalarType, class MV, class OP>
+   template<class ScalarType, class MV, class OP, class DM>
    Teuchos::RCP<const Teuchos::ParameterList>
-   BlockGCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const {
+   BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::getValidParameters() const {
      using Teuchos::ParameterList;
      using Teuchos::parameterList;
      using Teuchos::RCP;
@@ -602,9 +607,9 @@ private:
      return defaultParams_;
    }
 
-   template<class ScalarType, class MV, class OP>
+   template<class ScalarType, class MV, class OP, class DM>
    void
-   BlockGCRODRSolMgr<ScalarType,MV,OP>::
+   BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::
    setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params) {
      using Teuchos::isParameterType;
      using Teuchos::getParameter;
@@ -1018,9 +1023,9 @@ private:
    }
 
   // initializeStateStorage.
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   void
-  BlockGCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage()
+  BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::initializeStateStorage()
   {
 
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1171,8 +1176,8 @@ private:
 
   }
 
-template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > block_gmres_iter){
+template<class ScalarType, class MV, class OP, class DM>
+void BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > block_gmres_iter){
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1265,8 +1270,8 @@ MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
 return;
 } // end buildRecycleSpaceKryl defnition
 
-template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodr_iter){
+template<class ScalarType, class MV, class OP, class DM>
+void BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodr_iter){
   const MagnitudeType one = Teuchos::ScalarTraits<ScalarType>::one();
   const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
@@ -1434,8 +1439,8 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceAugKryl(Teuchos::RCP<
 
 } //end buildRecycleSpaceAugKryl definition
 
-template<class ScalarType, class MV, class OP>
-int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsAugKryl(int keff, int m, const SDM& GG, const Teuchos::RCP<const MV>& VV, SDM& PP){
+template<class ScalarType, class MV, class OP, class DM>
+int BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::getHarmonicVecsAugKryl(int keff, int m, const SDM& GG, const Teuchos::RCP<const MV>& VV, SDM& PP){
   int i, j;
   int m2 = GG.numCols();
   bool xtraVec = false;
@@ -1567,8 +1572,8 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsAugKryl(int keff, int m,
 
 } //end getHarmonicVecsAugKryl definition
 
-template<class ScalarType, class MV, class OP>
-int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& HH, SDM& PP){
+template<class ScalarType, class MV, class OP, class DM>
+int BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::getHarmonicVecsKryl(int m, const SDM& HH, SDM& PP){
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1702,8 +1707,8 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& H
 } //end getHarmonicVecsKryl
 
 // This method sorts list of n floating-point numbers and return permutation vector
-template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
+template<class ScalarType, class MV, class OP, class DM>
+void BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
   int l, r, j, i, flag;
   int    RR2;
   MagnitudeType dRR, dK;
@@ -1762,8 +1767,8 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<MagnitudeType>& dlist
   iperm[0] = RR2;
 } //end sort() definition
 
-template<class ScalarType, class MV, class OP>
-ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
