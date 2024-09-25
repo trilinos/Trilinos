@@ -85,6 +85,64 @@ namespace Amesos2 {
     }
 
 
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node>
+  Teuchos::RCP<const MatrixAdapter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
+  ConcreteMatrixAdapter<
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+    >::reindex_impl() const
+    {
+      typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+      typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t>  contiguous_map_type;
+      auto rowMap = this->mat_->getRowMap();
+      auto colMap = this->mat_->getColMap();
+      auto rowComm = rowMap->getComm();
+      auto colComm = colMap->getComm();
+
+      global_ordinal_t indexBase = rowMap->getIndexBase();
+      global_ordinal_t numDoFs = this->mat_->getGlobalNumRows();
+      local_ordinal_t nRows = this->mat_->getLocalNumRows();
+      local_ordinal_t nCols = colMap->getLocalNumElements();
+
+      auto tmpMap = rcp (new contiguous_map_type (numDoFs, nRows, indexBase, rowComm));
+      global_ordinal_t frow = tmpMap->getMinGlobalIndex();
+
+      // Create new GID list for RowMap
+      Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("indexList", nRows);
+      for (local_ordinal_t k = 0; k < nRows; k++) {
+         rowIndexList(k) = frow+k;
+      }
+      // Create new GID list for ColMap
+      Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("indexList", nCols);
+      typedef Tpetra::MultiVector<global_ordinal_t,
+                                  local_ordinal_t,
+                                  global_ordinal_t,
+                                  node_t> gid_mv_t;
+      Teuchos::ArrayView<const global_ordinal_t> rowIndexArray(rowIndexList.data(), nRows);
+      Teuchos::ArrayView<const global_ordinal_t> colIndexArray(colIndexList.data(), nCols);
+      gid_mv_t row_mv (rowMap, rowIndexArray, nRows, 1);
+      gid_mv_t col_mv (colMap, colIndexArray, nCols, 1);
+      typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_t;
+      RCP<import_t> importer = rcp (new import_t (rowMap, colMap));
+      col_mv.doImport (row_mv, *importer, Tpetra::INSERT);
+      {
+        auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
+        for(int i=0; i<nCols; i++) colIndexList(i) = col_view(i,0);
+      }
+      // Create new Row & Col Maps
+      Teuchos::RCP<const contiguous_map_type> newRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
+      Teuchos::RCP<const contiguous_map_type> newColMap = rcp (new contiguous_map_type (numDoFs, colIndexList.data(), nCols, indexBase, colComm));
+
+      // Build Matrix with new Maps, 
+      auto lclMatrix = this->mat_->getLocalMatrixDevice();
+      RCP<matrix_t> contiguous_t_mat = rcp( new matrix_t(newRowMap, newColMap, lclMatrix));
+
+      return rcp (new ConcreteMatrixAdapter<matrix_t> (contiguous_t_mat));
+    }
+
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,
@@ -96,6 +154,7 @@ namespace Amesos2 {
                  const Teuchos::EVerbosityLevel verbLevel) const
     {
       this->mat_->describe(os, verbLevel);
+      Tpetra::MatrixMarket::Writer<matrix_t>::writeSparseFile ("matA.dat", this->mat_);
     }
 } // end namespace Amesos2
 

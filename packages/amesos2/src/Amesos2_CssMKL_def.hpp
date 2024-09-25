@@ -29,7 +29,6 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_CssMKL_decl.hpp"
 
-
 namespace Amesos2 {
 
   namespace PMKL {
@@ -45,8 +44,6 @@ namespace Amesos2 {
     , n_(Teuchos::as<int_t>(this->globalNumRows_))
     , perm_(this->globalNumRows_)
     , nrhs_(0)
-    , use_zoltan2_(false)
-    , use_parmetis_(false)
     , css_initialized_(false)
     , is_contiguous_(true)
     , msglvl_(0)
@@ -131,41 +128,6 @@ namespace Amesos2 {
   int
   CssMKL<Matrix,Vector>::symbolicFactorization_impl()
   {
-#if 1
-    if (use_zoltan2_) {
-      char filename[200];
-      int nprocs = -1; 
-      int rank   = -1; 
-      MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      sprintf(filename,"metis_%d.dat", this->globalNumRows_);
-      if (rank == 0) printf( " filename : %s\n",filename );
-
-      FILE *fp = fopen(filename,"r");
-      if (fp) {
-        if (rank == 0) printf( " - perm from filename : %s\n\n",filename );
-        for (int i=0; i<this->globalNumRows_; i++) {
-          int row;
-          fscanf(fp, "%d", &row);
-          //perm_[i] = row;
-          perm_[row] = i;
-        }
-        /*if (rank == 0) {
-          printf("perm=[\n");
-          for (int i=0; i<this->globalNumRows_; i++) {
-            printf( " %d\n",perm_[i] );
-          }
-          printf("];\n");
-        }*/
-      } else {
-        if (rank == 0) printf( " - natural perm\n\n" );
-        for (int i=0; i<this->globalNumRows_; i++) {
-          perm_[i] = i;
-        }
-      }
-      iparm_[4] = 1; /* 0: ignore perm, 1: use perm, 2: return perm */
-    }
-#endif
     if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
       std::cout << " CssMKL::symbolicFactorization:\n" << std::endl;
       for (int i=0; i < 64; i++) std::cout << " * IPARM[" << i << "] = " << iparm_[i] << std::endl;
@@ -196,14 +158,6 @@ namespace Amesos2 {
     // such a situation is reported.
     this->setNnzLU(iparm_[17]);
     css_initialized_ = true;
-    /*{
-      int rank = -1; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      char filename[200];
-      sprintf(filename,"perm_%d.dat", rank);
-      FILE *fp = fopen(filename,"w");
-      for (int i=0; i<n_; i++) fprintf(fp,"%d\n",perm_[i]);
-      fclose(fp);
-    }*/
     return(0);
   }
 
@@ -265,7 +219,7 @@ namespace Amesos2 {
         MultiVecAdapter<Vector>,
         solver_scalar_type>::do_get(B, bvals_(),
           as<size_t>(ld_rhs),
-	  Teuchos::ptrInArg(*css_rowmap_));
+          Teuchos::ptrInArg(*css_rowmap_));
     }
 
     int_t error = 0;
@@ -304,7 +258,7 @@ namespace Amesos2 {
       MultiVecAdapter<Vector>,
         solver_scalar_type>::do_put(X, xvals_(),
           as<size_t>(ld_rhs),
-	  Teuchos::ptrInArg(*css_rowmap_));
+          Teuchos::ptrInArg(*css_rowmap_));
     }
 
     return( 0 );
@@ -389,14 +343,6 @@ namespace Amesos2 {
       iparm_[27] = getIntegralValue<int>(*parameterList, "IPARM(28)");
     }
    
-    if( parameterList->isParameter("useZoltan2") ){
-      use_zoltan2_ = parameterList->get<bool>("useZoltan2");
-    }
-
-    if( parameterList->isParameter("useParMETIS") ){
-      use_parmetis_ = parameterList->get<bool>("useParMETIS");
-    }
-
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
@@ -522,24 +468,14 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
   EDistribution dist_option = (iparm_[39] != 0 ? DISTRIBUTED_NO_OVERLAP : ((is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED));
   if (dist_option == DISTRIBUTED_NO_OVERLAP && !is_contiguous_) {
     // Neeed to form contiguous matrix
-    #if 0
-      int myRank = this->matrixA_->getComm()->getRank();
-      Teuchos::oblackholestream blackhole;
-      std::ostream& out = ( myRank == 0 ? std::cout : blackhole );
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
-
-      if (myRank == 0) printf( " %d Distributed and contiguous\n",myRank ); fflush(stdout);
-      this->matrixA_->describe(*fos, Teuchos::VERB_EXTREME);
-      if (myRank == 0) printf( " %d done print\n\n\n",myRank ); fflush(stdout); MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+    #if 1
+    // Only reinex GIDs
+    css_rowmap_ = this->matrixA_->getRowMap(); // use original map to redistribute vectors in solve
+    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex();
+    #else
+    // Redistribued matrixA into contiguous GIDs
     Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->get(ptrInArg(*css_rowmap_));
-    #if 0
-      contig_mat->describe(*fos, Teuchos::VERB_EXTREME);
-      if (myRank == 0) printf( " %d done re-print\n\n\n",myRank ); fflush(stdout); MPI_Barrier(MPI_COMM_WORLD);
-
-      printf( " %d: (%d,%d, %d,%d) -> (%d,%d, %d,%d)\n",myRank,
-		      this->matrixA_->getGlobalNumRows(),this->matrixA_->getGlobalNNZ(), this->matrixA_->getLocalNumRows(),this->matrixA_->getLocalNNZ(),
-                      contig_mat->getGlobalNumRows(),contig_mat->getGlobalNNZ(), contig_mat->getLocalNumRows(),contig_mat->getLocalNNZ());
+    //css_rowmap_ = contig_mat->getRowMap(); // use new map to redistribute vectors in solve
     #endif
     // Copy into local views
     if (current_phase == SYMBFACT) {
@@ -558,7 +494,7 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
                                          contig_mat.ptr(),
                                          nzvals_temp_, colind_view_, rowptr_view_,
                                          nnz_ret,
-                                         ptrInArg(*css_rowmap_),
+                                         ptrInArg(*(contig_mat->getRowMap())),
                                          #if 1
                                          DISTRIBUTED_NO_OVERLAP,
                                          #else
@@ -598,7 +534,7 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
                                          this->matrixA_.ptr(),
                                          nzvals_temp_, colind_view_, rowptr_view_,
                                          nnz_ret,
-                                         Teuchos::ptrInArg(*css_rowmap_),
+                                         ptrInArg(*(this->matrixA_->getRowMap())),
                                          dist_option,
                                          SORTED_INDICES);
       Kokkos::deep_copy(nzvals_view_, nzvals_temp_);

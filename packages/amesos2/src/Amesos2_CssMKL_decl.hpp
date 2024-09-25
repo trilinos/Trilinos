@@ -268,9 +268,6 @@ namespace Amesos2 {
     /// number of righthand-side vectors
     mutable int_t nrhs_;
 
-    bool use_zoltan2_;
-    bool use_parmetis_;
-
     bool css_initialized_;
     bool is_contiguous_;
 
