@@ -36,9 +36,9 @@
 
 namespace Belos {
     
-  template<class Storage, class MV, class OP>
-  class PseudoBlockGmresIter<Sacado::MP::Vector<Storage>, MV, OP> : 
-    virtual public Iteration<Sacado::MP::Vector<Storage>, MV, OP> {
+  template<class Storage, class MV, class OP, class DM>
+  class PseudoBlockGmresIter<Sacado::MP::Vector<Storage>, MV, OP, DM> : 
+    virtual public Iteration<Sacado::MP::Vector<Storage>, MV, OP, Teuchos::SerialDenseMatrix<int, Sacado::MP::Vector<Storage> > > {
     
   public:
     
@@ -46,7 +46,8 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef Sacado::MP::Vector<Storage> ScalarType;
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef Teuchos::SerialDenseMatrix<int, ScalarType> DMType;
+    typedef MultiVecTraits<ScalarType,MV,DMType> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -65,8 +66,8 @@ namespace Belos {
      */  
     PseudoBlockGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 			  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-			  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DMType> > &tester,
+			  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DMType> > &ortho,
 			  Teuchos::ParameterList &params );
     
     //! Destructor.
@@ -121,14 +122,14 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(const PseudoBlockGmresIterState<ScalarType,MV> & newstate);
+    void initialize(const PseudoBlockGmresIterState<ScalarType,MV,DMType> & newstate);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
      */
     void initialize()
     {
-      PseudoBlockGmresIterState<ScalarType,MV> empty;
+      PseudoBlockGmresIterState<ScalarType,MV,DMType> empty;
       initialize(empty);
     }
     
@@ -139,8 +140,8 @@ namespace Belos {
      * \returns A PseudoBlockGmresIterState object containing const pointers to the current
      * solver state.
      */
-    PseudoBlockGmresIterState<ScalarType,MV> getState() const {
-      PseudoBlockGmresIterState<ScalarType,MV> state;
+    PseudoBlockGmresIterState<ScalarType,MV,DMType> getState() const {
+      PseudoBlockGmresIterState<ScalarType,MV,DMType> state;
       state.curDim = curDim_;
       state.V.resize(numRHS_);
       state.H.resize(numRHS_);
@@ -245,10 +246,10 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-    const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >      lp_;
+    const Teuchos::RCP<OutputManager<ScalarType> >            om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DMType> >  stest_;
+    const Teuchos::RCP<OrthoManager<ScalarType,MV,DMType> >   ortho_;
     
     //
     // Algorithmic parameters
@@ -260,11 +261,11 @@ namespace Belos {
 
     // Mask used to store whether the ensemble GMRES has faced lucky breakdown or not.
     Mask<MagnitudeType> lucky_breakdown_;
-    
+   
     // Storage for QR factorization of the least squares system.
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > > sn_;
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,MagnitudeType> > > cs_;
-    
+    std::vector<Teuchos::RCP<std::vector<ScalarType> > > sn_;
+    std::vector<Teuchos::RCP<std::vector<MagnitudeType> > > cs_;
+ 
     // Pointers to a work vector used to improve aggregate performance.
     Teuchos::RCP<MV> U_vec_, AU_vec_;    
 
@@ -308,12 +309,12 @@ namespace Belos {
      
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class StorageType, class MV, class OP>
-  PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::
+  template<class StorageType, class MV, class OP, class DM>
+  PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
   PseudoBlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 							       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-							       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DMType> > &tester,
+							       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DMType> > &ortho,
 							       Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -336,8 +337,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
-  template <class StorageType, class MV, class OP>
-  void PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::setNumBlocks (int numBlocks)
+  template <class StorageType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::setNumBlocks (int numBlocks)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -352,8 +353,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the current update from this subspace.
-  template <class StorageType, class MV, class OP>
-  Teuchos::RCP<MV> PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::getCurrentUpdate() const
+  template <class StorageType, class MV, class OP, class DM>
+  Teuchos::RCP<MV> PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::getCurrentUpdate() const
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor updateTimer( *timerSolveLSQR_ );
@@ -401,9 +402,9 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.
   // Note:  No residual vector will be returned by Gmres.
-  template <class StorageType, class MV, class OP>
+  template <class StorageType, class MV, class OP, class DM>
   Teuchos::RCP<const MV>
-  PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::
+  PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const
   {
     typedef typename Teuchos::ScalarTraits<ScalarType> STS;
@@ -426,10 +427,10 @@ namespace Belos {
   }
 
 
-  template <class StorageType, class MV, class OP>
+  template <class StorageType, class MV, class OP, class DM>
   void
-  PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::
-  initialize (const PseudoBlockGmresIterState<ScalarType,MV> & newstate)
+  PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
+  initialize (const PseudoBlockGmresIterState<ScalarType,MV,DMType> & newstate)
   {
     using Teuchos::RCP;
 
@@ -617,20 +618,20 @@ namespace Belos {
     if ((int)newstate.cs.size() == numRHS_ && (int)newstate.sn.size() == numRHS_) {
       for (int i=0; i<numRHS_; ++i) {
         if (cs_[i] != newstate.cs[i])
-          cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(*newstate.cs[i]) );
+          cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(*newstate.cs[i]) );
         if (sn_[i] != newstate.sn[i])
-          sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(*newstate.sn[i]) );
+          sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(*newstate.sn[i]) );
       }
     }
 
     // Resize or create the vectors as necessary
     for (int i=0; i<numRHS_; ++i) {
       if (cs_[i] == Teuchos::null)
-        cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(numBlocks_+1) );
+        cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(numBlocks_+1) );
       else
         cs_[i]->resize(numBlocks_+1);
       if (sn_[i] == Teuchos::null)
-        sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(numBlocks_+1) );
+        sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(numBlocks_+1) );
       else
         sn_[i]->resize(numBlocks_+1);
     }
@@ -654,8 +655,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class StorageType, class MV, class OP>
-  void PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::iterate()
+  template <class StorageType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -796,8 +797,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Update the least squares solution for each right-hand side.
-  template<class StorageType, class MV, class OP>
-  void PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP>::updateLSQR( int dim )
+  template<class StorageType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::updateLSQR( int dim )
   {
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
