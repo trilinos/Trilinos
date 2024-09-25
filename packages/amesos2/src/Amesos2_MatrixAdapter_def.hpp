@@ -514,6 +514,14 @@ namespace Amesos2 {
   }
 
 
+  template < class Matrix >
+  Teuchos::RCP<const MatrixAdapter<Matrix> >
+  MatrixAdapter<Matrix>::reindex() const
+  {
+    return static_cast<const adapter_t*>(this)->reindex_impl();
+  }
+
+
   template <class Matrix>
   Teuchos::RCP<MatrixAdapter<Matrix> >
   createMatrixAdapter(Teuchos::RCP<Matrix> m){

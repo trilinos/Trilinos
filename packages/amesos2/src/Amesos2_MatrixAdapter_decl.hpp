@@ -215,6 +215,7 @@ namespace Amesos2 {
     }
 
     Teuchos::RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
+    Teuchos::RCP<const type> reindex() const;
 
     /// Returns a short description of this Solver
     std::string description() const;
