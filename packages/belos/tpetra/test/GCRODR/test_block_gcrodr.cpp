@@ -109,8 +109,7 @@ int run (int argc, char *argv[])
   RCP<tcrsmatrix_t> A;
   RCP<MV> X_guess, X_exact, B;
   {
-    Teuchos::RCP<NT> node; // can be null; only for type deduction
-    Belos::Tpetra::ProblemMaker<tcrsmatrix_t> factory (comm, node, out, tolerant, debug);
+    Belos::Tpetra::ProblemMaker<tcrsmatrix_t> factory (comm, out, tolerant, debug);
 
     RCP<ParameterList> problemParams = parameterList ();
     problemParams->set ("Global number of rows",
