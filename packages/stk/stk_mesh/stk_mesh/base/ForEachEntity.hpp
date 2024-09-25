@@ -37,12 +37,13 @@
 #include <stk_util/stk_config.h>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 
 namespace stk {
 namespace mesh {
+
+class BulkData;
 
 template <typename ALGORITHM_TO_RUN_PER_ENTITY>
 void for_each_entity_run(const BulkData &mesh,

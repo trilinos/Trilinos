@@ -43,7 +43,6 @@
 #include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/BulkData.hpp>              // for BulkData
 #include <stk_mesh/base/Selector.hpp>              // for Selector
 #include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
 #include <stk_util/util/ParameterList.hpp>         // for Type

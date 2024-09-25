@@ -46,14 +46,6 @@
  *          and derived field relationships.
  */
 
-/** \ingroup  stk_mesh_module
- *  \defgroup stk_mesh_field_dimension_tags  Meta Data Field Dimension Tags
- *  \brief Mesh specific
- *         \ref shards::ArrayDimTag "Array dimension tags" for defining
- *         \ref shards::Array "multi-dimensional array"
- *         \ref stk_mesh_field_data "field data".
- */
-
 //----------------------------------------------------------------------
 
 /** \ingroup  stk_mesh_module
