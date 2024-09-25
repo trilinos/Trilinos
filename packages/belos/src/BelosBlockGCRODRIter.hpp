@@ -131,8 +131,8 @@ namespace Belos{
   	//@}
 
 
-    template<class ScalarType, class MV, class OP>
-    class BlockGCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
+    template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType> >
+    class BlockGCRODRIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     	public:
 
   	//
@@ -420,8 +420,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Constructor.
-   template<class ScalarType, class MV, class OP>
-   BlockGCRODRIter<ScalarType,MV,OP>::BlockGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+   template<class ScalarType, class MV, class OP, class DM>
+   BlockGCRODRIter<ScalarType,MV,OP,DM>::BlockGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
                                             const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -483,8 +483,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    // Iterate until the status test informs us we should stop.
-   template <class ScalarType, class MV, class OP>
-   void BlockGCRODRIter<ScalarType,MV,OP>::iterate() {
+   template <class ScalarType, class MV, class OP, class DM>
+   void BlockGCRODRIter<ScalarType,MV,OP,DM>::iterate() {
 	TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, BlockGCRODRIterInitFailure,"Belos::BlockGCRODRIter::iterate(): GCRODRIter class not initialized." );
 
 // MLP
@@ -608,8 +608,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Initialize this iteration object.
-   template <class ScalarType, class MV, class OP>
-   void BlockGCRODRIter<ScalarType,MV,OP>::initialize(BlockGCRODRIterState<ScalarType,MV>& newstate) {
+   template <class ScalarType, class MV, class OP, class DM>
+   void BlockGCRODRIter<ScalarType,MV,OP,DM>::initialize(BlockGCRODRIterState<ScalarType,MV>& newstate) {
 	if (newstate.V != Teuchos::null &&  newstate.H != Teuchos::null) {
       		curDim_ = newstate.curDim;
       		V_      = newstate.V;
@@ -644,9 +644,9 @@ namespace Belos{
    //right-hand sides we are interested in, as dictated by 
    //std::vector<int> trueRHSIndices_ (THIS IS NOT YET IMPLEMENTED.  JUST GETS ALL RESIDUALS)
    //A norm of -1 is entered for all residuals about which we do not care.
-   template <class ScalarType, class MV, class OP>
+   template <class ScalarType, class MV, class OP, class DM>
    Teuchos::RCP<const MV> 
-   BlockGCRODRIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const
+   BlockGCRODRIter<ScalarType,MV,OP,DM>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const
    {
 	//
 	// NOTE: Make sure the incoming std::vector is the correct size!
@@ -673,8 +673,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Get the current update from this subspace.
-   template <class ScalarType, class MV, class OP>
-   Teuchos::RCP<MV> BlockGCRODRIter<ScalarType,MV,OP>::getCurrentUpdate() const {
+   template <class ScalarType, class MV, class OP, class DM>
+   Teuchos::RCP<MV> BlockGCRODRIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const {
 	//
 	// If this is the first iteration of the Arnoldi factorization,
 	// there is no update, so return Teuchos::null.
@@ -744,8 +744,8 @@ namespace Belos{
     	return currentUpdate;
     }//end getCurrentUpdate() definition
 
-    template<class ScalarType, class MV, class OP>
-    void BlockGCRODRIter<ScalarType,MV,OP>::updateLSQR( int dim ) {
+    template<class ScalarType, class MV, class OP, class DM>
+    void BlockGCRODRIter<ScalarType,MV,OP,DM>::updateLSQR( int dim ) {
 	
 	int i;
 	const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
