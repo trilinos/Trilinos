@@ -4811,7 +4811,7 @@ namespace Ioex {
     std::vector<INT> proc_id(elementCount, myProcessor);
     const auto &blocks = region->get_element_blocks();
     for (const auto &block : blocks) {
-      put_field_internal(block, block->get_field("proc_id"), Data(proc_id), -1);
+      put_field_internal(block, block->get_field("proc_id"), Data(proc_id), 0);
     }
   }
 
