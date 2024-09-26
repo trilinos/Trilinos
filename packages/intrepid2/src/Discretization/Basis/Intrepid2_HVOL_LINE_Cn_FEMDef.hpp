@@ -41,8 +41,8 @@ namespace Intrepid2 {
       const ordinal_type order = card - 1;
       const double alpha = 0.0, beta = 0.0;
 
-      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
-      auto vcprop = Kokkos::common_view_alloc_prop(work);
+      typedef typename Kokkos::DynRankView<typename inputViewType::value_type, typename workViewType::memory_space> viewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(input);
       
       switch (opType) {
       case OPERATOR_VALUE: {

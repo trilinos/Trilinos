@@ -460,8 +460,8 @@ namespace Intrepid2 {
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
     perTeamSpaceSize = 0;
-    ordinal_type scalarViewExtent = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 5*this->basisCardinality_;
-    perThreadSpaceSize = scalarViewExtent*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+    ordinal_type scalarWorkViewExtent = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 5*this->basisCardinality_;
+    perThreadSpaceSize = scalarWorkViewExtent*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
   }
 
   template<typename DT, typename OT, typename PT>
