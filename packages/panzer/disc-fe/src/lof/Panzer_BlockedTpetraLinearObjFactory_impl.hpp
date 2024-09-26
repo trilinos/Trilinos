@@ -199,11 +199,11 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    TEUCHOS_ASSERT(global_bcs->productSpace()->numBlocks()==(int) rowBlockDim);
 
    for(std::size_t i=0;i<rowBlockDim;i++) {
-      // grab epetra vector
+      // grab tpetra vector
       RCP<const VectorType> t_local_bcs = rcp_dynamic_cast<const ThyraVector>(local_bcs->getVectorBlock(i),true)->getConstTpetraVector();
       RCP<const VectorType> t_global_bcs = rcp_dynamic_cast<const ThyraVector>(global_bcs->getVectorBlock(i),true)->getConstTpetraVector();
 
-      // pull out epetra values
+      // pull out tpetra values
       RCP<VectorBase<ScalarT> > th_f = (f==Teuchos::null) ? Teuchos::null : f->getNonconstVectorBlock(i);
       RCP<VectorType> t_f;
       if(th_f==Teuchos::null)
@@ -215,10 +215,10 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       //   RCP<const MapType> map_i = getGhostedMap(i);
       //   RCP<const MapType> map_j = getGhostedMap(j);
 
-         // pull out epetra values
+         // pull out tpetra values
          RCP<LinearOpBase<ScalarT> > th_A = (A== Teuchos::null)? Teuchos::null : A->getNonconstBlock(i,j);
 
-         // don't do anyting if opertor is null
+         // don't do anything if operator is null
          RCP<CrsMatrixType> t_A;
          if(th_A==Teuchos::null)
             t_A = Teuchos::null;
@@ -463,7 +463,7 @@ Teuchos::RCP<const GlobalIndexer>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGlobalIndexer(int i) const
 {
-   return gidProviders_[0]->getFieldDOFManagers()[i];
+   return gidProviders_.front()->getFieldDOFManagers()[i];
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -501,7 +501,7 @@ getThyraDomainSpace() const
    if(domainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<getBlockColCount();i++)
+      for(int i=0;i<getBlockColCount();i++)
          vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getColMap(i)));
 
       domainSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
@@ -518,7 +518,7 @@ getThyraRangeSpace() const
    if(rangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<getBlockRowCount();i++)
+      for(int i=0;i<getBlockRowCount();i++)
          vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap(i)));
 
       rangeSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
@@ -561,7 +561,7 @@ getThyraDomainVector() const
    Thyra::assign(vec.ptr(),0.0);
 
    Teuchos::RCP<Thyra::ProductVectorBase<ScalarT> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<ScalarT> >(vec);
-   for(std::size_t i=0;i<getBlockColCount();i++) {
+   for(int i=0;i<getBlockColCount();i++) {
       TEUCHOS_ASSERT(Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<ScalarT> >(p_vec->getNonconstVectorBlock(i))->spmdSpace()->localSubDim()==
                      Teuchos::as<int>(getColMap(i)->getLocalNumElements()));
    }
@@ -620,7 +620,7 @@ getGhostedThyraDomainSpace() const
    if(ghostedDomainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<getBlockColCount();i++)
+      for(int i=0;i<getBlockColCount();i++)
          vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getColGhostedMap(i)));
 
       ghostedDomainSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
@@ -637,7 +637,7 @@ getGhostedThyraRangeSpace() const
    if(ghostedRangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<getBlockRowCount();i++)
+      for(int i=0;i<getBlockRowCount();i++)
          vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedMap(i)));
 
       ghostedRangeSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
@@ -762,7 +762,7 @@ ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<ScalarT> & in,Thyra::LinearOp
             TEUCHOS_ASSERT(th_in!=Teuchos::null);
             TEUCHOS_ASSERT(th_out!=Teuchos::null);
 
-            // get the epetra version of the blocks
+            // get the tpetra version of the blocks
             RCP<const OperatorType> tp_op_in = rcp_dynamic_cast<const ThyraLinearOp>(th_in,true)->getConstTpetraOperator();
             RCP<OperatorType> tp_op_out      = rcp_dynamic_cast<ThyraLinearOp>(th_out,true)->getTpetraOperator();
 
@@ -1224,7 +1224,7 @@ int
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getBlockRowCount() const
 {
-   return gidProviders_[0]->getFieldBlocks();
+   return gidProviders_.front()->getFieldBlocks();
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -1233,7 +1233,7 @@ BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>
 getBlockColCount() const
 {
    if(not useColGidProviders_) {
-      return gidProviders_[0]->getFieldBlocks();
+      return gidProviders_.front()->getFieldBlocks();
    }
 
    return gidProviders_.back()->getFieldBlocks();
