@@ -73,6 +73,8 @@ public:
       m_hostNodes(i) = NgpNode(*(eval.get_node(i)));
     }
     Kokkos::deep_copy(m_deviceNodes, m_hostNodes);
+
+    check_for_errors();
   }
 
   KOKKOS_DEFAULTED_FUNCTION ParsedEval(const ParsedEval&) = default;
@@ -81,19 +83,12 @@ public:
 
   virtual int get_result_buffer_size() override { return RESULT_BUFFER_SIZE; }
 
-  void check_for_errors(bool will_run_on_device) const override
+  STK_DEPRECATED_MSG("check_for_errors is now called by the constructor.  No need to call it yourself")
+  void check_for_errors(bool /*will_run_on_device*/) const override
   {
-    for (size_t i=0; i < m_hostNodes.size(); ++i)
-    {
-      const NgpNode& node = m_hostNodes(i);
-      if (node.m_opcode == OPCODE_FUNCTION)
-      {
-        FunctionType funcType = node.m_data.function.functionType;
-        STK_ThrowRequireMsg(funcType != FunctionType::UNDEFINED, "user defined functions are not supported by ParsedEval");
-        STK_ThrowRequireMsg(will_run_on_device && is_function_supported_on_device(funcType), "random number generation and time functions not supported on device");
-      }
-    }
+    check_for_errors();
   }
+
 
   KOKKOS_INLINE_FUNCTION
   int get_num_variables() const { return m_numVariables; }
@@ -135,6 +130,19 @@ public:
 private:
   template <int MAX_BOUND_VARIABLES>
   friend class DeviceVariableMap;
+
+  void check_for_errors() const
+  {
+    for (size_t i=0; i < m_hostNodes.size(); ++i)
+    {
+      const NgpNode& node = m_hostNodes(i);
+      if (node.m_opcode == OPCODE_FUNCTION)
+      {
+        FunctionType funcType = node.m_data.function.functionType;
+        STK_ThrowRequireMsg(funcType != FunctionType::UNDEFINED, "user defined functions and system functions (rand(), time() etc.) are not supported by ParsedEval");
+      }
+    }
+  }
 
   int m_numVariables;
   int m_requiredResultBufferSize;

@@ -67,7 +67,6 @@
 #include "stk_util/diag/StringUtil.hpp"
 #include <type_traits>
 
-namespace shards { class ArrayDimTag; }
 namespace shards { class CellTopologyManagedData; }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -77,8 +76,8 @@ namespace mesh {
 template <typename>
 struct is_field : std::false_type {};
 
-template <typename Scalar, class Tag1, class Tag2, class Tag3, class Tag4, class Tag5, class Tag6, class Tag7>
-struct is_field<Field<Scalar, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, Tag7>> : std::true_type {};
+template <typename Scalar>
+struct is_field<Field<Scalar>> : std::true_type {};
 
 template <typename field_type>
 constexpr bool is_field_v = is_field<field_type>::value;
@@ -89,16 +88,6 @@ struct is_field_base : std::is_same<field_type, FieldBase> {};
 
 template <typename field_type>
 constexpr bool is_field_base_v = is_field_base<field_type>::value;
-
-
-template <typename>
-struct is_simple_field : std::false_type {};
-
-template <typename Scalar>
-struct is_simple_field<Field<Scalar, void, void, void, void, void, void, void>> : std::true_type {};
-
-template <typename field_type>
-constexpr bool is_simple_field_v = is_simple_field<field_type>::value;
 
 
 /** \addtogroup stk_mesh_module
@@ -784,16 +773,14 @@ Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
                                const char * fileName,
                                int lineNumber) const
 {
-  static_assert(not is_field_v<T>, "You must use a datatype as the template parameter to MetaData::get_field(),"
-                                   "and not the Field itself");
+  static_assert(not is_field_v<T> && not is_field_base_v<T>,
+                "You must use a datatype as the template parameter to MetaData::get_field(), "
+                "and not the Field itself");
 
   const DataTraits & dt = data_traits<T>();
   const DataTraits & dt_void = data_traits<void>();
-  const int fieldRank = 0;
 
-  std::array<shards::ArrayDimTag*, 8> tags {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-
-  FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, fieldRank, tags.data(), 0);
+  FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, 0);
 
   STK_ThrowRequireMsg(field == nullptr ||
                       field->data_traits().type_info == dt.type_info ||
@@ -812,13 +799,11 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
                         const char * fileName,
                         int lineNumber)
 {
-  static_assert(not is_field_v<T>, "You must use a datatype as the template parameter to MetaData::declare_field(),"
-                                   "and not the Field itself");
+  static_assert(not is_field_v<T> && not is_field_base_v<T>,
+                "You must use a datatype as the template parameter to MetaData::declare_field(), "
+                "and not the Field itself");
 
   const DataTraits & traits = data_traits<T>();
-  const int fieldRank = 0;
-
-  std::array<shards::ArrayDimTag*, 8> tags {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
   const char** reservedStateSuffix = reserved_state_suffix();
 
@@ -841,8 +826,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
 
   Field<T> * f[MaximumFieldStates] = {nullptr};
 
-  FieldBase* rawField = m_field_repo.get_field(arg_entity_rank, name,
-                                               traits, fieldRank, tags.data(), number_of_states);
+  FieldBase* rawField = m_field_repo.get_field(arg_entity_rank, name, traits, number_of_states);
 
   f[0] = dynamic_cast<Field<T>*>(rawField);
 
@@ -881,8 +865,6 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
                           m_field_repo.get_fields().size(),
                           field_names[i],
                           traits,
-                          fieldRank,
-                          tags.data(),
                           number_of_states,
                           static_cast<FieldState>(i));
 
@@ -905,10 +887,6 @@ field_type & put_field_on_mesh(field_type & field,
                                const Part & part,
                                const typename field_type::value_type* init_value)
 {
-  static_assert(is_simple_field_v<field_type> || is_field_base_v<field_type>,
-                "You must only call put_field_on_mesh() with a simple field argument (i.e. without template parameters"
-                " beyond the datatype");
-
   MetaData & meta = MetaData::get(field);
 
   unsigned numScalarsPerEntity = 1;
@@ -924,10 +902,6 @@ field_type & put_field_on_mesh(field_type & field,
                                const Selector & selector,
                                const typename field_type::value_type* init_value)
 {
-  static_assert(is_simple_field_v<field_type> || is_field_base_v<field_type>,
-                "You must only call put_field_on_mesh() with a simple field argument (i.e. without template parameters"
-                " beyond the datatype");
-
   MetaData & meta = MetaData::get(field);
 
   unsigned numScalarsPerEntity = 1;
@@ -1102,8 +1076,9 @@ Field<T> * get_field_by_name(const std::string & name,
                              const char * fileName = HOST_DEBUG_FILE_NAME,
                              int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
-  static_assert(not is_field_v<T>, "You must use a datatype as the template parameter to get_field_by_name(),"
-                                   "and not the Field itself");
+  static_assert(not is_field_v<T> && not is_field_base_v<T>,
+                "You must use a datatype as the template parameter to get_field_by_name(), "
+                "and not the Field itself");
 
   Field<T>* field = nullptr;
   unsigned num_nonnull_fields = 0;

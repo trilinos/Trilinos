@@ -47,6 +47,8 @@
 #include "stk_search/kdtree/KDTree_BoundingBox.hpp"
 #include "stk_search/kdtree/KDTree.hpp"
 #include "DeviceMPIUtils.hpp"
+#include <any>
+#include <memory>
 
 namespace stk::search {
 
@@ -429,6 +431,11 @@ class SearchResultCommunication
     int m_commRank;
     int m_numLocalResults;
     DeviceBuffers m_recvBuffers;
+};
+
+struct SearchData
+{
+  std::any data;
 };
 
 } // end namespace stk::search
