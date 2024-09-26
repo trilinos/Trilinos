@@ -75,7 +75,7 @@ namespace Intrepid2 {
       }
       case OPERATOR_CURL: {
         const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
-        ptr += card*npts*spaceDim*get_dimension_scalar(work);
+        ptr += card*npts*spaceDim*get_dimension_scalar(input);
         const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::

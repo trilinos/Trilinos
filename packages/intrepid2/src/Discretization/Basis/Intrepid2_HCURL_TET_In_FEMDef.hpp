@@ -77,7 +77,7 @@ getValues(       OutputViewType output,
   }
   case OPERATOR_CURL: {
     const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
-    ptr += card*npts*spaceDim*get_dimension_scalar(work);
+    ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
@@ -593,7 +593,7 @@ Basis_HCURL_TET_In_FEM<DT,OT,PT>::getValues(
     const int numPoints = inputPoints.extent(0);
     using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-    ordinal_type scalarSizePerPoint = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 5*this->basisCardinality_;
+    ordinal_type scalarSizePerPoint = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 7*this->basisCardinality_;
     ordinal_type sizePerPoint = scalarSizePerPoint*get_dimension_scalar(inputPoints);
     WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
     using range_type = Kokkos::pair<ordinal_type,ordinal_type>;

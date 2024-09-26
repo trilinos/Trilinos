@@ -86,6 +86,12 @@ namespace Intrepid2 {
             int scratch_space_level =1;
             const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
             Kokkos::TeamPolicy<DeviceSpaceType> teamPolicy(ncells, Kokkos::AUTO,vectorSize);
+            { // avoid using a team size larger than needed, to reduce allocated scrach space memory
+              ordinal_type team_size = teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag());
+              *outStream << "Max Recommended team size: " << team_size << ", Requested team size: " << numPoints <<std::endl;
+              team_size = std::min(team_size, numPoints);
+              teamPolicy = Kokkos::TeamPolicy<typename DeviceType::execution_space>(numCells, team_size,vectorSize);
+            }
 
             { //compute values
               auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {

@@ -106,7 +106,7 @@ getValues(       OutputViewType output,
   }
   case OPERATOR_CURL: { // only works in 2d. first component is -d/dy, second is d/dx
     const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
-    ptr += card*npts*spaceDim*get_dimension_scalar(work);
+    ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
 
 
