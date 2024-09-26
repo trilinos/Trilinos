@@ -483,10 +483,10 @@ makeRoomForBlocks(std::size_t blockCnt, std::size_t colBlockCnt)
    importers_.resize(blockCnt);
    exporters_.resize(blockCnt);
    if(colBlockCnt > 0) {
-      colMaps_.resize(blockCnt);
-      colGhostedMaps_.resize(blockCnt);
-      colImporters_.resize(blockCnt);
-      colExporters_.resize(blockCnt);
+      colMaps_.resize(colBlockCnt);
+      colGhostedMaps_.resize(colBlockCnt);
+      colImporters_.resize(colBlockCnt);
+      colExporters_.resize(colBlockCnt);
    }
 }
 
