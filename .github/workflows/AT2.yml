@@ -306,7 +306,7 @@ jobs:
 
   framework-tests-EXPERIMENTAL:
     needs: pre-checks
-    runs-on: [self-hosted, python-3.8]
+    runs-on: [self-hosted, python-3.9]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -393,4 +393,4 @@ jobs:
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
-        
+
