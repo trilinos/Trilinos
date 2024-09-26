@@ -95,8 +95,8 @@ namespace Intrepid2 {
 
               // avoid using a team size larger than needed, to reduce allocated scrach space memory
               ordinal_type team_size = teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag());
-              *outStream << "Max Recommended team size: " << team_size << ", Requested team size: " << numPoints <<std::endl;
-              team_size = std::min(team_size, numPoints);
+              *outStream << "Max Recommended team size: " << team_size << ", Requested team size: " << npts <<std::endl;
+              team_size = std::min(team_size, npts);
               teamPolicy = Kokkos::TeamPolicy<typename DeviceType::execution_space>(ncells, team_size,vectorSize);
 
               //Get the required size of the scratch space per team and per thread.
@@ -115,8 +115,8 @@ namespace Intrepid2 {
               
               // avoid using a team size larger than needed, to reduce allocated scrach space memory
               ordinal_type team_size = teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag());
-              *outStream << "Max Recommended team size: " << team_size << ", Requested team size: " << numPoints <<std::endl;
-              team_size = std::min(team_size, numPoints);
+              *outStream << "Max Recommended team size: " << team_size << ", Requested team size: " << npts <<std::endl;
+              team_size = std::min(team_size, npts);
               teamPolicy = Kokkos::TeamPolicy<typename DeviceType::execution_space>(ncells, team_size,vectorSize);         
               
               //Get the required size of the scratch space per team and per thread.
