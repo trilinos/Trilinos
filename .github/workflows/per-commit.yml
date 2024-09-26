@@ -1,0 +1,23 @@
+name: Per-Commit Checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  DCO-signoff:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      with:
+        fetch-depth: 0
+
+    - name: Search for signoff statements in commit messages
+      run: |
+        $GITHUB_WORKSPACE/commonTools/test/utilities/check-commit-signoffs.sh \
+        origin/${{ github.event.pull_request.base.ref }} \
+        ${{ github.event.pull_request.head.sha }}
