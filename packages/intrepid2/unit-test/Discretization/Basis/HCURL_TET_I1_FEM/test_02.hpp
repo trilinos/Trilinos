@@ -138,8 +138,8 @@ namespace Intrepid2 {
                 if (diff > tol) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
-                            << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << "]"
-                            << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) << "]"
+                            << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << ", " << outputValuesA_Host(ic,i,j,2) << "]"
+                            << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) << ", " << outputValuesB_Host(i,j,2) << "]"
                             << ", |diff|: " << diff
                             << ", tol: " << tol
                             << std::endl;

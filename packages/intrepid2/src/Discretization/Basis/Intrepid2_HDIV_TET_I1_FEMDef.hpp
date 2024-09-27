@@ -256,27 +256,32 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HDIV_TET_I1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
-      (void) scratchStorage;
+      (void) scratchStorage; //avoid unused variable warning
+
       const int numPoints = inputPoints.extent(0);
+
       switch(operatorType) {
         case OPERATOR_VALUE:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (int& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
-            Impl::Basis_HDIV_TET_I1_FEM::Serial<OPERATOR_VALUE>::getValues( output, input );
+            Impl::Basis_HDIV_TET_I1_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
           });
           break;
         case OPERATOR_DIV:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (int& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
-            Impl::Basis_HDIV_TET_I1_FEM::Serial<OPERATOR_DIV>::getValues( output, input );
+            Impl::Basis_HDIV_TET_I1_FEM::Serial<OPERATOR_DIV>::getValues( output, input);
           });
           break;
-        default: {}
+        default: {
+          INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR: (Intrepid2::Basis_HDIV_TET_I1_FEM::getValues), Operator Type not supported.");
+        }
     }
   }
-
+  
 }// namespace Intrepid2
+
 #endif
 

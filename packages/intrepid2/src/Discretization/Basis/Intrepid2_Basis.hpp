@@ -384,7 +384,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
         Warning, <var>inputPoints</var> is only used to deduce the type of the points where to evaluate basis functions.
         The rank of </var>inputPoints</var> and its size are not relevant, however, 
-        when using DFAD types, </var>inputPoints</var> cannot be empty and has to be allocated, 
+        when using DFAD types, </var>inputPoints</var> cannot be empty, 
         otherwise the size of the scracth space needed won't be deduced correctly.
 
         \param  space             [in]  - inputPoints
@@ -401,15 +401,22 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     }
 
 
-    /** \brief  Team-level evaluation of a FEM basis on a <strong>reference cell</strong>.
+    /** \brief  Team-level evaluation of basis functions on a <strong>reference cell</strong>.
 
-        Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
+        Returns values of <var>operatorType</var> acting on basis functions for a set of
         points in the <strong>reference cell</strong> for which the basis is defined.
 
-        \param  space             [in]  - execution space instance
+        The interface allow also to select basis functions associated to a particular entity. 
+        As an example, if <var>subcellDim==1</var> (edges) and <var>subcellOrdinal==0</var>, <var>outputValues</var> will contain all the basis functions associated with the first edge.
+        <var>outputValues</var> will contain all the cell basis functions when the default value (-1) is used for <var>subcellDim</var> and <var>subcellOrdinal</var>
+
         \param  outputValues      [out] - variable rank array with the basis values
         \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
         \param  operatorType      [in]  - the operator acting on the basis functions
+        \param  teamMember        [in]  - team member of the Kokkos::TemaPolicy
+        \param  scratchStorage    [in]  - scratch space to use by each team
+        \param  subcellDim        [in]  - the dimension of the subcells, the default values of -1 returns basis functions associated to subcells of all dimensions
+        \param  subcellOrdinal    [in]  - the ordinal of the subcell, the default values of -1 returns basis functions associated to subcells of all ordinals
 
         \remark This function is supposed to be called within a TeamPolicy kernel. 
                 The size of the required scratch space is determined by the getScratchSpaceSize function.
@@ -419,7 +426,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     void getValues(       OutputViewType /* outputValues */,
                     const PointViewType  /* inputPoints */,
                     const EOperator /* operatorType */,
-                    const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team_member,
+                    const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& teamMember,
                     const typename ExecutionSpace::scratch_memory_space &scratchStorage, 
                     const ordinal_type subcellDim=-1,
                     const ordinal_type subcellOrdinal=-1) const {
