@@ -1939,7 +1939,7 @@ public:
                                  s0.rowptrU, s0.colindU, s0.nzvalsU,
                                  rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
       // workspace
-      #if ROCM_VERSION >= 50400
+      #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
       rocsparse_spmv_ex
       #else
       rocsparse_spmv
@@ -1958,7 +1958,11 @@ public:
       #if ROCM_VERSION >= 50400
       // preprocess
       buffer_size_U = buffer_U.extent(0);
+      #if (ROCM_VERSION >= 60000)
+      rocsparse_spmv
+      #else
       rocsparse_spmv_ex
+      #endif
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1971,7 +1975,7 @@ public:
                                    s0.rowptrL, s0.colindL, s0.nzvalsL,
                                    rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
         // workspace
-        #if ROCM_VERSION >= 50400
+        #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
         rocsparse_spmv_ex
         #else
         rocsparse_spmv
@@ -1990,7 +1994,11 @@ public:
         #if ROCM_VERSION >= 50400
         // preprocess
         buffer_size_L = buffer_L.extent(0);
+        #if (ROCM_VERSION >= 60000)
+        rocsparse_spmv
+        #else
         rocsparse_spmv_ex
+        #endif
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2003,7 +2011,7 @@ public:
                                    s0.rowptrU, s0.colindU, s0.nzvalsU,
                                    rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
         // workspace (transpose)
-        #if ROCM_VERSION >= 50400
+        #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
         rocsparse_spmv_ex
         #else
         rocsparse_spmv
@@ -2022,7 +2030,11 @@ public:
         #if ROCM_VERSION >= 50400
         // preprocess
         buffer_size_L = buffer_L.extent(0);
+        #if (ROCM_VERSION >= 60000)
+        rocsparse_spmv
+        #else
         rocsparse_spmv_ex
+        #endif
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2491,7 +2503,7 @@ public:
       auto vecY = ((nlvls-1-lvl)%2 == 0 ? vecW : vecL);
       if (s0.spmv_explicit_transpose) {
         status =
-          #if ROCM_VERSION >= 50400
+          #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
           rocsparse_spmv_ex
           #else
           rocsparse_spmv
@@ -2505,7 +2517,7 @@ public:
            &buffer_size_L, (void*)buffer_L.data());
       } else {
         status =
-          #if ROCM_VERSION >= 50400
+          #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
           rocsparse_spmv_ex
           #else
           rocsparse_spmv
@@ -2827,7 +2839,7 @@ public:
       auto vecX = (lvl%2 == 0 ? vecU : vecW);
       auto vecY = (lvl%2 == 0 ? vecW : vecU);
       status =
-        #if ROCM_VERSION >= 50400
+        #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
         rocsparse_spmv_ex
         #else
         rocsparse_spmv
