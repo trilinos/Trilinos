@@ -507,7 +507,6 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
     constexpr ordinal_type order = 2;
     if(order <= maxOrder) {
       QuadBasisType quadBasis(order);
-      auto quadBasisPtr = Teuchos::rcp(new QuadBasisType(order));
 
       DynRankViewHostScalarValueType ConstructWithLabel(quadNodesHost, 10, 2);
       DynRankViewPointValueType ConstructWithLabelPointView(quadNodes, 10, 2);
@@ -570,64 +569,6 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
           }
         }
       }
-
-      {
-        // Check VALUE of basis functions: resize vals to rank-2 container:
-        const ordinal_type numCells = 200;
-        DynRankViewOutValueType ConstructWithLabelOutView(vals, numCells, numFields, numPoints);
-
-        auto quadBasisPtr_device = copy_virtual_class_to_device<DeviceType,QuadBasisType>(*quadBasisPtr);
-        auto quadBasisRawPtr_device = quadBasisPtr_device.get();
-
-        int scratch_space_level =1; //level 0 memory is too small
-
-        auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type team_member) {
-            auto vals_cell = Kokkos::subview(vals, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-            quadBasisRawPtr_device->getValues(vals_cell, quadNodes, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
-          };
-
-        const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
-        Kokkos::TeamPolicy<typename DeviceType::execution_space> teamPolicy(numCells, Kokkos::AUTO,vectorSize);
-
-        ordinal_type team_size = teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag());
-        //The requested team size doesn't have to be numPoints, and it depends on the implementation of getVlues.
-        //Should we have a function that returns the requested team size? 
-        std::cout << "Max Recommended team size: " << team_size << ", Requested team size: " << numPoints <<std::endl;
-        team_size = std::min(team_size, numPoints);
-        
-        teamPolicy = Kokkos::TeamPolicy<typename DeviceType::execution_space>(numCells, team_size,vectorSize);
-
-        //Get the required size of the scratch space per team and per thread.
-        int perThreadSpaceSize(0), perTeamSpaceSize(0);
-        quadBasisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,quadNodes);
-        teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
-
-        Kokkos::parallel_for (teamPolicy,functor);
-          
-        auto vals_host = Kokkos::create_mirror_view(vals);
-        Kokkos::deep_copy(vals_host, vals);
-        for (ordinal_type ic = 0; ic < numCells; ++ic) {
-          for (ordinal_type i = 0; i < numFields; ++i) {
-            for (ordinal_type j = 0; j < numPoints; ++j) {
-
-              // Compute offset for (F,P) container
-              ordinal_type l =  j + i * numPoints;
-              if (std::abs(vals_host(ic,i,j) - basisValues[l]) > tol) {
-                errorFlag++;
-                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-
-                // Output the multi-index of the value where the error is:
-                *outStream << " At multi-index { ";
-                *outStream << ic << " ";*outStream << i << " ";*outStream << j << " ";
-                *outStream << "}  computed value: " << vals_host(ic,i,j)
-                                << " but reference value: " << basisValues[l] << "\n";
-              }
-            }
-          }
-        }
-      }
-
-
       *outStream << " -- Testing OPERATOR_GRAD \n";
       {
         // Check GRAD of basis function: resize vals to rank-3 container

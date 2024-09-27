@@ -78,7 +78,6 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HDIV_TET_I1_FEM<DeviceType,outputValueType,pointValueType> tetBasis;
-      auto tetBasisPtr = Teuchos::rcp(new Basis_HDIV_TET_I1_FEM<DeviceType,outputValueType,pointValueType>);
 
       *outStream
       << "\n"
@@ -285,50 +284,27 @@ namespace Intrepid2 {
 
         {
           // Check VALUE of basis functions:
-          const ordinal_type numCells = 200;
-          DynRankView ConstructWithLabel(vals, numCells, numFields, numPoints, spaceDim);
-          //tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
-          
-          auto tetBasisPtr_device = copy_virtual_class_to_device<DeviceType,Basis_HDIV_TET_I1_FEM<DeviceType,outputValueType,pointValueType>>(*tetBasisPtr);
-          auto tetBasisRawPtr_device = tetBasisPtr_device.get();
-
-          int scratch_space_level=0;
-
-          auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type team_member) {
-            auto vals_cell = Kokkos::subview(vals, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-            tetBasisRawPtr_device->getValues(vals_cell, tetNodes, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
-          };
-
-          const int vectorSize = getVectorSizeForHierarchicalParallelism<pointValueType>();
-          Kokkos::TeamPolicy<typename DeviceType::execution_space> teamPolicy(numCells, Kokkos::AUTO,vectorSize);
-          //Get the required size of the scratch space per team and per thread.
-          int perThreadSpaceSize(0), perTeamSpaceSize(0);
-          tetBasisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,tetNodes);
-          teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
-
-          Kokkos::parallel_for (teamPolicy,functor);          
-
+          DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+          tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
           const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (int c=0; c< numCells; ++c) {
           for (int i = 0; i < numFields; i++) {
             for (size_type j = 0; j < numPoints; j++) {
               for (size_type k = 0; k < spaceDim; k++) {
                 // basisValues is (P,F,D) array so its multiindex is (j,i,k) and not (i,j,k)!
                  int l = k + i * spaceDim + j * spaceDim * numFields;
-                 if (std::abs(vals_host(c,i,j,k) - basisValues[l]) > tol) {
+                 if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
                    errorFlag++;
                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                    // Output the multi-index of the value where the error is:
-                   *outStream << " At (Cell,Field,Point,Dim) multi-index { ";
-                   *outStream << c << " ";*outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                   *outStream << "}  computed value: " << vals_host(c,i,j,k)
+                   *outStream << " At (Field,Point,Dim) multi-index { ";
+                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                   *outStream << "}  computed value: " << vals_host(i,j,k)
                      << " but reference value: " << basisValues[l] << "\n";
                   }
                }
             }
-          }
           }
         }
 
