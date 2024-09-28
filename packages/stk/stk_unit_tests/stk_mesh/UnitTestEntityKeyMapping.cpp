@@ -32,46 +32,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stkMeshTestUtilsHpp
-#define stkMeshTestUtilsHpp
-
 #include <gtest/gtest.h>
-#include <stk_mesh/base/ForEachEntity.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_topology/topology.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/baseImpl/EntityKeyMapping.hpp>
 
-namespace stk { namespace mesh { class BulkData; } }
+namespace {
 
-namespace testUtils
+TEST(UnitTestEntityKeyMapping, invalidEntityKey)
 {
-
-inline
-int get_other_proc(int myproc)
-{
-  return myproc == 0 ? 1 : 0;
+  stk::mesh::impl::EntityKeyMapping entityKeyMapping;
+  entityKeyMapping.update_num_ranks(1);
+  stk::mesh::EntityKey invalidKey;
+  stk::mesh::Entity entity = entityKeyMapping.get_entity(invalidKey);
+  EXPECT_EQ(stk::mesh::Entity::InvalidEntity, entity.local_offset());
 }
 
-inline
-void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField,
-                                      const stk::mesh::Selector& boundaryNodesSelector,
-                                      double prescribedTemperatureValue)
-{
-  const stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
+}//namespace <anonymous>
 
-  stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      const double *temperature = stk::mesh::field_data(temperatureField, node);
-      EXPECT_EQ(prescribedTemperatureValue, *temperature);
-    });
-
-  stk::mesh::Selector nonBoundaryNodes = !boundaryNodesSelector;
-
-  stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, nonBoundaryNodes,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      const double *temperature = stk::mesh::field_data(temperatureField, node);
-      EXPECT_EQ(0.0, *temperature);
-    });
-}
-}
-
-#endif

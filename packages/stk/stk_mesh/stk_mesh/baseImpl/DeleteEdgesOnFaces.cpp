@@ -1,8 +1,11 @@
 #include "stk_mesh/baseImpl/DeleteEdgesOnFaces.hpp"
 
 #include <vector>
-#include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/Entity.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/Selector.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 

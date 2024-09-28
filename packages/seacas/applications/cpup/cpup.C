@@ -36,6 +36,9 @@
 unsigned int debug_level = 0;
 
 #if FMT_VERSION >= 90000
+#include "Ioss_ZoneConnectivity.h"
+#include "Ioss_StructuredBlock.h"
+
 namespace fmt {
   template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
   {
@@ -712,19 +715,25 @@ namespace {
       fmt::print(stderr, "  {:14} cells, {:14} nodes ", fmt::group_digits(num_cell),
                  fmt::group_digits(num_node));
 
+#if defined(__NVCC__)
+#define CONST
+#else
+#define CONST const
+#endif
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print(stderr, "\n\tConnectivity with other blocks:\n");
-        for (const auto &zgc : sb->m_zoneConnectivity) {
+        for (CONST auto &zgc : sb->m_zoneConnectivity) {
           fmt::print(stderr, "{}\n", zgc);
         }
       }
 
       if (!sb->m_boundaryConditions.empty()) {
         fmt::print(stderr, "\tBoundary Conditions:\n");
-        for (const auto &bc : sb->m_boundaryConditions) {
+        for (CONST auto &bc : sb->m_boundaryConditions) {
           fmt::print(stderr, "{}\n", bc);
         }
       }
+#undef CONST
     }
   }
 

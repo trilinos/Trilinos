@@ -36,13 +36,13 @@
 #define stk_mesh_base_FieldBase_hpp
 
 #include <any>
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for size_t
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction, etc
 #include <stk_mesh/base/FieldState.hpp>  // for FieldState
-#include <stk_mesh/base/Types.hpp>      // for FieldTraits, EntityRank, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/base/NgpFieldBase.hpp>
 #include <stk_mesh/base/FieldSyncDebugging.hpp>
 #include <stk_mesh/base/StkFieldSyncDebugger.hpp>
@@ -54,8 +54,6 @@
 #include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
 #include <stk_util/util/CSet.hpp>
 #include <type_traits>
-
-namespace shards { class ArrayDimTag; }
 
 namespace stk::mesh 
 {
@@ -321,13 +319,13 @@ public:
                           const Part       & arg_part ,
                           const unsigned     arg_num_scalars_per_entity ,
                           const unsigned     arg_first_dimension ,
-                          const void*        arg_init_value = NULL);
+                          const void*        arg_init_value = nullptr);
 
   void insert_restriction(const char     * arg_method ,
                           const Selector   & arg_selector ,
                           const unsigned     arg_num_scalars_per_entity ,
                           const unsigned     arg_first_dimension ,
-                          const void*        arg_init_value = NULL);
+                          const void*        arg_init_value = nullptr);
 
   void verify_and_clean_restrictions( const Part& superset, const Part& subset );
 
@@ -344,7 +342,7 @@ public:
 
   template <typename T, template <typename> class NgpDebugger> friend class HostField;
   template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
-  template <typename Scalar, class Tag1, class Tag2, class Tag3, class Tag4, class Tag5, class Tag6, class Tag7> friend class Field;
+  template <typename Scalar> friend class Field;
 
 protected:
   FieldBase(MetaData                   * arg_mesh_meta_data,
@@ -352,15 +350,12 @@ protected:
             unsigned                     arg_ordinal,
             const std::string          & arg_name,
             const DataTraits           & arg_traits,
-            unsigned                     arg_rank,
-            const shards::ArrayDimTag  * const * arg_dim_tags,
             unsigned                     arg_number_of_states,
             FieldState                   arg_this_state)
     : m_mesh(nullptr),
       m_entity_rank(arg_entity_rank),
       m_name(arg_name),
       m_num_states(arg_number_of_states),
-      m_field_rank( arg_rank ),
       m_restrictions(),
       m_initial_value(nullptr),
       m_initial_value_num_bytes(0),
@@ -376,13 +371,7 @@ protected:
       m_execSpace(Kokkos::DefaultExecutionSpace())
   {
     FieldBase * const pzero = nullptr ;
-    const shards::ArrayDimTag * const dzero = nullptr ;
     Copy<MaximumFieldStates>(    m_field_states , pzero );
-    Copy<MaximumFieldDimension>( m_dim_tags ,     dzero );
-
-    for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
-      m_dim_tags[i] = arg_dim_tags[i];
-    }
   }
 
 private:
@@ -392,17 +381,15 @@ private:
   EntityRank m_entity_rank;
   const std::string m_name;
   const unsigned m_num_states;
-  unsigned m_field_rank;
   FieldBase                  * m_field_states[ MaximumFieldStates ];
-  const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
-  FieldRestrictionVector m_restrictions;
+  FieldRestrictionVector       m_restrictions;
   void*                        m_initial_value;
   unsigned                     m_initial_value_num_bytes;
   CSet                         m_attribute;
-  const DataTraits           & m_data_traits ;
-  MetaData             * const m_meta_data ;
-  const unsigned               m_ordinal ;
-  const FieldState             m_this_state ;
+  const DataTraits           & m_data_traits;
+  MetaData             * const m_meta_data;
+  const unsigned               m_ordinal;
+  const FieldState             m_this_state;
   mutable NgpFieldBase       * m_ngpField;
   mutable size_t               m_numSyncsToHost;
   mutable size_t               m_numSyncsToDevice;
@@ -670,7 +657,7 @@ field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, c
   STK_ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity >= knownSize,
                  "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytesPerEntity= "
                  << f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity);
-  STK_ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
+  STK_ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != nullptr);
 
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
 

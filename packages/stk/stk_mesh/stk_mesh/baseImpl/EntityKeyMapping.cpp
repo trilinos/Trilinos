@@ -244,7 +244,15 @@ EntityKeyMapping::internal_create_entity( const EntityKey & key)
 
 Entity EntityKeyMapping::get_entity(const EntityKey &key) const
 {
+  if (!key.is_valid()) {
+    return Entity();
+  }
+
   EntityRank rank = key.rank();
+  if (rank >= entity_rank_count()) {
+    return Entity();
+  }
+
   if (!m_destroy_cache[rank].empty()) {
     const std::vector<EntityKey>& destroyed = m_destroy_cache[rank];
     if (destroyed.size() < 64) {
@@ -259,13 +267,6 @@ Entity EntityKeyMapping::get_entity(const EntityKey &key) const
   }
 
   clear_updated_entity_cache(rank);
-
-  STK_ThrowErrorMsgIf( ! key.is_valid(),
-      "Invalid key: " << key.rank() << " " << key.id());
-
-  if (rank >= entity_rank_count()) {
-    return Entity();
-  }
 
   entity_iterator ent = get_from_cache(key);
   if (ent != m_create_cache[rank].end()) {

@@ -36,7 +36,8 @@
 #define STK_SEARCH_PLANE_HPP
 
 #include <cmath>
-#include <Kokkos_ArithTraits.hpp>
+#include <Kokkos_NumericTraits.hpp>
+#include <Kokkos_MathematicalFunctions.hpp>
 #include <stk_search/Point.hpp>
 
 namespace stk { namespace search {
@@ -49,7 +50,7 @@ public:
   typedef Point<value_type> point_type;
   static const int Dim = 3;
 
-  static KOKKOS_FUNCTION constexpr value_type max() { return Kokkos::Details::ArithTraits<T>::max() ;}
+  static KOKKOS_FUNCTION constexpr value_type max() { return Kokkos::Experimental::finite_max_v<T> ;}
 
   KOKKOS_FUNCTION point_type cross(const point_type& a, const point_type& b) const{
     return point_type(a[1]*b[2] - a[2]*b[1],
@@ -58,7 +59,7 @@ public:
   }
 
   KOKKOS_FUNCTION void normalize(point_type& a) const{
-    const value_type vec_len = Kokkos::Details::ArithTraits<T>::sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+    const value_type vec_len = Kokkos::sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
     const value_type denom = vec_len == 0.0 ? 1.0 : vec_len;
     const value_type vec_len_inv = 1.0 / denom;
     a[0] *= vec_len_inv;

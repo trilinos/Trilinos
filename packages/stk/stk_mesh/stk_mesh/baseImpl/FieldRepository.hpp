@@ -43,7 +43,6 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert
-namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class DataTraits; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -67,14 +66,10 @@ class FieldRepository {
       m_rankedFields[new_field->entity_rank()].push_back(new_field);
     }
 
-    FieldBase * get_field(
-        stk::topology::rank_t               arg_entity_rank ,
-        const std::string                 & arg_name ,
-        const DataTraits                  & arg_traits ,
-        unsigned                            arg_array_rank ,
-        const shards::ArrayDimTag * const * arg_dim_tags ,
-        unsigned                            arg_num_states
-        ) const;
+    FieldBase * get_field(stk::topology::rank_t   arg_entity_rank,
+                          const std::string     & arg_name,
+                          const DataTraits      & arg_traits,
+                          unsigned                arg_num_states) const;
 
     void verify_and_clean_restrictions(const Part& superset, const Part& subset);
 
@@ -106,7 +101,7 @@ class FieldRepository {
     template<class T>
       bool remove_attribute( FieldBase & f , const T * a )
       {
-	return f.remove_attribute<T>( a );
+        return f.remove_attribute<T>( a );
       }
 
     void declare_field_restriction(
@@ -136,11 +131,9 @@ class FieldRepository {
     MetaData & mesh_meta_data() { return m_meta; }
 
   private:
-    void verify_field_type(const FieldBase                   & arg_field,
-                           const DataTraits                  & arg_traits,
-                           unsigned                            arg_rank,
-                           const shards::ArrayDimTag * const * arg_dim_tags,
-                           unsigned                    arg_num_states) const;
+    void verify_field_type(const FieldBase  & arg_field,
+                           const DataTraits & arg_traits,
+                           unsigned           arg_num_states) const;
 
     MetaData & m_meta;
     FieldVector m_fields;

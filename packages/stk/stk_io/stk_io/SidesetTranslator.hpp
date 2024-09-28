@@ -161,11 +161,11 @@ void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
     size_t num_sides = stk::io::get_entities(params, *part, type, allSides, false);
     elem_side_ids.reserve(num_sides * 2);
 
+    std::vector<stk::mesh::Entity> side_elements;
+    std::vector<stk::mesh::Entity> side_nodes;
     for(size_t i = 0; i < num_sides; ++i)
     {
         stk::mesh::Entity side = allSides[i];
-        std::vector<stk::mesh::Entity> side_elements;
-        std::vector<stk::mesh::Entity> side_nodes;
 
         fill_side_elements_and_nodes(bulk_data, side, side_elements, side_nodes);
 

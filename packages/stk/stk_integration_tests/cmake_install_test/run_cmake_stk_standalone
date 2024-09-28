@@ -47,7 +47,6 @@ cmake \
 -DShards_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Shards \
 -DZoltan2Core_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Zoltan2Core \
 -DKokkos_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Kokkos \
--DKokkosKernels_DIR=/fgs/william/kokkos-kernels/install/lib64/cmake/KokkosKernels \
 -DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \
 ${stk_src_dir}/
 

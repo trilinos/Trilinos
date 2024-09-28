@@ -627,30 +627,6 @@ public:
       STK_NGP_ThrowErrorMsg("Incorrect number of arguments for gamma_pdf function");
       break;
     }
-    case FunctionType::RAND : {
-      if (argumentCount == 0) {
-        return real_rand();
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for rand function");
-      break;
-    }
-    case FunctionType::SRAND : {
-      if (argumentCount == 1) {
-        return real_srand(arguments[0]);
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for srand function");
-      break;
-    }
-    case FunctionType::RANDOM : {
-      if (argumentCount == 0) {
-        return random0();
-      }
-      else if (argumentCount == 1) {
-        return random1(arguments[0]);
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for random function");
-      break;
-    }
     case FunctionType::TS_RANDOM : {
       if (argumentCount == 4) {
         return time_space_random(arguments[0], arguments[1], arguments[2], arguments[3]);
@@ -664,13 +640,6 @@ public:
             arguments[5], arguments[6], arguments[7]);
       }
       STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ts_normal function");
-      break;
-    }
-    case FunctionType::TIME : {
-      if (argumentCount == 0) {
-        return current_time();
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for time function");
       break;
     }
     case FunctionType::UNDEFINED : {
