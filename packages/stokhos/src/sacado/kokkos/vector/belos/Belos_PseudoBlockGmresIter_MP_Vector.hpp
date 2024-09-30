@@ -20,6 +20,8 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "BelosPseudoBlockGmresIter.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 /*!
   \class Belos::PseudoBlockGmresIter
