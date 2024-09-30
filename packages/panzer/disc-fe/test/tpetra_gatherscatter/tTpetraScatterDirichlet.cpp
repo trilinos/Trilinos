@@ -25,7 +25,7 @@
 
 namespace panzer {
 
-TEUCHOS_UNIT_TEST(tTpetraScatter, constructor)
+TEUCHOS_UNIT_TEST(tTpetraScatterDirichlet, constructor)
 {
 
    using Teuchos::RCP;
