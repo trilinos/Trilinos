@@ -20,6 +20,7 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "BelosPseudoBlockCGIter.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 /*!
   \class Belos::PseudoBlockCGIter
