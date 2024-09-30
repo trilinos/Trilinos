@@ -283,8 +283,27 @@ namespace Belos {
       // Check that we can get a raw pointer from a non-const and const object for BLAS/LAPACK calls
       DMT::SyncDeviceToHost( *dm2 );
       ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
+      if (testPtr == 0) {
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "GetRawHostPtr returns NULL." << endl;
+        return false;
+      }
       RCP<const DM> cdm2 = DMT::SubviewConst(*dm2, DMT::GetNumRows(*dm2), DMT::GetNumCols(*dm2)); 
+      if(DMT::GetNumRows(*cdm2) != numrows+5 ||
+         DMT::GetNumCols(*cdm2) != numcols+5){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "SubviewConst did not create the right size matrix." << endl;
+        return false;
+      }
       const ScalarType * testPtr2 = DMT::GetConstRawHostPtr(*cdm2);
+      if (testPtr2 == 0) {
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "GetConstRawHostPtr returns NULL." << endl;
+        return false;
+      }
       //
       //Compute Frobenius norm. //TODO: Do Frob norm of a matrix we know the answer for and check it. 
       DMT::NormFrobenius(*dm2);
