@@ -564,7 +564,7 @@ namespace Belos {
       "Belos::GmresPolyOp::generateArnoldiPoly(): Failed to compute initial block of orthonormal vectors for polynomial generation.");
   
     // Set the new state and initialize the solver.
-    GmresIterationState<ScalarType,MV> newstate;
+    GmresIterationState<ScalarType,MV,DM> newstate;
     newstate.V = V_0;
     newstate.z = Teuchos::rcpFromRef( r0_);
     newstate.curDim = 0;
@@ -589,7 +589,7 @@ namespace Belos {
     Teuchos::RCP<MV> currX = gmres_iter->getCurrentUpdate();
   
     // Record polynomial info, get current GMRES state
-    GmresIterationState<ScalarType,MV> gmresState = gmres_iter->getState();
+    GmresIterationState<ScalarType,MV,DM> gmresState = gmres_iter->getState();
   
     // If the polynomial has no dimension, the tolerance is too low, return false
     dim_ = gmresState.curDim;
