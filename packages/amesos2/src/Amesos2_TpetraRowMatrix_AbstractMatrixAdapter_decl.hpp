@@ -146,7 +146,7 @@ namespace Amesos2 {
     // different (cf subclasses of Tpetra::CrsMatrix), this method
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
-    RCP<const super_t> reindex_impl() const;
+    RCP<const super_t> reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigRowMap, Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigColMap) const;
 
     template<class KV>
     void getSparseRowPtr_kokkos_view(KV & view) const {

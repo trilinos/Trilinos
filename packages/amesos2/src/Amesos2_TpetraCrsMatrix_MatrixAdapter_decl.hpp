@@ -83,11 +83,12 @@ namespace Amesos2 {
     typedef typename super_t::global_size_t       global_size_t;
 
     typedef ConcreteMatrixAdapter<matrix_t>                type;
+    typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
 
     ConcreteMatrixAdapter(RCP<matrix_t> m);
 
-    RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
-    RCP<const MatrixAdapter<matrix_t> > reindex_impl() const;
+    RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+    RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const;
 
     //! Print a description of this adapter to the given output stream
     void

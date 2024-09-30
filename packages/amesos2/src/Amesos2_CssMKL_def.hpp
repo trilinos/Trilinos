@@ -56,7 +56,9 @@ namespace Amesos2 {
     // rowmap for loadA (to have locally contiguous)
     css_rowmap_ =
       Teuchos::rcp (new map_type (this->globalNumRows_, nrows, indexBase, matComm));
- 
+    css_contig_rowmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, matComm));
+    css_contig_colmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, matComm));
+
     // set the default matrix type
     set_css_mkl_matrix_type();
     set_css_mkl_default_parameters(pt_, iparm_);
@@ -471,7 +473,7 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     #if 1
     // Only reinex GIDs
     css_rowmap_ = this->matrixA_->getRowMap(); // use original map to redistribute vectors in solve
-    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex();
+    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex(css_contig_rowmap_, css_contig_colmap_);
     #else
     // Redistribued matrixA into contiguous GIDs
     Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->get(ptrInArg(*css_rowmap_));
