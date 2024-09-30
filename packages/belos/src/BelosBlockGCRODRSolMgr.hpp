@@ -1969,7 +1969,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
       // MLP: ADD EXCEPTION IF INITIAL BLOCK IS RANK DEFFICIENT
 
       // Set the new state and initialize the iteration.
-      GmresIterationState<ScalarType,MV> newstate;
+      GmresIterationState<ScalarType,MV,DM> newstate;
       newstate.V = V_0;
       newstate.z = z_0;
       newstate.curDim = 0;
