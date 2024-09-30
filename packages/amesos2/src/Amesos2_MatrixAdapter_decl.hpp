@@ -52,6 +52,7 @@ namespace Amesos2 {
     typedef Matrix                                                  matrix_t;
     typedef MatrixAdapter<Matrix>                                       type;
     typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
+    typedef Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> map_t;
 
     typedef typename MatrixTraits<Matrix>::global_host_idx_type  global_host_idx_t;
     typedef typename MatrixTraits<Matrix>::global_host_val_type  global_host_val_t;
@@ -100,7 +101,7 @@ namespace Amesos2 {
                             KV_GO & colind,
                             KV_GS & rowptr,
                             global_size_t& nnz,
-                            const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+                            const Teuchos::Ptr<const map_t> rowmap,
                             EStorage_Ordering ordering=ARBITRARY,
                             EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
 
@@ -151,7 +152,7 @@ namespace Amesos2 {
                             KV_GO & rowind,
                             KV_GS & colptr,
                             global_size_t& nnz,
-                            const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+                            const Teuchos::Ptr<const map_t> colmap,
                             EStorage_Ordering ordering=ARBITRARY,
                             EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
 
@@ -199,23 +200,23 @@ namespace Amesos2 {
     /// Get the local number of non-zeros on this processor
     size_t getLocalNNZ() const;
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    Teuchos::RCP<const map_t>
     getMap() const {
       return static_cast<const adapter_t*>(this)->getMap_impl();
     }
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    Teuchos::RCP<const map_t>
     getRowMap() const {
       return row_map_;
     }
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    Teuchos::RCP<const map_t>
     getColMap() const {
       return col_map_;
     }
 
-    Teuchos::RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
-    Teuchos::RCP<const type> reindex() const;
+    Teuchos::RCP<const type> get(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+    Teuchos::RCP<const type> reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const;
 
     /// Returns a short description of this Solver
     std::string description() const;

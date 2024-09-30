@@ -289,6 +289,8 @@ namespace Amesos2 {
 
     MPI_Fint CssComm_;
     Teuchos::RCP<const map_type> css_rowmap_;
+    Teuchos::RCP<const map_type> css_contig_rowmap_;
+    Teuchos::RCP<const map_type> css_contig_colmap_;
 
 };                              // End class CssMKL
 

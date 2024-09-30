@@ -44,7 +44,7 @@ namespace Amesos2 {
   Teuchos::RCP<const MatrixAdapter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
+    >::get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution) const
     {
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -68,11 +68,11 @@ namespace Amesos2 {
         const size_t local_num_contiguous_entries = (myRank == 0) ? t_mat->getGlobalNumRows() : 0;
 
         //create maps
-        typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t>  contiguous_map_type;
-        RCP<const contiguous_map_type> contiguousRowMap = rcp( new contiguous_map_type(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
-        RCP<const contiguous_map_type> contiguousColMap = rcp( new contiguous_map_type(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
-        RCP<const contiguous_map_type> contiguousDomainMap = rcp( new contiguous_map_type(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
-        RCP<const contiguous_map_type> contiguousRangeMap = rcp( new contiguous_map_type(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
+        //typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t>  contiguous_map_type;
+        RCP<const map_t> contiguousRowMap = rcp( new map_t(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
+        RCP<const map_t> contiguousColMap = rcp( new map_t(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
+        RCP<const map_t> contiguousDomainMap = rcp( new map_t(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
+        RCP<const map_t> contiguousRangeMap  = rcp( new map_t(global_num_contiguous_entries, local_num_contiguous_entries, 0, (t_mat->getComm() ) ) );
 
         RCP<matrix_t> contiguous_t_mat = rcp( new matrix_t(contiguousRowMap, contiguousColMap, local_matrix) );
         contiguous_t_mat->resumeFill();
@@ -93,52 +93,59 @@ namespace Amesos2 {
   Teuchos::RCP<const MatrixAdapter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-    >::reindex_impl() const
+    >::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                    Teuchos::RCP<const map_t> &contigColMap) const
     {
-      typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
-      typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t>  contiguous_map_type;
+      typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t> contiguous_map_type;
       auto rowMap = this->mat_->getRowMap();
       auto colMap = this->mat_->getColMap();
       auto rowComm = rowMap->getComm();
       auto colComm = colMap->getComm();
+
+#ifdef HAVE_AMESOS2_TIMERS
+      auto reindexTimer = Teuchos::TimeMonitor::getNewTimer("Time to re-index matrix gids");
+      Teuchos::TimeMonitor ReindexTimer(*reindexTimer);
+#endif
 
       global_ordinal_t indexBase = rowMap->getIndexBase();
       global_ordinal_t numDoFs = this->mat_->getGlobalNumRows();
       local_ordinal_t nRows = this->mat_->getLocalNumRows();
       local_ordinal_t nCols = colMap->getLocalNumElements();
 
-      auto tmpMap = rcp (new contiguous_map_type (numDoFs, nRows, indexBase, rowComm));
-      global_ordinal_t frow = tmpMap->getMinGlobalIndex();
+      if (contigRowMap->getGlobalNumElements() != numDoFs || contigColMap->getGlobalNumElements() != numDoFs) {
+        auto tmpMap = rcp (new contiguous_map_type (numDoFs, nRows, indexBase, rowComm));
+        global_ordinal_t frow = tmpMap->getMinGlobalIndex();
 
-      // Create new GID list for RowMap
-      Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("indexList", nRows);
-      for (local_ordinal_t k = 0; k < nRows; k++) {
-         rowIndexList(k) = frow+k;
+        // Create new GID list for RowMap
+        typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+        Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("indexList", nRows);
+        for (local_ordinal_t k = 0; k < nRows; k++) {
+          rowIndexList(k) = frow+k;
+        }
+        // Create new GID list for ColMap
+        Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("indexList", nCols);
+        typedef Tpetra::MultiVector<global_ordinal_t,
+                                    local_ordinal_t,
+                                    global_ordinal_t,
+                                    node_t> gid_mv_t;
+        Teuchos::ArrayView<const global_ordinal_t> rowIndexArray(rowIndexList.data(), nRows);
+        Teuchos::ArrayView<const global_ordinal_t> colIndexArray(colIndexList.data(), nCols);
+        gid_mv_t row_mv (rowMap, rowIndexArray, nRows, 1);
+        gid_mv_t col_mv (colMap, colIndexArray, nCols, 1);
+        typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_t;
+        RCP<import_t> importer = rcp (new import_t (rowMap, colMap));
+        col_mv.doImport (row_mv, *importer, Tpetra::INSERT);
+        {
+          auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
+          for(int i=0; i<nCols; i++) colIndexList(i) = col_view(i,0);
+        }
+        // Create new Row & Col Maps
+        contigRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
+        contigColMap = rcp (new contiguous_map_type (numDoFs, colIndexList.data(), nCols, indexBase, colComm));
       }
-      // Create new GID list for ColMap
-      Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("indexList", nCols);
-      typedef Tpetra::MultiVector<global_ordinal_t,
-                                  local_ordinal_t,
-                                  global_ordinal_t,
-                                  node_t> gid_mv_t;
-      Teuchos::ArrayView<const global_ordinal_t> rowIndexArray(rowIndexList.data(), nRows);
-      Teuchos::ArrayView<const global_ordinal_t> colIndexArray(colIndexList.data(), nCols);
-      gid_mv_t row_mv (rowMap, rowIndexArray, nRows, 1);
-      gid_mv_t col_mv (colMap, colIndexArray, nCols, 1);
-      typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_t;
-      RCP<import_t> importer = rcp (new import_t (rowMap, colMap));
-      col_mv.doImport (row_mv, *importer, Tpetra::INSERT);
-      {
-        auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
-        for(int i=0; i<nCols; i++) colIndexList(i) = col_view(i,0);
-      }
-      // Create new Row & Col Maps
-      Teuchos::RCP<const contiguous_map_type> newRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
-      Teuchos::RCP<const contiguous_map_type> newColMap = rcp (new contiguous_map_type (numDoFs, colIndexList.data(), nCols, indexBase, colComm));
-
       // Build Matrix with new Maps, 
       auto lclMatrix = this->mat_->getLocalMatrixDevice();
-      RCP<matrix_t> contiguous_t_mat = rcp( new matrix_t(newRowMap, newColMap, lclMatrix));
+      RCP<matrix_t> contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
 
       return rcp (new ConcreteMatrixAdapter<matrix_t> (contiguous_t_mat));
     }
