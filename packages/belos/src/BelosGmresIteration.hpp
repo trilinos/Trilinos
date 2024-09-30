@@ -17,7 +17,6 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {
 
@@ -28,7 +27,7 @@ namespace Belos {
    *
    * This struct is utilized by GmresIteration::initialize() and GmresIteration::getState().
    */
-  template <class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+  template <class ScalarType, class MV, class DM>
   struct GmresIterationState {
     /*! \brief The current dimension of the reduction.
      *
@@ -70,7 +69,7 @@ namespace Belos {
    *
    * This struct is utilized by PseudoBlockGmresIter::initialize() and PseudoBlockGmresIter::getState().
    */
-  template <class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+  template <class ScalarType, class MV, class DM>
   struct PseudoBlockGmresIterState {
 
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -160,7 +159,7 @@ namespace Belos {
 
   //@}
 
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+template<class ScalarType, class MV, class OP, class DM>
 class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
