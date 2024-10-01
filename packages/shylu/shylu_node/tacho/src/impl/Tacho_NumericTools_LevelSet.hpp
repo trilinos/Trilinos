@@ -78,6 +78,14 @@
   #else
     #define TACHO_CUSPARSE_SPMM_ALG CUSPARSE_MM_ALG_DEFAULT
   #endif
+#elif defined(KOKKOS_ENABLE_HIP)
+  #if (ROCM_VERSION >= 60000)
+    #define tacho_rocsparse_spmv rocsparse_spmv
+  #elif (ROCM_VERSION >= 50400)
+    #define tacho_rocsparse_spmv rocsparse_spmv_ex
+  #else
+    #define tacho_rocsparse_spmv rocsparse_spmv
+  #endif
 #endif
 
 namespace Tacho {
@@ -1939,11 +1947,7 @@ public:
                                  s0.rowptrU, s0.colindU, s0.nzvalsU,
                                  rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
       // workspace
-      #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
-      rocsparse_spmv_ex
-      #else
-      rocsparse_spmv
-      #endif
+      tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1958,11 +1962,7 @@ public:
       #if ROCM_VERSION >= 50400
       // preprocess
       buffer_size_U = buffer_U.extent(0);
-      #if (ROCM_VERSION >= 60000)
-      rocsparse_spmv
-      #else
-      rocsparse_spmv_ex
-      #endif
+      tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1975,11 +1975,7 @@ public:
                                    s0.rowptrL, s0.colindL, s0.nzvalsL,
                                    rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
         // workspace
-        #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
-        rocsparse_spmv_ex
-        #else
-        rocsparse_spmv
-        #endif
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1994,11 +1990,7 @@ public:
         #if ROCM_VERSION >= 50400
         // preprocess
         buffer_size_L = buffer_L.extent(0);
-        #if (ROCM_VERSION >= 60000)
-        rocsparse_spmv
-        #else
-        rocsparse_spmv_ex
-        #endif
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2011,11 +2003,7 @@ public:
                                    s0.rowptrU, s0.colindU, s0.nzvalsU,
                                    rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
         // workspace (transpose)
-        #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
-        rocsparse_spmv_ex
-        #else
-        rocsparse_spmv
-        #endif
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2030,11 +2018,7 @@ public:
         #if ROCM_VERSION >= 50400
         // preprocess
         buffer_size_L = buffer_L.extent(0);
-        #if (ROCM_VERSION >= 60000)
-        rocsparse_spmv
-        #else
-        rocsparse_spmv_ex
-        #endif
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2502,12 +2486,7 @@ public:
       auto vecX = ((nlvls-1-lvl)%2 == 0 ? vecL : vecW);
       auto vecY = ((nlvls-1-lvl)%2 == 0 ? vecW : vecL);
       if (s0.spmv_explicit_transpose) {
-        status =
-          #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
-          rocsparse_spmv_ex
-          #else
-          rocsparse_spmv
-          #endif
+        status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2516,12 +2495,7 @@ public:
            #endif
            &buffer_size_L, (void*)buffer_L.data());
       } else {
-        status =
-          #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
-          rocsparse_spmv_ex
-          #else
-          rocsparse_spmv
-          #endif
+        status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY, // dscrL stores the same ptrs as descrU, but optimized for trans
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2838,12 +2812,7 @@ public:
       }
       auto vecX = (lvl%2 == 0 ? vecU : vecW);
       auto vecY = (lvl%2 == 0 ? vecW : vecU);
-      status =
-        #if (ROCM_VERSION >= 50400 && ROCM_VERSION < 60000)
-        rocsparse_spmv_ex
-        #else
-        rocsparse_spmv
-        #endif
+      status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
