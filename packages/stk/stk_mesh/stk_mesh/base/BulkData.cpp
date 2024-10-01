@@ -5799,7 +5799,8 @@ BulkData::copy_entity_fields(Entity src, Entity dst)
                               src_mesh_idx.bucket_ordinal);
 }
 
-bool 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Oct 2024
+STK_DEPRECATED bool 
 BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
 {
   bool found = false;
@@ -5816,6 +5817,7 @@ BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, Relation
 
   return found;
 }
+#endif
 
 void BulkData::create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts)
 {

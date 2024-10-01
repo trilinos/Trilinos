@@ -571,9 +571,10 @@ public:
                          Entity e_to,
                          const RelationIdentifier local_id );
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Oct 2024
   // Check if entity has a specific relation to an entity of subcell_rank
-  inline bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id );
+  STK_DEPRECATED bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id );
+#endif
 
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
   STK_DEPRECATED inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+5.21.5-1 (STK_VERSION 5210501) 9/27/2024
+  stk_mesh: deprecate BulkData::relation_exist
+
 5.21.5 (STK_VERSION 5210500) 9/25/2024
    general: Fixed MI300A unified memory build errors.
    stk_search: Turned off sorted results by default.
