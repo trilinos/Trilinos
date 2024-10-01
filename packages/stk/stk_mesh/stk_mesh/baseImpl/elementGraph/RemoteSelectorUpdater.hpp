@@ -35,7 +35,6 @@
 #define STK_REMOTE_SELECTOR_UPDATER_HPP
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
@@ -51,6 +50,7 @@
 #include "ElemElemGraphImpl.hpp"
 
 namespace stk { namespace mesh {
+class BulkData;
 
 class RemoteSelectorUpdater : public stk::mesh::ModificationObserver
 {

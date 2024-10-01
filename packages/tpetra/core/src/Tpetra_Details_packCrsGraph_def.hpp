@@ -195,8 +195,11 @@ public:
   int getError () const {
     auto error_h = Kokkos::create_mirror_view (error_);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    using execution_space = typename device_type::execution_space;
-    Kokkos::deep_copy (execution_space(), error_h, error_);
+    // Note: In the UVM case, this would otherwise be a no-op
+    // and thus not fence, so the value might not be correct on return
+    // In the non-UVM case, create_mirror_view will block for the allocation
+    Kokkos::deep_copy (error_h, error_);
+
     return error_h ();
   }
 
@@ -267,7 +270,7 @@ computeNumPacketsAndOffsets(const OutputOffsetsViewType& outputOffsets,
        << " != numRowsToPack = " << numRowsToPack << ".");
 
     functor_type f (outputOffsets, counts, rowOffsets, lclRowInds, lclRowPids);
-    Kokkos::parallel_scan (range_type (0, numRowsToPack + 1), f);
+    Kokkos::parallel_scan ("Tpetra::Details::computeNumPacketsAndOffsets::scan", range_type (0, numRowsToPack + 1), f);
 
     // At least in debug mode, this functor checks for errors.
     const int errCode = f.getError ();
@@ -579,7 +582,7 @@ do_pack(const LocalGraph& local_graph,
 
   typename pack_functor_type::value_type result;
   range_type range (0, num_packets_per_lid.extent (0));
-  Kokkos::parallel_reduce (range, f, result);
+  Kokkos::parallel_reduce ("Tpetra::Details::computeNumPacketsAndOffsets::reduce",range, f, result);
 
   if (result.first != 0) {
     // We can't deep_copy from AnonymousSpace Views, so we can't

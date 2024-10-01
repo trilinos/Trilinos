@@ -37,13 +37,14 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include "BulkDataIdMapper.hpp"
 #include <vector>
 
 namespace stk { namespace mesh {
+class BulkData;
+
 namespace impl {
 
 inline bool is_solid_shell_connection(stk::topology t1, stk::topology t2)

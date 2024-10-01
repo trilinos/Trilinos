@@ -91,7 +91,7 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
     destroy_elements(bulk, elementsToDestroy, orphansToDelete);
 }
 
-void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
+void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, const stk::mesh::Selector& orphansToDelete)
 {
     bulk.modification_begin();
     bulk.m_bucket_repository.set_remove_mode_tracking();
@@ -119,7 +119,7 @@ void get_all_related_entities(BulkData& bulk, EntityVector& elements, const Sele
   stk::util::sort_and_unique(relatedEntities, stk::mesh::EntityLess(bulk));
 }
 
-void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
+void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, const stk::mesh::Selector& orphansToDelete)
 {
   for(stk::mesh::Entity element : elementsToDestroy) {
     if(!bulk.is_valid(element))

@@ -83,12 +83,13 @@ void coarse_search(std::vector<std::pair<DomainBoxType, DomainIdentProcType>> co
                    stk::ParallelMachine comm,
                    std::vector<std::pair<DomainIdentProcType, RangeIdentProcType>>& intersections,
                    bool enforceSearchResultSymmetry = true,
-                   bool autoSwapDomainAndRange = true)
+                   bool autoSwapDomainAndRange = true,
+                   bool sortSearchResults = false)
 {
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
-      coarse_search_arborx(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      coarse_search_arborx(domain, range, comm, intersections, enforceSearchResultSymmetry, sortSearchResults);
 #else
       STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX enabled. Please use KDTREE or MORTON_LBVH.");
 #endif
@@ -96,15 +97,15 @@ void coarse_search(std::vector<std::pair<DomainBoxType, DomainIdentProcType>> co
     }
     case KDTREE: {
       if (autoSwapDomainAndRange) {
-        coarse_search_kdtree_driver(domain, range, comm, intersections, enforceSearchResultSymmetry);
+        coarse_search_kdtree_driver(domain, range, comm, intersections, enforceSearchResultSymmetry, sortSearchResults);
       }
       else {
-        coarse_search_kdtree(domain, range, comm, intersections, enforceSearchResultSymmetry);
+        coarse_search_kdtree(domain, range, comm, intersections, enforceSearchResultSymmetry, sortSearchResults);
       }
       break;
     }
     case MORTON_LBVH: {
-      coarse_search_morton_lbvh(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      coarse_search_morton_lbvh(domain, range, comm, intersections, enforceSearchResultSymmetry, sortSearchResults);
       break;
     }
     default: {
@@ -121,7 +122,8 @@ void coarse_search(DomainView const & domain,
                    ResultView& intersections,
                    ExecutionSpace const& execSpace = ExecutionSpace{},
                    bool enforceSearchResultSymmetry = true,
-                   bool autoSwapDomainAndRange = true)
+                   bool autoSwapDomainAndRange = true,
+                   bool sortSearchResults = false)
 {
   check_coarse_search_types_parallel<DomainView, RangeView, ResultView, ExecutionSpace>();
   Kokkos::Profiling::pushRegion("STK coarse search with Views");
@@ -129,7 +131,7 @@ void coarse_search(DomainView const & domain,
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
-      coarse_search_arborx(domain, range, comm, intersections, execSpace, enforceSearchResultSymmetry);
+      coarse_search_arborx(domain, range, comm, intersections, execSpace, enforceSearchResultSymmetry, sortSearchResults);
 #else
       STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX enabled. Please use KDTREE or MORTON_LBVH.");
 #endif
@@ -140,7 +142,7 @@ void coarse_search(DomainView const & domain,
       break;
     }
     case MORTON_LBVH: {
-      coarse_search_morton_lbvh(domain, range, comm, intersections, execSpace, enforceSearchResultSymmetry);
+      coarse_search_morton_lbvh(domain, range, comm, intersections, execSpace, enforceSearchResultSymmetry, sortSearchResults);
       break;
     }
     default: {

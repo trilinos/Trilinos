@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,48 +30,33 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#ifndef stkMeshTestUtilsHpp
-#define stkMeshTestUtilsHpp
+#ifndef stk_mesh_impl_PrintEntityState_hpp
+#define stk_mesh_impl_PrintEntityState_hpp
 
-#include <gtest/gtest.h>
-#include <stk_mesh/base/ForEachEntity.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_topology/topology.hpp>
+//----------------------------------------------------------------------
 
-namespace stk { namespace mesh { class BulkData; } }
+#include <stk_mesh/base/Types.hpp>
+#include <iostream>
 
-namespace testUtils
-{
+namespace stk {
+namespace mesh {
 
 inline
-int get_other_proc(int myproc)
+std::ostream& operator<<(std::ostream& os, EntityState state)
 {
-  return myproc == 0 ? 1 : 0;
+  switch(state) {
+  case Unchanged: os<<"Unchanged"; break;
+  case Created: os<<"Created"; break;
+  case Modified: os<<"Modified"; break;
+  case Deleted: os<<"Deleted"; break;
+  default: break;
+  };
+  return os;
 }
 
-inline
-void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField,
-                                      const stk::mesh::Selector& boundaryNodesSelector,
-                                      double prescribedTemperatureValue)
-{
-  const stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
-
-  stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      const double *temperature = stk::mesh::field_data(temperatureField, node);
-      EXPECT_EQ(prescribedTemperatureValue, *temperature);
-    });
-
-  stk::mesh::Selector nonBoundaryNodes = !boundaryNodesSelector;
-
-  stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, nonBoundaryNodes,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      const double *temperature = stk::mesh::field_data(temperatureField, node);
-      EXPECT_EQ(0.0, *temperature);
-    });
-}
-}
+} // namespace mesh
+} // namespace stk
 
 #endif

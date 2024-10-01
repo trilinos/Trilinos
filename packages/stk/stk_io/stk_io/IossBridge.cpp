@@ -2096,6 +2096,35 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return !omitted;
     }
 
+      int64_t get_side_offset(const Ioss::ElementTopology* sideTopo,
+                              const Ioss::ElementTopology* parentTopo)
+      {
+        int64_t sideOffset = 0;
+        if ((  sideTopo != nullptr) && (  sideTopo->name() != "unknown") &&
+	    (parentTopo != nullptr) && (parentTopo->name() != "unknown")) {
+          int sideTopoDim = sideTopo->parametric_dimension();
+          int elemTopoDim = parentTopo->parametric_dimension();
+          int elemSpatDim = parentTopo->spatial_dimension();
+
+          if (sideTopoDim + 1 < elemSpatDim && sideTopoDim < elemTopoDim) {
+            sideOffset = parentTopo->number_faces();
+          }
+        }
+        return sideOffset;
+      }
+
+      int64_t get_side_offset(const Ioss::SideBlock* sb)
+      {
+	if(nullptr != sb) {
+	  const Ioss::ElementTopology *sideTopo   = sb->topology();
+	  const Ioss::ElementTopology *parentTopo = sb->parent_element_topology();
+	  return get_side_offset(sideTopo, parentTopo);
+	}
+
+	return 0;	
+      }
+      
+
     namespace {
 
     stk::mesh::EntityRank get_output_rank(stk::io::OutputParams& params)
@@ -2208,22 +2237,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       ioss_add_fields(part, stk::topology::NODE_RANK, ns, Ioss::Field::ATTRIBUTE);
     }
 
-      int64_t get_side_offset(const Ioss::ElementTopology* sideTopo,
-                              const Ioss::ElementTopology* parentTopo)
-      {
-        int64_t sideOffset = 0;
-        if ((sideTopo != nullptr) && (parentTopo != nullptr)) {
-          int sideTopoDim = sideTopo->parametric_dimension();
-          int elemTopoDim = parentTopo->parametric_dimension();
-          int elemSpatDim = parentTopo->spatial_dimension();
-
-          if (sideTopoDim + 1 < elemSpatDim && sideTopoDim < elemTopoDim) {
-            sideOffset = parentTopo->number_faces();
-          }
-        }
-        return sideOffset;
-      }
-
       std::tuple<std::string, const Ioss::ElementTopology *, stk::topology>
       get_touching_element_block_topology_from_side_block_by_tokenization(stk::io::OutputParams &params, const stk::mesh::Part& part)
       {
@@ -2261,6 +2274,18 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             }
           }
 
+	  const stk::mesh::MetaData& meta = params.bulk_data().mesh_meta_data();
+	  std::vector<const stk::mesh::Part*> touchingParts = meta.get_blocks_touching_surface(&part);
+	
+	  if(touchingParts.size() == 1u) {
+	    stk::topology stkTouchingTopology = touchingParts[0]->topology();
+	    std::string touchingTopoName = map_stk_topology_to_ioss(stkTouchingTopology);
+	    const Ioss::ElementTopology *touchingTopo = Ioss::ElementTopology::factory(touchingTopoName, true);
+	    if(touchingTopo != elementTopo) {
+	      elementTopo = nullptr;	      
+	    }
+	  }
+	  
           if (elementTopo != nullptr) {
             elementTopoName = elementTopo->name();
             stkElementTopology = map_ioss_topology_to_stk(elementTopo, bulk.mesh_meta_data().spatial_dimension());
@@ -2320,6 +2345,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         Ioss::SideBlock *sideBlock = sset->get_side_block(name);
         if(sideBlock == nullptr)
         {
+	  if("unknown" == ioTopo) {
+	    // Special case of heterogenous sideset encapsulated in one side block
+	    // There is no side topology so we cannot specify an element topology
+	    // due to internal IOSS code that gives wrong SideBlock offset
+	    elementTopoName = "unknown";
+	  }
+	  
             sideBlock = new Ioss::SideBlock(sset->get_database(), name, ioTopo, elementTopoName, sideCount);
             sset->add(sideBlock);
         }

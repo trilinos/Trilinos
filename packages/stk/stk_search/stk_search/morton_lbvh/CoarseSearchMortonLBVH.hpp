@@ -133,7 +133,8 @@ inline void coarse_search_morton_lbvh(std::vector<std::pair<DomainBoxType, Domai
                                       std::vector<std::pair<RangeBoxType, RangeIdentProcType>> const & localRange,
                                       MPI_Comm comm,
                                       std::vector<std::pair<DomainIdentProcType, RangeIdentProcType>> & searchResults,
-                                      bool enforceSearchResultSymmetry = true)
+                                      bool enforceSearchResultSymmetry = true,
+                                      bool sortSearchResults = false)
 {
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
   using Callback =  impl::MortonCoarseSearchVectorCallback<DomainBoxType, DomainIdentProcType, RangeBoxType, RangeIdentProcType>;
@@ -141,31 +142,44 @@ inline void coarse_search_morton_lbvh(std::vector<std::pair<DomainBoxType, Domai
   STK_ThrowRequireMsg((std::is_same_v<typename DomainBoxType::value_type, typename RangeBoxType::value_type>),
                       "The domain and range boxes must have the same floating-point precision");
 
-  using ValueType = typename DomainBoxType::value_type;
+  using DomainValueType = typename DomainBoxType::value_type;
+  using RangeValueType = typename RangeBoxType::value_type;
 
   Kokkos::Profiling::pushRegion("Parallel consistency: extend range box list");
   const auto [extendedRangeBoxes, remoteRangeIdentProcs] =
       morton_extend_local_range_with_remote_boxes_that_might_intersect<HostSpace>(localDomain, localRange, comm, HostSpace{});
   Kokkos::Profiling::popRegion();
 
-  Kokkos::Profiling::pushRegion("Fill domain and range trees");
-  stk::search::MortonAabbTree<ValueType, HostSpace> domainTree("Domain Tree", localDomain.size());
-  stk::search::MortonAabbTree<ValueType, HostSpace> rangeTree("Range Tree", extendedRangeBoxes.size());
+  using StkDomainBoxType = stk::search::Box<DomainValueType>;
+  using StkRangeBoxType = stk::search::Box<RangeValueType>;
 
-  stk::search::export_from_box_ident_proc_vec_to_morton_tree(localDomain, domainTree);
-  stk::search::export_from_box_vec_to_morton_tree(extendedRangeBoxes, rangeTree);
+  Kokkos::Profiling::pushRegion("Fill domain and range trees");
+  using DomainViewType = Kokkos::View<BoxIdentProc<StkDomainBoxType,DomainIdentProcType>*,HostSpace>;
+  using RangeViewType = Kokkos::View<BoxIdentProc<StkRangeBoxType,RangeIdentProcType>*,HostSpace>;
+  using DomainTreeType = stk::search::MortonAabbTree<DomainViewType, HostSpace>;
+  using RangeTreeType = stk::search::MortonAabbTree<RangeViewType, HostSpace>;
+  DomainTreeType domainTree("Domain Tree", localDomain.size());
+  RangeTreeType rangeTree("Range Tree", extendedRangeBoxes.size());
+
+  stk::search::export_from_box_ident_proc_vec_to_morton_tree<DomainTreeType,DomainBoxType,DomainIdentProcType>(localDomain, domainTree);
+  stk::search::export_from_box_vec_to_morton_tree<RangeTreeType,HostSpace,RangeBoxType>(extendedRangeBoxes, rangeTree);
   domainTree.sync_to_device();
   rangeTree.sync_to_device();
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Perform Morton query");
   Callback callback(localDomain, localRange, extendedRangeBoxes, remoteRangeIdentProcs, searchResults);
-  stk::search::morton_lbvh_search<ValueType, HostSpace>(domainTree, rangeTree, callback, HostSpace{});
+  stk::search::morton_lbvh_search<DomainViewType,RangeViewType,HostSpace,Callback>(domainTree, rangeTree, callback, HostSpace{});
   Kokkos::Profiling::popRegion();
 
   if (enforceSearchResultSymmetry) {
     Kokkos::Profiling::pushRegion("Enforce results symmetry");
     stk::search::communicate_vector(comm, searchResults, enforceSearchResultSymmetry);
+    Kokkos::Profiling::popRegion();
+  }
+
+  if (sortSearchResults) {
+    Kokkos::Profiling::pushRegion("Sort searchResults");
     std::sort(searchResults.begin(), searchResults.end());
     Kokkos::Profiling::popRegion();
   }
@@ -263,7 +277,6 @@ class BoundingShapeIntersectionCheckFunctor
 
 }
 
-
 template <typename DomainView,
           typename RangeView,
           typename ResultView,
@@ -275,6 +288,7 @@ inline void coarse_search_morton_lbvh(
     ResultView& searchResults,
     ExecutionSpace const& execSpace = ExecutionSpace{},
     bool enforceSearchResultSymmetry = true,
+    bool sortSearchResults = false,
     bool doParallelConsistencyOnHost = false)
 {
   check_coarse_search_types_parallel<DomainView, RangeView, ResultView, ExecutionSpace>();
@@ -283,13 +297,15 @@ inline void coarse_search_morton_lbvh(
   using DomainBoxType       = typename DomainView::value_type::box_type;
   using RangeBoxType        = typename RangeView::value_type::box_type;
   using RangeIdentProcType  = typename RangeView::value_type::ident_proc_type;
-  using ValueType = typename DomainBoxType::value_type;
   using BoundingShapeIntersectionChecker = impl::BoundingShapeIntersectionCheckFunctor<DomainView, RangeView, ResultView, ExecutionSpace>;
   using ExtendedRangeBoxView           = Kokkos::View<RangeBoxType*, ExecutionSpace>;
   using ExtendedRangeIdentProcView     = Kokkos::View<RangeIdentProcType*, ExecutionSpace>;
 
   static_assert(std::is_same_v<typename DomainBoxType::value_type, typename RangeBoxType::value_type>,
                       "The domain and range boxes must have the same floating-point precision");
+
+  using MDomainViewType = typename BoxIdentProcViewTrait<DomainView>::ViewType;
+  using MRangeViewType = typename BoxIdentProcViewTrait<RangeView>::ViewType;
 
   Kokkos::Profiling::pushRegion("Parallel consistency: extend range box list");
   ExtendedRangeBoxView extendedRangeBoxes;
@@ -318,13 +334,21 @@ inline void coarse_search_morton_lbvh(
   }
   Kokkos::Profiling::popRegion();
 
-  Kokkos::Profiling::pushRegion("Fill domain and range trees");
+  Kokkos::Profiling::pushRegion("STK Fill domain and range trees");
 
-  bool setBoxesOnHost = false;
-  stk::search::MortonAabbTree<ValueType, ExecutionSpace> domainTree("Domain Tree", localDomain.extent(0), setBoxesOnHost);
-  stk::search::MortonAabbTree<ValueType, ExecutionSpace> rangeTree("Range Tree", extendedRangeBoxes.extent(0), setBoxesOnHost);
+  const bool setBoxesOnHost = false;
+  using DomainTreeType = stk::search::MortonAabbTree<MDomainViewType, ExecutionSpace>;
+  using RangeTreeType = stk::search::MortonAabbTree<MRangeViewType, ExecutionSpace>;
+  DomainTreeType domainTree("Domain Tree", localDomain.extent(0), setBoxesOnHost);
+  RangeTreeType rangeTree("Range Tree", extendedRangeBoxes.extent(0), setBoxesOnHost);
 
-  stk::search::export_box_ident_view_to_morton_tree(localDomain, domainTree, execSpace);
+  if constexpr (std::is_same_v<DomainView, MDomainViewType>) {
+    domainTree.m_minMaxs = localDomain;
+  }
+  else {
+    stk::search::export_box_ident_view_to_morton_tree(localDomain, domainTree, execSpace);
+  }
+
   stk::search::export_box_view_to_morton_tree(extendedRangeBoxes, rangeTree, execSpace);
   execSpace.fence();
 
@@ -341,14 +365,10 @@ inline void coarse_search_morton_lbvh(
   Kokkos::Profiling::pushRegion("Inner morton search");
   BoundingShapeIntersectionChecker intersectionChecker(localDomain, localRange, extendedRangeBoxes,
                                                        remoteRangeIdentProcs, searchResults);
-  stk::search::morton_lbvh_search<ValueType, ExecutionSpace>(domainTree, rangeTree, intersectionChecker);
+  stk::search::morton_lbvh_search<MDomainViewType, MRangeViewType, ExecutionSpace, BoundingShapeIntersectionChecker>(domainTree, rangeTree, intersectionChecker, execSpace);
   searchResults = intersectionChecker.get_search_results();
   Kokkos::Profiling::popRegion();
 
-
-  Kokkos::Profiling::pushRegion("Kokkos sort");
-  Kokkos::sort(searchResults);
-  Kokkos::Profiling::popRegion();
 
   if (enforceSearchResultSymmetry) {
     Kokkos::Profiling::pushRegion("Enforce results symmetry");
@@ -356,6 +376,13 @@ inline void coarse_search_morton_lbvh(
     searchResults = resultComm.run();
     Kokkos::Profiling::popRegion();
   }
+
+  if (sortSearchResults) {
+    Kokkos::Profiling::pushRegion("Sort searchResults");
+    Kokkos::sort(searchResults, Comparator<typename ResultView::value_type>());
+    Kokkos::Profiling::popRegion();
+  }
+
 }
 
 }
