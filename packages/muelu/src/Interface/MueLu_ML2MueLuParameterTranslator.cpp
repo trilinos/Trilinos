@@ -541,21 +541,21 @@ int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::P
   Teuchos::RCP<std::vector<double> > params;
 
   // Taken from AztecOO
-  const int AZ_OPTIONS_SIZE=47;
-  const int AZ_PARAMS_SIZE=30;
+  const int MUELU_AZ_OPTIONS_SIZE=47;
+  const int MUELU_AZ_PARAMS_SIZE=30;
 
   /*bool SetDefaults = false;
     if (ioptions == NULL || iparams == NULL)
     SetDefaults = true;*/
 
   if (ioptions == NULL)
-    options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+    options = rcp(new std::vector<int>(MUELU_AZ_OPTIONS_SIZE));
   else
-    options = rcp(new std::vector<int>(ioptions,ioptions+AZ_OPTIONS_SIZE));
+    options = rcp(new std::vector<int>(ioptions,ioptions+MUELU_AZ_OPTIONS_SIZE));
   if (iparams  == NULL)
-    params  = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+    params  = rcp(new std::vector<double>(MUELU_AZ_PARAMS_SIZE));
   else
-    params = rcp(new std::vector<double>(iparams,iparams+AZ_PARAMS_SIZE));
+    params = rcp(new std::vector<double>(iparams,iparams+MUELU_AZ_PARAMS_SIZE));
 
   //if (SetDefaults)
   //    AZ_defaults(&(*options)[0],&(*params)[0]);

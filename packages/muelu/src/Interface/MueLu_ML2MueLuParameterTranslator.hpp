@@ -66,7 +66,10 @@ class ML2MueLuParameterTranslator {
   //! Sets ML's (not MueLu's) default parameters for aggregation-based preconditioners.
   /*! This function is use to set ML's default parameters, as
     defined in ml_MultiLevelPreconditioner.h. This has been ported to MueLu as a backwards
-    compatibility feature for ML users transitioning to MueLu.
+    compatibility feature for ML users transitioning to MueLu.  These routines are designed
+    to be used with or without compiling ML.
+
+    NOTE: MueLu's SetDefaults does *NOT* support the AztecOO options supported by ML.
 
     \param ProblemType (In) : a std::string, whose possible values are:
        - "SA" : classical smoothed aggregation preconditioners;
