@@ -66,6 +66,82 @@
 #include "Ifpack_Polynomial.h"
 #include "Ifpack_Krylov.h"
 
+template <class CommType>
+Teuchos::RefCountPtr<Epetra_RowMatrix>
+createTriDiagMat(int NumGlobalElements, CommType Comm, bool str_singular, bool num_singular) {
+  // Construct a Map that puts approximatively the same number of 
+  // equations on each processor. `0' is the index base (that is,
+  // numbering starts from 0.
+  Epetra_Map Map(NumGlobalElements, 0, Comm);
+
+  // Create an empty EpetraCrsMatrix 
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, 0));
+
+  // Create the structure of the matrix (tridiagonal)
+  int NumMyElements = Map.NumMyElements();
+
+  // Add  rows one-at-a-time
+  // Need some vectors to help
+
+  double Values[3];
+  // Right now, we put zeros only in the matrix.
+  int Indices[3];
+  int NumEntries;
+  /// global ID's of local ID's
+  int* MyGlobalElements = Map.MyGlobalElements();
+
+  // At this point we simply set the nonzero structure of A.
+  // Actual values will be inserted later (now all zeros)
+  for (int i = 0; i < NumMyElements; i++)
+  {
+    if (MyGlobalElements[i] == 0)
+    {
+      if (str_singular) {
+        NumEntries = 0;
+      } else {
+        Indices[0] = 0;
+        Indices[1] = 1;
+        if (num_singular) {
+          Values[0] = 0.0;
+          Values[1] = 0.0;
+        } else {
+          Values[0] = 2.0;
+          Values[1] = 1.0;
+        }
+        NumEntries = 2;
+      }
+    }
+    else if (MyGlobalElements[i] == NumGlobalElements-1)
+    {
+      Indices[0] = NumGlobalElements-1;
+      Indices[1] = NumGlobalElements-2;
+      Values[0] = 2.0;
+      Values[1] = 1.0;
+      NumEntries = 2;
+    }
+    else
+    {
+      Indices[0] = MyGlobalElements[i]-1;
+      Indices[1] = MyGlobalElements[i];
+      Indices[2] = MyGlobalElements[i]+1;
+      Values[0] = 1.0;
+      Values[1] = 2.0;
+      Values[2] = 1.0;
+      NumEntries = 3;
+    }
+
+    if (NumEntries > 0)
+    A->InsertGlobalValues(MyGlobalElements[i],
+                          NumEntries, Values, Indices);
+  }
+
+  // Finish up.
+  A->FillComplete();
+  //A->Print(std::cout);
+
+  return A;
+}
+
 template <class T>
 bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::ParameterList& List)
 {
@@ -88,9 +164,9 @@ bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::Paramet
   Prec = Teuchos::rcp( new T(&*Matrix) );
   assert(Prec != Teuchos::null);
 
-  IFPACK_CHK_ERR(Prec->SetParameters(List));
-  IFPACK_CHK_ERR(Prec->Initialize());
-  IFPACK_CHK_ERR(Prec->Compute());
+  IFPACK_CHK_ERRB(Prec->SetParameters(List));
+  IFPACK_CHK_ERRB(Prec->Initialize());
+  IFPACK_CHK_ERRB(Prec->Compute());
 
   // create the AztecOO solver
   AztecOO AztecOOSolver(Problem);
@@ -170,7 +246,6 @@ int main(int argc, char *argv[])
     TestPassed = false;
   }
 
-
   if (!Test<Ifpack_Amesos>(Matrix,List)) 
   {
     TestPassed = false;
@@ -217,6 +292,33 @@ int main(int argc, char *argv[])
   if (!Test<Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > >(Matrix,List)) {
     TestPassed = false;
   }
+
+#ifdef HAVE_IFPACK_AMESOS
+  // Additive Schwarz with local Amesos
+  // Amesos should fail on MPI-0.
+  // So, these tests should fail,
+  // but are designed to check that error is propagated to all MPI processes
+  // instead of just failing on MPI-0, causing deadlock
+  bool check_for_global_error = false;
+  if (check_for_global_error) {
+    // structurally singular case
+    List = DefaultList;
+    bool num_singular = false;
+    bool str_singular = true;
+    Matrix = createTriDiagMat(10, Comm, str_singular, num_singular);
+    if (Test<Ifpack_AdditiveSchwarz<Ifpack_Amesos>>(Matrix,List)) {
+      TestPassed = false;
+    }
+    // numerically singular case
+    num_singular = true;
+    str_singular = false;
+    Matrix = createTriDiagMat(10, Comm, str_singular, num_singular);
+    if (Test<Ifpack_AdditiveSchwarz<Ifpack_Amesos>>(Matrix,List)) {
+      TestPassed = false;
+    }
+  }
+#endif
+
   if (!TestPassed) {
     cerr << "Test `TestAll.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
