@@ -24,22 +24,20 @@
 
 namespace MueLuTests {
 
-bool compareLists(Teuchos::ParameterList & L1, Teuchos::ParameterList & L2) {
-  return Teuchos::haveSameValuesSorted(L1,L2,true);
-
+bool compareLists(Teuchos::ParameterList& L1, Teuchos::ParameterList& L2) {
+  return Teuchos::haveSameValuesSorted(L1, L2, true);
 }
 
-TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator,SA) {
-  //SetDefaults(SA)
+TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA) {
+  // SetDefaults(SA)
   Teuchos::ParameterList List, goldList;
-  MueLu::ML2MueLuParameterTranslator::SetDefaults("SA",List);
+  MueLu::ML2MueLuParameterTranslator::SetDefaults("SA", List);
 
 #ifdef HAVE_MUELU_ML
   Teuchos::ParameterList mlList;
-  ML_Epetra::SetDefaults("SA",mlList);
-  TEST_EQUALITY(compareLists(List,mlList),true);
+  ML_Epetra::SetDefaults("SA", mlList);
+  TEST_EQUALITY(compareLists(List, mlList), true);
 #endif
-
 
   // Gold list
   goldList.set("default values", "SA");
@@ -60,19 +58,18 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator,SA) {
   goldList.set("coarse: sweeps", 1);
   goldList.set("coarse: split communicator", false);
 
-  TEST_EQUALITY(compareLists(List,goldList),true);
-}// SA
+  TEST_EQUALITY(compareLists(List, goldList), true);
+}  // SA
 
-
-TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator,RefMaxwell) {
-  //SetDefaults(SA)
+TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
+  // SetDefaults(SA)
   Teuchos::ParameterList List, goldList;
   MueLu::ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(List);
 
 #ifdef HAVE_MUELU_ML
   Teuchos::ParameterList mlList;
   ML_Epetra::SetDefaultsRefMaxwell(mlList);
-  TEST_EQUALITY(compareLists(List,mlList),true);
+  TEST_EQUALITY(compareLists(List, mlList), true);
 #endif
 
   // Gold list
@@ -163,7 +160,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator,RefMaxwell) {
   goldList.sublist("refmaxwell: 22list").set("aggregation: threshold", 0.01);
   goldList.sublist("refmaxwell: 22list").set("ML label", "(2,2) block");
 
-  TEST_EQUALITY(compareLists(List,goldList),true);
+  TEST_EQUALITY(compareLists(List, goldList), true);
 }
 
-} // namespace
+}  // namespace MueLuTests
