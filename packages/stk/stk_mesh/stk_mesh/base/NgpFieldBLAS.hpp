@@ -65,7 +65,8 @@ void field_fill(const Scalar alpha,
                 const EXEC_SPACE& execSpace,
                 bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  ngp_field_blas::impl::field_fill_impl(alpha, field, component, &selector, execSpace, isDeviceExecSpaceUserOverride);
+  std::array<const FieldBase*, 1> field_array = {&field};
+  ngp_field_blas::impl::field_fill_impl(alpha, field_array.data(), field_array.size(), component, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<class Scalar, class EXEC_SPACE>
@@ -75,7 +76,8 @@ void field_fill(const Scalar alpha,
                 const EXEC_SPACE& execSpace,
                 bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  ngp_field_blas::impl::field_fill_impl(alpha, field, -1, nullptr, execSpace, isDeviceExecSpaceUserOverride);
+  std::array<const FieldBase*, 1> field_array = {&field};
+  ngp_field_blas::impl::field_fill_impl(alpha, field_array.data(), field_array.size(), -1, nullptr, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<class Scalar, class EXEC_SPACE>
@@ -86,8 +88,44 @@ void field_fill(const Scalar alpha,
                 const EXEC_SPACE& execSpace,
                 bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  ngp_field_blas::impl::field_fill_impl(alpha, field, -1, &selector, execSpace, isDeviceExecSpaceUserOverride);
+  std::array<const FieldBase*, 1> field_array = {&field};
+  ngp_field_blas::impl::field_fill_impl(alpha, field_array.data(), field_array.size(), -1, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
+
+
+template<class Scalar, typename EXEC_SPACE>
+inline
+void field_fill(const Scalar alpha,
+                const std::vector<const FieldBase*>& fields,
+                int component,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  ngp_field_blas::impl::field_fill_impl(alpha, fields.data(), fields.size(), component, &selector, execSpace, isDeviceExecSpaceUserOverride);
+}
+
+template<class Scalar, class EXEC_SPACE>
+inline
+void field_fill(const Scalar alpha,
+                const std::vector<const FieldBase*>& fields,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  ngp_field_blas::impl::field_fill_impl(alpha, fields.data(), fields.size(), -1, nullptr, execSpace, isDeviceExecSpaceUserOverride);
+}
+
+template<class Scalar, class EXEC_SPACE>
+inline
+void field_fill(const Scalar alpha,
+                const std::vector<const FieldBase*>& fields,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  ngp_field_blas::impl::field_fill_impl(alpha, fields.data(), fields.size(), -1, &selector, execSpace, isDeviceExecSpaceUserOverride);
+}
+
 
 template<typename EXEC_SPACE>
 inline

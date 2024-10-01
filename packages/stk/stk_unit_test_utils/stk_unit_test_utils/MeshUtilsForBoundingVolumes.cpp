@@ -246,6 +246,7 @@ void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const std::st
     }
 
     const int num_nodes_per_elem = 8;
+    const int num_edges_per_elem = 0, num_faces_per_elem = 0;
     const int num_attr = 0;
     const unsigned num_elements = boxes.size();
     std::vector<int> numElementsPerBlock;
@@ -260,7 +261,7 @@ void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const std::st
     for (int blockId=1;blockId<=num_blocks;blockId++)
     {
         const int num_elements_this_block = numElementsPerBlock[blockId-1];
-        ex_put_elem_block(exoid, blockId, "HEX", num_elements_this_block, num_nodes_per_elem, num_attr);
+        ex_put_block(exoid, EX_ELEM_BLOCK, blockId, "HEX", num_elements_this_block, num_nodes_per_elem, num_edges_per_elem, num_faces_per_elem, num_attr);
 
         for (int j=0;j<num_nodes_per_elem*num_elements_this_block;j++)
         {
@@ -268,7 +269,7 @@ void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const std::st
         }
         offset += num_elements_this_block*num_nodes_per_elem;
 
-        ex_put_elem_conn(exoid, blockId, connect.data());
+        ex_put_conn(exoid, EX_ELEM_BLOCK, blockId, connect.data(), nullptr, nullptr);
     }
 
     ex_close(exoid);

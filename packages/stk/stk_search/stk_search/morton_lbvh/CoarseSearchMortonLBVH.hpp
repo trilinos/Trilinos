@@ -297,7 +297,6 @@ inline void coarse_search_morton_lbvh(
   using DomainBoxType       = typename DomainView::value_type::box_type;
   using RangeBoxType        = typename RangeView::value_type::box_type;
   using RangeIdentProcType  = typename RangeView::value_type::ident_proc_type;
-  using ValueType = typename DomainBoxType::value_type;
   using BoundingShapeIntersectionChecker = impl::BoundingShapeIntersectionCheckFunctor<DomainView, RangeView, ResultView, ExecutionSpace>;
   using ExtendedRangeBoxView           = Kokkos::View<RangeBoxType*, ExecutionSpace>;
   using ExtendedRangeIdentProcView     = Kokkos::View<RangeIdentProcType*, ExecutionSpace>;
