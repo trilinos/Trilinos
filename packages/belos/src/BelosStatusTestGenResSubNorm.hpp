@@ -36,7 +36,7 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP, class DM>
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
 class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
 
  public:
@@ -86,7 +86,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
     TEUCHOS_UNREACHABLE_RETURN(0);
   }
 
-  //! Define form of the scaling, its norm, its optional weighting std::vector, or, alternatively, define an explicit value.
+  //! Define form of the scaling, its norm, its optional weighting vector, or, alternatively, define an explicit value.
   /*! This method defines the form of how the residual is scaled (if at all).  It operates in two modes:
     <ol>
     <li> User-provided scaling value:
@@ -100,9 +100,9 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
 
     <li> Use a supported Scaling Form:
     <ul>
-    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual std::vector,
+    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual vector,
     or to none.
-    <li> Define norm to be used on the scaling std::vector (this may be different than the norm used
+    <li> Define norm to be used on the scaling vector (this may be different than the norm used
     in DefineResForm()).
     </ul>
     </ol>
@@ -209,10 +209,10 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
   /** @name Misc. */
   //@{
 
-  /** \brief Call to setup initial scaling std::vector.
+  /** \brief Call to setup initial scaling vector.
    *
    * After this function is called <tt>getScaledNormValue()</tt> can be called
-   * to get the scaling std::vector.
+   * to get the scaling vector.
    */
   StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP,DM>* iSolver) {
     return Undefined;
@@ -286,7 +286,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
   //! @name Form and parameter definition methods.
   //@{
 
-  //! Define form of the residual, its norm and optional weighting std::vector.
+  //! Define form of the residual, its norm and optional weighting vector.
   /*! This method defines the form of \f$\|r\|\f$.  We specify:
     <ul>
     <li> The norm to be used on the residual (this may be different than the norm used in
@@ -303,7 +303,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     return(0);
   }
 
-  //! Define form of the scaling, its norm, its optional weighting std::vector, or, alternatively, define an explicit value.
+  //! Define form of the scaling, its norm, its optional weighting vector, or, alternatively, define an explicit value.
   /*! This method defines the form of how the residual is scaled (if at all).  It operates in two modes:
     <ol>
     <li> User-provided scaling value:
@@ -317,9 +317,9 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
 
     <li> Use a supported Scaling Form:
     <ul>
-    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual std::vector,
+    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual vector,
     or to none.
-    <li> Define norm to be used on the scaling std::vector (this may be different than the norm used
+    <li> Define norm to be used on the scaling vector (this may be different than the norm used
     in DefineResForm()).
     </ul>
     </ol>
@@ -378,7 +378,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     }
 
     //
-    // This section computes the norm of the residual std::vector
+    // This section computes the norm of the residual vector
     //
     if ( curLSNum_ != lp.getLSNumber() ) {
       //
@@ -590,10 +590,10 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
   /** @name Misc. */
   //@{
 
-  /** \brief Call to setup initial scaling std::vector.
+  /** \brief Call to setup initial scaling vector.
    *
    * After this function is called <tt>getScaledNormValue()</tt> can be called
-   * to get the scaling std::vector.
+   * to get the scaling vector.
    */
   StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP,DM>* iSolver) {
     int i;
