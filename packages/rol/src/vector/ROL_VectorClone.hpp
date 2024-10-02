@@ -136,7 +136,7 @@ public:
   /** \brief Preallocate keys if desired */
   template<typename... Keys>
   VectorCloneMap( Keys&&...keys ) {
-    Constructor_Impl( forward<Keys>(keys)... );
+    Constructor_Impl( keys... );
   }
 
   Ptr<Vector<Real>> operator() ( const Vector<Real>& x, KeyType key ) {
