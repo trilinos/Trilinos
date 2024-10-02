@@ -112,6 +112,7 @@ namespace Amesos2 {
       local_ordinal_t nRows = this->mat_->getLocalNumRows();
       local_ordinal_t nCols = colMap->getLocalNumElements();
 
+      RCP<matrix_t> contiguous_t_mat;
       if (contigRowMap->getGlobalNumElements() != numDoFs || contigColMap->getGlobalNumElements() != numDoFs) {
         auto tmpMap = rcp (new contiguous_map_type (numDoFs, nRows, indexBase, rowComm));
         global_ordinal_t frow = tmpMap->getMinGlobalIndex();
@@ -142,11 +143,17 @@ namespace Amesos2 {
         // Create new Row & Col Maps
         contigRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
         contigColMap = rcp (new contiguous_map_type (numDoFs, colIndexList.data(), nCols, indexBase, colComm));
-      }
-      // Build Matrix with new Maps, 
-      auto lclMatrix = this->mat_->getLocalMatrixDevice();
-      RCP<matrix_t> contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
 
+        // Create contiguous Matrix
+        auto lclMatrix = this->mat_->getLocalMatrixDevice();
+        contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
+      } else {
+        // Build Matrix with contiguous Maps
+        auto lclMatrix = this->mat_->getLocalMatrixDevice();
+        auto importer  = this->mat_->getCrsGraph()->getImporter();
+        auto exporter  = this->mat_->getCrsGraph()->getExporter();
+        contiguous_t_mat = rcp( new matrix_t(lclMatrix, contigRowMap, contigColMap, contigRowMap, contigColMap, importer,exporter));
+      }
       return rcp (new ConcreteMatrixAdapter<matrix_t> (contiguous_t_mat));
     }
 
