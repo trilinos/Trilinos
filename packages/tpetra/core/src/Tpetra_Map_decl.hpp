@@ -643,9 +643,9 @@ namespace Tpetra {
     ///   Teuchos::OrdinalTraits<global_ordinal_type>::invalid().
     global_ordinal_type getGlobalElement (local_ordinal_type localIndex) const;
 
-    /// \brief Get the local Map for Kokkos kernels.
+    /// \brief Get the LocalMap for Kokkos-Kernels.
     ///
-    /// \warning The interface of the local Map object is SUBJECT TO
+    /// \warning The interface of the LocalMap object is SUBJECT TO
     ///   CHANGE and is for EXPERT USERS ONLY.
     local_map_type getLocalMap () const;
 
