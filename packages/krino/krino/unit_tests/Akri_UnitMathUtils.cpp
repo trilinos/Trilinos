@@ -60,5 +60,24 @@ TEST(find_root_newton_raphson, givenPolynomialFunctionWithWRONGJacobian_findRoot
   expect_root_newton_raphson(0.25, guess, tol, [error](const double x){ std::cout << "Eval at " << x << std::endl; return std::make_pair(x*x*x-0.25*0.25*0.25, 3.*x*x*error); });
 }
 
+void expect_quadratic_crossing(const double gold, const std::array<double,3> & edgeVals)
+{
+  EXPECT_NEAR(gold, find_quadratic_crossing(edgeVals[0],edgeVals[1],edgeVals[2]), 1.e-6);
+}
+
+std::array<double,3> compute_edge_values(const double crossing1, const double crossing2)
+{
+  std::array<double,3> edgeVals = {{(0.-crossing1)*(0.-crossing2), (1.-crossing1)*(1.-crossing2), (0.5-crossing1)*(0.5-crossing2)}};
+  return edgeVals;
+}
+
+TEST(compute_edge_values, singleCrossings)
+{
+  expect_quadratic_crossing(0.25, compute_edge_values(0.25, -0.25));
+  expect_quadratic_crossing(0.25, compute_edge_values(0.25, 1.25));
+  expect_quadratic_crossing(0.33, compute_edge_values(0.33, -0.25));
+  expect_quadratic_crossing(0.77, compute_edge_values(0.77, 1.25));
+}
+
 }
 

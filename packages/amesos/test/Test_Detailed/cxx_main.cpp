@@ -147,6 +147,7 @@ bool Test(char* SolverType,
   Epetra_LinearProblem ProblemC;
   Amesos Factory;
   Amesos_BaseSolver* Solver;
+  std::string ST = SolverType ;    
 
   // Test simple usage:
   // - set problem (empty)
@@ -159,12 +160,16 @@ bool Test(char* SolverType,
     ProblemA.SetRHS((Epetra_MultiVector*)0);
 
     Solver = Factory.Create(SolverType,ProblemA);
-  
+    if ( ST == "Amesos_CssMKL" ) {
+      Teuchos::ParameterList List;
+      List.set("Reindex", true);
+      Solver->SetParameters(List);
+    }
+
     ProblemA.SetOperator(&A);
     ProblemA.SetLHS(&x_A);
     ProblemA.SetRHS(&b_A);
 
-    std::string ST = SolverType ;    
     if (! ( ST == "Amesos_Superludist" ) ) {    // Kludge see bug #1141 and bug #1138
       AMESOS_CHK_ERR(Solver->Solve());
 
@@ -189,6 +194,11 @@ bool Test(char* SolverType,
     ProblemA.SetRHS((Epetra_MultiVector*)0);
 
     Solver = Factory.Create(SolverType,ProblemA);
+    if ( ST == "Amesos_CssMKL" ) {
+      Teuchos::ParameterList List;
+      List.set("Reindex", true);
+      Solver->SetParameters(List);
+    }
   
     ProblemA.SetOperator(&A);
     AMESOS_CHK_ERR(Solver->NumericFactorization());
@@ -221,6 +231,12 @@ bool Test(char* SolverType,
     ProblemA.SetRHS((Epetra_MultiVector*)0);
 
     Solver = Factory.Create(SolverType,ProblemA);
+    if ( ST == "Amesos_CssMKL" ) {
+      // need to rindex since "interlaced"
+      Teuchos::ParameterList List;
+      List.set("Reindex", true);
+      Solver->SetParameters(List);
+    }
   
     ProblemA.SetOperator(&A);
     AMESOS_CHK_ERR(Solver->SymbolicFactorization());
@@ -265,7 +281,13 @@ bool Test(char* SolverType,
     ProblemA.SetRHS((Epetra_MultiVector*)0);
 
     Solver = Factory.Create(SolverType,ProblemA);
- 
+    if ( ST == "Amesos_CssMKL" ) {
+      // need to rindex since "interlaced"
+      Teuchos::ParameterList List;
+      List.set("Reindex", true);
+      Solver->SetParameters(List);
+    }
+
     ProblemA.SetOperator(&A);
     AMESOS_CHK_ERR(Solver->SymbolicFactorization());
     ProblemA.SetOperator(&B);
@@ -294,6 +316,12 @@ bool Test(char* SolverType,
     ProblemA.SetRHS(&b_A);
 
     Solver = Factory.Create(SolverType,ProblemA);
+    if ( ST == "Amesos_CssMKL" ) {
+      // need to rindex since "interlaced"
+      Teuchos::ParameterList List;
+      List.set("Reindex", true);
+      Solver->SetParameters(List);
+    }
 
     ProblemA.SetOperator(&C);
 
@@ -326,6 +354,12 @@ bool Test(char* SolverType,
     ProblemA.SetRHS(&b_A);
 
     Solver = Factory.Create(SolverType,ProblemA);
+    if ( ST == "Amesos_CssMKL" ) {
+      // need to rindex since "interlaced"
+      Teuchos::ParameterList List;
+      List.set("Reindex", true);
+      Solver->SetParameters(List);
+    }
 
     std::string ST = SolverType ; 
     if (! ( ST == "Amesos_Superludist" ) ) {   // bug #1141 and bug #1138
@@ -383,7 +417,7 @@ int SubMain( Epetra_Comm &Comm ) {
 
   GaleriList.set("n", Size_C);
   Epetra_Map* Map_C = CreateMap("Interlaced", Comm, GaleriList);
-  Epetra_CrsMatrix* Matrix_C = CreateCrsMatrix("Minij", Map_A, GaleriList);
+  Epetra_CrsMatrix* Matrix_C = CreateCrsMatrix("Minij", Map_C, GaleriList);
 
   Amesos_TestRowMatrix A(Matrix_A);
   Amesos_TestRowMatrix B(Matrix_B);
@@ -418,7 +452,6 @@ int SubMain( Epetra_Comm &Comm ) {
 
   Amesos Factory;
   bool TestPassed = true;
-
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
     std::string Solver = SolverType[i];
     if (Factory.Query((char*)Solver.c_str())) {
@@ -441,6 +474,51 @@ int SubMain( Epetra_Comm &Comm ) {
   delete Map_A;
   delete Map_C;
 
+  // Testing CSS MKL
+  // Same as above, but using Laplace2D instead of dense Minij for C
+  if (Factory.Query("Amesos_CssMKL")) {
+    GaleriList.set("n", Size_AB * Size_AB);
+    GaleriList.set("nx", Size_AB);
+    GaleriList.set("ny", Size_AB);
+    Epetra_Map* Map_A_css = CreateMap("Interlaced", Comm, GaleriList);
+    Epetra_CrsMatrix* Matrix_A_css = CreateCrsMatrix("Recirc2D", Map_A_css, GaleriList);
+    Epetra_CrsMatrix* Matrix_B_css = CreateCrsMatrix("Laplace2D", Map_A_css, GaleriList);
+
+    GaleriList.set("n", Size_C * Size_C);
+    GaleriList.set("nx", Size_C);
+    GaleriList.set("ny", Size_C);
+    Epetra_Map* Map_C_css = CreateMap("Interlaced", Comm, GaleriList);
+    Epetra_CrsMatrix* Matrix_C_css = CreateCrsMatrix("Laplace2D", Map_C_css, GaleriList);
+
+    Amesos_TestRowMatrix A_css(Matrix_A_css);
+    Amesos_TestRowMatrix B_css(Matrix_B_css);
+    Amesos_TestRowMatrix C_css(Matrix_C_css);
+
+    Epetra_MultiVector x_A_css(A_css.OperatorDomainMap(),NumVectors_AB);
+    Epetra_MultiVector x_exactA_css(A_css.OperatorDomainMap(),NumVectors_AB);
+    Epetra_MultiVector b_A_css(A_css.OperatorRangeMap(),NumVectors_AB);
+    x_exactA_css.Random();
+    A_css.Multiply(false,x_exactA_css,b_A_css);
+
+    Epetra_MultiVector x_B_css(B_css.OperatorDomainMap(),NumVectors_AB);
+    Epetra_MultiVector x_exactB_css(B_css.OperatorDomainMap(),NumVectors_AB);
+    Epetra_MultiVector b_B_css(B_css.OperatorRangeMap(),NumVectors_AB);
+    x_exactB_css.Random();
+    B_css.Multiply(false,x_exactB_css,b_B_css);
+
+    Epetra_MultiVector x_C_css(C_css.OperatorDomainMap(),NumVectors_C);
+    Epetra_MultiVector x_exactC_css(C_css.OperatorDomainMap(),NumVectors_C);
+    Epetra_MultiVector b_C_css(C_css.OperatorRangeMap(),NumVectors_C);
+    x_exactC_css.Random();
+    C_css.Multiply(false,x_exactC_css,b_C_css);
+
+    // Passing CrsMatrix for reindexing
+    bool ok = Test("Amesos_CssMKL",
+		     *Matrix_A_css, x_A_css, b_A_css, x_exactA_css,
+		     *Matrix_B_css, x_B_css, b_B_css, x_exactB_css,
+		     *Matrix_C_css, x_C_css, b_C_css, x_exactC_css);
+    TestPassed = TestPassed && ok;
+  }
   if (TestPassed) {
     if (Comm.MyPID() == 0)
       std::cout << std::endl << "TEST PASSED" << std::endl << std::endl;

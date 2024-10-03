@@ -1,9 +1,88 @@
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 16.0 Release Notes                      TBD May/June, 2024 #
+# Trilinos Release 16.1 Release Notes                               TBD, 2024 #
 #                                                                             #
 ###############################################################################
+
+A large number of packages have been marked as deprecated in this release.
+We are planning to remove them in the fall of 2025. The list of packages is
+
+  - Amesos
+  - AztecOO
+  - Epetra
+  - EpetraExt
+  - Ifpack
+  - Intrepid
+  - Isorropia
+  - ML
+  - NewPackage
+  - Pliris
+  - PyTrilinos
+  - ShyLU_DDCore
+  - ThyraEpetraAdapters
+  - ThyraEpetraExtAdapters
+  - Triutils
+
+If you are a user of one of these packages, please transition to the newer
+software stack. If you need guidance with finding an adequate replacement
+or are missing a particular feature, please open an issue or a discussion
+on Github.
+
+
+Framework
+
+  - Added option `Trilinos_WARNINGS_MODE` that can control warnings useful
+    for development.  There is a list of warnings in
+    `cmake/WarningsErrorsPolicy.cmake` that can be applied as warnings or
+    errors by passing the `WARN` or `ERROR` value for that variable.  Turning
+    either of those settings on will also turn on a set of 'promoted' warnings
+    that will always be errors in any mode other than the default.  The Pull
+    Request testing will currently use the `WARN` setting for this mode,
+    meaning that any 'upcoming' warnings will show up as warnings, and any
+    'promoted' warnings will show up as errors.  You can also pass additional
+    'upcoming' warnings via the `Trilinos_ADDITIONAL_WARNINGS` option.  Lastly,
+    if either of these modes are enabled, all warnings are disabled for any
+    deprecated packages, in the interest of not spending effort cleaning them.
+    By default, no warnings or errors are added.
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.0 Release Notes                           July 22, 2024 #
+#                                                                             #
+###############################################################################
+
+A large number of packages have been marked as deprecated in this release.
+We are planning to remove them in the fall of 2025. The list of packages is
+
+  - Amesos
+  - AztecOO
+  - Epetra
+  - EpetraExt
+  - Ifpack
+  - Intrepid
+  - Isorropia
+  - ML
+  - NewPackage
+  - Pliris
+  - PyTrilinos
+  - ShyLU_DDCore
+  - ThyraEpetraAdapters
+  - ThyraEpetraExtAdapters
+  - Triutils
+
+If you are a user of one of these packages, please transition to the newer
+software stack. If you need guidance with finding an adequate replacement
+or are missing a particular feature, please open an issue or a discussion
+on Github.
+
+
+Amesos2
+
+  - Add interface to MKL cluster sparse solver.
+    https://github.com/trilinos/Trilinos/pull/13073
+
 
 Framework
 
@@ -19,8 +98,49 @@ Framework
   - Added deprecation warnings to all deprecated packages.  The warnings are able
     to be disabled via the `Trilinos_SHOW_DEPRECATED_WARNINGS` option (this is
     also available as a per-package option).  These warnings are intended to
-    notify users that pacakge capability they are using will be removed in upcoming
+    notify users that package capability they are using will be removed in upcoming
     releases.
+    https://github.com/trilinos/Trilinos/pull/12828
+
+
+Ifpack2
+
+  - RBILUK now supports Kokkos Kernels as a backend
+    https://github.com/trilinos/Trilinos/pull/12911
+
+
+Kokkos, Kokkos Kernels
+
+  - Inclusion of version 4.3.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/12995
+
+
+NOX
+
+  - Added preconditioner reuse across multiple nonlinear solves.
+    https://github.com/trilinos/Trilinos/pull/12986
+
+
+Teko
+
+  - Add Hierarchical Block Gauss-Seidel Capability
+    https://github.com/trilinos/Trilinos/pull/13040
+
+
+Tpetra
+
+  - Some Tpetra features can be toggled via environment variables.
+    When an unrecognized variable is found, Tpetra now throws to alert
+    to potentially misspelled variables.
+    https://github.com/trilinos/Trilinos/pull/12944
+
+  - Add a test that checks that vendor TPLs for sparse matrix-vector product
+    are called.
+    https://github.com/trilinos/Trilinos/pull/13018
+
+  - Add team parallelism to kernels associated with matrix equilibration.
+    https://github.com/trilinos/Trilinos/pull/13017
+
 
 ###############################################################################
 #                                                                             #

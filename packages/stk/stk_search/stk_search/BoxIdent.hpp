@@ -35,6 +35,7 @@
 #ifndef BOXIDENT_HPP
 #define BOXIDENT_HPP
 
+#include "Kokkos_Core.hpp"
 namespace stk::search {
 
 template <typename BoxType, typename IdentType>
@@ -80,6 +81,7 @@ struct IdentIntersection
     return domainIdent < rhs.domainIdent ||
           (!(rhs.domainIdent < domainIdent) && rangeIdent < rhs.rangeIdent);
   }
+
 };
 
 template <typename DomainIdentProcType, typename RangeIdentProcType>
@@ -98,6 +100,17 @@ struct IdentProcIntersection
     return domainIdentProc < rhs.domainIdentProc ||
           (!(rhs.domainIdentProc < domainIdentProc) && rangeIdentProc < rhs.rangeIdentProc);
   }
+
+};
+
+template<class T>
+struct Comparator {
+
+KOKKOS_FUNCTION
+bool operator()(T a, T b) const {
+  return a < b;
+}
+
 };
 
 }

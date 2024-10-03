@@ -92,6 +92,7 @@ struct BlockPair {
   const stk::mesh::Part* get_first() const { return first; }
   const stk::mesh::Part* get_second() const { return second; }
   bool is_adjacent() const { return true; }
+  bool is_valid() const {return (first != nullptr) && (second != nullptr) && (first != second); }
 
   stk::mesh::Part* first;
   stk::mesh::Part* second;

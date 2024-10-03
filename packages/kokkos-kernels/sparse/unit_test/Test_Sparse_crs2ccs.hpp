@@ -19,11 +19,8 @@
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
-template <class CcsType, class IdType, class MapType, class ValsType,
-          class ColsType>
-void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
-                      MapType crs_row_map_d, ValsType crs_vals_d,
-                      ColsType cols) {
+template <class CcsType, class IdType, class MapType, class ValsType, class ColsType>
+void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d, MapType crs_row_map_d, ValsType crs_vals_d, ColsType cols) {
   using ordinal_type = typename CcsType::ordinal_type;
   using size_type    = typename CcsType::size_type;
 
@@ -32,14 +29,11 @@ void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
   using ViewTypeVals   = decltype(crs_vals_d);
 
   // Copy to host
-  typename ViewTypeRowIds::HostMirror crs_col_ids =
-      Kokkos::create_mirror_view(crs_col_ids_d);
+  typename ViewTypeRowIds::HostMirror crs_col_ids = Kokkos::create_mirror_view(crs_col_ids_d);
   Kokkos::deep_copy(crs_col_ids, crs_col_ids_d);
-  typename ViewTypeColMap::HostMirror crs_row_map =
-      Kokkos::create_mirror_view(crs_row_map_d);
+  typename ViewTypeColMap::HostMirror crs_row_map = Kokkos::create_mirror_view(crs_row_map_d);
   Kokkos::deep_copy(crs_row_map, crs_row_map_d);
-  typename ViewTypeVals::HostMirror crs_vals =
-      Kokkos::create_mirror_view(crs_vals_d);
+  typename ViewTypeVals::HostMirror crs_vals = Kokkos::create_mirror_view(crs_vals_d);
   Kokkos::deep_copy(crs_vals, crs_vals_d);
 
   auto ccs_row_ids_d = ccsMat.graph.entries;
@@ -51,14 +45,11 @@ void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
   using ViewTypeCrsVals   = decltype(ccs_vals_d);
 
   // Copy to host
-  typename ViewTypeCrsColIds::HostMirror ccs_row_ids =
-      Kokkos::create_mirror_view(ccs_row_ids_d);
+  typename ViewTypeCrsColIds::HostMirror ccs_row_ids = Kokkos::create_mirror_view(ccs_row_ids_d);
   Kokkos::deep_copy(ccs_row_ids, ccs_row_ids_d);
-  typename ViewTypeCrsRowMap::HostMirror ccs_col_map =
-      Kokkos::create_mirror_view(ccs_col_map_d);
+  typename ViewTypeCrsRowMap::HostMirror ccs_col_map = Kokkos::create_mirror_view(ccs_col_map_d);
   Kokkos::deep_copy(ccs_col_map, ccs_col_map_d);
-  typename ViewTypeCrsVals::HostMirror ccs_vals =
-      Kokkos::create_mirror_view(ccs_vals_d);
+  typename ViewTypeCrsVals::HostMirror ccs_vals = Kokkos::create_mirror_view(ccs_vals_d);
   Kokkos::deep_copy(ccs_vals, ccs_vals_d);
 
   for (ordinal_type j = 0; j < cols; ++j) {
@@ -81,23 +72,18 @@ void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
       }
 
       if (l == row_end)
-        FAIL() << "ccs element at (i: " << ccs_row_ids(i) << ", j: " << j
-               << ") not found!" << std::endl;
+        FAIL() << "ccs element at (i: " << ccs_row_ids(i) << ", j: " << j << ") not found!" << std::endl;
 
-      ASSERT_EQ(ccs_vals(i), crs_vals(l))
-          << "(i: " << ccs_row_ids(i) << ", j: " << j << ")" << std::endl;
+      ASSERT_EQ(ccs_vals(i), crs_vals(l)) << "(i: " << ccs_row_ids(i) << ", j: " << j << ")" << std::endl;
     }
   }
 }
 
 template <class ScalarType, class LayoutType, class ExeSpaceType>
-void doCrs2Ccs(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
-               bool fully_sparse = false) {
-  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> crsMat(
-      m, n, min_val, max_val, fully_sparse);
+void doCrs2Ccs(size_t m, size_t n, ScalarType min_val, ScalarType max_val, bool fully_sparse = false) {
+  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> crsMat(m, n, min_val, max_val, fully_sparse);
 
-  auto ccsMat = KokkosSparse::crs2ccs(crsMat.get_dim1(), crsMat.get_dim2(),
-                                      crsMat.get_nnz(), crsMat.get_vals(),
+  auto ccsMat = KokkosSparse::crs2ccs(crsMat.get_dim1(), crsMat.get_dim2(), crsMat.get_nnz(), crsMat.get_vals(),
                                       crsMat.get_map(), crsMat.get_ids());
 
   auto crs_col_ids_d = crsMat.get_ids();
@@ -128,9 +114,7 @@ void doAllCrs2Ccs(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_crs2ccs) {
-  uint64_t ticks =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count() %
-      UINT32_MAX;
+  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
   std::srand(ticks);
 
   // Empty cases
@@ -162,10 +146,9 @@ TEST_F(TestCategory, sparse_crs2ccs) {
   doCrs2Ccs<double, Kokkos::LayoutRight, TestDevice>(50, 10, 10, 100, true);
 
   // Test the convenience wrapper that accepts a crs matrix
-  RandCsMatrix<float, Kokkos::LayoutLeft, TestDevice> csMat(2, 2, 10, 10,
-                                                            false);
-  auto crsMatrix = ccs2crs(csMat.get_dim2(), csMat.get_dim1(), csMat.get_nnz(),
-                           csMat.get_vals(), csMat.get_map(), csMat.get_ids());
+  RandCsMatrix<float, Kokkos::LayoutLeft, TestDevice> csMat(2, 2, 10, 10, false);
+  auto crsMatrix =
+      ccs2crs(csMat.get_dim2(), csMat.get_dim1(), csMat.get_nnz(), csMat.get_vals(), csMat.get_map(), csMat.get_ids());
   auto ccsMatrix = crs2ccs(crsMatrix);
 
   auto crs_col_ids_d = crsMatrix.graph.entries;

@@ -28,23 +28,21 @@
 #include <Teuchos_RCP.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-#include "Intrepid_FieldContainer.hpp"
-
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
 
 #include "GeometryVerifier.hpp"
 #include <percept/mesh/geometry/volume/VolumeUtil.hpp>
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
 #include <percept/mesh/geometry/volume/sierra_only/FiniteVolumeMesh.hpp>
 #endif
 
 // FIXME
 #include <percept/fixtures/Fixture.hpp>
 
-using namespace Intrepid;
+using namespace Intrepid2;
 
   namespace percept
   {
@@ -249,6 +247,7 @@ using namespace Intrepid;
      */
     bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable, std::vector<double> *volume_histogram) //, stk::mesh::Part& mesh_part )
     {
+      using DynRankView = Kokkos::DynRankView<double, Kokkos::HostSpace>;
       const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
       const unsigned p_rank = bulk.parallel_rank();
       bool checkLocalJacobians = m_checkLocalJacobians;
@@ -348,69 +347,69 @@ using namespace Intrepid;
               if (isShell) topoDim = 2;
 
               // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
-              FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);
+              DynRankView cellNodes("cellNodes", numCells, numNodes, spaceDim);
               PerceptMesh::fillCellNodes(bulk, bucket,  coord_field, cellNodes, spaceDim);
 
-              FieldContainer<double> volume(numCells);
+              DynRankView volume("volume", numCells);
 
               // get min/max edge length
-              FieldContainer<double> elem_min_edge_length(number_elems);
-              FieldContainer<double> elem_max_edge_length(number_elems);
+              DynRankView elem_min_edge_length("elem_min_edge_length", number_elems);
+              DynRankView elem_max_edge_length("elem_max_edge_length", number_elems);
               PerceptMesh::findMinMaxEdgeLength(bulk, bucket, *coord_field, elem_min_edge_length, elem_max_edge_length);
 
               /// note: we're using cubature here instead of explicitly specifying some reference points
               ///  the idea is that we'll get a good estimate of the Jacobian's sign by testing it at all the
               ///  cubature points
 
-              DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
+              DefaultCubatureFactory cubFactory;                                              // create cubature factory
               unsigned cubDegree = 2;                                                                      // set cubature degree, e.g. 2
-              Teuchos::RCP<Cubature<double> > myCub;
+              Teuchos::RCP<Cubature<Kokkos::HostSpace,double,double> > myCub;
               bool hasGoodTopo = true;
               try {
-                myCub = cubFactory.create(cell_topo, cubDegree);         // create default cubature
+                myCub = cubFactory.create<Kokkos::HostSpace,double,double>(cell_topo, cubDegree);         // create default cubature
               }
               catch(...)
                 {
                    if (!p_rank)
-                     std::cout << "WARNING: mesh contains elements that Intrepid doesn't support for quadrature, cell_topo= " << cell_topo.getName() << std::endl;
+                     std::cout << "WARNING: mesh contains elements that Intrepid2 doesn't support for quadrature, cell_topo= " << cell_topo.getName() << std::endl;
                   //continue;
                   hasGoodTopo = false;
                 }
-
-              FieldContainer<double> jacobian_det(numCells, 1);
+              
+              
               unsigned numCubPoints = 1;
-              FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
+              // Rank-4 array (C,P,D,D) for the Jacobian and Rank-2 array (C,P) for its determinant
+              DynRankView jacobian("jacobian", numCells, numCubPoints, spaceDim, spaceDim);
+              DynRankView jacobian_det("jacobian_det", numCells,numCubPoints);
 
               if (hasGoodTopo)
                 {
                   numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
 
-                  FieldContainer<double> cub_points(numCubPoints, spaceDim);
-                  FieldContainer<double> cub_weights(numCubPoints);
+                  DynRankView cub_points("cub_points", numCubPoints, spaceDim);
+                  DynRankView cub_weights("cub_weights", numCubPoints);
 
-                  // Rank-4 array (C,P,D,D) for the Jacobian and its inverse and Rank-2 array (C,P) for its determinant
-                  //FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-                  jacobian.resize(numCells, numCubPoints, spaceDim, spaceDim);
-                  FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-                  //FieldContainer<double> jacobian_det(numCells, numCubPoints);
-                  jacobian_det.resize(numCells, numCubPoints);
+                  // Rank-4 array (C,P,D,D) for the Jacobian, its inverse and Rank-2 array (C,P) for the Jacobian determinant
+                  Kokkos::resize(jacobian, numCells, numCubPoints, spaceDim, spaceDim);
+                  DynRankView jacobian_inv("jacobian_inv", numCells, numCubPoints, spaceDim, spaceDim);
+                  Kokkos::resize(jacobian_det, numCells, numCubPoints);
 
                   myCub->getCubature(cub_points, cub_weights);                                          // retrieve cubature points and weights
 
                   // Methods to compute cell Jacobians, their inverses and their determinants
 
-                  CellTools<double>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
-                  CellTools<double>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
-                  CellTools<double>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
+                  Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
+                  Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
+                  Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
 
-                  FieldContainer<double> weightedMeasure(numCells, numCubPoints);
+                  DynRankView weightedMeasure("weightedMeasure", numCells, numCubPoints);
 
-                  FieldContainer<double> onesLeft(numCells,  numCubPoints);
-                  onesLeft.initialize(1.0);
+                  DynRankView onesLeft("onesLeft", numCells,  numCubPoints);
+                  Kokkos::deep_copy(onesLeft, 1.0);
 
                   // compute weighted measure
-                  // unfortunately, Intrepid fixes-up the sign of the result - which is what we *don't* want when checking for negative volumes...
-                  //FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
+                  // unfortunately, Intrepid2 fixes-up the sign of the result - which is what we *don't* want when checking for negative volumes...
+                  //bool negativeDet = Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
                   for (unsigned iCell = 0; iCell < numCells; iCell++)
                     {
                       for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
@@ -419,7 +418,7 @@ using namespace Intrepid;
                         }
                     }
                   // integrate to get volume
-                  FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
+                  Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::integrate(volume, onesLeft, weightedMeasure);
                 }
 
               jacData& jdata = jac_data[cell_topo.getName()];
@@ -437,7 +436,7 @@ using namespace Intrepid;
                       jacobian_det(iCell, 0) = Jac;
                       //std::cout << "Jac= " << Jac << " vol= " << volume(iCell) << std::endl;
                     }
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
                   if (m_use_finite_volume)
                     {
                       FiniteVolumeMesh3D fvm(*eMesh.get_bulk_data());
@@ -461,7 +460,7 @@ using namespace Intrepid;
                       vv = Jac*vu.getJacobianToVolumeScale(cell_topo);
                       if ( (vv < 0.0 && cellVolActual >= 0.0 ) || (vv >= 0.0 && cellVolActual < 0.0))
                         {
-                          VERIFY_OP_ON(vv, ==, cellVolActual, "Intrepid/VolumeUtil mismatch");
+                          VERIFY_OP_ON(vv, ==, cellVolActual, "Intrepid2/VolumeUtil mismatch");
                         }
                     }
 

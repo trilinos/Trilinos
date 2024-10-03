@@ -279,7 +279,7 @@ void UnitCell::generate_boundary_faces(unsigned int which_faces)
   auto                   &faces = face_generator.faces("ALL");
   Ioss::ElementBlock     *block = nullptr;
   for (const auto &face : faces) {
-    if (face.elementCount_ == 1) {
+    if (face.element_count() == 1) {
       block             = get_element_block(block, face.element[0] / 10, m_region);
       auto block_offset = block->get_offset();
       for (int i = 0; i < 6; i++) {

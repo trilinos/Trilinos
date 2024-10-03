@@ -1,46 +1,11 @@
 /*
 //@HEADER
-// ************************************************************************
+// *****************************************************************************
+//                        Adelus
 //
-//                        Adelus v. 1.0
-//       Copyright (2020) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of NTESS nor the names of the contributors may be
-// used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Vinh Dang (vqdang@sandia.gov)
-//                    Joseph Kotulski (jdkotul@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2020 NTESS and the Adelus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 //@HEADER
 */
 
@@ -117,7 +82,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
   int my_rows       = ahandle.get_my_rows();
   int my_cols       = ahandle.get_my_cols();
   int blksz         = ahandle.get_blksz();
-  
+
   int j,k;               // loop counters
 
   struct pivot_type {    // a stucture for storing pivot info
@@ -126,7 +91,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
     int row;             //   pivot row number
   } pivot;               // pivot info and some temporary pivot info
 
-  constexpr int one = 1; 
+  constexpr int one = 1;
   value_type d_one     = static_cast<value_type>(1.0);
   value_type d_min_one = static_cast<value_type>(-1.0);
   value_type d_zero    = static_cast<value_type>(0.0);
@@ -200,19 +165,19 @@ void factor(HandleType& ahandle,           // handle containg metadata
   printf("Rank %i -- factor() -- use KokkosBlas::copy, KokkosBlas::iamax\n", me);
 #endif
 #endif
-  
+
 #ifdef GET_TIMING
   t2 = MPI_Wtime();
 #endif
   colcnt = 0;                       // number of column's currently saved for update
   col_len = my_rows;                // length of column in remaining local matrix
- 
-  cur_col_i=0; cur_col_j=0;         // location of first column in remaining local matrix   
-  sav_col_i=0; sav_col_j=0;         // location to store next active column   
+
+  cur_col_i=0; cur_col_j=0;         // location of first column in remaining local matrix
+  sav_col_i=0; sav_col_j=0;         // location to store next active column
   act_col_i=0;                      // location of matrix of columns being saved for gemm update
-  
+
   row_len = my_cols + my_rhs;       // length of row in local matrix including rhs's
-                                    
+
   rows_used = 0;                    // haven't used any local rows yet
   cols_used = 0;
 
@@ -356,7 +321,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
       pivot_mag = abs(pivot.entry);
       if (pivot_mag == 0.0) {
         //printf("Node %d error -- zero pivot found in column %d -- exiting\n",me,j);
-        //return; 
+        //return;
         std::ostringstream os;
         os << "Adelus::factor: rank " << me << " error -- zero pivot found in column "<< j;
         throw std::runtime_error (os.str ());
@@ -454,7 +419,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
 
       // if own active column don't include it in row work anymore
 
-      row_len--; 
+      row_len--;
       update_j++;
       cur_col_j++;
       cur_row_j++;
@@ -559,14 +524,14 @@ void factor(HandleType& ahandle,           // handle containg metadata
         auto cur_row_view_1d = subview(ZV, cur_row_i, Kokkos::make_pair(cur_row_j, cur_row_j+row_len));
         auto sav_row_view_1d = subview(row2_view, Kokkos::make_pair(0, 0+row_len));  //note: sav_row_ptr = row2;
 #ifdef USE_DEEPCOPY
-        Kokkos::deep_copy (sav_row_view_1d, cur_row_view_1d);//copy: cur_row_view_1d --> sav_row_view_1d 
+        Kokkos::deep_copy (sav_row_view_1d, cur_row_view_1d);//copy: cur_row_view_1d --> sav_row_view_1d
 #else
         BlasWrapper::copy (cur_row_view_1d, sav_row_view_1d);//copy: cur_row_view_1d --> sav_row_view_1d
 #endif
         auto cur_col1_row_view_1d = subview(col1_view, cur_col1_row_i, Kokkos::make_pair(0, 0+colcnt));
         auto sav_row_plus_view_1d = subview(row2_view, Kokkos::make_pair(row_len, row_len+colcnt));  //note: sav_row_ptr = row2;
 #ifdef USE_DEEPCOPY
-        Kokkos::deep_copy (sav_row_plus_view_1d, cur_col1_row_view_1d);//copy: cur_col1_row_view_1d --> sav_row_plus_view_1d 
+        Kokkos::deep_copy (sav_row_plus_view_1d, cur_col1_row_view_1d);//copy: cur_col1_row_view_1d --> sav_row_plus_view_1d
 #else
         BlasWrapper::copy (cur_col1_row_view_1d, sav_row_plus_view_1d);//copy: cur_col1_row_view_1d --> sav_row_plus_view_1d
 #endif
@@ -625,7 +590,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
 #endif
 #endif
 #ifdef GET_TIMING
-        Kokkos::fence();        
+        Kokkos::fence();
         rowupdtime += (MPI_Wtime()-t1);
 #endif
       }
@@ -649,7 +614,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
       auto piv_col1_row_view_1d  = subview(col1_view, piv_col1_row_i, Kokkos::make_pair(0, 0+colcnt));
       auto temp_row_plus_view_1d = subview(row3_view, Kokkos::make_pair(row_len, row_len+colcnt));  //note: temp_row_ptr -> row3.view;
 #ifdef USE_DEEPCOPY
-      Kokkos::deep_copy (temp_row_plus_view_1d, piv_col1_row_view_1d);//copy: piv_col1_row_view_1d --> temp_row_plus_view_1d 
+      Kokkos::deep_copy (temp_row_plus_view_1d, piv_col1_row_view_1d);//copy: piv_col1_row_view_1d --> temp_row_plus_view_1d
 #else
       BlasWrapper::copy (piv_col1_row_view_1d, temp_row_plus_view_1d);//copy: piv_col1_row_view_1d --> temp_row_plus_view_1d
 #endif
@@ -889,8 +854,8 @@ void factor(HandleType& ahandle,           // handle containg metadata
 #endif
     }
 #endif
- 
-    sav_col_j++; 
+
+    sav_col_j++;
     sav_piv_row_i++;
 
     // if we have saved up enough columns, we do the outer product update
@@ -917,7 +882,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
 #endif
         // reset active matrix pointers
 
-        colcnt = 0; 
+        colcnt = 0;
         act_col_i=rows_used; sav_col_i=rows_used; sav_col_j=0;
         act_row_j = 0; sav_piv_row_i=sav_piv_row_j=0;
      }
@@ -962,9 +927,9 @@ void factor(HandleType& ahandle,           // handle containg metadata
   tmp = 100*msgtime/totalfactortime;
   showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent msg passing time",&tmp);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total copy between host pinned mem and dev mem time",&copyhostpinnedtime); 
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total copy between host pinned mem and dev mem time",&copyhostpinnedtime);
   tmp = 100*copyhostpinnedtime/totalfactortime;
-  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent copy between host pinned mem and dev mem time",&tmp);  
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent copy between host pinned mem and dev mem time",&tmp);
 #endif
 #ifdef ADELUS_SHOW_TIMING_DETAILS
   showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to swap pivot",&pivotswaptime);

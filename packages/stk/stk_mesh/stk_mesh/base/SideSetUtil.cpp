@@ -1,6 +1,7 @@
 #include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/Relation.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/SidesetUpdater.hpp"
@@ -10,6 +11,7 @@
 #include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include "stk_mesh/baseImpl/SideSetUtilImpl.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/diag/StringUtil.hpp"           // for Type, etc
 #include "stk_util/util/string_case_compare.hpp"
@@ -181,9 +183,9 @@ bool is_face_represented_in_sideset(const stk::mesh::BulkData& bulk, const stk::
     STK_ThrowRequire(bulk.entity_rank(face) == sideRank);
 
     std::vector<stk::mesh::Entity> side_elements;
-    std::vector<stk::mesh::Entity> side_nodes(bulk.begin_nodes(face), bulk.end_nodes(face));
 
-    stk::mesh::get_entities_through_relations(bulk, side_nodes, stk::topology::ELEMENT_RANK, side_elements);
+    stk::mesh::ConnectedEntities sideNodes = bulk.get_connected_entities(face, stk::topology::NODE_RANK);
+    stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, sideNodes.size(), sideNodes.data(), side_elements);
 
     bool found = false;
 

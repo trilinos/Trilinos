@@ -149,7 +149,7 @@ void unpack_entity_info(
   EntityKey      & key ,
   int            & owner ,
   PartVector     & parts ,
-  std::vector<Relation> & relations );
+  RelationVector& relations );
 
 void pack_sideset_info(BulkData& mesh, CommBuffer & buf, const Entity entity);
 

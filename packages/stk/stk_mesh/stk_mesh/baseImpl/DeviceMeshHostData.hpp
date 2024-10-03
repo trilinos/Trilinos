@@ -35,8 +35,6 @@
 #define STK_DEVICEMESH_HOST_DATA_HPP
 
 #include <Kokkos_Core.hpp>
-#include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/NgpTypes.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 
@@ -57,6 +55,7 @@ struct DeviceMeshHostData {
   PermutationViewType::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
   UnsignedViewType::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
   FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
+  unsigned volatileFastSharedCommMapSyncCount = 0;
 };
 
 }  // namespace impl

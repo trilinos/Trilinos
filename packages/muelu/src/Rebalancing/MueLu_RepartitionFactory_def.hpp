@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_REPARTITIONFACTORY_DEF_HPP
 #define MUELU_REPARTITIONFACTORY_DEF_HPP
 
@@ -80,6 +44,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RepartitionFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RepartitionFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -89,6 +59,7 @@ RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal,
   SET_VALID_ENTRY("repartition: remap num values");
   SET_VALID_ENTRY("repartition: remap accept partition");
   SET_VALID_ENTRY("repartition: node repartition level");
+  SET_VALID_ENTRY("repartition: save importer");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
@@ -402,6 +373,13 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
 
   Set(currentLevel, "Importer", rowMapImporter);
 
+  // Importer saving
+  bool save_importer = pL.get<bool>("repartition: save importer");
+  if (save_importer) {
+    currentLevel.Set("Importer", rowMapImporter, NoFactory::get());
+    currentLevel.AddKeepFlag("Importer", NoFactory::get(), MueLu::Final);
+    currentLevel.RemoveKeepFlag("Importer", NoFactory::get(), MueLu::UserData);  // FIXME: This is a hack
+  }
   // ======================================================================================================
   // Print some data
   // ======================================================================================================

@@ -38,7 +38,6 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/LegacyFieldTraits.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include <iomanip>
@@ -74,8 +73,8 @@ namespace mesh {
  *       using CoordFieldType stk::mesh::Field<double> CoordFieldType;
  *       CoordFieldType& coord_field = meta.declare_field<double>("<name>", <num_states>);
  *
- *   - Field restrictions: Defines the set of entities that have a field and the dimensions of the
- *     field (maximum of 7 dimensions).  FieldRestrictions are applied to Parts and entities pick
+ *   - Field restrictions: Defines the set of entities that have a field and the memory layout of
+ *     the data (e.g. a vector-3).  FieldRestrictions are applied to Parts and entities pick
  *     up the field by being placed in the associated part. Also, FieldRestrictions allow the same
  *     Field to be applied to different ranks of entities. E.g., you could apply a velocity Field
  *     to both Faces and Edges through two different FieldRestrictions for each of the different ranks.
@@ -137,44 +136,30 @@ namespace mesh {
  *   - stk_mesh/base/FieldParallel - Free functions for some parallel operations
  *   - stk_mesh/base/FieldRestriction - Defines FieldRestriction class
  *   - stk_mesh/base/FieldState - Defines enums to refer to field states
- *   - stk_mesh/base/FieldTraits - Defines API for querying field-types
- *   - stk_mesh/base/CoordinateSystems - Defines common ArrayDimTags (used for defining Field types)
- *   - stk_mesh/base/TopologyDimensions - Contains useful Field types / ArrayDimTags for setting up field relations
  *   - Type-related in ArrayDim, DataTraits
  *
  * - TODO Describe relationship with Buckets
  */
-// Implementation Details:
-// The template arguments below describe the field type. Scalar is the scalar
-// type of data contained by the field. The TagN describe each dimension of the
-// Field, these are expected to be ArrayDimTags. Unused dimensions can be ignored.
-template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
-          class Tag5 , class Tag6 , class Tag7 >
+
+template <typename Scalar>
 class Field : public FieldBase {
 public:
   using value_type = Scalar;
 
-  Field(
-       MetaData                   * arg_mesh_meta_data ,
-       stk::topology::rank_t        arg_entity_rank ,
-       unsigned                     arg_ordinal ,
-       const std::string          & arg_name ,
-       const DataTraits           & arg_traits ,
-       unsigned                     arg_rank,
-       const shards::ArrayDimTag  * const * arg_dim_tags,
-       unsigned                     arg_number_of_states ,
-       FieldState                   arg_this_state
-       )
+  Field(MetaData                   * arg_mesh_meta_data,
+        stk::topology::rank_t        arg_entity_rank,
+        unsigned                     arg_ordinal,
+        const std::string          & arg_name,
+        const DataTraits           & arg_traits,
+        unsigned                     arg_number_of_states,
+        FieldState                   arg_this_state)
     : FieldBase(arg_mesh_meta_data,
-        arg_entity_rank,
-        arg_ordinal,
-        arg_name,
-        arg_traits,
-        arg_rank,
-        arg_dim_tags,
-        arg_number_of_states,
-        arg_this_state
-        )
+                arg_entity_rank,
+                arg_ordinal,
+                arg_name,
+                arg_traits,
+                arg_number_of_states,
+                arg_this_state)
   {}
 
   /** \brief  Query this field for a given field state. */
@@ -186,7 +171,7 @@ public:
 #endif
   }
 
-  virtual ~Field(){}
+  virtual ~Field() = default;
 
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const override
   {
@@ -233,7 +218,7 @@ public:
       const int len_suffix = std::strlen(reserved_state_suffix[i]);
       const int offset     = len_name - len_suffix ;
       if ( 0 <= offset ) {
-        const char * const name_suffix = name().c_str() + offset;
+        [[maybe_unused]] const char * const name_suffix = name().c_str() + offset;
         STK_ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
                         "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
                         reserved_state_suffix[i] << "\"");
@@ -261,8 +246,6 @@ public:
                        fieldRepo.get_fields().size(),
                        fieldNames[i],
                        data_traits(),
-                       m_field_rank,
-                       m_dim_tags,
                        number_of_states(),
                        static_cast<FieldState>(i));
       fieldRepo.add_field(f[i]);

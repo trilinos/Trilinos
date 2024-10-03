@@ -1,45 +1,11 @@
-/*
-//@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _build_problem_hpp_
 #define _build_problem_hpp_
@@ -57,6 +23,12 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+# include "Zoltan2_PartitioningProblem.hpp"
+# include "Zoltan2_XpetraCrsMatrixAdapter.hpp"
+# include "Zoltan2_XpetraMultiVectorAdapter.hpp"
+#endif
 
 #include "read_matrix.hpp"
 #include "build_precond.hpp"
@@ -101,7 +73,11 @@ build_problem (Teuchos::ParameterList& test_params,
   std::string hb_file("not specified");
   Ifpack2::getParameter(test_params, "hb_file", hb_file);
   bool useMatrixWithConstGraph = false;
+  bool useZoltan2 = false;
+  bool useParMETIS = false;
   Ifpack2::getParameter(test_params, "Use matrix with const graph", useMatrixWithConstGraph);
+  Ifpack2::getParameter(test_params, "Use Zoltan2",  useZoltan2);
+  Ifpack2::getParameter(test_params, "Use ParMetis", useParMETIS);
 
   if (mm_file != "not specified") {
     if (comm->getRank() == 0) {
@@ -220,6 +196,61 @@ build_problem (Teuchos::ParameterList& test_params,
   }
   else {
     x->putScalar (STS::zero ());
+  }
+
+  if (useZoltan2) {
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+    // Create an input adapter for the Tpetra matrix.
+    Zoltan2::XpetraCrsMatrixAdapter<crs_matrix_type>
+      zoltan_matrix(A);
+
+    // Specify partitioning parameters
+    Teuchos::ParameterList zoltan_params;
+    zoltan_params.set("partitioning_approach", "partition");
+    //
+    if (useParMETIS) {
+      if (comm->getRank() == 0) {
+        std::cout << "Using Zoltan2(ParMETIS)" << std::endl;
+      }
+      zoltan_params.set("algorithm", "parmetis");
+      zoltan_params.set("symmetrize_input", "transpose");
+      zoltan_params.set("partitioning_objective", "minimize_cut_edge_weight");
+    } else {
+      if (comm->getRank() == 0) {
+        std::cout << "Using Zoltan2(HyperGraph)" << std::endl;
+      }
+      zoltan_params.set("algorithm", "phg");
+    }
+
+    // Create and solve partitioning problem
+    Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter<crs_matrix_type>>
+      problem(&zoltan_matrix, &zoltan_params);
+    problem.solve();
+
+    // Redistribute matrix
+    RCP<crs_matrix_type> zoltan_A;
+    zoltan_matrix.applyPartitioningSolution (*A, zoltan_A, problem.getSolution());
+    // Set it as coefficient matrix
+    A = zoltan_A;
+
+    // Redistribute RHS
+    RCP<TMV> zoltan_b;
+    Zoltan2::XpetraMultiVectorAdapter<TMV> adapterRHS(rcpFromRef (*b));
+    adapterRHS.applyPartitioningSolution (*b, zoltan_b, problem.getSolution());
+    // Set it as RHS
+    b = zoltan_b;
+
+    // Redistribute Sol
+    RCP<TMV> zoltan_x;
+    Zoltan2::XpetraMultiVectorAdapter<TMV> adapterSol(rcpFromRef (*x));
+    adapterSol.applyPartitioningSolution (*x, zoltan_x, problem.getSolution());
+    // Set it as Sol
+    x = zoltan_x;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      useZoltan2, std::invalid_argument,
+      "Both Xpetra and Zoltan2 are needed to use Zoltan2.");
+#endif
   }
 
   Teuchos::RCP< BLinProb > problem;

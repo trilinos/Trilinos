@@ -54,7 +54,7 @@
 
 #include <limits>
 
-class NgpMeshTest : public stk::mesh::fixtures::simple_fields::TestHexFixture
+class NgpMeshTest : public stk::mesh::fixtures::TestHexFixture
 {
 public:
   void run_get_nodes_using_FastMeshIndex_test()
@@ -80,7 +80,7 @@ TEST_F(NgpMeshTest, get_nodes_using_FastMeshIndex)
   run_get_nodes_using_FastMeshIndex_test();
 }
 
-class NgpMeshRankLimit : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
+class NgpMeshRankLimit : public stk::mesh::fixtures::TestHexFixture {};
 
 TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
 {
@@ -97,7 +97,7 @@ TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
   }
 }
 
-class EntityIndexSpace : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
+class EntityIndexSpace : public stk::mesh::fixtures::TestHexFixture {};
 
 TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
 {
@@ -151,23 +151,28 @@ TEST(StkVectorGpuTest, gpu_runs)
 
 void check_volatile_fast_shared_comm_map_values_on_device(const stk::mesh::NgpMesh & ngpMesh, int proc, const stk::mesh::DeviceCommMapIndices & deviceCommMapIndicesGold)
 {
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-                       KOKKOS_LAMBDA(size_t i)
-                       {
-                         stk::mesh::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
+  auto test = KOKKOS_LAMBDA(size_t i)
+              {
+                stk::mesh::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
 
-                         for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
-                           NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_id, deviceCommMapIndices[entry].bucket_id);
-                           NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_ord, deviceCommMapIndices[entry].bucket_ord);
-                         }
-                       });
+                for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
+                  NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_id, deviceCommMapIndices[entry].bucket_id);
+                  NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_ord, deviceCommMapIndices[entry].bucket_ord);
+                }
+              };
+
+  if constexpr (std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>) {
+    test(0);
+  } else {
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), test);
+  }
 }
 
 using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::HostExecSpace>;
 
 NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) return;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) { GTEST_SKIP(); }
 
   setup_mesh(1, 1, 4);
 
@@ -175,21 +180,9 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {
-    const stk::mesh::BucketIndices & stkBktIndices = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK)[proc];
-    stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", stkBktIndices.ords.size());
-    stk::mesh::DeviceCommMapIndices::HostMirror hostNgpMeshIndices = Kokkos::create_mirror_view(deviceNgpMeshIndices);
+    stk::mesh::DeviceCommMapIndices::HostMirror hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
+    stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", hostNgpMeshIndices.extent(0));
 
-    size_t entryIndex = 0;
-    size_t stkOrdinalIndex = 0;
-    for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
-      const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
-      const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
-      for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
-        const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex++];
-        const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
-        hostNgpMeshIndices[entryIndex++] = stkFastMeshIndex;
-      }
-    }
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
     check_volatile_fast_shared_comm_map_values_on_device(ngpMesh, proc, deviceNgpMeshIndices);
   }
@@ -219,7 +212,7 @@ double reduce_on_host(stk::mesh::BulkData& bulk)
 TEST(NgpHostMesh, FieldForEachEntityReduceOnHost_fromTylerVoskuilen)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
-  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, 2, 2, 2);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, 2, 2, 2);
   fixture.m_meta.commit();
   fixture.generate_mesh();
 

@@ -8,6 +8,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Relation.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 
 namespace krino {
@@ -60,7 +61,7 @@ static void assign_interface_element_sign(const unsigned surfIndex,
 static void fill_edge_elements(const stk::mesh::BulkData & mesh, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements)
 {
   const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
-  stk::mesh::get_entities_through_relations(mesh, {edgeNodes[0], edgeNodes[1]}, stk::topology::ELEMENT_RANK, edgeElements);
+  stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edgeNodes[0], edgeNodes[1]}, stk::topology::ELEMENT_RANK, edgeElements);
 }
 
 static void check_edge_intersections_to_assign_crossed_elements_and_find_nodes_on_either_side_of_surface(const stk::mesh::BulkData & mesh,

@@ -490,8 +490,39 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_MatvecFence
+  SOURCES
+    CrsMatrix_MatvecFence.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  )
 
 
+if (
+  # supported TPLs
+  (
+    (Tpetra_INST_CUDA AND TPL_ENABLE_CUSPARSE ) OR
+    (Tpetra_INST_HIP AND TPL_ENABLE_ROCSPARSE)
+  )
+
+  AND
+
+  # supported type combos
+  (
+    (Tpetra_INST_DOUBLE OR Tpetra_INST_FLOAT)
+  )
+)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_ApplyUsesTPLs
+    SOURCES
+      CrsMatrix_ApplyUsesTPLs.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+endif()
 
 SET(TIMING_INSTALLS "")
 

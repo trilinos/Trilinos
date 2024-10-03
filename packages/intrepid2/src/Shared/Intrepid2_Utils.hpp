@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_Utils.hpp
@@ -314,13 +281,13 @@ namespace Intrepid2 {
   template<typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   constexpr typename
-  std::enable_if< !std::is_pod<T>::value, typename ScalarTraits<T>::scalar_type >::type
+  std::enable_if< !(std::is_standard_layout<T>::value && std::is_trivial<T>::value), typename ScalarTraits<T>::scalar_type >::type
   get_scalar_value(const T& obj) {return obj.val();}
 
   template<typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod<T>::value, typename ScalarTraits<T>::scalar_type >::type
+  std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, typename ScalarTraits<T>::scalar_type >::type
   get_scalar_value(const T& obj){return obj;}
 
 
@@ -333,13 +300,13 @@ namespace Intrepid2 {
   template<typename T, typename ...P>
   KOKKOS_INLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod<T>::value, unsigned >::type
+  std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, unsigned >::type
   dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
 
   template<typename T, typename ...P>
   KOKKOS_INLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod< typename Kokkos::View<T, P...>::value_type >::value, unsigned >::type
+  std::enable_if< std::is_standard_layout<typename Kokkos::View<T, P...>::value_type>::value && std::is_trivial<typename Kokkos::View<T, P...>::value_type>::value, unsigned >::type
   dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
 
   template<typename T, typename ...P>
@@ -372,7 +339,7 @@ namespace Intrepid2 {
     using DeviceType         = typename ViewType::device_type;
     using ViewTypeWithLayout = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
     
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    const bool allocateFadStorage = !(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value);
     if (!allocateFadStorage)
     {
       return ViewTypeWithLayout(label,dims...);
@@ -799,7 +766,7 @@ namespace Intrepid2 {
   template <typename ValueType>
   struct NaturalLayoutForType {
     using layout  =
-    typename std::conditional<std::is_pod<ValueType>::value,
+    typename std::conditional<(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value),
       Kokkos::LayoutLeft, // for POD types, use LayoutLeft
       Kokkos::LayoutNatural<Kokkos::LayoutLeft> >::type; // For FAD types, use LayoutNatural
   };
@@ -824,7 +791,7 @@ namespace Intrepid2 {
   template<typename Scalar>
   constexpr int getVectorSizeForHierarchicalParallelism()
   {
-    return std::is_pod<Scalar>::value ? VECTOR_SIZE : FAD_VECTOR_SIZE;
+    return (std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value) ? VECTOR_SIZE : FAD_VECTOR_SIZE;
   }
   
   /**
@@ -836,7 +803,7 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   constexpr unsigned getScalarDimensionForView(const ViewType &view)
   {
-    return (std::is_pod<typename ViewType::value_type>::value) ? 0 : get_dimension_scalar(view);
+    return (std::is_standard_layout<typename ViewType::value_type>::value && std::is_trivial<typename ViewType::value_type>::value) ? 0 : get_dimension_scalar(view);
   }
 } // end namespace Intrepid2
 

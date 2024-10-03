@@ -56,10 +56,9 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 }
 
 #define N_BASE_ALGOS BaseKokkosBatchedAlgos::N
-#define BASE_ALGO_STRS                                                      \
-  "BaseHeuristicAlgos::SQUARE", "BaseHeuristicAlgos::TALL",                 \
-      "BaseHeuristicAlgos::WIDE", "BaseTplAlgos::ARMPL", "BaseTplAlgosMKL", \
-      "BaseKokkosBatchedAlgos::KK_SERIAL"
+#define BASE_ALGO_STRS                                                                                         \
+  "BaseHeuristicAlgos::SQUARE", "BaseHeuristicAlgos::TALL", "BaseHeuristicAlgos::WIDE", "BaseTplAlgos::ARMPL", \
+      "BaseTplAlgosMKL", "BaseKokkosBatchedAlgos::KK_SERIAL"
 
 /// \brief TplParams abstracts underlying handle or execution queue type.
 struct TplParams {
@@ -145,8 +144,7 @@ class BatchedKernelHandle {
   int vecLen       = 0;
   bool enableDebug = false;
 
-  BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                      int teamSize = 0, int vecLength = 0)
+  BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0, int vecLength = 0)
       : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType) {
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || ARMPL_BUILD < 1058
     if (_kernelAlgoType == BaseTplAlgos::ARMPL) {
@@ -161,9 +159,7 @@ class BatchedKernelHandle {
 
   int get_kernel_algo_type() const { return _kernelAlgoType; }
 
-  std::string get_kernel_algo_type_str() const {
-    return algo_type_strs[_kernelAlgoType];
-  }
+  std::string get_kernel_algo_type_str() const { return algo_type_strs[_kernelAlgoType]; }
 
   decltype(auto) get_tpl_params() const {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)

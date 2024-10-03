@@ -31,7 +31,7 @@
 namespace
 {
 
-class SkinWithModification : public stk::unit_test_util::simple_fields::MeshFixture
+class SkinWithModification : public stk::unit_test_util::MeshFixture
 {
 protected:
   SkinWithModification() : boundaryPart(nullptr)
@@ -289,7 +289,7 @@ protected:
                  "1,2,QUAD_4_2D,4,3,5,6\n"
                  "0,3,QUAD_4_2D,21,22,3,4";
     }
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     get_bulk().modification_begin();
     put_entity_into_part(get_bulk(), 1, block1);

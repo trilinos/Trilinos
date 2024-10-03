@@ -43,7 +43,7 @@
 #include <vector>
 #include <unistd.h>
 
-class MeshFixtureDecomposer : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshFixtureDecomposer : public stk::unit_test_util::MeshFixture
 {
 protected:
   MeshFixtureDecomposer()

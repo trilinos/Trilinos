@@ -127,7 +127,7 @@ void fill_small_mesh_with_big_ids(stk::mesh::BulkData& bulkData)
   bulkData.modification_end();
 }
 
-class StkPerfComm : public stk::unit_test_util::simple_fields::MeshFixture
+class StkPerfComm : public stk::unit_test_util::MeshFixture
 {
   typedef stk::mesh::Field<double> ScalarField;
   typedef stk::mesh::Field<double> VectorField;
@@ -277,13 +277,9 @@ protected:
     const stk::mesh::BucketVector& shared_not_owned = get_bulk().get_buckets(stk::topology::NODE_RANK, shared & !owned);
     const std::vector<int>& procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
     stk::CommNeighbors commNeighbors(get_bulk().parallel(), procs);
-    const stk::mesh::VolatileFastSharedCommMapOneRank& sharedCommMap = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK);
     for(int p : procs) {
-      size_t numEntities = 0;
-      const std::vector<stk::mesh::BucketInfo>& bktInfoVec = sharedCommMap[p].bucket_info;
-      for(const stk::mesh::BucketInfo& bktInfo : bktInfoVec) {
-        numEntities += bktInfo.num_entities_this_bucket;
-      }
+      const stk::mesh::HostCommMapIndices sharedCommMap = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK, p);
+      size_t numEntities = sharedCommMap.extent(0);
       commNeighbors.send_buffer(p).reserve(numEntities*sizeof(stk::mesh::EntityKey));
     }
 
@@ -408,7 +404,7 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("Before rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
 
     rebalance(get_bulk());
 
@@ -416,7 +412,7 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("After rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
   }
 
   void generate_and_rebalance_small_mesh_with_big_ids()
@@ -433,7 +429,7 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("Before rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("before_rebal.e",get_bulk(), get_bulk().parallel());
 
     rebalance(get_bulk());
 
@@ -441,12 +437,12 @@ protected:
     if (get_bulk().parallel_rank()==0) {
       print_mesh_stats("After rebalance: ",stats);
     }
-    //        stk::unit_test_util::simple_fields::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
+    //        stk::unit_test_util::write_mesh_using_stk_io("after_rebal.e",get_bulk(), get_bulk().parallel());
   }
 
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-mesh", "NO_MESH_SPECIFIED");
+    return stk::unit_test_util::get_option("-mesh", "NO_MESH_SPECIFIED");
   }
 
   ScalarField& nodeFieldScalar;

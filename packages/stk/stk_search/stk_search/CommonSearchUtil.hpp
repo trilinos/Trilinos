@@ -43,8 +43,12 @@
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
+#include "stk_search/BoxIdent.hpp"
 #include "stk_search/kdtree/KDTree_BoundingBox.hpp"
 #include "stk_search/kdtree/KDTree.hpp"
+#include "DeviceMPIUtils.hpp"
+#include <any>
+#include <memory>
 
 namespace stk::search {
 
@@ -116,6 +120,24 @@ inline void all_gather_helper(const DomainBox& localBox, std::vector<DomainBox> 
   char* localData = const_cast<char*>(localDataConst);
 
   MPI_Allgather(localData, sizeof(DomainBox), MPI_CHAR, global_box_array.data(), sizeof(DomainBox), MPI_CHAR, comm);
+}
+
+template <typename DomainBox, typename ExecutionSpace>
+void all_gather_helper(const DomainBox& localBox, Kokkos::View<DomainBox*, ExecutionSpace> global_box_array,
+                       MPI_Comm comm)
+{
+  int commSize = stk::parallel_machine_size(comm);
+  if (static_cast<int>(global_box_array.extent(0)) < commSize)
+  {
+    Kokkos::resize(global_box_array, commSize);
+  }
+  auto global_box_array_host = Kokkos::create_mirror_view(global_box_array);
+
+  impl::check_view_c_layout(global_box_array_host);
+
+  MPI_Allgather(&localBox, sizeof(DomainBox), MPI_CHAR,
+                global_box_array_host.data(), sizeof(DomainBox), MPI_CHAR, comm);
+  Kokkos::deep_copy(global_box_array, global_box_array_host);
 }
 
 template <typename DataType>
@@ -302,6 +324,119 @@ void communicate_views(stk::ParallelMachine arg_comm,
     }
   }
 }
+
+namespace impl {
+template <typename T>
+bool constexpr is_stk_box =
+    std::is_same_v<T, Box<typename T::value_type>> || std::is_base_of_v<Box<typename T::value_type>, T>;
+
+template <typename T>
+bool constexpr is_stk_sphere =
+    std::is_same_v<T, Sphere<typename T::value_type>> || std::is_base_of_v<Sphere<typename T::value_type>, T>;
+
+template <typename T>
+bool constexpr is_stk_point =
+    std::is_same_v<T, Point<typename T::value_type>> || std::is_base_of_v<Point<typename T::value_type>, T>;
+}
+
+template <typename SearchResultsType, typename ExecutionSpace>
+class SearchResultCommunication
+{
+    using ValueType = typename SearchResultsType::value_type;
+    using DeviceBufferAppender = impl::DeviceMPIBufferAppender<ValueType, ExecutionSpace>;
+    using DeviceBuffers = impl::DeviceMPIBuffers<ValueType, ExecutionSpace>;
+
+  public:
+    struct FillBuffer {};
+    struct UnpackBuffer {};
+
+
+    //Note: unlike communicate_views(), this assumes search_relations is
+    //      exactly the size it needs to be (no unused entries at the end)
+    SearchResultCommunication(stk::ParallelMachine comm,
+                              SearchResultsType searchResults,
+                              ExecutionSpace execSpace,
+                              bool enforceSearchResultSymmetry = true) :
+      m_comm(comm),
+      m_searchResults(searchResults),
+      m_execSpace(execSpace),
+      m_enforceSearchResultSymmetry(enforceSearchResultSymmetry),
+      m_bufferAppender(stk::parallel_machine_size(comm), execSpace),
+      m_commRank(stk::parallel_machine_rank(comm)),
+      m_numLocalResults(searchResults.size())
+    {}
+
+    SearchResultsType run()
+    {
+      Kokkos::Profiling::pushRegion("Filling MPI Buffers");
+      Kokkos::RangePolicy<FillBuffer, ExecutionSpace> packPolicy(m_execSpace, 0, m_searchResults.extent(0));
+      Kokkos::parallel_for("mpi_buffer_sizing", packPolicy, *this);
+      m_execSpace.fence();
+
+      m_bufferAppender.allocate_buffers();
+
+      Kokkos::parallel_for("mpi_buffer_fill", packPolicy, *this);
+      m_execSpace.fence();
+      Kokkos::Profiling::popRegion();
+
+      Kokkos::Profiling::pushRegion("Parallel Communication");
+      impl::DeviceDataExchangeUnknownPattern<ValueType, ExecutionSpace> exchanger(m_bufferAppender.getBuffers(), m_execSpace, m_comm);
+      m_recvBuffers = exchanger.communicate();
+      Kokkos::Profiling::popRegion();
+
+      Kokkos::Profiling::pushRegion("Unpacking buffers");
+      Kokkos::resize(Kokkos::WithoutInitializing, m_searchResults, m_numLocalResults + m_recvBuffers.buffers.extent(0));
+      Kokkos::RangePolicy<UnpackBuffer, ExecutionSpace> unpackPolicy(m_execSpace, 0, m_recvBuffers.buffers.extent(0));
+      Kokkos::parallel_for("mpi_buffer_unpack", unpackPolicy, *this);
+      m_execSpace.fence();
+      Kokkos::Profiling::popRegion();
+
+      return m_searchResults;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FillBuffer /*tag*/, int idx) const
+    {
+      ValueType searchResult = m_searchResults(idx);
+      int domainProc = static_cast<int>(searchResult.domainIdentProc.proc());
+
+      if (domainProc != m_commRank) {
+        m_bufferAppender.push_back(domainProc, searchResult);
+      }
+
+      if (m_enforceSearchResultSymmetry)
+      {
+        int rangeProc = static_cast<int>(searchResult.rangeIdentProc.proc());
+        if (rangeProc != m_commRank &&
+            rangeProc != domainProc) {
+          m_bufferAppender.push_back(rangeProc, searchResult);
+        }
+      }
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(UnpackBuffer /*tag*/, int idx) const
+    {
+      m_searchResults(idx + m_numLocalResults) = m_recvBuffers.buffers(idx);
+    }
+
+
+  private:
+    stk::ParallelMachine m_comm;
+    SearchResultsType m_searchResults;
+    ExecutionSpace m_execSpace;
+    bool m_enforceSearchResultSymmetry;
+
+    DeviceBufferAppender m_bufferAppender;
+    int m_commRank;
+    int m_numLocalResults;
+    DeviceBuffers m_recvBuffers;
+};
+
+struct SearchData
+{
+  std::any data;
+};
 
 } // end namespace stk::search
 

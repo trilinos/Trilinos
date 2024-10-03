@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HGRAD_TET_Cn_FEMDef.hpp
@@ -229,12 +196,12 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     const EPointType   pointType ) {
   constexpr ordinal_type spaceDim = 3;
 
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
-  this->basisDegree_       = order; // small n
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  this->basisType_         = BASIS_FEM_LAGRANGIAN;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
+  this->basisDegree_          = order; // small n
+  this->basisCellTopologyKey_ = shards::Tetrahedron<4>::key;
+  this->basisType_            = BASIS_FEM_LAGRANGIAN;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HGRAD;
   pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
   const ordinal_type card = this->basisCardinality_;
@@ -254,25 +221,26 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
   // construct lattice
 
-  const ordinal_type numEdges = this->basisCellTopology_.getEdgeCount();
-  const ordinal_type numFaces = this->basisCellTopology_.getFaceCount();
+  shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+  const ordinal_type numEdges = cellTopo.getEdgeCount();
+  const ordinal_type numFaces = cellTopo.getFaceCount();
 
-  shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
-  shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+  shards::CellTopology edgeTopo(shards::getCellTopologyData<shards::Line<2> >() );
+  shards::CellTopology faceTopo(shards::getCellTopologyData<shards::Triangle<3> >() );
 
-  const int numVertexes = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const int numVertexes = PointTools::getLatticeSize( cellTopo ,
       1 ,
       0 );
 
-  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTopo ,
       order ,
       1 );
 
-  const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+  const int numPtsPerFace = PointTools::getLatticeSize( faceTopo ,
       order ,
       1 );
 
-  const int numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const int numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order ,
       1 );
 
@@ -285,17 +253,17 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
 
   PointTools::getLattice( vertexes,
-      this->basisCellTopology_ ,
+      cellTopo ,
       1, 0,
       this->pointType_ );
 
   PointTools::getLattice( linePts,
-      edgeTop,
+      edgeTopo,
       order, offset,
       this->pointType_ );
 
   PointTools::getLattice( triPts,
-      faceTop,
+      faceTopo,
       order, offset,
       this->pointType_ );
 
@@ -320,7 +288,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
         linePts ,
         1 ,
         i ,
-        this->basisCellTopology_ );
+        cellTopo );
 
 
     // loop over points (rows of V2)
@@ -348,7 +316,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
           triPts ,
           2 ,
           i ,
-          this->basisCellTopology_ );
+          cellTopo );
       for (ordinal_type j=0;j<numPtsPerFace;j++) {
 
         const ordinal_type i_card = numVertexes+numEdges*numPtsPerEdge+numPtsPerFace*i+j;
@@ -371,7 +339,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     cellPoints( "Hcurl::Tet::In::cellPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( cellPoints ,
-        this->basisCellTopology_ ,
+        cellTopo ,
         order,
         1 ,
         this->pointType_ );

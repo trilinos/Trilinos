@@ -198,9 +198,9 @@ file. Then, the first file will be reopened and steps 0.7, 0.8, and
 
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------
-MEMORY_READ        | on/[off]   | experimental
-MEMORY_WRITE       | on/[off]   | experimental
-ENABLE_FILE_GROUPS | on/[off]   | experimental
+MEMORY_READ        | on/[off]   | experimental. Read a file into memory at open time, operate on it without disk accesses.
+MEMORY_WRITE       | on/[off]   | experimental. Open and read a file into memory or create and optionally write it back out to disk when nc_close() is called.
+ENABLE_FILE_GROUPS | on/[off]   | experimental.  Opens database in netcdf-4 non-classic mode which is what is required to support groups at netCDF level.
 MINIMAL_NEMESIS_INFO | on/[off] | special case, omit all nemesis data except for nodal communication map
 OMIT_EXODUS_NUM_MAPS | on/[off] | special case, do not output the node and element numbering map.
 EXODUS_CALL_GET_ALL_TIMES| [on] / off | special case -- should the `ex_get_all_times()` function be called.  See below.

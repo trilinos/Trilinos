@@ -99,8 +99,14 @@ namespace Ioex {
     IOSS_NODISCARD bool ok_nl(bool write_message = false, std::string *error_message = nullptr,
                               int *bad_count = nullptr) const override;
 
+    void release_memory_nl() override;
+
+    int  num_child_group_nl() override;
+    bool open_child_group_nl(int index) override;
+    bool open_root_group_nl() override;
     bool open_group_nl(const std::string &group_name) override;
     bool create_subgroup_nl(const std::string &group_name) override;
+    Ioss::NameList groups_describe_nl(bool return_full_names) override;
 
     bool begin_nl(Ioss::State state) override;
     bool end_nl(Ioss::State state) override;
@@ -125,8 +131,8 @@ namespace Ioex {
                             Ioss::Map &entity_map, void *ids, size_t num_to_get,
                             size_t offset) const;
 
-    void compute_block_membership_nl(Ioss::SideBlock          *efblock,
-                                     std::vector<std::string> &block_membership) const override;
+    void compute_block_membership_nl(Ioss::SideBlock *efblock,
+                                     Ioss::NameList  &block_membership) const override;
 
     IOSS_NODISCARD int int_byte_size_db() const override;
     void               set_int_byte_size_api(Ioss::DataSize size) const override;
@@ -238,8 +244,9 @@ namespace Ioex {
     void add_attribute_fields(Ioss::GroupingEntity *block, int attribute_count,
                               const std::string &type);
 
-    void common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior);
-    void output_other_meta_data();
+    void common_write_metadata(Ioss::IfDatabaseExistsBehavior behavior);
+    void output_other_metadata();
+    void output_field_metadata();
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
                                         int64_t position, int64_t block_count,
@@ -248,6 +255,9 @@ namespace Ioex {
     int64_t add_results_fields(Ioss::GroupingEntity *entity, int64_t position = 0);
     int64_t add_reduction_results_fields(Ioss::GroupingEntity *entity);
     void    add_mesh_reduction_fields(int64_t id, Ioss::GroupingEntity *entity);
+    std::vector<Ioss::Field> get_fields_via_field_metadata(Ioss::GroupingEntity *entity,
+                                                           ex_entity_type        type,
+                                                           Ioss::NameList       &names);
 
     void add_region_fields();
     void store_reduction_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
@@ -316,6 +326,7 @@ namespace Ioex {
 
     time_t timeLastFlush{0};
     int    flushInterval{-1};
+    int    m_timestepCount{0};
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};

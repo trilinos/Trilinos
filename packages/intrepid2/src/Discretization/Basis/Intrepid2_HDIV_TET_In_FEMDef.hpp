@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HDIV_TET_In_FEMDef.hpp
@@ -190,12 +157,12 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     const EPointType   pointType ) {
 
   constexpr ordinal_type spaceDim = 3;
-  this->basisCardinality_  = CardinalityHDivTet(order);
-  this->basisDegree_       = order; // small n
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  this->basisType_         = BASIS_FEM_LAGRANGIAN;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HDIV;
+  this->basisCardinality_     = CardinalityHDivTet(order);
+  this->basisDegree_          = order; // small n
+  this->basisCellTopologyKey_ = shards::Tetrahedron<4>::key;
+  this->basisType_            = BASIS_FEM_LAGRANGIAN;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HDIV;
   pointType_ = pointType;
 
   const ordinal_type card = this->basisCardinality_;
@@ -282,11 +249,12 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V2("Hdiv::Tet::In::V2", card ,cardVecPn);
 
-  const ordinal_type numFaces = this->basisCellTopology_.getFaceCount();
+  const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4>>());
+  const ordinal_type numFaces = cellTopo.getFaceCount();
 
-  shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+  shards::CellTopology faceTopo(shards::getCellTopologyData<shards::Triangle<3> >() );
 
-  const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+  const int numPtsPerFace = PointTools::getLatticeSize( faceTopo ,
       order+2 ,
       1 );
 
@@ -296,7 +264,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   // construct lattice
   const ordinal_type offset = 1;
   PointTools::getLattice( triPts,
-      faceTop,
+      faceTopo,
       order+2,
       offset,
       pointType );
@@ -312,13 +280,13 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     // these are normal scaled by the appropriate face areas.
     CellTools<Kokkos::HostSpace>::getReferenceSideNormal( faceNormal ,
         face ,
-        this->basisCellTopology_ );
+        cellTopo );
 
     CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( facePts ,
         triPts ,
         2 ,
         face ,
-        this->basisCellTopology_ );
+        cellTopo );
 
     // get phi values at face points
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
@@ -357,7 +325,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   // points of a lattice of degree+2
   // This way, RT0 --> degree = 1 and internal lattice has no points
   // RT1 --> degree = 2, and internal lattice has one point (inside of quartic)
-  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order + 2 ,
       1 );
 
@@ -365,7 +333,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     internalPoints( "Hdiv::Tet::In::internalPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( internalPoints ,
-        this->basisCellTopology_ ,
+        cellTopo ,
         order + 2 ,
         1 ,
         pointType );

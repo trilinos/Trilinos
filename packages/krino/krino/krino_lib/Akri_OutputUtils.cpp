@@ -35,7 +35,16 @@ void output_mesh_with_fields_and_properties(const stk::mesh::BulkData & mesh, co
   stk::mesh::BulkData & workAroundNonConstMesh = const_cast<stk::mesh::BulkData &>(mesh);
   stkIo.set_bulk_data(workAroundNonConstMesh);
 
-  size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose, properties);
+  const size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose, properties);
+
+  const int filterDisconnectedNodes = true;
+  if (filterDisconnectedNodes)
+  {
+    // Will filter out nodes that are themselves selected, but without any attached elements that are selected.
+    // For example, if selector is BLOCK_1 | NODESET_1, a node will not be output if it is in NODESET_1 and not BLOCK_1.
+    std::shared_ptr<Ioss::Region> ioRegion = stkIo.get_output_ioss_region(outputFileIndex);
+    ioRegion->property_add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, filterDisconnectedNodes));
+  }
 
   if (step > 0)
   {
@@ -64,14 +73,12 @@ void output_composed_mesh_with_fields(const stk::mesh::BulkData & mesh, const st
 {
   Ioss::PropertyManager properties;
   properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
-  properties.add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, true));
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
 void output_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
 {
   Ioss::PropertyManager properties;
-  properties.add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, true));
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
@@ -109,6 +116,9 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
   Ioss::PropertyManager properties;
   properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
   const std::string fileName = create_file_name(fileBaseName, fileIndex);
+  properties.add(Ioss::Property("base_filename", create_file_name(fileBaseName, 0)));
+  if (fileIndex > 0)
+    properties.add(Ioss::Property("state_offset", fileIndex));
   Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", create_file_name(fileBaseName, fileIndex), Ioss::WRITE_RESULTS, comm, properties);
   STK_ThrowRequireMsg(db != nullptr && db->ok(), "ERROR: Could not open output database '" << fileName << "' of type 'exodus'\n");
   Ioss::Region io(db, "FacetRegion");
@@ -128,13 +138,6 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
   const std::string description = "level set interface facets";
   io.property_add(Ioss::Property("title", description));
   io.begin_mode(Ioss::STATE_DEFINE_MODEL);
-
-//  // if we have no elements bail now
-//  if ( numFacets > 0)
-//  {
-//    io.end_mode(Ioss::STATE_DEFINE_MODEL);
-//    return;
-//  }
 
   Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", numNodes, nodesPerFacet);
   io.add(nb);
@@ -202,6 +205,16 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
   }
 
   io.end_mode(Ioss::STATE_MODEL);
+
+  // write fake transient
+  io.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+  io.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+
+  io.begin_mode(Ioss::STATE_TRANSIENT);
+  const int currentOutputStep = io.add_state(1.0*fileIndex);
+  io.begin_state(currentOutputStep);
+  io.end_state(currentOutputStep);
+  io.end_mode(Ioss::STATE_TRANSIENT);
 }
 
 stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector)

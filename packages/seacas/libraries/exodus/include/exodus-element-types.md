@@ -78,7 +78,7 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       | 64  |  X   |    X  |           |    |
 
 Only the base topology name is required for the element type. For example, all
-elements of a `hex` toplogy can be referred to by the name `hex` no
+elements of a `hex` topology can be referred to by the name `hex` no
 matter how many nodes there are.  However, it is also correct to
 append the node count to the topology type for the element name.  For
 example, a 20-node hex could be named `hex20`.

@@ -465,55 +465,44 @@ EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh,
 
 stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         EntityRank subcell_rank,
-        unsigned subcell_identifier,
+        unsigned subcell_ordinal,
         EntityVector & subcell_nodes)
 {
     STK_ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
 
     subcell_nodes.clear();
 
-    // get cell topology
     stk::topology celltopology = mesh.bucket(entity).topology();
 
     //error checking
     {
-//no celltopology defined
+        //no celltopology defined
         if(celltopology == stk::topology::INVALID_TOPOLOGY)
         {
             return celltopology;
         }
 
-// valid ranks fall within the dimension of the cell topology
+        // valid ranks fall within the dimension of the cell topology
         const bool bad_rank = static_cast<unsigned>(subcell_rank) >= celltopology.dimension();
         STK_ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
 
-// subcell_identifier must be less than the subcell count
-        bool bad_id = subcell_identifier >= celltopology.num_sub_topology(subcell_rank);
+        // subcell_ordinal must be less than the subcell count
+        bool bad_id = subcell_ordinal >= celltopology.num_sub_topology(subcell_rank);
 
         // FIXME SHELL_SIDE_TOPO
         if (celltopology.is_shell_with_face_sides() && subcell_rank == stk::topology::FACE_RANK) {
-          bad_id = (subcell_identifier >= celltopology.num_sides());
+          bad_id = (subcell_ordinal >= celltopology.num_sides());
         }
         STK_ThrowInvalidArgMsgIf( bad_id, "subcell_id is >= subcell_count\n");
     }
 
-    // Get the cell topology of the subcell
     stk::topology subcell_topology =
-            celltopology.sub_topology(subcell_rank, subcell_identifier);
+            celltopology.sub_topology(subcell_rank, subcell_ordinal);
 
-    const int num_nodes_in_subcell = subcell_topology.num_nodes();
-
-    // For the subcell, get it's local nodes ids
-    std::vector<unsigned> subcell_node_local_ids(num_nodes_in_subcell);
-    celltopology.sub_topology_node_ordinals(subcell_rank, subcell_identifier, subcell_node_local_ids.data());
+    subcell_nodes.resize(subcell_topology.num_nodes());
 
     Entity const *node_relations = mesh.begin_nodes(entity);
-    subcell_nodes.reserve(num_nodes_in_subcell);
-
-    for(int i = 0; i < num_nodes_in_subcell; ++i)
-    {
-        subcell_nodes.push_back(node_relations[subcell_node_local_ids[i]]);
-    }
+    celltopology.sub_topology_nodes(node_relations, subcell_rank, subcell_ordinal, subcell_nodes.data());
 
     return subcell_topology;
 }
@@ -539,6 +528,32 @@ int get_entity_subcell_id(const BulkData& mesh,
     }
 
     return INVALID_SIDE;
+}
+
+void get_parts_with_topology(stk::topology topology,
+                             stk::mesh::BulkData& mesh,
+                             stk::mesh::PartVector& parts,
+                             bool skip_topology_root_parts)
+{
+  parts.clear();
+
+  const stk::mesh::MetaData & fem_meta = mesh.mesh_meta_data();
+
+  const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
+
+  stk::mesh::PartVector::const_iterator
+    iter = all_parts.begin(),
+    iter_end = all_parts.end();
+
+  for(; iter!=iter_end; ++iter) {
+    stk::mesh::Part* part =  *iter;
+    if (fem_meta.get_topology(*part) == topology) {
+      if (skip_topology_root_parts && stk::mesh::is_topology_root_part(*part)) {
+        continue;
+      }
+      parts.push_back(part);
+    }
+  }
 }
 
 stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank)

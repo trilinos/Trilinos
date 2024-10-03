@@ -1,0 +1,156 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - hdf5@1.14.3~shared
+  - zlib
+  - openmpi@4.1.6
+  - kokkos~shared
+  - trilinos@develop~boost+exodus+kokkos~shared+stk+test+gtest
+  view: true
+  concretizer:
+    unify: true
+  config:
+      install_tree:
+        root: SED_REPLACE_INSTALL_PATH
+  compilers:
+  - compiler:
+      spec: gcc@=10.3.0
+      paths:
+        cc: /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/bin/gcc
+        cxx: /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/bin/g++
+        f77: /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/bin/gfortran
+        fc: /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/bin/gfortran
+      flags: {}
+      operating_system: rhel8
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  - compiler:
+      spec: gcc@=8.5.0
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      flags: {}
+      operating_system: rhel8
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  develop:
+    trilinos:
+      path: SED_REPLACE_TRILINOS_PATH
+      spec: trilinos@=develop
+  packages:
+    binutils:
+      externals:
+      - spec: binutils@2.41
+        prefix: /projects/aue/cee/builds/x86_64/rhel8/3aa2f152/tooling-24.08/install/linux-rhel8-x86_64/gcc-10.3.0/binutils-2.41-uxjiarj
+      - spec: binutils@2.30.123
+        prefix: /usr
+    coreutils:
+      externals:
+      - spec: coreutils@8.30
+        prefix: /usr
+    diffutils:
+      externals:
+      - spec: diffutils@3.6
+        prefix: /usr
+    findutils:
+      externals:
+      - spec: findutils@4.6.0
+        prefix: /usr
+    gawk:
+      externals:
+      - spec: gawk@4.2.1
+        prefix: /usr
+    openssh:
+      externals:
+      - spec: openssh@8.0p1
+        prefix: /usr
+    openssl:
+      externals:
+      - spec: openssl@1.1.1k
+        prefix: /usr
+    tar:
+      externals:
+      - spec: tar@1.30
+        prefix: /usr
+    autoconf:
+      externals:
+      - spec: autoconf@2.69
+        prefix: /usr
+    automake:
+      externals:
+      - spec: automake@1.16.1
+        prefix: /usr
+    bison:
+      externals:
+      - spec: bison@3.0.4
+        prefix: /usr
+    cmake:
+      externals:
+      - spec: cmake@3.26.5
+        prefix: /usr
+    curl:
+      externals:
+      - spec: curl@7.61.1+gssapi+ldap+nghttp2
+        prefix: /usr
+    cvs:
+      externals:
+      - spec: cvs@1.11.23
+        prefix: /usr
+    doxygen:
+      externals:
+      - spec: doxygen@1.8.14+graphviz~mscgen
+        prefix: /usr
+    flex:
+      externals:
+      - spec: flex@2.6.1+lex
+        prefix: /usr
+    git:
+      externals:
+      - spec: git@2.42.0+tcltk
+        prefix: /projects/aue/cee/builds/x86_64/rhel8/33ebcb7e/tooling-sprint-24.02/install/linux-rhel8-x86_64/gcc-10.3.0/git-2.42.0-zueya4d
+      - spec: git@2.39.3~tcltk
+        prefix: /usr
+    gmake:
+      externals:
+      - spec: gmake@4.2.1
+        prefix: /usr
+    groff:
+      externals:
+      - spec: groff@1.22.3
+        prefix: /usr
+    m4:
+      externals:
+      - spec: m4@1.4.18
+        prefix: /usr
+    pkgconf:
+      externals:
+      - spec: pkgconf@1.4.2
+        prefix: /usr
+    subversion:
+      externals:
+      - spec: subversion@1.10.2
+        prefix: /usr
+    swig:
+      externals:
+      - spec: swig@3.0.12
+        prefix: /usr
+    texinfo:
+      externals:
+      - spec: texinfo@6.5
+        prefix: /usr
+    openmpi:
+      buildable: false
+      externals:
+      - spec: openmpi@4.1.6
+        modules:
+        - aue/openmpi/4.1.6-gcc-10.3.0

@@ -949,7 +949,7 @@
 #if !STK_PERCEPT_LITE
       static
       void findMinMaxEdgeLength(stk::mesh::BulkData& bulk, const stk::mesh::Bucket &bucket,  stk::mesh::FieldBase& coord_field,
-                                Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
+                                MDArray& elem_min_edge_length, MDArray& elem_max_edge_length);
 #endif
 
       void element_side_nodes( const stk::mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity>& side_node_entities );
@@ -1169,9 +1169,8 @@ private:
       bool m_avoid_add_all_mesh_fields_as_input_fields;
     public:
       bool m_markNone;
-    private:
-      bool m_useSimpleFields;
 
+    private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
       void checkState(const std::string& function) {

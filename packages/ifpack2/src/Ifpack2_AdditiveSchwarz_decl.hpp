@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_AdditiveSchwarz_decl.hpp
 /// \brief Declaration of Ifpack2::AdditiveSchwarz, which implements
@@ -856,6 +823,18 @@ private:
   mutable std::unique_ptr<MV> overlapping_B_;
   //! Cached local (possibly) overlapping output (multi)vector.
   mutable std::unique_ptr<MV> overlapping_Y_;
+  //! Cached local (possibly) reordered input (multi)vector.
+  mutable std::unique_ptr<MV> reduced_reordered_B_;
+  //! Cached local (possibly) reordered output (multi)vector.
+  mutable std::unique_ptr<MV> reduced_reordered_Y_;
+  //! Cached local (possibly) reduced input (multi)vector.
+  mutable std::unique_ptr<MV> reduced_B_;
+  //! Cached local (possibly) reduced output (multi)vector.
+  mutable std::unique_ptr<MV> reduced_Y_;
+  //! Cached local (possibly) reordered input (multi)vector.
+  mutable std::unique_ptr<MV> reordered_B_;
+  //! Cached local (possibly) reduced output (multi)vector.
+  mutable std::unique_ptr<MV> reordered_Y_;
   //! Cached local (possibly) vector that indicates how many copies of a dof exist due to overlap
   mutable std::unique_ptr<MV> num_overlap_copies_;
   //! Cached residual (multi)vector.

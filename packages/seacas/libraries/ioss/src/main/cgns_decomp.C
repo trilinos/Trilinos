@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -316,7 +316,7 @@ namespace {
       }
     }
 
-    // In Iocgns::Utils::common_write_meta_data, there is code to make
+    // In Iocgns::Utils::common_write_metadata, there is code to make
     // sure that the zgc.m_connectionName  is unique for all zgc instances on
     // a zone / processor pair (if !parallel_io which is file-per-processor)
     // The uniquification appends a letter from 'A' to 'Z' to the name
@@ -633,13 +633,13 @@ namespace {
           int star_cnt =
               (double)(proc_work[i] - min_work) / (max_work - min_work) * delta + min_star;
           std::string stars(star_cnt, '*');
-          std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
+          const std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
           if (proc_work[i] == max_work) {
             fmt::print(
 #if !defined __NVCC__
                 fg(fmt::color::red),
 #endif
-                format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                 proc_work[i] / avg_work, stars);
           }
           else if (proc_work[i] == min_work) {
@@ -647,11 +647,11 @@ namespace {
 #if !defined __NVCC__
                 fg(fmt::color::green),
 #endif
-                format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                 proc_work[i] / avg_work, stars);
           }
           else {
-            fmt::print(format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+            fmt::print(fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                        proc_work[i] / avg_work, stars);
           }
           if (verbose) {

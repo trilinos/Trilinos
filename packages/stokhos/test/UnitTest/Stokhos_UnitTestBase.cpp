@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                           Stokhos Package
+//
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Kokkos_Core.hpp"
 #include "Teuchos_UnitTestRepository.hpp"

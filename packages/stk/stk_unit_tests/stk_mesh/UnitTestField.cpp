@@ -344,7 +344,6 @@ TEST(UnitTestField, writeFieldsWithSameName)
   // Create the mesh with fields with the same name
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:4x4x16";
     size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -406,7 +405,6 @@ TEST(UnitTestField, writeFieldsWithSameName)
   // Verify that we can read the mesh back into memory correctly
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     size_t index = stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
@@ -453,7 +451,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
     EXPECT_TRUE( &nodeField == myFieldBase);
   }
 
-  stk::unit_test_util::simple_fields::delete_mesh(mesh_name);
+  stk::unit_test_util::delete_mesh(mesh_name);
 }
 
 //////////////////////
@@ -606,7 +604,7 @@ void verify_fields_are_on_entities(const std::string& filename, stk::mesh::Entit
   }
 }
 
-class FieldFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class FieldFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
   void test_solution_case_with_rank(stk::mesh::EntityRank rank)
@@ -620,7 +618,6 @@ protected:
     stk::io::fill_mesh("generated:1x1x2", get_bulk());
 
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
 
     stk::mesh::EntityVector locallyOwnedEntities;
@@ -633,7 +630,7 @@ protected:
       std::string filename = "junk-" + solnCases.get_solution_case_names()[solnIndex] + ".g";
       EXPECT_NO_THROW(write_mesh_with_fields(stkIo, filename, rank, solnCases.get_fields_for_case(solnIndex)));
       verify_fields_are_on_entities(filename, rank, solnCases.get_fields_for_case(solnIndex), locallyOwnedEntities.size());
-      stk::unit_test_util::simple_fields::delete_mesh(filename);
+      stk::unit_test_util::delete_mesh(filename);
     }
 
     verify_acceleration_is_not_on_entities(get_bulk(), rank);
@@ -654,7 +651,7 @@ TEST_F(FieldFixture, totalNgpFieldDataBytes)
   stk::mesh::put_field_on_mesh(field, partB, 5, vectorInitValue);
 
   const int numElemsPerDim = 10;
-  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), get_bulk());
+  stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), get_bulk());
   const int totalNumElements = numElemsPerDim * numElemsPerDim * numElemsPerDim;
 
   stk::mesh::EntityVector elements;
@@ -704,7 +701,7 @@ TEST_F(FieldFixture, fenceWithoutNgpField)
   EXPECT_NO_THROW(field.fence());
 }
 
-class LateFieldFixtureNoTest : public stk::unit_test_util::simple_fields::MeshFixtureNoTest
+class LateFieldFixtureNoTest : public stk::unit_test_util::MeshFixtureNoTest
 {
 protected:
   LateFieldFixtureNoTest() {}
@@ -1427,7 +1424,7 @@ TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
       std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF);
       stk::mesh::BulkData& bulk = *bulkPtr;
 
-      stk::unit_test_util::simple_fields::create_AB_mesh_with_sideset_and_distribution_factors(bulk,
+      stk::unit_test_util::create_AB_mesh_with_sideset_and_distribution_factors(bulk,
                                                                                                stk::unit_test_util::LEFT,
                                                                                                stk::unit_test_util::DECREASING,
                                                                                                fieldName,
@@ -1877,7 +1874,6 @@ public:
     builder.set_field_data_manager(std::move(fieldDataManager));
     m_bulk = builder.create();
     m_meta = &m_bulk->mesh_meta_data();
-    m_meta->use_simple_fields();
   }
 
   int expected_bytes_allocated_host(const stk::mesh::BucketVector & buckets, int dataSize)

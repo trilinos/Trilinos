@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -108,7 +108,7 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
   }
 
   /* put output file into define mode */
-  EXCHECK(nc_redef(out_exoid));
+  EXCHECK(exi_redef(out_exoid, __func__));
 
   /* copy global attributes */
   EXCHECK(cpy_global_att(in_exoid, out_exoid));

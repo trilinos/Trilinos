@@ -49,6 +49,15 @@ struct DeletedElementInfo
     stk::mesh::Entity entity;
     stk::mesh::EntityId identifier;
     bool isShell;
+
+    bool operator<(const DeletedElementInfo& rhs) const
+    {
+      return identifier < rhs.identifier;
+    }
+    bool operator==(const DeletedElementInfo& rhs) const
+    {
+      return identifier == rhs.identifier;
+    }
 };
 
 typedef std::vector<DeletedElementInfo> DeletedElementInfoVector;

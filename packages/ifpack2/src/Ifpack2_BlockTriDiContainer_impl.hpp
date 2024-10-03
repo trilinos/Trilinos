@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_BLOCKTRIDICONTAINER_IMPL_HPP
 #define IFPACK2_BLOCKTRIDICONTAINER_IMPL_HPP
@@ -193,15 +160,24 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     typename Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type>
-    createBlockCrsTpetraImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::CreateBlockCrsTpetraImporter");
+    createBlockCrsTpetraImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::CreateBlockCrsTpetraImporter", CreateBlockCrsTpetraImporter);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using tpetra_mv_type = typename impl_type::tpetra_block_multivector_type;
       using tpetra_import_type = typename impl_type::tpetra_import_type;
+      using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
+      using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
-      const auto g = A->getCrsGraph();  // tpetra crs graph object
-      const auto blocksize = A->getBlockSize();
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
+
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+      // This is OK here to use the graph of the A_crs matrix and a block size of 1
+      const auto g = hasBlockCrsMatrix ? A_bcrs->getCrsGraph() : *(A_crs->getCrsGraph()); // tpetra crs graph object
+
+      const auto blocksize = hasBlockCrsMatrix ? A_bcrs->getBlockSize() : 1;
       const auto src = Teuchos::rcp(new tpetra_map_type(tpetra_mv_type::makePointMap(*g.getDomainMap(), blocksize)));
       const auto tgt = Teuchos::rcp(new tpetra_map_type(tpetra_mv_type::makePointMap(*g.getColMap()   , blocksize)));
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -547,7 +523,7 @@ namespace Ifpack2 {
       }
 
       void asyncSendRecvVar1(const impl_scalar_type_2d_view_tpetra &mv) {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv", AsyncSendRecv);
 
 #ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
@@ -636,7 +612,7 @@ namespace Ifpack2 {
       }
 
       void syncRecvVar1() {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv", SyncRecv);
 #ifdef HAVE_IFPACK2_MPI
         // 0. wait for receive async.
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.recv.extent(0));++i) {
@@ -743,7 +719,7 @@ namespace Ifpack2 {
       /// standard comm
       ///
       void asyncSendRecvVar0(const impl_scalar_type_2d_view_tpetra &mv) {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv", AsyncSendRecv);
 
 #ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
@@ -814,7 +790,7 @@ namespace Ifpack2 {
       }
 
       void syncRecvVar0() {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncRecv", SyncRecv);
 #ifdef HAVE_IFPACK2_MPI
         // receive async.
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
@@ -869,7 +845,7 @@ namespace Ifpack2 {
       }
 
       void syncExchange(const impl_scalar_type_2d_view_tpetra &mv) {
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncExchange");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::AsyncableImport::SyncExchange", SyncExchange);
         asyncSendRecv(mv);
         syncRecv();
         IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
@@ -878,52 +854,110 @@ namespace Ifpack2 {
       impl_scalar_type_2d_view_tpetra getRemoteMultiVectorLocalView() const { return remote_multivector; }
     };
 
+    template <typename ViewType1, typename ViewType2>
+    struct are_same_struct {
+      ViewType1 keys1;
+      ViewType2 keys2;
+
+      are_same_struct(ViewType1 keys1_, ViewType2 keys2_) : keys1(keys1_), keys2(keys2_) {}
+      KOKKOS_INLINE_FUNCTION
+      void operator()(int i, unsigned int& count) const {
+        if (keys1(i) != keys2(i)) count++;
+      }
+    };
+
+    template <typename ViewType1, typename ViewType2>
+    bool are_same (ViewType1 keys1, ViewType2 keys2) {
+      unsigned int are_same_ = 0;
+
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<typename ViewType1::execution_space>(0, keys1.extent(0)),
+                              are_same_struct(keys1, keys2),
+                              are_same_);
+      return are_same_==0;
+    }
+
     ///
     /// setup async importer
     ///
     template<typename MatrixType>
     Teuchos::RCP<AsyncableImport<MatrixType> >
-    createBlockCrsAsyncImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
+    createBlockCrsAsyncImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
+      IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter", createBlockCrsAsyncImporter);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using global_ordinal_type = typename impl_type::global_ordinal_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
+      using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
+      using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+      using global_indices_array_device_type = Kokkos::View<const global_ordinal_type*, typename tpetra_map_type::device_type>;
 
-      const auto g = A->getCrsGraph();  // tpetra crs graph object
-      const auto blocksize = A->getBlockSize();
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
+
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+      // This is OK here to use the graph of the A_crs matrix and a block size of 1
+      const auto g = hasBlockCrsMatrix ? A_bcrs->getCrsGraph() : *(A_crs->getCrsGraph()); // tpetra crs graph object
+
+      const auto blocksize = hasBlockCrsMatrix ? A_bcrs->getBlockSize() : 1;
       const auto domain_map = g.getDomainMap();
       const auto column_map = g.getColMap();
 
       std::vector<global_ordinal_type> gids;
+
+      Kokkos::Subview<global_indices_array_device_type, std::pair<int,int>> column_map_global_iD_last;
+
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
-      for (size_t i=0;i<column_map->getLocalNumElements();++i) {
-        const global_ordinal_type gid = column_map->getGlobalElement(i);
-        if (!domain_map->isNodeGlobalElement(gid)) {
-          found_first = true;
-          gids.push_back(gid);
-        } else if (found_first) {
-          separate_remotes = false;
-          break;
+      {
+        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::loop_over_local_elements", loop_over_local_elements);
+
+        global_indices_array_device_type column_map_global_iD = column_map->getMyGlobalIndicesDevice();
+        global_indices_array_device_type domain_map_global_iD = domain_map->getMyGlobalIndicesDevice();
+        
+        if(are_same(domain_map_global_iD, column_map_global_iD)) {
+          // this should be the most likely path
+          separate_remotes = true;
+          need_owned_permutation = false;
+
+          column_map_global_iD_last = Kokkos::subview(column_map_global_iD, 
+            std::pair<int,int>(domain_map_global_iD.extent(0), column_map_global_iD.extent(0)));
         }
-        if (!need_owned_permutation &&
-            domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
-          // The owned part of the domain and column maps are different
-          // orderings. We *could* do a super efficient impl of this case in the
-          // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
-          // really, if a caller cares about speed, they wouldn't make different
-          // local permutations like this. So we punt on the best impl and go for
-          // a pretty good one: the permutation is done in place in
-          // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
-          // is the presumably worse memory access pattern of the input vector.
-          need_owned_permutation = true;
+        else {
+          // This loop is relatively expensive
+          for (size_t i=0;i<column_map->getLocalNumElements();++i) {
+            const global_ordinal_type gid = column_map->getGlobalElement(i);
+            if (!domain_map->isNodeGlobalElement(gid)) {
+              found_first = true;
+              gids.push_back(gid);
+            } else if (found_first) {
+              separate_remotes = false;
+              break;
+            }
+            if (!found_first && !need_owned_permutation &&
+                domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
+              // The owned part of the domain and column maps are different
+              // orderings. We *could* do a super efficient impl of this case in the
+              // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
+              // really, if a caller cares about speed, they wouldn't make different
+              // local permutations like this. So we punt on the best impl and go for
+              // a pretty good one: the permutation is done in place in
+              // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
+              // is the presumably worse memory access pattern of the input vector.
+              need_owned_permutation = true;
+            }
+          }
         }
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       }
 
       if (separate_remotes) {
+        IFPACK2_BLOCKHELPER_TIMER("createBlockCrsAsyncImporter::separate_remotes", separate_remotes);
         const auto invalid = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
         const auto parsimonious_col_map
-          = Teuchos::rcp(new tpetra_map_type(invalid, gids.data(), gids.size(), 0, domain_map->getComm()));
+          = need_owned_permutation ? 
+            Teuchos::rcp(new tpetra_map_type(invalid, gids.data(), gids.size(), 0, domain_map->getComm())):
+            Teuchos::rcp(new tpetra_map_type(invalid, column_map_global_iD_last, 0, domain_map->getComm()));
         if (parsimonious_col_map->getGlobalNumElements() > 0) {
           // make the importer only if needed.
           local_ordinal_type_1d_view dm2cm;
@@ -934,9 +968,11 @@ namespace Ifpack2 {
               dm2cm_host(i) = domain_map->getLocalElement(column_map->getGlobalElement(i));
             Kokkos::deep_copy(dm2cm, dm2cm_host);
           }
+          IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
           return Teuchos::rcp(new AsyncableImport<MatrixType>(domain_map, parsimonious_col_map, blocksize, dm2cm));
         }
       }
+      IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       return Teuchos::null;
     }
 
@@ -1004,17 +1040,21 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     BlockHelperDetails::PartInterface<MatrixType>
-    createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+    createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                        const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                         const Teuchos::Array<Teuchos::Array<typename BlockHelperDetails::ImplType<MatrixType>::local_ordinal_type> > &partitions,
                         const typename BlockHelperDetails::ImplType<MatrixType>::local_ordinal_type n_subparts_per_part_in) {
-      IFPACK2_BLOCKHELPER_TIMER("createPartInterface");
+      IFPACK2_BLOCKHELPER_TIMER("createPartInterface", createPartInterface);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using local_ordinal_type_2d_view = typename impl_type::local_ordinal_type_2d_view;
       using size_type = typename impl_type::size_type;
 
-      const auto blocksize = A->getBlockSize();
+      auto bA = Teuchos::rcp_dynamic_cast<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type>(A);
+
+      TEUCHOS_ASSERT(!bA.is_null() || G->getLocalNumRows() != 0);
+      const local_ordinal_type blocksize = bA.is_null() ? A->getLocalNumRows() / G->getLocalNumRows() : A->getBlockSize();
       constexpr int vector_length = impl_type::vector_length;
       constexpr int internal_vector_length = impl_type::internal_vector_length;
 
@@ -1023,7 +1063,7 @@ namespace Ifpack2 {
       BlockHelperDetails::PartInterface<MatrixType> interf;
 
       const bool jacobi = partitions.size() == 0;
-      const local_ordinal_type A_n_lclrows = A->getLocalNumRows();
+      const local_ordinal_type A_n_lclrows = G->getLocalNumRows();
       const local_ordinal_type nparts = jacobi ? A_n_lclrows : partitions.size();
 
       typedef std::pair<local_ordinal_type,local_ordinal_type> size_idx_pair_type;
@@ -1050,11 +1090,13 @@ namespace Ifpack2 {
           SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
           recommended_team_size(blocksize, vector_length, internal_vector_length);
 
-        const local_ordinal_type num_teams = execution_space().concurrency() / (team_size * vector_length);
+        const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
 
         n_subparts_per_part = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
 
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
+#endif
       }
       else {
         n_subparts_per_part = n_subparts_per_part_in;
@@ -1137,7 +1179,7 @@ namespace Ifpack2 {
       local_ordinal_type pack_nrows = 0;
       local_ordinal_type pack_nrows_sub = 0;
       if (jacobi) {
-        IFPACK2_BLOCKHELPER_TIMER("compute part indices (Jacobi)");
+        IFPACK2_BLOCKHELPER_TIMER("compute part indices (Jacobi)", Jacobi);
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
           constexpr local_ordinal_type ipnrows = 1;
           //assume No overlap.
@@ -1279,7 +1321,7 @@ namespace Ifpack2 {
         }        
         IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       } else {
-        IFPACK2_BLOCKHELPER_TIMER("compute part indices");
+        IFPACK2_BLOCKHELPER_TIMER("compute part indices", indices);
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
           const auto* part = &partitions[p[ip]];
           const local_ordinal_type ipnrows = part->size();
@@ -1442,7 +1484,7 @@ namespace Ifpack2 {
       Kokkos::deep_copy(interf.rowidx2part, rowidx2part);
 
       { // Fill packptr.
-        IFPACK2_BLOCKHELPER_TIMER("Fill packptr");
+        IFPACK2_BLOCKHELPER_TIMER("Fill packptr", packptr0);
         local_ordinal_type npacks = ceil(float(nparts)/vector_length) * (part2packrowidx0_sub.extent(1)-1);
         npacks = 0;
         for (local_ordinal_type ip=1;ip<=nparts;++ip) //n_sub_parts_and_schur
@@ -1576,7 +1618,7 @@ namespace Ifpack2 {
     template<typename MatrixType>
     BlockTridiags<MatrixType>
     createBlockTridiags(const BlockHelperDetails::PartInterface<MatrixType> &interf) {
-      IFPACK2_BLOCKHELPER_TIMER("createBlockTridiags");
+      IFPACK2_BLOCKHELPER_TIMER("createBlockTridiags", createBlockTridiags0);
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using execution_space = typename impl_type::execution_space;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
@@ -1817,12 +1859,13 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     void
-    performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+    performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                         const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &g,
                          const BlockHelperDetails::PartInterface<MatrixType> &interf,
                          BlockTridiags<MatrixType> &btdm,
                          BlockHelperDetails::AmD<MatrixType> &amd,
                          const bool overlap_communication_and_computation) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SymbolicPhase");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SymbolicPhase", SymbolicPhase);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
 
@@ -1836,15 +1879,19 @@ namespace Ifpack2 {
       using size_type_1d_view = typename impl_type::size_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using vector_type_4d_view = typename impl_type::vector_type_4d_view;
+      using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
       using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
       constexpr int vector_length = impl_type::vector_length;
 
       const auto comm = A->getRowMap()->getComm();
 
-      const auto& g = A->getCrsGraph();
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
 
-      const auto blocksize = A->getBlockSize();
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+      TEUCHOS_ASSERT(hasBlockCrsMatrix || g->getLocalNumRows() != 0);
+      const local_ordinal_type blocksize = hasBlockCrsMatrix ? A->getBlockSize() : A->getLocalNumRows()/g->getLocalNumRows();
 
       // mirroring to host
       const auto partptr = Kokkos::create_mirror_view_and_copy     (Kokkos::HostSpace(), interf.partptr);
@@ -1861,9 +1908,9 @@ namespace Ifpack2 {
       
       Kokkos::deep_copy(col2row, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
       {
-        const auto rowmap = g.getRowMap();
-        const auto colmap = g.getColMap();
-        const auto dommap = g.getDomainMap();
+        const auto rowmap = g->getRowMap();
+        const auto colmap = g->getColMap();
+        const auto dommap = g->getDomainMap();
         TEUCHOS_ASSERT( !(rowmap.is_null() || colmap.is_null() || dommap.is_null()));
 
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
@@ -1888,7 +1935,7 @@ namespace Ifpack2 {
 
       // construct the D and R graphs in A = D + R.
       {
-        const auto local_graph = g.getLocalGraphHost();
+        const auto local_graph = g->getLocalGraphHost();
         const auto local_graph_rowptr = local_graph.row_map;
         TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
         const auto local_graph_colidx = local_graph.entries;
@@ -2116,8 +2163,11 @@ namespace Ifpack2 {
           }
 
           // Allocate or view values.
-          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->getValuesDeviceNonConst());
-                               
+          if (hasBlockCrsMatrix)
+            amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A_bcrs.get())->getValuesDeviceNonConst());
+          else {
+            amd.tpetra_values = (const_cast<crs_matrix_type*>(A_crs.get()))->getLocalValuesDevice (Tpetra::Access::ReadWrite);
+          }
         }
 
         // Allocate view for E and initialize the values with B:
@@ -2713,7 +2763,8 @@ namespace Ifpack2 {
       using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
       /// tpetra interface
-      using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+      using row_matrix_type = typename impl_type::tpetra_row_matrix_type;
+      using crs_graph_type = typename impl_type::tpetra_crs_graph_type;
       /// views
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using local_ordinal_type_2d_view = typename impl_type::local_ordinal_type_2d_view;
@@ -2746,8 +2797,9 @@ namespace Ifpack2 {
       const local_ordinal_type max_partsz;
       // block crs matrix (it could be Kokkos::UVMSpace::size_type, which is int)
       using size_type_1d_view_tpetra = Kokkos::View<size_t*,typename impl_type::node_device_type>;
-      const ConstUnmanaged<size_type_1d_view_tpetra> A_rowptr;
-      const ConstUnmanaged<impl_scalar_type_1d_view_tpetra> A_values;
+      ConstUnmanaged<size_type_1d_view_tpetra> A_block_rowptr;
+      ConstUnmanaged<size_type_1d_view_tpetra> A_point_rowptr;
+      ConstUnmanaged<impl_scalar_type_1d_view_tpetra> A_values;
       // block tridiags
       const ConstUnmanaged<size_type_2d_view> pack_td_ptr, flat_td_ptr, pack_td_ptr_schur;
       const ConstUnmanaged<local_ordinal_type_1d_view> A_colindsub;
@@ -2762,10 +2814,13 @@ namespace Ifpack2 {
       const local_ordinal_type vector_loop_size;
       const local_ordinal_type vector_length_value;
 
+      bool hasBlockCrsMatrix;
+
     public:
       ExtractAndFactorizeTridiags(const BlockTridiags<MatrixType> &btdm_,
                                   const BlockHelperDetails::PartInterface<MatrixType> &interf_,
-                                  const Teuchos::RCP<const block_crs_matrix_type> &A_,
+                                  const Teuchos::RCP<const row_matrix_type> &A_,
+                                  const Teuchos::RCP<const crs_graph_type> &G_,
                                   const magnitude_type& tiny_) :
         // interface
         partptr(interf_.partptr),
@@ -2777,9 +2832,6 @@ namespace Ifpack2 {
         part2packrowidx0_sub(interf_.part2packrowidx0_sub),
         packindices_schur(interf_.packindices_schur),
         max_partsz(interf_.max_partsz),
-        // block crs matrix
-        A_rowptr(A_->getCrsGraph().getLocalGraphDevice().row_map),
-        A_values(const_cast<block_crs_matrix_type*>(A_.get())->getValuesDeviceNonConst()),
         // block tridiags
         pack_td_ptr(btdm_.pack_td_ptr),
         flat_td_ptr(btdm_.flat_td_ptr),
@@ -2822,7 +2874,24 @@ namespace Ifpack2 {
         // diagonal weight to avoid zero pivots
         tiny(tiny_),
         vector_loop_size(vector_length/internal_vector_length),
-        vector_length_value(vector_length) {}
+        vector_length_value(vector_length) {
+          using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
+          using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+
+          auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
+          auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A_);
+
+          hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+          A_block_rowptr = G_->getLocalGraphDevice().row_map;
+          if (hasBlockCrsMatrix) {
+            A_values = const_cast<block_crs_matrix_type*>(A_bcrs.get())->getValuesDeviceNonConst();
+          }
+          else {
+            A_point_rowptr = A_crs->getCrsGraph()->getLocalGraphDevice().row_map;
+            A_values = A_crs->getLocalValuesDevice (Tpetra::Access::ReadOnly);
+          }
+        }
 
     private:
 
@@ -2861,25 +2930,44 @@ namespace Ifpack2 {
 #endif
         for (local_ordinal_type tr=tr_min,j=0;tr<tr_max;++tr) {
           for (local_ordinal_type e=0;e<3;++e) {
-            const impl_scalar_type* block[vector_length] = {};
-            for (local_ordinal_type vi=0;vi<npacks;++vi) {
-              const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
-              block[vi] = &A_values(Aj*blocksize_square);
-            }
-            const size_type pi = kps + j;
+            if (hasBlockCrsMatrix) {
+              const impl_scalar_type* block[vector_length] = {};
+              for (local_ordinal_type vi=0;vi<npacks;++vi) {
+                const size_type Aj = A_block_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
+
+                block[vi] = &A_values(Aj*blocksize_square);
+              }
+              const size_type pi = kps + j;
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-            printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d\n", pi, ri0[0] + tr, kfs[0] + j);
+              printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d\n", pi, ri0[0] + tr, kfs[0] + j);
 #endif            
-            ++j;
-            for (local_ordinal_type ii=0;ii<blocksize;++ii) {
-              for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
-                auto& v = internal_vector_values(pi, ii, jj, 0);
-                for (local_ordinal_type vi=0;vi<npacks;++vi)
-                  v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
+              ++j;            
+              for (local_ordinal_type ii=0;ii<blocksize;++ii) {
+                for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                  const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
+                  auto& v = internal_vector_values(pi, ii, jj, 0);
+                  for (local_ordinal_type vi=0;vi<npacks;++vi) {
+                    v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
+                  }
+                }
               }
             }
+            else {
+              const size_type pi = kps + j;
 
+              for (local_ordinal_type vi=0;vi<npacks;++vi) {
+                const size_type Aj_c = A_colindsub(kfs[vi] + j);
+
+                for (local_ordinal_type ii=0;ii<blocksize;++ii) {
+                  auto point_row_offset = A_point_rowptr(lclrow(ri0[vi] + tr)*blocksize + ii);
+
+                  for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                    scalar_values(pi, ii, jj, vi) = A_values(point_row_offset + Aj_c*blocksize + jj);
+                  }
+                }
+              }
+              ++j;
+            }
             if (nrows[0] == 1) break;
             if (local_subpartidx % 2 == 0) {
               if (e == 1 && (tr == 0 || tr+1 == nrows[0])) break;
@@ -2965,20 +3053,36 @@ namespace Ifpack2 {
                   lend = 1;
                 }
               }
-              for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
-                const size_type Aj = A_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
-                const impl_scalar_type* block = &A_values(Aj*blocksize_square);
-                const size_type pi = kps + j;
+              if (hasBlockCrsMatrix) {
+                for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
+                  const size_type Aj = A_block_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
+                  const impl_scalar_type* block = &A_values(Aj*blocksize_square);
+                  const size_type pi = kps + j;
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-                printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d, tr = %d, lbeg = %d, lend = %d, l = %d\n", pi, ri0 + tr, kfs + j, tr, lbeg, lend, l);
+                  printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d, tr = %d, lbeg = %d, lend = %d, l = %d\n", pi, ri0 + tr, kfs + j, tr, lbeg, lend, l);
 #endif
-                Kokkos::parallel_for
-                  (Kokkos::TeamThreadRange(member,blocksize),
-                   [&](const local_ordinal_type &ii) {
-                    for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[tlb::getFlatIndex(ii,jj,blocksize)]);
-                    }
-                  });
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member,blocksize),
+                    [&](const local_ordinal_type &ii) {
+                      for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                        scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[tlb::getFlatIndex(ii,jj,blocksize)]);
+                      }
+                    });
+                }
+              }
+              else {
+                for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
+                  const size_type Aj_c = A_colindsub(kfs + j);
+                  const size_type pi = kps + j;
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member,blocksize),
+                    [&](const local_ordinal_type &ii) {
+                      auto point_row_offset = A_point_rowptr(lclrow(ri0 + tr)*blocksize + ii);
+                      for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                        scalar_values(pi, ii, jj, v) = A_values(point_row_offset + Aj_c*blocksize + jj);
+                      }
+                    });
+                }
               }
             }
           }
@@ -3365,7 +3469,7 @@ namespace Ifpack2 {
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Start ExtractAndFactorizeSubLineTag\n");
 #endif
-          IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractAndFactorizeSubLineTag");
+          IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractAndFactorizeSubLineTag", ExtractAndFactorizeSubLineTag0);
           Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeSubLineTag>
             policy(packindices_sub.extent(0), team_size, vector_loop_size);
 
@@ -3396,7 +3500,7 @@ namespace Ifpack2 {
             write5DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), e_scalar_values, "e_scalar_values_before_extract.mm");
 
             {
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractBCDTag");
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ExtractBCDTag", ExtractBCDTag0);
               Kokkos::TeamPolicy<execution_space,ExtractBCDTag>
                 policy(packindices_schur.extent(0)*packindices_schur.extent(1), team_size, vector_loop_size);
 
@@ -3415,7 +3519,7 @@ namespace Ifpack2 {
 #endif
             write5DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), e_scalar_values, "e_scalar_values_after_extract.mm");
             {
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeETag");
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeETag", ComputeETag0);
               Kokkos::TeamPolicy<execution_space,ComputeETag>
                 policy(packindices_sub.extent(0), team_size, vector_loop_size);
 
@@ -3435,7 +3539,7 @@ namespace Ifpack2 {
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Start ComputeSchurTag\n");
 #endif
-            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeSchurTag");
+            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::ComputeSchurTag", ComputeSchurTag0);
             writeBTDValuesToFile(part2packrowidx0_sub.extent(0), scalar_values_schur, "before_schur.mm");
             Kokkos::TeamPolicy<execution_space,ComputeSchurTag>
               policy(packindices_schur.extent(0)*packindices_schur.extent(1), team_size, vector_loop_size);
@@ -3454,7 +3558,7 @@ namespace Ifpack2 {
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Start FactorizeSchurTag\n");
 #endif
-            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::FactorizeSchurTag");
+            IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase::FactorizeSchurTag", FactorizeSchurTag0);
             Kokkos::TeamPolicy<execution_space,FactorizeSchurTag>
               policy(packindices_schur.extent(0), team_size, vector_loop_size);
             policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch));
@@ -3478,12 +3582,13 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     void
-    performNumericPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+    performNumericPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                        const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                         const BlockHelperDetails::PartInterface<MatrixType> &interf,
                         BlockTridiags<MatrixType> &btdm,
                         const typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type tiny) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase");
-      ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, tiny);
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase", NumericPhase);
+      ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, G, tiny);
       function.run();
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
@@ -3607,7 +3712,7 @@ namespace Ifpack2 {
 
       void run(const const_impl_scalar_type_2d_view_tpetra &scalar_multivector_) {
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::MultiVectorConverter");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::MultiVectorConverter", MultiVectorConverter0);
 
         scalar_multivector = scalar_multivector_;
         if constexpr (BlockHelperDetails::is_device<execution_space>::value) {
@@ -4277,14 +4382,13 @@ namespace Ifpack2 {
         const local_ordinal_type r0 = part2packrowidx0_sub(partidx,local_subpartidx);
         const local_ordinal_type nrows = partptr_sub(subpartidx,1) - partptr_sub(subpartidx,0);
         const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
-        const local_ordinal_type num_vectors = blocksize;
 
         //(void) i0;
         //(void) nrows;
         (void) npacks;
 
         internal_vector_scratch_type_3d_view
-          WW(member.team_scratch(0), blocksize, num_vectors, vector_loop_size);
+          WW(member.team_scratch(0), blocksize, 1, vector_loop_size);
 
         Kokkos::parallel_for
           (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
@@ -4592,7 +4696,7 @@ namespace Ifpack2 {
       void run(const impl_scalar_type_2d_view_tpetra &Y,
                const impl_scalar_type_1d_view &Z) {
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN;
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SolveTridiags");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SolveTridiags", SolveTridiags);
 
         /// set vectors
         this->Y_scalar_multivector = Y;
@@ -4643,7 +4747,7 @@ namespace Ifpack2 {
                 policy, *this);                                            \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSubLineTag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSubLineTag", SingleVectorSubLineTag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorSubLineTag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorSubLineTag<B> >       \
                 policy(packindices_sub.extent(0), team_size, vector_loop_size); \
@@ -4655,7 +4759,7 @@ namespace Ifpack2 {
               IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyCTag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyCTag", SingleVectorApplyCTag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorApplyCTag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorApplyCTag<B> >       \
                 policy(packindices_sub.extent(0), team_size, vector_loop_size); \
@@ -4667,7 +4771,7 @@ namespace Ifpack2 {
               IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSchurTag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorSchurTag", SingleVectorSchurTag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorSchurTag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorSchurTag<B> >       \
                 policy(packindices_schur.extent(0), team_size, vector_loop_size); \
@@ -4679,7 +4783,7 @@ namespace Ifpack2 {
               IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
             } \
             { \
-              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyETag"); \
+              IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi::SingleVectorApplyETag", SingleVectorApplyETag0); \
               write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_before_SingleVectorApplyETag.mm"); \
               Kokkos::TeamPolicy<execution_space,SingleVectorApplyETag<B> >       \
                 policy(packindices_sub.extent(0), team_size, vector_loop_size); \
@@ -4736,7 +4840,8 @@ namespace Ifpack2 {
     template<typename MatrixType>
     int
     applyInverseJacobi(// importer
-                       const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+                       const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                       const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                        const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type> &tpetra_importer,
                        const Teuchos::RCP<AsyncableImport<MatrixType> > &async_importer,
                        const bool overlap_communication_and_computation,
@@ -4757,7 +4862,7 @@ namespace Ifpack2 {
                        const int max_num_sweeps,
                        const typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type tol,
                        const int check_tol_every) {
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyInverseJacobi", ApplyInverseJacobi);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using node_memory_space = typename impl_type::node_memory_space;
@@ -4838,8 +4943,18 @@ namespace Ifpack2 {
                                                damping_factor, is_norm_manager_active);
 
       const local_ordinal_type_1d_view dummy_local_ordinal_type_1d_view;
+
+
+      auto A_crs = Teuchos::rcp_dynamic_cast<const typename impl_type::tpetra_crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const typename impl_type::tpetra_block_crs_matrix_type>(A);
+
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+      // This is OK here to use the graph of the A_crs matrix and a block size of 1
+      const auto g = hasBlockCrsMatrix ? A_bcrs->getCrsGraph() : *(A_crs->getCrsGraph()); // tpetra crs graph object
+
       BlockHelperDetails::ComputeResidualVector<MatrixType>
-        compute_residual_vector(amd, A->getCrsGraph().getLocalGraphDevice(), blocksize, interf,
+        compute_residual_vector(amd, G->getLocalGraphDevice(), g.getLocalGraphDevice(), blocksize, interf,
                                 is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
 
       // norm manager workspace resize
@@ -4923,7 +5038,8 @@ namespace Ifpack2 {
       using async_import_type = AsyncableImport<MatrixType>;
 
       // distructed objects
-      Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A;
+      Teuchos::RCP<const typename impl_type::tpetra_row_matrix_type> A;
+      Teuchos::RCP<const typename impl_type::tpetra_crs_graph_type> blockGraph;
       Teuchos::RCP<const typename impl_type::tpetra_import_type> tpetra_importer;
       Teuchos::RCP<async_import_type> async_importer;
       bool overlap_communication_and_computation;

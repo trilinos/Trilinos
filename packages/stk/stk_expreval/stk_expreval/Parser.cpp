@@ -54,6 +54,7 @@ Node *parseFunction(Eval & eval, LexemVector::const_iterator from, LexemVector::
 Node *parseFunctionArg(Eval & eval, LexemVector::const_iterator from, LexemVector::const_iterator to);
 Node *parseRValue(Eval & eval, LexemVector::const_iterator from, LexemVector::const_iterator to);
 Node *parseIndex(Eval & eval, LexemVector::const_iterator from, LexemVector::const_iterator lbrack, LexemVector::const_iterator rbrack, LexemVector::const_iterator to);
+int countFunctionArgs(Node* function);
 
 Node *
 parseStatements(Eval &eval,
@@ -539,57 +540,43 @@ parseFunction(Eval & eval,
               LexemVector::const_iterator rparen,
               LexemVector::const_iterator to)
 {
+  using CFunctionIterPair = std::pair<CFunctionMap::iterator, CFunctionMap::iterator>;
+
   if ((*from).getToken() != TOKEN_IDENTIFIER) {
     throw std::runtime_error("syntax error parsing function");
   }
 
   const std::string &function_name = (*from).getString();
 
-  CFunctionBase *c_function = nullptr;
-  CFunctionMap::iterator it = getCFunctionMap().find(function_name);
   Node *function = eval.newNode(OPCODE_FUNCTION);
 
-  FunctionType functionType = eval.get_function_type(function_name);
-  function->m_data.function.functionType = functionType;
-
-  // only 1 function found with that function name.
-  if ( getCFunctionMap().count(function_name) == 1 ) {
-    if (it != getCFunctionMap().end()) {
-      c_function = (*it).second;
-    }
-    function->m_data.function.function[0] = c_function;
-    std::strncpy(function->m_data.function.functionName,
-                 function_name.c_str(),
-                 function_name.length() < Node::MAXIMUM_FUNCTION_NAME_LENGTH-1 ? function_name.length() : Node::MAXIMUM_FUNCTION_NAME_LENGTH-1);
-
-    if (!c_function) {
-      eval.getUndefinedFunctionSet().insert(function_name);
-    }
+  function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
+  int argc = countFunctionArgs(function);
+  if (argc > Node::MAXIMUM_NUMBER_OF_FUNCTION_ARGS)
+  {
+    throw std::runtime_error(std::string("too many arguments to function, limit is ") +
+                                         std::to_string(Node::MAXIMUM_NUMBER_OF_FUNCTION_ARGS));
   }
-  else {
-    std::pair<CFunctionMap::iterator, CFunctionMap::iterator> ppp;
-    ppp = getCFunctionMap().equal_range(function_name);
-    int iCount=0;
-    for (CFunctionMap::iterator it2 = ppp.first;  it2 != ppp.second; ++it2, ++iCount) {
-      c_function = (*it2).second;
-      function->m_data.function.function[iCount] = c_function;
+
+  FunctionType functionType = eval.get_function_type(function_name);
+
+  CFunctionIterPair iteratorPair = getCFunctionMap().equal_range(function_name);
+  function->m_data.function.function = nullptr;
+  for (auto it = iteratorPair.first; it != iteratorPair.second; ++it)
+  {
+    CFunctionBase* c_function = it->second;
+    if (c_function->getArgCount() == argc)
+    {
+      function->m_data.function.function = c_function;
+      function->m_data.function.functionType = functionType;
       std::strncpy(function->m_data.function.functionName,
                    function_name.c_str(),
                    function_name.length() < Node::MAXIMUM_FUNCTION_NAME_LENGTH-1 ? function_name.length() : Node::MAXIMUM_FUNCTION_NAME_LENGTH-1);
-
-      if (!c_function) {
-        eval.getUndefinedFunctionSet().insert(function_name);
-      }
-    }
-    if( iCount == Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES) {
-      throw std::runtime_error(std::string("Exceeded maximum number of overloaded function names for function named= ") + function_name);
+      break;
     }
   }
 
-  function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
-
-  if (!c_function) {
-    function->m_data.function.undefinedFunction = true;
+  if (!(function->m_data.function.function)) {
     eval.getUndefinedFunctionSet().insert(function_name);
   }
 
@@ -711,6 +698,21 @@ parseRValue(Eval & eval,
     throw std::runtime_error("invalid rvalue");
   }
   }
+}
+
+int countFunctionArgs(Node* function)
+{
+  if (function->m_opcode != OPCODE_FUNCTION)
+  {
+    throw std::runtime_error("Node must be a function to count its arguments");
+  }
+
+  int argc = 0;
+  for (Node *arg = function->m_right; arg; arg = arg->m_right) {
+    argc++;
+  }
+
+  return argc;
 }
 
 }

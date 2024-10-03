@@ -70,7 +70,6 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionSpecifiedTime)
     //+ The value of the fields at each node is 0.0 at time 0.0,
     //+ 1.0 at time 1.0, and 2.0 at time 2.0
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -118,7 +117,6 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionSpecifiedTime)
     //+ to the analysis time passed in to read_defined_input_fields.
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t index = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
     stkIo.create_input_mesh();

@@ -37,7 +37,6 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
@@ -48,6 +47,7 @@
 namespace Ioss { class Region; }
 
 namespace stk {
+namespace mesh { class BulkData; }
 namespace transfer_utils {
 
 class RepeatedTransferCopyByIdStkMeshAdapter : public stk::transfer::TransferCopyByIdStkMeshAdapter

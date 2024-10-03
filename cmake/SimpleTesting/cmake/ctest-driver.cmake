@@ -19,6 +19,10 @@ if(STAGE_CONFIGURE_ERROR OR STAGE_BUILD_ERROR OR STAGE_TEST_ERROR OR STAGE_COVER
     message(FATAL_ERROR "STAGE_CONFIGURE_ERROR: ${STAGE_CONFIGURE_ERROR}, STAGE_BUILD_ERROR: ${STAGE_BUILD_ERROR}, STAGE_TEST_ERROR: ${STAGE_TEST_ERROR}, STAGE_COVERAGE_ERROR: ${STAGE_COVERAGE_ERROR}")
 endif()
 
+message(">>> CDash URL1 = ${build_url1}")
+message(">>> CDash URL2 = ${build_url2}")
+message(">>> CDash URL3 = ${build_url3}")
+
 message("+--------------------------------------+")
 message("| ctest-driver.cmake FINISH            |")
 message("+--------------------------------------+")

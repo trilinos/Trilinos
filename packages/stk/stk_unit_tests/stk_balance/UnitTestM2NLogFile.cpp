@@ -44,7 +44,7 @@
 
 namespace {
 
-class TestM2NLogFile : public stk::unit_test_util::simple_fields::MeshFixture
+class TestM2NLogFile : public stk::unit_test_util::MeshFixture
 {
 protected:
   void clean_up_file(const std::string & fileName)

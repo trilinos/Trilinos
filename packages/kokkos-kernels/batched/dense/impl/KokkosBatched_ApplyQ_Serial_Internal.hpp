@@ -32,13 +32,10 @@ namespace KokkosBatched {
 
 struct SerialApplyQ_LeftForwardInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const int k,
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *B, const int bs0,
-                                           const int bs1,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
     typedef ValueType value_type;
 
@@ -75,9 +72,8 @@ struct SerialApplyQ_LeftForwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21,
-                                                 as0, B_part3x1.A1, bs1,
-                                                 B_part3x1.A2, bs0, bs1, w);
+      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
+                                                 bs1, w);
 
       /// -----------------------------------------------------
       A_part2x2.mergeToABR(A_part3x3);
@@ -90,13 +86,10 @@ struct SerialApplyQ_LeftForwardInternal {
 
 struct SerialApplyQ_LeftBackwardInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const int k,
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *B, const int bs0,
-                                           const int bs1,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
     typedef ValueType value_type;
 
@@ -133,9 +126,8 @@ struct SerialApplyQ_LeftBackwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21,
-                                                 as0, B_part3x1.A1, bs1,
-                                                 B_part3x1.A2, bs0, bs1, w);
+      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
+                                                 bs1, w);
 
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
@@ -148,13 +140,10 @@ struct SerialApplyQ_LeftBackwardInternal {
 
 struct SerialApplyQ_RightForwardInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const int k,
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *B, const int bs0,
-                                           const int bs1,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
     typedef ValueType value_type;
 
@@ -191,9 +180,8 @@ struct SerialApplyQ_RightForwardInternal {
       const int n_B2 = n - n_A0 - 1;
       /// -----------------------------------------------------
       // right apply householder to partitioned B1 and B2
-      SerialApplyRightHouseholderInternal::invoke(m, n_B2, tau, A_part3x3.A21,
-                                                  as0, B_part1x3.A1, bs0,
-                                                  B_part1x3.A2, bs0, bs1, w);
+      SerialApplyRightHouseholderInternal::invoke(m, n_B2, tau, A_part3x3.A21, as0, B_part1x3.A1, bs0, B_part1x3.A2,
+                                                  bs0, bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

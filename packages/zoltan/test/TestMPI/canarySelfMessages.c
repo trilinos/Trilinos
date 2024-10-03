@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+//
+// Copyright 2012 NTESS and the Zoltan contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 /* MPI distributions in some version of Ubuntu and FreeBSD do not handle
  * self messages correctly.  Errors then appear in Zoltan in the Comm package,
  * or in PHG's building of the hypergraph.  If this test fails, there is 

@@ -72,14 +72,14 @@ void change_mesh_decomposition(stk::mesh::BulkData& mesh)
   int myProc = mesh.parallel_rank();
   int otherProc = 1-myProc;
 
-  stk::mesh::for_each_entity_run(mesh, stk::topology::ELEM_RANK,
-                                 mesh.mesh_meta_data().locally_owned_part(),
-                                 [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& elem)
+  stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::ELEM_RANK,
+                                            mesh.mesh_meta_data().locally_owned_part(),
+                                            [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& elem)
   {
     entityProcPairs.emplace_back(elem, otherProc);
   });
 
-  stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK,
+  stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::NODE_RANK,
                                  mesh.mesh_meta_data().locally_owned_part(),
                                  [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& node)
   {
@@ -103,14 +103,12 @@ TEST(StkTransferHowTo, useCopyTransfer)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> meshA = builder.create();
   stk::mesh::MetaData& metaA = meshA->mesh_meta_data();
-  metaA.use_simple_fields();
   DoubleField & scalarFieldNodeA = metaA.declare_field<double>(stk::topology::NODE_RANK, "Node Scalar Field");
   stk::mesh::put_field_on_mesh(scalarFieldNodeA, metaA.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *meshA);
 
   std::shared_ptr<stk::mesh::BulkData> meshB = builder.create();
   stk::mesh::MetaData& metaB = meshB->mesh_meta_data();
-  metaB.use_simple_fields();
   DoubleField & scalarFieldNodeB = metaB.declare_field<double>(stk::topology::NODE_RANK, "Node Scalar Field");
   stk::mesh::put_field_on_mesh(scalarFieldNodeB, metaB.universal_part(), &initVals);
   stk::io::fill_mesh(meshSpec, *meshB);

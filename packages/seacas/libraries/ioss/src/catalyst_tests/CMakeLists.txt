@@ -113,11 +113,11 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
    TEST_2 EXEC io_shell ARGS -out_type catalyst ${ioshell_output_file_name}
-          ${test_time_step}
+          catalyst.bin
      DIRECTORY ../main
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${num_procs}
-   TEST_3 EXEC io_shell ARGS -in_type catalyst ${test_time_step}
+   TEST_3 EXEC io_shell ARGS -in_type catalyst catalyst.bin
           ${CATALYST_FNAME}
      DIRECTORY ../main
      NOEXEPREFIX NOEXESUFFIX
@@ -137,6 +137,7 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
    ENVIRONMENT CATALYST_DATA_DUMP_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+     IOSS_PROPERTIES=CATALYST_READER_TIME_STEP=${test_time_step}
   )
 endfunction()
 
@@ -145,32 +146,32 @@ foreach(NUM_PROCS 1 4)
   catalyst_test_ioshell_generated(
     "Iocatalyst_10x10x10_hex_MPI_${NUM_PROCS}"
     "10x10x10+times:4+variables:element,2,nodal,3"
-    "ioshell_10x10x10.g" "3" "3" ${NUM_PROCS})
+    "ioshell_10x10x10.g" "3" 3 ${NUM_PROCS})
 
   catalyst_test_ioshell_generated(
     "Iocatalyst_10x10x10_tets_MPI_${NUM_PROCS}"
     "10x10x10+tets:+times:2+variables:element,2,nodal,3"
-    "ioshell_10x10x10_tets.g" "1" "1" ${NUM_PROCS})
+    "ioshell_10x10x10_tets.g" "1" 1 ${NUM_PROCS})
 
   catalyst_test_ioshell_generated(
     "Iocatalyst_10x10x10_pyramids_MPI_${NUM_PROCS}"
     "10x10x10+pyramids:+times:2+variables:element,2,nodal,3"
-    "ioshell_10x10x10_pyramids.g" "1" "1" ${NUM_PROCS})
+    "ioshell_10x10x10_pyramids.g" "1" 1 ${NUM_PROCS})
 
   catalyst_test_ioshell_generated(
     "Iocatalyst_10x10x10_shell_MPI_${NUM_PROCS}"
     "10x10x10+shell:xX:+times:2+variables:element,2,nodal,3"
-    "ioshell_10x10x10_shell.g" "1" "1" ${NUM_PROCS})
+    "ioshell_10x10x10_shell.g" "1" 1 ${NUM_PROCS})
 
   catalyst_test_ioshell_generated(
     "Iocatalyst_10x10x10_nodeset_MPI_${NUM_PROCS}"
     "10x10x10+nodeset:xX:+times:2+variables:element,2,nodal,3,nodeset,4"
-    "ioshell_10x10x10_nodeset.g" "1" "1" ${NUM_PROCS})
+    "ioshell_10x10x10_nodeset.g" "1" 1 ${NUM_PROCS})
 
   catalyst_test_ioshell_generated(
     "Iocatalyst_10x10x10_sideset_MPI_${NUM_PROCS}"
     "10x10x10+sideset:xX:+times:2+variables:element,2,nodal,3,sideset,4"
-    "ioshell_10x10x10_sideset.g" "1" "1" ${NUM_PROCS})
+    "ioshell_10x10x10_sideset.g" "1" 1 ${NUM_PROCS})
 
 endforeach()
 
@@ -196,12 +197,12 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
     TEST_1 EXEC io_shell ARGS -out_type catalyst
-           ${input_file} ${test_time_step}
+           ${input_file} catalyst.bin
       DIRECTORY ../main
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS ${num_procs}
     TEST_2 EXEC io_shell ARGS -in_type catalyst
-           ${test_time_step} ${CATALYST_FNAME}
+           catalyst.bin ${CATALYST_FNAME}
       DIRECTORY ../main
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS ${num_procs}
@@ -220,7 +221,13 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
     ENVIRONMENT CATALYST_DATA_DUMP_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+      IOSS_PROPERTIES=CATALYST_READER_TIME_STEP=${test_time_step}
+    ADDED_TEST_NAME_OUT FileTestExodus
 )
+
+set_tests_properties(${FileTestExodus}
+   PROPERTIES FIXTURES_SETUP WriteTestConduit)
+
 endfunction()
 
 set(EXO_TEST_FILES
@@ -237,16 +244,16 @@ endforeach()
 foreach(NUM_PROCS 1 4)
   catalyst_test_ioshell_exodus_file(
     "Iocatalyst_cube_g_MPI_${NUM_PROCS}"
-    "cube.g" "1" "1" ${NUM_PROCS})
+    "cube.g" "1" 1 ${NUM_PROCS})
   catalyst_test_ioshell_exodus_file(
     "Iocatalyst_two_block_g_MPI_${NUM_PROCS}"
-    "two-block.g" "1" "1" ${NUM_PROCS})
+    "two-block.g" "1" 1 ${NUM_PROCS})
   catalyst_test_ioshell_exodus_file(
     "Iocatalyst_eight_block_g_MPI_${NUM_PROCS}"
-    "8-block.g" "0.05" "5" ${NUM_PROCS})
+    "8-block.g" "0.05" 5 ${NUM_PROCS})
   catalyst_test_ioshell_exodus_file(
     "Iocatalyst_can_ex2_MPI_${NUM_PROCS}"
-    "can.ex2" "0.00219992" "22" ${NUM_PROCS})
+    "can.ex2" "0.00219992" 22 ${NUM_PROCS})
 endforeach()
 
 if ( NETCDF_NCDUMP_BINARY )
@@ -267,11 +274,11 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
       DIRECTORY ../../../exodus/test
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
-    TEST_1 EXEC io_shell ARGS -out_type catalyst ${INPUT_FILE_PATH} ${test_time_step}
+    TEST_1 EXEC io_shell ARGS -out_type catalyst ${INPUT_FILE_PATH} catalyst.bin
       DIRECTORY ../main
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
-    TEST_2 EXEC io_shell ARGS -in_type catalyst ${test_time_step} ${CATALYST_FNAME}
+    TEST_2 EXEC io_shell ARGS -in_type catalyst catalyst.bin ${CATALYST_FNAME}
       DIRECTORY ../main
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
@@ -284,14 +291,16 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
     ENVIRONMENT CATALYST_DATA_DUMP_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+      IOSS_PROPERTIES=CATALYST_READER_TIME_STEP=${test_time_step}
 )
+
 endfunction()
 
 catalyst_test_ioshell_generated_exodus_file("Iocatalyst_test_blob_exo_MPI_1"
-  "testwt-blob" "" "test-blob.exo" "0.02" "1")
+  "testwt-blob" "" "test-blob.exo" "0.02" 1)
 
 catalyst_test_ioshell_generated_exodus_file("Iocatalyst_test_seacas_exodus_exoIIC_MPI_1"
-  "SEACASExodus_ExoIICTests.exe" "CreateEdgeFace" "edgeFace.exo" "1" "0")
+  "SEACASExodus_ExoIICTests.exe" "CreateEdgeFace" "edgeFace.exo" "1" 0)
 
 endif()
 
@@ -325,11 +334,11 @@ set(IOSHELL_FNAME ioshell_time_${test_time_step}_${input_file})
 set(INPUT_FILE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../main/test/${input_file})
 
 TRIBITS_ADD_ADVANCED_TEST(${test_name}
-    TEST_0 EXEC io_shell ARGS -debug -out_type catalyst ${INPUT_FILE_PATH} ${test_time_step}
+    TEST_0 EXEC io_shell ARGS -debug -out_type catalyst ${INPUT_FILE_PATH} catalyst.bin
       DIRECTORY ../main
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
-    TEST_1 EXEC io_shell ARGS -in_type catalyst ${test_time_step} ${CATALYST_FNAME}
+    TEST_1 EXEC io_shell ARGS -in_type catalyst catalyst.bin ${CATALYST_FNAME}
       DIRECTORY ../main
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
@@ -341,11 +350,33 @@ TRIBITS_ADD_ADVANCED_TEST(${test_name}
       NOEXEPREFIX NOEXESUFFIX
       NUM_MPI_PROCS 1
     ENVIRONMENT CATALYST_DATA_DUMP_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+      IOSS_PROPERTIES=CATALYST_READER_TIME_STEP=${test_time_step}
+    ADDED_TEST_NAME_OUT FileTestCGNS
 )
+
+set_tests_properties(${FileTestCGNS}
+   PROPERTIES FIXTURES_SETUP WriteTestConduit)
+
 endfunction()
 
 catalyst_test_ioshell_cgns_file(
-  "Iocatalyst_sparc1_cgns_MPI_1" "sparc1.cgns" "15.992" "1")
+  "Iocatalyst_sparc1_cgns_MPI_1" "sparc1.cgns" "15.992" 1)
+
+TRIBITS_ADD_EXECUTABLE(
+    Iocatalyst_ConduitReadTest
+ SOURCES
+    Iocatalyst_ConduitReadTest.C
+)
+
+TRIBITS_ADD_TEST(
+	Iocatalyst_ConduitReadTest
+  NAME Iocatalyst_ConduitReadTest
+	NUM_MPI_PROCS 1
+  ADDED_TESTS_NAMES_OUT ConduitReadTest
+)
+
+set_tests_properties(${ConduitReadTest}
+  PROPERTIES FIXTURES_REQUIRED WriteTestConduit)
 
 endif()
 endif()

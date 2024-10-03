@@ -33,7 +33,7 @@
   {
 
     /** This class compbines several Fields into a single function, e.g., density_field*temperature_field/pressure_field
-     *  It uses Intrepid to compute basis functions then evaluates all the required fields and stores them in MDArray's 
+     *  It uses Intrepid2 to compute basis functions then evaluates all the required fields and stores them in MDArray's 
      *  ready for the operator() to compute the actual function.
      */
     class MultipleFieldFunction : public FieldFunction

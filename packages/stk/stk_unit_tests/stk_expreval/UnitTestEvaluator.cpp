@@ -1159,12 +1159,13 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isValidFunction("sin(1)"));
   EXPECT_TRUE(isValidFunction("SIN(1)"));
   EXPECT_TRUE(isValidFunction("rand()"));
-  EXPECT_TRUE(isValidFunction("srand()"));
+  EXPECT_TRUE(isValidFunction("srand(1)"));
   EXPECT_TRUE(isValidFunction("time()"));
   EXPECT_TRUE(isValidFunction("random()"));
   EXPECT_TRUE(isValidFunction("random(1)"));
   EXPECT_TRUE(isValidFunction("random(time())"));
   EXPECT_TRUE(isValidFunction("cosine_ramp(x,y)"));
+  EXPECT_TRUE(isValidFunction("linear_ramp(x,y,z)"));
   EXPECT_TRUE(isValidFunction("sign(x)"));
   EXPECT_TRUE(isValidFunction("weibull_pdf(x, alpha, beta)"));
   EXPECT_TRUE(isValidFunction("normal_pdf(x, alpha, beta)"));
@@ -1173,6 +1174,41 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isInvalidFunction("stress(1)"));
   EXPECT_TRUE(isInvalidFunction("gamma(1)"));
 }
+
+class OneArgFunction : public stk::expreval::CFunctionBase
+{
+  public:
+    explicit OneArgFunction() :
+      CFunctionBase(1)
+    {}
+
+    double operator()(int argc, const double * argv) override
+    {
+      STK_ThrowRequire(argc == 1);
+      return argv[0];
+    }
+};
+
+TEST(UnitTestEvaluator, testFunctionArgumentCountCheck)
+{
+  stk::expreval::addFunction("my_function", new OneArgFunction());
+  EXPECT_TRUE(isValidFunction("my_function(1)"));
+  EXPECT_TRUE(isInvalidFunction("my_function(1, 2)"));
+}
+
+TEST(UnitTestEvaluator, testParsedEvalNoUserDefinedFunctions)
+{
+  stk::expreval::addFunction("my_function", new OneArgFunction());
+  stk::expreval::Eval eval("my_function(1)");
+  EXPECT_ANY_THROW(eval.get_parsed_eval());
+}
+
+TEST(UnitTestEvaluator, testParsedEvalNoRandom)
+{
+  stk::expreval::Eval eval("rand()");
+  EXPECT_ANY_THROW(eval.get_parsed_eval());
+}
+
 
 #if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
 TEST(UnitTestEvaluator, deviceVariableMap_too_small)
@@ -2827,6 +2863,17 @@ TEST(UnitTestEvaluator, testFunction_cosine_ramp3)
   EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1.5, 0, 1)"),  1);
 }
 
+TEST(UnitTestEvaluator, testFunction_linear_ramp3)
+{
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(3/4, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1.5, 0, 1)"),  1);
+}
+
 TEST(UnitTestEvaluator, Ngp_testFunction_cosine_ramp3)
 {
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(-0.5, 0, 1)"), 0);
@@ -2836,6 +2883,17 @@ TEST(UnitTestEvaluator, Ngp_testFunction_cosine_ramp3)
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(2/3, 0, 1)"),  0.75);
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(1, 0, 1)"),    1);
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(1.5, 0, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_linear_ramp3)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(3/4, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1.5, 0, 1)"),  1);
 }
 
 TEST(UnitTestEvaluator, testFunction_cosine_ramp2)
@@ -3198,22 +3256,6 @@ TEST(UnitTestEvaluator, testFunction_rand)
   testRandom("rand()");
 }
 
-void Ngp_testRandom(const char * expression)
-{
-  const int NUM_SAMPLES = 10000;
-  std::vector<double> results(NUM_SAMPLES);
-  for (int i = 0; i < NUM_SAMPLES; ++i) {
-    results[i] = device_evaluate(expression);
-  }
-  checkUniformDist(results);
-}
-
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_rand)
-{
-  Ngp_testRandom("rand()");
-}
-#endif
 
 TEST(UnitTestEvaluator, testFunction_srand_repeatability)
 {
@@ -3229,33 +3271,10 @@ TEST(UnitTestEvaluator, testFunction_srand_repeatability)
   }
 }
 
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_srand_repeatability)
-{
-  std::vector<double> result(10);
-  device_evaluate("srand(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    result[i] = device_evaluate("rand()");
-  }
-
-  device_evaluate("srand(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    EXPECT_DOUBLE_EQ(device_evaluate("rand()"), result[i]);
-  }
-}
-#endif
-
 TEST(UnitTestEvaluator, testFunction_random)
 {
   testRandom("random()");
 }
-
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_random)
-{
-  Ngp_testRandom("random()");
-}
-#endif
 
 TEST(UnitTestEvaluator, testFunction_random1_repeatability)
 {
@@ -3270,22 +3289,6 @@ TEST(UnitTestEvaluator, testFunction_random1_repeatability)
     EXPECT_DOUBLE_EQ(evaluate("random()"), result[i]);
   }
 }
-
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_random1_repeatability)
-{
-  std::vector<double> result(10);
-  device_evaluate("random(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    result[i] = device_evaluate("random()");
-  }
-
-  device_evaluate("random(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    EXPECT_DOUBLE_EQ(device_evaluate("random()"), result[i]);
-  }
-}
-#endif
 
 TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
 {
@@ -3436,11 +3439,5 @@ TEST(UnitTestEvaluator, testFunction_time)
   EXPECT_NEAR(evaluate("time()"), std::time(nullptr), 1.1);
 }
 
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_time)
-{
-  EXPECT_NEAR(device_evaluate("time()"), std::time(nullptr), 1.1);
-}
-#endif
 
 } // namespace <unnamed>

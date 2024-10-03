@@ -43,7 +43,7 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     IOSS_NODISCARD Property get_implicit_property(const std::string &my_name) const override;
 
-    void block_membership(std::vector<std::string> &block_membership) override;
+    void block_membership(Ioss::NameList &block_membership) override;
 
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,

@@ -57,9 +57,7 @@ int main_instantiation(int argc, char** argv) {
   else if (params.use_sycl)
     device_id = params.use_sycl - 1;
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
   Kokkos::print_configuration(std::cout);
   std::cout << '\n';
 
@@ -112,8 +110,7 @@ int main_instantiation(int argc, char** argv) {
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
     std::cout << "Running on SYCL backend.\n";
-    KOKKOSKERNELS_PERF_TEST_NAME<Kokkos::Experimental::SYCL>(argc, argv,
-                                                             params);
+    KOKKOSKERNELS_PERF_TEST_NAME<Kokkos::Experimental::SYCL>(argc, argv, params);
     ran = true;
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";

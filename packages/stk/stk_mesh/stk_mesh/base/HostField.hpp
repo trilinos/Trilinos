@@ -140,26 +140,6 @@ class HostField : public NgpFieldBase
     return data[component];
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2024
-  STK_DEPRECATED
-  T& get(HostMesh::MeshIndex entity, int component,
-         const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
-  {
-    T* data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
-    STK_ThrowAssert(data);
-    return data[component];
-  }
-
-  STK_DEPRECATED
-  T& operator()(const HostMesh::MeshIndex& index, int component,
-                const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
-  {
-    T* data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket->bucket_id(), index.bucketOrd));
-    STK_ThrowAssert(data);
-    return data[component];
-  }
-#endif
-
   T& operator()(const stk::mesh::FastMeshIndex& index, int component,
                 const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
@@ -264,10 +244,6 @@ class HostField : public NgpFieldBase
   size_t synchronized_count() const override { return synchronizedCount; }
 
   FieldState state() const { return field->state(); }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED void rotate_multistate_data() override { }
-#endif
 
   void update_bucket_pointer_view() override { }
 

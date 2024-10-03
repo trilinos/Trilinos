@@ -249,6 +249,8 @@ int exi_conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
   new_file->has_edges             = 1;
   new_file->has_faces             = 1;
   new_file->has_elems             = 1;
+  new_file->in_define_mode        = 0;
+  new_file->persist_define_mode   = 0;
   new_file->is_write              = is_write;
 
   new_file->next = file_list;

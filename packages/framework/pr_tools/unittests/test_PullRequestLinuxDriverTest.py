@@ -115,122 +115,13 @@ class Test_parse_args(unittest.TestCase):
                 | - [O] workspace-dir               : /dev/null/Trilinos_clone
                 ''')
 
-        self.help_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url
-                                   TARGET_REPO_URL --target-branch-name TARGET_BRANCH_NAME
-                                   --pullrequest-build-name PULLREQUEST_BUILD_NAME
-                                   --genconfig-build-name GENCONFIG_BUILD_NAME
-                                   --pullrequest-number PULLREQUEST_NUMBER
-                                   --jenkins-job-number JENKINS_JOB_NUMBER
-                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
-                                   [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
-                                   [--ctest-drop-site CTEST_DROP_SITE]
-                                   [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
-                                   [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
-                                   [--pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE]
-                                   [--workspace-dir WORKSPACE_DIR]
-                                   [--filename-packageenables FILENAME_PACKAGEENABLES]
-                                   [--filename-subprojects FILENAME_SUBPROJECTS]
-                                   [--test-mode TEST_MODE]
-                                   [--req-mem-per-core REQ_MEM_PER_CORE]
-                                   [--max-cores-allowed MAX_CORES_ALLOWED]
-                                   [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
-                                   [--extra-configure-args EXTRA_CONFIGURE_ARGS]
-
-                Parse the repo and build information
-
-                optional arguments:
-                  -h, --help            show this help message and exit
-
-                Required Arguments:
-                  --source-repo-url SOURCE_REPO_URL
-                                        Repo with the new changes
-                  --target-repo-url TARGET_REPO_URL
-                                        Repo to merge into
-                  --target-branch-name TARGET_BRANCH_NAME
-                                        Branch to merge into
-                  --pullrequest-build-name PULLREQUEST_BUILD_NAME
-                                        The Jenkins job base name
-                  --genconfig-build-name GENCONFIG_BUILD_NAME
-                                        The job base name for the cmake configuration
-                  --pullrequest-number PULLREQUEST_NUMBER
-                                        The github PR number
-                  --jenkins-job-number JENKINS_JOB_NUMBER
-                                        The Jenkins build number
-
-                Optional Arguments:
-                  --dashboard-build-name DASHBOARD_BUILD_NAME
-                                        The build name posted by ctest to a dashboard
-                  --source-dir SOURCE_DIR
-                                        Directory containing the source code to compile/test.
-                  --build-dir BUILD_DIR
-                                        Path to the build directory.
-                  --use-explicit-cachefile
-                                        Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.
-                  --ctest-driver CTEST_DRIVER
-                                        Location of the CTest driver script to load via `-S`.
-                  --ctest-drop-site CTEST_DROP_SITE
-                                        URL of the cdash server to post to.
-                  --pullrequest-cdash-track PULLREQUEST_CDASH_TRACK
-                                        The CDash Track to add results to. Default=Pull
-                                        Request
-                  --pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE
-                                        The Trilinos PR driver configuration file containing
-                                        job mappings to environment specifications. Default=/d
-                                        ev/null/Trilinos_clone/pr_config/pullrequest.ini
-                  --pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE
-                                        The Trilinos PR driver configuration file containing
-                                        job mappings to cmake specifications.
-                                        Default=/dev/null/Trilinos_clone/../GenConfig/src/gen-
-                                        config.ini
-                  --workspace-dir WORKSPACE_DIR
-                                        The local workspace directory that Jenkins set up.
-                                        Default=/dev/null/Trilinos_clone
-                  --filename-packageenables FILENAME_PACKAGEENABLES
-                                        The packageEnables.cmake is usually generated by
-                                        TriBiTS infrastructure based on which packages contain
-                                        the changes between the source and target branches.
-                                        Default=../packageEnables.cmake
-                  --filename-subprojects FILENAME_SUBPROJECTS
-                                        The subprojects_file is used by the testing
-                                        infrastructure. This parameter allows the default,
-                                        generated file, to be overridden. Generally this
-                                        should not be changed from the defaults..
-                                        Default=../package_subproject_list.cmake
-                  --test-mode TEST_MODE
-                                        PR testing mode. Use 'standard' for normal PR tests,
-                                        'installation' for installation testing. Default =
-                                        standard
-                  --req-mem-per-core REQ_MEM_PER_CORE
-                                        Minimum required memory per core (GB) to build
-                                        Trilinos.Default = 3.0
-                  --max-cores-allowed MAX_CORES_ALLOWED
-                                        Max cores allowed, if >= 0 we will use the # of
-                                        detected cores on the system. Default = 12
-                  --num-concurrent-tests NUM_CONCURRENT_TESTS
-                                        Set the number of concurrent tests allowd in CTest.
-                                        This is equivalent to `ctest -j <num-concurrent-
-                                        tests>`. If > 0 then this value is used, otherwise the
-                                        value is calculated based on number_of_available_cores
-                                        / max_test_parallelism Default = -1
-                  --enable-ccache       Enable ccache object caching to improve build times.
-                                        Default = False
-                  --dry-run             Enable dry-run mode. Script will run but not execute
-                                        the build steps. Default = False
-                  --extra-configure-args EXTRA_CONFIGURE_ARGS
-                                        Extra arguments that will be passed to CMake for
-                                        configuring Trilinos.
-                ''')
-
         self.usage_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
+                usage: programName [-h] [--source-repo-url SOURCE_REPO_URL] [--target-repo-url TARGET_REPO_URL]
                                    --target-branch-name TARGET_BRANCH_NAME
-                                   --pullrequest-build-name PULLREQUEST_BUILD_NAME
+                                   [--pullrequest-build-name PULLREQUEST_BUILD_NAME]
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
-                                   --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--jenkins-job-number JENKINS_JOB_NUMBER]
                                    [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
@@ -246,7 +137,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
-                programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
+                programName: error: the following arguments are required: --target-branch-name, --genconfig-build-name, --pullrequest-number
                 ''')
 
         self.m_cwd = mock.patch('PullRequestLinuxDriverTest.os.getcwd',
@@ -295,28 +186,6 @@ class Test_parse_args(unittest.TestCase):
         return
 
 
-    def test_help(self):
-        """
-        Compare the help message to the expected
-        """
-
-        with mock.patch.object(sys, 'argv', ['programName', '--help']), self.assertRaises(SystemExit), self.stdoutRedirect as m_stdout:
-            PullRequestLinuxDriverTest.parse_args()
-
-        self.assertEqual(self.help_output, m_stdout.getvalue())
-        return
-
-
-    def test_usage(self):
-        '''
-        Compare the usage message to the expected
-        '''
-
-        with mock.patch.object(sys, 'argv', ['programName', '--usage']), self.assertRaises(SystemExit), self.stderrRedirect as m_stderr:
-            PullRequestLinuxDriverTest.parse_args()
-
-        self.assertEqual(re.sub("\s+", " ", self.usage_output, flags=re.DOTALL), re.sub("\s+", " ", m_stderr.getvalue(), flags=re.DOTALL))
-        return
 
 
 class Test_main(unittest.TestCase):

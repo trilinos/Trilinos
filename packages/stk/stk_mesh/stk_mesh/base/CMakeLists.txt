@@ -54,14 +54,21 @@ if(HAVE_STK_Trilinos)
   )
 else()
   find_package(Shards REQUIRED)
-  find_package(BLAS REQUIRED)
   add_library(stk_mesh_base ${SOURCES} ${SOURCES_IMPL} ${SOURCES_ELEMGRAPH})
   target_link_libraries(stk_mesh_base ${Shards_LIBRARIES})
-  target_link_libraries(stk_mesh_base BLAS::BLAS)
   target_link_libraries(stk_mesh_base stk_topology)
   target_link_libraries(stk_mesh_base stk_util_diag)
   target_link_libraries(stk_mesh_base stk_util_env)
   target_link_libraries(stk_mesh_base stk_util_parallel)
+
+  if(STK_BUILT_FOR_SIERRA)
+    find_package(SierraLapack REQUIRED)
+    target_link_libraries(stk_util_util PUBLIC SierraLapack::sierra_blas_lapack)
+  else()
+    find_package(BLAS REQUIRED)
+    target_link_libraries(stk_util_util PUBLIC BLAS::BLAS)
+  endif()
+    
 endif()
 
 target_include_directories(stk_mesh_base PUBLIC
@@ -79,5 +86,5 @@ INSTALL(FILES ${HEADERS_ELEMGRAPH} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_mesh/baseImpl/elementGraph)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_mesh_base DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_mesh_base EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

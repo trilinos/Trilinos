@@ -41,7 +41,8 @@ import path ;
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_simd-root)
     <define>STK_VOLATILE_SIMD
     <architecture>power:<define>USE_STK_SIMD_NONE
@@ -73,8 +74,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.

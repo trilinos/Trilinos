@@ -11,6 +11,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_DecompositionUtils.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
@@ -387,12 +388,11 @@ int main(int argc, char *argv[])
   dbi->set_surface_split_type(Ioss::SPLIT_BY_DONT_SPLIT);
   dbi->set_field_separator(0);
 
-  // NOTE: 'region' owns 'db' pointer at this time...
-  Ioss::Region region(dbi, "region_1");
-
-  region.output_summary(std::cerr, true);
-
   try {
+    // NOTE: 'region' owns 'db' pointer at this time...
+    Ioss::Region region(dbi, "region_1");
+    region.output_summary(std::cerr, true);
+
     if (dbi->int_byte_size_api() == 4) {
       progress("4-byte slice");
       slice(region, nem_file, interFace, 1);
@@ -912,6 +912,8 @@ namespace {
                           size_t proc_size)
   {
     progress(__func__);
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
     std::vector<double> glob_coord_x;
     std::vector<double> glob_coord_y;
     std::vector<double> glob_coord_z;
@@ -968,8 +970,12 @@ namespace {
     }
     else {
       gnb->get_field_data("mesh_model_coordinates_x", glob_coord_x);
-      gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
-      gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      if (spatial_dimension > 1) {
+        gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
+      }
+      if (spatial_dimension > 2) {
+        gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      }
       progress("\tRead global mesh_model_coordinates");
 
       for (size_t i = 0; i < node_count; i++) {
@@ -993,8 +999,12 @@ namespace {
     for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
       Ioss::NodeBlock *nb = proc_region[p]->get_node_blocks()[0];
       nb->put_field_data("mesh_model_coordinates_x", coordinates_x[p]);
-      nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
-      nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      if (spatial_dimension > 1) {
+        nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
+      }
+      if (spatial_dimension > 2) {
+        nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      }
       proc_progress(p, processor_count);
     }
     progress("\tOutput processor coordinate vectors");
@@ -1028,7 +1038,9 @@ namespace {
     }
     progress("\tReserve processor coordinate vectors");
 
-    for (size_t comp = 0; comp < 3; comp++) {
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
+    for (size_t comp = 0; comp < spatial_dimension; comp++) {
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         coordinates[p].resize(0);
       }
@@ -1292,9 +1304,10 @@ namespace {
         offset += element_count;
       }
     }
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
     for (size_t p = 0; p < proc_count; p++) {
-      auto *nb =
-          new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count[p], 3);
+      auto *nb = new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1",
+                                     on_proc_count[p], spatial_dimension);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
         fmt::print(stderr, "\tProcessor {} has {} nodes.\n", fmt::group_digits(p),
@@ -1374,7 +1387,7 @@ namespace {
     Ioss::PropertyManager properties = set_properties(interFace);
 
     Ioss::chain_t<INT> element_chains;
-    std::vector<int>   weights;
+    std::vector<float> weights;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
@@ -1382,8 +1395,8 @@ namespace {
 
       if (interFace.decomposition_method() == "rcb" || interFace.decomposition_method() == "rib" ||
           interFace.decomposition_method() == "hsfc") {
-        weights =
-            line_decomp_weights(element_chains, region.get_property("element_count").get_int());
+        weights = Ioss::DecompUtils::line_decomp_weights(
+            element_chains, region.get_property("element_count").get_int());
         progress("generate_element_weights");
       }
     }
@@ -1400,12 +1413,12 @@ namespace {
 
     if (interFace.lineDecomp_) {
       // Make sure all elements on a chain are on the same processor rank...
-      line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count());
+      Ioss::DecompUtils::line_decomp_modify(element_chains, elem_to_proc,
+                                            interFace.processor_count());
     }
 
     if (debug_level & 32) {
-      output_decomposition_statistics(elem_to_proc, interFace.processor_count(),
-                                      elem_to_proc.size());
+      Ioss::DecompUtils::output_decomposition_statistics(elem_to_proc, interFace.processor_count());
     }
 
     if (!create_split_files) {
@@ -1428,7 +1441,7 @@ namespace {
       Ioss::MeshCopyOptions options{};
       options.ints_64_bit       = sizeof(INT) == 64;
       options.delete_timesteps  = true;
-      options.data_storage_type = 2;
+      options.data_storage_type = 1;
       options.verbose           = true;
 
       // Copy mesh portion of input region to the output region

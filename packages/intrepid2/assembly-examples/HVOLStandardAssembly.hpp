@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 //
 //  HVOLStandardAssembly.hpp
 //  Trilinos
@@ -131,8 +139,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHVOL(Intrepid2
     auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
     
     FunctionSpaceTools::HVOLtransformVALUE(unorientedTransformedBasisValues, jacobianDeterminant, basisValues);
+    // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
+    fstIntegrateCall->stop();
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedBasisValues, unorientedTransformedBasisValues,
                                                            orientationsWorkset, basis.get());
+    fstIntegrateCall->start();
     FunctionSpaceTools::multiplyMeasure(transformedWeightedBasisValues, cellMeasures, transformedBasisValues);
     bool sumInto = true; // add the (value,value) integral to the (curl,curl) that we've already integrated
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedBasisValues, transformedWeightedBasisValues, sumInto);

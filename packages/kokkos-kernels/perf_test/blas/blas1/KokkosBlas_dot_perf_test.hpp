@@ -58,10 +58,8 @@ struct testData {
   // constructor or a destructor;
   // Constructor -- create function:
   testData(int m_in) : m(m_in) {
-    x = Kokkos::View<Scalar*, Device>(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
-    y = Kokkos::View<Scalar*, Device>(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
+    x = Kokkos::View<Scalar*, Device>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
+    y = Kokkos::View<Scalar*, Device>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
 
     Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
 

@@ -19,7 +19,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
+// #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Spmv.hpp"
 #include "KokkosBatched_Spmv_Team_Impl.hpp"
@@ -38,9 +38,8 @@ struct ParamTag {
   typedef T trans;
 };
 
-template <typename DeviceType, typename ParamTagType, typename ValuesViewType,
-          typename IntView, typename xViewType, typename yViewType,
-          typename alphaViewType, typename betaViewType, int dobeta>
+template <typename DeviceType, typename ParamTagType, typename ValuesViewType, typename IntView, typename xViewType,
+          typename yViewType, typename alphaViewType, typename betaViewType, int dobeta>
 struct Functor_TestBatchedTeamSpmv {
   using execution_space = typename DeviceType::execution_space;
   const alphaViewType _alpha;
@@ -53,45 +52,27 @@ struct Functor_TestBatchedTeamSpmv {
   const int _N_team;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamSpmv(const alphaViewType &alpha,
-                              const ValuesViewType &D, const IntView &r,
-                              const IntView &c, const xViewType &X,
-                              const betaViewType &beta, const yViewType &Y,
-                              const int N_team)
-      : _alpha(alpha),
-        _D(D),
-        _r(r),
-        _c(c),
-        _X(X),
-        _beta(beta),
-        _Y(Y),
-        _N_team(N_team) {}
+  Functor_TestBatchedTeamSpmv(const alphaViewType &alpha, const ValuesViewType &D, const IntView &r, const IntView &c,
+                              const xViewType &X, const betaViewType &beta, const yViewType &Y, const int N_team)
+      : _alpha(alpha), _D(D), _r(r), _c(c), _X(X), _beta(beta), _Y(Y), _N_team(N_team) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &,
-                                         const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const MemberType &member) const {
     const int first_matrix = static_cast<int>(member.league_rank()) * _N_team;
     const int N            = _D.extent(0);
     const int last_matrix =
-        (static_cast<int>(member.league_rank() + 1) * _N_team < N
-             ? static_cast<int>(member.league_rank() + 1) * _N_team
-             : N);
+        (static_cast<int>(member.league_rank() + 1) * _N_team < N ? static_cast<int>(member.league_rank() + 1) * _N_team
+                                                                  : N);
 
-    auto alpha =
-        Kokkos::subview(_alpha, Kokkos::make_pair(first_matrix, last_matrix));
-    auto d = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
-    auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
-    auto beta =
-        Kokkos::subview(_beta, Kokkos::make_pair(first_matrix, last_matrix));
-    auto y = Kokkos::subview(_Y, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
+    auto alpha = Kokkos::subview(_alpha, Kokkos::make_pair(first_matrix, last_matrix));
+    auto d     = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto x     = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto beta  = Kokkos::subview(_beta, Kokkos::make_pair(first_matrix, last_matrix));
+    auto y     = Kokkos::subview(_Y, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
-    KokkosBatched::TeamSpmv<MemberType, typename ParamTagType::trans>::
-        template invoke<ValuesViewType, IntView, xViewType, yViewType,
-                        alphaViewType, betaViewType, dobeta>(
-            member, alpha, d, _r, _c, x, beta, y);
+    KokkosBatched::TeamSpmv<MemberType, typename ParamTagType::trans>::template invoke<
+        ValuesViewType, IntView, xViewType, yViewType, alphaViewType, betaViewType, dobeta>(member, alpha, d, _r, _c, x,
+                                                                                            beta, y);
   }
 
   inline void run() {
@@ -100,16 +81,14 @@ struct Functor_TestBatchedTeamSpmv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(
-        _D.extent(0) / _N_team, Kokkos::AUTO(), Kokkos::AUTO());
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(_D.extent(0) / _N_team, Kokkos::AUTO(), Kokkos::AUTO());
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
 };
 
-template <typename DeviceType, typename ParamTagType, typename ValuesViewType,
-          typename IntView, typename xViewType, typename yViewType,
-          typename alphaViewType, typename betaViewType, int dobeta>
+template <typename DeviceType, typename ParamTagType, typename ValuesViewType, typename IntView, typename xViewType,
+          typename yViewType, typename alphaViewType, typename betaViewType, int dobeta>
 void impl_test_batched_spmv(const int N, const int BlkSize, const int N_team) {
   typedef typename ValuesViewType::value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
@@ -151,20 +130,15 @@ void impl_test_batched_spmv(const int N, const int BlkSize, const int N_team) {
       else
         Y0_host(l, i) *= beta_host(l);
       if (i != 0 && i != (BlkSize - 1))
-        Y0_host(l, i) +=
-            alpha_host(l) *
-            (2 * X0_host(l, i) - X0_host(l, i - 1) - X0_host(l, i + 1));
+        Y0_host(l, i) += alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i - 1) - X0_host(l, i + 1));
       else if (i == 0)
-        Y0_host(l, i) +=
-            alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i + 1));
+        Y0_host(l, i) += alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i + 1));
       else
-        Y0_host(l, i) +=
-            alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i - 1));
+        Y0_host(l, i) += alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i - 1));
     }
 
-  Functor_TestBatchedTeamSpmv<DeviceType, ParamTagType, ValuesViewType, IntView,
-                              xViewType, yViewType, alphaViewType, betaViewType,
-                              dobeta>(alpha, D, r, c, X1, beta, Y1, N_team)
+  Functor_TestBatchedTeamSpmv<DeviceType, ParamTagType, ValuesViewType, IntView, xViewType, yViewType, alphaViewType,
+                              betaViewType, dobeta>(alpha, D, r, c, X1, beta, Y1, N_team)
       .run();
 
   Kokkos::fence();
@@ -189,50 +163,38 @@ void impl_test_batched_spmv(const int N, const int BlkSize, const int N_team) {
 }  // namespace TeamSpmv
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType, typename ScalarType,
-          typename ParamTagType>
+template <typename DeviceType, typename ValueType, typename ScalarType, typename ParamTagType>
 int test_batched_team_spmv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> ViewType;
     typedef Kokkos::View<int *, Kokkos::LayoutLeft, DeviceType> IntView;
-    typedef Kokkos::View<ScalarType *, Kokkos::LayoutLeft, DeviceType>
-        alphaViewType;
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutLeft, DeviceType> alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType,
-                                             IntView, ViewType, ViewType,
-                                             alphaViewType, alphaViewType, 0>(
-          1024, i, 2);
+      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
+                                             alphaViewType, alphaViewType, 0>(1024, i, 2);
     }
     for (int i = 3; i < 10; ++i) {
-      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType,
-                                             IntView, ViewType, ViewType,
-                                             alphaViewType, alphaViewType, 1>(
-          1024, i, 2);
+      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
+                                             alphaViewType, alphaViewType, 1>(1024, i, 2);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        ViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> ViewType;
     typedef Kokkos::View<int *, Kokkos::LayoutRight, DeviceType> IntView;
-    typedef Kokkos::View<ScalarType *, Kokkos::LayoutRight, DeviceType>
-        alphaViewType;
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutRight, DeviceType> alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType,
-                                             IntView, ViewType, ViewType,
-                                             alphaViewType, alphaViewType, 0>(
-          1024, i, 2);
+      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
+                                             alphaViewType, alphaViewType, 0>(1024, i, 2);
     }
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType,
-                                             IntView, ViewType, ViewType,
-                                             alphaViewType, alphaViewType, 1>(
-          1024, i, 2);
+      Test::TeamSpmv::impl_test_batched_spmv<DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
+                                             alphaViewType, alphaViewType, 1>(1024, i, 2);
     }
   }
 #endif

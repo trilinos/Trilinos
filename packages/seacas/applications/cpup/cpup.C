@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,6 +34,22 @@
 #endif
 
 unsigned int debug_level = 0;
+
+#if FMT_VERSION >= 90000
+#include "Ioss_ZoneConnectivity.h"
+#include "Ioss_StructuredBlock.h"
+
+namespace fmt {
+  template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
+  {
+  };
+} // namespace fmt
+namespace fmt {
+  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
+  {
+  };
+} // namespace fmt
+#endif
 
 namespace {
   std::string tsFormat = "[{:%H:%M:%S}] ";
@@ -406,9 +422,11 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   int ts_max  = interFace.step_max();
   int ts_step = interFace.step_interval();
 
-  if (ts_min == -1 && ts_max == -1) {
-    ts_min = num_time_steps;
-    ts_max = num_time_steps;
+  if (ts_min < 0) {
+    ts_min = num_time_steps + 1 + ts_min;
+  }
+  if (ts_max < 0) {
+    ts_max = num_time_steps + 1 + ts_max;
   }
 
   // Time steps for output file
@@ -697,19 +715,25 @@ namespace {
       fmt::print(stderr, "  {:14} cells, {:14} nodes ", fmt::group_digits(num_cell),
                  fmt::group_digits(num_node));
 
+#if defined(__NVCC__)
+#define CONST
+#else
+#define CONST const
+#endif
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print(stderr, "\n\tConnectivity with other blocks:\n");
-        for (const auto &zgc : sb->m_zoneConnectivity) {
+        for (CONST auto &zgc : sb->m_zoneConnectivity) {
           fmt::print(stderr, "{}\n", zgc);
         }
       }
 
       if (!sb->m_boundaryConditions.empty()) {
         fmt::print(stderr, "\tBoundary Conditions:\n");
-        for (const auto &bc : sb->m_boundaryConditions) {
+        for (CONST auto &bc : sb->m_boundaryConditions) {
           fmt::print(stderr, "{}\n", bc);
         }
       }
+#undef CONST
     }
   }
 

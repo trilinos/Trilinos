@@ -12,7 +12,7 @@
 namespace
 {
 
-class InputNodesetDataCalledDispX : public stk::unit_test_util::simple_fields::MeshFixture
+class InputNodesetDataCalledDispX : public stk::unit_test_util::MeshFixture
 {
 protected:
   ~InputNodesetDataCalledDispX()
@@ -24,7 +24,6 @@ protected:
   {
     delete stkIo;
     stkIo = new stk::io::StkMeshIoBroker;
-    stkIo->use_simple_fields();
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     stkIo->set_bulk_data(get_bulk());
     stkIo->add_mesh_database(filename, stk::io::READ_MESH);

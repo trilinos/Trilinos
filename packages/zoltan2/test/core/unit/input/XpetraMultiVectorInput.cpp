@@ -1,47 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 // @HEADER
 // ***********************************************************************
 //         Zoltan2: Sandia Partitioning Ordering & Coloring Library
@@ -168,7 +133,6 @@ void readChacoGraphHeaderInfo(
   std::ifstream &fp, 
   size_t &nIDs, 
   size_t &nEdges, 
-  char *code, 
   int &nWgts)
 {
   // Read the header info from a Chaco .graph file
@@ -176,8 +140,9 @@ void readChacoGraphHeaderInfo(
   std::getline(fp, line);
   while (line[0]=='#') std::getline(fp, line); // skip comments
   std::istringstream issHeader(line);
-  issHeader >> nIDs >> nEdges >> code;
-  if (!strcmp(code, "010") || !strcmp(code, "011")) {
+  std::string s_code;
+  issHeader >> nIDs >> nEdges >> s_code;
+  if (!strcmp(s_code.c_str(), "010") || !strcmp(s_code.c_str(), "011")) {
     if (!(issHeader >> nWgts)) nWgts = 1;
   }
 }
@@ -205,7 +170,6 @@ int verifyGenerateFiles(
 
     size_t nIDsGen, nIDsInp;
     size_t nEdgesGen, nEdgesInp;
-    char codeGen[4], codeInp[4];
     int nWgtsGen = 0, nWgtsInp = 0;
     std::string lineGen, lineInp;
 
@@ -217,11 +181,11 @@ int verifyGenerateFiles(
 
     // Read header info from generated file
     fpGen.open(graphFilenameGen.c_str(), std::ios::in);
-    readChacoGraphHeaderInfo(fpGen, nIDsGen, nEdgesGen, codeGen, nWgtsGen);
+    readChacoGraphHeaderInfo(fpGen, nIDsGen, nEdgesGen, nWgtsGen);
 
     // Read header info from input file
     fpInp.open(graphFilenameInp.c_str(), std::ios::in);
-    readChacoGraphHeaderInfo(fpInp, nIDsInp, nEdgesInp, codeInp, nWgtsInp);
+    readChacoGraphHeaderInfo(fpInp, nIDsInp, nEdgesInp, nWgtsInp);
 
     // input file and generated file should have same number of IDs
     if (nIDsGen != nIDsInp) {

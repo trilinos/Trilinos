@@ -23,9 +23,9 @@ namespace KokkosBlas {
 namespace Experimental {
 
 template <class TeamType, class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<
-    typename XVector::non_const_value_type>::mag_type KOKKOS_INLINE_FUNCTION
-nrm2(const TeamType& team, const XVector& x) {
+typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+    KOKKOS_INLINE_FUNCTION
+    nrm2(const TeamType& team, const XVector& x) {
   return Impl::TeamNrm2<TeamType, XVector>::team_nrm2(team, x);
 }
 

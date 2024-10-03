@@ -29,6 +29,7 @@ void CommBuffer::set_buffer_ptrs(unsigned char* begin, unsigned char* ptr, unsig
   m_beg = begin;
   m_ptr = ptr;
   m_end = end;
+  m_offset = static_cast<unsigned>(m_ptr-m_beg);
 }
 
 }

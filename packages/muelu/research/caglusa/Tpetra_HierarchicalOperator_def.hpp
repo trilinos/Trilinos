@@ -1,8 +1,18 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TPETRA_HIERARCHICALOPERATOR_DEF_HPP
 #define TPETRA_HIERARCHICALOPERATOR_DEF_HPP
 
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
+#include <Tpetra_HierarchicalOperator_decl.hpp>
 
 namespace Tpetra {
 
@@ -18,7 +28,7 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
   using vals_type    = typename crs_matrix::local_matrix_device_type::values_type;
 
-  typedef Kokkos::ArithTraits<Scalar> ATS;
+  using ATS      = Kokkos::ArithTraits<Scalar>;
   using impl_SC  = typename ATS::val_type;
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 
@@ -26,29 +36,21 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
 
   auto rowptr = row_ptr_type("rowptr", lclA.numRows() + 1);
 
-  Kokkos::parallel_for(
-      "removeSmallEntries::rowptr1",
+  LocalOrdinal nnz;
+  Kokkos::parallel_scan(
+      "removeSmallEntries::rowptr",
       Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
-      KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+      KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
         auto row = lclA.row(rlid);
         for (LocalOrdinal k = 0; k < row.length; ++k) {
           if (impl_ATS::magnitude(row.value(k)) > tol) {
-            rowptr(rlid + 1) += 1;
+            partial_nnz += 1;
           }
         }
-      });
-  LocalOrdinal nnz;
-  Kokkos::parallel_scan(
-      "removeSmallEntries::rowptr2",
-      Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
-      KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
-        partial_nnz += rowptr(rlid + 1);
         if (is_final)
           rowptr(rlid + 1) = partial_nnz;
       },
       nnz);
-
-  // auto nnz = rowptr(lclA.numRows());
 
   auto idx  = col_idx_type("idx", nnz);
   auto vals = vals_type("vals", nnz);
@@ -67,6 +69,57 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
           }
         }
       });
+
+  Kokkos::fence();
+
+  auto newA = Teuchos::rcp(new crs_matrix(A->getRowMap(), A->getColMap(), rowptr, idx, vals));
+  newA->fillComplete(A->getDomainMap(),
+                     A->getRangeMap());
+  return newA;
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+constructSubMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                   std::pair<LocalOrdinal, LocalOrdinal> lid_range) {
+  using crs_matrix        = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_graph_type  = typename crs_matrix::local_graph_device_type;
+  using local_matrix_type = typename crs_matrix::local_matrix_device_type;
+  using row_ptr_type      = typename local_graph_type::row_map_type::non_const_type;
+  using col_idx_type      = typename local_graph_type::entries_type::non_const_type;
+  using vals_type         = typename local_matrix_type::values_type;
+
+  auto lclA = A->getLocalMatrixDevice();
+
+  auto old_rowptr = lclA.graph.row_map;
+  auto rowptr     = row_ptr_type("rowptr", lclA.numRows() + 1);
+
+  LocalOrdinal nnz;
+  Kokkos::parallel_scan(
+      "constructSubMatrix::rowptr",
+      Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+      KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
+        if ((lid_range.first <= rlid) && (rlid < lid_range.second)) {
+          partial_nnz += old_rowptr(rlid + 1) - old_rowptr(rlid);
+        }
+        if (is_final)
+          rowptr(rlid + 1) = partial_nnz;
+      },
+      nnz);
+
+  typename local_graph_type::size_type start;
+  typename local_graph_type::size_type end;
+  Kokkos::deep_copy(start, Kokkos::subview(old_rowptr, lid_range.first));
+  Kokkos::deep_copy(end, Kokkos::subview(old_rowptr, lid_range.second));
+  auto vals_range = Kokkos::make_pair(start, end);
+
+  TEUCHOS_ASSERT_EQUALITY(nnz, static_cast<LocalOrdinal>(end - start));
+
+  auto idx  = Kokkos::subview(lclA.graph.entries, vals_range);
+  auto vals = Kokkos::subview(lclA.values, vals_range);
 
   auto newA = Teuchos::rcp(new crs_matrix(A->getRowMap(), A->getColMap(), rowptr, idx, vals));
   newA->fillComplete(A->getDomainMap(),
@@ -148,6 +201,8 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   defaultParams.set("keepTransfers", -1);
   defaultParams.set("treeCoarseningFactor", 2.0);
   defaultParams.set("leftOverFactor", 1.0);
+  defaultParams.set("batchSize", 50);
+  defaultParams.set("numBatches", 36);
   if (params_.is_null())
     params_ = Teuchos::rcp(new Teuchos::ParameterList(""));
   params_->validateParametersAndSetDefaults(defaultParams);
@@ -159,7 +214,11 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sendTypeKernelApproximations = params_->get<std::string>("Send type kernelApproximations");
   coarseningCriterion_         = params_->get<std::string>("Coarsening criterion");
   TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense") || (coarseningCriterion_ == "transferLevels"));
-  debugOutput_ = params_->get<bool>("debugOutput");
+  setDebugOutput(params_->get<bool>("debugOutput"));
+
+  auto comm = getComm();
+  if (debugOutput_ && (comm->getRank() == 0))
+    std::cout << *params_ << std::endl;
 
   if (doDebugChecks) {
     // near field matrix lives on map and is nonlocal
@@ -523,6 +582,8 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar HALF = ONE / (ONE + ONE);
 
+  RCP<Teuchos::ParameterList> coarseParams = rcp(new Teuchos::ParameterList(*params_));
+
   // newBasisMatrix = P^T * basisMatrix
   RCP<matrix_type> newBasisMatrix = rcp(new matrix_type(P->getDomainMap(), clusterCoeffMap_, 0));
   MatrixMatrix::Multiply(*P, true, *basisMatrix_, false, *newBasisMatrix);
@@ -576,10 +637,11 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   }
 
   // coarse cluster pair graph
-  RCP<matrix_type> newKernelBlockGraph = rcp(new matrix_type(kernelApproximations_->blockA_->getCrsGraph()));
-  newKernelBlockGraph->resumeFill();
+  RCP<matrix_type> newKernelBlockGraph;
   // point entries of cluster pairs that should be moved to the near field
-  RCP<matrix_type> diffKernelApprox = rcp(new matrix_type(kernelApproximations_->pointA_->getCrsGraph()));
+  RCP<matrix_type> diffKernelApprox;
+  // coarse point matrix of cluster pairs
+  Teuchos::RCP<matrix_type> newKernelApprox;
 
   // Determine which cluster pairs should be moved to the near field.
   // We are constructing the coarse block matrix newKernelBlockGraph
@@ -622,7 +684,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       }
       std::sort(clusterPairSizes.begin(), clusterPairSizes.end());
       double coarseningRate = Teuchos::as<double>(P->getGlobalNumCols()) / Teuchos::as<double>(P->getGlobalNumRows());
-      tgt_clusterPairSize   = clusterPairSizes[Teuchos::as<size_t>(clusterPairSizes.size() * (1 - coarseningRate))];
+      tgt_clusterPairSize   = clusterPairSizes[Teuchos::as<size_t>(static_cast<double>(clusterPairSizes.size()) * (1 - coarseningRate))];
       // std::cout << "HERE " << clusterPairSizes[0] << " " << tgt_clusterPairSize << " " << clusterPairSizes[clusterPairSizes.size()-1] << std::endl;
     }
 
@@ -630,65 +692,73 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     // Drop cluster pairs by level in the tree.
     auto comm = getComm();
     std::set<LocalOrdinal> blidsToDrop;
+    LocalOrdinal minDrop = kernelApproximations_->blockMap_->blockMap_->getLocalNumElements() + 1;
+    LocalOrdinal maxDrop = -1;
     if (coarseningCriterion_ == "transferLevels") {
       double coarseningRate       = Teuchos::as<double>(P->getGlobalNumCols()) / Teuchos::as<double>(P->getGlobalNumRows());
       size_t droppedClusterPairs  = 0;
       size_t totalNumClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
       RCP<vec_type> tempV         = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
       RCP<vec_type> tempV2        = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
-      int keepTransfers           = params_->get<int>("keepTransfers", -1);
+      // keepTransfers == transferMatrices_.size(): keep all transfers
+      // keepTransfers == 0: keep no transfers
+      int keepTransfers                 = params_->get<int>("keepTransfers", -1);
+      const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
       if (keepTransfers == -1) {
-        double leftOverFactor             = params_->get<double>("leftOverFactor");
-        keepTransfers                     = transferMatrices_.size();
-        double temp                       = (1.0 / coarseningRate) * leftOverFactor;
-        const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
-        while (temp >= 2.0) {
+        double leftOverFactor = params_->get<double>("leftOverFactor");
+        keepTransfers         = transferMatrices_.size();
+        double temp           = (1.0 / coarseningRate) * leftOverFactor;
+        while (temp >= 1.0) {
           --keepTransfers;
           temp /= treeCoarseningFactor;
         }
         keepTransfers = std::max(keepTransfers, 0);
-        params_->set("leftOverFactor", temp);
+        coarseParams->set("leftOverFactor", temp);
       }
+      coarseParams->set("keepTransfers", -1);
+      TEUCHOS_ASSERT((0 <= keepTransfers) && (keepTransfers <= Teuchos::as<int>(transferMatrices_.size())));
 
+      size_t droppedTransfers = 0;
       for (int k = Teuchos::as<int>(transferMatrices_.size()) - 1; k >= 0; --k) {
-        size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();
+        size_t numTreeEdgesBetweenLevels = transferMatrices_[k]->blockA_->getGlobalNumEntries();
+        size_t numClusters_k1            = numTreeEdgesBetweenLevels;
+        auto numClusters_k               = Teuchos::as<size_t>(static_cast<double>(numTreeEdgesBetweenLevels) / treeCoarseningFactor);
 
         if (debugOutput_ && (comm->getRank() == 0))
-          std::cout << "level " << k << " clustersInLevel " << clustersInLevel << std::endl;
+          std::cout << "transfer " << k << " between levels " << k + 1 << " and " << k << " maps " << numClusters_k1 << " to " << numClusters_k << " clusters" << std::endl;
 
         tempV->putScalar(ONE);
         transferMatrices_[k]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
-
-        size_t numClusters = tempV2->norm1();
-        if (debugOutput_ && (comm->getRank() == 0))
-          std::cout << "numClusters " << numClusters << std::endl;
         tempV->putScalar(ZERO);
         kernelApproximations_->blockA_->apply(*tempV2, *tempV);
-
         Scalar numClusterPairs = tempV->dot(*tempV2);
         if (debugOutput_ && (comm->getRank() == 0))
-          std::cout << "numClusterPairs " << numClusterPairs << std::endl;
+          std::cout << "cluster pairs on level " << k + 1 << ": " << numClusterPairs << std::endl;
 
         bool doDrop;
         if (keepTransfers >= 0) {
           doDrop = (keepTransfers <= k);
         } else {
-          doDrop = (droppedClusterPairs + numClusterPairs < (1.0 - coarseningRate) * totalNumClusterPairs);
+          doDrop = (droppedClusterPairs + numClusterPairs < (1.0 - coarseningRate) * static_cast<double>(totalNumClusterPairs));
         }
         if (doDrop) {
           auto lcl_transfer       = transferMatrices_[k]->blockA_->getLocalMatrixHost();
           auto lcl_transfer_graph = lcl_transfer.graph;
-          for (LocalOrdinal j = 0; j < lcl_transfer_graph.entries.extent_int(0); j++)
+          for (LocalOrdinal j = 0; j < lcl_transfer_graph.entries.extent_int(0); j++) {
             blidsToDrop.insert(lcl_transfer_graph.entries(j));
+            minDrop = std::min(minDrop, lcl_transfer_graph.entries(j));
+            maxDrop = std::max(maxDrop, lcl_transfer_graph.entries(j));
+          }
 
+          droppedTransfers += 1;
           droppedClusterPairs += numClusterPairs;
-        } else {
-          if (debugOutput_ && (comm->getRank() == 0))
-            std::cout << "Dropped " << transferMatrices_.size() - 1 - k << " transfers of " << transferMatrices_.size() << " dropped cp: " << droppedClusterPairs << std::endl;
-          break;
         }
       }
+      if (debugOutput_ && (comm->getRank() == 0))
+        std::cout << "Dropped " << droppedTransfers << " transfers of " << transferMatrices_.size() << ", dropped cluster pairs: " << droppedClusterPairs << std::endl;
     }
+
+    bool dropContiguousRange = (static_cast<size_t>(maxDrop + 1 - minDrop) == blidsToDrop.size());
 
     // number of cluster pairs dropped
     int dropped = 0;
@@ -696,78 +766,105 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     int kept = 0;
     // number of cluster pairs that were no longer present
     int ignored = 0;
-    // loop over cluster pairs
-    // TODO: parallel_for
-    auto lcl_BlockGraph       = kernelApproximations_->blockA_->getLocalMatrixHost();
-    auto lcl_newBlockGraph    = newKernelBlockGraph->getLocalMatrixHost();
-    auto lcl_KernelApprox     = kernelApproximations_->pointA_->getLocalMatrixHost();
-    auto lcl_diffKernelApprox = diffKernelApprox->getLocalMatrixHost();
-    for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
-      size_t brsize = lcl_clusterSizes(brlid, 0);
-      auto brow     = lcl_BlockGraph.row(brlid);
-      auto new_brow = lcl_newBlockGraph.row(brlid);
-      for (LocalOrdinal k = 0; k < brow.length; ++k) {
-        // Entries of the block matrix for kernelApproximations
-        // decide whether the cluster pair is present and only take
-        // values 1 or 0.
-        if (brow.value(k) > HALF) {
-          LocalOrdinal bclid = brow.colidx(k);
-          size_t bcsize      = lcl_ghosted_clusterSizes(bclid, 0);
 
-          // criterium for removing a cluster pair from the far field
-          bool removeCluster = false;
-          if (coarseningCriterion_ == "equivalentDense") {
-            // Size of the sparse cluster approximation >= size of dense equivalent
-            removeCluster = (brsize * bcsize >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
-          } else if (coarseningCriterion_ == "numClusters") {
-            removeCluster = (lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0) < tgt_clusterPairSize);
-          } else if (coarseningCriterion_ == "transferLevels") {
-            removeCluster = ((blidsToDrop.find(brlid) != blidsToDrop.end()) ||
-                             (blidsToDrop.find(bclid) != blidsToDrop.end()));
-          }
-          if (removeCluster) {
-            // we are dropping the cluster pair from the far field
-            ++dropped;
-            new_brow.value(k) = ZERO;
+    if (dropContiguousRange) {
+      newKernelBlockGraph = constructSubMatrix(kernelApproximations_->blockA_, {0, minDrop});
+      dropped             = maxDrop + 1 - minDrop;
+      kept                = minDrop;
+      LocalOrdinal minLid = lcl_offsets(minDrop);
+      LocalOrdinal maxLid = lcl_offsets(maxDrop + 1);
+      diffKernelApprox    = constructSubMatrix(kernelApproximations_->pointA_, {minLid, maxLid});
+      newKernelApprox     = constructSubMatrix(kernelApproximations_->pointA_, {0, minLid});
 
-            // loop over the point matrix and add the entries to diffKernelApprox
-            const LocalOrdinal row_start = lcl_offsets(brlid);
-            const LocalOrdinal row_end   = lcl_offsets(brlid + 1);
-            const LocalOrdinal col_start = lcl_ghosted_offsets(bclid);
-            const LocalOrdinal col_end   = lcl_ghosted_offsets(bclid + 1);
-            TEUCHOS_ASSERT_EQUALITY(Teuchos::as<size_t>(row_end - row_start), brsize);
-            TEUCHOS_ASSERT_EQUALITY(Teuchos::as<size_t>(col_end - col_start), bcsize);
-            for (LocalOrdinal rlid = row_start; rlid < row_end; ++rlid) {
-              auto diff_row  = lcl_diffKernelApprox.row(rlid);
-              auto row       = lcl_KernelApprox.row(rlid);
-              size_t removed = 0;
-              for (LocalOrdinal n = 0; n < row.length; ++n) {
-                if ((col_start <= row.colidx(n)) && (col_end > row.colidx(n))) {
-                  diff_row.value(n) = row.value(n);
-                  ++removed;
-                }
-              }
-              if (removed != bcsize) {
-                std::ostringstream oss;
-                oss << "brlid " << brlid << " row " << rlid << std::endl;
-                oss << "col_start " << col_start << " col_end " << col_end << std::endl;
+    } else {
+      newKernelBlockGraph = rcp(new matrix_type(kernelApproximations_->blockA_->getCrsGraph()));
+      newKernelBlockGraph->resumeFill();
+      diffKernelApprox = rcp(new matrix_type(kernelApproximations_->pointA_->getCrsGraph()));
+
+      // loop over cluster pairs
+      // TODO: parallel_for
+      auto lcl_BlockGraph       = kernelApproximations_->blockA_->getLocalMatrixHost();
+      auto lcl_newBlockGraph    = newKernelBlockGraph->getLocalMatrixHost();
+      auto lcl_KernelApprox     = kernelApproximations_->pointA_->getLocalMatrixHost();
+      auto lcl_diffKernelApprox = diffKernelApprox->getLocalMatrixHost();
+      for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
+        size_t brsize = lcl_clusterSizes(brlid, 0);
+        auto brow     = lcl_BlockGraph.row(brlid);
+        auto new_brow = lcl_newBlockGraph.row(brlid);
+        for (LocalOrdinal k = 0; k < brow.length; ++k) {
+          // Entries of the block matrix for kernelApproximations
+          // decide whether the cluster pair is present and only take
+          // values 1 or 0.
+          if (brow.value(k) > HALF) {
+            LocalOrdinal bclid = brow.colidx(k);
+            size_t bcsize      = lcl_ghosted_clusterSizes(bclid, 0);
+
+            // criterium for removing a cluster pair from the far field
+            bool removeCluster = false;
+            if (coarseningCriterion_ == "equivalentDense") {
+              // Size of the sparse cluster approximation >= size of dense equivalent
+              removeCluster = (brsize * bcsize >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
+            } else if (coarseningCriterion_ == "numClusters") {
+              removeCluster = (lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0) < tgt_clusterPairSize);
+            } else if (coarseningCriterion_ == "transferLevels") {
+              removeCluster = ((blidsToDrop.find(brlid) != blidsToDrop.end()) ||
+                               (blidsToDrop.find(bclid) != blidsToDrop.end()));
+            }
+            if (removeCluster) {
+              // we are dropping the cluster pair from the far field
+              ++dropped;
+              new_brow.value(k) = ZERO;
+
+              // loop over the point matrix and add the entries to diffKernelApprox
+              const LocalOrdinal row_start = lcl_offsets(brlid);
+              const LocalOrdinal row_end   = lcl_offsets(brlid + 1);
+              const LocalOrdinal col_start = lcl_ghosted_offsets(bclid);
+              const LocalOrdinal col_end   = lcl_ghosted_offsets(bclid + 1);
+              TEUCHOS_ASSERT_EQUALITY(Teuchos::as<size_t>(row_end - row_start), brsize);
+              TEUCHOS_ASSERT_EQUALITY(Teuchos::as<size_t>(col_end - col_start), bcsize);
+              for (LocalOrdinal rlid = row_start; rlid < row_end; ++rlid) {
+                auto diff_row  = lcl_diffKernelApprox.row(rlid);
+                auto row       = lcl_KernelApprox.row(rlid);
+                size_t removed = 0;
                 for (LocalOrdinal n = 0; n < row.length; ++n) {
-                  oss << row.colidx(n) << " " << row.value(n) << std::endl;
+                  if ((col_start <= row.colidx(n)) && (col_end > row.colidx(n))) {
+                    diff_row.value(n) = row.value(n);
+                    ++removed;
+                  }
                 }
-                std::cout << oss.str();
+                if (removed != bcsize) {
+                  std::ostringstream oss;
+                  oss << "brlid " << brlid << " row " << rlid << std::endl;
+                  oss << "col_start " << col_start << " col_end " << col_end << std::endl;
+                  for (LocalOrdinal n = 0; n < row.length; ++n) {
+                    oss << row.colidx(n) << " " << row.value(n) << std::endl;
+                  }
+                  std::cout << oss.str();
+                }
+                TEUCHOS_ASSERT_EQUALITY(removed, bcsize);
               }
-              TEUCHOS_ASSERT_EQUALITY(removed, bcsize);
+            } else {
+              // We are keeping the cluster pair.
+              ++kept;
+              new_brow.value(k) = brow.value(k);
             }
           } else {
-            // We are keeping the cluster pair.
-            ++kept;
+            // The cluster pair has already been dropped on the fine level.
+            ++ignored;
             new_brow.value(k) = brow.value(k);
           }
-        } else {
-          // The cluster pair has already been dropped on the fine level.
-          ++ignored;
-          new_brow.value(k) = brow.value(k);
         }
+      }
+
+      newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
+                                        kernelApproximations_->blockA_->getRangeMap());
+      newKernelBlockGraph = removeSmallEntries(newKernelBlockGraph, Teuchos::ScalarTraits<MagnitudeType>::eps());
+      diffKernelApprox->fillComplete(clusterCoeffMap_,
+                                     clusterCoeffMap_);
+
+      {
+        Teuchos::RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *kernelApproximations_->pointA_, -ONE, false, *diffKernelApprox);
+        newKernelApprox                = removeSmallEntries(temp, Teuchos::ScalarTraits<MagnitudeType>::eps());
       }
     }
     if (debugOutput_) {
@@ -781,21 +878,8 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &kept, &gbl_kept);
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ignored, &gbl_ignored);
       if (comm->getRank() == 0)
-        std::cout << "dropped " << gbl_dropped << " kept " << gbl_kept << " ignored " << gbl_ignored << std::endl;
+        std::cout << "dropped " << gbl_dropped << " cluster pairs, kept " << gbl_kept << " cluster pairs, ignored " << gbl_ignored << " cluster pairs" << std::endl;
     }
-  }
-
-  newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
-                                    kernelApproximations_->blockA_->getRangeMap());
-  newKernelBlockGraph = removeSmallEntries(newKernelBlockGraph, Teuchos::ScalarTraits<MagnitudeType>::eps());
-  diffKernelApprox->fillComplete(clusterCoeffMap_,
-                                 clusterCoeffMap_);
-
-  // coarse point matrix of cluster pairs
-  Teuchos::RCP<matrix_type> newKernelApprox;
-  {
-    Teuchos::RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *kernelApproximations_->pointA_, -ONE, false, *diffKernelApprox);
-    newKernelApprox                = removeSmallEntries(temp, Teuchos::ScalarTraits<MagnitudeType>::eps());
   }
 
   // construct identity on clusterCoeffMap_
@@ -806,6 +890,8 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   // select subset of transfer matrices for coarse operator
   std::vector<Teuchos::RCP<blocked_matrix_type> > newTransferMatrices;
   {
+    Teuchos::TimeMonitor tM_basis_transfer(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse basis and transfers")));
+
     auto comm = getComm();
 
     RCP<vec_type> v_temp          = rcp(new vec_type(newKernelBlockGraph->getDomainMap()));
@@ -841,32 +927,49 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   // Coarse near field
   RCP<matrix_type> newNearField;
   {
-    // transfer = newBasisMatrix * (identity + newTransferMatrices[K-1]^T) * ... * (identity + newTransferMatrices[0])^T
-    Teuchos::RCP<matrix_type> transfer = rcp(new matrix_type(*newBasisMatrix));
-    for (int i = Teuchos::as<int>(newTransferMatrices.size()) - 1; i >= 0; i--) {
-      Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *newTransferMatrices[i]->pointA_);
-      Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-      MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
-      transfer = temp2;
+    Teuchos::TimeMonitor tM_near(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field")));
+
+    // diffKernelApprox := (identity + newTransferMatrices[K-1])^T * ... * (identity + newTransferMatrices[0])^T
+    //                      * diffKernelApprox
+    //                      * (identity + newTransferMatrices[0]) * ... * (identity + newTransferMatrices[K-1])
+    {
+      Teuchos::TimeMonitor tM_near_1(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 1")));
+      for (int i = 0; i < Teuchos::as<int>(newTransferMatrices.size()); ++i) {
+        // diffKernelApprox := (I + newTransferMatrices[i])^T * diffKernelApprox * (I + newTransferMatrices[i])
+        Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *newTransferMatrices[i]->pointA_);
+        Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(clusterCoeffMap_, 0));
+        MatrixMatrix::Multiply(*temp, true, *diffKernelApprox, false, *temp2);
+        MatrixMatrix::Multiply(*temp2, false, *temp, false, *diffKernelApprox);
+      }
     }
 
-    // diffFarField = transfer * diffKernelApprox * transfer^T
-    RCP<matrix_type> diffFarField;
+    // diffKernelApprox := (newBasisMatrix * diffKernelApprox) * newBasisMatrix^T
     {
+      Teuchos::TimeMonitor tM_near2(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2")));
+
       Teuchos::RCP<matrix_type> temp = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-      MatrixMatrix::Multiply(*transfer, false, *diffKernelApprox, false, *temp);
-      diffFarField = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-      MatrixMatrix::Multiply(*temp, false, *transfer, true, *diffFarField);
+      {
+        Teuchos::TimeMonitor tM_near2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2a")));
+        MatrixMatrix::Multiply(*newBasisMatrix, false, *diffKernelApprox, false, *temp);
+      }
+
+      {
+        Teuchos::TimeMonitor tM_near2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2b")));
+        diffKernelApprox = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*temp, false, *newBasisMatrix, true, *diffKernelApprox);
+      }
     }
 
-    // newNearField = P^T * nearField * P + diffFarField
+    // newNearField = (P^T * nearField * P) + diffKernelApprox
     {
+      Teuchos::TimeMonitor tM_near3(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 3")));
       RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
       MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);
       RCP<matrix_type> temp2 = rcp(new matrix_type(P->getDomainMap(), 0));
       MatrixMatrix::Multiply(*P, true, *temp, false, *temp2);
-      newNearField = MatrixMatrix::add(ONE, false, *temp2, ONE, false, *diffFarField);
-      newNearField = removeSmallEntries(newNearField, Teuchos::ScalarTraits<MagnitudeType>::eps());
+      newNearField     = MatrixMatrix::add(ONE, false, *temp2, ONE, false, *diffKernelApprox);
+      diffKernelApprox = Teuchos::null;
+      // newNearField = removeSmallEntries(newNearField, Teuchos::ScalarTraits<MagnitudeType>::eps());
     }
   }
 
@@ -874,7 +977,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
                                                                                           newBlockedKernelApproximation,
                                                                                           newBasisMatrix,
                                                                                           newTransferMatrices,
-                                                                                          params_));
+                                                                                          coarseParams));
 }
 
 template <class Scalar,
@@ -892,29 +995,100 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
   if (hasFarField()) {
-    // transfer = basisMatrix_ * (identity + transferMatrices_[K-1]) * ... * (identity + transferMatrices_[0])
-    RCP<matrix_type> transfer = rcp(new matrix_type(*basisMatrix_));
+    RCP<matrix_type> kernelApproximations;
 
     if (hasTransferMatrices()) {
+      kernelApproximations = rcp(new matrix_type(*kernelApproximations_->pointA_));
+
       // construct identity on clusterCoeffMap_
       Teuchos::RCP<matrix_type> identity = buildIdentityMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(clusterCoeffMap_);
 
-      for (int i = Teuchos::as<int>(transferMatrices_.size()) - 1; i >= 0; i--) {
-        RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
-        RCP<matrix_type> temp2 = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-        MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
-        transfer = temp2;
+      Teuchos::TimeMonitor tM_near_1(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 1")));
+      for (int i = 0; i < Teuchos::as<int>(transferMatrices_.size()); ++i) {
+        // kernelApproximations := (I + newTransferMatrices[i])^T * kernelApproximations * (I + newTransferMatrices[i])
+        Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
+        Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(clusterCoeffMap_, 0));
+        MatrixMatrix::Multiply(*temp, true, *kernelApproximations, false, *temp2);
+        Teuchos::RCP<matrix_type> temp3 = rcp(new matrix_type(clusterCoeffMap_, 0));
+        MatrixMatrix::Multiply(*temp2, false, *temp, false, *temp3);
+        kernelApproximations = temp3;
+      }
+    } else {
+      kernelApproximations = kernelApproximations_->pointA_;
+    }
+
+    // farField = (basisMatrix_ * kernelApproximations) * basisMatrix_^T
+    RCP<matrix_type> farField;
+    {
+      Teuchos::TimeMonitor tM_near_2(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2")));
+      int rank       = getComm()->getRank();
+      int size       = getComm()->getSize();
+      int numBatches = params_->get<int>("numBatches");
+      if (numBatches < 0) {
+        int batchSize = params_->get<int>("batchSize");
+        numBatches    = size / batchSize;
+      }
+      numBatches = std::max(numBatches, 1);
+      for (int batchNo = 0; batchNo < numBatches; ++batchNo) {
+        RCP<matrix_type> kernelApproximationsSlice;
+        {
+          Teuchos::TimeMonitor tM_near_2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2 0")));
+
+          using local_matrix_type = typename matrix_type::local_matrix_device_type;
+          local_matrix_type lclKernelApproximationsSlice;
+
+          if (rank % numBatches == batchNo) {
+            lclKernelApproximationsSlice = kernelApproximations->getLocalMatrixDevice();
+
+          } else {
+            using local_graph_type = typename matrix_type::local_graph_device_type;
+            using row_ptr_type     = typename local_graph_type::row_map_type::non_const_type;
+            using col_idx_type     = typename local_graph_type::entries_type::non_const_type;
+            using vals_type        = typename local_matrix_type::values_type;
+
+            auto lclKernelApproximations = kernelApproximations->getLocalMatrixDevice();
+            auto rowptr                  = row_ptr_type("rowptr", lclKernelApproximations.numRows() + 1);
+            auto idx                     = col_idx_type("colidx", 0);
+            auto vals                    = vals_type("vals", 0);
+
+            auto lclKernelApproximationsSliceGraph = local_graph_type(idx, rowptr);
+            lclKernelApproximationsSlice           = local_matrix_type("slice", lclKernelApproximations.numCols(), vals, lclKernelApproximationsSliceGraph);
+          }
+          kernelApproximationsSlice = rcp(new matrix_type(lclKernelApproximationsSlice,
+                                                          kernelApproximations->getRowMap(),
+                                                          kernelApproximations->getColMap(),
+                                                          kernelApproximations->getDomainMap(),
+                                                          kernelApproximations->getRangeMap()));
+        }
+        {
+          RCP<matrix_type> temp;
+          {
+            Teuchos::TimeMonitor tM_near_2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2a")));
+            temp = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
+            MatrixMatrix::Multiply(*basisMatrix_, false, *kernelApproximationsSlice, false, *temp);
+          }
+
+          {
+            Teuchos::TimeMonitor tM_near_2b(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2b")));
+            auto temp2 = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
+            MatrixMatrix::Multiply(*temp, false, *basisMatrix_, true, *temp2);
+            temp = Teuchos::null;
+            if (batchNo == 0)
+              farField = temp2;
+            else
+              farField = MatrixMatrix::add(ONE, false, *farField, ONE, false, *temp2);
+          }
+        }
       }
     }
 
-    // farField = transfer * kernelApproximations_ * transfer^T
-    RCP<matrix_type> temp = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-    MatrixMatrix::Multiply(*transfer, false, *kernelApproximations_->pointA_, false, *temp);
-    RCP<matrix_type> farField = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-    MatrixMatrix::Multiply(*temp, false, *transfer, true, *farField);
-
     // nearField_ + farField
-    return MatrixMatrix::add(ONE, false, *nearField_, ONE, false, *farField);
+    RCP<matrix_type> dense;
+    {
+      Teuchos::TimeMonitor tM_near_3(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 3")));
+      dense = MatrixMatrix::add(ONE, false, *nearField_, ONE, false, *farField);
+    }
+    return dense;
 
   } else
 

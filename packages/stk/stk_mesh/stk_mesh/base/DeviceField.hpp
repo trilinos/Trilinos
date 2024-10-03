@@ -311,15 +311,6 @@ private:
     return deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, component));
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  template <typename MeshIndex> STK_DEPRECATED KOKKOS_FUNCTION
-  T& get(MeshIndex index, int component,
-         const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
-  {
-    return deviceData(deviceSelectedBucketOffset(index.bucket->bucket_id()), ORDER_INDICES(index.bucketOrd, component));
-  }
-#endif
-
   KOKKOS_FUNCTION
   T& operator()(const FastMeshIndex& index, int component,
                 const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
@@ -327,15 +318,6 @@ private:
     fieldSyncDebugger.device_stale_access_check(this, index, component, fileName, lineNumber);
     return deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, component));
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  template <typename MeshIndex> STK_DEPRECATED KOKKOS_FUNCTION
-  T& operator()(const MeshIndex& index, int component,
-                const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
-  {
-    return deviceData(deviceSelectedBucketOffset(index.bucket->bucket_id()), ORDER_INDICES(index.bucketOrd, component));
-  }
-#endif
 
   KOKKOS_FUNCTION
   EntityFieldData<T> operator()(const FastMeshIndex& index,
@@ -369,12 +351,6 @@ private:
   FieldState state() const { return hostField->state(); }
 
   const FieldBase* get_field_base() const { return hostField; }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED void rotate_multistate_data() override
-  {
-  }
-#endif
 
   void update_bucket_pointer_view() override
   {
@@ -512,7 +488,7 @@ private:
     newDeviceSelectedBucketOffset = UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_bucket_offset"),
                                                      allBuckets.size());
     newHostSelectedBucketOffset =
-        Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), newDeviceSelectedBucketOffset);
+        Kokkos::create_mirror_view(Kokkos::WithoutInitializing, newDeviceSelectedBucketOffset);
 
     for(unsigned i = 0; i < allBuckets.size(); i++) {
       if(selector(*allBuckets[i])) {
@@ -647,59 +623,66 @@ private:
     Kokkos::deep_copy(get_execution_space(), unInnerDestView, unInnerSrcView);
   }
 
+  struct BackwardShiftIndices {
+    BackwardShiftIndices(unsigned _oldIndex, unsigned _newIndex)
+      : oldIndex(_oldIndex),
+        newIndex(_newIndex)
+    {}
+    unsigned oldIndex;
+    unsigned newIndex;
+  };
+
   void move_unmodified_buckets(const BucketVector& buckets, unsigned numPerEntity)
   {
-    for(unsigned i = 0; i < buckets.size(); i++) {
+    std::vector<BackwardShiftIndices> backwardShiftList;
+
+    for (unsigned i = 0; i < buckets.size(); ++i) {
       unsigned oldBucketId = buckets[i]->get_ngp_field_bucket_id(get_ordinal());
       unsigned newBucketId = buckets[i]->bucket_id();
 
-      if(oldBucketId == INVALID_BUCKET_ID) { continue; }
+      const bool isNewBucket = (oldBucketId == INVALID_BUCKET_ID);
+      if (isNewBucket) {
+        continue;
+      }
 
       unsigned oldBucketOffset = hostSelectedBucketOffset(oldBucketId);
       unsigned newBucketOffset = newHostSelectedBucketOffset(newBucketId);
 
-      if(oldBucketOffset != newBucketOffset && !buckets[i]->get_ngp_field_bucket_is_modified(get_ordinal())) {
-        if(oldBucketOffset > newBucketOffset) {
-          copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
-        } else {
-          move_unmodified_buckets_in_range_from_back(buckets, numPerEntity, i);
-        }
+      const bool bucketNotForThisField = (newBucketOffset == INVALID_BUCKET_ID);
+      const bool bucketHasNotMoved = (oldBucketId == newBucketId);
+      const bool bucketIsUnmodified = not buckets[i]->get_ngp_field_bucket_is_modified(get_ordinal());
+
+      if (bucketNotForThisField || (bucketHasNotMoved && bucketIsUnmodified)) {
+        continue;
+      }
+
+      if (newBucketOffset < oldBucketOffset) {
+        shift_bucket_forward(oldBucketId, newBucketId, numPerEntity);
+      }
+      else {
+        backwardShiftList.emplace_back(oldBucketId, newBucketId);
       }
     }
+
+    shift_buckets_backward(backwardShiftList, numPerEntity);
   }
 
-  void move_unmodified_buckets_in_range_from_back(const BucketVector& buckets, unsigned numPerEntity, unsigned& currBaseIndex)
+  void shift_bucket_forward(unsigned oldBucketId, unsigned newBucketId, unsigned numPerEntity)
   {
-    int startIndex = currBaseIndex;
-    int endIndex = buckets.size() - 1;
-    unsigned oldBucketId, newBucketId;
-    unsigned oldBucketOffset, newBucketOffset;
+    copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(deviceData, deviceData,
+                                                                                        oldBucketId, newBucketId,
+                                                                                        numPerEntity);
+  }
 
-    for(unsigned j = currBaseIndex; j < buckets.size(); j++) {
-      oldBucketId = buckets[j]->get_ngp_field_bucket_id(get_ordinal());
-      newBucketId = buckets[j]->bucket_id();
-
-      if(oldBucketId == INVALID_BUCKET_ID) {
-        endIndex = j - 1;
-        break;
-      }
-
-      oldBucketOffset = hostSelectedBucketOffset(oldBucketId);
-      newBucketOffset = newHostSelectedBucketOffset(newBucketId);
-
-      if(oldBucketOffset >= newBucketOffset || buckets[j]->get_ngp_field_bucket_is_modified(get_ordinal())) {
-        endIndex = j - 1;
-        break;
-      }
+  void shift_buckets_backward(const std::vector<BackwardShiftIndices> & backwardShiftList, unsigned numPerEntity)
+  {
+    for (auto it = backwardShiftList.rbegin(); it != backwardShiftList.rend(); ++it) {
+      const BackwardShiftIndices& shiftIndices = *it;
+      copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(deviceData, deviceData,
+                                                                                          shiftIndices.oldIndex,
+                                                                                          shiftIndices.newIndex,
+                                                                                          numPerEntity);
     }
-
-    for(int j = endIndex; j >= startIndex; j--) {
-      oldBucketId = buckets[j]->get_ngp_field_bucket_id(get_ordinal());
-      newBucketId = buckets[j]->bucket_id();
-
-      copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
-    }
-    currBaseIndex = endIndex;
   }
 
   void copy_new_and_modified_buckets_from_host(const BucketVector& buckets, unsigned numPerEntity)

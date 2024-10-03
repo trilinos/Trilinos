@@ -34,8 +34,7 @@ namespace Impl {
 ///
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
-template <class CMV, class AV, class BMV, int scalar_ab, int scalar_c,
-          class SizeType = typename CMV::size_type>
+template <class CMV, class AV, class BMV, int scalar_ab, int scalar_c, class SizeType = typename CMV::size_type>
 struct MV_MultFunctor {
   typedef SizeType size_type;
   typedef Kokkos::ArithTraits<typename CMV::non_const_value_type> ATS;
@@ -47,8 +46,8 @@ struct MV_MultFunctor {
   AV m_A;
   BMV m_B;
 
-  MV_MultFunctor(typename CMV::const_value_type& c, const CMV& C,
-                 typename AV::const_value_type& ab, const AV& A, const BMV& B)
+  MV_MultFunctor(typename CMV::const_value_type& c, const CMV& C, typename AV::const_value_type& ab, const AV& A,
+                 const BMV& B)
       : m_n(C.extent(1)), m_c(c), m_C(C), m_ab(ab), m_A(A), m_B(B) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const size_type& i) const {
@@ -101,8 +100,7 @@ struct MV_MultFunctor {
 ///
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual
 /// BLAS update rules.
-template <class CV, class AV, class BV, int scalar_ab, int scalar_c,
-          class SizeType = typename CV::size_type>
+template <class CV, class AV, class BV, int scalar_ab, int scalar_c, class SizeType = typename CV::size_type>
 struct V_MultFunctor {
   typedef SizeType size_type;
   typedef Kokkos::ArithTraits<typename CV::non_const_value_type> ATS;
@@ -113,8 +111,8 @@ struct V_MultFunctor {
   AV m_A;
   BV m_B;
 
-  V_MultFunctor(typename CV::const_value_type& c, const CV& C,
-                typename AV::const_value_type& ab, const AV& A, const BV& B)
+  V_MultFunctor(typename CV::const_value_type& c, const CV& C, typename AV::const_value_type& ab, const AV& A,
+                const BV& B)
       : m_c(c), m_C(C), m_ab(ab), m_A(A), m_B(B) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const size_type& i) const {
@@ -145,10 +143,8 @@ struct V_MultFunctor {
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual BLAS
 /// update rules.
 template <class execution_space, class CV, class AV, class BV, class SizeType>
-void V_Mult_Generic(const execution_space& space,
-                    typename CV::const_value_type& c, const CV& C,
-                    typename AV::const_value_type& ab, const AV& A,
-                    const BV& B) {
+void V_Mult_Generic(const execution_space& space, typename CV::const_value_type& c, const CV& C,
+                    typename AV::const_value_type& ab, const AV& A, const BV& B) {
   using Kokkos::ALL;
   using Kokkos::subview;
   typedef Kokkos::ArithTraits<typename AV::non_const_value_type> ATA;
@@ -192,10 +188,8 @@ void V_Mult_Generic(const execution_space& space,
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
 template <class execution_space, class CMV, class AV, class BMV, class SizeType>
-void MV_Mult_Generic(const execution_space& space,
-                     typename CMV::const_value_type& c, const CMV& C,
-                     typename AV::const_value_type& ab, const AV& A,
-                     const BMV& B) {
+void MV_Mult_Generic(const execution_space& space, typename CMV::const_value_type& c, const CMV& C,
+                     typename AV::const_value_type& ab, const AV& A, const BMV& B) {
   typedef Kokkos::ArithTraits<typename AV::non_const_value_type> ATA;
   typedef Kokkos::ArithTraits<typename CMV::non_const_value_type> ATC;
 
@@ -205,8 +199,7 @@ void MV_Mult_Generic(const execution_space& space,
     typedef decltype(C_0) CV;
     typedef decltype(B_0) BV;
 
-    V_Mult_Generic<execution_space, CV, AV, BV, SizeType>(space, c, C_0, ab, A,
-                                                          B_0);
+    V_Mult_Generic<execution_space, CV, AV, BV, SizeType>(space, c, C_0, ab, A, B_0);
     return;
   }
 

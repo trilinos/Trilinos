@@ -47,17 +47,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/** Maximum length of name permitted by NetCDF */
+#define EX_MAX_NAME NC_MAX_NAME
+
 #ifndef NC_INT64
 #error "NetCDF version 4.1.2 or later is required."
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "8.25"
-#define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 25
-#define EXODUS_RELEASE_DATE  "July 28, 2023"
+#define EXODUS_VERSION       "9.01"
+#define EXODUS_VERSION_MAJOR 9
+#define EXODUS_VERSION_MINOR 1
+#define EXODUS_RELEASE_DATE  "July 17, 2024"
 
-#define EX_API_VERS       8.25f
+#define EX_API_VERS       9.01f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -282,6 +285,98 @@ enum ex_entity_type {
 };
 typedef enum ex_entity_type ex_entity_type;
 
+enum ex_field_type {
+  EX_FIELD_TYPE_INVALID = 0,
+  EX_FIELD_TYPE_USER_DEFINED,
+  EX_FIELD_TYPE_SEQUENCE,
+  EX_BASIS,
+  EX_QUADRATURE,
+  EX_SCALAR,
+  EX_VECTOR_1D,
+  EX_VECTOR_2D,
+  EX_VECTOR_3D,
+  EX_QUATERNION_2D,
+  EX_QUATERNION_3D,
+  EX_FULL_TENSOR_36,
+  EX_FULL_TENSOR_32,
+  EX_FULL_TENSOR_22,
+  EX_FULL_TENSOR_16,
+  EX_FULL_TENSOR_12,
+  EX_SYM_TENSOR_33,
+  EX_SYM_TENSOR_31,
+  EX_SYM_TENSOR_21,
+  EX_SYM_TENSOR_13,
+  EX_SYM_TENSOR_11,
+  EX_SYM_TENSOR_10,
+  EX_ASYM_TENSOR_03,
+  EX_ASYM_TENSOR_02,
+  EX_ASYM_TENSOR_01,
+  EX_MATRIX_2X2,
+  EX_MATRIX_3X3
+};
+typedef enum ex_field_type ex_field_type;
+
+#define EX_MAX_FIELD_NESTING 2
+typedef struct ex_field
+{
+  ex_entity_type entity_type;
+  int64_t        entity_id;
+  char           name[EX_MAX_NAME + 1]; /* Name of the field */
+  /*
+   * For basis, user, quadrature -- what is name of the subtype. This
+   * is a comma-separated list of `nesting` names Use two consecutive
+   * commas for an empty type_name. Leave empty if no type_names
+   */
+  int           nesting; /* Number of composite fields (vector at each quadrature point = 2) */
+  char          type_name[EX_MAX_NAME + 1];
+  ex_field_type type[EX_MAX_FIELD_NESTING];                /* ex_field_type of each nested field */
+  int           cardinality[EX_MAX_FIELD_NESTING];         /* 0 to calculate based on type */
+  char          component_separator[EX_MAX_FIELD_NESTING]; /* empty defaults to '_'; */
+  char          suffices[EX_MAX_NAME + 1]; /* Optional comma-separated list of suffices if type is
+                                              EX_FIELD_TYPE_USER_DEFINED */
+} ex_field;
+
+typedef struct ex_basis
+{
+  /*
+   clang-format off
+   *
+   * subc_dim: dimension of the subcell associated with the specified DoF ordinal 
+   *      -- 0 node, 1 edge, 2 face, 3 volume [Range: 0..3]
+   * subc_ordinal: ordinal of the subcell relative to its parent cell
+   *      -- 0..n for each ordinal with the same subc dim [Range: <= DoF ordinal] 
+   * subc_dof_ordinal: ordinal of the DoF relative to the subcell 
+   * subc_num_dof: cardinality of the DoF set associated with this subcell. 
+   * xi, eta, mu (ξ, η, ζ): Parametric coordinate location of the DoF 
+   *      -- (Only first ndim values are valid)
+   *
+   clang-format on
+   */
+
+  char    name[EX_MAX_NAME + 1];
+  int     cardinality; /* number of `basis` points == dimension of non-null subc_*, xi, eta, mu */
+  int    *subc_dim;
+  int    *subc_ordinal;
+  int    *subc_dof_ordinal;
+  int    *subc_num_dof;
+  double *xi;
+  double *eta;
+  double *zeta;
+} ex_basis;
+
+typedef struct ex_quadrature
+{
+  char    name[EX_MAX_NAME + 1];
+  int     cardinality; /* Number of quadrature points */
+  int     dimension;   /* 1,2,3 -- spatial dimension of points */
+  double *xi;          /* xi  (x) coordinate of points; dimension = cardinality  or NULL */
+  double *
+      eta; /* eta (y) coordinate of points; dimension = cardinality if dimension = 2 or 3 or NULL */
+  double
+      *zeta; /* zeta (z) coordinate of points; dimension = cardinality if dimension == 3. or NULL */
+  double *weight; /* weights for each point; dimension = cardinality or NULL */
+} ex_quadrature;
+
 /*!
  * ex_opts() function codes - codes are OR'ed into exopts
  */
@@ -304,9 +399,6 @@ typedef enum ex_options ex_options;
  * constants that are used as netcdf dimensions must be of type long
  * @{
  */
-
-/** Maximum length of name permitted by NetCDF */
-#define EX_MAX_NAME NC_MAX_NAME
 
 /** Maximum length of QA record, element type name */
 #define MAX_STR_LENGTH 32L
@@ -368,10 +460,10 @@ typedef enum ex_type ex_type;
 typedef struct ex_attribute
 {
   ex_entity_type entity_type;
-  ex_entity_id   entity_id;
-  char           name[NC_MAX_NAME + 1];
+  int64_t        entity_id;
+  char           name[EX_MAX_NAME + 1];
   ex_type        type; /* int, double, text */
-  size_t         value_count;
+  int            value_count;
   void          *values; /* not accessed if NULL */
 } ex_attribute;
 
@@ -953,6 +1045,22 @@ EXODUS_EXPORT int ex_get_blob(int exoid, struct ex_blob *blob);
 EXODUS_EXPORT int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs);
 EXODUS_EXPORT int ex_get_blobs(int exoid, struct ex_blob *blobs);
 
+EXODUS_EXPORT int ex_put_multi_field_metadata(int exoid, const ex_field *field,
+                                              const int field_count);
+EXODUS_EXPORT int ex_put_field_metadata(int exoid, const ex_field field);
+EXODUS_EXPORT int ex_put_field_suffices(int exoid, const ex_field field, const char *suffices);
+EXODUS_EXPORT int ex_get_field_metadata(int exoid, ex_field *field);
+EXODUS_EXPORT int ex_get_field_metadata_count(int exoid, ex_entity_type obj_type, ex_entity_id id);
+EXODUS_EXPORT int ex_get_field_suffices(int exoid, const ex_field field, char *suffices);
+
+EXODUS_EXPORT int ex_get_basis_count(int exoid);
+EXODUS_EXPORT int ex_get_basis(int exoid, ex_basis **pbasis, int *num_basis);
+EXODUS_EXPORT int ex_put_basis(int exoid, const ex_basis basis);
+
+EXODUS_EXPORT int ex_get_quadrature_count(int exoid);
+EXODUS_EXPORT int ex_get_quadrature(int exoid, ex_quadrature **pquad, int *num_quad);
+EXODUS_EXPORT int ex_put_quadrature(int exoid, const ex_quadrature quad);
+
 /*  Write arbitrary integer, double, or text attributes on an entity */
 EXODUS_EXPORT int ex_put_attribute(int exoid, const ex_attribute attributes);
 EXODUS_EXPORT int ex_put_attributes(int exoid, size_t attr_count, const ex_attribute *attributes);
@@ -1201,6 +1309,17 @@ EXODUS_EXPORT int ex_put_elem_cmap(int             exoid,    /**< NetCDF/Exodus 
                                    const void_int *proc_ids, /**< Vector of processor IDs */
                                    int             processor /**< This processor ID */
 );
+
+EXODUS_EXPORT int ex_initialize_basis_struct(ex_basis *basis, size_t num_basis, int mode);
+EXODUS_EXPORT int ex_initialize_quadrature_struct(ex_quadrature *quad, size_t num_quad, int mode);
+
+EXODUS_EXPORT const char *ex_component_field_name(ex_field *field,
+                                                  int       component[EX_MAX_FIELD_NESTING]);
+EXODUS_EXPORT const char *ex_field_component_suffix(ex_field *field, int nest_level, int component);
+EXODUS_EXPORT int         ex_field_cardinality(const ex_field_type field_type);
+EXODUS_EXPORT const char *ex_field_type_name(const ex_field_type field_type);
+EXODUS_EXPORT ex_field_type ex_string_to_field_type_enum(const char *field_name);
+EXODUS_EXPORT const char   *ex_field_type_enum_to_string(const ex_field_type field_type);
 
 /*! @} */
 
@@ -1836,6 +1955,7 @@ enum ex_error_return_code {
   EX_LASTERR       = -1003, /**< in ex_err, use existing err_num value */
   EX_NULLENTITY    = -1006, /**< null entity found                        */
   EX_NOENTITY      = -1007, /**< no entities of that type on database    */
+  EX_INTSIZEMISMATCH = -1008, /**< integer sizes do not match on input/output databases in ex_copy  */
   EX_NOTFOUND      = -1008, /**< could not find requested variable on database */
 
   EX_FATAL = -1, /**< fatal error flag def                     */

@@ -39,10 +39,11 @@
 #include <vector>
 #include <string>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+
+namespace stk { namespace mesh { class BulkData; } }
 
 inline void checkFileForNodalVarNames(const std::string &exodusFilename, const std::vector<std::string>& nodalVarNames)
 {
@@ -94,25 +95,6 @@ inline void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, const doubl
     *fieldDataForNode = value;
   }
 }
-
-//inline void putDataOnTriStateField(stk::mesh::BulkData &bulkData, stk::mesh::FieldBase *triStateField,
-//        const double stateNp1Value,
-//        const double stateNValue,
-//        const double stateNm1Value)
-//{
-//    stk::mesh::FieldBase *statedFieldNp1 =
-//            triStateField->field_state(stk::mesh::StateNP1);
-//    putDataOnTestField(bulkData, stateNp1Value,
-//                       *statedFieldNp1);
-//    stk::mesh::FieldBase *statedFieldN =
-//            triStateField->field_state(stk::mesh::StateN);
-//    putDataOnTestField(bulkData, stateNValue,
-//                       *statedFieldN);
-//    stk::mesh::FieldBase *statedFieldNm1 =
-//            triStateField->field_state(stk::mesh::StateNM1);
-//    putDataOnTestField(bulkData, stateNm1Value,
-//                       *statedFieldNm1);
-//}
 
 inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double goldValue, stk::mesh::FieldBase &field)
 {
@@ -186,7 +168,6 @@ inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
   size_t index = stkIo.add_mesh_database(resultsFilename, stk::io::READ_RESTART);
   stkIo.set_active_mesh(index);
   stkIo.create_input_mesh();

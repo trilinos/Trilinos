@@ -51,7 +51,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-class ParallelHowTo : public stk::unit_test_util::simple_fields::MeshFixture {};
+class ParallelHowTo : public stk::unit_test_util::MeshFixture {};
 
 //BEGINCommuniateFieldData
 TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)

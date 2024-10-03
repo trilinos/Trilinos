@@ -5,7 +5,6 @@
  *      Author: drnoble
  */
 #include "Akri_RefinementInterface.hpp"
-
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <Akri_AuxMetaData.hpp>
@@ -18,18 +17,19 @@
 #include "Akri_MeshHelpers.hpp"
 #include "Akri_ReportHandler.hpp"
 #include "Akri_TransitionElementEdgeMarker.hpp"
+#include "stk_util/environment/Env.hpp"
 
 namespace krino {
 
 void clear_refinement_marker(const RefinementInterface & refinement)
 {
-  FieldRef markerField = refinement.get_marker_field();
+  FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
   stk::mesh::field_fill(static_cast<int>(Refinement::RefinementMarker::NOTHING), markerField, stk::mesh::selectField(markerField));
 }
 
 void mark_selected_elements_for_refinement(const RefinementInterface & refinement, const stk::mesh::Selector & selector)
 {
-  FieldRef markerField = refinement.get_marker_field();
+  FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
   clear_refinement_marker(refinement);
   stk::mesh::field_fill(static_cast<int>(Refinement::RefinementMarker::REFINE), markerField, selector);
 }
@@ -46,7 +46,7 @@ void mark_selected_elements_for_refinement(const RefinementInterface & refinemen
 void mark_elements_for_refinement(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & elemsToRefine)
 {
   clear_refinement_marker(refinement);
-  FieldRef markerField = refinement.get_marker_field();
+  FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
   for (auto && elem : elemsToRefine)
   {
     int * elemMarker = field_data<int>(markerField, elem);
@@ -85,7 +85,7 @@ void mark_based_on_indicator_field(const stk::mesh::BulkData & mesh,
   }
 
   const FieldRef indicatorField = auxMeta.get_field(stk::topology::ELEMENT_RANK, indicatorFieldName);
-  const FieldRef markerField = refinement.get_marker_field();
+  const FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
   const auto & parentPart = refinement.parent_part();
 
   const auto & activeBuckets =
@@ -197,7 +197,7 @@ KrinoRefinement::create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
   STK_ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
-    AuxMetaData & auxMeta = AuxMetaData::get(meta);
+    AuxMetaData & auxMeta = AuxMetaData::get_or_create(meta);
     refinement = new KrinoRefinement(meta,
         &auxMeta.active_part(),
         false /*auxMeta.get_force_64bit_flag()*/,
@@ -229,6 +229,17 @@ KrinoRefinement::get_or_create(stk::mesh::MetaData & meta)
     return *refinement;
   return create(meta);
 }
+
+KrinoRefinement &
+KrinoRefinement::get_or_create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
+{
+  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
+  if (refinement)
+    return *refinement;
+
+  return create(meta, timer);
+}
+
 
 void
 KrinoRefinement::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta)
@@ -356,9 +367,11 @@ void KrinoRefinement::set_marker_field(const std::string & markerFieldName)
   myElementMarkerField = myMeta.get_field(stk::topology::ELEMENT_RANK, markerFieldName);
 }
 
-FieldRef KrinoRefinement::get_marker_field() const
+FieldRef KrinoRefinement::get_marker_field_and_sync_to_host() const
 {
   setup_marker();
+  myElementMarkerField.sync_to_host();
+
   return myElementMarkerField;
 }
 
@@ -388,10 +401,10 @@ TransitionElementEdgeMarker & KrinoRefinement::get_marker() const
   return *myMarker;
 }
 
-std::pair<unsigned,unsigned> KrinoRefinement::get_marked_element_counts() const
+std::array<unsigned, 2> KrinoRefinement::get_marked_element_counts() const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  const FieldRef markerField = get_marker_field();
+  const FieldRef markerField = get_marker_field_and_sync_to_host();
   const stk::mesh::Selector selector = stk::mesh::selectField(markerField) & AuxMetaData::get(myMeta).active_part() & myMeta.locally_owned_part() & !myRefinement.parent_part();
 
   unsigned numRefine = 0;
@@ -415,23 +428,58 @@ std::pair<unsigned,unsigned> KrinoRefinement::get_marked_element_counts() const
   std::array<unsigned, 2> globalNum{0,0};
   stk::all_reduce_sum(mesh.parallel(), localNum.data(), globalNum.data(), 2);
 
-  return std::make_pair(globalNum[0], globalNum[1]);
+  return globalNum;
+}
+
+bool KrinoRefinement::is_supported_uniform_refinement_element() const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  const FieldRef markerField = get_marker_field_and_sync_to_host();
+  const stk::mesh::Selector selector = stk::mesh::selectField(markerField) &
+      AuxMetaData::get(myMeta).active_part() & myMeta.locally_owned_part() &
+      !myRefinement.parent_part();
+
+  bool is_supported = true;
+
+  for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
+  {
+    const auto topology = bucket->topology();
+
+    is_supported &= (topology == stk::topology::TRI_3 || topology == stk::topology::TRI_3_2D ||
+        topology == stk::topology::TETRAHEDRON_4 || topology == stk::topology::HEX_8 ||
+        topology == stk::topology::QUAD_4 || topology == stk::topology::QUAD_4_2D ||
+        topology == stk::topology::BEAM_2 || topology == stk::topology::BEAM_3);
+  }
+
+  const int is_supported_int = static_cast<int>(is_supported);
+  int reduced_result = 0;
+  
+  MPI_Allreduce(&is_supported_int, &reduced_result, 1, MPI_INT, MPI_LAND, mesh.parallel());
+  
+  return static_cast<bool>(reduced_result);
 }
 
 bool KrinoRefinement::do_refinement(const int debugLevel)
-{
+{ 
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
   const auto markerCounts = get_marked_element_counts();
-  const unsigned numRefine = markerCounts.first;
-  const unsigned numUnrefine = markerCounts.second;
+  const unsigned numRefine = markerCounts[0];
+  const unsigned numUnrefine = markerCounts[1];
+
   krinolog << "Number of elements marked for refinement = " << numRefine << "\n";
   krinolog << "Number of elements marked for unrefinement = " << numUnrefine << stk::diag::dendl;
 
   std::vector<size_t> counts;
   stk::mesh::comm_mesh_counts(mesh, counts);
 
-  krinolog << "Adapt: before refine, mesh has  " << counts[0] << " nodes, " << counts[1]
+  //if it can be uniformly refined, and all elements are marked for refinement just do uniform refinement
+  if (is_supported_uniform_refinement_element() && counts[3] == numRefine && (counts[3]+numRefine) > 0)
+  {
+    return do_uniform_refinement(1);
+  }
+
+  krinolog << "Adaptive refinement: before refine, mesh has  " << counts[0] << " nodes, " << counts[1]
            << " edges, " << counts[2] << " faces, " << counts[3] << " elements" << stk::diag::dendl;
 
   bool didMakeAnyChanges = false;
@@ -439,6 +487,7 @@ bool KrinoRefinement::do_refinement(const int debugLevel)
     stk::diag::TimeBlock timer_(myRefinementTimer);
     didMakeAnyChanges = myRefinement.do_refinement(get_marker());
   }
+
   stk::mesh::comm_mesh_counts(mesh, counts);
 
   krinolog << "Adapt: after refine, mesh has  " << counts[0] << " nodes, " << counts[1]
@@ -450,7 +499,7 @@ bool KrinoRefinement::do_refinement(const int debugLevel)
   return didMakeAnyChanges;
 }
 
-void KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
+bool KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
@@ -460,7 +509,7 @@ void KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels
   krinolog << "Uniform refinement: before refine, mesh has  " << counts[0] << " nodes, " << counts[1]
            << " edges, " << counts[2] << " faces, " << counts[3] << " elements" << stk::diag::dendl;
 
-  myRefinement.do_uniform_refinement(numUniformRefinementLevels);
+  const bool didMakeAnyChanges = myRefinement.do_uniform_refinement(numUniformRefinementLevels);
 
   stk::mesh::comm_mesh_counts(mesh, counts);
 
@@ -469,6 +518,8 @@ void KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels
 
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_ownership(mesh));
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
+
+  return didMakeAnyChanges;
 }
 
 void KrinoRefinement::restore_after_restart()

@@ -14,6 +14,7 @@ output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
 trilinos_dir=${output_dir}/Trilinos
 cuda_on_or_off=${CUDA:-OFF}
 clear_cache=${CLEAR_CACHE:-ON}
+incremental_build=${INCREMENTAL_BUILD:-OFF}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
@@ -23,15 +24,19 @@ if [ ! -d ${output_dir} ] ; then
 fi
 
 stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+if [ "${incremental_build}" == "OFF" ] ; then
 ${stk_cmake_testing_source_dir}/create_workspace.sh ${trilinos_dir} ${sierra_proj}
+fi
 
 trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_gcc
 exe rm -rf $trilinos_install_dir
 
 stk_build_dir=${output_dir}/stk_build_${build_type}_gcc
+if [ "${incremental_build}" == "OFF" ] ; then
 if [ "${clear_cache}" == "ON" ] ; then
   exe rm -rf $stk_build_dir
   exe mkdir -p $stk_build_dir
+fi
 fi
 
 printf "\nUsing sierra project: ${sierra_proj}\n";
@@ -52,6 +57,7 @@ exe cd ${stk_build_dir}
 
 exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
 
+if [ "${incremental_build}" == "OFF" ] ; then
 printf "Configuring trilinos/stk (running cmake)...\n";
 exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
@@ -63,9 +69,10 @@ if [ $? -ne 0 ] ; then
   echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
   exit 1;
 fi
+fi
 
 printf "Now building trilinos/stk using make...\n";
-exe "make VERBOSE=1 -j8 >& ${stk_make_log}";
+exe "make VERBOSE=1 -j16 >& ${stk_make_log}";
 if [ $? -ne 0 ] ; then
   echo "!! error in make, check output in ${stk_make_log} !!";
   exit 1;

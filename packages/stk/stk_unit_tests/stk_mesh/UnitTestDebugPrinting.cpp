@@ -49,7 +49,7 @@ TEST(UnitTestDebugDump, dump_all_meta_info)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
   fixture.m_meta.commit();
 
   // Doesn't check anything, but at least makes sure it builds and runs
@@ -64,7 +64,7 @@ TEST(UnitTestDebugDump, dump_all_mesh_info)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 
@@ -80,7 +80,7 @@ TEST(UnitTestDebugDump, dump_mesh_per_proc)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 
@@ -96,7 +96,7 @@ TEST(UnitTestDebugDump, dump_partition_summary)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 
@@ -112,7 +112,7 @@ TEST(UnitTestDebugDump, dump_partition_summary_per_proc)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 
@@ -128,7 +128,7 @@ TEST(UnitTestDebugDump, dump_bucket_size_histogram)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 
@@ -144,7 +144,7 @@ TEST(UnitTestDebugDump, dump_bucket_size_histogram_per_proc)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 
@@ -160,7 +160,7 @@ TEST(UnitTestDebugDump, dump_global_bucket_size_histogram)
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 

@@ -781,8 +781,8 @@ TEST(DetectHinge3D, inputFile)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
-  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
-  bool nodesOnly = stk::unit_test_util::simple_fields::has_option("--nodesOnly");
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
+  bool nodesOnly = stk::unit_test_util::has_option("--nodesOnly");
 
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
@@ -792,7 +792,7 @@ TEST(DetectHinge3D, inputFile)
     stk::tools::impl::HingeEdgeVector hingeEdges;
 
     std::string blockList = "";
-    std::string inputBlockList = stk::unit_test_util::simple_fields::get_command_line_option("--blockList", blockList);
+    std::string inputBlockList = stk::unit_test_util::get_command_line_option("--blockList", blockList);
 
     std::vector<std::string> blocksToDetect = stk::split_csv_string(inputBlockList);
     for (std::string & blockToDetect : blocksToDetect) {
@@ -1732,7 +1732,7 @@ TEST(SnipHinge, inputFile)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
-  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);

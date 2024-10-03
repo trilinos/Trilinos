@@ -96,7 +96,7 @@ namespace Iogn {
 
     void setGeneratedMesh(Iogn::GeneratedMesh *generatedMesh) { m_generatedMesh = generatedMesh; }
 
-    const std::vector<std::string> &get_sideset_names() const { return m_sideset_names; }
+    const Ioss::NameList &get_sideset_names() const { return m_sideset_names; }
 
   private:
     void read_meta_data_nl() override;
@@ -159,8 +159,8 @@ namespace Iogn {
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
-    GeneratedMesh           *m_generatedMesh{nullptr};
-    std::vector<std::string> m_sideset_names{};
+    GeneratedMesh *m_generatedMesh{nullptr};
+    Ioss::NameList m_sideset_names{};
 
     double currentTime{0.0};
     int    spatialDimension{3};

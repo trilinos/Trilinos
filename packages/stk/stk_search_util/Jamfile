@@ -44,7 +44,8 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_search_util-root-inc)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_search_util-root-inc)
   : build-dir $(stk_search_util-builddir)
@@ -67,8 +68,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -142,6 +143,7 @@ lib stk_search_util_base
     /sierra/stk_search//stk_search
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_diag
+    /tpl/trilinos//intrepid2
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

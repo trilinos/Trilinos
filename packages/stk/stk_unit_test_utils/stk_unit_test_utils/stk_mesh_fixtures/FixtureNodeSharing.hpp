@@ -56,8 +56,10 @@ void DoAddNodeSharings(BulkData &bulk_data, NodeToProcsMMap &nodes_to_procs, Ent
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void AddToNodeProcsMMap(NodeToProcsMMap &nodes_to_procs, EntityId node_id, int proc_rank);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void DoAddNodeSharings(BulkData &bulk_data, NodeToProcsMMap &nodes_to_procs, EntityId node_id, Entity node);
 
 } // namespace simple_fields

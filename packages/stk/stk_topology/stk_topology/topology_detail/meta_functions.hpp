@@ -41,6 +41,21 @@
 
 namespace stk::topology_detail {
 
+namespace impl {
+// Temporary function used to identify the new SHELL_[TRI|QUAD]_ALL_FACE_SIDES
+// Will be removed once a proper conversion is available
+template <typename Topology>
+STK_INLINE_FUNCTION
+constexpr bool is_temporary_shell_with_all_face_sides() {
+  return (Topology::value == topology::SHELL_QUAD_4_ALL_FACE_SIDES ||
+          Topology::value == topology::SHELL_QUAD_8_ALL_FACE_SIDES ||
+          Topology::value == topology::SHELL_QUAD_9_ALL_FACE_SIDES ||
+          Topology::value == topology::SHELL_TRI_3_ALL_FACE_SIDES ||
+          Topology::value == topology::SHELL_TRI_4_ALL_FACE_SIDES ||
+          Topology::value == topology::SHELL_TRI_6_ALL_FACE_SIDES);
+}
+}
+
 //------------------------------------------------------------------------------
 template <typename Topology, unsigned EdgeOrdinal>
 STK_INLINE_FUNCTION
@@ -119,7 +134,8 @@ constexpr topology::topology_t shell_side_topology_()
 {
   if constexpr (Topology::is_shell && Topology::dimension == 3 && ShellSideOrdinal < Topology::num_edges)
   {
-    return Topology::shell_side_topology_vector[ShellSideOrdinal];
+    if constexpr (!impl::is_temporary_shell_with_all_face_sides<Topology>())
+      return Topology::shell_side_topology_vector[ShellSideOrdinal];
   }
   return topology::INVALID_TOPOLOGY;
 }

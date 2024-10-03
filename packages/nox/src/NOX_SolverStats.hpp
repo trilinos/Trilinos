@@ -1,4 +1,10 @@
 // @HEADER
+// *****************************************************************************
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef NOX_SOLVER_STATS_HPP

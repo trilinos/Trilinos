@@ -34,12 +34,14 @@
 #ifndef SIDESETTRANSLATOR_HPP_
 #define SIDESETTRANSLATOR_HPP_
 
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
-#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/EntityLess.hpp"
+#include "stk_mesh/base/Relation.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_io/OutputParams.hpp"
 
@@ -159,11 +161,11 @@ void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
     size_t num_sides = stk::io::get_entities(params, *part, type, allSides, false);
     elem_side_ids.reserve(num_sides * 2);
 
+    std::vector<stk::mesh::Entity> side_elements;
+    std::vector<stk::mesh::Entity> side_nodes;
     for(size_t i = 0; i < num_sides; ++i)
     {
         stk::mesh::Entity side = allSides[i];
-        std::vector<stk::mesh::Entity> side_elements;
-        std::vector<stk::mesh::Entity> side_nodes;
 
         fill_side_elements_and_nodes(bulk_data, side, side_elements, side_nodes);
 

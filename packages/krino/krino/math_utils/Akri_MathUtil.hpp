@@ -31,6 +31,8 @@ std::pair<bool, double> find_root_newton_raphson( const std::function<std::pair<
     const unsigned maxIters = 100,
     const double fTol = 1.e-4);
 
+double find_quadratic_crossing( const double d0, const double d1, const double d2 );
+
 }
 
 

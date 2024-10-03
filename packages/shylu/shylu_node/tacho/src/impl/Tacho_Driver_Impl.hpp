@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_DRIVER_IMPL_HPP__
 #define __TACHO_DRIVER_IMPL_HPP__
@@ -150,8 +142,13 @@ void Driver<VT, DT>::setLevelSetOptionDeviceFunctionThreshold(const ordinal_type
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
-  if (variant > 2 || variant < 0) {
-    std::logic_error("levelset algorithm variants range from 0 to 2");
+#if !defined(TACHO_HAVE_CUSPARSE) && !defined(KOKKOS_ENABLE_HIP)
+  if (variant == 3) {
+    TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "variant 3 requires CuSparse or rocSparce");
+  }
+#endif
+  if (variant > 3 || variant < 0) {
+   TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "levelset algorithm variants range from 0 to 3");
   }
   _variant = variant;
 }

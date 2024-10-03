@@ -64,7 +64,7 @@ using stk::unit_test_util::build_mesh;
 
 TEST ( UnitTestCreateEdges, Quad_2x1 )
 {
-  stk::mesh::fixtures::simple_fields::QuadFixture fixture( MPI_COMM_WORLD, 2, 1);
+  stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 2, 1);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -94,7 +94,7 @@ TEST ( UnitTestCreateEdges, Quad_2x1 )
 
 TEST ( UnitTestCreateEdges, Quad9_2x1 )
 {
-  stk::mesh::fixtures::simple_fields::Quad9Fixture fixture( MPI_COMM_WORLD, 2, 1);
+  stk::mesh::fixtures::Quad9Fixture fixture( MPI_COMM_WORLD, 2, 1);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -124,7 +124,7 @@ TEST ( UnitTestCreateEdges, Quad9_2x1 )
 
 TEST ( UnitTestCreateEdges, Quad_3x1 )
 {
-  stk::mesh::fixtures::simple_fields::QuadFixture fixture( MPI_COMM_WORLD, 3, 1);
+  stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 3, 1);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -155,7 +155,7 @@ TEST ( UnitTestCreateEdges, Quad_3x1 )
 
 TEST ( UnitTestCreateEdges, Quad9_3x1 )
 {
-  stk::mesh::fixtures::simple_fields::Quad9Fixture fixture( MPI_COMM_WORLD, 3, 1);
+  stk::mesh::fixtures::Quad9Fixture fixture( MPI_COMM_WORLD, 3, 1);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -185,7 +185,7 @@ TEST ( UnitTestCreateEdges, Quad9_3x1 )
 
 TEST ( UnitTestCreateEdges, Hex_2x1x1 )
 {
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -215,7 +215,7 @@ TEST ( UnitTestCreateEdges, Hex_2x1x1 )
 
 TEST( UnitTestCreateEdges , Hex_3x1x1 )
 {
-  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, 3, 1, 1);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, 3, 1, 1);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -254,7 +254,7 @@ TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -355,7 +355,7 @@ TEST( UnitTestCreateEdges , testCreateEdges3x3 )
   const size_t NX = 3;
   const size_t NY = 3;
 
-  stk::mesh::fixtures::simple_fields::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
+  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -416,7 +416,7 @@ TEST( UnitTestCreateEdges , hex1x1x4 )
   if(procCount == 2)
   {
     const std::string generatedMeshSpec = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-    stk::unit_test_util::simple_fields::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+    stk::unit_test_util::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
     stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -546,7 +546,7 @@ TEST( UnitTestCreateEdges, hybrid_HexPyrTet )
 
 TEST ( UnitTestCreateEdges, Hex_2x1x1_select_out_a_face )
 {
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
 
   stk::mesh::Part & facePart = fixture.m_meta.declare_part_with_topology("face_part_to_exclude", stk::topology::QUADRILATERAL_4, true);
   stk::mesh::PartVector facePartVector(1, &facePart);

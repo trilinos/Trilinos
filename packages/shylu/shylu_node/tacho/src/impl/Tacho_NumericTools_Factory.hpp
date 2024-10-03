@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_NUMERIC_TOOLS_FACTORY_HPP__
 #define __TACHO_NUMERIC_TOOLS_FACTORY_HPP__
@@ -135,6 +127,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -178,6 +171,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -247,6 +241,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -286,6 +281,14 @@ public:
     }
     case 2: {
       TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    case 3: {
+      if (_method == 1 || _method == 3) {
+        TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
+      } else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+      }
       break;
     }
     default: {
@@ -307,6 +310,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -346,6 +350,14 @@ public:
     }
     case 2: {
       TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    case 3: {
+      if (_method == 1 || _method == 3) {
+        TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
+      } else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+      }
       break;
     }
     default: {
@@ -368,6 +380,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;

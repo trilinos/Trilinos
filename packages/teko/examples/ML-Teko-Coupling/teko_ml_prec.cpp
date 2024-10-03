@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//      Teko: A package for block and physics based preconditioning
+//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // Teuchos includes
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

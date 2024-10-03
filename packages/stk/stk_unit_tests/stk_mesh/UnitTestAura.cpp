@@ -731,7 +731,7 @@ void test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(stk::mesh::
   }
 }
 
-class Aura2Hex2Proc : public stk::unit_test_util::simple_fields::MeshFixture
+class Aura2Hex2Proc : public stk::unit_test_util::MeshFixture
 {
 public:
   Aura2Hex2Proc()
@@ -885,7 +885,7 @@ TEST(BulkData, aura_moveElem1FromProc0ToProc1_NoUpwardConnectivity)
   }
 }
 
-class BulkDataAura : public stk::unit_test_util::simple_fields::MeshFixture
+class BulkDataAura : public stk::unit_test_util::MeshFixture
 {
 public:
   void verify_no_aura()

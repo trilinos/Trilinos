@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef __MATRIXMARKET_TPETRA_NEW_HPP
 #define __MATRIXMARKET_TPETRA_NEW_HPP

@@ -50,7 +50,6 @@ cmake \
 -DKokkos_ENABLE_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
--DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=OFF \
 -DCMAKE_CXX_STANDARD:STRING=17 \

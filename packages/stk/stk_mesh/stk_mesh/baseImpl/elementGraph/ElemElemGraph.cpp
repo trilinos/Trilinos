@@ -1090,8 +1090,10 @@ bool ElemElemGraph::communicate_if_shell_connectivity(std::vector<impl::ShellCon
                                                    const std::vector<impl::ElementSidePair> &deletedShells) {
 
     unsigned localNumShells = shellConnectivityList.size();
-    unsigned globalMaxShells = 0;
-    stk::all_reduce_max(m_bulk_data.parallel(), &localNumShells, &globalMaxShells, 1);
+    unsigned globalMaxShells = localNumShells;
+    if (m_bulk_data.parallel_size() > 1) {
+      stk::all_reduce_max(m_bulk_data.parallel(), &localNumShells, &globalMaxShells, 1);
+    }
     if (globalMaxShells == 0) {
         return false;
     }

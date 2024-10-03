@@ -9,14 +9,12 @@ namespace impl {
 std::vector<int> MeshAgglomerator::get_group_idxs(SetType<MeshEntityPtr>& vertsIn, const int nthres)
 {
   std::vector<int> idxs;
-  int nsearches = 0;
   for (int i = 0; i < get_num_groups(); ++i)
   {
     int nfound   = 0;
     int nvertsRemaining = vertsIn.size();
     for (auto& v : vertsIn)
     {
-      nsearches++;
       if (contains_entity_sorted(m_verts[i], v))
       {
         nfound += 1;

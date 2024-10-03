@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
+//
+// Copyright 2004 NTESS and the Thyra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>

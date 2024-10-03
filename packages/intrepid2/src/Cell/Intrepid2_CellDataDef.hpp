@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov), or
-//                    Nathan Roberts  (nvrober@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_CellDataDef.hpp
@@ -67,7 +33,7 @@ isSupported( const unsigned cellTopoKey ) {
   case shards::Beam<2>::key:
   case shards::Beam<3>::key:
   case shards::Triangle<3>::key:
-  // case shards::Triangle<4>::key:
+  case shards::Triangle<4>::key:
   case shards::Triangle<6>::key:
   // case shards::ShellTriangle<3>::key:
   // case shards::ShellTriangle<6>::key:
@@ -78,17 +44,17 @@ isSupported( const unsigned cellTopoKey ) {
   // case shards::ShellQuadrilateral<8>::key:
   // case shards::ShellQuadrilateral<9>::key:
   case shards::Tetrahedron<4>::key:
-  // case shards::Tetrahedron<8>::key:
+  case shards::Tetrahedron<8>::key:
   case shards::Tetrahedron<10>::key:
-  // case shards::Tetrahedron<11>::key:
+  case shards::Tetrahedron<11>::key:
   case shards::Hexahedron<8>::key:
   case shards::Hexahedron<20>::key:
   case shards::Hexahedron<27>::key:
   case shards::Pyramid<5>::key:
-  // case shards::Pyramid<13>::key:
-  // case shards::Pyramid<14>::key:
+  case shards::Pyramid<13>::key:
+  case shards::Pyramid<14>::key:
   case shards::Wedge<6>::key:
-  // case shards::Wedge<15>::key:
+  case shards::Wedge<15>::key:
   case shards::Wedge<18>::key:
   return true;
   default:
@@ -855,7 +821,98 @@ refCenterDataStatic_ = {
     // wedge
     { 1.0/3.0, 1.0/3.0, 0.0},
 };
-}
+
+
+// Point Inclusion 
+
+
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Line<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+    return (minus_one <= point(0) && point(0) <= plus_one);
+  }  
+
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Triangle<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const PointType one = 1.0;
+    const PointType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - one );
+    return distance < threshold;
+  }
+  
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Quadrilateral<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+    return ((minus_one <= point(0) && point(0) <= plus_one) &&
+            (minus_one <= point(1) && point(1) <= plus_one));
+  }  
+
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Tetrahedron<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const PointType one = 1.0;
+    const PointType distance = max( max(-point(0),-point(1)),
+                                  max(-point(2), point(0) + point(1) + point(2) - one) );
+    return distance < threshold;
+  }
+
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Hexahedron<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+    return ((minus_one <= point(0) && point(0) <= plus_one) &&
+            (minus_one <= point(1) && point(1) <= plus_one) &&
+            (minus_one <= point(2) && point(2) <= plus_one));
+  }
+  
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Pyramid<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const PointType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold, minus_zero = -threshold;
+    const PointType left = minus_one + point(2);
+    const PointType right =  plus_one - point(2);
+    return ((left       <= point(0) && point(0) <= right) &&
+            (left       <= point(1) && point(1) <= right) &&
+            (minus_zero <= point(2) && point(2) <= plus_one));
+  }
+
+  template<typename PointViewType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  bool
+  PointInclusion<shards::Wedge<>::key>::
+  check(const PointViewType &point, const ScalarType threshold) {
+    //this implementation should work when PointType is a Sacado Fad<ScalarType>
+    using PointType = typename PointViewType::value_type; 
+    const ScalarType minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
+    const PointType one = 1.0;
+    const PointType distance = max( max( -point(0), -point(1) ), point(0) + point(1) - one );
+    return (distance < threshold && (minus_one <= point(2) && point(2) <= plus_one));
+  }
+
+}  // Intrepid2 namespace
 
 #endif
 

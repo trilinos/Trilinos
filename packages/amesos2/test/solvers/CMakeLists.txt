@@ -310,6 +310,24 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
     )
 ENDIF()
 
+##### PARDISO_CSS Tests #####
+
+IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyCssMKLFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES css_mkl_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Css_MKL_Solver_Test
+    ARGS "--xml-params=css_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    COMM mpi
+    )
+ENDIF()
 
 ##### LAPACK Tests #####
 

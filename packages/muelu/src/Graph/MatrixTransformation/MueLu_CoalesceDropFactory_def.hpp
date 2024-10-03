@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_COALESCEDROPFACTORY_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_DEF_HPP
 
@@ -206,7 +170,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
 
   RCP<LocalOrdinalVector> ghostedBlockNumber;
-  ArrayRCP<const LO> g_block_id;
 
   if (algo == "distance laplacian") {
     // Grab the coordinates for distance laplacian
@@ -229,7 +192,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     } else {
       ghostedBlockNumber = BlockNumber;
     }
-    g_block_id = ghostedBlockNumber->getData(0);
     //      }
     if (algo == "block diagonal colored signed classical")
       generateColoringGraph = true;
@@ -479,11 +441,13 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         // RS style needs the max negative off-diagonal, SA style needs the diagonal
         if (useSignedClassicalRS) {
           if (ghostedBlockNumber.is_null()) {
-            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A);
+            auto negMaxOffDiagonalVec = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A);
+            negMaxOffDiagonal         = negMaxOffDiagonalVec->getData(0);
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Calculated max point off-diagonal" << std::endl;
           } else {
-            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A, *ghostedBlockNumber);
+            auto negMaxOffDiagonalVec = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A, *ghostedBlockNumber);
+            negMaxOffDiagonal         = negMaxOffDiagonalVec->getData(0);
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Calculating max block off-diagonal" << std::endl;
           }
@@ -503,6 +467,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             Utilities::ApplyRowSumCriterionHost(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);
           }
         }
+
+        ArrayRCP<const LO> g_block_id;
+        if (!ghostedBlockNumber.is_null())
+          g_block_id = ghostedBlockNumber->getData(0);
 
         LO realnnz = 0;
         rows(0)    = 0;
@@ -1902,7 +1870,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
     auto boundaryNodesVector = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(inputGraph->GetDomainMap());
     for (size_t i = 0; i < inputGraph->GetNodeNumVertices(); i++)
       boundaryNodesVector->getDataNonConst(0)[i] = boundaryNodes[i];
-    // Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Write("boundary",*boundaryNodesVector);
+    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("boundary",*boundaryNodesVector);
     auto boundaryColumnVector = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(inputGraph->GetImportMap());
     boundaryColumnVector->doImport(*boundaryNodesVector, *importer, Xpetra::INSERT);
     auto boundaryColumn = boundaryColumnVector->getData(0);

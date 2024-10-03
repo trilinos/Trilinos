@@ -36,7 +36,7 @@
 #include "stk_balance/setup/FileValidator.hpp"
 #include "stk_balance/setup/Parser.hpp"
 
-class InputSanity : public stk::unit_test_util::simple_fields::MeshFixture
+class InputSanity : public stk::unit_test_util::MeshFixture
 {
 public:
   InputSanity()

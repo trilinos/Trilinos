@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_REITZINGERPFACTORY_DEF_HPP
 #define MUELU_REITZINGERPFACTORY_DEF_HPP
 
@@ -213,10 +177,9 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   ArrayView<const SC> values_E, values_N;
 
   size_t Ne = EdgeMatrix->getLocalNumRows();
-  size_t Nn = NodeMatrix->getLocalNumRows();
 
-  // Upper bound on local number of coarse edges
-  size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn + 1) / 2;
+  // Notinal upper bound on local number of coarse edges
+  size_t max_edges = PnT_D0T->getLocalNumEntries();
   ArrayRCP<size_t> D0_rowptr(Ne + 1);
   ArrayRCP<LO> D0_colind(max_edges);
   ArrayRCP<SC> D0_values(max_edges);
@@ -297,6 +260,16 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
         continue;
       }
 
+      // Exponential memory reallocation, if needed
+      if (current + 1 >= Teuchos::as<LocalOrdinal>(max_edges)) {
+        max_edges *= 2;
+        D0_colind.resize(max_edges);
+        D0_values.resize(max_edges);
+      }
+      if (current / 2 + 1 >= D0_rowptr.size()) {
+        D0_rowptr.resize(2 * D0_rowptr.size() + 1);
+      }
+
       // NOTE: "i" here might not be a valid local column id, so we read it from the map
       D0_colind[current] = local_column_i;
       D0_values[current] = -1;
@@ -313,6 +286,11 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   D0_rowptr.resize(num_coarse_edges + 1);
   D0_colind.resize(current);
   D0_values.resize(current);
+
+  // Handle empty ranks gracefully
+  if (num_coarse_edges == 0) {
+    D0_rowptr[0] = 0;
+  }
 
   // Count the total number of edges
   // NOTE: Since we solve the ownership issue above, this should do what we want
@@ -340,30 +318,31 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
 #if 0
       {
         char fname[80];
-        printf("[%d] D0: ia.size() = %d ja.size() = %d\n",MyPID,(int)ia.size(),(int)ja.size());
-        printf("[%d] D0: ia  :",MyPID);
+        int fine_level_id = fineLevel.GetLevelID();
+        printf("[%d] Level %d D0: ia.size() = %d ja.size() = %d\n",MyPID,fine_level_id,(int)ia.size(),(int)ja.size());
+        printf("[%d] Level %d D0: ia  :",MyPID,fine_level_id);
         for(int i=0; i<(int)ia.size(); i++)
           printf("%d ",(int)ia[i]);
-        printf("\n[%d] D0: global ja  :",MyPID);
+        printf("\n[%d] Level %d D0: global ja  :",MyPID,fine_level_id);
         for(int i=0; i<(int)ja.size(); i++)
           printf("%d ",(int)ownedPlusSharedCoarseNodeMap->getGlobalElement(ja[i]));
-        printf("\n[%d] D0: local ja  :",MyPID);
+        printf("\n[%d] Level %d D0: local ja  :",MyPID,fine_level_id);
         for(int i=0; i<(int)ja.size(); i++)
           printf("%d ",(int)ja[i]);
         printf("\n");
 
-        sprintf(fname,"D0_global_ja_%d_%d.dat",MyPID,fineLevel.GetLevelID());
+        sprintf(fname,"D0_global_ja_%d_%d.dat",MyPID,fine_level_id);
         FILE * f = fopen(fname,"w");
         for(int i=0; i<(int)ja.size(); i++)
           fprintf(f,"%d ",(int)ownedPlusSharedCoarseNodeMap->getGlobalElement(ja[i]));
         fclose(f);
 
-        sprintf(fname,"D0_local_ja_%d_%d.dat",MyPID,fineLevel.GetLevelID());
+        sprintf(fname,"D0_local_ja_%d_%d.dat",MyPID,fine_level_id);
         f = fopen(fname,"w");
         for(int i=0; i<(int)ja.size(); i++)
           fprintf(f,"%d ",(int)ja[i]);
         fclose(f);
-        
+
       }
 #endif
     D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap, ownedCoarseEdgeMap);
@@ -380,7 +359,28 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   RCP<Matrix> Pe;
   {
     SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
-
+#if 0
+    {
+      // If you're concerned about processor / rank mismatches, this debugging code might help
+      int rank =  D0->getRowMap()->getComm()->getRank();
+      int fine_level = fineLevel.GetLevelID();
+      printf("[%d] Level %d Checkpoint #2 Pn = %d/%d/%d/%d D0c = %d/%d/%d/%d D0 = %d/%d/%d/%d\n",rank,fine_level,
+             Pn->getRangeMap()->getComm()->getSize(),
+             Pn->getRowMap()->getComm()->getSize(),
+             Pn->getColMap()->getComm()->getSize(),
+             Pn->getDomainMap()->getComm()->getSize(),
+             D0_coarse_m->getRangeMap()->getComm()->getSize(),
+             D0_coarse_m->getRowMap()->getComm()->getSize(),
+             D0_coarse_m->getColMap()->getComm()->getSize(),
+             D0_coarse_m->getDomainMap()->getComm()->getSize(),
+             D0->getRangeMap()->getComm()->getSize(),
+             D0->getRowMap()->getComm()->getSize(),
+             D0->getColMap()->getComm()->getSize(),
+             D0->getDomainMap()->getComm()->getSize());
+      fflush(stdout);
+      D0->getRowMap()->getComm()->barrier();
+    }
+#endif
     RCP<Matrix> dummy;
     RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn, false, *D0_coarse_m, true, dummy, out0, true, true, "Pn*D0c'", mm_params);
 
@@ -458,6 +458,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   Set(coarseLevel, "Ptent", Pe);
 
   Set(coarseLevel, "D0", D0_coarse_m);
+
+  /* This needs to be kept for the smoothers */
   coarseLevel.Set("D0", D0_coarse_m, NoFactory::get());
   coarseLevel.AddKeepFlag("D0", NoFactory::get(), MueLu::Final);
   coarseLevel.RemoveKeepFlag("D0", NoFactory::get(), MueLu::UserData);

@@ -103,7 +103,6 @@ TEST(StkMeshIoBrokerHowTo, writeHistory)
     // EXAMPLE USAGE...
     // Begin use of stk io history file...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     //-BEGIN
     //+ Define the heartbeat output and the format (BINARY)
@@ -180,7 +179,6 @@ double initialValue()
 void setUpMeshWithFieldOnBlock1(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field1, stk::mesh::Field<double>& field2)
 {
   stk::io::StkMeshIoBroker stkIo(bulk.parallel());
-  stkIo.use_simple_fields();
   stkIo.set_bulk_data(bulk);
   stkIo.add_mesh_database("generated:1x1x2", stk::io::READ_MESH);
   stkIo.create_input_mesh();
@@ -216,7 +214,6 @@ void writeHistoryFile(const std::string& historyFilename, stk::mesh::BulkData& b
 {
   stk::mesh::Selector subset = elementHistoryPart | nodeHistoryPart;
   stk::io::StkMeshIoBroker outStkIo;
-  outStkIo.use_simple_fields();
   outStkIo.set_bulk_data(bulk);
 
   size_t outputFileIndex = outStkIo.create_output_mesh(historyFilename, stk::io::WRITE_RESULTS);
@@ -272,7 +269,6 @@ void verifyHistoryFileOutput(const std::string& filename)
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   int numSteps = 0;
   double maxTime = 0;
@@ -300,7 +296,6 @@ TEST(StkMeshIoBrokerHowTo, writeHistoryOfElementAndNode)
     builder.set_spatial_dimension(3);
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Field<double>& elemField = meta.declare_field<double>(stk::topology::ELEM_RANK, getElementFieldName());
     stk::mesh::Field<double>& nodalField = meta.declare_field<double>(stk::topology::NODE_RANK, getNodalFieldName());
@@ -338,7 +333,6 @@ TEST(StkMeshIoBrokerHowTo, writeEmptyHistory)
     // EXAMPLE USAGE...
     // Begin use of stk io history file...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     //-BEGIN
     //+ Define the heartbeat output and the format (BINARY)

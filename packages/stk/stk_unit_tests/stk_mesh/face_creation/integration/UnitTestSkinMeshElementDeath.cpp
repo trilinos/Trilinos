@@ -39,7 +39,9 @@ public:
 
   void set_sorting_by_face()
   {
+#ifdef SIERRA_MIGRATION
     m_shouldSortFacesByNodeIds = true;
+#endif
   }
 };
 
@@ -97,7 +99,6 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
     unsigned spatialDim = 3;
 
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     stk::mesh::Part& skin  = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
     stk::io::put_io_part_attribute(skin);
     BulkDataTester bulkData(meta, comm);
@@ -105,7 +106,7 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
 
     stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
     stk::io::fill_mesh("generated:1x1x4", bulkData);
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     ElemGraphTestUtils::skin_boundary(bulkData, active, {&skin, &active});
 

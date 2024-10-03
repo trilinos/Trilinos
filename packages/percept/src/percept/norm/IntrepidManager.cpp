@@ -8,28 +8,19 @@
 
 #include <stdexcept>
 
-// Intrepid includes
+// Intrepid2 includes
 
 #define PGI_INSTANTIATION_FILE
 #include <percept/Percept.hpp>
 
 
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_ArrayTools.hpp"
-
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
-#include "Intrepid_Basis.hpp"
-#include <percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
-#include <percept/Intrepid_HGRAD_QUAD_C2_Serendipity_FEM.hpp>
-#include <percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
-
-
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_Utils.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_ArrayTools.hpp"
+#include <percept/element/intrepid/BasisTable.hpp>
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_Utils.hpp"
 
 #include "IntrepidManager.hpp"
 
@@ -62,35 +53,33 @@
       // workaround for PGI compiler bug
     void IntrepidManager::bootstrap()
     {
-      static BasisTypeRCP a1 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a1 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double >() );
 
       // FIXME
-      static BasisTypeRCP a2 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a3 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a4 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
+      static BasisTypeRCP a2 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a3 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a4 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
 
-      static BasisTypeRCP a5 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
-      static BasisTypeRCP a7 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double, MDArray >() );
+      static BasisTypeRCP a5 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a7 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<Kokkos::HostSpace, double, double >() );
 
-      static BasisTypeRCP a8 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM<double, MDArray >() );
-      static BasisTypeRCP a10 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_FEM<double, MDArray >() );
+      static BasisTypeRCP a8 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a10 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::HostSpace, double, double >() );
 
-      static BasisTypeRCP a11 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a12 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C2_FEM<double, MDArray >() );
+      static BasisTypeRCP a11 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a12 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::HostSpace, double, double >() );
 
-      static BasisTypeRCP a13 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<double, MDArray >() );
-
-      // Intrepid doesn't support wedge 15
-      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_Serendipity_FEM<double, MDArray >() );
+      static BasisTypeRCP a13 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_FEM<Kokkos::HostSpace, double, double >() );
 
 
       // Shells
-      static BasisTypeRCP a15 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a16 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
-      static BasisTypeRCP a17 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
-      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
+      static BasisTypeRCP a15 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a16 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a17 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
     }
 #endif
 
@@ -101,8 +90,8 @@
 
     void IntrepidManager::setupCubature( CellTopology& cell_topo, unsigned cubDegree)
     {
-      DefaultCubatureFactory<double, CubaturePoints, CubatureWeights> cubFactory;         // create cubature factory
-      m_cub = cubFactory.create(cell_topo, cubDegree);                                    // create default cubature
+      DefaultCubatureFactory cubFactory;         // create cubature factory
+      m_cub = cubFactory.create<Kokkos::HostSpace, double, double >(cell_topo, cubDegree);                                    // create default cubature
       unsigned numCubPoints = m_cub->getNumPoints();                                      // retrieve number of cubature points
       m_Cub_Points_Tag = Cub_Points_Tag(numCubPoints);
     }
@@ -111,31 +100,15 @@
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([P],[D])
-    IntrepidManager::CubaturePoints::CubaturePoints(IM& im) : BaseType( NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
+    IntrepidManager::CubaturePoints::CubaturePoints(const IM& im) : BaseType("IM::CubaturePoints", NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
     {
     }
 
-#if 1
-    //using BaseBaseType::operator();
-
-    double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3)
-    {
-      throw std::runtime_error("CubaturePoints:: operator()(int i1, int i2, int i3) not implemented");
-      return m_dummy;
-    }
-    const double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3) const {
-      throw std::runtime_error("CubaturePoints:: operator()(int i1, int i2, int i3) not implemented");
-      return m_dummy;
-    }
-
-    double& IntrepidManager::CubaturePoints::operator()(int i1, int i2) { return BaseBaseType::operator()(i1, i2); }
-    const double& IntrepidManager::CubaturePoints::operator()(int i1, int i2) const { return BaseBaseType::operator()(i1, i2); }
-#endif
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([P])
-    IntrepidManager::CubatureWeights::   CubatureWeights(IM& im) : BaseType( NUM(Cub_Points_Tag))
+    IntrepidManager::CubatureWeights::CubatureWeights(const IM& im) : BaseType("IM::CubatureWeights", NUM(Cub_Points_Tag))
     {
     }
 
@@ -144,25 +117,18 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [V], [D])
     IntrepidManager::CellWorkSet::
-    CellWorkSet(IM& im) : BaseType(NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Spatial_Dim_Tag))
+    CellWorkSet(const IM& im) : BaseType("IM::CellWorkSet", NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Spatial_Dim_Tag))
     {
 
     }
 
-#if 0
-    void
-    IntrepidManager::CellWorkSet::
-    operator()(BulkData& bulkData, Bucket& bucket)
-    {
-      // FIXME
-    }
-#endif
+
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [P], [D])
     IntrepidManager::PhysicalCoords::
-    PhysicalCoords(IM& im) : BaseType( NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
+    PhysicalCoords(const IM& im) : BaseType("IM::PhysicalCoords", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
     {
     }
 
@@ -170,43 +136,17 @@
     IntrepidManager::PhysicalCoords::
     operator()(CellWorkSet& c, CubaturePoints& xi)
     {
-      //FieldContainer<double> images(1, cellDim );
-      //Intrepid::CellTools<double>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3, whichCell);
-      CellTools<double>::mapToPhysicalFrame(*this, xi, c, *m_im.m_topo, -1);
+      //Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3);
+      auto basis = BasisTable::getInstance()->getBasis(*m_im.m_topo);
+      Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(*this, xi, c, basis);
     }
-#if 1
-    //using BaseBaseType::operator();
-
-    //double m_dummy;
-#if 0
-    double&
-    IntrepidManager::PhysicalCoords::
-    operator()(int i1, int i2, int i3)
-    {
-      throw std::runtime_error("PhysicalCoords:: operator()(int i1, int i2, int i3) not implemented");
-      return m_dummy;
-    }
-    const double&
-    IntrepidManager::PhysicalCoords::
-
-    operator()(int i1, int i2, int i3) const {
-      throw std::runtime_error("PhysicalCoords:: operator()(int i1, int i2, int i3) not implemented");
-      return m_dummy;
-    }
-#endif
-
-    double&     IntrepidManager::PhysicalCoords::
-    operator()(int i1, int i2, int i3) { return BaseBaseType::operator()(i1, i2, i3); }
-    const double&     IntrepidManager::PhysicalCoords::
-    operator()(int i1, int i2, int i3) const { return BaseBaseType::operator()(i1, i2, i3); }
-#endif
 
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [D], [D])
     IntrepidManager::Jacobian::
-    Jacobian(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
+    Jacobian(const IM& im) : BaseType("IM::Jacobian", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
     {
 
     }
@@ -215,45 +155,24 @@
 
     operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo)
     {
-      CellTools<double>::setJacobian(*this, xi, c, topo);           // compute cell Jacobians
+      CellTools<Kokkos::HostSpace>::setJacobian(*this, xi, c, topo);           // compute cell Jacobians
     }
-    //double m_dummy;
-    double&     IntrepidManager::Jacobian::
-    operator()(int i1, int i2, int i3) { return m_dummy;}
-    const double&     IntrepidManager::Jacobian::
-    operator()(int i1, int i2, int i3) const { return m_dummy;}
-
 
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [D])
     IntrepidManager::FaceNormal::
-    FaceNormal(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
+    FaceNormal(const IM& im) : BaseType("IM::FaceNormal", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag))
     {
 
     }
     void
     IntrepidManager::FaceNormal::
-    operator()(Jacobian& J, int i_face, CellTopology& topo)
+    operator()(Jacobian& jac, int i_face, CellTopology& topo)
     {
-      // FIXME - don't instantiate this, since Intrepid isn't completely free of its own MDArray, FieldContainer
-#if 0
-      MDArray J_mda;
-      J.copyTo(J_mda);
-      MDArray fn_mda(m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-      CellTools<double>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
-      this->copyFrom(fn_mda);
-#endif
-      //CellTools<double>::getPhysicalFaceNormals(*this, jac, i_face, topo);
-      throw std::runtime_error(" don't instantiate this, since Intrepid isn't completely free of its own MDArray, FieldContainer");
+      Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(*this, jac, i_face, topo);
     }
-    //double m_dummy;
-    double&     IntrepidManager::FaceNormal::
-    operator()(int i1, int i2) { return m_dummy;}
-    const double&     IntrepidManager::FaceNormal::
-    operator()(int i1, int i2) const { return m_dummy;}
-
 
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -261,14 +180,14 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [P], [D], [D])
     IntrepidManager::JacobianInverse::
-    JacobianInverse(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag))
+    JacobianInverse(const IM& im) : BaseType("IM::JacobianInverse", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag))
     {
 
     }
     void    IntrepidManager::JacobianInverse::
     operator()(Jacobian& jac)
     {
-      CellTools<double>::setJacobianInv(*this, jac);
+      CellTools<Kokkos::HostSpace>::setJacobianInv(*this, jac);
     }
 
 
@@ -277,7 +196,7 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P])
     IntrepidManager::JacobianDet::
-    JacobianDet(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag))
+    JacobianDet(const IM& im) : BaseType("IM::JacobianDet", NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
 
@@ -285,7 +204,7 @@
     IntrepidManager::JacobianDet::
     operator()(Jacobian& jac)
     {
-      CellTools<double>::setJacobianDet(*this, jac);
+      Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet(*this, jac);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -293,7 +212,7 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P])
     IntrepidManager::WeightedMeasure::
-    WeightedMeasure(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag))
+    WeightedMeasure(const IM& im) : BaseType("IM::WeightedMeasure", NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
 
@@ -301,7 +220,7 @@
     IntrepidManager::WeightedMeasure::
     operator()(CubatureWeights& w, JacobianDet& dJ)
     {
-      FunctionSpaceTools::computeCellMeasure<double>(*this, dJ, w);
+      FunctionSpaceTools<Kokkos::HostSpace>::computeCellMeasure(*this, dJ, w);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -309,14 +228,14 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [DOF])
     IntrepidManager::IntegrandValuesDOF::
-    IntegrandValuesDOF(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag))
+    IntegrandValuesDOF(const IM& im) : BaseType("IM::IntegrandValuesDOF", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag))
     {
     }
     void
     IntrepidManager::IntegrandValuesDOF::
     copyFrom(MDArray& mda)
     {
-      copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
+      Kokkos::deep_copy(*this, mda);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -324,26 +243,20 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P])
     IntrepidManager::IntegrandValues::
-    IntegrandValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag))
+    IntegrandValues(const IM& im) : BaseType("IM::IntegrandValues", NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
     void
     IntrepidManager::IntegrandValues::
     copyFrom(MDArray& mda)
     {
-      copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
+     Kokkos::deep_copy(*this, mda);
     }
     void
     IntrepidManager::IntegrandValues::
     copyFrom(IntrepidManager& im, MDArray& mda, int iDof)
     {
-      for (int iCell = 0; iCell < im.m_Elements_Tag.num; iCell++)
-        {
-          for (int iPoint = 0; iPoint < im.m_Cub_Points_Tag.num; iPoint++)
-            {
-              (*this)(iCell, iPoint) = mda(iCell, iPoint, iDof);
-            }
-        }
+      Kokkos::deep_copy(*this, Kokkos::subview(mda, std::make_pair(0, im.m_Elements_Tag.num),  std::make_pair(0, im.m_Cub_Points_Tag.num), iDof));
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -351,7 +264,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [DOF])
     IntrepidManager::IntegralDOF::
-    IntegralDOF(IM& im) : BaseType(NUM(Elements_Tag), NUM(DOFs_Tag))
+    IntegralDOF(const IM& im) : BaseType("IM::IntegralDOF", NUM(Elements_Tag), NUM(DOFs_Tag))
     {
     }
 
@@ -360,24 +273,15 @@
     /// this:     ([C], [DOF])
     void
     IntrepidManager::IntegralDOF::
-    operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega, int comp_type)
+    operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega)
     {
       VERIFY_OP(iv.rank(),       == , 3,                     "IntrepidManager::Integral::operator() bad iv rank");
       VERIFY_OP(wXdOmega.rank(), == , 2,                     "IntrepidManager::Integral::operator() bad wXdOmega rank");
       VERIFY_OP((*this).rank(),  == , 2,                     "IntrepidManager::Integral::operator() bad (*this) rank");
-      VERIFY_OP(iv.dimension(0), == , this->dimension(0),    "IntrepidManager::Integral::operator() bad");
-      VERIFY_OP(iv.dimension(1), == , wXdOmega.dimension(1), "IntrepidManager::Integral::operator() bad");
-      VERIFY_OP(iv.dimension(0), == , wXdOmega.dimension(0), "IntrepidManager::Integral::operator() bad");
-      VERIFY_OP(iv.dimension(2), == , this->dimension(1),    "IntrepidManager::Integral::operator() bad");
-
-#if 0
-      for (int iDof = 0; iDof < iv.dimension(2); iDof++)
-        {
-          Integral Is(...);
-          Is(iv, wXdOmega, COMP_BLAS);
-          FunctionSpaceTools::integrate<double>(*this, iv, wXdOmega,  COMP_BLAS);
-        }
-#endif
+      VERIFY_OP(iv.extent_int(0), == , this->extent_int(0),    "IntrepidManager::Integral::operator() bad");
+      VERIFY_OP(iv.extent_int(1), == , wXdOmega.extent_int(1), "IntrepidManager::Integral::operator() bad");
+      VERIFY_OP(iv.extent_int(0), == , wXdOmega.extent_int(0), "IntrepidManager::Integral::operator() bad");
+      VERIFY_OP(iv.extent_int(2), == , this->extent_int(1),    "IntrepidManager::Integral::operator() bad");
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -385,7 +289,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C])
     IntrepidManager::Integral::
-    Integral(IM& im) : BaseType(NUM(Elements_Tag))
+    Integral(const IM& im) : BaseType("IM::Integral", NUM(Elements_Tag))
     {
     }
 
@@ -394,16 +298,16 @@
     /// this:     ([C])
     void
     IntrepidManager::Integral::
-    operator()(IntegrandValues& iv, WeightedMeasure& wXdOmega, int comp_type)
+    operator()(IntegrandValues& iv, WeightedMeasure& wXdOmega)
     {
       VERIFY_OP(iv.rank(),       == , 2,                     "IntrepidManager::Integral::operator() bad iv rank");
       VERIFY_OP(wXdOmega.rank(), == , 2,                     "IntrepidManager::Integral::operator() bad wXdOmega rank");
       VERIFY_OP((*this).rank(),  == , 1,                     "IntrepidManager::Integral::operator() bad (*this) rank");
-      VERIFY_OP(iv.dimension(0), == , this->dimension(0),    "IntrepidManager::Integral::operator() bad");
-      VERIFY_OP(iv.dimension(1), == , wXdOmega.dimension(1), "IntrepidManager::Integral::operator() bad");
-      VERIFY_OP(iv.dimension(0), == , wXdOmega.dimension(0), "IntrepidManager::Integral::operator() bad");
+      VERIFY_OP(iv.extent_int(0), == , this->extent_int(0),    "IntrepidManager::Integral::operator() bad");
+      VERIFY_OP(iv.extent_int(1), == , wXdOmega.extent_int(1), "IntrepidManager::Integral::operator() bad");
+      VERIFY_OP(iv.extent_int(0), == , wXdOmega.extent_int(0), "IntrepidManager::Integral::operator() bad");
 
-      FunctionSpaceTools::integrate<double>(*this, iv, wXdOmega,  COMP_BLAS);
+      FunctionSpaceTools<Kokkos::HostSpace>::integrate(*this, iv, wXdOmega);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -413,7 +317,7 @@
     static ComputeBases s_compute_bases;
 
     IntrepidManager::Bases::
-    Bases(IM& im) : BaseType(NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag))
+    Bases(const IM& im) : BaseType("IM::Bases", NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag))
                   , m_cb(ComputeBases()) 
          //, m_cb(new ComputeBases()) 
     {
@@ -439,7 +343,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C],[P],[DOF]): evaluated field values at each integration point in each cell:
     IntrepidManager::FieldValues::
-    FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
+    FieldValues(const IM& im) : BaseType("IM::FieldValues", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
     void IntrepidManager::FieldValues::operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, stk::mesh::FieldBase* field)
     {
@@ -472,17 +376,6 @@
       m_Spatial_Dim_Tag.num = cellTopo.getDimension();
     }
 
-
-
-
-
-#if 0
-    void IntrepidManager::getCubature(CubaturePoints& cp, CubatureWeights& cw)
-    {
-      m_cub->getCubature(cp, cw);
-    }
-#endif
-
     void test()
     {
       typedef IntrepidManager IM;
@@ -503,54 +396,11 @@
       im.m_cub->getCubature(xi, w);
       pc(c, xi);
 
-#if 0
-      IM::WeightedMeasure wXdOmega(im);
 
-      wXdOmega = w * dJ;
-#endif
-
-#if 0
-      IM::GradField gradP("pressure");
-      IM::TransformedGradField tgradP(gradP);
-      IM::WeightedTransformedGrad wtgradP(tgradP);
-
-      IM::GradField gradN_i("basis");
-      IM::TransformedGradField tgradN_i(gradN_i);
-      IM::WeightedTransformedGrad wtgradN_i(tgradN_i);
-      IM::StiffnessMatrix K;
-
-      IM::WeightedMeasure wXdOmega;
-      IM::HGRADPhysicalSpace tgradN_i;
-      IM::MultipliedByMeasure wXdOmegaTGradN_i;
-      IM::IntegratedOp K( COMP_CPP );
-#endif
-
-      //IM::JacobianInv ji(im);
-      //std::cout << "j.size()= " << j.size() << std::endl;
-      //im.print();
-
-
-#if 0
-      xi.set();
-      w.set();
-      gradN_i(xi);
-#endif
       //Step 6: Apply cell tools
       J(xi, c, *topo);
       Ji(J);
       dJ(J);
-
-#if 0
-      //Step 7: Apply function space tools
-
-      wXdOmega = w * dJ;
-
-      tgradN_i = Ji * gradN_i;
-
-      wXdOmegaTGradN_i = wXdOmega * tgradN_i;
-
-      K =  tgradN_i * wXdOmegaTGradN_i;
-#endif
 
     }
 
@@ -577,7 +427,7 @@
       shards::CellTopology topo(bucket_cell_topo_data);
       unsigned numNodes = topo.getNodeCount();
       unsigned cellDim  = topo.getDimension();
-      MDArray cellWorkset(numCells, numNodes, cellDim);
+      MDArray cellWorkset("cellWorkset", numCells, numNodes, cellDim);
 
       /// FIXME -- fill cellWorkset
       const MyPairIterRelation elem_nodes(bulkData, element, stk::topology::NODE_RANK );
@@ -596,42 +446,11 @@
             }
         }
 
-      // FIXME for multiple points
-      if (input_phy_points.rank() == 1)
-        {
-          VERIFY_1("IsInElement::isInElement bad rank of input_phy_points");
-        }
-      VERIFY_OP(input_phy_points.dimension(0), == , 1, "IsInElement::isInElement bad input_phy_points 1st dim");
-      if (input_phy_points.dimension(1) < (int)cellDim)
-        {
-          std::cout << "IsInElement::isInElement bad input_phy_points 2nd dim";
-        }
-      VERIFY_OP(input_phy_points.dimension(1), >= , (int)cellDim, "IsInElement::isInElement bad input_phy_points 2nd dim");
-
-      if (found_parametric_coordinates.rank() == 1)
-        {
-          VERIFY_1("IsInElement::isInElement bad rank of found_parametric_coordinates");
-        }
-      VERIFY_OP(found_parametric_coordinates.dimension(0), == , 1, "IsInElement::isInElement bad found_parametric_coordinates 1st dim");
-      VERIFY_OP(found_parametric_coordinates.dimension(1), == , (int)cellDim,
-                "IsInElement::isInElement bad found_parametric_coordinates 2nd dim");
-
-      unsigned cellOrd = 0;  // FIXME
-      Intrepid::CellTools<double>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo, cellOrd);
-      MDArrayUInt inclusion_results(1);  // FIXME
+      Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo);
+      MDArrayUInt inclusion_results("inclusion_results", 1, 1);  // FIXME
       double threshold = 1.e-4; // (INTREPID_THRESHOLD default = 10*double_eps ~ 20e-16)
-      Intrepid::CellTools<double>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo, threshold);
-      found_it = inclusion_results(0);
-      if (found_it)
-        {
-          // for testing only
-          if (0)
-            {
-              FieldContainer<double> images(1, cellDim );
-              //Intrepid::CellTools<double>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3, whichCell);
-              Intrepid::CellTools<double>::mapToPhysicalFrame(images, found_parametric_coordinates, cellWorkset, topo, cellOrd);
-            }
-        }
+      Intrepid2::CellTools<Kokkos::HostSpace>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo, threshold);
+      found_it = inclusion_results(0,0);
     }
 
     void IntrepidManager::more_template_instantiations()
@@ -644,39 +463,39 @@
       unsigned spaceDim = 1;
 
       // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
-      FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);
+      MDArray cellNodes("cellNodes", numCells, numNodes, spaceDim);
 
-      DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
+      DefaultCubatureFactory cubFactory;                                              // create cubature factory
       unsigned cubDegree = 2;                                                                      // set cubature degree, e.g. 2
-      Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cell_topo, cubDegree);         // create default cubature
+      auto myCub = cubFactory.create<Kokkos::HostSpace, double, double>(cell_topo, cubDegree);         // create default cubature
 
       unsigned numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
 
-      FieldContainer<double> cub_points(numCubPoints, spaceDim);
-      FieldContainer<double> cub_weights(numCubPoints);
+      MDArray cub_points("cub_points", numCubPoints, spaceDim);
+      MDArray cub_weights("cub_weights", numCubPoints);
 
       // Rank-4 array (C,P,D,D) for the Jacobian and its inverse and Rank-2 array (C,P) for its determinant
-      FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_det(numCells, numCubPoints);
+      MDArray jacobian("jacobian", numCells, numCubPoints, spaceDim, spaceDim);
+      MDArray jacobian_inv("jacobian_inv", numCells, numCubPoints, spaceDim, spaceDim);
+      MDArray jacobian_det("jacobian_det", numCells, numCubPoints);
 
       myCub->getCubature(cub_points, cub_weights);                                          // retrieve cubature points and weights
 
       // Methods to compute cell Jacobians, their inverses and their determinants
 
-      CellTools<double>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
-      CellTools<double>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
-      CellTools<double>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
+      CellTools<Kokkos::HostSpace>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
+      CellTools<Kokkos::HostSpace>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
+      CellTools<Kokkos::HostSpace>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
 
-      FieldContainer<double> weightedMeasure(numCells, numCubPoints);
-      FieldContainer<double> onesLeft(numCells,  numCubPoints);
-      FieldContainer<double> volume(numCells);
+      MDArray weightedMeasure("weightedMeasure", numCells, numCubPoints);
+      MDArray onesLeft("onesLeft", numCells,  numCubPoints);
+      MDArray volume("volume", numCells);
 
       // compute weighted measure
-      FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
+      FunctionSpaceTools<Kokkos::HostSpace>::computeCellMeasure(weightedMeasure, jacobian_det, cub_weights);
 
       // integrate to get volume
-      FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
+      FunctionSpaceTools<Kokkos::HostSpace>::integrate(volume, onesLeft, weightedMeasure);
 
     }
 

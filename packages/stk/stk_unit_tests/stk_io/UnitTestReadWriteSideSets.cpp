@@ -33,7 +33,6 @@ protected:
     const std::string fileName("meshSubset.g");
     stk::mesh::Selector meshSubsetSelector = create_block_subset_selector({blockToExclude});
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
     stkIo.set_output_selector(outputFileIndex, stk::topology::ELEM_RANK, meshSubsetSelector);
@@ -429,8 +428,7 @@ void test_output_sideset(stk::unit_test_util::sideset::BulkDataTester &bulk,
   stk::unit_test_util::sideset::write_exo_file(bulk, outputFileName);
 
   auto meta2 = std::make_shared<stk::mesh::MetaData>();
-  meta2->use_simple_fields();
-  stk::unit_test_util::sideset::BulkDataTester bulk2(meta2, bulk.parallel());
+  stk::unit_test_util::sideset::BulkDataTester bulk2(*meta2, bulk.parallel());
   stk::unit_test_util::sideset::read_exo_file(bulk2, outputFileName, readMode);
   EXPECT_NO_THROW(stk::unit_test_util::sideset::compare_sidesets(outputFileName, bulk, bulk2));
 }
@@ -491,8 +489,7 @@ void test_create_and_write_new_sideset(stk::ParallelMachine pm,
                                        const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
 {
   auto meta = std::make_shared<stk::mesh::MetaData>(3);
-  meta->use_simple_fields();
-  stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+  stk::unit_test_util::sideset::BulkDataTester bulk(*meta, pm);
   stk::mesh::PartVector parts = create_parts(*meta);
 
   load_mesh_with_no_sidesets(bulk, inputFileName);
@@ -552,8 +549,7 @@ void test_read_and_modify_sideset(stk::ParallelMachine pm,
                                   const stk::unit_test_util::sideset::ElemIdSideVector &expectedOutputElemIdSides)
 {
     auto meta = std::make_shared<stk::mesh::MetaData>();
-    meta->use_simple_fields();
-    stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+    stk::unit_test_util::sideset::BulkDataTester bulk(*meta, pm);
     int inputId = 1;
 
     read_and_test_preexisting_sidesets(bulk, inputFileName, inputId, expectedInputElemIdSides);
@@ -577,6 +573,32 @@ TEST(StkIo, modify_sideset)
   }
 }
 
+
+TEST(StkIo, skinned_sideset_from_badly_named_element_block)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  if(stk::parallel_machine_size(pm) > 1) GTEST_SKIP();
+
+  std::string meshDesc = "textmesh: 0,1,HEX_8,1,2,3,4,5,6,7,8, shell_a"
+                         "|coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1"
+                         "|sideset:name=surface_skinned_shell_a; data=1,1";
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  EXPECT_NO_THROW(stk::io::fill_mesh(meshDesc, *bulk));
+
+  std::string fileName("missing_skinned_shell.g");
+  stk::io::write_mesh(fileName, *bulk);
+
+  std::shared_ptr<stk::mesh::BulkData> bulk2 = build_mesh_no_simple_fields(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::unit_test_util::sideset::read_exo_file(*bulk2, fileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+  stk::unit_test_util::sideset::SideSetIdAndElemIdSidesVector expectedInputSideset{ {1, {{1, 0}}} };
+  stk::unit_test_util::sideset::compare_sidesets(fileName, *bulk2, expectedInputSideset);
+  
+  unlink(fileName.c_str());
+}
+
 TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -586,8 +608,7 @@ TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
   if(p_size == 2)
   {
       auto meta = std::make_shared<stk::mesh::MetaData>(3);
-      meta->use_simple_fields();
-      stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+      stk::unit_test_util::sideset::BulkDataTester bulk(*meta, pm);
 
       stk::mesh::PartVector parts = create_parts(*meta);
       load_mesh_with_no_sidesets(bulk, "AA.e");

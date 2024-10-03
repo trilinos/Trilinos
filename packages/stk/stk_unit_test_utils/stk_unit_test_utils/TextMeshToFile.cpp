@@ -69,7 +69,6 @@ TextMeshToFile::TextMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::A
     m_bulk(*m_bulkPtr),
     m_meta(m_bulk.mesh_meta_data())
 {
-  m_meta.use_simple_fields();
 }
 
 void

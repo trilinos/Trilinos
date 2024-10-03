@@ -35,8 +35,7 @@ struct TeamVectorQR_Internal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m,  // m = NumRows(A)
                                            const int n,  // n = NumCols(A)
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *w) {
     typedef ValueType value_type;
@@ -67,14 +66,12 @@ struct TeamVectorQR_Internal {
       /// -----------------------------------------------------
 
       // perform householder transformation
-      TeamVectorLeftHouseholderInternal::invoke(member, m_A22, A_part3x3.A11,
-                                                A_part3x3.A21, as0, tau);
+      TeamVectorLeftHouseholderInternal::invoke(member, m_A22, A_part3x3.A11, A_part3x3.A21, as0, tau);
       member.team_barrier();
 
       // left apply householder to A22
-      TeamVectorApplyLeftHouseholderInternal::invoke(
-          member, m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
-          A_part3x3.A22, as0, as1, w);
+      TeamVectorApplyLeftHouseholderInternal::invoke(member, m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
+                                                     A_part3x3.A22, as0, as1, w);
       member.team_barrier();
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);

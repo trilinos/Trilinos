@@ -71,10 +71,9 @@ void run_volume_to_surface_test(const std::string& meshFileName,
     BoxVectorType sideBoxes;
     createBoundingBoxesForEntities(*bulkPtr, stk::topology::FACE_RANK, sideBoxes);
 
-    SearchResults searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      SearchResults searchResults;
       stk::search::coarse_search(elemBoxes, sideBoxes, searchMethod, comm, searchResults, enforceSearchResultSymmetry);
     }
     batchTimer.stop_batch_timer();
@@ -109,10 +108,9 @@ void run_volume_to_surface_test_with_views(const std::string& meshFileName,
     Kokkos::View<BoxIdentProcType *, ExecSpace> sideBoxes = createBoundingBoxesForEntities<BoxIdentProcType>(*bulkPtr,
                                                                                               stk::topology::FACE_RANK);
 
-    Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
       stk::search::coarse_search(elemBoxes, sideBoxes, searchMethod, comm, searchResults,
                                  ExecSpace{}, enforceSearchResultSymmetry);
     }
@@ -211,10 +209,9 @@ void run_volume_to_surface_test_local(const std::string& meshFileName,
     BoxVectorType sideBoxes;
     createBoundingBoxesForEntities(*bulkPtr, stk::topology::FACE_RANK, sideBoxes);
 
-    LocalSearchResults searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      LocalSearchResults searchResults;
       stk::search::local_coarse_search(elemBoxes, sideBoxes, searchMethod, searchResults);
     }
     batchTimer.stop_batch_timer();
@@ -248,10 +245,9 @@ void run_volume_to_surface_test_local_with_views(const std::string& meshFileName
     Kokkos::View<BoxIdentType *, ExecSpace> sideBoxes = createBoundingBoxesForEntities<BoxIdentType>(*bulkPtr,
                                                                                               stk::topology::FACE_RANK);
 
-    Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
       stk::search::local_coarse_search(elemBoxes, sideBoxes, searchMethod, searchResults, ExecSpace{});
     }
     batchTimer.stop_batch_timer();

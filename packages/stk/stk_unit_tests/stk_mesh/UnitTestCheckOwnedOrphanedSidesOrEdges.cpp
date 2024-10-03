@@ -7,7 +7,7 @@
 namespace
 {
 
-class MeshCheckerOwnedOrphans : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshCheckerOwnedOrphans : public stk::unit_test_util::MeshFixture
 {
 protected:
   MeshCheckerOwnedOrphans()
@@ -66,7 +66,7 @@ TEST_F(MeshCheckerOwnedOrphans, check_mesh_with_orphaned_owned_sides)
   }
 }
 
-class MeshCheckerWithElements : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshCheckerWithElements : public stk::unit_test_util::MeshFixture
 {
 protected:
   void delete_element5_on_proc0()

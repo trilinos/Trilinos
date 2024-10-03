@@ -19,9 +19,6 @@ public:
   KOKKOS_FUNCTION NgpFieldBase& operator=(const NgpFieldBase&) { return *this; }
   KOKKOS_FUNCTION NgpFieldBase& operator=(NgpFieldBase&&) { return *this; }
   KOKKOS_FUNCTION virtual ~NgpFieldBase() {}
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED virtual void rotate_multistate_data() = 0;
-#endif
   virtual void update_bucket_pointer_view() = 0;
   virtual void swap_field_views(NgpFieldBase*) = 0;
   virtual void modify_on_host() = 0;

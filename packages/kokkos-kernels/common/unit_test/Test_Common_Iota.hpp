@@ -76,13 +76,11 @@ void test_iota_rank() {
 
 template <typename T, typename Size>
 void test_iota_non_const_value_type() {
-  static_assert(
-      std::is_same_v<typename Iota<T, Size>::non_const_value_type, T>,
-      "Iota's non-const value type should be same as non-const type provided");
-  static_assert(
-      std::is_same_v<typename Iota<const T, Size>::non_const_value_type, T>,
-      "Iota's non-const value type should be same as non-const version of "
-      "const type provided");
+  static_assert(std::is_same_v<typename Iota<T, Size>::non_const_value_type, T>,
+                "Iota's non-const value type should be same as non-const type provided");
+  static_assert(std::is_same_v<typename Iota<const T, Size>::non_const_value_type, T>,
+                "Iota's non-const value type should be same as non-const version of "
+                "const type provided");
 }
 
 template <typename T, typename Size>
@@ -98,10 +96,8 @@ void test_iota_subview() {
 
 template <typename T, typename Size>
 void test_is_iota() {
-  static_assert(KokkosKernels::Impl::is_iota_v<Iota<T, Size>>,
-                "Iota should be an Iota");
-  static_assert(!KokkosKernels::Impl::is_iota_v<int>,
-                "int should not be an Iota");
+  static_assert(KokkosKernels::Impl::is_iota_v<Iota<T, Size>>, "Iota should be an Iota");
+  static_assert(!KokkosKernels::Impl::is_iota_v<int>, "int should not be an Iota");
 }
 
 template <typename T, typename Size>

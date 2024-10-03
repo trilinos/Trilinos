@@ -182,7 +182,6 @@ TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
     builder.set_entity_rank_names(rank_names);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
     stk::mesh::MetaData& stkMeshMetaData = bulkPtr->mesh_meta_data();
-    stkMeshMetaData.use_simple_fields();
     stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
     const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
     stk::io::fill_mesh(generatedMeshSpecification, stkMeshBulkData);

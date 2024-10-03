@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <Teuchos_ConfigDefs.hpp>
@@ -46,11 +14,12 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 
+#include "Kokkos_DynRankView.hpp"
+
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
-#include "Kokkos_DynRankView.hpp"
 
 #include "PanzerCore_config.hpp"
 
@@ -64,24 +33,20 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
-typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
-template <typename Intrepid2Type>
-RCP<const panzer::FieldPattern> buildFieldPattern()
-{
+RCP<const panzer::FieldPattern> buildFieldPattern(
+  RCP<Intrepid2::Basis<PHX::Device, double, double>> basis
+) {
   // build a geometric pattern from a single basis
-  RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
-  RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
-  return pattern;
+  return Teuchos::make_rcp<panzer::Intrepid2FieldPattern>(basis);
 }
 
 // test that you can correctly compute a rank index from a global processor id
 TEUCHOS_UNIT_TEST(tCartesianTop, computeMyRankTriplet)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef CCM::Triplet<int> Triplet;
+  using CCM = CartesianConnManager;
+  using Triplet = typename CCM::Triplet<int>;
 
   // test 2D
   {
@@ -107,16 +72,16 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeMyRankTriplet)
 }
 
 // test that you can correctly compute a rank index from a grobal processor id
-TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementGlobalTriplet)
+TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalBrickElementGlobalTriplet)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef CCM::Triplet<panzer::GlobalOrdinal> Triplet;
+  using CCM = CartesianConnManager;
+  using Triplet = typename CCM::Triplet<panzer::GlobalOrdinal>;
 
   // test 2D
   {
-    auto t0 = CCM::computeLocalElementGlobalTriplet( 1,Triplet(4,3,1),Triplet(7,2,0));
-    auto t1 = CCM::computeLocalElementGlobalTriplet( 4,Triplet(4,3,1),Triplet(7,2,0));
-    auto t2 = CCM::computeLocalElementGlobalTriplet(11,Triplet(4,3,1),Triplet(7,2,0));
+    auto t0 = CCM::computeLocalBrickElementGlobalTriplet( 1,Triplet(4,3,1),Triplet(7,2,0));
+    auto t1 = CCM::computeLocalBrickElementGlobalTriplet( 4,Triplet(4,3,1),Triplet(7,2,0));
+    auto t2 = CCM::computeLocalBrickElementGlobalTriplet(11,Triplet(4,3,1),Triplet(7,2,0));
 
     TEST_EQUALITY(t0.x,1+7); TEST_EQUALITY(t0.y,0+2); TEST_EQUALITY(t0.z,0);
     TEST_EQUALITY(t1.x,0+7); TEST_EQUALITY(t1.y,1+2); TEST_EQUALITY(t1.z,0);
@@ -125,9 +90,9 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementGlobalTriplet)
 
   // test 3D
   {
-    auto t0 = CCM::computeLocalElementGlobalTriplet( 1+2*12,Triplet(4,3,5),Triplet(7,2,3));
-    auto t1 = CCM::computeLocalElementGlobalTriplet( 4+1*12,Triplet(4,3,5),Triplet(7,2,3));
-    auto t2 = CCM::computeLocalElementGlobalTriplet(11+4*12,Triplet(4,3,5),Triplet(7,2,3));
+    auto t0 = CCM::computeLocalBrickElementGlobalTriplet( 1+2*12,Triplet(4,3,5),Triplet(7,2,3));
+    auto t1 = CCM::computeLocalBrickElementGlobalTriplet( 4+1*12,Triplet(4,3,5),Triplet(7,2,3));
+    auto t2 = CCM::computeLocalBrickElementGlobalTriplet(11+4*12,Triplet(4,3,5),Triplet(7,2,3));
 
     TEST_EQUALITY(t0.x,1+7); TEST_EQUALITY(t0.y,0+2); TEST_EQUALITY(t0.z,2+3);
     TEST_EQUALITY(t1.x,0+7); TEST_EQUALITY(t1.y,1+2); TEST_EQUALITY(t1.z,1+3);
@@ -135,43 +100,43 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementGlobalTriplet)
   }
 }
 
-TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementIndex)
+TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalBrickElementIndex)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef CCM::Triplet<panzer::GlobalOrdinal> Triplet;
+  using CCM = CartesianConnManager;
+  using Triplet = typename CCM::Triplet<panzer::GlobalOrdinal>;
 
   // test 2D
   {
-    auto t0 = CCM::computeLocalElementGlobalTriplet( 1,Triplet(4,3,1),Triplet(7,2,0));
-    auto t1 = CCM::computeLocalElementGlobalTriplet( 4,Triplet(4,3,1),Triplet(7,2,0));
-    auto t2 = CCM::computeLocalElementGlobalTriplet(11,Triplet(4,3,1),Triplet(7,2,0));
+    auto t0 = CCM::computeLocalBrickElementGlobalTriplet( 1,Triplet(4,3,1),Triplet(7,2,0));
+    auto t1 = CCM::computeLocalBrickElementGlobalTriplet( 4,Triplet(4,3,1),Triplet(7,2,0));
+    auto t2 = CCM::computeLocalBrickElementGlobalTriplet(11,Triplet(4,3,1),Triplet(7,2,0));
 
-    TEST_EQUALITY(CCM::computeLocalElementIndex(t0,Triplet(4,3,1),Triplet(7,2,0)), 1);
-    TEST_EQUALITY(CCM::computeLocalElementIndex(t1,Triplet(4,3,1),Triplet(7,2,0)), 4);
-    TEST_EQUALITY(CCM::computeLocalElementIndex(t2,Triplet(4,3,1),Triplet(7,2,0)),11);
+    TEST_EQUALITY(CCM::computeLocalBrickElementIndex(t0,Triplet(4,3,1),Triplet(7,2,0)), 1);
+    TEST_EQUALITY(CCM::computeLocalBrickElementIndex(t1,Triplet(4,3,1),Triplet(7,2,0)), 4);
+    TEST_EQUALITY(CCM::computeLocalBrickElementIndex(t2,Triplet(4,3,1),Triplet(7,2,0)),11);
   }
 
   // test 3D
   {
-    auto t0 = CCM::computeLocalElementGlobalTriplet( 1+2*12,Triplet(4,3,5),Triplet(7,2,3));
-    auto t1 = CCM::computeLocalElementGlobalTriplet( 4+1*12,Triplet(4,3,5),Triplet(7,2,3));
-    auto t2 = CCM::computeLocalElementGlobalTriplet(11+4*12,Triplet(4,3,5),Triplet(7,2,3));
+    auto t0 = CCM::computeLocalBrickElementGlobalTriplet( 1+2*12,Triplet(4,3,5),Triplet(7,2,3));
+    auto t1 = CCM::computeLocalBrickElementGlobalTriplet( 4+1*12,Triplet(4,3,5),Triplet(7,2,3));
+    auto t2 = CCM::computeLocalBrickElementGlobalTriplet(11+4*12,Triplet(4,3,5),Triplet(7,2,3));
 
-    TEST_EQUALITY(CCM::computeLocalElementIndex(t0,Triplet(4,3,5),Triplet(7,2,3)), 1+2*12);
-    TEST_EQUALITY(CCM::computeLocalElementIndex(t1,Triplet(4,3,5),Triplet(7,2,3)), 4+1*12);
-    TEST_EQUALITY(CCM::computeLocalElementIndex(t2,Triplet(4,3,5),Triplet(7,2,3)),11+4*12);
+    TEST_EQUALITY(CCM::computeLocalBrickElementIndex(t0,Triplet(4,3,5),Triplet(7,2,3)), 1+2*12);
+    TEST_EQUALITY(CCM::computeLocalBrickElementIndex(t1,Triplet(4,3,5),Triplet(7,2,3)), 4+1*12);
+    TEST_EQUALITY(CCM::computeLocalBrickElementIndex(t2,Triplet(4,3,5),Triplet(7,2,3)),11+4*12);
   }
 }
 
-TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalElementIndex)
+TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalBrickElementIndex)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef CCM::Triplet<panzer::GlobalOrdinal> Triplet;
+  using CCM = CartesianConnManager;
+  using Triplet = typename CCM::Triplet<panzer::GlobalOrdinal>;
 
   // test 2D
   {
-    panzer::GlobalOrdinal t0 = CCM::computeGlobalElementIndex(Triplet(1,1,0),Triplet(4,3,1));
-    panzer::GlobalOrdinal t1 = CCM::computeGlobalElementIndex(Triplet(3,2,0),Triplet(4,3,1));
+    panzer::GlobalOrdinal t0 = CCM::computeGlobalBrickElementIndex(Triplet(1,1,0),Triplet(4,3,1));
+    panzer::GlobalOrdinal t1 = CCM::computeGlobalBrickElementIndex(Triplet(3,2,0),Triplet(4,3,1));
 
     TEST_EQUALITY(t0, 5);
     TEST_EQUALITY(t1,11);
@@ -179,8 +144,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalElementIndex)
 
   // test 3D
   {
-    panzer::GlobalOrdinal t0 = CCM::computeGlobalElementIndex(Triplet( 1,1,3),Triplet(4,3,6));
-    panzer::GlobalOrdinal t1 = CCM::computeGlobalElementIndex(Triplet( 3,2,5),Triplet(4,3,6));
+    panzer::GlobalOrdinal t0 = CCM::computeGlobalBrickElementIndex(Triplet( 1,1,3),Triplet(4,3,6));
+    panzer::GlobalOrdinal t1 = CCM::computeGlobalBrickElementIndex(Triplet( 3,2,5),Triplet(4,3,6));
 
     TEST_EQUALITY(t0, 5+3*12);
     TEST_EQUALITY(t1,11+5*12);
@@ -190,8 +155,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalElementIndex)
 // This test checks functions used to generate the topology are correct
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef CCM::Triplet<panzer::GlobalOrdinal> TripletGO;
+  using CCM = CartesianConnManager;
+  using Triplet = typename CCM::Triplet<panzer::GlobalOrdinal>;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -204,15 +169,14 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
   int rank = comm.getRank();
 
   // field pattern for basis required
-  RCP<const panzer::FieldPattern> fp
-        = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
-
+  RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device, double, double>>());
+  
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7;
   int px = np, py = 1;
   int bx =  1, by = 2;
 
-  RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,px,py,bx,by);
 
   // test element blocks are computed properly and sized appropriately
@@ -230,8 +194,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 
   // test that owned and offset elements are correct
   { 
-    auto myElements = connManager->getMyElementsTriplet();
-    auto myOffset = connManager->getMyOffsetTriplet();
+    auto myElements = connManager->getMyBrickElementsTriplet();
+    auto myOffset = connManager->getMyBrickOffsetTriplet();
 
     panzer::GlobalOrdinal n = nx / px;
     panzer::GlobalOrdinal r = nx - n * px;
@@ -249,15 +213,15 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
   // test that the elements are in the right blocks
   {
     panzer::GlobalOrdinal blk0[4],blk1[4];
-    blk0[0] = connManager->computeLocalElementIndex(TripletGO(2,2,0));
-    blk0[1] = connManager->computeLocalElementIndex(TripletGO(5,2,0));
-    blk0[2] = connManager->computeLocalElementIndex(TripletGO(7,2,0));
-    blk0[3] = connManager->computeLocalElementIndex(TripletGO(9,2,0));
+    blk0[0] = connManager->computeLocalBrickElementIndex(Triplet(2,2,0));
+    blk0[1] = connManager->computeLocalBrickElementIndex(Triplet(5,2,0));
+    blk0[2] = connManager->computeLocalBrickElementIndex(Triplet(7,2,0));
+    blk0[3] = connManager->computeLocalBrickElementIndex(Triplet(9,2,0));
 
-    blk1[0] = connManager->computeLocalElementIndex(TripletGO(2,12,0));
-    blk1[1] = connManager->computeLocalElementIndex(TripletGO(5,12,0));
-    blk1[2] = connManager->computeLocalElementIndex(TripletGO(7,12,0));
-    blk1[3] = connManager->computeLocalElementIndex(TripletGO(9,12,0));
+    blk1[0] = connManager->computeLocalBrickElementIndex(Triplet(2,12,0));
+    blk1[1] = connManager->computeLocalBrickElementIndex(Triplet(5,12,0));
+    blk1[2] = connManager->computeLocalBrickElementIndex(Triplet(7,12,0));
+    blk1[3] = connManager->computeLocalBrickElementIndex(Triplet(9,12,0));
 
     bool found = false;
     for(int i=0;i<4;i++) {
@@ -307,7 +271,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  using CCM = CartesianConnManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -327,10 +291,10 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
   // test 2D nodal discretization
   {
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
-
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device, double, double>>());
+  
     // build the topology
-    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
+    const auto connManager = Teuchos::make_rcp<CCM>();
     connManager->initialize(comm,nx,ny,px,py,bx,by);
     connManager->buildConnectivity(*fp);
 
@@ -342,8 +306,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),4);
   
-        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
-                                                                      connManager->getMyOffsetTriplet());
+        auto global = CCM::computeLocalBrickElementGlobalTriplet(elmts0[i],connManager->getMyBrickElementsTriplet(),
+                                                                           connManager->getMyBrickOffsetTriplet());
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
   
@@ -361,10 +325,10 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     panzer::GlobalOrdinal totalEdges = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
 
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device, double, double>>());
 
     // build the topology
-    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
+    const auto connManager = Teuchos::make_rcp<CCM>();
     connManager->initialize(comm,nx,ny,px,py,bx,by);
     connManager->buildConnectivity(*fp);
 
@@ -376,8 +340,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),9);
   
-        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
-                                                                      connManager->getMyOffsetTriplet());
+        auto global = CCM::computeLocalBrickElementGlobalTriplet(elmts0[i],connManager->getMyBrickElementsTriplet(),
+                                                                           connManager->getMyBrickOffsetTriplet());
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
   
@@ -403,8 +367,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 // This test checks functions used to generate the topology are correct
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef CCM::Triplet<panzer::GlobalOrdinal> TripletGO;
+  using CCM = CartesianConnManager;
+  using Triplet = typename CCM::Triplet<panzer::GlobalOrdinal>;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -417,15 +381,14 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
   int rank = comm.getRank();
 
   // field pattern for basis required
-  RCP<const panzer::FieldPattern> fp
-        = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
+  RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device, double, double>>());
 
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
   int px = np, py = 1, pz = 1;
   int bx =  1, by = 2, bz = 1;
 
-  RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 
   // test element blocks are computed properly and sized appropriately
@@ -443,8 +406,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
 
   // test that owned and offset elements are correct
   { 
-    auto myElements = connManager->getMyElementsTriplet();
-    auto myOffset = connManager->getMyOffsetTriplet();
+    auto myElements = connManager->getMyBrickElementsTriplet();
+    auto myOffset = connManager->getMyBrickOffsetTriplet();
 
     panzer::GlobalOrdinal n = nx / px;
     panzer::GlobalOrdinal r = nx - n * px;
@@ -462,15 +425,15 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
   // test that the elements are in the right blocks
   {
     panzer::GlobalOrdinal blk0[4],blk1[4];
-    blk0[0] = connManager->computeLocalElementIndex(TripletGO(2,2,3));
-    blk0[1] = connManager->computeLocalElementIndex(TripletGO(5,2,3));
-    blk0[2] = connManager->computeLocalElementIndex(TripletGO(7,2,3));
-    blk0[3] = connManager->computeLocalElementIndex(TripletGO(9,2,3));
+    blk0[0] = connManager->computeLocalBrickElementIndex(Triplet(2,2,3));
+    blk0[1] = connManager->computeLocalBrickElementIndex(Triplet(5,2,3));
+    blk0[2] = connManager->computeLocalBrickElementIndex(Triplet(7,2,3));
+    blk0[3] = connManager->computeLocalBrickElementIndex(Triplet(9,2,3));
 
-    blk1[0] = connManager->computeLocalElementIndex(TripletGO(2,12,1));
-    blk1[1] = connManager->computeLocalElementIndex(TripletGO(5,12,1));
-    blk1[2] = connManager->computeLocalElementIndex(TripletGO(7,12,1));
-    blk1[3] = connManager->computeLocalElementIndex(TripletGO(9,12,1));
+    blk1[0] = connManager->computeLocalBrickElementIndex(Triplet(2,12,1));
+    blk1[1] = connManager->computeLocalBrickElementIndex(Triplet(5,12,1));
+    blk1[2] = connManager->computeLocalBrickElementIndex(Triplet(7,12,1));
+    blk1[3] = connManager->computeLocalBrickElementIndex(Triplet(9,12,1));
 
     bool found = false;
     for(int i=0;i<4;i++) {
@@ -520,7 +483,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
 
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  using CCM = CartesianConnManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -545,10 +508,10 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
   // test 3D nodal discretization
   {
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device, double, double>>());
 
     // build the topology
-    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
+    const auto connManager = Teuchos::make_rcp<CCM>();
     connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
     connManager->buildConnectivity(*fp);
 
@@ -560,8 +523,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),8);
   
-        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
-                                                                      connManager->getMyOffsetTriplet());
+        auto global = CCM::computeLocalBrickElementGlobalTriplet(elmts0[i],connManager->getMyBrickElementsTriplet(),
+                                                                           connManager->getMyBrickOffsetTriplet());
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
   
@@ -585,10 +548,10 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
     panzer::GlobalOrdinal totalFaces = (bx*nx+1)*(by*ny)*(bz*nz)+(bx*nx)*(by*ny+1)*(bz*nz)+(bx*nx)*(by*ny)*(bz*nz+1);
 
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device, double, double>>());
 
     // build the topology
-    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
+    const auto connManager = Teuchos::make_rcp<CCM>();
     connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
     connManager->buildConnectivity(*fp);
 
@@ -600,8 +563,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),27);
   
-        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
-                                                                      connManager->getMyOffsetTriplet());
+        auto global = CCM::computeLocalBrickElementGlobalTriplet(elmts0[i],connManager->getMyBrickElementsTriplet(),
+                                                                           connManager->getMyBrickOffsetTriplet());
         out << "Element Triplet: " << global.x << ", " << global.y << ", " << global.z << std::endl;
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
@@ -658,6 +621,4 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
   }
 }
 
-} // end unit test
-} // end panzer
-
+} // namespace panzer::unit test

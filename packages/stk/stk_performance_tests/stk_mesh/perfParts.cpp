@@ -7,11 +7,11 @@
 namespace
 {
 
-class GetPartsByNamePerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class GetPartsByNamePerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
   GetPartsByNamePerformance(stk::mesh::BulkData &bulk)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       bulkData(bulk)
   {
   }
@@ -36,7 +36,7 @@ protected:
   stk::mesh::BulkData &bulkData;
 };
 
-class GetPartsByName : public stk::unit_test_util::simple_fields::MeshFixture
+class GetPartsByName : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_get_parts_perf_test()

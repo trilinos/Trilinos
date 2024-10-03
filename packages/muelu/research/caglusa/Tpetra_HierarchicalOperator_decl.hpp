@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TPETRA_HIERARCHICALOPERATOR_DECL_HPP
 #define TPETRA_HIERARCHICALOPERATOR_DECL_HPP
 
@@ -6,8 +15,10 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_RowMatrix.hpp>
+#include <Tpetra_OperatorWithDiagonal.hpp>
 #include <Tpetra_BlockedMap_decl.hpp>
 #include <Tpetra_BlockedMatrix_decl.hpp>
+#include "Teuchos_VerbosityLevel.hpp"
 
 namespace Tpetra {
 
@@ -52,7 +63,7 @@ template <class Scalar        = Tpetra::Operator<>::scalar_type,
           class LocalOrdinal  = typename Tpetra::Operator<Scalar>::local_ordinal_type,
           class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
           class Node          = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+class HierarchicalOperator : public Tpetra::OperatorWithDiagonal<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
  public:
   using matrix_type = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using mv_type     = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -132,6 +143,61 @@ class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Glob
     return Teuchos::as<double>(nnz) / (getDomainMap()->getGlobalNumElements() * getDomainMap()->getGlobalNumElements());
   }
 
+  size_t numClusterPairsOnLevelGlobal(size_t level) const {
+    using vec_type = typename Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Teuchos::RCP;
+    const Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+    if (level == 0) {
+      // RCP<vec_type> tempV         = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+      // RCP<vec_type> tempV2        = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+
+      // tempV->putScalar(ONE);
+      // transferMatrices_[0]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
+      // tempV->putScalar(ZERO);
+      // kernelApproximations_->blockA_->apply(*tempV2, *tempV);
+      // return Teuchos::as<size_t>(tempV->dot(*tempV2));
+      return 0;
+    } else if (level <= transferMatrices_.size()) {
+      RCP<vec_type> tempV  = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+      RCP<vec_type> tempV2 = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+
+      tempV->putScalar(ONE);
+      transferMatrices_[level - 1]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
+      tempV->putScalar(ZERO);
+      kernelApproximations_->blockA_->apply(*tempV2, *tempV);
+      return Teuchos::as<size_t>(tempV->dot(*tempV2));
+    } else {
+      TEUCHOS_ASSERT(false);
+    }
+  }
+
+  size_t numClustersOnLevelGlobal(size_t level) const {
+    if (level > 0)
+      return Teuchos::as<size_t>(transferMatrices_[level - 1]->blockA_->getGlobalNumEntries());
+    else {
+      const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
+      return Teuchos::as<size_t>(transferMatrices_[0]->blockA_->getGlobalNumEntries() / treeCoarseningFactor);
+    }
+  }
+
+  size_t numClustersOnLevelLocal(size_t level) const {
+    if (level > 0)
+      return Teuchos::as<size_t>(transferMatrices_[level - 1]->blockA_->getLocalNumEntries());
+    else {
+      const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
+      return Teuchos::as<size_t>(transferMatrices_[0]->blockA_->getLocalNumEntries() / treeCoarseningFactor);
+    }
+  }
+
+  size_t numLevels() const {
+    return transferMatrices_.size() + 1;
+  }
+
+  void setDebugOutput(const bool debugOutput) {
+    debugOutput_ = debugOutput;
+  }
+
   Teuchos::RCP<matrix_type> nearFieldMatrix() {
     return nearField_;
   }
@@ -181,90 +247,8 @@ class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Glob
     return nearField_->getLocalNumEntries();
   }
 
-  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  size_t getGlobalMaxNumRowEntries() const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  LocalOrdinal getBlockSize() const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  size_t getLocalMaxNumRowEntries() const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  bool hasColMap() const {
-    return false;
-  }
-
-  bool isLocallyIndexed() const {
-    return true;
-  }
-
-  bool isGloballyIndexed() const {
-    return true;
-  }
-
-  bool isFillComplete() const {
-    return true;
-  }
-
-  bool supportsRowViews() const {
-    return false;
-  }
-
-  void
-  getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                   nonconst_global_inds_host_view_type& Indices,
-                   nonconst_values_host_view_type& Values,
-                   size_t& NumEntries) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void
-  getLocalRowCopy(LocalOrdinal LocalRow,
-                  nonconst_local_inds_host_view_type& Indices,
-                  nonconst_values_host_view_type& Values,
-                  size_t& NumEntries) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void
-  getGlobalRowView(GlobalOrdinal GlobalRow,
-                   global_inds_host_view_type& indices,
-                   values_host_view_type& values) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void
-  getLocalRowView(LocalOrdinal LocalRow,
-                  local_inds_host_view_type& indices,
-                  values_host_view_type& values) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag) const {
     nearField_->getLocalDiagCopy(diag);
-  }
-
-  void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  mag_type getFrobeniusNorm() const {
-    return 0.;
   }
 
   void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
@@ -309,6 +293,18 @@ class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Glob
         << nnzTransfer << setw(12)
         << nnzTotal << setw(14)
         << nnzTotalPerRow << endl;
+
+    if (Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_EXTREME)) {
+      oss << setw(9) << "level" << setw(9) << "numClusters" << setw(9) << "numClusterPairs" << endl;
+      for (size_t lvl = 0; lvl < numLevels(); ++lvl) {
+        size_t numClustersLvl_gbl = numClustersOnLevelGlobal(lvl);
+        size_t numClusterPairsLvl = numClusterPairsOnLevelGlobal(lvl);
+        // size_t numClustersLvl_lcl = numClustersOnLevelLocal(lvl);
+
+        oss << setw(9) << lvl << setw(9) << numClustersLvl_gbl << setw(9) << numClusterPairsLvl << endl;
+      }
+    }
+
     out << oss.str();
   }
 
@@ -317,7 +313,7 @@ class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Glob
   }
 
   bool hasTransferMatrices() const {
-    return transferMatrices_.size() > 0;
+    return !transferMatrices_.empty();
   }
 
   bool denserThanDenseMatrix() const {

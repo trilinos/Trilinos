@@ -20,8 +20,8 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
     HierarchicalDriver
     NAME "HierarchicalDriver-fractionalLaplacian1D"
     ARGS
-    "--xml=1d-mm/hierarchical.xml --xmlProblem=1d-mm/problem.xml"
-    "--xml=1d-binary/hierarchical.xml --xmlProblem=1d-binary/problem.xml"
+    "--xmlHierarchical=1d-mm/hierarchical.xml --xmlProblem=1d-mm/problem.xml"
+    "--xmlHierarchical=1d-binary/hierarchical.xml --xmlProblem=1d-binary/problem.xml"
     COMM mpi
     NUM_MPI_PROCS 4
     )

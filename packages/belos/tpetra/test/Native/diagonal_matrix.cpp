@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                 Belos: Block Linear Solvers Package
+//
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "BelosSolverFactory.hpp"
@@ -25,13 +34,13 @@ TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions (true);
-  clp.setOption ("solver", &commandLineOptions.solverName, 
+  clp.setOption ("solver", &commandLineOptions.solverName,
 		 "Name of the solver to test.  Belos::SolverFactory::create "
 		 "must accept this string.  Protect with double quotes if it "
 		 "has spaces: e.g., \"TPETRA CG PIPELINE\".");
-  clp.setOption ("maxNumIters", &commandLineOptions.maxAllowedNumIters, 
+  clp.setOption ("maxNumIters", &commandLineOptions.maxAllowedNumIters,
 		 "Maximum number of iterations");
-  clp.setOption ("verbose", "quiet", &commandLineOptions.verbose, 
+  clp.setOption ("verbose", "quiet", &commandLineOptions.verbose,
 		 "Whether to print verbose output");
 }
 
@@ -49,10 +58,10 @@ public:
     typename TpetraOperatorType::node_type>;
 
 private:
-  using device_type = typename map_type::device_type;  
+  using device_type = typename map_type::device_type;
   using val_type = typename TpetraOperatorType::scalar_type;
   using STS = Teuchos::ScalarTraits<val_type>;
-  
+
 public:
   using mag_type = typename Teuchos::ScalarTraits<val_type>::magnitudeType;
 
@@ -153,7 +162,7 @@ testSolver (Teuchos::FancyOStream& out,
   // setting this to 'true'.  That will change 'myOut' from an alias
   // to 'out', into a wrapper for std::cerr.
   constexpr bool debug = false;
-  
+
   const SC ZERO = STS::zero ();
   const SC ONE = STS::one ();
 
@@ -217,7 +226,7 @@ testSolver (Teuchos::FancyOStream& out,
     myOut << "*** FAILED: setParameters threw an exception "
       "not a subclass of std::exception." << endl;
     success = false;
-    return;    
+    return;
   }
 
   myOut << "Set up the linear system to solve" << endl;
@@ -225,7 +234,7 @@ testSolver (Teuchos::FancyOStream& out,
                                                        rcpFromRef (B)));
   lp->setProblem ();
 
-  myOut << "Solve the linear system" << endl;  
+  myOut << "Solve the linear system" << endl;
   solver->setProblem (lp);
   const Belos::ReturnType belosResult = solver->solve ();
 

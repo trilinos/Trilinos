@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -370,9 +336,13 @@ namespace { // (anonymous)
     //Input vector: elements are all 1s
     MV w(domainMap, numVecs, false);
     w.putScalar(ST::one());
-    //Output vector: zero initially
-    //note: rowMap is non-overlapping so this is OK
-    MV v(rowMap, numVecs, true);
+    //Output vector: if Scalar is real or complex, fill with NaN to test that NaNs are correctly overwritten with beta=0.
+    //If Scalar is an integer, fill with ones instead to at least test that the output vector is zeroed.
+    MV v(rowMap, numVecs, false);
+    if constexpr(Kokkos::ArithTraits<Scalar>::is_integer)
+      v.putScalar(Kokkos::ArithTraits<Scalar>::one());
+    else
+      v.putScalar(Kokkos::ArithTraits<Scalar>::nan());
     //Do the apply. If cuSPARSE is enabled, the merge path algorithm will be used. Otherwise, this tests the fallback.
     imba.apply(w, v);
     Teuchos::Array<Scalar> vvals(numLocalRows * numVecs);
@@ -393,7 +363,10 @@ namespace { // (anonymous)
       //Now run again, but on single vectors only (rank-1)
       auto wcol = w.getVector(0);
       auto vcol = v.getVectorNonConst(0);
-      vcol->putScalar(ST::zero());
+      if constexpr(Kokkos::ArithTraits<Scalar>::is_integer)
+        vcol->putScalar(Kokkos::ArithTraits<Scalar>::one());
+      else
+        vcol->putScalar(Kokkos::ArithTraits<Scalar>::nan());
       imba.apply(*wcol, *vcol);
       vcol->get1dCopy(vvals(), numLocalRows);
       for(size_t i = 0; i < numLocalRows - 1; i++)
@@ -414,6 +387,57 @@ namespace { // (anonymous)
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ApplyOverwriteNan, LO, GO, Scalar, Node )
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    // NaN is only representable for floating-point real and complex types
+    if constexpr(!ST::isOrdinal) {
+      typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
+      typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+      typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
+      typedef typename ST::magnitudeType Mag;
+      typedef Teuchos::ScalarTraits<Mag> MT;
+      const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+      // get a comm
+      RCP<const Comm<int> > comm = getDefaultComm();
+      const size_t myImageID = comm->getRank();
+      // create a Map
+      const size_t numLocal = 10;
+      const size_t numVecs  = 5;
+      RCP<const Tpetra::Map<LO,GO,Node> > map =
+        createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+      // create the identity matrix
+      GO base = numLocal*myImageID;
+      RCP<Tpetra::RowMatrix<Scalar,LO,GO,Node> > eye;
+      {
+        RCP<MAT> eye_crs = rcp(new MAT(map,numLocal));
+        for (size_t i=0; i<numLocal; ++i) {
+          eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
+        }
+        eye_crs->fillComplete();
+        eye = eye_crs;
+      }
+      MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
+      mvrand.randomize();
+      // because beta=0 (default argument), the NaN values in mvres should be overwritten
+      mvres.putScalar(Kokkos::ArithTraits<Scalar>::nan());
+      eye->apply(mvrand, mvres);
+      mvres.update(-ST::one(), mvrand, ST::one());
+      Array<Mag> norms(numVecs), zeros(numVecs, MT::zero());
+      mvres.norm1(norms());
+      TEST_COMPARE_FLOATING_ARRAYS(norms, zeros, MT::zero());
+      // Test with a single column as well
+      auto mvrand_col0 = mvrand.getVectorNonConst(0);
+      auto mvres_col0 = mvres.getVectorNonConst(0);
+      mvrand_col0->randomize();
+      mvres_col0->putScalar(Kokkos::ArithTraits<Scalar>::nan());
+      eye->apply(*mvrand_col0, *mvres_col0);
+      mvres_col0->update(-ST::one(), *mvrand_col0, ST::one());
+      Array<Mag> norm_col0(1), zeros_col0(1, MT::zero());
+      mvres_col0->norm1(norm_col0());
+      TEST_COMPARE_FLOATING_ARRAYS(norm_col0, zeros_col0, MT::zero());
+    }
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, InsertLocalValuesCombineModes, LO, GO, Scalar, Node )
   {
@@ -507,6 +531,7 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth,  LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix,     LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ImbalancedRowMatrix, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ApplyOverwriteNan, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls,       LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE )

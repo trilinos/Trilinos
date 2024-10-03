@@ -78,6 +78,7 @@
 
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 
@@ -155,7 +156,6 @@
       ,m_unprojected_coordinates(0)
       ,m_avoid_add_all_mesh_fields_as_input_fields(false)
       ,m_markNone(false)
-      ,m_useSimpleFields(false)
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -196,9 +196,6 @@
       stk::mesh::MeshBuilder builder(m_comm);
       m_bulkData = builder.create();
       m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(),[](auto ptrWeWontDelete){});
-      if (m_useSimpleFields) {
-        m_metaData->use_simple_fields();
-      }
       m_metaData->initialize(m_spatialDim, entity_rank_names);
 
       const unsigned p_rank = stk::parallel_machine_rank( m_comm );
@@ -948,7 +945,7 @@
     {
       stk::mesh::Entity const *elem_nodes = get_bulk_data()->begin_nodes(element);
       stk::mesh::Entity const *side_nodes = get_bulk_data()->begin_nodes(side);
-      return get_bulk_data()->find_permutation(topology(element), elem_nodes, topology(side), side_nodes, side_ord);
+      return stk::mesh::find_permutation(*get_bulk_data(), topology(element), elem_nodes, topology(side), side_nodes, side_ord);
     }
 
     bool PerceptMesh::is_perm_bad(stk::mesh::Entity element, stk::mesh::Entity side, unsigned side_ord, stk::mesh::Permutation& perm)
@@ -1016,7 +1013,7 @@
                   stk::topology side_topo = topology(element).side_topology(side_ord);
                   if (side_topo != side_topo_in)
                     continue;
-                  stk::mesh::Permutation perm = get_bulk_data()->find_permutation(topology(element), elem_nodes, side_topo, side_nodes, side_ord);
+                  stk::mesh::Permutation perm = stk::mesh::find_permutation(*get_bulk_data(), topology(element), elem_nodes, side_topo, side_nodes, side_ord);
 
                   bool sameOwner = this->owner_rank(element) == this->get_rank();
                   bool isPos = perm < side_topo.num_positive_permutations();
@@ -1814,7 +1811,6 @@
       ,m_unprojected_coordinates(0)
       ,m_avoid_add_all_mesh_fields_as_input_fields(false)
       ,m_markNone(false)
-      ,m_useSimpleFields((metaData) ? metaData->is_using_simple_fields() : false)
     {
       //if (!bulkData)
       //  throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1828,13 +1824,6 @@
 
     void PerceptMesh::use_simple_fields()
     {
-      m_useSimpleFields = true;
-      if (m_iossMeshData) {
-        m_iossMeshData->use_simple_fields();
-      }
-      if (m_metaData) {
-        m_metaData->use_simple_fields();
-      }
     }
 
     void PerceptMesh::set_bulk_data(stk::mesh::BulkData *bulkData)
@@ -1882,9 +1871,6 @@
         entity_rank_names.push_back("FAMILY_TREE");
   #endif
         m_iossMeshData->set_rank_name_vector(entity_rank_names);
-        if (m_useSimpleFields) {
-          m_iossMeshData->use_simple_fields();
-        }
     }
 
     void PerceptMesh::destroy()
@@ -1898,6 +1884,13 @@
       m_iossMeshDataOut = Teuchos::null;
       m_bulkData.reset();
       m_metaData.reset();
+
+#if !STK_PERCEPT_LITE
+      if(m_searcher) {
+        delete m_searcher;
+        m_searcher = NULL;
+      }
+#endif
     }
 
     PerceptMesh::~PerceptMesh()
@@ -2381,12 +2374,12 @@
           //std::cout << "setupSearch...done" << std::endl;
         }
 
-      static MDArray input_phy_points_one(1,get_spatial_dim());
-      static MDArray output_field_values_one(1,get_spatial_dim());
-      static MDArray found_parametric_coordinates_one(1, get_spatial_dim());
-      input_phy_points_one(0,0) = x;
-      input_phy_points_one(0,1) = y;
-      if (get_spatial_dim()==3) input_phy_points_one(0,2) = z;
+      MDArray input_phy_points_one("input_phy_points_one",1,1,get_spatial_dim());
+      MDArray output_field_values_one("output_field_values_one",1,1,get_spatial_dim());
+      MDArray found_parametric_coordinates_one("found_parametric_coordinates_one",1, 1,get_spatial_dim());
+      input_phy_points_one(0,0,0) = x;
+      input_phy_points_one(0,0,1) = y;
+      if (get_spatial_dim()==3) input_phy_points_one(0,0,2) = z;
 
       unsigned found_it = 0;
       stk::mesh::Entity found_element = stk::mesh::Entity();
@@ -3058,7 +3051,7 @@
     // static
     void PerceptMesh::
     findMinMaxEdgeLength(stk::mesh::BulkData& bulkData, const stk::mesh::Bucket &bucket,  stk::mesh::FieldBase& coord_field,
-                         FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
+                         MDArray& elem_min_edge_length, MDArray& elem_max_edge_length)
     {
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket.topology()).getCellTopologyData();
 
@@ -3928,75 +3921,143 @@
                                     stk::mesh::Entity entity_1 = bucket_1[iEntity];
                                     stk::mesh::Entity entity_2 = bucket_2[iEntity];
 
-                                    unsigned loc_stride_1 = 0;
-                                    unsigned loc_stride_2 = 0;
-                                    double * fdata_1 = eMesh1.field_data( field_1 , entity_1,  &loc_stride_1);
-                                    double * fdata_2 = eMesh2.field_data( field_2 , entity_2,  &loc_stride_2);
-
-                                    if ((fdata_1 == 0) != (fdata_2 == 0) || (loc_stride_1 != loc_stride_2))
+                                    if (field_1->type_is<double>() && field_2->type_is<double>())
                                       {
-                                        msg += "| (fdata_1 == 0) != (fdata_2 == 0)) |\n";
-                                        diff = true;
-                                      }
+                                        unsigned loc_stride_1 = 0;
+                                        unsigned loc_stride_2 = 0;
+                                        double * fdata_1 = eMesh1.field_data( field_1 , entity_1,  &loc_stride_1);
+                                        double * fdata_2 = eMesh2.field_data( field_2 , entity_2,  &loc_stride_2);
 
-                                    if (fdata_1)
-                                      {
-                                        bool is_same=true;
-                                        double tol = 1.e-5;
-                                        for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                        if ((fdata_1 == 0) != (fdata_2 == 0) || (loc_stride_1 != loc_stride_2))
                                           {
-                                            double fd1 = fdata_1[istride];
-                                            double fd2 = fdata_2[istride];
-                                            if (!Util::approx_equal_relative(fd1, fd2, tol))
-                                              {
-                                                is_same=false;
-                                                break;
-                                              }
+                                            msg += "| (fdata_1 == 0) != (fdata_2 == 0)) |\n";
+                                            diff = true;
                                           }
 
-                                        if (!is_same)
+                                        if (fdata_1)
                                           {
-                                            if (!printed_header)
-                                              {
-                                                for (unsigned jfld = 0; jfld < fields_1.size(); jfld++)
-                                                  {
-                                                    stk::mesh::FieldBase *field_0_1 = fields_1[jfld];
-                                                    if (1) std::cout << "P[" << p_rank << "] info>    Field1[" << jfld << "]= " << field_0_1->name() << std::endl;
-                                                  }
-                                                for (unsigned jfld = 0; jfld < fields_2.size(); jfld++)
-                                                  {
-                                                    stk::mesh::FieldBase *field_0_2 = fields_2[jfld];
-                                                    if (1) std::cout << "P[" << p_rank << "] info>    Field2[" << jfld << "]= " << field_0_2->name() << std::endl;
-                                                  }
-
-                                                msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
-                                                printed_header = true;
-                                              }
-                                            msg += "\n|{";
+                                            bool is_same=true;
+                                            double tol = 1.e-5;
                                             for (unsigned istride = 0; istride < loc_stride_1; istride++)
                                               {
                                                 double fd1 = fdata_1[istride];
                                                 double fd2 = fdata_2[istride];
-                                                //                                             msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
-                                                //                                               +toString(fd1-fd2).substr(0,print_field_width)+
-                                                //                                               " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
-                                                //std::ostringstream ostr;
-                                                //                                             ostr << "\n| " << std::setw(print_field_width) << fd1 << " - " << fd2 << " = "
-                                                //                                                  << (fd1-fd2)
-                                                //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
-                                                //msg += ostr.str();
-                                                char buf[1024];
-                                                sprintf(buf, ", | %12.3g - %12.3g = %12.3g [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
-                                                //                                                  << (fd1-fd2)
-                                                //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
-                                                msg += buf;
-                                                diff = true;
-                                                local_local_diff = true;
-                                                max_diff = std::max(max_diff, std::abs(fd1-fd2));
-                                                min_diff = std::min(min_diff, std::abs(fd1-fd2));
+                                                if (!Util::approx_equal_relative(fd1, fd2, tol))
+                                                  {
+                                                    is_same=false;
+                                                    break;
+                                                  }
                                               }
-                                            msg += "}|";
+
+                                            if (!is_same)
+                                              {
+                                                if (!printed_header)
+                                                  {
+                                                    for (unsigned jfld = 0; jfld < fields_1.size(); jfld++)
+                                                      {
+                                                        stk::mesh::FieldBase *field_0_1 = fields_1[jfld];
+                                                        if (1) std::cout << "P[" << p_rank << "] info>    Field1[" << jfld << "]= " << field_0_1->name() << std::endl;
+                                                      }
+                                                    for (unsigned jfld = 0; jfld < fields_2.size(); jfld++)
+                                                      {
+                                                        stk::mesh::FieldBase *field_0_2 = fields_2[jfld];
+                                                        if (1) std::cout << "P[" << p_rank << "] info>    Field2[" << jfld << "]= " << field_0_2->name() << std::endl;
+                                                      }
+
+                                                    msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
+                                                    printed_header = true;
+                                                  }
+                                                msg += "\n|{";
+                                                for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                                  {
+                                                    double fd1 = fdata_1[istride];
+                                                    double fd2 = fdata_2[istride];
+                                                    //                                             msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
+                                                    //                                               +toString(fd1-fd2).substr(0,print_field_width)+
+                                                    //                                               " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
+                                                    //std::ostringstream ostr;
+                                                    //                                             ostr << "\n| " << std::setw(print_field_width) << fd1 << " - " << fd2 << " = "
+                                                    //                                                  << (fd1-fd2)
+                                                    //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
+                                                    //msg += ostr.str();
+                                                    char buf[1024];
+                                                    sprintf(buf, ", | %12.3g - %12.3g = %12.3g [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
+                                                    //                                                  << (fd1-fd2)
+                                                    //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
+                                                    msg += buf;
+                                                    diff = true;
+                                                    local_local_diff = true;
+                                                    max_diff = std::max(max_diff, std::abs(fd1-fd2));
+                                                    min_diff = std::min(min_diff, std::abs(fd1-fd2));
+                                                  }
+                                                msg += "}|";
+                                              }
                                           }
+                                      }
+                                    else if (field_1->type_is<int>() && field_2->type_is<int>())
+                                      {
+                                        const unsigned loc_stride_1 = (field_1 != nullptr) ? stk::mesh::field_scalars_per_entity(*field_1, entity_1)
+                                                                                           : 0;
+                                        const unsigned loc_stride_2 = (field_2 != nullptr) ? stk::mesh::field_scalars_per_entity(*field_2, entity_2)
+                                                                                           : 0;
+                                        int * fdata_1 = static_cast<int*>(stk::mesh::field_data(*field_1, entity_1));
+                                        int * fdata_2 = static_cast<int*>(stk::mesh::field_data(*field_2, entity_2));
+
+                                        if ((fdata_1 == 0) != (fdata_2 == 0) || (loc_stride_1 != loc_stride_2))
+                                          {
+                                            msg += "| (fdata_1 == 0) != (fdata_2 == 0)) |\n";
+                                            diff = true;
+                                          }
+
+                                        if (fdata_1)
+                                          {
+                                            bool is_same=true;
+                                            for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                              {
+                                                int fd1 = fdata_1[istride];
+                                                int fd2 = fdata_2[istride];
+                                                if (fd1 != fd2)
+                                                  {
+                                                    is_same=false;
+                                                    break;
+                                                  }
+                                              }
+
+                                            if (!is_same)
+                                              {
+                                                if (!printed_header)
+                                                  {
+                                                    for (unsigned jfld = 0; jfld < fields_1.size(); jfld++)
+                                                      {
+                                                        stk::mesh::FieldBase *field_0_1 = fields_1[jfld];
+                                                        std::cout << "P[" << p_rank << "] info>    Field1[" << jfld << "]= " << field_0_1->name() << std::endl;
+                                                      }
+                                                    for (unsigned jfld = 0; jfld < fields_2.size(); jfld++)
+                                                      {
+                                                        stk::mesh::FieldBase *field_0_2 = fields_2[jfld];
+                                                        std::cout << "P[" << p_rank << "] info>    Field2[" << jfld << "]= " << field_0_2->name() << std::endl;
+                                                      }
+
+                                                    msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
+                                                    printed_header = true;
+                                                  }
+                                                msg += "\n|{";
+                                                for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                                  {
+                                                    int fd1 = fdata_1[istride];
+                                                    int fd2 = fdata_2[istride];
+                                                    char buf[1024];
+                                                    sprintf(buf, ", | %i - %i = %i [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
+                                                    msg += buf;
+                                                    diff = true;
+                                                    local_local_diff = true;
+                                                    max_diff = std::max(max_diff, static_cast<double>(std::abs(fd1-fd2)));
+                                                    min_diff = std::min(min_diff, static_cast<double>(std::abs(fd1-fd2)));
+                                                  }
+                                                msg += "}|";
+                                              }
+                                          }
+
                                       }
 
                                     if (!print_all_field_diffs && local_local_diff) break;
@@ -5873,15 +5934,7 @@
     FieldType * find_field_possible_array_tag(const stk::mesh::MetaData & meta,
         const stk::mesh::EntityRank rank, const std::string & field_name)
     {
-      stk::mesh::FieldBase * result = meta.get_field(rank, field_name);
-
-      // Note: This is dangerous, but apparently Percept has been getting away with
-      // it for years without problems.  Once all apps have been migrated to the
-      // new simple_fields workflow, this code can be replaced with a
-      // generic get_field<data_type>() call without a reinterpret cast because there
-      // won't be any ambiguity about the absence/presence/type of extra Field
-      // template parameters.
-      return reinterpret_cast<FieldType *>(result);
+      return meta.get_field<typename FieldType::value_type>(rank, field_name);
     }
 
     void PerceptMesh::register_and_set_refine_fields()

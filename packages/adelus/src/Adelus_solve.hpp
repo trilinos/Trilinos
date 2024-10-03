@@ -1,46 +1,11 @@
 /*
 //@HEADER
-// ************************************************************************
+// *****************************************************************************
+//                        Adelus
 //
-//                        Adelus v. 1.0
-//       Copyright (2020) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of NTESS nor the names of the contributors may be
-// used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Vinh Dang (vqdang@sandia.gov)
-//                    Joseph Kotulski (jdkotul@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2020 NTESS and the Adelus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 //@HEADER
 */
 
@@ -68,7 +33,7 @@
 
 namespace Adelus {
 
-//  Customized elimination on the rhs that I own	
+//  Customized elimination on the rhs that I own
 template<class ZView, class RHSView, class DView>
 void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -127,7 +92,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 
   value_type d_one = 1.0;
   value_type d_min_one = -1.0;
-  
+
   int j2;
 
   int n_rhs_this; // num rhs that I currently own
@@ -173,7 +138,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 
   // set j2 to be first column in last group of columns
   max_bytes = nrhs/nprocs_row;
-  if (nrhs%nprocs_row > 0) max_bytes++; 
+  if (nrhs%nprocs_row > 0) max_bytes++;
   max_bytes = max_bytes*sizeof(ADELUS_DATA_TYPE)*my_rows;
 
 #ifdef GET_TIMING
@@ -201,7 +166,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 #ifdef GET_TIMING
   allocviewtime += (MPI_Wtime()-t1);
 #endif
-   
+
   n_rhs_this = my_rhs;// why "n_rhs_this" is changing after the first iteration (need to as Joe???)
   j2 = ncols_matrix-1;
   col_offset = (j2%nprocs_row);
@@ -228,7 +193,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 
         end_row = global_col/nprocs_col;
         if (my_first_row <= global_col%nprocs_col) ++end_row;
-                 
+
         // do an elimination step on the rhs that I own
 
         //auto ptr2_view = subview(Z, end_row-1, Kokkos::ALL());
@@ -272,7 +237,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
         MPI_Bcast(reinterpret_cast<char *>(h_row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);
 #else //GPU-aware MPI
-        MPI_Bcast(reinterpret_cast<char *>(row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);		
+        MPI_Bcast(reinterpret_cast<char *>(row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);
 #endif
         // added this barrier for CPLANT operation
 
@@ -332,7 +297,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
         n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
 
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        Kokkos::deep_copy(subview(h_rhs, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)), 
+        Kokkos::deep_copy(subview(h_rhs, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)),
                           subview(RHS,   Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
 #endif
 
@@ -388,7 +353,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);
 #endif
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to xchg rhs",&xchgrhstime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
@@ -473,7 +438,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 #endif
 
   for (int k = ncols_matrix-1; k >= 0; k--) {
-    int k_row = k%nprocs_col;//proc. id (in the col_comm) having global k 
+    int k_row = k%nprocs_col;//proc. id (in the col_comm) having global k
     int k_col = k%nprocs_row;//proc. id (in the row_comm) having global k
     int end_row = k/nprocs_col;
     if (myrow <= k_row) end_row++;
@@ -483,7 +448,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 #endif
     //Step 1: copy the current column of Z to a temporary view
     if (mycol == k_col) { //only deep_copy if holding the current column
-      Kokkos::deep_copy( Kokkos::subview(curr_col, Kokkos::make_pair(0, end_row), 0), 
+      Kokkos::deep_copy( Kokkos::subview(curr_col, Kokkos::make_pair(0, end_row), 0),
                          Kokkos::subview(Z, Kokkos::make_pair(0, end_row), k/nprocs_row) );
     }
 #ifdef GET_TIMING
@@ -561,7 +526,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
         MPI_Bcast(reinterpret_cast<char *>(h_rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
 #else //GPU-aware MPI
-        MPI_Bcast(reinterpret_cast<char *>(rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);		
+        MPI_Bcast(reinterpret_cast<char *>(rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
 #endif
 
 #ifdef GET_TIMING
@@ -608,8 +573,8 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
-#endif 
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);
+#endif
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
 #endif
 }
@@ -618,12 +583,12 @@ template<class HandleType, class ZViewType, class RHSViewType>
 inline
 void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
-  if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
-    back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
-  }
-  else {
+  //if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
+  //  back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
+  //}
+  //else {
     back_solve_currcol_bcast(ahandle, Z, RHS);
-  }
+  //}
 }
 
 }//namespace Adelus

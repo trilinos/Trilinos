@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_LAYOUT_CONTIGUOUS_HPP
@@ -93,6 +73,7 @@ struct inner_layout< LayoutContiguous<Layout, Stride> > {
 
 } // namespace Kokkos
 
+// FIXME This is evil and needs refactoring urgently.
 // Make LayoutContiguous<Layout> equivalent to Layout
 namespace std {
 
@@ -102,13 +83,30 @@ namespace std {
   };
 
   template <class Layout, unsigned Stride>
+#if defined(KOKKOS_COMPILER_INTEL)
+  inline constexpr bool is_same_v< Kokkos::LayoutContiguous<Layout,Stride>, Layout> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#else
+  static constexpr bool is_same_v< Kokkos::LayoutContiguous<Layout,Stride>, Layout> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#endif
+
+  template <class Layout, unsigned Stride>
   struct is_same< Layout, Kokkos::LayoutContiguous<Layout,Stride> > {
     static const bool value = true;
   };
 
+  template <class Layout, unsigned Stride>
+#if defined(KOKKOS_COMPILER_INTEL)
+  inline constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#else
+  static constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
+#endif
 }
 
+#if KOKKOS_VERSION >= 40499
+#include "View/Kokkos_ViewMapping.hpp"
+#else
 #include "impl/Kokkos_ViewMapping.hpp"
+#endif
 
 namespace Kokkos {
 namespace Impl {

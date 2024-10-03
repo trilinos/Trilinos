@@ -107,10 +107,10 @@ TEST(PerfPllDataExchange, nonsym_knownsizes)
   if (numProcs < 3) { GTEST_SKIP(); }
 
   const unsigned NUM_BATCHES = 5;
-  const unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 5);
+  const unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 5);
   const unsigned defaultBandwidth = std::max(2, numProcs/5);
-  const unsigned BANDWIDTH = stk::unit_test_util::simple_fields::get_command_line_option("-b", defaultBandwidth);
-  const unsigned NUM_VALUES = stk::unit_test_util::simple_fields::get_command_line_option("-v", 20);
+  const unsigned BANDWIDTH = stk::unit_test_util::get_command_line_option("-b", defaultBandwidth);
+  const unsigned NUM_VALUES = stk::unit_test_util::get_command_line_option("-v", 20);
 
   const int myProc = stk::parallel_machine_rank(comm);
 

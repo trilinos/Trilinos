@@ -31,19 +31,14 @@ using Layout  = default_layout;
 int main() {
   Kokkos::initialize();
 
-  using device_type = typename Kokkos::Device<
-      Kokkos::DefaultExecutionSpace,
-      typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using matrix_type =
-      typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
-                                       Offset>;
-  using b_matrix_type =
-      typename KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal,
-                                                     device_type, void, Offset>;
-  using graph_type   = typename matrix_type::staticcrsgraph_type;
-  using row_map_type = typename graph_type::row_map_type;
-  using entries_type = typename graph_type::entries_type;
-  using values_type  = typename matrix_type::values_type;
+  using device_type =
+      typename Kokkos::Device<Kokkos::DefaultExecutionSpace, typename Kokkos::DefaultExecutionSpace::memory_space>;
+  using matrix_type   = typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void, Offset>;
+  using b_matrix_type = typename KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, device_type, void, Offset>;
+  using graph_type    = typename matrix_type::staticcrsgraph_type;
+  using row_map_type  = typename graph_type::row_map_type;
+  using entries_type  = typename graph_type::entries_type;
+  using values_type   = typename matrix_type::values_type;
 
   const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
 
@@ -70,8 +65,7 @@ int main() {
 
     {
       // Build the row pointers and store numNNZ
-      typename row_map_type::HostMirror row_map_h =
-          Kokkos::create_mirror_view(row_map);
+      typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
       for (Ordinal rowIdx = 1; rowIdx < numRows + 1; ++rowIdx) {
         if ((rowIdx == 1) || (rowIdx == numRows)) {
           row_map_h(rowIdx) = row_map_h(rowIdx - 1) + 2;
@@ -82,15 +76,13 @@ int main() {
       Kokkos::deep_copy(row_map, row_map_h);
       if (row_map_h(numRows) != numNNZ) {
         std::ostringstream error_msg;
-        error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)="
-                  << row_map_h(numRows) << ", numNNZ=" << numNNZ;
+        error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)=" << row_map_h(numRows)
+                  << ", numNNZ=" << numNNZ;
         throw std::runtime_error(error_msg.str());
       }
 
-      typename entries_type::HostMirror entries_h =
-          Kokkos::create_mirror_view(entries);
-      typename values_type::HostMirror values_h =
-          Kokkos::create_mirror_view(values);
+      typename entries_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
+      typename values_type::HostMirror values_h   = Kokkos::create_mirror_view(values);
       for (Ordinal rowIdx = 0; rowIdx < numRows; ++rowIdx) {
         if (rowIdx == 0) {
           entries_h(row_map_h(rowIdx))     = rowIdx;

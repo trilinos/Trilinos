@@ -41,7 +41,8 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_integration_tests-root)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_integration_tests-root)
   : build-dir $(stk_integration_tests-builddir)
@@ -71,8 +72,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.

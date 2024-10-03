@@ -448,6 +448,7 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
   }
 #endif
+
 } // namespace
 
 std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &name, bool is_parallel)
@@ -893,7 +894,7 @@ namespace {
 
     // Now clean out existing ZGC lists for all blocks and add on the consolidated instances.
     // Also create a vector for mapping from zone to sb name.
-    std::vector<std::string> sb_names(structured_blocks.size() + 1);
+    Ioss::NameList sb_names(structured_blocks.size() + 1);
     for (auto &sb : structured_blocks) {
       sb->m_zoneConnectivity.clear();
       auto zone = sb->get_property("zone").get_int();
@@ -1066,8 +1067,8 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
   }
 }
 
-size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &region,
-                                             std::vector<size_t> &zone_offset, bool is_parallel_io)
+size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &region,
+                                            std::vector<size_t> &zone_offset, bool is_parallel_io)
 {
 #if !IOSS_ENABLE_HYBRID
   // Make sure mesh is not hybrid...
@@ -1081,7 +1082,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   }
 #endif
 
-  region.get_database()->progress("\tEnter common_write_meta_data");
+  region.get_database()->progress("\tEnter common_write_metadata");
   int base           = 0;
   int phys_dimension = region.get_property("spatial_dimension").get_int();
   CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
@@ -1433,7 +1434,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     }
   }
 
-  region.get_database()->progress("\tReturn from common_write_meta_data");
+  region.get_database()->progress("\tReturn from common_write_metadata");
   return element_count;
 }
 
@@ -1938,7 +1939,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
 
   for (auto &owner_block : blocks) {
     int  owner_zone = owner_block->get_property("zone").get_int();
-    auto owner_ids  = owner_block->get_cell_node_ids(true);
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
       assert(zgc.m_donorProcessor >= 0);
       assert(zgc.m_ownerProcessor >= 0);
@@ -1951,9 +1951,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
         auto donor_block = region.get_structured_block(zgc.m_donorName);
         assert(donor_block != nullptr);
         int donor_zone = donor_block->get_property("zone").get_int();
-
-        auto donor_ids = donor_block->get_cell_node_ids(true);
-
         std::vector<int> i_range = zgc.get_range(1);
         std::vector<int> j_range = zgc.get_range(2);
         std::vector<int> k_range = zgc.get_range(3);
@@ -2100,7 +2097,7 @@ void Iocgns::Utils::generate_boundary_faces(
     auto              &boundary = boundary_faces[name];
     auto              &faces    = face_generator.faces(name);
     for (auto &face : faces) {
-      if (face.elementCount_ == 1) {
+      if (face.element_count() == 1) {
         boundary.insert(face);
       }
     }
@@ -2302,19 +2299,20 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
       int field_count = 0;
       CGCHECK(cg_nfields(cgns_file_ptr, b, z, sol, &field_count));
 
-      char **field_names = Ioss::Utils::get_name_array(field_count, CGNS_MAX_NAME_LENGTH);
+      Ioss::NameList field_names;
+      field_names.reserve(field_count);
       for (int field = 1; field <= field_count; field++) {
         CGNS_ENUMT(DataType_t) data_type;
         char field_name[CGNS_MAX_NAME_LENGTH + 1];
         CGCHECK(cg_field_info(cgns_file_ptr, b, z, sol, field, &data_type, field_name));
-        Ioss::Utils::copy_string(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH + 1);
+        field_names.emplace_back(field_name);
       }
 
       // Convert raw field names into composite fields (a_x, a_y, a_z ==> 3D vector 'a')
       std::vector<Ioss::Field> fields;
       if (grid_loc == CGNS_ENUMV(CellCenter)) {
         size_t entity_count = block->entity_count();
-        Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
+        Ioss::Utils::get_fields(entity_count, field_names, Ioss::Field::TRANSIENT,
                                 region->get_database(), nullptr, fields);
         size_t index = 1;
         for (const auto &field : fields) {
@@ -2338,7 +2336,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
           IOSS_ERROR(errmsg);
         }
         size_t entity_count = nb->entity_count();
-        Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
+        Ioss::Utils::get_fields(entity_count, field_names, Ioss::Field::TRANSIENT,
                                 region->get_database(), nullptr, fields);
         size_t index = 1;
         for (const auto &field : fields) {
@@ -2347,8 +2345,6 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
           nb->field_add(field);
         }
       }
-
-      Ioss::Utils::delete_name_array(field_names, field_count);
     }
   };
   // ==========================================
@@ -2420,7 +2416,7 @@ void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string 
   int num_families = 0;
   CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
 
-  std::vector<std::string> families;
+  Ioss::NameList families;
   families.reserve(num_families);
   for (int family = 1; family <= num_families; family++) {
     char name[CGNS_MAX_NAME_LENGTH + 1];
@@ -3102,7 +3098,7 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
 
   // All faces generated for this element block; now extract boundary faces...
   for (auto &face : all_faces) {
-    if (face.elementCount_ == 1) {
+    if (face.element_count() == 1) {
       boundary.insert(face);
     }
   }

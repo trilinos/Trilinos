@@ -38,8 +38,7 @@ struct Functor_TestBlasSerialNrm2 {
   norm_view_type _nrm;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBlasSerialNrm2(const ViewType &x, const norm_view_type &nrm)
-      : _x(x), _nrm(nrm) {}
+  Functor_TestBlasSerialNrm2(const ViewType &x, const norm_view_type &nrm) : _x(x), _nrm(nrm) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const KokkosKernelTag &, const int i) const {
@@ -61,14 +60,11 @@ struct Functor_TestBlasSerialNrm2 {
   inline void run() {
     std::string name_region("KokkosBlas::Test::SerialNrm2");
     const std::string name_value_type = Test::value_type_name<value_type>();
-    std::string name_work_tag =
-        (std::is_same<AlgoTagType, KokkosKernelTag>::value
-             ? "::KokkosBlas"
-             : std::is_same<AlgoTagType, NaiveTag>::value ? "::Naive"
-                                                          : "::UnknownWorkTag");
-    std::string name_test_id = "Nrm2";
-    std::string name =
-        name_region + name_value_type + name_work_tag + name_test_id;
+    std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelTag>::value ? "::KokkosBlas"
+                                         : std::is_same<AlgoTagType, NaiveTag>::value      ? "::Naive"
+                                                                                           : "::UnknownWorkTag");
+    std::string name_test_id          = "Nrm2";
+    std::string name                  = name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -89,8 +85,7 @@ struct Functor_TestBlasSerialNrm2MV {
   norm_view_type _nrm;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBlasSerialNrm2MV(const ViewType &x, const norm_view_type &nrm)
-      : _x(x), _nrm(nrm) {}
+  Functor_TestBlasSerialNrm2MV(const ViewType &x, const norm_view_type &nrm) : _x(x), _nrm(nrm) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const KokkosKernelTag &, const int i) const {
@@ -116,14 +111,11 @@ struct Functor_TestBlasSerialNrm2MV {
   inline void run() {
     std::string name_region("KokkosBlas::Test::SerialNrm2MV");
     const std::string name_value_type = Test::value_type_name<value_type>();
-    std::string name_work_tag =
-        (std::is_same<AlgoTagType, KokkosKernelTag>::value
-             ? "::KokkosBlas"
-             : std::is_same<AlgoTagType, NaiveTag>::value ? "::Naive"
-                                                          : "::UnknownWorkTag");
-    std::string name_test_id = "Nrm2";
-    std::string name =
-        name_region + name_value_type + name_work_tag + name_test_id;
+    std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelTag>::value ? "::KokkosBlas"
+                                         : std::is_same<AlgoTagType, NaiveTag>::value      ? "::Naive"
+                                                                                           : "::UnknownWorkTag");
+    std::string name_test_id          = "Nrm2";
+    std::string name                  = name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -153,31 +145,24 @@ void impl_test_blas_serial_nrm2(const int N, const int BlkSize) {
 
   /// test body
   Functor_TestBlasSerialNrm2<DeviceType, ViewType, NaiveTag>(X, norms).run();
-  Functor_TestBlasSerialNrm2<DeviceType, ViewType, KokkosKernelTag>(X,
-                                                                    norms_ref)
-      .run();
+  Functor_TestBlasSerialNrm2<DeviceType, ViewType, KokkosKernelTag>(X, norms_ref).run();
 
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename norm_view_type::HostMirror norms_host =
-      Kokkos::create_mirror_view(norms);
-  typename norm_view_type::HostMirror norms_ref_host =
-      Kokkos::create_mirror_view(norms_ref);
+  typename norm_view_type::HostMirror norms_host     = Kokkos::create_mirror_view(norms);
+  typename norm_view_type::HostMirror norms_ref_host = Kokkos::create_mirror_view(norms_ref);
 
   Kokkos::deep_copy(norms_host, norms);
   Kokkos::deep_copy(norms_ref_host, norms_ref);
 
   /// check a = b
-  typename ats::mag_type eps =
-      100 * std::numeric_limits<typename ats::mag_type>::epsilon();
-  for (int k = 0; k < N; ++k)
-    EXPECT_NEAR_KK(norms_host(k), norms_ref_host(k), eps);
+  typename ats::mag_type eps = 100 * std::numeric_limits<typename ats::mag_type>::epsilon();
+  for (int k = 0; k < N; ++k) EXPECT_NEAR_KK(norms_host(k), norms_ref_host(k), eps);
 }
 
 template <typename DeviceType, typename ViewType>
-void impl_test_blas_serial_nrm2mv(const int N, const int vecLength,
-                                  const int numVecs) {
+void impl_test_blas_serial_nrm2mv(const int N, const int vecLength, const int numVecs) {
   /// typedefs
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
@@ -197,24 +182,19 @@ void impl_test_blas_serial_nrm2mv(const int N, const int vecLength,
 
   /// test body
   Functor_TestBlasSerialNrm2MV<DeviceType, ViewType, NaiveTag>(X, norms).run();
-  Functor_TestBlasSerialNrm2MV<DeviceType, ViewType, KokkosKernelTag>(X,
-                                                                      norms_ref)
-      .run();
+  Functor_TestBlasSerialNrm2MV<DeviceType, ViewType, KokkosKernelTag>(X, norms_ref).run();
 
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename norm_view_type::HostMirror norms_host =
-      Kokkos::create_mirror_view(norms);
-  typename norm_view_type::HostMirror norms_ref_host =
-      Kokkos::create_mirror_view(norms_ref);
+  typename norm_view_type::HostMirror norms_host     = Kokkos::create_mirror_view(norms);
+  typename norm_view_type::HostMirror norms_ref_host = Kokkos::create_mirror_view(norms_ref);
 
   Kokkos::deep_copy(norms_host, norms);
   Kokkos::deep_copy(norms_ref_host, norms_ref);
 
   /// check a = b
-  typename ats::mag_type eps =
-      100 * std::numeric_limits<typename ats::mag_type>::epsilon();
+  typename ats::mag_type eps = 100 * std::numeric_limits<typename ats::mag_type>::epsilon();
   for (int k = 0; k < N; ++k)
     for (int vecIdx = 0; vecIdx < numVecs; ++vecIdx)
       EXPECT_NEAR_KK(norms_host(k, vecIdx), norms_ref_host(k, vecIdx), eps);
@@ -232,8 +212,7 @@ int test_blas_serial_nrm2() {
     Test::impl_test_blas_serial_nrm2<DeviceType, ViewType>(1024, 9);
     Test::impl_test_blas_serial_nrm2<DeviceType, ViewType>(132231, 3);
 
-    using MVViewType =
-        Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>;
+    using MVViewType = Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>;
     Test::impl_test_blas_serial_nrm2mv<DeviceType, MVViewType>(0, 10, 5);
     Test::impl_test_blas_serial_nrm2mv<DeviceType, MVViewType>(10, 15, 7);
     Test::impl_test_blas_serial_nrm2mv<DeviceType, MVViewType>(1024, 9, 5);
@@ -242,15 +221,13 @@ int test_blas_serial_nrm2() {
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    using ViewType =
-        Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>;
+    using ViewType = Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>;
     Test::impl_test_blas_serial_nrm2<DeviceType, ViewType>(0, 10);
     Test::impl_test_blas_serial_nrm2<DeviceType, ViewType>(10, 15);
     Test::impl_test_blas_serial_nrm2<DeviceType, ViewType>(1024, 9);
     Test::impl_test_blas_serial_nrm2<DeviceType, ViewType>(132231, 3);
 
-    using MVViewType =
-        Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>;
+    using MVViewType = Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>;
     Test::impl_test_blas_serial_nrm2mv<DeviceType, MVViewType>(0, 10, 5);
     Test::impl_test_blas_serial_nrm2mv<DeviceType, MVViewType>(10, 15, 5);
     Test::impl_test_blas_serial_nrm2mv<DeviceType, MVViewType>(1024, 9, 5);
@@ -262,27 +239,19 @@ int test_blas_serial_nrm2() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, serial_nrm2_float_float) {
-  test_blas_serial_nrm2<TestDevice, float>();
-}
+TEST_F(TestCategory, serial_nrm2_float_float) { test_blas_serial_nrm2<TestDevice, float>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, serial_nrm2_double_double) {
-  test_blas_serial_nrm2<TestDevice, double>();
-}
+TEST_F(TestCategory, serial_nrm2_double_double) { test_blas_serial_nrm2<TestDevice, double>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
-TEST_F(TestCategory, serial_nrm2_fcomplex_float) {
-  test_blas_serial_nrm2<TestDevice, Kokkos::complex<float> >();
-}
+TEST_F(TestCategory, serial_nrm2_fcomplex_float) { test_blas_serial_nrm2<TestDevice, Kokkos::complex<float> >(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F(TestCategory, serial_nrm2_dcomplex_dcomplex) {
-  test_blas_serial_nrm2<TestDevice, Kokkos::complex<double> >();
-}
+TEST_F(TestCategory, serial_nrm2_dcomplex_dcomplex) { test_blas_serial_nrm2<TestDevice, Kokkos::complex<double> >(); }
 #endif
 
 #endif  // TEST_BLAS_SERIAL_NRM2_HPP_

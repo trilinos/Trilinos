@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 //
 //  StandardAssembly.hpp
 //  Trilinos
@@ -102,10 +110,10 @@ namespace {
 }
 
 //! General assembly for two arbitrary bases and ops that uses the classic, generic Intrepid2 paths.
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2>  // spaceDim and spaceDim2 should agree on value (differ on type)
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, int worksetSize,
-                                                                 const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
-                                                                 const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                 const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight1,
+                                                                 const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight2,
                                                                  double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
@@ -162,32 +170,72 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   ViewType basis1Values = basis1->allocateOutputView(numPoints, op1); // (F1,P[,D])
   ViewType basis2Values = basis2->allocateOutputView(numPoints, op2); // (F2,P[,D])
   
-  ViewType orientedValues1, transformedValues1;
-  ViewType orientedValues2, transformedValues2, transformedWeightedValues2;
+  ViewType orientedValues1, transformedValues1, ultimateValues1;
+  ViewType orientedValues2, transformedValues2, ultimateValues2, ultimateWeightedValues2;
   
-  INTREPID2_TEST_FOR_EXCEPTION(basis1Values.rank() != basis2Values.rank(), std::invalid_argument, "basis1 and basis2 must agree on their rank under the respective operators");
+  int ultimateBasis1Rank, ultimateBasis2Rank;
+  if (basis1Values.rank() == 2)
+  {
+    // the un-transformed values have shape (F,P): scalar values
+    // if vector weights supplied, these will increase the rank
+    ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? 3 : 4; // (C,F,P) or (C,F,P,D)
+  }
+  else if (basis1Values.rank() == 3)
+  {
+    // the un-transformed values have shape (F,P,D): vector values
+    // if vector weights supplied, these will decrease the rank (we interpret as a dot product)
+    ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? 4 : 3; // (C,F,P,D) or (C,F,P)
+  }
+  if (basis2Values.rank() == 2)
+  {
+    // the un-transformed values have shape (F,P): scalar values
+    // if vector weights supplied, these will increase the rank
+    ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? 3 : 4; // (C,F,P) or (C,F,P,D)
+  }
+  else if (basis2Values.rank() == 3)
+  {
+    // the un-transformed values have shape (F,P,D): vector values
+    // if vector weights supplied, these will decrease the rank (we interpret as a dot product)
+    ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? 4 : 3; // (C,F,P,D) or (C,F,P)
+  }
   
-  const bool scalarValued = (basis1Values.rank() == 2); // (F1,P): scalar-valued
-  if (scalarValued)
+  INTREPID2_TEST_FOR_EXCEPTION(ultimateBasis1Rank != ultimateBasis2Rank, std::invalid_argument, "basis1 and basis2 must agree on their rank under the respective operators");
+  
+  if (basis1Values.rank() == 2)
   {
     orientedValues1 = ViewType("oriented values 1", worksetSize, numFields1, numPoints);
-    orientedValues2 = ViewType("oriented values 2", worksetSize, numFields2, numPoints);
-    
     transformedValues1 = ViewType("transformed values 1", worksetSize, numFields1, numPoints);
+  }
+  else
+  {
+    orientedValues1 = ViewType("oriented values 1", worksetSize, numFields1, numPoints, spaceDim);
+    transformedValues1 = ViewType("transformed values 1", worksetSize, numFields1, numPoints, spaceDim);
+  }
+  if (basis2Values.rank() == 2)
+  {
+    orientedValues2 = ViewType("oriented values 2", worksetSize, numFields2, numPoints);
     transformedValues2 = ViewType("transformed values 2", worksetSize, numFields2, numPoints);
+  }
+  else
+  {
+    orientedValues2 = ViewType("oriented values 2", worksetSize, numFields2, numPoints, spaceDim);
+    transformedValues2 = ViewType("transformed values 2", worksetSize, numFields2, numPoints, spaceDim);
+  }
+  
+  const bool scalarValued = (ultimateBasis1Rank == 3); // (C,F1,P): scalar-valued
+  if (scalarValued)
+  {
+    ultimateValues1 = ViewType("ultimate values 1", worksetSize, numFields1, numPoints);
+    ultimateValues2 = ViewType("ultimate values 2", worksetSize, numFields2, numPoints);
     
-    transformedWeightedValues2 = ViewType("transformed weighted values 2", worksetSize, numFields2, numPoints);
+    ultimateWeightedValues2 = ViewType("ultimate weighted values 2", worksetSize, numFields2, numPoints);
   }
   else // (F1, P, D)
   {
-    const int finalDim = basis1Values.extent_int(2);
-    orientedValues1 = ViewType("oriented values 1", worksetSize, numFields1, numPoints, finalDim);
-    orientedValues2 = ViewType("oriented values 2", worksetSize, numFields2, numPoints, finalDim);
+    ultimateValues1 = ViewType("ultimate values 1", worksetSize, numFields1, numPoints, spaceDim);
+    ultimateValues2 = ViewType("ultimate values 2", worksetSize, numFields2, numPoints, spaceDim);
     
-    transformedValues1 = ViewType("transformed values 1", worksetSize, numFields1, numPoints, finalDim);
-    transformedValues2 = ViewType("transformed values 2", worksetSize, numFields2, numPoints, finalDim);
-    
-    transformedWeightedValues2 = ViewType("transformed weighted values 2", worksetSize, numFields2, numPoints, finalDim);
+    ultimateWeightedValues2 = ViewType("ultimate weighted values 2", worksetSize, numFields2, numPoints, spaceDim);
   }
     
   basis1->getValues(basis1Values, cubaturePoints, op1 );
@@ -210,6 +258,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   ViewType jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
   ViewType jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
   ViewType jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
+  
+  // Views used for vector-weighted case:
+  ViewType scalarTransformedValues1        ("scalar transformed values 1", worksetSize, numFields1, numPoints);
+  ViewType scalarTransformedWeightedValues2("scalar transformed weighted values 2", worksetSize, numFields2, numPoints);
 
   initialSetupTimer->stop();
   
@@ -235,23 +287,45 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
       Kokkos::resize(jacobianInverse,     numCellsInWorkset, numPoints, spaceDim, spaceDim);
       Kokkos::resize(jacobianDeterminant, numCellsInWorkset, numPoints);
       Kokkos::resize(cellMeasures,        numCellsInWorkset, numPoints);
+      Kokkos::resize(jacobianDeterminant, numCellsInWorkset, numPoints);
       
-      if (scalarValued)
+      Kokkos::resize(scalarTransformedValues1,         numCellsInWorkset, numFields1, numPoints);
+      Kokkos::resize(scalarTransformedWeightedValues2, numCellsInWorkset, numFields2, numPoints);
+      
+      if (basis1Values.rank() == 2)
       {
-        Kokkos::resize(orientedValues1,            numCellsInWorkset, numFields1, numPoints);
-        Kokkos::resize(orientedValues2,            numCellsInWorkset, numFields2, numPoints);
-        Kokkos::resize(transformedValues1,         numCellsInWorkset, numFields1, numPoints);
-        Kokkos::resize(transformedValues2,         numCellsInWorkset, numFields2, numPoints);
-        Kokkos::resize(transformedWeightedValues2, numCellsInWorkset, numFields2, numPoints);
+        Kokkos::resize(orientedValues1,    numCellsInWorkset, numFields1, numPoints);
+        Kokkos::resize(transformedValues1, numCellsInWorkset, numFields1, numPoints);
       }
       else
       {
-        const int finalDim = basis1Values.extent_int(2);
-        Kokkos::resize(orientedValues1,            numCellsInWorkset, numFields1, numPoints, finalDim);
-        Kokkos::resize(orientedValues2,            numCellsInWorkset, numFields2, numPoints, finalDim);
-        Kokkos::resize(transformedValues1,         numCellsInWorkset, numFields1, numPoints, finalDim);
-        Kokkos::resize(transformedValues2,         numCellsInWorkset, numFields2, numPoints, finalDim);
-        Kokkos::resize(transformedWeightedValues2, numCellsInWorkset, numFields2, numPoints, finalDim);
+        Kokkos::resize(orientedValues1,    numCellsInWorkset, numFields1, numPoints, spaceDim);
+        Kokkos::resize(transformedValues1, numCellsInWorkset, numFields1, numPoints, spaceDim);
+      }
+      if (basis2Values.rank() == 2)
+      {
+        Kokkos::resize(orientedValues2,    numCellsInWorkset, numFields2, numPoints);
+        Kokkos::resize(transformedValues2, numCellsInWorkset, numFields2, numPoints);
+      }
+      else
+      {
+        Kokkos::resize(orientedValues2,    numCellsInWorkset, numFields2, numPoints, spaceDim);
+        Kokkos::resize(transformedValues2, numCellsInWorkset, numFields2, numPoints, spaceDim);
+      }
+      
+      if (scalarValued)
+      {
+        Kokkos::resize(ultimateValues1, numCellsInWorkset, numFields1, numPoints);
+        Kokkos::resize(ultimateValues2, numCellsInWorkset, numFields2, numPoints);
+        
+        Kokkos::resize(ultimateWeightedValues2, numCellsInWorkset, numFields2, numPoints);
+      }
+      else // (F1, P, D)
+      {
+        ultimateValues1 = ViewType("ultimate values 1", worksetSize, numFields1, numPoints, spaceDim);
+        ultimateValues2 = ViewType("ultimate values 2", worksetSize, numFields2, numPoints, spaceDim);
+        
+        ultimateWeightedValues2 = ViewType("ultimate weighted values 2", worksetSize, numFields2, numPoints, spaceDim);
       }
     }
     jacobianAndCellMeasureTimer->start();
@@ -263,20 +337,94 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
     ExecutionSpace().fence();
     jacobianAndCellMeasureTimer->stop();
     
-    // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
-    fstIntegrateCall->start();
     OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues1, basis1Values, orientationsWorkset, basis1.get());
     OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues2, basis2Values, orientationsWorkset, basis2.get());
+    
+    // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
+    fstIntegrateCall->start();
     transform(transformedValues1, orientedValues1, fs1, op1, jacobian, jacobianDeterminant, jacobianInverse);
     transform(transformedValues2, orientedValues2, fs2, op2, jacobian, jacobianDeterminant, jacobianInverse);
-    
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
-    FunctionSpaceTools::multiplyMeasure(transformedWeightedValues2, cellMeasures, transformedValues2);
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
         
     auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
     
-    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedValues1, transformedWeightedValues2);
+    if (vectorWeight1 != Teuchos::null)
+    {
+      auto uWeight = *vectorWeight1;
+      
+      auto policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields1,numPoints});
+      if (transformedValues1.rank() == 4)
+      {
+        Kokkos::parallel_for("compute ultimateValues1", policy3,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+        {
+          Scalar u_result = 0;
+          for (int d=0; d<spaceDim; d++)
+          {
+            u_result += uWeight[d] * transformedValues1(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+          }
+          ultimateValues1(cellOrdinal,fieldOrdinal,pointOrdinal) = u_result;
+        });
+      }
+      else // transformedValues1.rank() == 3
+      {
+        Kokkos::parallel_for("compute ultimateValues1", policy3,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+        {
+          const Scalar & value1 = transformedValues1(cellOrdinal,fieldOrdinal,pointOrdinal);
+          for (int d=0; d<spaceDim; d++)
+          {
+            ultimateValues1(cellOrdinal,fieldOrdinal,pointOrdinal, d) = value1 * uWeight[d];
+          }
+        });
+      }
+    }
+    else
+    {
+      ultimateValues1 = transformedValues1;
+    }
+    
+    if (vectorWeight2 != Teuchos::null)
+    {
+      auto vWeight = *vectorWeight2;
+      
+      auto policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields2,numPoints});
+      if (transformedValues2.rank() == 4)
+      {
+        Kokkos::parallel_for("compute ultimateValues2", policy3,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+        {
+          Scalar v_result = 0;
+          for (int d=0; d<spaceDim; d++)
+          {
+            v_result += vWeight[d] * transformedValues2(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+          }
+          ultimateValues2(cellOrdinal,fieldOrdinal,pointOrdinal) = v_result;
+        });
+      }
+      else // transformedValues2.rank() == 3
+      {
+        Kokkos::parallel_for("compute ultimateValues2", policy3,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+        {
+          const Scalar & value2 = transformedValues2(cellOrdinal,fieldOrdinal,pointOrdinal);
+          for (int d=0; d<spaceDim; d++)
+          {
+            ultimateValues2(cellOrdinal,fieldOrdinal,pointOrdinal, d) = value2 * vWeight[d];
+          }
+        });
+      }
+    }
+    else
+    {
+      ultimateValues2 = transformedValues2;
+    }
+    
+    FunctionSpaceTools::multiplyMeasure(ultimateWeightedValues2, cellMeasures, ultimateValues2);
+    transformIntegrateFlopCount += ultimateValues2.size(); // multiply each entry of ultimateValues2: one flop for each.
+    
+    FunctionSpaceTools::integrate(cellStiffnessSubview, ultimateValues1, ultimateWeightedValues2);
+    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
+    
     ExecutionSpace().fence();
     fstIntegrateCall->stop();
     
@@ -289,4 +437,18 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   return cellStiffness;
 }
 
+//! General assembly for two arbitrary bases and ops that uses the classic, generic Intrepid2 paths.
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, int worksetSize,
+                                                                 const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
+                                                                 const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                 double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+{
+  Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > nullVectorWeight = Teuchos::null;
+  
+  return performStandardAssembly<Scalar,BasisFamily,PointScalar,spaceDim,DeviceType>(geometry, worksetSize,
+                                                                                     polyOrder1, fs1, op1, nullVectorWeight,
+                                                                                     polyOrder2, fs2, op2, nullVectorWeight,
+                                                                                     transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+}
 #endif /* StandardAssembly_hpp */

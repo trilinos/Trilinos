@@ -35,6 +35,15 @@ IF(NOT TPL_ENABLE_MPI)
 ENDIF()
 ENDIF()
 
+# if using CSC, must be parallel and needs Pardiso_MKL
+IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
+  IF (NOT TPL_ENABLE_MPI)
+    MESSAGE(WARNING "*****Amesos_ENABLE_CSS_MKL requires MPI. Turning off CSS_MKL. *****")
+    SET(${PACKAGE_NAME}_ENABLE_CSS_MKL OFF)
+    SET(HAVE_AMESOS_CSS_MKL OFF)
+  ENDIF()
+ENDIF()
+
 # if using parallel MUMPS, must also link in scalapack and BLACS
 
 IF(${PACKAGE_NAME}_ENABLE_MUMPS AND ${PACKAGE_NAME}_ENABLE_MPI AND NOT ${PACKAGE_NAME}_ENABLE_SCALAPACK)

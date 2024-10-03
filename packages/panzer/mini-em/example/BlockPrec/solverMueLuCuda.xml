@@ -1,3 +1,5 @@
+<!-- Tuned for V100 -->
+
 <ParameterList name="Linear Solver">
 
   <ParameterList name="Preconditioner Types">

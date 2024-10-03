@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 // clang-format off
@@ -45,6 +15,7 @@
 /// \brief Declaration of the Tpetra::CrsMatrix class
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "TpetraExt_MatrixMatrix_fwd.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #if KOKKOSKERNELS_VERSION >= 40299
@@ -60,6 +31,7 @@
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "Teuchos_DataAccess.hpp"
+
 
 #include <memory> // std::shared_ptr
 
@@ -2316,6 +2288,18 @@ private:
     const crs_graph_type& getCrsGraphRef () const;
 
   public:
+#if __armclang_major__ == 22 && __armclang_minor__ == 1
+   // On Stria, PR 13052 caused a 25% performance regression in the
+   // CGSolve performance test that is fixed by forcing
+   // getLocalMatrixDevice to always be inlined. Restrict the fix
+   // to the specific toolchain where the problem was observed
+#define TPETRA_DETAILS_ALWAYS_INLINE __attribute__((always_inline))
+#else
+#define TPETRA_DETAILS_ALWAYS_INLINE
+#endif
+     /// \brief The local sparse matrix.
+     ///
+     /// \warning It is only valid to call this method under certain
     /// \brief The local sparse matrix.
     ///
     /// \warning It is only valid to call this method under certain
@@ -2325,8 +2309,10 @@ private:
     ///   least once.  This method will do no error checking, so you
     ///   are responsible for knowing when it is safe to call this
     ///   method.
-    local_matrix_device_type getLocalMatrixDevice () const;
+    TPETRA_DETAILS_ALWAYS_INLINE local_matrix_device_type
+    getLocalMatrixDevice () const;
     local_matrix_host_type getLocalMatrixHost () const;
+#undef TPETRA_DETAILS_ALWAYS_INLINE
 
 #if KOKKOSKERNELS_VERSION < 40299
     /// \brief The local sparse matrix operator 
@@ -3937,11 +3923,56 @@ public:
     typename values_dualv_type::t_dev
     getValuesViewDeviceNonConst (const RowInfo& rowinfo);
 
+#if KOKKOSKERNELS_VERSION >= 40299
+private:
+    // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
+    // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
+    //
+    // At that point the ApplyHelper can be replaced with just a SPMVHandle.
+    using local_matrix_int_rowptrs_device_type =
+      KokkosSparse::CrsMatrix<impl_scalar_type,
+                              local_ordinal_type,
+                              device_type,
+                              void,
+                              int>;
+
+    /// The specialization of Details::MatrixApplyHelper used by this class in apply().
+    using ApplyHelper = Details::MatrixApplyHelper<
+      local_matrix_device_type,
+      local_matrix_int_rowptrs_device_type, 
+      typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
+
+
+    std::shared_ptr<ApplyHelper> getApplyHelper() const {
+      if (!applyHelper) {
+        auto A_lcl = getLocalMatrixDevice();
+        applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
+      }
+      return applyHelper;
+    }
+#endif
 
   protected:
 
     // Friend the tester for CrsMatrix::swap
     friend class Tpetra::crsMatrix_Swap_Tester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // Friend the matrix multiply kernels so they can access internally-cached integer
+    // row pointers without making them part of the CrsMatrix interface
+    template<typename S, typename LO, typename GO, typename NODE, typename LOV> friend struct Tpetra::MMdetails::KernelWrappers;
+    template<typename S, typename LO, typename GO, typename NODE, typename LOV> friend struct Tpetra::MMdetails::KernelWrappers2;
+
+
+    // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
+    friend 
+    void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
+    bool                                                          userAssertsThereAreNoRemotes,
+    const std::string&                                            label,
+    const Teuchos::RCP<Teuchos::ParameterList>&                   params);
 
     /// \brief Swaps the data from *this with the data and maps from crsMatrix
     ///
@@ -4032,23 +4063,6 @@ protected:
 
   private:
 #if KOKKOSKERNELS_VERSION >= 40299
-    // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
-    // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
-    //
-    // At that point the ApplyHelper can be replaced with just a SPMVHandle.
-    using local_matrix_int_rowptrs_device_type =
-      KokkosSparse::CrsMatrix<impl_scalar_type,
-                              local_ordinal_type,
-                              device_type,
-                              void,
-                              int>;
-
-    /// The specialization of Details::MatrixApplyHelper used by this class in apply().
-    using ApplyHelper = Details::MatrixApplyHelper<
-      local_matrix_device_type,
-      local_matrix_int_rowptrs_device_type, 
-      typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
-
     /// The apply helper is lazily created in apply(), and reset when resumeFill is called.
     /// It performs 3 functions:
     /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs

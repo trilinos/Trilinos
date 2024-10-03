@@ -47,7 +47,6 @@ namespace SpatialDimension { const unsigned three = 3; }
 TEST(stkMeshHowTo, getFields)
 {
   stk::mesh::MetaData metaData(SpatialDimension::three);
-  metaData.use_simple_fields();
 
   typedef stk::mesh::Field<double> DoubleFieldType;
 

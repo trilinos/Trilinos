@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 //
 //  H1StandardAssembly.hpp
 //  Trilinos
@@ -143,8 +151,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
     FunctionSpaceTools::HGRADtransformGRAD(unorientedTransformedGradValues, jacobianInverse, basisGradValues);
+    // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
+    fstIntegrateCall->stop();
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedGradValues, unorientedTransformedGradValues,
                                                            orientationsWorkset, basis.get());
+    fstIntegrateCall->start();
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
@@ -155,8 +166,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::
     ExecutionSpace().fence();
     
     FunctionSpaceTools::HGRADtransformVALUE(unorientedTransformedBasisValues, basisValues);
+    // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
+    fstIntegrateCall->stop();
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedBasisValues, unorientedTransformedBasisValues,
                                                            orientationsWorkset, basis.get());
+    fstIntegrateCall->start();
     FunctionSpaceTools::multiplyMeasure(transformedWeightedBasisValues, cellMeasures, transformedBasisValues);
     bool sumInto = true; // add the (value,value) integral to the (grad,grad) that we've already integrated
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedBasisValues, transformedWeightedBasisValues, sumInto);

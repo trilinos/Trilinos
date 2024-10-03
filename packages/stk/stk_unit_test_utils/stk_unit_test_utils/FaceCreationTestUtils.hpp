@@ -205,7 +205,8 @@ protected:
 
 namespace simple_fields {
 
-class SideCreationTester
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+SideCreationTester
 {
 public:
     SideCreationTester(MPI_Comm comm) : communicator(comm) {}

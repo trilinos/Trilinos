@@ -229,7 +229,7 @@ void ConservativeTransferTests::test_conservation_bidirectional(std::function<do
   assert(!(inputMesh1 && inputMesh2));
 
   mesh::FieldPtr<double> sendFieldPtr, recvFieldPtr;
-  double sendIntegral, recvIntegral;
+  double sendIntegral = 0.0, recvIntegral = 0.0;
   if (inputMesh1)
   {
     sendFieldPtr = mesh::create_field<double>(inputMesh1, mesh::FieldShape(1, 0, 0), 1);

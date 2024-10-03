@@ -66,7 +66,7 @@ else() # Raw CMake Project
 
   PROJECT(Compadre VERSION ${Compadre_VERSION} LANGUAGES CXX)
   if (NOT CMAKE_CXX_STANDARD)
-      set(CMAKE_CXX_STANDARD 14)
+      set(CMAKE_CXX_STANDARD 17)
   endif()
   set(CMAKE_DISABLE_SOURCE_CHANGES ON)
   set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
@@ -133,6 +133,17 @@ else() # Raw CMake Project
   #
   #  TPLS
   #
+  #  Three choices for providing TPLs:
+  #
+  #      a.) None
+  #          - Trilinos_PREFIX, KokkosCore_PREFIX, and KokkosKernels_PREFIX 
+  #            not specified
+  #      b.) Trilinos installation with Kokkos AND KokkosKernels
+  #          - Trilinos_PREFIX specified
+  #      c.) Kokkos AND KokkosKernels standalone installations
+  #          - KokkosCore_PREFIX and KokkosKernels_PREFIX specified
+  #
+  #  For option a, vendored Kokkos and KokkosKernels built for user
   #
   ##########
 
@@ -173,7 +184,7 @@ else() # Raw CMake Project
   set(KOKKOS_MIN "3.3.01")
 
   if (Trilinos_PREFIX)
-    FIND_PACKAGE(Trilinos)
+    FIND_PACKAGE(Trilinos COMPONENTS Kokkos KokkosKernels OPTIONAL_COMPONENTS Gtest)
 
     LIST(REVERSE Trilinos_INCLUDE_DIRS)
     LIST(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
@@ -209,13 +220,17 @@ else() # Raw CMake Project
     MESSAGE("   Trilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
     MESSAGE("   Trilinos_CXX_FLAGS = ${Trilinos_CXX_COMPILER_FLAGS}")
 
-    LIST(FIND Trilinos_PACKAGE_LIST KokkosCore KokkosCoreID)
-    IF (KokkosCoreID GREATER -1 )
-      MESSAGE(STATUS "Found KokkosCore inside Trilinos!")
+    IF (Trilinos_VERSION VERSION_GREATER_EQUAL "14.1")
+        set(CompadreKokkosPackageName "Kokkos")
+    ELSE ()
+        set(CompadreKokkosPackageName "KokkosCore")
+    ENDIF()
+    LIST(FIND Trilinos_PACKAGE_LIST ${CompadreKokkosPackageName} ${CompadreKokkosPackageName}ID)
+    IF (${CompadreKokkosPackageName}ID GREATER -1 )
+      MESSAGE(STATUS "Found ${CompadreKokkosPackageName} inside Trilinos!")
       set(KOKKOS_IN_TRILINOS ON)
-      set(KokkosCore_FOUND ON)
     ELSE()
-      MESSAGE(FATAL_ERROR "Found Trilinos but could not find KokkosCore.")
+      MESSAGE(FATAL_ERROR "Found Trilinos but could not find ${CompadreKokkosPackageName}.")
     ENDIF()
 
     LIST(FIND Trilinos_PACKAGE_LIST KokkosKernels KokkosKernelsID)
@@ -227,21 +242,19 @@ else() # Raw CMake Project
       MESSAGE(FATAL_ERROR "Found Trilinos but could not find KokkosKernels.")
     ENDIF()
 
+    LIST(FIND Trilinos_PACKAGE_LIST Gtest GtestID)
+
     if(KOKKOS_IN_TRILINOS AND NOT(KOKKOSKERNELS_IN_TRILINOS))
         MESSAGE(FATAL_ERROR "Kokkos found in Trilinos, but not KokkosKernels")
     endif()
 
-    #  Detect KokkosCore functionality from Trilinos
-    include(${CMAKE_CURRENT_LIST_DIR}/cmake/detect_kokkos_opts.cmake)
-    # cmake/detect_kokkos_opts.cmake populates KokkosCore_HAS_* 
-    detect_kokkos_opts()
-
-    # get kokkos settings, change our settings, error to user if we something they requested is not enabled
-    if (KokkosCore_HAS_CUDA)
-      if (NOT KokkosCore_HAS_CUDA_LAMBDA)
+    # Check that CUDA_LAMBDA is enabled if using CUDA in Kokkos
+    list(FIND Kokkos_DEVICES CUDA cuda_index)
+    if (NOT cuda_index EQUAL -1)
+      list(FIND Kokkos_OPTIONS CUDA_LAMBDA cuda_lambda_index)
+      if (cuda_lambda_index EQUAL -1)
         message(FATAL_ERROR "Please reconfigure Trilinos with -DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON")
       endif()
-      message(STATUS "CUDA enabled in KokkosCore in Trilinos, setting Compadre_USE_CUDA to ON")
       set(Compadre_USE_CUDA ON)
     endif()
 

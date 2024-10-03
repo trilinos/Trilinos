@@ -1325,9 +1325,11 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
   int ts_max  = interFace.step_max();
   int ts_step = interFace.step_interval();
 
-  if (ts_min == -1 && ts_max == -1) {
-    ts_min = num_time_steps;
-    ts_max = num_time_steps;
+  if (ts_min < 0) {
+    ts_min = num_time_steps + 1 + ts_min;
+  }
+  if (ts_max < 0) {
+    ts_max = num_time_steps + 1 + ts_max;
   }
 
   // Time steps for output file
@@ -1451,8 +1453,8 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
             for (int ig = 0; ig < global_vars.count(InOut::IN); ig++) {
               if (proc_global_values[ig] != global_values[ig]) {
                 fmt::print(stderr,
-                           "At step {:{}}, Global Variable {:{}}, P{:0{}} = {:15.8g}, P{:0{}} = "
-                           "{:15.8g}\n",
+                           fmt::runtime("At step {:{}}, Global Variable {:{}}, P{:0{}} = {:15.8g}, P{:0{}} = "
+					"{:15.8g}\n"),
                            time_step + 1, ts_max + 1, ig + 1,
                            get_width(global_vars.count(InOut::IN)), start_part,
                            get_width(interFace.processor_count()), start_part + p,

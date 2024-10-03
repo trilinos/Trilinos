@@ -52,8 +52,7 @@ typedef struct params {
 namespace KokkosKernels {
 namespace Experiment {
 
-template <typename ExecutionSpace, typename uniform_memory_pool_t,
-          typename scalar_t>
+template <typename ExecutionSpace, typename uniform_memory_pool_t, typename scalar_t>
 struct functorTestHashmapAccumulator {
   typedef ExecutionSpace execution_space;
   typedef typename Kokkos::View<scalar_t*> data_view_t;
@@ -65,17 +64,12 @@ struct functorTestHashmapAccumulator {
   const size_t _max_hash_entries;
   const parameters_t& _params;
 
-  typedef Kokkos::Experimental::UniqueToken<
-      execution_space, Kokkos::Experimental::UniqueTokenScope::Global>
+  typedef Kokkos::Experimental::UniqueToken<execution_space, Kokkos::Experimental::UniqueTokenScope::Global>
       unique_token_t;
   unique_token_t tokens;
 
-  functorTestHashmapAccumulator(const size_t num_entries,
-                                const data_view_t& data,
-                                uniform_memory_pool_t memory_pool,
-                                const size_t hash_size,
-                                const size_t max_hash_entries,
-                                const parameters_t& params)
+  functorTestHashmapAccumulator(const size_t num_entries, const data_view_t& data, uniform_memory_pool_t memory_pool,
+                                const size_t hash_size, const size_t max_hash_entries, const parameters_t& params)
       : _num_entries(num_entries),
         _data(data),
         _memory_pool(memory_pool),
@@ -104,9 +98,7 @@ struct functorTestHashmapAccumulator {
     }
     scalar_t* ptr_memory_pool_chunk = (scalar_t*)(ptr_temp);
 
-    KokkosKernels::Experimental::HashmapAccumulator<
-        hash_size_type, hash_key_type, hash_value_type>
-        hash_map;
+    KokkosKernels::Experimental::HashmapAccumulator<hash_size_type, hash_key_type, hash_value_type> hash_map;
 
     // Set pointer to hash indices
     scalar_t* used_hash_indices = (scalar_t*)(ptr_temp);
@@ -145,9 +137,8 @@ struct functorTestHashmapAccumulator {
       // Compute the hash index using & instead of % (modulus is slower).
       scalar_t hash = key & hash_func_pow2;
 
-      int r = hash_map.sequential_insert_into_hash_TrackHashes(
-          hash, key, &used_hash_size, hash_map.max_value_size, &used_hash_count,
-          used_hash_indices);
+      int r = hash_map.sequential_insert_into_hash_TrackHashes(hash, key, &used_hash_size, hash_map.max_value_size,
+                                                               &used_hash_count, used_hash_indices);
 
       // Check return code
       if (r) {
@@ -180,9 +171,7 @@ struct functorTestHashmapAccumulator {
 
 template <typename execution_space, typename scalar_t = int>
 void experiment(const parameters_t& params) {
-  typedef
-      typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t>
-          uniform_memory_pool_t;
+  typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t> uniform_memory_pool_t;
   typedef typename Kokkos::View<scalar_t*> data_view_t;
   typedef typename data_view_t::HostMirror data_view_hostmirror_t;
 
@@ -224,9 +213,8 @@ void experiment(const parameters_t& params) {
   // Set Hash Table Parameters
   size_t max_hash_entries = max_value;  // Max number of entries that can be
                                         // inserted (values allowed are 1..100)
-  size_t hash_size_hint =
-      max_value;  // How many hash keys are allowed. The actual hash size will
-                  // be set to the next power of 2 bigger than hash_size_hint.
+  size_t hash_size_hint = max_value;    // How many hash keys are allowed. The actual hash size will
+                                        // be set to the next power of 2 bigger than hash_size_hint.
 
   // Set the hash_size as the next power of 2 bigger than hash_size_hint.
   // - hash_size must be a power of two since we use & rather than % (which is
@@ -237,8 +225,7 @@ void experiment(const parameters_t& params) {
   }
 
   // Create Uniform Initialized Memory Pool
-  KokkosKernels::Impl::PoolType pool_type =
-      KokkosKernels::Impl::OneThread2OneChunk;
+  KokkosKernels::Impl::PoolType pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
   // Determine memory chunk size for UniformMemoryPool
   size_t mem_chunk_size = hash_size;   // for hash indices
@@ -254,16 +241,12 @@ void experiment(const parameters_t& params) {
 
   // KokkosKernels::Impl::UniformMemoryPool<Kokkos::DefaultExecutionSpace,
   // size_t> m_space(mem_chunk_count, mem_chunk_size, -1, pool_type);
-  uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, -1,
-                                    pool_type);
+  uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, -1, pool_type);
 
-  functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t,
-                                scalar_t>
-      testHashmapAccumulator(num_entries, d_data, memory_pool, hash_size,
-                             max_hash_entries, params);
+  functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t, scalar_t> testHashmapAccumulator(
+      num_entries, d_data, memory_pool, hash_size, max_hash_entries, params);
 
-  Kokkos::parallel_for("testHashmapAccumulator", num_entries,
-                       testHashmapAccumulator);
+  Kokkos::parallel_for("testHashmapAccumulator", num_entries, testHashmapAccumulator);
 
   if (params.verbose) {
     double t = timer.seconds();
@@ -275,8 +258,7 @@ void experiment(const parameters_t& params) {
 }  // namespace Experiment
 }  // namespace KokkosKernels
 
-void print_options(std::ostream& os, const char* app_name,
-                   unsigned int indent = 0) {
+void print_options(std::ostream& os, const char* app_name, unsigned int indent = 0) {
   std::string spaces(indent, ' ');
   os << "Usage:" << std::endl
      << spaces << "  " << app_name << " [parameters]" << std::endl
@@ -285,15 +267,12 @@ void print_options(std::ostream& os, const char* app_name,
      << spaces << "  Parallelism (select one of the following):" << std::endl
      << spaces << "      --serial <N>        Execute serially." << std::endl
      << spaces << "      --threads <N>       Use N posix threads." << std::endl
-     << spaces << "      --openmp <N>        Use OpenMP with N threads."
-     << std::endl
+     << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
      << spaces << "      --cuda              Use CUDA" << std::endl
      << spaces << "  Optional Parameters:" << std::endl
-     << spaces << "      --problem-size <N>  Problem Size (Default: 20)"
-     << std::endl
+     << spaces << "      --problem-size <N>  Problem Size (Default: 20)" << std::endl
      << spaces << "      --verbose           Verbose output" << std::endl
-     << spaces << "      --help              Print out command line help."
-     << std::endl
+     << spaces << "      --help              Print out command line help." << std::endl
      << spaces << " " << std::endl;
 }  // print_options
 
@@ -321,19 +300,16 @@ int parse_inputs(parameters_t& params, int argc, char** argv) {
     } else if (0 == Test::string_compare_no_case(argv[i], "--verbose") ||
                0 == Test::string_compare_no_case(argv[i], "-V")) {
       params.verbose = true;
-    } else if (0 == Test::string_compare_no_case(argv[i], "help") ||
-               0 == Test::string_compare_no_case(argv[i], "-h")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "help") || 0 == Test::string_compare_no_case(argv[i], "-h")) {
       print_options(std::cout, argv[0]);
       return 1;
     } else {
-      std::cerr << "3-Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options(std::cout, argv[0]);
       return 1;
     }
   }
-  if (!params.use_serial && !params.use_threads && !params.use_openmp &&
-      !params.use_cuda) {
+  if (!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda) {
     print_options(std::cout, argv[0]);
     return 1;
   }
@@ -351,14 +327,11 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  const int device_id = 0;
-  const int num_threads =
-      params.use_openmp;  // Assumption is that use_openmp variable is provided
-                          // as number of threads
+  const int device_id   = 0;
+  const int num_threads = params.use_openmp;  // Assumption is that use_openmp variable is provided
+                                              // as number of threads
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
 
   if (params.verbose) {
     Kokkos::print_configuration(std::cout);

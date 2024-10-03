@@ -1,10 +1,11 @@
-// @HEADER
-// ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
 //
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
-// ****************************************************************************
-// @HEADER
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
 
 #include "Tempus_UnitTest_Utils.hpp"
 
@@ -555,7 +556,9 @@ TEUCHOS_UNIT_TEST(SolutionHistory, initWorkingState_Failing)
   sh->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!sh->isInitialized());
 
-  auto state1 = Tempus::createSolutionStateX<double>(icSoln);
+  auto currentSoln = icSoln->clone_v();
+  Thyra::V_S(currentSoln.ptr(), std::numeric_limits<double>::quiet_NaN());
+  auto state1 = Tempus::createSolutionStateX<double>(currentSoln);
   state1->setTime(1.0);
   state1->setTimeStep(1.0);
   state1->setIndex(1);
@@ -573,8 +576,11 @@ TEUCHOS_UNIT_TEST(SolutionHistory, initWorkingState_Failing)
 
   TEUCHOS_ASSERT(sh->getCurrentState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getCurrentState() == sh->getStateTimeIndexNM1());
+  TEUCHOS_ASSERT(get_ele(*(sh->getCurrentState()->getX()), 0) == 1.0);
+
   TEUCHOS_ASSERT(sh->getWorkingState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getWorkingState() == sh->getStateTimeIndexN());
+  TEUCHOS_ASSERT(std::isnan(get_ele(*(sh->getWorkingState()->getX()), 0)));  // !!!
 
   TEST_COMPARE(sh->getCurrentState()->getIndex(), ==, 0);
   TEST_FLOATING_EQUALITY(sh->getCurrentState()->getTime(), 0.0, 1.0e-14);
@@ -585,7 +591,8 @@ TEUCHOS_UNIT_TEST(SolutionHistory, initWorkingState_Failing)
   sh->initWorkingState();
 
   // State after initializing workingState.
-  // Should be unchanged as we are trying to redo FAILing time step.
+  // Should be unchanged except the workingState->getX() is reset
+  // to currentState->getX().
   TEST_COMPARE(sh->getNumStates(), ==, 2);
   TEST_FLOATING_EQUALITY(sh->getCurrentTime(), 0.0, 1.0e-14);
   TEST_COMPARE(sh->getCurrentIndex(), ==, 0);
@@ -594,8 +601,11 @@ TEUCHOS_UNIT_TEST(SolutionHistory, initWorkingState_Failing)
 
   TEUCHOS_ASSERT(sh->getCurrentState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getCurrentState() == sh->getStateTimeIndexNM1());
+  TEUCHOS_ASSERT(get_ele(*(sh->getCurrentState()->getX()), 0) == 1.0);
+
   TEUCHOS_ASSERT(sh->getWorkingState() != Teuchos::null);
   TEUCHOS_ASSERT(sh->getWorkingState() == sh->getStateTimeIndexN());
+  TEUCHOS_ASSERT(get_ele(*(sh->getWorkingState()->getX()), 0) == 1.0);  // !!!
 
   TEST_COMPARE(sh->getCurrentState()->getIndex(), ==, 0);
   TEST_FLOATING_EQUALITY(sh->getCurrentState()->getTime(), 0.0, 1.0e-14);

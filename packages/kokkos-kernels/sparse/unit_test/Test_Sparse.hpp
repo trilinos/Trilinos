@@ -38,6 +38,7 @@
 #include "Test_Sparse_gmres.hpp"
 #include "Test_Sparse_Transpose.hpp"
 #include "Test_Sparse_TestUtils_RandCsMat.hpp"
+#include "Test_Sparse_IOUtils.hpp"
 #include "Test_Sparse_ccs2crs.hpp"
 #include "Test_Sparse_crs2ccs.hpp"
 #include "Test_Sparse_removeCrsMatrixZeros.hpp"

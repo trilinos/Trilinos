@@ -21,10 +21,8 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && \
-    !defined(TEST_HIP_BATCHED_DENSE_CPP) &&  \
-    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
+#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && !defined(TEST_HIP_BATCHED_DENSE_CPP) && \
+    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
@@ -59,33 +57,30 @@ void impl_test_batched_vector_logical() {
 
     {
 #undef CHECK
-#define CHECK(op)                             \
-  {                                           \
-    const auto comparison = a op b;           \
-    for (int i = 0; i < vector_length; ++i)   \
-      EXPECT_EQ(comparison[i], a[i] op b[i]); \
+#define CHECK(op)                                                                   \
+  {                                                                                 \
+    const auto comparison = a op b;                                                 \
+    for (int i = 0; i < vector_length; ++i) EXPECT_EQ(comparison[i], a[i] op b[i]); \
   }
 
       CHECK(||);
       CHECK(&&);
 
 #undef CHECK
-#define CHECK(op)                           \
-  {                                         \
-    const auto comparison = a op 0;         \
-    for (int i = 0; i < vector_length; ++i) \
-      EXPECT_EQ(comparison[i], a[i] op 0);  \
+#define CHECK(op)                                                                \
+  {                                                                              \
+    const auto comparison = a op 0;                                              \
+    for (int i = 0; i < vector_length; ++i) EXPECT_EQ(comparison[i], a[i] op 0); \
   }
 
       CHECK(||);
       CHECK(&&);
 
 #undef CHECK
-#define CHECK(op)                           \
-  {                                         \
-    const auto comparison = 0 op b;         \
-    for (int i = 0; i < vector_length; ++i) \
-      EXPECT_EQ(comparison[i], 0 op b[i]);  \
+#define CHECK(op)                                                                \
+  {                                                                              \
+    const auto comparison = 0 op b;                                              \
+    for (int i = 0; i < vector_length; ++i) EXPECT_EQ(comparison[i], 0 op b[i]); \
   }
 
       CHECK(||);
@@ -100,9 +95,8 @@ void impl_test_batched_vector_logical() {
 
 template <typename DeviceType, typename ValueType, int VectorLength>
 int test_batched_vector_logical() {
-  static_assert(
-      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
-      "vector datatype is only tested on host space");
+  static_assert(Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+                "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_logical<ValueType, VectorLength>();
 
   return 0;
@@ -113,21 +107,13 @@ int test_batched_vector_logical() {
 ///
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, batched_vector_logical_simd_float3) {
-  test_batched_vector_logical<TestDevice, float, 3>();
-}
-TEST_F(TestCategory, batched_vector_logical_simd_float8) {
-  test_batched_vector_logical<TestDevice, float, 8>();
-}
+TEST_F(TestCategory, batched_vector_logical_simd_float3) { test_batched_vector_logical<TestDevice, float, 3>(); }
+TEST_F(TestCategory, batched_vector_logical_simd_float8) { test_batched_vector_logical<TestDevice, float, 8>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, batched_vector_logical_simd_double3) {
-  test_batched_vector_logical<TestDevice, double, 3>();
-}
-TEST_F(TestCategory, batched_vector_logical_simd_double4) {
-  test_batched_vector_logical<TestDevice, double, 4>();
-}
+TEST_F(TestCategory, batched_vector_logical_simd_double3) { test_batched_vector_logical<TestDevice, double, 3>(); }
+TEST_F(TestCategory, batched_vector_logical_simd_double4) { test_batched_vector_logical<TestDevice, double, 4>(); }
 #endif
 
 // #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)

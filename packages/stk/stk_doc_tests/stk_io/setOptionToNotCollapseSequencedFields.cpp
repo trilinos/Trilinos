@@ -11,19 +11,19 @@
 namespace
 {
 
-class MultipleNumberedFieldsWithSameBaseName : public stk::unit_test_util::simple_fields::MeshFileFixture { };
+class MultipleNumberedFieldsWithSameBaseName : public stk::unit_test_util::MeshFileFixture { };
 
 //-BEGIN
 TEST_F(MultipleNumberedFieldsWithSameBaseName, whenReading_collapseToSingleStkField)
 {
-  stk::unit_test_util::simple_fields::create_mesh_with__field_1__field_2__field_3(filename, get_comm());
+  stk::unit_test_util::create_mesh_with__field_1__field_2__field_3(filename, get_comm());
   read_mesh(filename);
   EXPECT_EQ(1u, get_meta().get_fields(stk::topology::ELEM_RANK).size());
 }
 
 TEST_F(MultipleNumberedFieldsWithSameBaseName, whenReadingWithoutCollapseOption_threeStkFieldsAreRead)
 {
-  stk::unit_test_util::simple_fields::create_mesh_with__field_1__field_2__field_3(filename, get_comm());
+  stk::unit_test_util::create_mesh_with__field_1__field_2__field_3(filename, get_comm());
   stkIo.set_option_to_not_collapse_sequenced_fields();
   read_mesh(filename);
   EXPECT_EQ(3u, get_meta().get_fields(stk::topology::ELEM_RANK).size());

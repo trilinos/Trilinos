@@ -959,6 +959,11 @@ namespace {
         // the filenames match.
         continue;
       }
+      if (property == "base_filename") {
+        // IGNORE the base_filename.  This is generally the base portion of the filename; we don't
+        // care whether the filenames match.
+        continue;
+      }
 
       // ALLOW the regions to have different names (when copying between databases, io_shell
       // will create "region_1" (input) and "region_2" (output))
@@ -995,10 +1000,8 @@ namespace {
   {
     bool overall_result = true;
 
-    const std::vector<std::string> &in_information_records_1 =
-        input_region_1.get_information_records();
-    const std::vector<std::string> &in_information_records_2 =
-        input_region_2.get_information_records();
+    const Ioss::NameList &in_information_records_1 = input_region_1.get_information_records();
+    const Ioss::NameList &in_information_records_2 = input_region_2.get_information_records();
 
     if (in_information_records_1.size() != in_information_records_2.size()) {
       fmt::print(Ioss::WarnOut(), COUNT_MISMATCH, "INFORMATION RECORD",
@@ -1025,8 +1028,8 @@ namespace {
 
     // Each QA record consists of four strings.  For now, require identical ordering
     // (i.e., records in the same order) for equality.
-    const std::vector<std::string> &in_qa_1 = input_region_1.get_qa_records();
-    const std::vector<std::string> &in_qa_2 = input_region_2.get_qa_records();
+    const Ioss::NameList &in_qa_1 = input_region_1.get_qa_records();
+    const Ioss::NameList &in_qa_2 = input_region_2.get_qa_records();
 
     bool printed = false;
     if (in_qa_1.size() != in_qa_2.size()) {

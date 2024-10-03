@@ -7,8 +7,10 @@
 #pragma once
 
 #include "Ioss_CoordinateFrame.h" // for CoordinateFrame
-#include "Ioss_DatabaseIO.h"      // for DatabaseIO
-#include "Ioss_EntityType.h"      // for EntityType, etc
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h" // for DatabaseIO
+#include "Ioss_DynamicTopology.h"
+#include "Ioss_EntityType.h" // for EntityType, etc
 #include "Ioss_Field.h"
 #include "Ioss_GroupingEntity.h" // for GroupingEntity
 #include "Ioss_MeshType.h"
@@ -25,6 +27,7 @@
 #include <functional> // for less
 #include <iosfwd>     // for ostream
 #include <map>        // for map, map<>::value_compare
+#include <memory>
 #include <sstream>
 #include <string>  // for string, operator<
 #include <utility> // for pair
@@ -52,6 +55,7 @@ namespace Ioss {
 namespace Ioss {
 
   class CoordinateFrame;
+
   enum class MeshType;
 
   using AssemblyContainer = std::vector<Ioss::Assembly *>;
@@ -226,8 +230,7 @@ namespace Ioss {
     IOSS_NODISCARD const AliasMap &get_alias_map(EntityType entity_type) const;
 
     /// Get a map containing all aliases defined for the entity with basename 'my_name'
-    int get_aliases(const std::string &my_name, EntityType type,
-                    std::vector<std::string> &aliases) const;
+    int get_aliases(const std::string &my_name, EntityType type, Ioss::NameList &aliases) const;
 
     // This routine transfers all relevant aliases from the 'this'
     // region and applies them to the 'to' file.
@@ -265,11 +268,11 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     IOSS_NODISCARD Property get_implicit_property(const std::string &my_name) const override;
 
-    IOSS_NODISCARD const std::vector<std::string> &get_information_records() const;
-    void add_information_records(const std::vector<std::string> &info);
-    void add_information_record(const std::string &info);
+    IOSS_NODISCARD const Ioss::NameList &get_information_records() const;
+    void                                 add_information_records(const Ioss::NameList &info);
+    void                                 add_information_record(const std::string &info);
 
-    IOSS_NODISCARD const std::vector<std::string> &get_qa_records() const;
+    IOSS_NODISCARD const Ioss::NameList &get_qa_records() const;
     void add_qa_record(const std::string &code, const std::string &code_qa,
                        const std::string &date = "", const std::string &time = "");
 
@@ -278,7 +281,40 @@ namespace Ioss {
                                               const std::vector<T *> &entity_container,
                                               std::vector<U>         &field_data) const;
 
+    void register_mesh_modification_observer(std::shared_ptr<DynamicTopologyObserver> observer);
+    std::shared_ptr<DynamicTopologyObserver> get_mesh_modification_observer() const
+    {
+      return topologyObserver;
+    }
+
+    void reset_topology_modification();
+    void set_topology_modification(unsigned int type);
+    unsigned int get_topology_modification() const;
+
+    void start_new_output_database_entry(int steps = 0);
+
+    void         set_topology_change_count(unsigned int new_count) { dbChangeCount = new_count; }
+    unsigned int get_topology_change_count() { return dbChangeCount; }
+
+    void         set_file_cyclic_count(unsigned int new_count) { fileCyclicCount = new_count; }
+    unsigned int get_file_cyclic_count() { return fileCyclicCount; }
+
+    void set_if_database_exists_behavior(IfDatabaseExistsBehavior if_exists)
+    {
+      ifDatabaseExists = if_exists;
+    }
+
+    bool model_is_written() const { return modelWritten; }
+    bool transient_is_written() const { return transientWritten; }
+
+    bool load_group_mesh(const std::string &child_group_name);
+    bool load_group_mesh(const int child_group_index);
+
   protected:
+    void update_dynamic_topology();
+    void clone_and_replace_output_database(int steps = 0);
+    void add_output_database_group(int steps = 0, bool force_addition = false);
+
     int64_t internal_get_field_data(const Field &field, void *data,
                                     size_t data_size = 0) const override;
 
@@ -304,6 +340,7 @@ namespace Ioss {
     bool end_mode_nl(State current_state);
 
     void delete_database() override;
+    void reset_region();
 
     mutable std::map<EntityType, AliasMap> aliases_; ///< Stores alias mappings
 
@@ -330,6 +367,18 @@ namespace Ioss {
     mutable int stateCount{0};
     bool        modelDefined{false};
     bool        transientDefined{false};
+
+    std::shared_ptr<DynamicTopologyObserver> topologyObserver;
+
+    unsigned int dbChangeCount{1}; //!< Used to track number of topology changes.
+    unsigned int fileCyclicCount{
+        0}; //!< For cycling file-A, file-B, file-C, ..., File-A, typically restart only.
+    IfDatabaseExistsBehavior ifDatabaseExists{DB_OVERWRITE};
+
+    bool modelWritten{false};
+    bool transientWritten{false};
+    bool fileGroupsStarted{false};
+
   };
 } // namespace Ioss
 
@@ -353,7 +402,7 @@ inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exis
  *
  *  \returns The informative strings.
  */
-inline const std::vector<std::string> &Ioss::Region::get_information_records() const
+inline const Ioss::NameList &Ioss::Region::get_information_records() const
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->get_information_records();
@@ -363,7 +412,7 @@ inline const std::vector<std::string> &Ioss::Region::get_information_records() c
  *
  *  \param[in] info The strings to add.
  */
-inline void Ioss::Region::add_information_records(const std::vector<std::string> &info)
+inline void Ioss::Region::add_information_records(const Ioss::NameList &info)
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->add_information_records(info);
@@ -411,7 +460,7 @@ inline void Ioss::Region::add_qa_record(const std::string &code, const std::stri
  *  \returns All QA records in a single vector. Every 4 consecutive elements of the
  *           vector make up a single QA record.
  */
-inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
+inline const Ioss::NameList &Ioss::Region::get_qa_records() const
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->get_qa_records();

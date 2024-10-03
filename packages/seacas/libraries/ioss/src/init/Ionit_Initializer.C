@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,7 +10,9 @@
 
 #if defined(SEACAS_HAVE_EXODUS)
 #include "exodus/Ioex_IOFactory.h"
+#if defined(SEACAS_HAVE_EXONULL)
 #include "exonull/Ioexnl_IOFactory.h"
+#endif
 #endif
 
 #include "gen_struc/Iogs_DatabaseIO.h"
@@ -47,6 +49,8 @@
 
 #include "Ioss_IOFactory.h"
 
+#include "Ioss_DynamicTopology.h"
+
 namespace {
 #if defined(IOSS_THREADSAFE)
   std::mutex m_;
@@ -72,7 +76,9 @@ namespace Ioss::Init {
 
 #if defined(SEACAS_HAVE_EXODUS)
     Ioex::IOFactory::factory(); // Exodus
+#if defined(SEACAS_HAVE_EXONULL)
     Ioexnl::IOFactory::factory();
+#endif
 #endif
 #if defined(SEACAS_HAVE_PAMGEN)
     Iopg::IOFactory::factory(); // Pamgen
@@ -94,6 +100,7 @@ namespace Ioss::Init {
     Iogs::IOFactory::factory(); // Structured Mesh Generator
     Ionull::IOFactory::factory();
     Ioss::StorageInitializer();
+    Ioss::DynamicTopologyBroker::broker();
     Ioss::Initializer();
     Iotr::Initializer();
 #ifdef HAVE_SEACASIOSS_ADIOS2

@@ -123,7 +123,6 @@ void rebalance_m2n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Comm c
   print_banner(sierra::Env::outputP0());
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
-  bulk->mesh_meta_data().use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), *bulk);
 

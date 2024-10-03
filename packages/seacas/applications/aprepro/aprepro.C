@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,6 +13,17 @@
 #include <vector>
 
 #include "aprepro.h"
+
+namespace {
+  bool is_double(const std::string &myString)
+  {
+    std::istringstream iss(myString);
+    double             f;
+    iss >> std::noskipws >> f; // noskipws considers leading whitespace invalid
+    // Check the entire string was consumed and if either failbit or badbit is set
+    return iss.eof() && !iss.fail();
+  }
+} // namespace
 
 int main(int argc, char *argv[])
 {
@@ -42,7 +53,9 @@ int main(int argc, char *argv[])
         value = value.substr(1, value.length() - 2);
         aprepro.add_variable(var, value, true); // Make it immutable
       }
-      else {
+      // See if `value` contains any characters that are invalid for a number...
+
+      else if (is_double(value)) {
         try {
           double dval = std::stod(value);
           aprepro.add_variable(var, dval, true);
@@ -57,6 +70,9 @@ int main(int argc, char *argv[])
             exit_status = EXIT_FAILURE;
           }
         }
+      }
+      else {
+        aprepro.add_variable(var, value, true); // Make it immutable
       }
     }
     else {

@@ -35,8 +35,9 @@
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stddef.h>                     // for NULL, size_t
 #include <algorithm>                    // for sort, binary_search, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/EntityLess.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for get_entity_subcell_id, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Part.hpp>       // for Part

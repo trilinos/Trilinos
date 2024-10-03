@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /********************************************************************************/
 /****************** Solution of Advection Diffusion Equation ********************/
 /********************** Using CVFEM with Multi-dimensional **********************/
@@ -5,13 +14,13 @@
 /********************************************************************************/
 
 /** \file   example_CVFEM.cpp
-    \brief  Example solution of an Advection Diffusion equation on a quadrilateral  
+    \brief  Example solution of an Advection Diffusion equation on a quadrilateral
             or triangular mesh using the CVFEM.
 
     \verbatim
 
      Advection diffusion system:
- 
+
           - div (epsilon grad phi - u phi) = f in Omega
                                        phi = g on Gamma
 
@@ -36,7 +45,7 @@
     \code   ./TrilinosCouplings_Example_CVFEM.exe <input.xml>  \endcode
 
     \remark Example requires an xml input file with mesh and solver settings.
-    
+
 
     NOTE: This problem does not currently work on more than one core (csiefer@sandia.gov 3/17/16)
 */
@@ -152,7 +161,7 @@ void exactSolutionGrad(Scalar gradExact[2], const Scalar& x, const Scalar& y);
 
     \param  x          [in]    x-coordinate of the evaluation point
     \param  y          [in]    y-coordinate of the evaluation point
-    \param  epsilon    [in]    diffusion coefficient 
+    \param  epsilon    [in]    diffusion coefficient
 
     \return Source term corresponding to the user-defined exact solution evaluated at (x,y)
  */
@@ -184,9 +193,9 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
     \param elemToNode                [out]      Array with element to node mapping
     \param nodeCoords                [out]      Array with nodal coordinates
     \param bcLeftId                  [out]      Array with ids of left boundary nodes,
-    \param bcRightId                 [out]      Array with ids of right boundary nodes 
-    \param bcTopId                   [out]      Array with ids of top boundary nodes 
-    \param bcBotId                   [out]      Array with ids of bottom boundary nodes 
+    \param bcRightId                 [out]      Array with ids of right boundary nodes
+    \param bcTopId                   [out]      Array with ids of top boundary nodes
+    \param bcBotId                   [out]      Array with ids of bottom boundary nodes
     \param meshType                   [in]      Mesh type (quad or tri)
     \param meshSize                   [in]      Number of elements in each direction
 */
@@ -202,9 +211,8 @@ void createMesh(ArrayOut1 &  elemToNode, ArrayOut2 & nodeCoords,
 
 int main(int argc, char *argv[]) {
 
-  int numProcs=1;  
-
 #ifdef HAVE_MPI
+  int numProcs=1;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -249,7 +257,7 @@ int main(int argc, char *argv[]) {
 
      if(xmlInFileName.length()) {
 
-       if (MyPID == 0) 
+       if (MyPID == 0)
          std::cout << "\nReading parameter list from \""<<xmlInFileName<<"\" \n\n";
 
        Teuchos::updateParametersFromXmlFile(xmlInFileName, Teuchos::ptr (&inputList));
@@ -325,7 +333,7 @@ int main(int argc, char *argv[]) {
     Intrepid::FieldContainer<int> bcRightId;
     Intrepid::FieldContainer<int> bcTopId;
     Intrepid::FieldContainer<int> bcBotId;
- 
+
    // Create mesh on square domain [0,1]x[0,1]
     createMesh(elemToNode, nodeCoords, bcLeftId,
                bcRightId, bcTopId, bcBotId,
@@ -384,7 +392,7 @@ int main(int argc, char *argv[]) {
          }
 
        } // end node loop
-                                                                                               
+
 
     if(showTiming) {std::cout << "Read/Create mesh                            "
                    << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -393,14 +401,14 @@ int main(int argc, char *argv[]) {
 /********************************SET CELL TOPOLOGY ********************************/
 /**********************************************************************************/
 
-    // For now set cell topology based on number of nodes per element. 
+    // For now set cell topology based on number of nodes per element.
     //  WARNING: only works for 2-D 1st degree elements.
-    
+
     Teuchos::RCP<shards::CellTopology> cellType;
 
     int numNodesPerElem = elemToNode.dimension(1);
-    
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (numNodesPerElem != 4) && (numNodesPerElem != 3) ), 
+
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (numNodesPerElem != 4) && (numNodesPerElem != 3) ),
                                 std::invalid_argument,
                                "Unknown number of nodes per element for cell topology selection. Please use 3 for Triangle or 4 for Quadrilateral.");
 
@@ -420,12 +428,12 @@ int main(int argc, char *argv[]) {
 /******************* GET CONTROL VOLUME INTEGRATION POINTS ************************/
 /**********************************************************************************/
 
-    //  Loop over cells to fill cell coordinate array            
+    //  Loop over cells to fill cell coordinate array
     Intrepid::FieldContainer<double> cellCoords(numElems, numNodesPerElem, spaceDim);
 
-    // loop over elements 
+    // loop over elements
     for (int ielem = 0; ielem < numElems; ielem++) {
-   
+
       // loop over nodes and fill cell coordinates array
        for (int inode = 0; inode < numNodesPerElem; inode++) {
 
@@ -517,7 +525,7 @@ int main(int argc, char *argv[]) {
     int numFieldsEdge = HCurlBasis->getCardinality();
 
 
-    if(showTiming) {std::cout << "Getting basis                               " 
+    if(showTiming) {std::cout << "Getting basis                               "
                  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
 
@@ -530,7 +538,7 @@ int main(int argc, char *argv[]) {
     Epetra_Map   globalMapNodes(numNodes, 0, Comm);
     Epetra_FECrsMatrix OpMatrix(Copy, globalMapNodes, numFields);
     Epetra_FEVector rhsVector(globalMapNodes);
- 
+
     if(showTiming) {std::cout <<  "Build global maps                           "
                  << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
@@ -574,7 +582,7 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector v(globalMapNodes,true);
     v.PutScalar(0.0);
 
-    int numBCNodes =  bcLeftId.dimension(0) + bcTopId.dimension(0) 
+    int numBCNodes =  bcLeftId.dimension(0) + bcTopId.dimension(0)
                      + bcRightId.dimension(0) + bcBotId.dimension(0);
 
     int * bcNodeVec = new int [numBCNodes];
@@ -583,7 +591,7 @@ int main(int argc, char *argv[]) {
 
     // Loop over right boundary
      for (int i = 0; i < bcRightId.dimension(0); i++) {
-       
+
         int bcNodeId = bcRightId(i);
         bcNodeVec[bcNodeCount] = bcNodeId;
 
@@ -593,18 +601,18 @@ int main(int argc, char *argv[]) {
 
         v[0][bcRightId(i)]=1.0;
 
-        if (problem == "manufacturedSoln")  
+        if (problem == "manufacturedSoln")
              v[0][bcNodeId]=exactSolution(x,y);
         if (problem == "horizAdvection")
              v[0][bcNodeId]=0.0;
-       
+
         bcNodeCount ++;
 
      } // end loop over right boundary nodes
 
     // Loop over left boundary
      for (int i = 0; i < bcLeftId.dimension(0); i++) {
-       
+
         int bcNodeId = bcLeftId(i);
 
         bcNodeVec[bcNodeCount] = bcNodeId;
@@ -615,18 +623,18 @@ int main(int argc, char *argv[]) {
 
         v[0][bcNodeId]=0.0;
 
-        if (problem == "manufacturedSoln")  
+        if (problem == "manufacturedSoln")
              v[0][bcNodeId]=exactSolution(x,y);
         if (problem == "horizAdvection")
              v[0][bcNodeId]=1.0;
-       
+
         bcNodeCount ++;
 
      } // end loop over left boundary nodes
 
     // Loop over top boundary
      for (int i = 0; i < bcTopId.dimension(0); i++) {
-       
+
         int bcNodeId = bcTopId(i);
         bcNodeVec[bcNodeCount] = bcNodeId;
 
@@ -636,18 +644,18 @@ int main(int argc, char *argv[]) {
 
         v[0][bcNodeId]=0.0;
 
-        if (problem == "manufacturedSoln")  
+        if (problem == "manufacturedSoln")
              v[0][bcNodeId]=exactSolution(x,y);
         if (problem == "horizAdvection")
              v[0][bcNodeId]=1.0;
-       
+
         bcNodeCount ++;
 
      } // end loop over top boundary nodes
 
     // Loop over bottom boundary
      for (int i = 0; i < bcBotId.dimension(0); i++) {
-       
+
         int bcNodeId = bcBotId(i);
         bcNodeVec[bcNodeCount] = bcNodeId;
 
@@ -657,13 +665,13 @@ int main(int argc, char *argv[]) {
 
         v[0][bcNodeId]=0.0;
 
-        if (problem == "manufacturedSoln")  
+        if (problem == "manufacturedSoln")
              v[0][bcNodeId]=exactSolution(x,y);
         if (problem == "horizAdvection")
              v[0][bcNodeId]=1.0;
         if (problem == "skewAdvection" && x > 0.5)
              v[0][bcNodeId]=1.0;
-       
+
         bcNodeCount ++;
 
      } // end loop over bottom boundary nodes
@@ -676,8 +684,8 @@ int main(int argc, char *argv[]) {
 /*********************** ASSEMBLE MATRIX AND VECTOR *******************************/
 /**********************************************************************************/
 
-  // Define desired workset size 
-  int desiredWorksetSize = 50;     
+  // Define desired workset size
+  int desiredWorksetSize = 50;
   int numWorksets        = numElems/desiredWorksetSize;
 
   // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
@@ -715,7 +723,7 @@ int main(int argc, char *argv[]) {
             {
                 Sacado::Fad::SFad<double,2> xfad = x;
                 Sacado::Fad::SFad<double,2> yfad = y;
-                source = sourceTerm<Sacado::Fad::SFad<double,2> >(xfad, yfad, epsilon, variableEpsilon, problem).val(); 
+                source = sourceTerm<Sacado::Fad::SFad<double,2> >(xfad, yfad, epsilon, variableEpsilon, problem).val();
             }
             worksetRHS(cellCounter,inode) = source * volCubWeights(icell,inode);
          }
@@ -730,8 +738,8 @@ int main(int argc, char *argv[]) {
  /**********************************************************************************/
  /*                   Compute Diffusion, Advection, Stabilization                  */
  /**********************************************************************************/
- 
-    // Loop over cells to assemble diffusion, advection, and stabilization terms 
+
+    // Loop over cells to assemble diffusion, advection, and stabilization terms
      Intrepid::FieldContainer<double> worksetDiffOp(worksetSize, numFields, numFields);
      Intrepid::FieldContainer<double> worksetAdvOp(worksetSize, numFields, numFields);
      Intrepid::FieldContainer<double> worksetStabOp(worksetSize, numFields, numFields);
@@ -795,7 +803,7 @@ int main(int argc, char *argv[]) {
             sideDiffusivity(iedge) = diffusivity(x,y,epsilon,variableEpsilon);
 
          }
-     
+
          // Assemble cell diffusion operator
          // Number of side cubature points is equal to number of primary cell edges
          for (int iedge = 0; iedge < numSidePoints; iedge++) {
@@ -805,12 +813,12 @@ int main(int argc, char *argv[]) {
             int rowNodeId1 = cellType->getNodeMap(1,iedge,1);
 
             for (int inode = 0; inode < numFields; inode++){
-       
+
                 int colNodeId = inode;
 
                 double operatorContrib0 = 0.0;
                 for (int idim = 0; idim < spaceDim; idim++){
-                   operatorContrib0 += nodeBasisGradsTrans(0,inode,iedge,idim) * sideCubWeights(icell,iedge,idim); 
+                   operatorContrib0 += nodeBasisGradsTrans(0,inode,iedge,idim) * sideCubWeights(icell,iedge,idim);
                 }
 
                 operatorContrib0 *= sideDiffusivity(iedge);
@@ -830,13 +838,13 @@ int main(int argc, char *argv[]) {
             int rowNodeId1 = cellType->getNodeMap(1,iedge,1);
 
             for (int inode = 0; inode < numFields; inode++){
-       
+
                 int colNodeId = inode;
 
                 double operatorContrib0 = 0.0;
                 for (int idim = 0; idim < spaceDim; idim++){
-                   operatorContrib0 += nodeBasisValsTrans(0,inode,iedge) * sideAdvVel(iedge,idim) 
-                                       * sideCubWeights(icell,iedge,idim); 
+                   operatorContrib0 += nodeBasisValsTrans(0,inode,iedge) * sideAdvVel(iedge,idim)
+                                       * sideCubWeights(icell,iedge,idim);
                 }
 
                 double operatorContrib1 = -operatorContrib0;
@@ -925,7 +933,7 @@ int main(int argc, char *argv[]) {
 
            // loop over subcontrol volume sides
 	    for (int jedge = 0; jedge < numEdgesPerElem; jedge++) {
-               
+
                 int colNodeId0 = cellType->getNodeMap(1,jedge,0);
                 int colNodeId1 = cellType->getNodeMap(1,jedge,1);
 
@@ -981,12 +989,12 @@ int main(int argc, char *argv[]) {
                int globalCol = elemToNode(icell,cellCol);
 
 // TEMP - no stab.
-//               double operatorMatrixContribution = worksetDiffOp(cellCounter, cellRow, cellCol) 
+//               double operatorMatrixContribution = worksetDiffOp(cellCounter, cellRow, cellCol)
 //                                                     - worksetAdvOp(cellCounter, cellRow, cellCol);
 
 
 
-               double operatorMatrixContribution = worksetStabOp(cellCounter, cellRow, cellCol);  
+               double operatorMatrixContribution = worksetStabOp(cellCounter, cellRow, cellCol);
 
                if (stabilization == "type2" || stabilization == "type1" ){
                      operatorMatrixContribution += -worksetAdvOp(cellCounter, cellRow, cellCol);
@@ -999,16 +1007,16 @@ int main(int argc, char *argv[]) {
 
 
                OpMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
- 
-            }// end cell col loop 
 
-         }// end cell row loop 
+            }// end cell col loop
+
+         }// end cell row loop
 
          cellCounter++;
 
       } // end workset cell loop
 
-    } // end loop over worksets 
+    } // end loop over worksets
 
 
  /**********************************************************************************/
@@ -1161,34 +1169,34 @@ int main(int argc, char *argv[]) {
         for(int icell = worksetBegin; icell < worksetEnd; icell++){
 
            for (int inode = 0; inode < numNodesPerElem; inode++) {
- 
+
              int rowIndex = elemToNode(icell,inode);
              approxSolnCoef(cellCounter, inode) = (*lhs).Values()[rowIndex];
              cellWorksetErr(cellCounter, inode, 0) = nodeCoords(elemToNode(icell,inode),0);
              cellWorksetErr(cellCounter, inode, 1) = nodeCoords(elemToNode(icell,inode),1);
            }
             cellCounter++;
-        } 
+        }
 
        // Containers for Jacobian
         Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
         Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
         Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
         Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
- 
+
        // Containers for basis values and gradients in physical space
         Intrepid::FieldContainer<double> basisValsErrTrans(worksetSize, numFields, numCubPointsErr);
         Intrepid::FieldContainer<double> basisGradsErrTrans(worksetSize, numFields, numCubPointsErr, spaceDim);
- 
+
        // compute cell Jacobians, their inverses and their determinants
         Intrepid::CellTools<double>::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetErr, *cellType);
         Intrepid::CellTools<double>::setJacobianInv(worksetJacobInvE, worksetJacobianE );
         Intrepid::CellTools<double>::setJacobianDet(worksetJacobDetE, worksetJacobianE );
- 
+
        // map cubature points to physical frame
         Intrepid::FieldContainer<double> worksetCubPointsErr(worksetSize, numCubPointsErr, cubDimErr);
         Intrepid::CellTools<double>::mapToPhysicalFrame(worksetCubPointsErr, cubPointsErr, cellWorksetErr, *cellType);
- 
+
        // evaluate exact solution and gradient at cubature points
         Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
         Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
@@ -1198,26 +1206,26 @@ int main(int argc, char *argv[]) {
        // transform basis values to physical coordinates
         Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(basisValsErrTrans, basisValsErr);
         Intrepid::FunctionSpaceTools::HGRADtransformGRAD<double>(basisGradsErrTrans, worksetJacobInvE, basisGradsErr);
- 
+
        // compute weighted measure
         Intrepid::FunctionSpaceTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
- 
+
        // evaluate the approximate solution and gradient at cubature points
         Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
         Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
         Intrepid::FunctionSpaceTools::evaluate<double>(worksetApproxSoln, approxSolnCoef, basisValsErrTrans);
         Intrepid::FunctionSpaceTools::evaluate<double>(worksetApproxSolnGrad, approxSolnCoef, basisGradsErrTrans);
- 
+
        // get difference between approximate and exact solutions
         Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
         Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
         Intrepid::RealSpaceTools<double>::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
         Intrepid::RealSpaceTools<double>::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
- 
+
        // take absolute values
         Intrepid::RealSpaceTools<double>::absval(worksetDeltaSoln);
         Intrepid::RealSpaceTools<double>::absval(worksetDeltaSolnGrad);
-  
+
        // apply cubature weights to differences in values and grads for use in integration
         Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
         Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
@@ -1275,7 +1283,7 @@ int main(int argc, char *argv[]) {
 
     if(showTiming) {std::cout << "Calculate error                             "
                   << Time.ElapsedTime() << " s \n"; Time.ResetStartTime();}
-   
+
   } // end if problem == manufacturedSoln
 
 
@@ -1386,7 +1394,7 @@ const Scalar1 sourceTerm(Scalar1& x, Scalar1& y, Scalar2& epsilon,
 
   // Get advection velocity
    advectionVelocity(u, x, y, problem);
-   
+
   // Compute total flux = J_n = epsilon grad phi - u phi
   for(int i = 0; i < 2; i++){
     flux[i] = D * grad_phi[i] - phi * u[i];
@@ -1461,7 +1469,7 @@ void createMesh(ArrayOut1 &  elemToNode, ArrayOut2 & nodeCoords,
    int spaceDim = 2;
 
    // Create regular quadrilateral mesh on square domain [0,1]x[0,1]
-   if (meshType == "quad") 
+   if (meshType == "quad")
    {
       int numElems = meshSize*meshSize;
       int numNodes = (meshSize+1)*(meshSize+1);
@@ -1502,7 +1510,7 @@ void createMesh(ArrayOut1 &  elemToNode, ArrayOut2 & nodeCoords,
 
    }
    // Create regular triangular mesh on square domain [0,1]x[0,1]
-   else if (meshType == "tri") 
+   else if (meshType == "tri")
    {
       int numElems = 2*meshSize*meshSize;
       int numNodes = (meshSize+1)*(meshSize+1);
@@ -1572,7 +1580,7 @@ void createMesh(ArrayOut1 &  elemToNode, ArrayOut2 & nodeCoords,
    // For this square grid each boundary has meshSize nodes
    //  (the left corner of each boundary belongs to that boundary)
     int nx = meshSize;
-    for (int ibcnode = 0; ibcnode < nx; ibcnode++){ 
+    for (int ibcnode = 0; ibcnode < nx; ibcnode++){
 
        bcBotId(ibcnode) = ibcnode;
        bcTopId(ibcnode) = (nx+1)*nx + ibcnode + 1;
@@ -1586,7 +1594,3 @@ void createMesh(ArrayOut1 &  elemToNode, ArrayOut2 & nodeCoords,
 /**********************************************************************************/
 /************************************** END ***************************************/
 /**********************************************************************************/
-
-     
-
-

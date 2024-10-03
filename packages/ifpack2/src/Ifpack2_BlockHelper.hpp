@@ -1,48 +1,16 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_BLOCKHELPER_IMPL_HPP
 #define IFPACK2_BLOCKHELPER_IMPL_HPP
 
+#include "Ifpack2_BlockHelper_Timers.hpp"
 
 namespace Ifpack2 {
 
@@ -188,15 +156,6 @@ namespace Ifpack2 {
     };
 #endif
 
-
-#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS)
-#define IFPACK2_BLOCKHELPER_TIMER(label) TEUCHOS_FUNC_TIME_MONITOR(label);
-#define IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) execution_space().fence();
-#else
-#define IFPACK2_BLOCKHELPER_TIMER(label)
-#define IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
-#endif
-
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKHELPER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN \
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
@@ -335,6 +294,8 @@ namespace Ifpack2 {
       typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> tpetra_map_type;
       typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> tpetra_import_type;
       typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_row_matrix_type;
+      typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_crs_matrix_type;
+      typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> tpetra_crs_graph_type;
       typedef Tpetra::BlockCrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_crs_matrix_type;
       typedef typename tpetra_block_crs_matrix_type::little_block_type tpetra_block_access_view_type;
       typedef Tpetra::BlockMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_multivector_type;
@@ -375,6 +336,7 @@ namespace Ifpack2 {
       typedef Kokkos::View<internal_vector_type***,Kokkos::LayoutRight,device_type> internal_vector_type_3d_view;
       typedef Kokkos::View<internal_vector_type****,Kokkos::LayoutRight,device_type> internal_vector_type_4d_view;
       typedef Kokkos::View<internal_vector_type*****,Kokkos::LayoutRight,device_type> internal_vector_type_5d_view;
+      typedef Kokkos::View<btdm_scalar_type**,Kokkos::LayoutRight,device_type> btdm_scalar_type_2d_view;
       typedef Kokkos::View<btdm_scalar_type***,Kokkos::LayoutRight,device_type> btdm_scalar_type_3d_view;
       typedef Kokkos::View<btdm_scalar_type****,Kokkos::LayoutRight,device_type> btdm_scalar_type_4d_view;
       typedef Kokkos::View<btdm_scalar_type*****,Kokkos::LayoutRight,device_type> btdm_scalar_type_5d_view;
@@ -434,7 +396,7 @@ namespace Ifpack2 {
       void ireduce(const int sweep, const bool force = false) {
         if ( ! force && sweep % sweep_step_) return;
 
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::Ireduce");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::Ireduce", Ireduce);
 
         work_[1] = work_[0];
 #ifdef HAVE_IFPACK2_MPI
@@ -463,7 +425,7 @@ namespace Ifpack2 {
         // early return
         if (sweep <= 0) return false;
 
-        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::CheckDone");
+        IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NormManager::CheckDone", CheckDone);
 
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
@@ -511,7 +473,7 @@ namespace Ifpack2 {
     void reduceVector(const ConstUnmanaged<typename BlockHelperDetails::ImplType<MatrixType>::impl_scalar_type_1d_view> zz,
                       /* */ typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type *vals) {
       IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
-      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ReduceVector");
+      IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ReduceVector", ReduceVector);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using local_ordinal_type = typename impl_type::local_ordinal_type;

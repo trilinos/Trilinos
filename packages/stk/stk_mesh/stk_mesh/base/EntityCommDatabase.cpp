@@ -137,7 +137,7 @@ void unpack_entity_info(
   EntityKey        & key ,
   int              & owner ,
   PartVector       & parts ,
-  std::vector<Relation> & relations )
+  RelationVector& relations )
 {
   unsigned nparts = 0 ;
   unsigned nrel = 0 ;

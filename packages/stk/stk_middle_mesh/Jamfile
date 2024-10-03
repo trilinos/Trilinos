@@ -47,10 +47,12 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_middle_mesh-root-inc)
   : usage-requirements
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_middle_mesh-root-inc)
   : build-dir $(stk_middle_mesh-builddir)
   ;
@@ -78,8 +80,8 @@ local installed-developer-files =
 local xml-files =
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.

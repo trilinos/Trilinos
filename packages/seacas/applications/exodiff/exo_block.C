@@ -53,11 +53,11 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
   elmt_type          = block.topology;
 
   if (num_nodes_per_elmt < 0 || num_attr < 0) {
-    Error(fmt::format("Exo_Block<INT>::entity_load_params(): Data appears corrupt for block {}!\n"
+    Error(fmt::format(fmt::runtime("Exo_Block<INT>::entity_load_params(): Data appears corrupt for block {}!\n"
                       "\tnum elmts          = {}\n"
                       "\tnum nodes per elmt = {}\n"
                       "\tnum attributes     = {}\n"
-                      " ... Aborting...\n",
+				   " ... Aborting...\n"),
                       fmt::group_digits(numEntity), num_nodes_per_elmt, num_attr));
   }
 }

@@ -6,4 +6,4 @@ TpetraMultiVector
 TpetraVector
 BlockedVector
 #Vector
-#VectorFactory
+VectorFactory

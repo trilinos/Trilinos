@@ -671,7 +671,7 @@ namespace Iogn {
       sideset->property_add(Ioss::Property("guid", util().generate_guid(iss + 1)));
       get_region()->add(sideset);
 
-      std::vector<std::string> touching_blocks = m_generatedMesh->sideset_touching_blocks(iss + 1);
+      Ioss::NameList touching_blocks = m_generatedMesh->sideset_touching_blocks(iss + 1);
       if (touching_blocks.size() == 1) {
         std::string sd_block_name = name;
         sd_block_name += "_";

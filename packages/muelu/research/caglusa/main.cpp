@@ -1,47 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
@@ -88,8 +53,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   clp.setOption("tests", "notests", &doTests, "Test operator using known LHS & RHS.");
   bool doUnPrecSolve = true;
   clp.setOption("unPrec", "noUnPrec", &doUnPrecSolve, "Solve unpreconditioned");
+  bool failOnUnPrecSolve = true;
+  clp.setOption("failOnUnPrec", "noFailOnUnPrec", &failOnUnPrecSolve, "Set error condition if unpreconditioned solve does not converge.");
   bool doPrecSolve = true;
   clp.setOption("prec", "noPrec", &doPrecSolve, "Solve preconditioned with AMG");
+  bool debugOutput = false;
+  clp.setOption("debug", "noDebug", &debugOutput, "Debug output");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
@@ -130,21 +99,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   RCP<op_type> op;
   RCP<HOp> hop;
   {
+    comm->barrier();
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read hierarchical matrix")));
 
     op  = IOhelpers::Read(xmlHierarchical, comm);
     hop = Teuchos::rcp_dynamic_cast<HOp>(op);
+
+    comm->barrier();
   }
 
-  if (!hop.is_null())
+  if (!hop.is_null()) {
+    if (debugOutput)
+      hop->setDebugOutput(debugOutput);
     out << "Compression: " << hop->getCompression() << " of dense matrix." << std::endl;
+  }
 
   Teuchos::ParameterList problemParams;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlProblem, Teuchos::Ptr<Teuchos::ParameterList>(&problemParams), *comm);
 
   RCP<const map_type> map = op->getDomainMap();
-  RCP<matrix_type> auxOp, mass;
-  RCP<mv_type> X_ex, RHS, X;
+  RCP<matrix_type> auxOp;
+  RCP<matrix_type> mass;
+  RCP<mv_type> X_ex;
+  RCP<mv_type> RHS;
+  RCP<mv_type> X;
   RCP<coord_mv> coords;
   {
     // Read in auxiliary stuff
@@ -154,9 +132,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // Auxiliary matrix used for multigrid construction
     {
+      comm->barrier();
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary operator")));
 
       auxOp = MueLu::constructAuxiliaryOperator(op, problemParams);
+
+      comm->barrier();
     }
 
     // Mass matrix for L2 error computation
@@ -178,7 +159,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
   if (doTests) {
     // Some simple apply tests
-    Scalar opX_exRHS, MopX_exRHS, MopTX_exRHS;
+    Scalar opX_exRHS;
+    Scalar MopX_exRHS;
+    Scalar MopTX_exRHS;
     {
       op->apply(*X_ex, *X);
 
@@ -223,31 +206,37 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << "Unpreconditioned Krylov method\n";
     out << "*********************************************************\n\n";
 
-    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Unpreconditioned solve")));
+    Belos::ReturnType ret;
+    int numIts;
+    {
+      comm->barrier();
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Unpreconditioned solve")));
 
-    using MV = typename HOp::mv_type;
-    using OP = Belos::OperatorT<MV>;
+      using MV = typename HOp::mv_type;
+      using OP = Belos::OperatorT<MV>;
 
-    X->putScalar(zero);
-    RCP<OP> belosOp                                         = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
-    RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
+      X->putScalar(zero);
+      RCP<OP> belosOp                                         = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
+      RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
 
-    std::string belosType = "Pseudoblock CG";
-    auto belosSolverList  = rcpFromRef(belosParams.sublist(belosType));
+      std::string belosType = "Pseudoblock CG";
+      auto belosSolverList  = rcpFromRef(belosParams.sublist(belosType));
 
-    bool set = belosProblem->setProblem();
-    if (set == false) {
-      throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+      bool set = belosProblem->setProblem();
+      if (!set) {
+        throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+      }
+
+      // Create an iterative solver manager
+      Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+      RCP<Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosSolverList);
+      solver->setProblem(belosProblem);
+
+      // Perform solve
+      ret    = solver->solve();
+      numIts = solver->getNumIters();
+      comm->barrier();
     }
-
-    // Create an iterative solver manager
-    Belos::SolverFactory<Scalar, MV, OP> solverFactory;
-    RCP<Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosSolverList);
-    solver->setProblem(belosProblem);
-
-    // Perform solve
-    Belos::ReturnType ret = solver->solve();
-    int numIts            = solver->getNumIters();
 
     // Get the number of iterations for this solve.
     out << "Number of iterations performed for this solve: " << numIts << std::endl;
@@ -257,14 +246,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl
         << std::endl;
 
-    success &= (ret == Belos::Converged);
+    if (failOnUnPrecSolve)
+      success &= (ret == Belos::Converged);
   }
 #endif  // HAVE_MUELU_BELOS
 
   if (doPrecSolve) {
     // Solve linear system using a AMG preconditioned Krylov method
 
-    RCP<Hierarchy> auxH, H;
+    RCP<Hierarchy> auxH;
+    RCP<Hierarchy> H;
 
     {
       ////////////////////////////////////////////////////////////////
@@ -273,6 +264,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       out << "Building the auxiliary hierarchy\n";
       out << "*********************************************************\n\n";
 
+      comm->barrier();
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary hierarchy")));
 
       Teuchos::ParameterList auxParams;
@@ -284,6 +276,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
                                                  2 * comm->getSize()));
 
       auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
+      comm->barrier();
     }
 
     {
@@ -293,13 +286,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       out << "Building the main hierarchy\n";
       out << "*********************************************************\n\n";
 
+      comm->barrier();
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct hierarchy")));
 
       Teuchos::ParameterList params;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
       params.sublist("user data").set("Coordinates", coords);
 
-      H = MueLu::constructHierarchyFromAuxiliary(Teuchos::rcp_dynamic_cast<Operator>(op, true), auxH, params, out);
+      H = MueLu::constructHierarchyFromAuxiliary(op, auxH, params, out);
+      comm->barrier();
     }
 
 #ifdef HAVE_MUELU_BELOS
@@ -307,34 +302,40 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       ////////////////////////////////////////////////////////////////
       // Set up the Krylov solver
 
-      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Preconditioned solve")));
+      Belos::ReturnType ret;
+      int numIts;
+      {
+        comm->barrier();
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Preconditioned solve")));
 
-      using MV = typename HOp::mv_type;
-      using OP = Belos::OperatorT<MV>;
+        using MV = typename HOp::mv_type;
+        using OP = Belos::OperatorT<MV>;
 
-      X->putScalar(zero);
-      RCP<OP> belosOp                                         = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
-      RCP<OP> belosPrec                                       = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));
-      RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
+        X->putScalar(zero);
+        RCP<OP> belosOp                                         = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
+        RCP<OP> belosPrec                                       = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));
+        RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
 
-      std::string belosType = "Pseudoblock CG";
-      auto belosSolverList  = rcpFromRef(belosParams.sublist(belosType));
+        std::string belosType = "Pseudoblock CG";
+        auto belosSolverList  = rcpFromRef(belosParams.sublist(belosType));
 
-      belosProblem->setRightPrec(belosPrec);
+        belosProblem->setRightPrec(belosPrec);
 
-      bool set = belosProblem->setProblem();
-      if (set == false) {
-        throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+        bool set = belosProblem->setProblem();
+        if (!set) {
+          throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+        }
+
+        // Create an iterative solver manager
+        Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+        RCP<Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosSolverList);
+        solver->setProblem(belosProblem);
+
+        // Perform solve
+        ret    = solver->solve();
+        numIts = solver->getNumIters();
+        comm->barrier();
       }
-
-      // Create an iterative solver manager
-      Belos::SolverFactory<Scalar, MV, OP> solverFactory;
-      RCP<Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosSolverList);
-      solver->setProblem(belosProblem);
-
-      // Perform solve
-      Belos::ReturnType ret = solver->solve();
-      int numIts            = solver->getNumIters();
 
       // Get the number of iterations for this solve.
       out << "Number of iterations performed for this solve: " << numIts << std::endl;

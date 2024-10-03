@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """
 Script for analyzing Panzer kernel performance on next-generation
@@ -12,7 +12,6 @@ __date__    = "Dec 2018"
 
 # Import python modules for command-line options, the operating system, regular
 # expressions, and system functions
-import commands
 import argparse
 import os
 import re

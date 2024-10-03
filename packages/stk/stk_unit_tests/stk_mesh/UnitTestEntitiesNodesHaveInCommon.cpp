@@ -256,7 +256,7 @@ std::string vec_to_string(const std::vector<T> &vec)
   return s + " ]";
 }
 
-class EntitiesNodesHaveInCommon : public stk::unit_test_util::simple_fields::MeshFixture
+class EntitiesNodesHaveInCommon : public stk::unit_test_util::MeshFixture
 {
 protected:
   void expect_nodes_have_elems_in_common(stk::mesh::EntityId elemId,

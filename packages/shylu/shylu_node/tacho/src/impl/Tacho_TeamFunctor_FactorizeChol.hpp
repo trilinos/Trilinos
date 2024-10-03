@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_TEAMFUNCTOR_FACTORIZE_CHOL_HPP__
 #define __TACHO_TEAMFUNCTOR_FACTORIZE_CHOL_HPP__
@@ -46,6 +38,7 @@ private:
   supernode_info_type _info;
   ordinal_type_array _compute_mode, _level_sids;
   ordinal_type _pbeg, _pend;
+  ordinal_type _m;
 
   size_type_array _buf_ptr;
   value_type_array _buf;
@@ -60,6 +53,10 @@ public:
   TeamFunctor_FactorizeChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                             const ordinal_type_array &level_sids, const value_type_array buf, int *rval)
       : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _rval(rval) {}
+
+  inline void setGlobalSize(const ordinal_type m) {
+    _m = m;
+  }
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
     _pbeg = pbeg;
@@ -228,8 +225,8 @@ public:
             Kokkos::TeamThreadRange(member, srcsize),
             [&, srcsize, src,
              tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-              const value_type *__restrict__ ss = src + j * srcsize;
-              /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+              const value_type *KOKKOS_RESTRICT ss = src + j * srcsize;
+              /* */ value_type *KOKKOS_RESTRICT tt = tgt + j * srcsize;
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1),
                                    [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
             });
@@ -339,6 +336,8 @@ public:
   struct UpdateTag {};
   struct DummyTag {};
 
+  // ---------------------------------------
+  // Functors to factorize
   template <typename MemberType, int Var>
   KOKKOS_INLINE_FUNCTION void operator()(const FactorizeTag<Var> &, const MemberType &member) const {
     const ordinal_type lid = member.league_rank();
@@ -358,7 +357,7 @@ public:
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
         factorize_var1(member, s, T, ABR);
-      } else if (factorize_tag_type::variant == 2) {
+      } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span(), m, m);
         factorize_var2(member, s, T, ABR);

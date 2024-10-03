@@ -27,17 +27,15 @@
 #include <Kokkos_Sort.hpp>
 #include <KokkosKernels_Error.hpp>
 
-//#define SYMBOLIC_OUTPUT_INFO
+// #define SYMBOLIC_OUTPUT_INFO
 
 namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class IlutHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class URowMapType>
-void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
-                   const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
-                   URowMapType& U_row_map_d) {
+template <class IlutHandle, class ARowMapType, class AEntriesType, class LRowMapType, class URowMapType>
+void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d,
+                   LRowMapType& L_row_map_d, URowMapType& U_row_map_d) {
   using execution_space = typename ARowMapType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;

@@ -1,4 +1,10 @@
 // @HEADER
+// *****************************************************************************
+//            LOCA: Library of Continuation Algorithms Package
+//
+// Copyright 2001-2005 NTESS and the LOCA contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef LOCA_TPETRA_LOW_RANK_UPDATE_ROW_MATRIX_HPP

@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#define ELB_VERSION "5.00"
+#define ELB_VERSION "5.04 (2024/08/19)"
 #define UTIL_NAME   "nem_slice"
 #define ELB_FALSE   0
 #define ELB_TRUE    1
@@ -211,7 +211,7 @@ template <typename INT> struct Graph_Description
   std::vector<INT>              adj{};
   std::vector<INT>              start{};
   std::vector<std::vector<INT>> sur_elem;
-  Graph_Description<INT>() = default;
+  Graph_Description() = default;
 };
 
 /* Various constants */

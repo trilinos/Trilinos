@@ -56,23 +56,11 @@
 namespace stk {
 namespace mesh {
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-struct HostMeshIndex
-{
-  const stk::mesh::Bucket *bucket;
-  size_t bucketOrd;
-};
-#endif
-
 class HostMesh : public NgpMeshBase
 {
 public:
   using MeshExecSpace     = stk::ngp::HostExecSpace;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  using MeshIndex         = HostMeshIndex;
-#else
   using MeshIndex         = FastMeshIndex;
-#endif
   using BucketType        = stk::mesh::Bucket;
   using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
   using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
@@ -131,15 +119,6 @@ public:
   {
     return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
-  STK_DEPRECATED
-  ConnectedNodes get_nodes(const MeshIndex &elem) const
-  {
-    const stk::mesh::Bucket& bucket = *elem.bucket;
-    return ConnectedNodes(bucket.begin_nodes(elem.bucketOrd), bucket.num_nodes(elem.bucketOrd));
-  }
-#endif
 
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
   {
@@ -225,13 +204,6 @@ public:
     return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity) const
-  {
-    return fast_mesh_index(entity);
-  }
-#endif
-
   stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
   {
     return fast_mesh_index(entity);
@@ -257,28 +229,9 @@ STK_DEPRECATED stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity
     return *bulk->buckets(rank)[i];
   }
 
-  DeviceCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+  HostCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
   {
-    DeviceCommMapIndices commMap("CommMapIndices", 0);
-    if (bulk->parallel_size() > 1) {
-      const stk::mesh::BucketIndices & stkBktIndices = bulk->volatile_fast_shared_comm_map(rank)[proc];
-      const size_t numEntities = stkBktIndices.ords.size();
-      commMap = DeviceCommMapIndices("CommMapIndices", numEntities);
-
-      size_t stkOrdinalIndex = 0;
-      for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
-        const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
-        const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
-        for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
-          const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex];
-          const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
-          commMap[stkOrdinalIndex] = stkFastMeshIndex;
-          ++stkOrdinalIndex;
-        }
-      }
-    }
-
-    return commMap;
+    return bulk->volatile_fast_shared_comm_map(rank, proc);
   }
 
   const stk::mesh::BulkData &get_bulk_on_host() const

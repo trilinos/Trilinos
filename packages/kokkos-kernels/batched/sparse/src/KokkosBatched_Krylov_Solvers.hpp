@@ -20,110 +20,71 @@
 namespace KokkosBatched {
 
 struct SerialGMRES {
-  template <typename OperatorType, typename VectorViewType,
-            typename PrecOperatorType, typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const PrecOperatorType& P,
-                                           const KrylovHandleType& handle,
+  template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const OperatorType& A, const VectorViewType& _B, const VectorViewType& _X,
+                                           const PrecOperatorType& P, const KrylovHandleType& handle,
                                            const int GMRES_id);
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const OperatorType& A, const VectorViewType& _B, const VectorViewType& _X,
                                            const KrylovHandleType& handle);
 };
 
 template <typename MemberType>
 struct TeamGMRES {
-  template <typename OperatorType, typename VectorViewType,
-            typename PrecOperatorType, typename KrylovHandleType,
+  template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType,
             typename ArnoldiViewType, typename TMPViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X, const PrecOperatorType& P,
-      const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
-      const TMPViewType& _TMPView);
-  template <typename OperatorType, typename VectorViewType,
-            typename PrecOperatorType, typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const PrecOperatorType& P,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const PrecOperatorType& P,
+                                           const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
+                                           const TMPViewType& _TMPView);
+  template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const PrecOperatorType& P,
                                            const KrylovHandleType& handle);
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const KrylovHandleType& handle);
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const KrylovHandleType& handle);
 };
 
 template <typename MemberType>
 struct TeamVectorGMRES {
-  template <typename OperatorType, typename VectorViewType,
-            typename PrecOperatorType, typename KrylovHandleType,
+  template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType,
             typename ArnoldiViewType, typename TMPViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X, const PrecOperatorType& P,
-      const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
-      const TMPViewType& _TMPView);
-  template <typename OperatorType, typename VectorViewType,
-            typename PrecOperatorType, typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const PrecOperatorType& P,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const PrecOperatorType& P,
+                                           const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
+                                           const TMPViewType& _TMPView);
+  template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const PrecOperatorType& P,
                                            const KrylovHandleType& handle);
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const KrylovHandleType& handle);
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const KrylovHandleType& handle);
 };
 
 template <typename MemberType>
 struct TeamCG {
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType, typename TMPViewType,
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType, typename TMPViewType,
             typename TMPNormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X, const KrylovHandleType& handle,
-      const TMPViewType& _TMPView, const TMPNormViewType& _TMPNormView);
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const KrylovHandleType& handle);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const KrylovHandleType& handle,
+                                           const TMPViewType& _TMPView, const TMPNormViewType& _TMPNormView);
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const KrylovHandleType& handle);
 };
 
 template <typename MemberType>
 struct TeamVectorCG {
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType, typename TMPViewType,
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType, typename TMPViewType,
             typename TMPNormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X, const KrylovHandleType& handle,
-      const TMPViewType& _TMPView, const TMPNormViewType& _TMPNormView);
-  template <typename OperatorType, typename VectorViewType,
-            typename KrylovHandleType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const OperatorType& A,
-                                           const VectorViewType& _B,
-                                           const VectorViewType& _X,
-                                           const KrylovHandleType& handle);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const KrylovHandleType& handle,
+                                           const TMPViewType& _TMPView, const TMPNormViewType& _TMPNormView);
+  template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+                                           const VectorViewType& _X, const KrylovHandleType& handle);
 };
 
 }  // namespace KokkosBatched

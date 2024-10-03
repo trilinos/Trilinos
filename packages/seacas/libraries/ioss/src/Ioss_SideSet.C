@@ -165,12 +165,12 @@ int Ioss::SideSet::max_parametric_dimension() const
   return max_par_dim;
 }
 
-void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
+void Ioss::SideSet::block_membership(Ioss::NameList &block_members)
 {
   IOSS_FUNC_ENTER(m_);
   if (blockMembership.empty()) {
     for (auto &sb : sideBlocks) {
-      std::vector<std::string> blocks;
+      Ioss::NameList blocks;
       sb->block_membership(blocks);
       blockMembership.insert(blockMembership.end(), blocks.begin(), blocks.end());
     }
@@ -202,11 +202,11 @@ bool Ioss::SideSet::equal_(const SideSet &rhs, const bool /* quiet */) const
   }
 
   // COMPARE block membership
-  std::vector<std::string> lhs_block_membership = this->blockMembership;
-  std::vector<std::string> rhs_block_membership = rhs.blockMembership;
+  Ioss::NameList lhs_block_membership = this->blockMembership;
+  Ioss::NameList rhs_block_membership = rhs.blockMembership;
 
   for (const auto &lhs_block_member : lhs_block_membership) {
-    std::vector<std::string>::iterator it;
+    Ioss::NameList::iterator it;
     for (it = rhs_block_membership.begin(); it != rhs_block_membership.end(); ++it) {
       if ((*it) == lhs_block_member) {
         break;

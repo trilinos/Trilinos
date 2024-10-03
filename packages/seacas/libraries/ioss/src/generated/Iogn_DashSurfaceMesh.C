@@ -350,7 +350,7 @@ namespace Iogn {
     }
   }
 
-  std::vector<std::string> ExodusMesh::sideset_touching_blocks(int64_t setId) const
+  Ioss::NameList ExodusMesh::sideset_touching_blocks(int64_t setId) const
   {
     return mExodusData.sidesetTouchingBlocks[setId - 1];
   }

@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <Teuchos_ConfigDefs.hpp>
@@ -67,30 +35,29 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
 using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
-RCP<const panzer::FieldPattern> buildFieldPattern(RCP<Intrepid2::Basis<PHX::Device,double,double> > basis)
-{
+RCP<const panzer::FieldPattern> buildFieldPattern(
+  RCP<Intrepid2::Basis<PHX::Device, double, double>> basis
+) {
   // build a geometric pattern from a single basis
-  RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
-  return pattern;
+  return Teuchos::make_rcp<panzer::Intrepid2FieldPattern>(basis);
 }
 
-std::string getElementBlock(const Triplet & element,
-                                    const CartesianConnManager & connManager)
-                                    
-{
+std::string getElementBlock(
+  const Triplet & element,
+  const CartesianConnManager & connManager
+) {
   int localElmtId = connManager.computeLocalBrickElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 {
-  typedef CartesianConnManager CCM;
-  typedef panzer::DOFManager DOFManager;
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -106,19 +73,19 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
   panzer::GlobalOrdinal nx = 8, ny = 4;//, nz = 4;
   //panzer::GlobalOrdinal nx = 4, ny = 3;//, nz = 4;
   int px = np, py = 1;//, pz = 1; // npx1 processor grids
-  int bx =  1, by = 1;//, bz = 1; // 1x2 blocks
+  int bx =  1, by = 1;//, bz = 1; // 1x1 blocks
 
   const int poly_U = 4;
   const int poly_P = 3;
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_P )) );
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_U));
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_P));
 
   // build the topology
-  RCP<CCM> connManager = rcp(new CCM);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,px,py,bx,by);
 
   // build the dof manager, and assocaite with the topology
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   // add velocity (U) and PRESSURE fields to the MHD element block
@@ -203,14 +170,14 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
   // const int poly_U = 4, poly_P = 1, poly_T = 3;
   const int poly_U = 1;
 
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_U));
 
   // build the topology
-  RCP<CCM> connManager = rcp(new CCM);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,px,py,bx,by);
 
   // build the dof manager, and assocaite with the topology
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   // add velocity (U) and PRESSURE fields to the MHD element block
@@ -302,16 +269,16 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
   // build velocity, temperature and pressure fields
   const int poly_U = 4, poly_P = 1, poly_T = 3;
 
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_P )) );
-  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_T )) );
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_U));
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_P));
+  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_T));
   
   // build the topology
-  RCP<CCM> connManager = rcp(new CCM);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,px,py,bx,by);
 
   // build the dof manager, and assocaite with the topology
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   // add TEMPERATURE field to all element blocks (MHD and solid)
@@ -520,5 +487,4 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     
 }
 
-} // end unit test
-} // end panzer
+} // namespace panzer::unit_test

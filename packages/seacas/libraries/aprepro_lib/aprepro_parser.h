@@ -177,7 +177,6 @@
 #endif /* ! defined SEAMSDEBUG */
 
 namespace SEAMS {
-#line 190 "aprepro_parser.h"
 
   /// A Bison parser.
   class Parser
@@ -191,14 +190,11 @@ namespace SEAMS {
 #else
     /// Symbol semantic values.
     union value_type {
-#line 71 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
 
       double         val;    /* For returning numbers.               */
       struct symrec *tptr;   /* For returning symbol-table pointers  */
       char          *string; /* For returning quoted strings         */
       struct array  *arrval; /* For returning arrays                 */
-
-#line 215 "aprepro_parser.h"
     };
 #endif
     /// Backward compatibility (Bison 3.8).
@@ -780,7 +776,7 @@ namespace SEAMS {
 
     /// Constants.
     enum {
-      yylast_  = 1804, ///< Last index in yytable_.
+      yylast_  = 1841, ///< Last index in yytable_.
       yynnts_  = 7,    ///< Number of nonterminal symbols.
       yyfinal_ = 2     ///< Termination state number.
     };
@@ -790,6 +786,5 @@ namespace SEAMS {
   };
 
 } // namespace SEAMS
-#line 881 "aprepro_parser.h"
 
 #endif // !YY_SEAMS_APREPRO_PARSER_H_INCLUDED

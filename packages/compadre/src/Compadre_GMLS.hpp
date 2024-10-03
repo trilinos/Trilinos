@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 #ifndef _COMPADRE_GMLS_HPP_
 #define _COMPADRE_GMLS_HPP_
 
@@ -556,6 +564,14 @@ public:
             // invariant to p and n
             double x = std::abs(r/h);
             return ((1-x)+x*(1-x)*(1-2*x)) * double(x<=1.0);
+        } else if (weighting_type == WeightingFunctionType::CardinalCubicBSpline) {
+            // compactly supported on [0,h]
+            // invariant to p and n
+            // Calculate the value using a cardinal cubic b-spline kernel (often just called cubic b spline)
+            double x = std::abs(r/h);
+            if (x < 0.5) return 1.0 + 6.0 * x * x * (-1.0 + x);
+            if (x < 1.0) return 2.0 * (1.0 + x * (-3.0 + 3.0 * x - 1.0 * x * x));
+            return 0.0;
         } else if (weighting_type == WeightingFunctionType::Cosine) {
             // compactly supported on [0,h]
             double pi = 3.14159265358979323846;
@@ -1035,7 +1051,10 @@ public:
         // this allows for nonstrided views on the device later
 
         // allocate memory on device
-        _T = decltype(_T)("device tangent directions", _pc._target_coordinates.extent(0)*_dimensions*_dimensions);
+        compadre_assert_release( tangent_directions.size() % (_dimensions*_dimensions) == 0 &&
+                "tangent_directions must have cardinality #number of targets * #dimensions * #dimensions");
+        auto num_targets = tangent_directions.size() / (_dimensions*_dimensions);
+        _T = decltype(_T)("device tangent directions", num_targets*_dimensions*_dimensions);
 
         compadre_assert_release( (std::is_same<decltype(_T)::memory_space, typename view_type::memory_space>::value) &&
                 "Memory space does not match between _T and tangent_directions");
@@ -1043,7 +1062,7 @@ public:
         auto this_dimensions = _dimensions;
         auto this_T = _T;
         // rearrange data on device from data given on host
-        Kokkos::parallel_for("copy tangent vectors", Kokkos::RangePolicy<device_execution_space>(0, _pc._target_coordinates.extent(0)), KOKKOS_LAMBDA(const int i) {
+        Kokkos::parallel_for("copy tangent vectors", Kokkos::RangePolicy<device_execution_space>(0, num_targets), KOKKOS_LAMBDA(const int i) {
             scratch_matrix_right_type T(this_T.data() + i*this_dimensions*this_dimensions, this_dimensions, this_dimensions);
             for (int j=0; j<this_dimensions; ++j) {
                 for (int k=0; k<this_dimensions; ++k) {
@@ -1158,6 +1177,8 @@ public:
             _weighting_type = WeightingFunctionType::Gaussian;
         } else if (wt_to_lower == "cubicspline") {
             _weighting_type = WeightingFunctionType::CubicSpline;
+        } else if (wt_to_lower == "cardinalcubicbspline") {
+            _weighting_type = WeightingFunctionType::CardinalCubicBSpline;
         } else if (wt_to_lower == "cosine") {
             _weighting_type = WeightingFunctionType::Cosine;
         } else if (wt_to_lower == "sigmoid") {
@@ -1185,6 +1206,8 @@ public:
             _curvature_weighting_type = WeightingFunctionType::Gaussian;
         } else if (wt_to_lower == "cubicspline") {
             _curvature_weighting_type = WeightingFunctionType::CubicSpline;
+        } else if (wt_to_lower == "cardinalcubicbspline") {
+            _curvature_weighting_type = WeightingFunctionType::CardinalCubicBSpline;
         } else if (wt_to_lower == "cosine") {
             _curvature_weighting_type = WeightingFunctionType::Cosine;
         } else if (wt_to_lower == "sigmoid") {

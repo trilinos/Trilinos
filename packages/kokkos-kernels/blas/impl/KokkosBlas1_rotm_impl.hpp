@@ -36,9 +36,7 @@ struct rotm_functor {
   VectorView X, Y;
   ParamView param;
 
-  rotm_functor(VectorView const& X_, VectorView const& Y_,
-               ParamView const& param_)
-      : X(X_), Y(Y_), param(param_) {}
+  rotm_functor(VectorView const& X_, VectorView const& Y_, ParamView const& param_) : X(X_), Y(Y_), param(param_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const minus_one_tag&, const int idx) const {
@@ -63,11 +61,9 @@ struct rotm_functor {
 };
 
 template <class execution_space, class VectorView, class ParamView>
-void Rotm_Invoke(execution_space const& space, VectorView const& X,
-                 VectorView const& Y, ParamView const& param) {
+void Rotm_Invoke(execution_space const& space, VectorView const& X, VectorView const& Y, ParamView const& param) {
   using Scalar = typename VectorView::value_type;
-  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex,
-                "rotm is not defined for complex types!");
+  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex, "rotm is not defined for complex types!");
 
   Scalar const zero = Kokkos::ArithTraits<Scalar>::zero();
   Scalar const one  = Kokkos::ArithTraits<Scalar>::one();
@@ -82,24 +78,19 @@ void Rotm_Invoke(execution_space const& space, VectorView const& X,
   if (flag == -two) {
     return;
   } else if (flag == -one) {
-    Kokkos::RangePolicy<
-        execution_space,
-        typename rotm_functor<VectorView, ParamView>::minus_one_tag>
-        rotm_policy(space, 0, X.extent(0));
+    Kokkos::RangePolicy<execution_space, typename rotm_functor<VectorView, ParamView>::minus_one_tag> rotm_policy(
+        space, 0, X.extent(0));
     Kokkos::parallel_for("KokkosBlas1::rotm_minus_one", rotm_policy, myFunc);
   } else if (flag == zero) {
-    Kokkos::RangePolicy<execution_space,
-                        typename rotm_functor<VectorView, ParamView>::zero_tag>
-        rotm_policy(space, 0, X.extent(0));
+    Kokkos::RangePolicy<execution_space, typename rotm_functor<VectorView, ParamView>::zero_tag> rotm_policy(
+        space, 0, X.extent(0));
     Kokkos::parallel_for("KokkosBlas1::rotm_zero", rotm_policy, myFunc);
   } else if (flag == one) {
-    Kokkos::RangePolicy<execution_space,
-                        typename rotm_functor<VectorView, ParamView>::one_tag>
-        rotm_policy(space, 0, X.extent(0));
+    Kokkos::RangePolicy<execution_space, typename rotm_functor<VectorView, ParamView>::one_tag> rotm_policy(
+        space, 0, X.extent(0));
     Kokkos::parallel_for("KokkosBlas1::rotm_one", rotm_policy, myFunc);
   } else {
-    throw std::runtime_error(
-        "KokkosBlas::rotm: param(0) is not -2, -1, 0 or 1!");
+    throw std::runtime_error("KokkosBlas::rotm: param(0) is not -2, -1, 0 or 1!");
   }
 }
 

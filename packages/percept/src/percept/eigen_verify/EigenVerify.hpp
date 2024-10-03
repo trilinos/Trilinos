@@ -32,7 +32,8 @@ namespace stk
     class EigenVerify
     {
     public:
-      EigenVerify() : 
+      EigenVerify(stk::ParallelMachine comm_in) : 
+    comm(comm_in),
 	num_meshes(2),
 	meshes_in(num_meshes,""),
 	mesh_out(),
@@ -64,6 +65,7 @@ namespace stk
 
       int get_num_time_steps();
 
+      stk::ParallelMachine comm;
       const int num_meshes;
 
       std::vector<std::string> meshes_in;

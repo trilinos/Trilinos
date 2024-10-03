@@ -48,6 +48,9 @@ void IOShell::Interface::enroll_options()
                   "Database type for output file:"
 #if defined(SEACAS_HAVE_EXODUS)
                   " exodus"
+#if defined(SEACAS_HAVE_EXONULL)
+                  " exonull"
+#endif
 #endif
 #if defined(SEACAS_HAVE_CGNS)
                   " cgns"
@@ -55,7 +58,7 @@ void IOShell::Interface::enroll_options()
 #if defined(SEACAS_HAVE_FAODEL)
                   " faodel"
 #endif
-                  ".\n\t\tIf not specified, guess from extension or exodus is the default.",
+                  " null.\n\t\tIf not specified, guess from extension or exodus is the default.",
                   "unknown");
   options_.enroll("compare", Ioss::GetLongOption::NoValue,
                   "Compare the contents of the INPUT and OUTPUT files.", nullptr);
@@ -203,19 +206,25 @@ void IOShell::Interface::enroll_options()
                   "\t\t(if auto) by `int((max_entry+1)/proc_count)`.",
                   nullptr);
 
+  options_.enroll("line_decomp", Ioss::GetLongOption::OptionalValue,
+                  "Generate the `lines` or `columns` of elements from the specified surface(s).\n"
+                  "\t\tSpecify a comma-separated list of surface/sideset names from which the "
+                  "lines will grow.\n"
+                  "\t\tDo not split a line/column across processors.\n"
+                  "\t\tOmit or enter 'ALL' for all surfaces in model.",
+                  nullptr, "ALL");
+
   options_.enroll("external", Ioss::GetLongOption::NoValue,
                   "Files are decomposed externally into a file-per-processor in a parallel run.",
                   nullptr);
 
-#if defined(SEACAS_HAVE_CGNS)
-  options_.enroll(
-      "add_processor_id_field", Ioss::GetLongOption::NoValue,
-      "For CGNS, add a cell-centered field whose value is the processor id of that cell", nullptr);
-#endif
+  options_.enroll("add_processor_id_field", Ioss::GetLongOption::NoValue,
+                  "Add a cell-centered field whose value is the processor id of that cell",
+                  nullptr);
 
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
-                  "a parallel run; 0 to disable",
+                  "a parallel run;\n\t\t0 to disable",
                   nullptr, nullptr, true);
 #endif
 
@@ -227,10 +236,11 @@ void IOShell::Interface::enroll_options()
       "If non-zero, then put <$val> timesteps in each file. Then close file and start new file.",
       nullptr);
 
-  options_.enroll("split_cyclic", Ioss::GetLongOption::MandatoryValue,
-                  "If non-zero, then the `split_times` timesteps will be put into <$val> files and "
-                  "then recycle filenames.",
-                  nullptr);
+  options_.enroll(
+      "split_cyclic", Ioss::GetLongOption::MandatoryValue,
+      "If non-zero, then the `split_times` timesteps will be put into <$val> files\n\t\tand "
+      "then recycle filenames.",
+      nullptr);
 
   options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
                   "put transient data for each timestep in separate file (EXPERIMENTAL)", nullptr);
@@ -276,7 +286,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
-                  "\t\t when recognizing vector, tensor fields. Enter '0' for no separator",
+                  "\t\twhen recognizing vector, tensor fields. Enter '0' for no separator",
                   "_");
 
   options_.enroll("disable_field_recognition", Ioss::GetLongOption::NoValue,
@@ -305,8 +315,20 @@ void IOShell::Interface::enroll_options()
                   "\t\tDefault is to ignore empty blocks.",
                   nullptr);
 
+  options_.enroll("omit_blocks", Ioss::GetLongOption::MandatoryValue,
+                  "comma-separated list of element block names that should NOT be transferred to "
+                  "output database\n"
+                  "\t\tNote that currently any nodes connected to only empty blocks will be "
+                  "retained in the output.",
+                  nullptr);
+
+  options_.enroll("omit_sets", Ioss::GetLongOption::MandatoryValue,
+                  "comma-separated list of nodeset/edgeset/faceset/elemset/sideset names\n"
+                  "\t\tthat should NOT be transferred to output database",
+                  nullptr);
+
   options_.enroll("boundary_sideset", Ioss::GetLongOption::NoValue,
-                  "Output a sideset for all boundary faces of the model", nullptr);
+                  "Output a sideset for all boundary faces of the model", nullptr, nullptr, true);
 
   options_.enroll(
       "delay", Ioss::GetLongOption::MandatoryValue,
@@ -318,12 +340,12 @@ void IOShell::Interface::enroll_options()
                   "Data type used internally to store field data\n"
                   "\t\tOptions are: POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, "
                   "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE",
-                  "POINTER", nullptr, true);
+                  "POINTER");
 #else
   options_.enroll("data_storage", Ioss::GetLongOption::MandatoryValue,
                   "Data type used internally to store field data\n"
                   "\t\tOptions are: POINTER, STD_VECTOR",
-                  "POINTER", nullptr, true);
+                  "POINTER");
 #endif
 
   options_.enroll("debug", Ioss::GetLongOption::NoValue, "turn on debugging output", nullptr);
@@ -497,9 +519,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
 #if defined(SEACAS_HAVE_MPI)
-#if defined(SEACAS_HAVE_CGNS)
   add_processor_id_field = (options_.retrieve("add_processor_id_field") != nullptr);
-#endif
 
 #if !defined(NO_ZOLTAN_SUPPORT)
   if (options_.retrieve("rcb") != nullptr) {
@@ -541,6 +561,11 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   if (options_.retrieve("variable") != nullptr) {
     decomp_method = "VARIABLE";
     decomp_extra  = options_.get_option_value("variable", decomp_extra);
+  }
+
+  if (options_.retrieve("line_decomp") != nullptr) {
+    line_decomp  = true;
+    decomp_extra = options_.get_option_value("line_decomp", decomp_extra);
   }
 
   if (options_.retrieve("cyclic") != nullptr) {
@@ -607,6 +632,26 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
   {
+    const char *temp = options_.retrieve("omit_blocks");
+    if (temp != nullptr) {
+      auto omit_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : omit_str) {
+        omitted_blocks.push_back(str);
+      }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("omit_sets");
+    if (temp != nullptr) {
+      auto omit_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : omit_str) {
+        omitted_sets.push_back(str);
+      }
+    }
+  }
+
+  {
     const char *temp = options_.retrieve("surface_split_scheme");
     if (temp != nullptr) {
       if (std::strcmp(temp, "TOPOLOGY") == 0) {
@@ -631,9 +676,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
       if (std::strcmp(temp, "POINTER") == 0) {
         data_storage_type = 1;
       }
-      else if (std::strcmp(temp, "STD_VECTOR") == 0) {
-        data_storage_type = 2;
-      }
 #ifdef SEACAS_HAVE_KOKKOS
       else if (std::strcmp(temp, "KOKKOS_VIEW_1D") == 0) {
         data_storage_type = 3;
@@ -650,10 +692,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
         if (my_processor == 0) {
           fmt::print(stderr, "ERROR: Option data_storage must be one of\n");
 #ifdef SEACAS_HAVE_KOKKOS
-          fmt::print(stderr, "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
+          fmt::print(stderr, "       POINTER, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
                              "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n");
 #else
-          fmt::print(stderr, "       POINTER, or STD_VECTOR\n");
+          fmt::print(stderr, "       POINTER\n");
 #endif
         }
         return false;

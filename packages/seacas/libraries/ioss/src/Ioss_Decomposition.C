@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <numeric>
 
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -138,29 +139,29 @@ namespace {
 
 namespace Ioss {
 
-  IOSS_EXPORT const std::vector<std::string> &valid_decomp_methods()
+  IOSS_EXPORT const Ioss::NameList &valid_decomp_methods()
   {
-    static const std::vector<std::string> valid_methods{"EXTERNAL"
+    static const Ioss::NameList valid_methods{"EXTERNAL"
 #ifdef SEACAS_HAVE_MPI
-                                                        ,
-                                                        "LINEAR",
-                                                        "MAP",
-                                                        "VARIABLE"
+                                              ,
+                                              "LINEAR",
+                                              "MAP",
+                                              "VARIABLE"
 #if !defined(NO_ZOLTAN_SUPPORT)
-                                                        ,
-                                                        "BLOCK",
-                                                        "CYCLIC",
-                                                        "RANDOM",
-                                                        "RCB",
-                                                        "RIB",
-                                                        "HSFC"
+                                              ,
+                                              "BLOCK",
+                                              "CYCLIC",
+                                              "RANDOM",
+                                              "RCB",
+                                              "RIB",
+                                              "HSFC"
 #endif
 #if !defined(NO_PARMETIS_SUPPORT)
-                                                        ,
-                                                        "KWAY",
-                                                        "KWAY_GEOM",
-                                                        "GEOM_KWAY",
-                                                        "METIS_SFC"
+                                              ,
+                                              "KWAY",
+                                              "KWAY_GEOM",
+                                              "GEOM_KWAY",
+                                              "METIS_SFC"
 #endif
 #endif
     };
@@ -301,6 +302,13 @@ namespace Ioss {
         props.get("PARMETIS_COMMON_NODE_COUNT").get_int() > 0) {
       m_commonNodeCount = props.get("PARMETIS_COMMON_NODE_COUNT").get_int();
     }
+
+    if (props.exists("LINE_DECOMPOSITION")) {
+      // The value of the property should be a comma-separated list of surface/sideset names from
+      // which the lines will grow, or the value "ALL" for all surfaces in the model.
+      m_lineDecomp  = true;
+      m_decompExtra = props.get("LINE_DECOMPOSITION").get_string();
+    }
   }
 
   template IOSS_EXPORT void
@@ -419,6 +427,10 @@ namespace Ioss {
                  "\nIOSS: Using decomposition method '{}' for {} elements on {} mpi ranks.\n",
                  m_method, fmt::group_digits(m_globalElementCount), m_processorCount);
 
+      if (!m_decompExtra.empty()) {
+        fmt::print(Ioss::OUTPUT(), "\tDecomposition extra data: '{}'.\n", m_decompExtra);
+      }
+
       if ((size_t)m_processorCount > m_globalElementCount) {
         fmt::print(Ioss::WarnOut(),
                    "Decomposing {} elements across {} mpi ranks will "
@@ -450,6 +462,12 @@ namespace Ioss {
       guided_decompose();
     }
     if (m_method == "MAP") {
+      guided_decompose();
+    }
+    if (m_method == "LINE_DECOMP") {
+      // Currently used for line decomposition with another decomposition type.
+      // The line-modified decomposition is done prior to this and builds the
+      // `m_elementToProc` which is then used here to decompose the elements...
       guided_decompose();
     }
 
@@ -666,7 +684,7 @@ namespace Ioss {
   template <typename INT> void Decomposition<INT>::guided_decompose()
   {
     show_progress(__func__);
-    assert(m_method == "MAP" || m_method == "VARIABLE");
+    assert(m_method == "MAP" || m_method == "VARIABLE" || m_method == "LINE_DECOMP");
     // - Read my portion of the map / variable.
     // - count # of exports to each rank
     // -- exportElementCount[proc]
@@ -675,13 +693,7 @@ namespace Ioss {
     // - communicate to all proc -- becomes   importElementMap.
     // Create `exportElementIndex` from `exportElementCount`
 
-    std::string label;
-    if (m_method == "MAP") {
-      label = "map";
-    }
-    else {
-      label = "variable";
-    }
+    std::string label = m_method;
 
     // If the "m_decompExtra" string contains a comma, then the
     // value following the comma is either an integer "scale"
@@ -699,7 +711,7 @@ namespace Ioss {
     // [0..m_processorCount).
     double scale = 1.0;
     auto   pos   = m_decompExtra.find(",");
-    if (pos != std::string::npos) {
+    if (m_method != "LINE_DECOMP" && pos != std::string::npos) {
       // Extract the string following the comma...
       auto scale_str = m_decompExtra.substr(pos + 1);
       if (scale_str == "AUTO" || scale_str == "auto") {
@@ -1080,6 +1092,7 @@ namespace Ioss {
 #endif
 
 #if !defined(NO_ZOLTAN_SUPPORT)
+
   template <typename INT> void Decomposition<INT>::zoltan_decompose(Zoltan &zz)
   {
     show_progress(__func__);

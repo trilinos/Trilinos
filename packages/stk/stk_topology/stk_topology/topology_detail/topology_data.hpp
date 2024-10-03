@@ -830,6 +830,89 @@ struct topology_data<topology::SHELL_TRI_6>
 };
 
 //***************************************************************************
+
+template <>
+struct topology_data<topology::SHELL_TRI_3_ALL_FACE_SIDES>
+  : public topology_data<topology::TRI_3>
+{
+  static constexpr topology::topology_t value = topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  static constexpr topology::topology_t base = topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_3,
+                                                                  topology::TRI_3,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2};
+
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr uint8_t dimension = 3;
+  static constexpr uint8_t num_faces = 5;
+
+  static constexpr uint8_t face_node_ordinals_offsets[] = {0, 3, 6, 8, 10, 12};
+  static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2,
+                                                          0, 2, 1,
+                                                          0, 1,
+                                                          1, 2,
+                                                          2, 0};
+};
+
+template <>
+struct topology_data<topology::SHELL_TRI_4_ALL_FACE_SIDES>
+  : public topology_data<topology::TRI_4>
+{
+  static constexpr topology::topology_t value = topology::SHELL_TRI_4_ALL_FACE_SIDES;
+  static constexpr topology::topology_t base = topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_4,
+                                                                  topology::TRI_4,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2};
+
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr uint8_t dimension = 3;
+  static constexpr uint8_t num_faces = 5;
+
+  static constexpr uint8_t face_node_ordinals_offsets[] = {0, 4, 8, 10, 12, 14};
+  static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2,  3,
+                                                          0, 2, 1,  3,
+                                                          0, 1,
+                                                          1, 2,
+                                                          2, 0};
+};
+
+template <>
+struct topology_data<topology::SHELL_TRI_6_ALL_FACE_SIDES>
+  : public topology_data<topology::TRI_6>
+{
+  static constexpr topology::topology_t value = topology::SHELL_TRI_6_ALL_FACE_SIDES;
+  static constexpr topology::topology_t base = topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3};
+
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr uint8_t dimension = 3;
+  static constexpr uint8_t num_faces = 5;
+
+  static constexpr uint8_t face_node_ordinals_offsets[] = {0, 6, 12, 15, 18, 21};
+  static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2,  3, 4, 5,
+                                                          0, 2, 1,  5, 4, 3,
+                                                          0, 1, 3,
+                                                          1, 2, 4,
+                                                          2, 0, 5};
+};
+
+//***************************************************************************
 // topology::QUADRILATERAL -- topology::FACE_RANK
 // defined on spatial dimension 3d
 // 4, 8, or 9 nodes with 4 edges
@@ -1149,6 +1232,94 @@ struct topology_data<topology::SHELL_QUAD_9>
   static constexpr uint8_t face_node_ordinals_offsets[] = {0, 9, 18};
   static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2, 3,  4, 5, 6, 7,  8,
                                                           0, 3, 2, 1,  7, 6, 5, 4,  8};
+};
+
+//***************************************************************************
+
+template <>
+struct topology_data<topology::SHELL_QUAD_4_ALL_FACE_SIDES>
+  : public topology_data<topology::QUAD_4>
+{
+  static constexpr topology::topology_t value = topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+  static constexpr topology::topology_t base = topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2,
+                                                                  topology::SHELL_SIDE_BEAM_2};
+
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr uint8_t dimension = 3;
+  static constexpr uint8_t num_faces = 6;
+
+  static constexpr uint8_t face_node_ordinals_offsets[] = {0, 4, 8, 10, 12, 14, 16};
+  static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2, 3,
+                                                          0, 3, 2, 1,
+                                                          0, 1,
+                                                          1, 2,
+                                                          2, 3,
+                                                          3, 0};
+};
+
+template <>
+struct topology_data<topology::SHELL_QUAD_8_ALL_FACE_SIDES>
+  : public topology_data<topology::QUAD_8>
+{
+  static constexpr topology::topology_t value = topology::SHELL_QUAD_8_ALL_FACE_SIDES;
+  static constexpr topology::topology_t base = topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3};
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr uint8_t dimension = 3;
+  static constexpr uint8_t num_faces = 6;
+
+  static constexpr uint8_t face_node_ordinals_offsets[] = {0, 8, 16, 19, 22, 25, 28};
+  static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2, 3,  4, 5, 6, 7,
+                                                          0, 3, 2, 1,  7, 6, 5, 4,
+                                                          0, 1, 4,
+                                                          1, 2, 5,
+                                                          2, 3, 6,
+                                                          3, 0, 7};
+};
+
+template <>
+struct topology_data<topology::SHELL_QUAD_9_ALL_FACE_SIDES>
+  : public topology_data<topology::QUAD_9>
+{
+  static constexpr topology::topology_t value = topology::SHELL_QUAD_9_ALL_FACE_SIDES;
+  static constexpr topology::topology_t base = topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3,
+                                                                  topology::SHELL_SIDE_BEAM_3};
+      
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr uint8_t dimension = 3;
+  static constexpr uint8_t num_faces = 6;
+
+  static constexpr uint8_t face_node_ordinals_offsets[] = {0, 9, 18, 21, 24, 27, 30};
+  static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2, 3,  4, 5, 6, 7,  8,
+                                                          0, 3, 2, 1,  7, 6, 5, 4,  8,
+                                                          0, 1, 4,
+                                                          1, 2, 5,
+                                                          2, 3, 6,
+                                                          3, 0, 7};
 };
 
 //***************************************************************************

@@ -24,10 +24,8 @@ namespace KokkosBlas {
 namespace Impl {
 
 template <class Scalar, class Magnitude,
-          typename std::enable_if<!Kokkos::ArithTraits<Scalar>::is_complex,
-                                  bool>::type = true>
-KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c,
-                                      Scalar* s) {
+          typename std::enable_if<!Kokkos::ArithTraits<Scalar>::is_complex, bool>::type = true>
+KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar* s) {
   const Scalar one  = Kokkos::ArithTraits<Scalar>::one();
   const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
 
@@ -40,12 +38,11 @@ KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c,
   } else {
     const Scalar scaled_a = *a / numerical_scaling;
     const Scalar scaled_b = *b / numerical_scaling;
-    Scalar norm = Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b) *
-                  numerical_scaling;
-    Scalar sign = Kokkos::abs(*a) > Kokkos::abs(*b) ? *a : *b;
-    norm        = Kokkos::copysign(norm, sign);
-    *c          = *a / norm;
-    *s          = *b / norm;
+    Scalar norm           = Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b) * numerical_scaling;
+    Scalar sign           = Kokkos::abs(*a) > Kokkos::abs(*b) ? *a : *b;
+    norm                  = Kokkos::copysign(norm, sign);
+    *c                    = *a / norm;
+    *s                    = *b / norm;
 
     Scalar z = one;
     if (Kokkos::abs(*a) > Kokkos::abs(*b)) {
@@ -60,10 +57,8 @@ KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c,
 }
 
 template <class Scalar, class Magnitude,
-          typename std::enable_if<Kokkos::ArithTraits<Scalar>::is_complex,
-                                  bool>::type = true>
-KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c,
-                                      Scalar* s) {
+          typename std::enable_if<Kokkos::ArithTraits<Scalar>::is_complex, bool>::type = true>
+KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar* s) {
   using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
   const Scalar one        = Kokkos::ArithTraits<Scalar>::one();
@@ -78,13 +73,11 @@ KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c,
   } else {
     const Scalar scaled_a = Kokkos::abs(*a / numerical_scaling);
     const Scalar scaled_b = Kokkos::abs(*b / numerical_scaling);
-    mag_type norm =
-        Kokkos::abs(Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b)) *
-        numerical_scaling;
-    Scalar unit_a = *a / Kokkos::abs(*a);
-    *c            = Kokkos::abs(*a) / norm;
-    *s            = unit_a * Kokkos::conj(*b) / norm;
-    *a            = unit_a * norm;
+    mag_type norm         = Kokkos::abs(Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b)) * numerical_scaling;
+    Scalar unit_a         = *a / Kokkos::abs(*a);
+    *c                    = Kokkos::abs(*a) / norm;
+    *s                    = unit_a * Kokkos::conj(*b) / norm;
+    *a                    = unit_a * norm;
   }
 }
 
@@ -94,20 +87,17 @@ struct rotg_functor {
   MViewType c;
   SViewType s;
 
-  rotg_functor(SViewType const& a_, SViewType const& b_, MViewType const& c_,
-               SViewType const& s_)
+  rotg_functor(SViewType const& a_, SViewType const& b_, MViewType const& c_, SViewType const& s_)
       : a(a_), b(b_), c(c_), s(s_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(int const) const {
-    rotg_impl(a.data(), b.data(), c.data(), s.data());
-  }
+  void operator()(int const) const { rotg_impl(a.data(), b.data(), c.data(), s.data()); }
 };
 
 /// \brief Compute Givens rotation coefficients.
 template <class ExecutionSpace, class SViewType, class MViewType>
-void Rotg_Invoke(ExecutionSpace const& space, SViewType const& a,
-                 SViewType const& b, MViewType const& c, SViewType const& s) {
+void Rotg_Invoke(ExecutionSpace const& space, SViewType const& a, SViewType const& b, MViewType const& c,
+                 SViewType const& s) {
   Kokkos::RangePolicy<ExecutionSpace> rotg_policy(space, 0, 1);
   rotg_functor rotg_func(a, b, c, s);
   Kokkos::parallel_for("KokkosBlas::rotg", rotg_policy, rotg_func);

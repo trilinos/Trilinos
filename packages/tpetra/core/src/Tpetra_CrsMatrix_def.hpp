@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
@@ -1764,7 +1734,7 @@ namespace Tpetra {
     // details; look for GCC_WORKAROUND macro definition.
     if (numInserted > 0) {
       const size_t startOffset = oldNumEnt;
-      memcpy (&oldRowVals[startOffset], &newRowVals[0],
+      memcpy ((void*) &oldRowVals[startOffset], &newRowVals[0],
               numInserted * sizeof (impl_scalar_type));
     }
   }
@@ -5092,16 +5062,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // The apply helper does not exist, so create it.
       // Decide now whether to use the imbalanced row path, or the default.
       bool useMergePath = false;
-      LocalOrdinal nrows = getLocalNumRows();
-      LocalOrdinal maxRowImbalance = 0;
-      if(nrows != 0)
-        maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       //TODO: when https://github.com/kokkos/kokkos-kernels/issues/2166 is fixed and,
       //we can use SPMV_MERGE_PATH for the native spmv as well.
       //Take out this ifdef to enable that.
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-        useMergePath = true;
+      //
+      //Until then, only use SPMV_MERGE_PATH when calling cuSPARSE.
+      if constexpr(std::is_same_v<execution_space, Kokkos::Cuda>) {
+        LocalOrdinal nrows = getLocalNumRows();
+        LocalOrdinal maxRowImbalance = 0;
+        if(nrows != 0)
+          maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+
+        if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+          useMergePath = true;
+      }
 #endif
       applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map,
           useMergePath ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT);

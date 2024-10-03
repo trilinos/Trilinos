@@ -21,7 +21,7 @@ void test_load_balancing_when_one_proc_has_no_mesh(stk::mesh::BulkData& stkMeshB
 void move_elements_from_proc_2_to_proc_0(stk::mesh::BulkData& bulkData);
 void test_that_empty_mesh_exists_on_proc_2(const stk::mesh::BulkData& stkMeshBulkData);
 
-class EmptyMeshOnProc : public stk::unit_test_util::simple_fields::MeshFixture {};
+class EmptyMeshOnProc : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(EmptyMeshOnProc, testEmptyMeshOnProcNoAura)
 {

@@ -187,12 +187,11 @@ public:
     for (stk::mesh::NgpField<T>* field : m_ngpFields)
     {
       stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
-      const stk::mesh::BucketIndices & stkBktIndices = m_ngpMesh.get_bulk_on_host().volatile_fast_shared_comm_map(field->get_rank())[proc];
-      for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
-        const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
-        const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
+      stk::mesh::HostCommMapIndices  commMapIndices = m_ngpMesh.get_bulk_on_host().volatile_fast_shared_comm_map(field->get_rank(), proc);
+      for (size_t i = 0; i < commMapIndices.extent(0); ++i) {
+        const unsigned bucketId = commMapIndices(i).bucket_id;
         const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
-        numValues += numScalarsPerEntity * numEntitiesThisBucket;
+        numValues += numScalarsPerEntity;
       }
     }
   }

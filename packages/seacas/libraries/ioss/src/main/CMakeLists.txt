@@ -306,12 +306,14 @@ TRIBITS_ADD_TEST(
   COMM mpi serial
  )
 
+IF (ENABLE_ExoNull)
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_exonull
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
  )
+ENDIF()
 
 if (TPL_ENABLE_MPI)
   set(EXTERNAL "--compose=external")
@@ -324,12 +326,14 @@ TRIBITS_ADD_TEST(
   COMM mpi serial
  )
 
+IF (ENABLE_ExoNull)
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_exonull_fpp
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
  )
+ENDIF()
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus

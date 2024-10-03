@@ -49,7 +49,10 @@ void create_parallel_output_with_comm(int procId, MPI_Comm comm);
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void create_parallel_output(int procId);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void create_parallel_output_with_comm(int procId, MPI_Comm comm);
 
 } // namespace simple_fields

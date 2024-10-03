@@ -27,7 +27,7 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
   }
 }
 
-class HexShellShell : public stk::unit_test_util::simple_fields::MeshFixture
+class HexShellShell : public stk::unit_test_util::MeshFixture
 {
 protected:
   HexShellShell()
@@ -462,7 +462,7 @@ public:
   const stk::mesh::impl::SparseGraph& my_get_coincident_graph() {return m_coincidentGraph; }
 };
 
-class ShellMeshModification : public stk::unit_test_util::simple_fields::MeshFixture
+class ShellMeshModification : public stk::unit_test_util::MeshFixture
 {
 protected:
   ShellMeshModification()

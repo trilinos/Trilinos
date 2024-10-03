@@ -85,7 +85,6 @@ TEST(UnitTestRootTopology, TestRootTopologyPartGetters)
 {
   const int spatial_dim = 3;
   stk::mesh::MetaData meta(spatial_dim);
-  meta.use_simple_fields();
   meta.commit();
 
   for (unsigned i = 0; i < num_test_topologies; ++i)
@@ -122,7 +121,6 @@ TEST(UnitTestRootTopology, TestRootTopologySubsets)
 {
   const int spatial_dim = 3;
   stk::mesh::MetaData meta(spatial_dim);
-  meta.use_simple_fields();
 
   for (unsigned i = 0; i < num_test_topologies; ++i)
   {

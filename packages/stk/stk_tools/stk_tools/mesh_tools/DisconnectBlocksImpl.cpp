@@ -1,7 +1,15 @@
 #include "stk_io/IossBridge.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/DestroyRelations.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/SideSetEntry.hpp"
+#include "stk_mesh/base/SideSetUtil.hpp"
+#include "stk_mesh/base/SkinMeshUtil.hpp"
+#include "stk_mesh/base/ExodusTranslator.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocks.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
@@ -85,6 +93,26 @@ ReconnectGroup get_group_for_reconnect_node(const DisconnectGroup& disconnectGro
   return reconnectGroup;
 }
 
+bool is_in_disconnected_block(const stk::mesh::BulkData& bulk, const stk::mesh::Entity elem, const BlockPair& blockPair)
+{
+  return bulk.bucket(elem).member(*blockPair.second);
+}
+
+bool is_in_disconnected_block(const stk::mesh::Bucket & elemBucket, const BlockPair& blockPair)
+{
+  return elemBucket.member(*blockPair.second);
+}
+
+bool is_in_preserved_block(const stk::mesh::BulkData& bulk, const stk::mesh::Entity elem, const BlockPair& blockPair)
+{
+  return bulk.bucket(elem).member(*blockPair.first);
+}
+
+bool is_in_preserved_block(const stk::mesh::Bucket & elemBucket, const BlockPair& blockPair)
+{
+  return elemBucket.member(*blockPair.first);
+}
+
 void insert_parts_uniquely(const stk::mesh::PartVector& fromParts, stk::mesh::PartVector& toParts)
 {
   stk::mesh::PartLess compare;
@@ -108,13 +136,12 @@ void add_to_sharing_lookup(const stk::mesh::BulkData& bulk, stk::mesh::Entity no
 
 void create_new_node_map_entry(const stk::mesh::BulkData& bulk, const stk::mesh::Entity node, const BlockPair& blockPair, LinkInfo& info)
 {
-  const stk::mesh::Part & secondBlock = *blockPair.second;
   const stk::mesh::Entity * elems = bulk.begin_elements(node);
   const unsigned numElems = bulk.num_elements(node);
   bool needToCloneNode = false;
   for (unsigned i = 0; i < numElems; ++i) {
     const stk::mesh::Bucket & elemBucket = bulk.bucket(elems[i]);
-    if (elemBucket.member(secondBlock) && elemBucket.owned()) {
+    if (is_in_disconnected_block(elemBucket, blockPair) && elemBucket.owned()) {
       needToCloneNode = true;
       break;
     }
@@ -161,6 +188,66 @@ void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
   for (const stk::mesh::Bucket * bucket : nodesOnBoundaryBetweenBlocks) {
     for (const stk::mesh::Entity node : *bucket) {
       create_new_node_map_entry(bulk, node, blockPair, info);
+    }
+  }
+}
+
+void add_faces_to_disconnect(stk::mesh::BulkData& bulk,
+                             BlockPair const& blockPair,
+                             LinkInfo& info)
+{
+  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  const stk::mesh::Part& firstBlock  = *blockPair.first;
+  const stk::mesh::Part& secondBlock = *blockPair.second;
+
+  auto firstBlockSurfaces = meta.get_surfaces_touched_by_block(blockPair.first);
+  auto secondBlockSurfaces = meta.get_surfaces_touched_by_block(blockPair.second);
+
+  auto check_is_in_blocks = [](auto& inBlock, auto& surfaces, auto partOrdinal) {
+    for (auto surface : surfaces) {
+      if (partOrdinal == surface->mesh_meta_data_ordinal()) {
+        inBlock = true;
+        break;
+      }
+    }};
+
+  stk::mesh::Selector blockBoundary = firstBlock & secondBlock &
+                                      (meta.locally_owned_part() | meta.globally_shared_part());
+  const stk::mesh::BucketVector & onBlockBoundaryFaces = bulk.get_buckets(meta.side_rank(), blockBoundary);
+  for (auto bucket : onBlockBoundaryFaces) {
+    stk::mesh::PartVector bucketSidesetParts;
+
+    const stk::mesh::PartVector& superset = bucket->supersets();
+    for (stk::mesh::Part* part : superset) {
+      if (stk::mesh::is_side_set(*part)) {
+        bucketSidesetParts.push_back(part);
+      }
+    }
+
+    for (auto face : *bucket) {
+      auto elems = bulk.begin_elements(face);
+      auto numElems = bulk.num_elements(face);
+      STK_ThrowRequire(numElems == 2u);
+
+      std::pair<bool, bool> isInBlocks = {false, false};
+      for (auto part : bucketSidesetParts) {
+        auto ordinal = part->mesh_meta_data_ordinal();
+
+        check_is_in_blocks(isInBlocks.first, firstBlockSurfaces, ordinal);
+        check_is_in_blocks(isInBlocks.second, secondBlockSurfaces, ordinal);
+      }
+
+      auto ordinals = bulk.begin_ordinals(face, stk::topology::ELEM_RANK);
+
+      for (unsigned i = 0; i < numElems; ++i) {
+        if (is_in_disconnected_block(bulk, elems[i], blockPair)) {
+          InternalFaceInfo faceInfo(blockPair,
+                                    elems[1u-i], ordinals[1u-i],
+                                    elems[i], ordinals[i], face,
+                                    isInBlocks);
+          stk::util::insert_keep_sorted_and_unique(faceInfo, info.internalSides);
+        }
+      }
     }
   }
 }
@@ -249,43 +336,93 @@ std::vector<BlockPair> get_block_pairs_to_disconnect(const stk::mesh::BulkData &
   return blockPairsToDisconnect;
 }
 
-void update_disconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::Entity node, stk::mesh::Entity newNode,
+bool update_disconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::Entity node, stk::mesh::Entity newNode,
                                          stk::mesh::Entity entity)
 {
+  bool updatedNode = false;
   unsigned numNodes = bulk.num_connectivity(entity, stk::topology::NODE_RANK);
-  const stk::mesh::Entity * elemNodes = bulk.begin(entity, stk::topology::NODE_RANK);
+  const stk::mesh::Entity * entityNodes = bulk.begin(entity, stk::topology::NODE_RANK);
   stk::mesh::ConnectivityOrdinal const * nodeOrdinals = bulk.begin_ordinals(entity, stk::topology::NODE_RANK);
   for (unsigned iNode = 0; iNode < numNodes; ++iNode) {
-    if (elemNodes[iNode] == node) {
-      bulk.destroy_relation(entity, node, nodeOrdinals[iNode]);
-      bulk.declare_relation(entity, newNode, nodeOrdinals[iNode]);
+    if (entityNodes[iNode] == node) {
+      stk::mesh::ConnectivityOrdinal nodeOrd = nodeOrdinals[iNode];
+      bulk.destroy_relation(entity, node, nodeOrd);
+      bulk.declare_relation(entity, newNode, nodeOrd);
+      updatedNode = true;
+    }
+  }
+  return updatedNode;
+}
+
+void update_internal_face_node_map(stk::mesh::BulkData& bulk, stk::mesh::Entity node, stk::mesh::Entity newNode,
+                                   InternalFaceInfo& faceInfo)
+{
+  stk::mesh::Entity face = faceInfo.internalFace;
+  unsigned numNodes = bulk.num_connectivity(face, stk::topology::NODE_RANK);
+  const stk::mesh::Entity * entityNodes = bulk.begin(face, stk::topology::NODE_RANK);
+  stk::mesh::ConnectivityOrdinal const * nodeOrdinals = bulk.begin_ordinals(face, stk::topology::NODE_RANK);
+  for (unsigned iNode = 0; iNode < numNodes; ++iNode) {
+    if (entityNodes[iNode] == node) {
+      faceInfo.nodeMap[std::make_pair(node,nodeOrdinals[iNode])] = newNode;
     }
   }
 }
 
-void disconnect_sub_rank(stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, stk::mesh::Entity newNode,
-                         const stk::mesh::Entity oldNode, stk::mesh::Entity elem)
+void update_internal_face_entity_relation(stk::mesh::BulkData& bulk, InternalFaceInfo& faceInfo)
 {
-  const stk::mesh::Entity* subEntities = bulk.begin(elem, rank);
-  unsigned numSubEntities = bulk.num_connectivity(elem, rank);
-  for(unsigned i = 0; i < numSubEntities; i++) {
-    update_disconnected_entity_relation(bulk, oldNode, newNode, subEntities[i]);
+  stk::mesh::Entity face = faceInfo.internalFace;
+
+  for (auto iter = faceInfo.nodeMap.begin(); iter != faceInfo.nodeMap.end(); ++iter) {
+    const auto& key = iter->first;
+    const auto& newNode = iter->second;
+
+    stk::mesh::Entity node = key.first;
+    stk::mesh::ConnectivityOrdinal ordinal = key.second;
+
+    bulk.destroy_relation(face, node, ordinal);
+    bulk.declare_relation(face, newNode, ordinal);
   }
 }
 
-void disconnect_sub_ranks(stk::mesh::BulkData& bulk, stk::mesh::Entity newNode,
-                          const stk::mesh::Entity oldNode, stk::mesh::Entity elem)
+void disconnect_sub_rank(stk::mesh::BulkData& bulk, LinkInfo& info, stk::mesh::EntityRank rank,
+                         stk::mesh::Entity newNode, const stk::mesh::Entity oldNode,
+                         stk::mesh::Entity elem, stk::tools::BlockPair& blockPair)
 {
-  disconnect_sub_rank(bulk, bulk.mesh_meta_data().side_rank(), newNode, oldNode, elem);
+  if (blockPair.is_valid() && is_in_preserved_block(bulk, elem, blockPair)) { return; }
+
+  auto sideRank = bulk.mesh_meta_data().side_rank();
+  const stk::mesh::Entity* subEntities = bulk.begin(elem, rank);
+  unsigned numSubEntities = bulk.num_connectivity(elem, rank);
+  for(unsigned i = 0; i < numSubEntities; i++) {
+    auto entity = subEntities[i];
+
+    if(sideRank == rank) {
+      auto iter = std::lower_bound(info.internalSides.begin(), info.internalSides.end(), entity);
+      if (!(iter == info.internalSides.end()) && !(entity < *iter)) {
+        update_internal_face_node_map(bulk, oldNode, newNode, *iter);
+        continue;
+      }
+    }
+
+    update_disconnected_entity_relation(bulk, oldNode, newNode, entity);
+  }
+}
+
+void disconnect_sub_ranks(stk::mesh::BulkData& bulk, LinkInfo& info,
+                          stk::mesh::Entity newNode, const stk::mesh::Entity oldNode,
+                          stk::mesh::Entity elem, stk::tools::BlockPair& blockPair)
+{
+  disconnect_sub_rank(bulk, info, bulk.mesh_meta_data().side_rank(), newNode, oldNode, elem, blockPair);
 
   if(bulk.mesh_meta_data().side_rank() != stk::topology::EDGE_RANK) {
-    disconnect_sub_rank(bulk, stk::topology::EDGE_RANK, newNode, oldNode, elem);
+    disconnect_sub_rank(bulk, info, stk::topology::EDGE_RANK, newNode, oldNode, elem, blockPair);
   }
 }
 
 void disconnect_elements(stk::mesh::BulkData& bulk, const NodeMapKey& key, NodeMapValue& value, LinkInfo& info)
 {
   const DisconnectGroup& group = key.disconnectedGroup;
+  auto blockPair = group.get_block_pair();
 
   if (group.is_active()) {
     const stk::mesh::Entity node = key.parentNode;
@@ -298,9 +435,11 @@ void disconnect_elements(stk::mesh::BulkData& bulk, const NodeMapKey& key, NodeM
       for (int sharingProc : value.sharingProcs) {
         bulk.add_node_sharing(newNode, sharingProc);
       }
-      update_disconnected_entity_relation(bulk, node, newNode, elem);
+      bool updatedNode = update_disconnected_entity_relation(bulk, node, newNode, elem);
 
-      disconnect_sub_ranks(bulk, newNode, node, elem);
+      if(updatedNode) {
+        disconnect_sub_ranks(bulk, info, newNode, node, elem, blockPair);
+      }
 
       if (bulk.num_elements(node) == 0 && !info.preserveOrphans) {
         bulk.destroy_entity(node);
@@ -319,6 +458,264 @@ void disconnect_elements(stk::mesh::BulkData & bulk, const BlockPair & blockPair
     if (disconnectedGroup.has_block_pair() && disconnectedGroup.get_block_pair() == blockPair) {
       disconnect_elements(bulk, nodeMapEntryIt->first, nodeMapEntryIt->second, info);
     }
+  }
+}
+
+void destroy_internal_face(stk::mesh::BulkData& bulk, const InternalFaceInfo& faceInfo)
+{
+  bulk.destroy_relation(faceInfo.elemInSecondBlock, faceInfo.internalFace, faceInfo.faceOrdinalInSecondBlock);
+  bulk.destroy_relation(faceInfo.elemInFirstBlock, faceInfo.internalFace, faceInfo.faceOrdinalInFirstBlock);
+  bulk.destroy_entity(faceInfo.internalFace, false);
+}
+
+void duplicate_and_destroy_internal_face(stk::mesh::BulkData& bulk,
+                                         const InternalFaceInfo& faceInfo,
+                                         const InternalFaceDisconnectState firstBlockState,
+                                         const InternalFaceDisconnectState secondBlockState,
+                                         stk::mesh::ConstPartVector& firstBlockSurfaces,
+                                         stk::mesh::ConstPartVector& secondBlockSurfaces)
+{
+  bulk.destroy_relation(faceInfo.elemInSecondBlock, faceInfo.internalFace, faceInfo.faceOrdinalInSecondBlock);
+  bulk.destroy_relation(faceInfo.elemInFirstBlock, faceInfo.internalFace, faceInfo.faceOrdinalInFirstBlock);
+
+  if(secondBlockState == InternalFaceDisconnectState::KEEP) {
+    stk::mesh::Entity newFace = bulk.declare_element_side(faceInfo.elemInSecondBlock,
+                                                          faceInfo.faceOrdinalInSecondBlock,
+                                                          stk::mesh::PartVector{faceInfo.blockPair.second});
+    STK_ThrowRequire(newFace != faceInfo.internalFace);
+
+    bulk.copy_entity_fields(faceInfo.internalFace, newFace);
+    bulk.change_entity_parts(newFace, secondBlockSurfaces, firstBlockSurfaces);
+  }
+
+  if(firstBlockState == InternalFaceDisconnectState::KEEP) {
+    stk::mesh::Entity newFace = bulk.declare_element_side(faceInfo.elemInFirstBlock,
+                                                          faceInfo.faceOrdinalInFirstBlock,
+                                                          stk::mesh::PartVector{faceInfo.blockPair.first});
+    STK_ThrowRequire(newFace != faceInfo.internalFace);
+
+    bulk.copy_entity_fields(faceInfo.internalFace, newFace);
+    bulk.change_entity_parts(newFace, firstBlockSurfaces, secondBlockSurfaces);
+  }
+
+  bulk.destroy_entity(faceInfo.internalFace, false);
+}
+
+void connect_element_side_to_internal_face(stk::mesh::BulkData& bulk,
+                                           stk::mesh::Entity elem,
+                                           stk::mesh::ConnectivityOrdinal sideOrdinal,
+                                           stk::mesh::Entity face,
+                                           stk::mesh::ConstPartVector& addSurfaces,
+                                           stk::mesh::ConstPartVector& removeSurfaces)
+{
+  stk::mesh::destroy_relations(bulk, face, stk::topology::ELEM_RANK);
+  stk::mesh::destroy_relations(bulk, face, stk::topology::NODE_RANK);
+
+  auto elemTopology = bulk.bucket(elem).topology();
+  auto sideTopology = elemTopology.side_topology(sideOrdinal);
+
+  stk::mesh::impl::connect_element_to_entity(bulk, elem, face, sideOrdinal, addSurfaces, sideTopology);
+  bulk.change_entity_parts(face, addSurfaces, removeSurfaces);
+}
+
+void duplicate_non_owned_internal_face(stk::mesh::BulkData& bulk,
+                                       const InternalFaceInfo& faceInfo,
+                                       stk::mesh::ConstPartVector& firstBlockSurfaces,
+                                       stk::mesh::ConstPartVector& secondBlockSurfaces)
+{
+  bulk.destroy_relation(faceInfo.elemInSecondBlock, faceInfo.internalFace, faceInfo.faceOrdinalInSecondBlock);
+  bulk.destroy_relation(faceInfo.elemInFirstBlock, faceInfo.internalFace, faceInfo.faceOrdinalInFirstBlock);
+
+  stk::mesh::Entity tempSoloSide = bulk.declare_solo_side(stk::mesh::PartVector{faceInfo.blockPair.second});
+  STK_ThrowRequire(tempSoloSide != faceInfo.internalFace);
+  bulk.copy_entity_fields(faceInfo.internalFace, tempSoloSide);
+
+  bulk.destroy_entity(faceInfo.internalFace, false);
+
+  stk::mesh::Entity newFaceOnFirstBlock = bulk.declare_element_side(faceInfo.elemInFirstBlock,
+                                                                    faceInfo.faceOrdinalInFirstBlock,
+                                                                    stk::mesh::PartVector{faceInfo.blockPair.first});
+  STK_ThrowRequire(newFaceOnFirstBlock != tempSoloSide);
+
+  bulk.copy_entity_fields(tempSoloSide, newFaceOnFirstBlock);
+  bulk.change_entity_parts(newFaceOnFirstBlock, firstBlockSurfaces, secondBlockSurfaces);
+
+  bulk.destroy_entity(tempSoloSide, false);
+}
+
+void detach_internal_face(stk::mesh::BulkData& bulk,
+                          const InternalFaceInfo& faceInfo,
+                          const InternalFaceDisconnectState firstBlockState,
+                          const InternalFaceDisconnectState secondBlockState,
+                          stk::mesh::ConstPartVector& firstBlockSurfaces,
+                          stk::mesh::ConstPartVector& secondBlockSurfaces)
+{
+  stk::mesh::EntityId faceIdFromSecondBlock = stk::mesh::impl::side_id_formula(bulk.identifier(faceInfo.elemInSecondBlock),
+                                                                               faceInfo.faceOrdinalInSecondBlock);
+
+  if(bulk.identifier(faceInfo.internalFace) == faceIdFromSecondBlock) {
+    if(secondBlockState == InternalFaceDisconnectState::KEEP) {
+      bulk.destroy_relation(faceInfo.elemInFirstBlock, faceInfo.internalFace, faceInfo.faceOrdinalInFirstBlock);
+    }
+
+    if(firstBlockState == InternalFaceDisconnectState::KEEP) {
+      duplicate_and_destroy_internal_face(bulk, faceInfo, firstBlockState, InternalFaceDisconnectState::NOOP,
+                                          firstBlockSurfaces, secondBlockSurfaces);
+    }
+  } else {
+    if(secondBlockState == InternalFaceDisconnectState::KEEP) {
+      duplicate_and_destroy_internal_face(bulk, faceInfo, InternalFaceDisconnectState::NOOP, secondBlockState,
+                                          firstBlockSurfaces, secondBlockSurfaces);
+    }
+
+    if(firstBlockState == InternalFaceDisconnectState::KEEP) {
+      if(bulk.bucket(faceInfo.internalFace).owned()) {
+        connect_element_side_to_internal_face(bulk, faceInfo.elemInFirstBlock, faceInfo.faceOrdinalInFirstBlock,
+                                              faceInfo.internalFace, firstBlockSurfaces, secondBlockSurfaces);
+      } else {
+        duplicate_non_owned_internal_face(bulk, faceInfo, firstBlockSurfaces, secondBlockSurfaces);
+      }
+    }
+  }
+}
+
+void detach_and_duplicate_internal_face(stk::mesh::BulkData& bulk,
+                                        const InternalFaceInfo& faceInfo,
+                                        const InternalFaceDisconnectState firstBlockState,
+                                        const InternalFaceDisconnectState secondBlockState,
+                                        stk::mesh::ConstPartVector& firstBlockSurfaces,
+                                        stk::mesh::ConstPartVector& secondBlockSurfaces)
+{
+  stk::mesh::EntityId faceIdFromSecondBlock = stk::mesh::impl::side_id_formula(bulk.identifier(faceInfo.elemInSecondBlock),
+                                                                               faceInfo.faceOrdinalInSecondBlock);
+
+  if(bulk.identifier(faceInfo.internalFace) == faceIdFromSecondBlock) {
+    bulk.destroy_relation(faceInfo.elemInFirstBlock, faceInfo.internalFace, faceInfo.faceOrdinalInFirstBlock);
+
+    stk::mesh::Entity newFace = bulk.declare_element_side(faceInfo.elemInFirstBlock,
+                                                          faceInfo.faceOrdinalInFirstBlock,
+                                                          stk::mesh::PartVector{faceInfo.blockPair.first});
+    STK_ThrowRequire(newFace != faceInfo.internalFace);
+
+    bulk.copy_entity_fields(faceInfo.internalFace, newFace);
+    bulk.change_entity_parts(faceInfo.internalFace, secondBlockSurfaces, firstBlockSurfaces);
+    bulk.change_entity_parts(newFace, firstBlockSurfaces, secondBlockSurfaces);
+  } else {
+    bulk.destroy_relation(faceInfo.elemInSecondBlock, faceInfo.internalFace, faceInfo.faceOrdinalInSecondBlock);
+    bulk.destroy_relation(faceInfo.elemInFirstBlock, faceInfo.internalFace, faceInfo.faceOrdinalInFirstBlock);
+
+    stk::mesh::Entity newFaceOnSecondBlock = bulk.declare_element_side(faceInfo.elemInSecondBlock,
+                                                                       faceInfo.faceOrdinalInSecondBlock,
+                                                                       stk::mesh::PartVector{faceInfo.blockPair.second});
+    STK_ThrowRequire(newFaceOnSecondBlock != faceInfo.internalFace);
+    bulk.copy_entity_fields(faceInfo.internalFace, newFaceOnSecondBlock);
+    bulk.change_entity_parts(newFaceOnSecondBlock, secondBlockSurfaces, firstBlockSurfaces);
+
+    bulk.destroy_entity(faceInfo.internalFace, false);
+
+    stk::mesh::Entity newFaceOnFirstBlock = bulk.declare_element_side(faceInfo.elemInFirstBlock,
+                                                                      faceInfo.faceOrdinalInFirstBlock,
+                                                                      stk::mesh::PartVector{faceInfo.blockPair.first});
+    STK_ThrowRequire(newFaceOnFirstBlock != newFaceOnSecondBlock);
+
+    bulk.copy_entity_fields(newFaceOnSecondBlock, newFaceOnFirstBlock);
+    bulk.change_entity_parts(newFaceOnFirstBlock, firstBlockSurfaces, secondBlockSurfaces);
+  }
+}
+
+InternalFaceDisconnectState get_internal_face_disconnect_state(stk::mesh::BulkData& bulk,
+                                                               stk::mesh::Entity elemInBlock,
+                                                               bool isSidesetAttachedToBlock)
+{
+  InternalFaceDisconnectState blockState = InternalFaceDisconnectState::NOOP;
+
+  if(isSidesetAttachedToBlock) {
+    if(bulk.is_valid(elemInBlock) && bulk.bucket(elemInBlock).owned()) {
+      blockState = InternalFaceDisconnectState::KEEP;
+    } else {
+      blockState = InternalFaceDisconnectState::DESTROY;
+    }
+  }
+
+  return blockState;
+}
+
+std::vector<const stk::mesh::Part*>
+get_surface_parts_for_internal_face_block(stk::mesh::BulkData& bulk, stk::mesh::Part* block, stk::mesh::Entity face)
+{
+  auto& meta = bulk.mesh_meta_data();
+  auto surfaces = meta.get_surfaces_touched_by_block(block);
+
+  const stk::mesh::Bucket& faceBucket = bulk.bucket(face);
+
+  auto is_not_selected = [&](const stk::mesh::Part* surface) {
+    return !faceBucket.member(*surface) ;
+  };
+  auto end = std::remove_if(surfaces.begin(), surfaces.end(), is_not_selected);
+  surfaces.erase(end, surfaces.end());
+
+  return surfaces;
+}
+
+void disconnect_internal_face(stk::mesh::BulkData& bulk, const InternalFaceInfo& faceInfo)
+{
+  auto firstBlockSurfaces = get_surface_parts_for_internal_face_block(bulk, faceInfo.blockPair.first, faceInfo.internalFace);
+  firstBlockSurfaces.push_back(faceInfo.blockPair.first);
+
+  auto secondBlockSurfaces = get_surface_parts_for_internal_face_block(bulk, faceInfo.blockPair.second, faceInfo.internalFace);
+  secondBlockSurfaces.push_back(faceInfo.blockPair.second);
+
+  InternalFaceDisconnectState firstBlockState = get_internal_face_disconnect_state(bulk,
+                                                                                   faceInfo.elemInFirstBlock,
+                                                                                   faceInfo.isInBlockPairSideset.first);
+  InternalFaceDisconnectState secondBlockState = get_internal_face_disconnect_state(bulk,
+                                                                                    faceInfo.elemInSecondBlock,
+                                                                                    faceInfo.isInBlockPairSideset.second);
+
+  bool wedgedSidesetAttachedToBothBlocksWithOneLocalElement =
+      ( firstBlockState == InternalFaceDisconnectState::KEEP && secondBlockState == InternalFaceDisconnectState::DESTROY) ||
+      (secondBlockState == InternalFaceDisconnectState::KEEP &&  firstBlockState == InternalFaceDisconnectState::DESTROY);
+
+  if(wedgedSidesetAttachedToBothBlocksWithOneLocalElement) {
+      detach_internal_face(bulk, faceInfo, firstBlockState, secondBlockState, firstBlockSurfaces, secondBlockSurfaces);
+  }
+
+  bool wedgedSidesetAttachedToOneBlockWithLocalAndRemoteElement =
+      ( firstBlockState == InternalFaceDisconnectState::NOOP && secondBlockState == InternalFaceDisconnectState::DESTROY) ||
+      (secondBlockState == InternalFaceDisconnectState::NOOP &&  firstBlockState == InternalFaceDisconnectState::DESTROY);
+
+  if(wedgedSidesetAttachedToOneBlockWithLocalAndRemoteElement) {
+    destroy_internal_face(bulk, faceInfo);
+  }
+
+  bool wedgedSidesetAttachedToOneBlockWithLocalElementInSidesetBlock =
+      ( firstBlockState == InternalFaceDisconnectState::NOOP && secondBlockState == InternalFaceDisconnectState::KEEP) ||
+      (secondBlockState == InternalFaceDisconnectState::NOOP &&  firstBlockState == InternalFaceDisconnectState::KEEP);
+
+  if(wedgedSidesetAttachedToOneBlockWithLocalElementInSidesetBlock) {
+    detach_internal_face(bulk, faceInfo, firstBlockState, secondBlockState, firstBlockSurfaces, secondBlockSurfaces);
+  }
+
+  bool wedgedSidesetAttachedToBothBlocksWithBothLocalElements =
+      (firstBlockState == InternalFaceDisconnectState::KEEP && secondBlockState == InternalFaceDisconnectState::KEEP);
+
+  if(wedgedSidesetAttachedToBothBlocksWithBothLocalElements) {
+    detach_and_duplicate_internal_face(bulk, faceInfo, firstBlockState, secondBlockState, firstBlockSurfaces, secondBlockSurfaces);
+  }
+}
+
+void disconnect_faces(stk::mesh::BulkData& bulk, LinkInfo& info)
+{
+  for (auto faceInfo : info.internalSides) {
+    update_internal_face_entity_relation(bulk, faceInfo);
+  }
+
+  if (bulk.has_face_adjacent_element_graph()) {
+    bulk.get_face_adjacent_element_graph().fill_from_mesh();
+  }
+
+  for (auto faceInfo : info.internalSides) {
+    disconnect_internal_face(bulk, faceInfo);
   }
 }
 
@@ -358,8 +755,9 @@ void update_reconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::En
   stk::mesh::ConnectivityOrdinal const * nodeOrdinals = bulk.begin_ordinals(entity, stk::topology::NODE_RANK);
   for (unsigned iNode = 0; iNode < numNodes; ++iNode) {
     if (elemNodes[iNode] == newNode) {
-      bulk.destroy_relation(entity, newNode, nodeOrdinals[iNode]);
-      bulk.declare_relation(entity, reconnectNode, nodeOrdinals[iNode]);
+      stk::mesh::ConnectivityOrdinal nodeOrd = nodeOrdinals[iNode];
+      bulk.destroy_relation(entity, newNode, nodeOrd);
+      bulk.declare_relation(entity, reconnectNode, nodeOrd);
     }
   }
 }
@@ -473,12 +871,11 @@ bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapV
 {
   const stk::mesh::BulkData& bulk = disconnectedGroup.get_bulk();
 
-
   if(!bulk.is_valid(currentEntity)) { return false; }
 
   const stk::mesh::PartVector& blockMembership = nodeMapValue.oldBlockMembership;
   bool isOriginalMember = false;
-  bool isInOneOfBlockPair = bulk.bucket(currentEntity).member(*blockPair.first) != bulk.bucket(currentEntity).member(*blockPair.second);
+  bool isInOneOfBlockPair = is_in_preserved_block(bulk,currentEntity,blockPair) != is_in_disconnected_block(bulk,currentEntity,blockPair);
 
   if (disconnectedGroup.has_block_pair() && isInOneOfBlockPair) {
     isOriginalMember = std::binary_search(blockMembership.begin(), blockMembership.end(), blockPair.first, stk::mesh::PartLess()) &&
@@ -761,7 +1158,7 @@ void determine_local_reconnect_node_id(stk::mesh::BulkData& bulk, const std::vec
   auto fill_reconnect_node_info_func =
       [&](const stk::mesh::PartVector& transitiveBlockList_, NodeMapType::iterator it, stk::mesh::Entity currentEntity_)
   {
-    unsigned groupId = it->second.reconnectGroupId; // reconnectGroup.get_id();
+    unsigned groupId = it->second.reconnectGroupId;
 
     ReconnectMapKey mapKey = std::make_pair(it->second.oldNodeId, groupId);
     auto reconnectMapIter = info.reconnectMap.find(mapKey);
@@ -866,25 +1263,22 @@ void update_node_id(stk::mesh::EntityId newNodeId, int proc, LinkInfo& info, con
 void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info)
 {
   stk::mesh::EntityVector allNodes;
-  stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), allNodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().locally_owned_part(), allNodes);
 
   for(stk::mesh::Entity node : allNodes) {
-    unsigned numElems = bulk.num_connectivity(node, stk::topology::ELEMENT_RANK);
+    const int numElems = bulk.num_connectivity(node, stk::topology::ELEMENT_RANK);
     const stk::mesh::Entity* elems = bulk.begin(node, stk::topology::ELEMENT_RANK);
-    int numLocallyOwnedElems = 0;
+    int numDestroyedElems = 0;
 
-    for(unsigned i = 0; i < numElems; i++) {
+    for(int i = numElems-1; i >= 0; --i) {
       stk::mesh::Entity elem = elems[i];
-      if(bulk.bucket(elem).owned()) {
-        numLocallyOwnedElems++;
+      if(!bulk.bucket(elem).owned()) {
+        bulk.destroy_entity(elem);
+        ++numDestroyedElems;
       }
     }
 
-    if(numLocallyOwnedElems == 0) {
-      for(unsigned j = 0; j < numElems; j++) {
-        stk::mesh::Entity elem = elems[j];
-        bulk.destroy_entity(elem);
-      }
+    if(numDestroyedElems == numElems) {
       bulk.destroy_entity(node);
     }
   }
@@ -897,6 +1291,7 @@ void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPa
 
   for (size_t i = 0; i < blockPairsToDisconnect.size(); ++i) {
     add_nodes_to_disconnect(bulk, blockPairsToDisconnect[i], info);
+    add_faces_to_disconnect(bulk, blockPairsToDisconnect[i], info);
   }
 
   if((bulk.parallel_rank() == 0) && (info.debugLevel > 0)) {
@@ -915,6 +1310,8 @@ void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPa
   for (size_t i = 0; i < blockPairsToDisconnect.size(); ++i) {
     disconnect_elements(bulk, blockPairsToDisconnect[i], info);
   }
+
+  disconnect_faces(bulk, info);
 
   clean_up_aura(bulk, info);
 

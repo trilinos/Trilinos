@@ -23,10 +23,8 @@
 #include <stk_mesh/base/Field.hpp>                   // for Field
 #include <stk_mesh/base/GetEntities.hpp>             // for get_entities
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include "stk_mesh/base/TopologyDimensions.hpp"      // for ElementNode
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/CompositeRank.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
@@ -66,7 +64,7 @@ public:
   void setup()
   {
     declare_parts();
-    declare_coordinate_field();
+    declare_coordinate_field<double>();
     declare_nodeset_distribution_factor_fields();
     declare_sideset_distribution_factor_fields();
   }
@@ -79,13 +77,8 @@ private:
 
      std::string nodesetDistFieldName = "distribution_factors_" + nodesetData.name;
 
-     stk::mesh::Field<double> * distributionFactorsFieldPerNodeset = nullptr;
-     if (m_meta.is_using_simple_fields()) {
-       distributionFactorsFieldPerNodeset = &m_meta.declare_field<double>(stk::topology::NODE_RANK, nodesetDistFieldName);
-     }
-     else {
-       distributionFactorsFieldPerNodeset = &stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(m_meta, stk::topology::NODE_RANK, nodesetDistFieldName);
-     }
+     stk::mesh::Field<double> * distributionFactorsFieldPerNodeset =
+         &m_meta.declare_field<double>(stk::topology::NODE_RANK, nodesetDistFieldName);
 
      stk::io::set_field_role(*distributionFactorsFieldPerNodeset, Ioss::Field::MESH);
      stk::mesh::put_field_on_mesh(*distributionFactorsFieldPerNodeset, *part, nullptr);
@@ -93,7 +86,7 @@ private:
  }
 
  void declare_sideblock_distribution_factor_field(const SideBlockInfo& sideBlock,
-                                                  stk::mesh::Field<double, stk::mesh::ElementNode>* distributionFactorsField)
+                                                  stk::mesh::Field<double>* distributionFactorsField)
  {
    stk::mesh::Part* sideBlockPart = m_meta.get_part(sideBlock.name);
 
@@ -103,37 +96,7 @@ private:
    }
  }
 
- void declare_simple_sideblock_distribution_factor_field(const SideBlockInfo& sideBlock,
-                                                         stk::mesh::Field<double>* distributionFactorsField)
- {
-   stk::mesh::Part* sideBlockPart = m_meta.get_part(sideBlock.name);
-
-   if (nullptr != distributionFactorsField) {
-     stk::io::set_distribution_factor_field(*sideBlockPart, *distributionFactorsField);
-     stk::mesh::put_field_on_mesh(*distributionFactorsField, *sideBlockPart, sideBlock.numNodesPerSide, nullptr);
-   }
- }
-
- stk::mesh::Field<double, stk::mesh::ElementNode>* declare_sideset_distribution_factor_field(const SidesetData& sidesetData)
- {
-   stk::mesh::Field<double, stk::mesh::ElementNode>* distributionFactorsField = nullptr;
-   stk::mesh::Part* sidesetPart = m_meta.get_part(sidesetData.name);
-
-   SplitType splitType = sidesetData.get_split_type();
-   if (splitType != SplitType::NO_SPLIT) {
-     std::string fieldName = sidesetData.name + "_df";
-
-     distributionFactorsField =
-         &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(m_meta, m_meta.side_rank(), fieldName);
-
-     stk::io::set_field_role(*distributionFactorsField, Ioss::Field::MESH);
-     stk::io::set_distribution_factor_field(*sidesetPart, *distributionFactorsField);
-   }
-
-   return distributionFactorsField;
- }
-
- stk::mesh::Field<double>* declare_simple_sideset_distribution_factor_field(const SidesetData& sidesetData)
+ stk::mesh::Field<double>* declare_sideset_distribution_factor_field(const SidesetData& sidesetData)
  {
    stk::mesh::Field<double>* distributionFactorsField = nullptr;
    stk::mesh::Part* sidesetPart = m_meta.get_part(sidesetData.name);
@@ -153,25 +116,12 @@ private:
 
  void declare_sideset_distribution_factor_fields()
  {
-   if (m_meta.is_using_simple_fields()) {
-     for (const SidesetData& sidesetData : m_data.sidesets.get_group_data()) {
-       stk::mesh::Field<double>* distributionFactorsField = declare_simple_sideset_distribution_factor_field(sidesetData);
-       std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
+   for (const SidesetData& sidesetData : m_data.sidesets.get_group_data()) {
+     stk::mesh::Field<double>* distributionFactorsField = declare_sideset_distribution_factor_field(sidesetData);
+     std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
 
-       for (const auto& sideBlock : sideBlocks) {
-         declare_simple_sideblock_distribution_factor_field(sideBlock, distributionFactorsField);
-       }
-     }
-   }
-   else {
-     for (const SidesetData& sidesetData : m_data.sidesets.get_group_data()) {
-       stk::mesh::Field<double, stk::mesh::ElementNode>* distributionFactorsField =
-           declare_sideset_distribution_factor_field(sidesetData);
-       std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
-
-       for (const auto& sideBlock : sideBlocks) {
-         declare_sideblock_distribution_factor_field(sideBlock, distributionFactorsField);
-       }
+     for (const auto& sideBlock : sideBlocks) {
+       declare_sideblock_distribution_factor_field(sideBlock, distributionFactorsField);
      }
    }
  }
@@ -335,30 +285,8 @@ private:
    declare_assembly_parts();
  }
 
-  void declare_coordinate_field()
-  {
-    if (m_meta.is_using_simple_fields()) {
-      declare_coordinate_field_with_datatype<double>();
-    }
-    else {
-      if (m_data.spatialDim == 3) {
-        declare_coordinate_field_with_type<stk::mesh::CoordinatesField>();
-      }
-      else if (m_data.spatialDim == 2) {
-        declare_coordinate_field_with_type<stk::mesh::Field<double, stk::mesh::Cartesian2d>>();
-      }
-    }
-  }
-
-  template<typename F>
-  void declare_coordinate_field_with_type()
-  {
-    F& coordsField = stk::mesh::legacy::declare_field<F>(m_meta, stk::topology::NODE_RANK, m_meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(coordsField, m_meta.universal_part(), m_data.spatialDim, nullptr);
-  }
-
   template<typename T>
-  void declare_coordinate_field_with_datatype()
+  void declare_coordinate_field()
   {
     stk::mesh::Field<T>& coordsField = m_meta.declare_field<T>(stk::topology::NODE_RANK, m_meta.coordinate_field_name());
     stk::mesh::put_field_on_mesh(coordsField, m_meta.universal_part(), m_data.spatialDim, nullptr);
@@ -373,8 +301,9 @@ private:
 class BulkDataInitializer
 {
 public:
-  BulkDataInitializer(const TextMeshData& d, stk::mesh::BulkData& b)
-    : m_data(d),
+  BulkDataInitializer(const StkTopologyMapping& t, const TextMeshData& d, stk::mesh::BulkData& b)
+    : m_topologyMapping(t),
+      m_data(d),
       m_bulk(b),
       m_meta(m_bulk.mesh_meta_data())
   { }
@@ -424,6 +353,92 @@ public:
     }
   }
 
+  stk::topology get_side_block_topology_from_entries(const SidesetData& ss, const SideBlockInfo& sideBlock)
+  {
+    std::vector<size_t> sideIndices = ss.get_sideblock_indices_local_to_proc(sideBlock, m_bulk.parallel_rank());
+    stk::topology invalidTopo = stk::topology::INVALID_TOPOLOGY;
+    stk::topology blockSideTopo = stk::topology::INVALID_TOPOLOGY;
+    int heterogenousTopo = 0;
+    
+    for (size_t sideIndex : sideIndices) {
+      stk::mesh::EntityId elemId = ss.data[sideIndex].first;
+      int elemSide = ss.data[sideIndex].second - 1;
+
+      auto elemIter = text_mesh::bound_search(m_data.elementDataVec.begin(), m_data.elementDataVec.end(), elemId, ElementDataLess());
+      STK_ThrowRequire(elemIter != m_data.elementDataVec.end());
+
+      Topology blockTopo = elemIter->topology;
+      Topology sideTopo = blockTopo.side_topology(elemSide);
+
+      if(stk::topology::INVALID_TOPOLOGY != blockSideTopo && sideTopo.topology != blockSideTopo) {
+	blockSideTopo = stk::topology::INVALID_TOPOLOGY;
+	heterogenousTopo = 1;
+	break;      
+      }
+
+      blockSideTopo = sideTopo.topology;	
+    }
+
+    int topoId = (stk::topology::topology_t) blockSideTopo;
+
+    if (m_bulk.parallel_size()) {
+      std::vector<int> l_topoData{topoId, heterogenousTopo};
+      std::vector<int> g_topoData(2);
+      stk::all_reduce_max(m_bulk.parallel(), l_topoData.data(), g_topoData.data(), 2);
+
+      topoId = g_topoData[0];
+      heterogenousTopo = g_topoData[1];
+    }
+
+    blockSideTopo = heterogenousTopo ? invalidTopo : stk::topology( (stk::topology::topology_t)topoId );
+
+    return blockSideTopo;
+  }
+
+  bool set_sideset_topology(const SidesetData& ss, stk::mesh::Part* part,
+			    const std::string& sideBlockTopo, stk::topology stkTopology,
+			    bool printWarning = false)
+  {
+    if (stkTopology == stk::topology::INVALID_TOPOLOGY) {
+      if (printWarning) {
+	std::ostringstream os;
+	os<<"TextMesh WARNING: failed to obtain sensible topology for sideset: " << ss.name<<", iossTopology: "<<sideBlockTopo<<", stk-part: "<<part->name()<<", rank: "<<part->primary_entity_rank()<<", stk-topology: "<<stkTopology<<". Probably because this SideSet is empty on this MPI rank. Unable to set correct stk topology hierarchy. Proceeding, but beware of unexpected behavior."<<std::endl;
+	std::cerr<<os.str();
+      }
+    }
+    else {
+      for(auto subsetPart : part->subsets()) {
+	if(subsetPart->topology() != stkTopology) {
+	  return false;
+	}
+      }
+	
+      stk::mesh::set_topology(*part, stkTopology);
+      return true;      
+    }
+
+    return false;    
+  }
+
+  
+  void setup_sideset_topology(const SidesetData& ss, stk::mesh::Part* part)
+  {
+    if(nullptr == part) return;
+    
+    std::vector<SideBlockInfo> sideBlocks = ss.get_side_block_info();
+    if(sideBlocks.size() != 1u) return;
+    
+    const SideBlockInfo& sideBlock = sideBlocks[0];
+
+    if(sideBlock.name != ss.name) {
+      stk::topology stkTopology = m_topologyMapping.topology(sideBlock.sideTopology).topology;
+      if(set_sideset_topology(ss, part, sideBlock.sideTopology, stkTopology, true)) return;
+    }
+
+    stk::topology blockSideTopo = get_side_block_topology_from_entries(ss, sideBlock);
+    set_sideset_topology(ss, part, sideBlock.sideTopology, blockSideTopo);
+  }
+  
   void setup_sidesets()
   {
     const bool fromInput = true;
@@ -431,6 +446,8 @@ public:
       stk::mesh::Part* part = m_meta.get_part(sidesetData.name);
       stk::mesh::SideSet& stkSideSet = m_bulk.create_sideset(*part, fromInput);
 
+      setup_sideset_topology(sidesetData, part);
+      
       std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
 
       for (const auto& sideBlock : sideBlocks) {
@@ -513,6 +530,7 @@ public:
     }
   }
 
+  const StkTopologyMapping &m_topologyMapping;
   const TextMeshData& m_data;
 
   stk::mesh::BulkData& m_bulk;
@@ -595,7 +613,7 @@ public:
     MetaDataInitializer metaInit(m_topologyMapping, m_data, m_meta);
     metaInit.setup();
 
-    BulkDataInitializer bulkInit(m_data, m_bulk);
+    BulkDataInitializer bulkInit(m_topologyMapping, m_data, m_bulk);
     bulkInit.setup();
 
     CoordinateInitializer coordInit(m_data, m_bulk);

@@ -15,8 +15,6 @@ IF (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodus)
   ADD_DEFINITIONS(-DEXODUS_SUPPORT)
 ENDIF()
 
-ADD_DEFINITIONS(-DFMT_SUPPORT)
-
 TRIBITS_INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -80,7 +78,7 @@ if(GENERATE_BISON_FILES)
 
   add_custom_command(OUTPUT  apr_parser.cc
                      COMMAND ${BISON_EXE}
-                     ARGS --defines=aprepro_parser.h --output apr_parser.cc
+                     ARGS --no-lines --defines=aprepro_parser.h --output apr_parser.cc
                         ${CMAKE_CURRENT_SOURCE_DIR}/aprepro.yy
                      MAIN_DEPENDENCY aprepro.yy
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

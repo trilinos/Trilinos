@@ -30,8 +30,7 @@ namespace KokkosBatched {
 template <typename ArgSide>
 struct SerialHouseholder {
   template <typename aViewType, typename tauViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const aViewType &a,
-                                           const tauViewType &tau);
+  KOKKOS_INLINE_FUNCTION static int invoke(const aViewType &a, const tauViewType &tau);
 };
 
 ///
@@ -42,9 +41,7 @@ struct SerialHouseholder {
 template <typename MemberType, typename ArgSide>
 struct TeamVectorHouseholder {
   template <typename MemberType, typename aViewType, typename tauViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const aViewType &a,
-                                           const tauViewType &tau);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const aViewType &a, const tauViewType &tau);
 };
 
 }  // namespace KokkosBatched

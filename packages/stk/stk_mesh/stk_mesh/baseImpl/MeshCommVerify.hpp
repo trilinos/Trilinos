@@ -39,7 +39,8 @@
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <stk_mesh/base/EntityCommListInfo.hpp>
 
 #include <vector>
 #include <functional>
@@ -48,6 +49,8 @@
 
 namespace stk {
 namespace mesh {
+class BulkData;
+
 namespace impl {
 
 //----------------------------------------------------------------------
@@ -108,6 +111,18 @@ bool unpack_not_owned_verify(const BulkData& mesh,
                       const std::function<PairIterEntityComm(Entity)>& getEntityComm,
                              CommSparse& commSparse,
                              std::ostream& error_log);
+
+bool verify_parallel_attributes(const BulkData& mesh,
+                                const EntityCommDatabase& commDB,
+                                const EntityCommListInfoVector& commList,
+                                const std::function<PairIterEntityComm(Entity)>& getEntityComm,
+                                std::ostream & error_log );
+
+bool comm_mesh_verify_parallel_consistency(const BulkData& mesh,
+                                           const EntityCommDatabase& commDB,
+                                           const EntityCommListInfoVector& commList,
+                                           const std::function<PairIterEntityComm(Entity)>& getEntityComm,
+                                           std::ostream & error_log );
 
 void check_matching_parts_count(unsigned partsCount, int rank, int commSize, MPI_Comm comm);
 

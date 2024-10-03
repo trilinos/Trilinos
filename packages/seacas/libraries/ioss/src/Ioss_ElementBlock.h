@@ -43,8 +43,8 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     IOSS_NODISCARD Property get_implicit_property(const std::string &my_name) const override;
 
-    IOSS_NODISCARD std::vector<std::string> get_block_adjacencies() const;
-    void get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
+    IOSS_NODISCARD Ioss::NameList get_block_adjacencies() const;
+    void                          get_block_adjacencies(Ioss::NameList &block_adjacency) const;
     IOSS_NODISCARD AxisAlignedBoundingBox get_bounding_box() const;
     IOSS_NODISCARD bool                   operator==(const Ioss::ElementBlock &rhs) const;
     IOSS_NODISCARD bool                   operator!=(const Ioss::ElementBlock &rhs) const;
