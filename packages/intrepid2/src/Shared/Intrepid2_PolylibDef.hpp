@@ -602,7 +602,7 @@ namespace Intrepid2 {
       
 
       double a2[maxOrder]={}, a3[maxOrder]={}, a4[maxOrder]={};
-      double ad1, ad2, ad3;
+      double ad1(0.0), ad2(0.0), ad3(0.0);
       const double apb = alpha + beta;
       const double amb = alpha - beta;
 
