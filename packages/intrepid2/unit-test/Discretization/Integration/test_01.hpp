@@ -260,9 +260,11 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(cubPoints,  Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
         DynRankView ConstructWithLabel(cubWeights, Parameters::MaxIntegrationPoints);
 
+        int maxTotalCubatureDegree = Parameters::MaxCubatureDegreeEdge; // sum in all dimensions
+        
         *outStream << "-> Line testing\n\n";
         {
-          for (ordinal_type deg=0;deg<=Parameters::MaxCubatureDegreeEdge;++deg) {
+          for (ordinal_type deg=0;deg<=maxTotalCubatureDegree;++deg) {
             CubatureLineType cub(deg);
             cub.getCubature(cubPoints, cubWeights);
             const auto npts = cub.getNumPoints();
@@ -316,8 +318,8 @@ namespace Intrepid2 {
 
         *outStream << "-> Quad testing\n\n";
         {
-          for (ordinal_type y_deg=0;y_deg<=Parameters::MaxCubatureDegreeEdge;++y_deg)
-            for (ordinal_type x_deg=0;x_deg<=Parameters::MaxCubatureDegreeEdge;++x_deg) {
+          for (ordinal_type y_deg=0;y_deg<=maxTotalCubatureDegree-1;++y_deg)
+            for (ordinal_type x_deg=0;x_deg<=maxTotalCubatureDegree-y_deg;++x_deg) {
               const auto x_line = CubatureLineType(x_deg);
               const auto y_line = CubatureLineType(y_deg);
               CubatureTensorType cub( x_line, y_line );
@@ -402,9 +404,9 @@ namespace Intrepid2 {
         }
         
         {
-          for (ordinal_type z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
-            for (ordinal_type y_deg=0;y_deg<Parameters::MaxCubatureDegreeEdge;++y_deg)
-              for (ordinal_type x_deg=0;x_deg<Parameters::MaxCubatureDegreeEdge;++x_deg) {
+          for (ordinal_type z_deg=0;z_deg<=maxTotalCubatureDegree-2;++z_deg)
+            for (ordinal_type y_deg=0;y_deg<=maxTotalCubatureDegree-z_deg;++y_deg)
+              for (ordinal_type x_deg=0;x_deg<=maxTotalCubatureDegree-z_deg-y_deg;++x_deg) {
                 const auto x_line = CubatureLineType(x_deg);
                 const auto y_line = CubatureLineType(y_deg);
                 const auto z_line = CubatureLineType(z_deg);
