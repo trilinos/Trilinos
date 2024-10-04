@@ -152,6 +152,7 @@ namespace Intrepid2 {
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
     using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using HostBasis = Basis_HVOL_TRI_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;

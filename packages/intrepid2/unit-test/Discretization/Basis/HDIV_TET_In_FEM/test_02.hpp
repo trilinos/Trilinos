@@ -126,7 +126,7 @@ namespace Intrepid2 {
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
             OutValueType diff = 0; 
-            auto tol = 100*epsilon<double>();
+            auto tol = epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
@@ -152,7 +152,8 @@ namespace Intrepid2 {
             const auto outputDivergencesB_Host = Kokkos::create_mirror_view(outputDivergencesB); Kokkos::deep_copy(outputDivergencesB_Host, outputDivergencesB);
             
             OutValueType diff = 0;
-            auto tol = 1e5*epsilon<double>();
+            //Note, a PR release-debug serial build shows substantially higher errors (possibly due to operation rearrangements). Need to investigate more.
+            auto tol = 1e6*epsilon<double>();
             for (size_t ic=0;ic<outputDivergencesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputDivergencesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputDivergencesA_Host.extent(2);++j) {

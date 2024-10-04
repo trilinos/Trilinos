@@ -592,7 +592,7 @@ namespace Intrepid2 {
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
-            using SerialValue = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::Serial<OPERATOR_VALUE>;
+            using SerialValue = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::template Serial<OPERATOR_VALUE>;
             SerialValue::getValues( output, input);
           });
           break;
@@ -600,7 +600,7 @@ namespace Intrepid2 {
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );            
-            using SerialGrad = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::Serial<OPERATOR_GRAD>;
+            using SerialGrad = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::template Serial<OPERATOR_GRAD>;
             SerialGrad::getValues( output, input);
           });
           break;
@@ -608,7 +608,7 @@ namespace Intrepid2 {
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
-            using SerialCurl = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::Serial<OPERATOR_CURL>;
+            using SerialCurl = typename Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::template Serial<OPERATOR_CURL>;
             SerialCurl::getValues( output, input);
           });
           break;

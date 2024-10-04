@@ -280,14 +280,14 @@ namespace Intrepid2 {
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
-            Impl::Basis_HGRAD_WEDGE_C1_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
+            Impl::Basis_HGRAD_WEDGE_C1_FEM::template Serial<OPERATOR_VALUE>::getValues( output, input);
           });
           break;
         case OPERATOR_GRAD:
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
-            Impl::Basis_HGRAD_WEDGE_C1_FEM::Serial<OPERATOR_GRAD>::getValues( output, input);
+            Impl::Basis_HGRAD_WEDGE_C1_FEM::template Serial<OPERATOR_GRAD>::getValues( output, input);
           });
           break;
         default: {}
