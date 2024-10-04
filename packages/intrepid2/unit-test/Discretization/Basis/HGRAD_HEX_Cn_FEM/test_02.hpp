@@ -37,13 +37,27 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       try { 
+        // for higher orders in certain environments, this test can take a while to run in ctest.  So we reduce the number of points as we go beyond 10th order.
+        std::vector<int> nptsForOrder(Parameters::MaxOrder+1);
+        for (int i=0; i<=10; i++)
+        {
+          nptsForOrder[i] = 1000;
+        }
+        for (int i=11; i<15; i++)
+        {
+          nptsForOrder[i] = 100;
+        }
+        for (int i=15; i<Parameters::MaxOrder; i++)
+        {
+          nptsForOrder[i] = 10;
+        }
         for (int order=1;order<Parameters::MaxOrder;++order) {
           Basis_HGRAD_HEX_Cn_FEM<DeviceType,OutValueType,PointValueType> basis(order);
           
           // problem setup 
           //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
           //   A is compuated via serial interface and B is computed with top-level interface.
-          const int npts = 1000, ndim = 3;
+          const int npts = nptsForOrder[order], ndim = 3;
           Kokkos::DynRankView<OutValueType,DeviceType> outputValuesA("outputValuesA", basis.getCardinality(), npts);
           Kokkos::DynRankView<OutValueType,DeviceType> outputValuesB("outputValuesB", basis.getCardinality(), npts);
           
