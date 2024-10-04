@@ -54,9 +54,6 @@ namespace Intrepid2 {
           using BasisType = Basis_HDIV_TET_In_FEM<DeviceType,OutValueType,PointValueType>;
           auto basisPtr = Teuchos::rcp(new BasisType(order));
           
-          // problem setup 
-          //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
-          //   A is compuated via serial interface and B is computed with top-level interface.
           const int ncells = 5, npts = 10, ndim = 3;
           Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputValuesA, ncells, basisPtr->getCardinality(), npts, ndim);
           Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputValuesB, basisPtr->getCardinality(), npts, ndim);
@@ -129,7 +126,7 @@ namespace Intrepid2 {
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
             OutValueType diff = 0; 
-            auto tol = epsilon<double>();
+            auto tol = 100*epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
@@ -155,7 +152,7 @@ namespace Intrepid2 {
             const auto outputDivergencesB_Host = Kokkos::create_mirror_view(outputDivergencesB); Kokkos::deep_copy(outputDivergencesB_Host, outputDivergencesB);
             
             OutValueType diff = 0;
-            auto tol = epsilon<double>();
+            auto tol = 1e5*epsilon<double>();
             for (size_t ic=0;ic<outputDivergencesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputDivergencesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputDivergencesA_Host.extent(2);++j) {

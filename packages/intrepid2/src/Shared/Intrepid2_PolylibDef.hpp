@@ -591,6 +591,11 @@ namespace Intrepid2 {
         for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = 0.5*(alpha + beta + two);
     } else {
+      INTREPID2_TEST_FOR_ABORT(Parameters::MaxOrder < n, 
+                               ">>> ERROR (Polylib::Serial::JacobiPolynomial): Requested order exceeds Parameters::MaxOrder .");
+      INTREPID2_TEST_FOR_ABORT(polyd.data() && !polyd.data() , 
+                               ">>> ERROR (Polylib::Serial::JacobiPolynomial): polyi view needed to compute polyd view.");
+      if(!polyi.data()) return;
       
       double a2[Parameters::MaxOrder]={}, a3[Parameters::MaxOrder]={}, a4[Parameters::MaxOrder]={};
       double ad1, ad2, ad3;

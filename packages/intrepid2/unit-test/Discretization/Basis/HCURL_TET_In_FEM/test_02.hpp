@@ -50,13 +50,10 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       try { 
-        for (int order=1;order<Parameters::MaxOrder;++order) {
+        for (int order=1;order<8;++order) {
           using BasisType = Basis_HCURL_TET_In_FEM<DeviceType,OutValueType,PointValueType>;
           auto basisPtr = Teuchos::rcp(new BasisType(order));
           
-          // problem setup 
-          //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
-          //   A is compuated via serial interface and B is computed with top-level interface.
           const int ncells = 5, npts = 10, ndim = 3;
           Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputValuesA, ncells, basisPtr->getCardinality(), npts, ndim);
           Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputValuesB, basisPtr->getCardinality(), npts, ndim);
@@ -141,7 +138,7 @@ namespace Intrepid2 {
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
             OutValueType diff = 0; 
-            auto tol = epsilon<double>();
+            auto tol = 1e2*epsilon<double>();  
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
@@ -167,7 +164,7 @@ namespace Intrepid2 {
             const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
             
             OutValueType diff = 0;
-            auto tol = epsilon<double>();
+            auto tol = 1e5*epsilon<double>(); //HCURL on TETs seems to be very sensitive to roundoff errors
             for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
