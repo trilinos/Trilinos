@@ -129,11 +129,17 @@ namespace Intrepid2 {
         // compute integrals
         for (ordinal_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
           CubatureLineType lineCub(cubDeg);
+          auto cubPoints  = lineCub.allocateCubaturePoints();
+          auto cubWeights = lineCub.allocateCubatureWeights();
+          lineCub.getCubature(cubPoints, cubWeights);
+          Kokkos::Array<int,1> degrees;
           for (ordinal_type polyDeg=0;polyDeg<=cubDeg;++polyDeg)
-            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(lineCub,
-                                                                            cubPoints,
+          {
+            degrees[0] = polyDeg;
+            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(cubPoints,
                                                                             cubWeights,
-                                                                            polyDeg);
+                                                                            degrees);
+          }
         }
         
         // get analytic values

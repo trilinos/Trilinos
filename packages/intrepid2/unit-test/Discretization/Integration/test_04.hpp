@@ -137,17 +137,27 @@ namespace Intrepid2 {
           CubatureTensorType hexCub( line, line, line );
           *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << "  Testing\n";
           
+          Kokkos::Array<int,3> degrees;
+          
+          auto cubPoints  = hexCub.allocateCubaturePoints();
+          auto cubWeights = hexCub.allocateCubatureWeights();
+          hexCub.getCubature(cubPoints, cubWeights);
+          
           ordinal_type cnt = 0;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
-            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg) 
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg)
+          {
+            degrees[0] = xDeg;
+            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg)
+            {
+              degrees[1] = yDeg;
               for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg,++cnt) {
-                testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(hexCub,
-                                                                            cubPoints,
+                degrees[2] = zDeg;
+                testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(cubPoints,
                                                                             cubWeights,
-                                                                            xDeg,
-                                                                            yDeg,
-                                                                            zDeg);
+                                                                            degrees);
               }
+            }
+          }
         }
 
 
