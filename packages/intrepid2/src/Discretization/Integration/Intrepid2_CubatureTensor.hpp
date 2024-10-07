@@ -158,6 +158,12 @@ namespace Intrepid2 {
     ordinal_type getNumCubatures() const {
       return numCubatures_;
     }
+      
+    /** \brief Return the number of cubatures.
+     */
+    CubatureDirect<DeviceType,pointValueType,weightValueType> getCubatureComponent(ordinal_type i) const {
+      return cubatures_[i];
+    }
 
     /** \brief Returns max. degree of polynomials that are integrated exactly.
      */
