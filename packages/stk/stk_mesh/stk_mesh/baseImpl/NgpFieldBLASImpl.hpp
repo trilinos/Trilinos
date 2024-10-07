@@ -288,21 +288,8 @@ void field_fill_impl(const Scalar alpha,
     }
   }
   else {
-    stk::mesh::HostMesh hostMesh(fields[0]->get_mesh());
-    if (nfields == 1)
-    {
-      stk::mesh::HostField<Scalar> ngpField(fields[0]->get_mesh(), *fields[0]);
-      field_fill_for_each_entity(hostMesh, &ngpField, nfields, alpha, component, fieldSelector, execSpace);
-    } else
-    {
-      std::vector<stk::mesh::HostField<Scalar>> ngpFields;
-      for (int i=0; i < nfields; ++i)
-      {
-        ngpFields.emplace_back(fields[i]->get_mesh(), *fields[i]);
-
-      }
-      field_fill_for_each_entity(hostMesh, ngpFields.data(), nfields, alpha, component, fieldSelector, execSpace);
-    }
+    std::vector<const stk::mesh::FieldBase*> fieldsVec(fields, fields+nfields);
+    stk::mesh::field_fill(alpha, fieldsVec, fieldSelector);
   }
 
   for (int i=0; i < nfields; ++i)
@@ -348,11 +335,7 @@ void field_copy_no_mark_t(const stk::mesh::FieldBase& xField,
   }
   else {
     xField.sync_to_host();
-    stk::mesh::HostField<Scalar> hostX(xField.get_mesh(), xField);
-    stk::mesh::HostField<Scalar> hostY(yField.get_mesh(), yField);
-    stk::mesh::HostMesh hostMesh(xField.get_mesh());
-    FieldCopy<stk::mesh::HostField<Scalar>> fieldCopy(hostX, hostY);
-    stk::mesh::for_each_entity_run(hostMesh, xField.entity_rank(), selector, fieldCopy);
+    stk::mesh::field_copy(xField, yField, selector);
   }
 }
 

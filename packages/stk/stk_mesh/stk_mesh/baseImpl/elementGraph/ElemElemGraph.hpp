@@ -350,14 +350,6 @@ private:
     std::string print_edge(const GraphEdge& graphEdge);
 };
 
-bool process_killed_elements(stk::mesh::BulkData& bulkData,
-                             const stk::mesh::EntityVector& killedElements,
-                             stk::mesh::Part& active,
-                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
-                             const stk::mesh::PartVector& side_parts,
-                             const stk::mesh::PartVector* boundary_mesh_parts = nullptr,
-                             stk::mesh::ModEndOptimizationFlag modEndOpt = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT);
-
 namespace impl
 {
 

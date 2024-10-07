@@ -1,5 +1,8 @@
 # CHANGELOG
 
+5.21.5-2 (STK_VERSION 5210502) 10/07/2024
+  stk_search: Fixed HIP sort error.
+  stk_mesh: add multi-field NGP-FieldBLAS field_fill
 5.21.5-1 (STK_VERSION 5210501) 9/27/2024
   stk_mesh: deprecate BulkData::relation_exist
 

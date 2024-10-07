@@ -493,6 +493,10 @@ TEST(stk_search, Local_CoarseSearchWithViews_MORTON_LBVH)
 
 TEST(stk_search, Local_CoarseSearchWithViews_ARBORX)
 {
+#ifndef STK_HAS_ARBORX
+  GTEST_SKIP();
+#endif
+
   local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX);
   local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX);
 }
