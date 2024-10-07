@@ -30,30 +30,26 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#ifndef STK_PROCESS_KILLED_ELEMENTS_HPP
+#define STK_PROCESS_KILLED_ELEMENTS_HPP
 
-#include <stk_util/registry/ProductRegistry.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/baseImpl/elementGraph/GraphTypes.hpp>
+#include <stk_mesh/baseImpl/MeshModification.hpp>
 
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
+namespace stk { namespace mesh {
+class Part;
+class BulkData;
 
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
+bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                             const stk::mesh::EntityVector& killedElements,
+                             stk::mesh::Part& active,
+                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                             const stk::mesh::PartVector& side_parts,
+                             const stk::mesh::PartVector* boundary_mesh_parts = nullptr,
+                             stk::mesh::impl::MeshModification::modification_optimization modEndOpt = stk::mesh::impl::MeshModification::modification_optimization::MOD_END_SORT);
 
-#define STK_VERSION 5210502
+}} // end stk mesh namespaces
 
-
-namespace stk
-{
-
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
-
-} // namespace stk
-
-#endif /* stk_util_Version_hpp */
-
+#endif

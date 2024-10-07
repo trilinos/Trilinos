@@ -159,7 +159,6 @@ namespace stk {
 
       void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
-      void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
       void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
       void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
@@ -851,11 +850,6 @@ namespace stk {
     inline void StkMeshIoBroker::set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->has_adaptivity(hasAdaptivity);
-    }
-
-    inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
     }
 
     inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {

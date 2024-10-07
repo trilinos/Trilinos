@@ -430,13 +430,10 @@ struct SortByCode
 {
   static void apply(const TreeType &tree, ExecutionSpace const& execSpace)
   {
-    if constexpr (Kokkos::SpaceAccessibility<ExecutionSpace, Kokkos::HostSpace>::accessible) {
+    if constexpr (Kokkos::SpaceAccessibility<ExecutionSpace, Kokkos::DefaultHostExecutionSpace::memory_space>::accessible) {
       SortByCodeIdPair<TreeType, ExecutionSpace>::apply(tree);
     }
     else {
-//#if KOKKOS_VERSION >= 40300
-//      Kokkos::Experimental::sort_by_key(execSpace, tree.m_leafCodes, tree.m_leafIds);
-//#elif defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCTHRUST)
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCTHRUST)
       const int n = tree.m_leafIds.extent(0);
 
@@ -447,7 +444,11 @@ struct SortByCode
       //thrust::stable_sort_by_key(rawLeafCodesThr, rawLeafCodesThr + n, rawLeafIdsThr);
       thrust::sort_by_key(rawLeafCodesThr, rawLeafCodesThr + n, rawLeafIdsThr);
 #else
-      STK_ThrowErrorMsg("shouldn't be able to get here"); // SortByCodeIdPair<TreeType, ExecutionSpace>::apply(tree);
+#if KOKKOS_VERSION >= 40300
+      Kokkos::Experimental::sort_by_key(execSpace, tree.m_leafCodes, tree.m_leafIds);
+#else
+      STK_ThrowErrorMessage("Need at least Kokkos 4.3");
+#endif
 #endif
     }
   }
