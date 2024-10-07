@@ -119,7 +119,7 @@ namespace Intrepid2 {
             for (size_t j=0;j<outputValuesA_Host.extent(1);++j) {
               sum += std::abs(outputValuesB_Host(i,j));
               diff += std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(i,j));
-              if (verbose) {
+              if (verbose && (diff/sum > 1.0e-9)) {
                 std::cout << " order = " << order
                           << " i = " << i << " j = " << j 
                           << " val A = " << outputValuesA_Host(i,j) 
