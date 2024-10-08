@@ -115,7 +115,6 @@ public:
       auto full_size_dv = available.back();
       available.pop_back();
 
-      using dv_t = typename MV::dual_view_type;
       typename dv_t::t_dev mv_dev(full_size_dv.view_device().data(), num_local_elems, numVecs);
       typename dv_t::t_host mv_host(full_size_dv.view_host().data(), num_local_elems, numVecs);
 
