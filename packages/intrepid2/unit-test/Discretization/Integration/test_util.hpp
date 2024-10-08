@@ -55,7 +55,10 @@ namespace Intrepid2 {
       const auto numPoints = cubPoints.extent_int(0); // P,D
       const auto dim       = cubPoints.extent_int(1);
       
-      Kokkos::parallel_reduce("computeIntegralOfMonomial", numPoints,
+      using ExecutionSpace = typename CubWeightViewType::execution_space;
+      
+      Kokkos::parallel_reduce("computeIntegralOfMonomial",
+                              Kokkos::RangePolicy(ExecutionSpace(), 0, numPoints),
       KOKKOS_LAMBDA (const int& pointOrdinal, double& localSum )
       {
         ValueType value = 1.0;
