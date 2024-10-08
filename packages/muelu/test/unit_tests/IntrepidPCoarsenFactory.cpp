@@ -46,9 +46,9 @@ namespace MueLuTests {
 
 /**** some helper methods and classes by Nate ****/
 #ifndef TEST_MORE_COMBINATIONS
-static const int MAX_LINE_DEGREE = Intrepid2::Parameters::MaxOrder;
-static const int MAX_QUAD_DEGREE = Intrepid2::Parameters::MaxOrder;
-static const int MAX_HEX_DEGREE  = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder : 4;
+static const int MAX_LINE_DEGREE = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10;
+static const int MAX_QUAD_DEGREE = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10;
+static const int MAX_HEX_DEGREE  = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder  :  4;
 static const int MAX_RANK_COUNT  = 4;
 #else
 static const int MAX_LINE_DEGREE = Intrepid2::Parameters::MaxOrder;
