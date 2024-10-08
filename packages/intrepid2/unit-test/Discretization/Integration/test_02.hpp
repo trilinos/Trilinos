@@ -112,19 +112,11 @@ namespace Intrepid2 {
         const auto maxDeg   = Parameters::MaxCubatureDegreeEdge;
         const auto polySize = maxDeg + 1;
 
-        // test inegral values
+        // test integral values
         DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
         
         // analytic integral values
         DynRankViewHost ConstructWithLabel(analyticInt, maxDeg+1, polySize);
-        
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints, 
-                                       Parameters::MaxIntegrationPoints, 
-                                       Parameters::MaxDimension);
-
-        DynRankView ConstructWithLabel(cubWeights, 
-                                       Parameters::MaxIntegrationPoints);
         
         // compute integrals
         for (ordinal_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
