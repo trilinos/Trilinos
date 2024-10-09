@@ -86,7 +86,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 2D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;

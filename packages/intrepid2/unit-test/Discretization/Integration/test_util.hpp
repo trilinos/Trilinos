@@ -53,7 +53,7 @@ namespace Intrepid2 {
       ValueType result = 0.0;
       
       const auto numPoints = cubPoints.extent_int(0); // P,D
-      const auto dim       = cubPoints.extent_int(1);
+      const int  dim       = spaceDim;
       
       using ExecutionSpace = typename CubWeightViewType::execution_space;
       
@@ -62,7 +62,7 @@ namespace Intrepid2 {
       KOKKOS_LAMBDA (const int& pointOrdinal, double& localSum )
       {
         ValueType value = 1.0;
-        for (int d=0; d<spaceDim; d++)
+        for (int d=0; d<dim; d++)
         {
           auto x_d = cubPoints(pointOrdinal,d);
           value *= pow(x_d, degrees[d]);

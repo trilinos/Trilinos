@@ -72,7 +72,7 @@ namespace Intrepid2 {
     virtual
     void
     getCubature( PointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
+                 weightViewType cubWeights ) const override {
       getCubatureImpl( cubPoints,
                        cubWeights );
     }

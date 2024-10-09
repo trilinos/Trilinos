@@ -86,7 +86,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 2D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -120,14 +119,6 @@ namespace Intrepid2 {
         const auto analyticMaxDeg = 61;
         const auto analyticPolySize = (analyticMaxDeg+1)*(analyticMaxDeg+2)/2;
         DynRankViewHost ConstructWithLabel(analyticInt, analyticPolySize, 1);
-        
-        // storage for cubature points and weights
-        DynRankView ConstructWithLabel(cubPoints,
-                                       Parameters::MaxIntegrationPoints,
-                                       Parameters::MaxDimension);
-        
-        DynRankView ConstructWithLabel(cubWeights,
-                                       Parameters::MaxIntegrationPoints);
         
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {

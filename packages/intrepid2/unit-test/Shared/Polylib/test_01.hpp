@@ -237,7 +237,6 @@ namespace Intrepid2 {
       const ValueType tol = 1000.0 * tolerence();
       const double  lowOrderTol = tol;
       const double highOrderTol = tol * 100;
-      const double  npThreshold = 20;
 
       try {
         Kokkos::View<ValueType*,Kokkos::HostSpace> 
