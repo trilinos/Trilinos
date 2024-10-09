@@ -43,8 +43,13 @@ class DynRankView ;
 
 namespace Impl {
 
+#if KOKKOS_VERSION >= 40499
+template<class Space, class T, class ... P>
+struct MirrorDRViewType;
+#else
 template<class Space, class T, class ... P>
 struct MirrorDRVType;
+#endif
 
 }
 
@@ -93,7 +98,11 @@ create_mirror(
       Kokkos::LayoutStride >::value >::type * = 0);
 
 template<class Space, class T, class ... P>
+#if KOKKOS_VERSION >= 40499
+typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type
+#else
 typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+#endif
 create_mirror(
   const Space&,
   const Kokkos::DynRankView<T,P...> & src,
@@ -1246,7 +1255,11 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
 }
 
 template<class Space, class T, class ... P>
+#if KOKKOS_VERSION >= 40499
+typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type
+#else
 typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+#endif
 create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
              , typename std::enable_if<
                  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
@@ -1257,8 +1270,13 @@ create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
   typedef DynRankView<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
+#if KOKKOS_VERSION >= 40499
+  return typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type(
+    src.label(),Impl::reconstructLayout(layout, src.rank()+1));
+#else
   return typename Impl::MirrorDRVType<Space,T,P ...>::view_type(
     src.label(),Impl::reconstructLayout(layout, src.rank()+1));
+#endif
 }
 
 namespace Impl {

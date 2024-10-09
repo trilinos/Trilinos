@@ -484,13 +484,21 @@ typename std::enable_if<
     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value,
+#if KOKKOS_VERSION >= 40499
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
+#else
   typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+#endif
 create_mirror(const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+#if KOKKOS_VERSION >= 40499
+  return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(src.label(),layout);
+#else
   return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),layout);
+#endif
 }
 
 template< class T , class ... P >
@@ -565,19 +573,32 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ),
+#if KOKKOS_VERSION >= 40499
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
+#else
   typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+#endif
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+#if KOKKOS_VERSION >= 40499
+  return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(
+    Kokkos::view_alloc(src.label(), wi), layout);
+#else
   return typename Impl::MirrorType<Space,T,P ...>::view_type(
     Kokkos::view_alloc(src.label(), wi), layout);
+#endif
 }
 
 template <class Space, class T, class... P>
+#if KOKKOS_VERSION >= 40499
+typename Impl::MirrorViewType<Space, T, P...>::dest_view_type
+#else
 typename Impl::MirrorViewType<Space, T, P...>::view_type
+#endif
 create_mirror_view_and_copy(
     const Space&, const Kokkos::View<T, P...>& src,
     std::string const& name,
