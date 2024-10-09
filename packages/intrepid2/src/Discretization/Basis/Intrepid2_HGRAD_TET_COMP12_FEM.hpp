@@ -203,12 +203,23 @@ namespace Intrepid2 {
                               operatorType);
     }
 
-    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-        <strong>reference Tetrahedron</strong>.
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
+                              ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPointsconst,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
 
-        \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
-        dimensioned (F,D)
-    */
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
     virtual
     void
     getDofCoords( ScalarViewType dofCoords ) const override {

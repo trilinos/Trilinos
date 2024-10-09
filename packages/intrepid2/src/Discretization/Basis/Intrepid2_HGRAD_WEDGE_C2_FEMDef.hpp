@@ -30,12 +30,13 @@ namespace Intrepid2 {
     Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::Serial<opType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
+      typedef typename inputViewType::value_type value_type;
       switch (opType) {
       case OPERATOR_VALUE: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
-        const auto w = 1.0 - x - y;
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
+        const value_type w = 1.0 - x - y;
 
         // output is a rank-1 array with dimensions (basisCardinality_)
         if constexpr (!serendipity) {
@@ -80,9 +81,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_GRAD: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
 
         if constexpr (!serendipity) {
           output.access(0, 0) = ((-3 + 4*x + 4*y)*(-1 + z)*z)/2.;
@@ -158,7 +159,7 @@ namespace Intrepid2 {
           output.access(17, 1) =  4*(-1 + x + 2*y)*(-1 + z*z);
           output.access(17, 2) =  8*y*(-1 + x + y)*z;
         } else {
-          const auto w = 1.0 - x - y;
+          const value_type w = 1.0 - x - y;
       
           output.access(0, 0) = -(2.0*w - 1.0 - 0.5*z)*(1.0 - z);
           output.access(0, 1) = -(2.0*w - 1.0 - 0.5*z)*(1.0 - z);
@@ -223,9 +224,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_D2: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
 
         if constexpr (!serendipity) {
           output.access(0, 0) =  2.*(-1. + z)*z;
@@ -356,7 +357,7 @@ namespace Intrepid2 {
 
         } else { //serendipity element
         
-          const auto w = 1.0 - x - y;
+          const value_type w = 1.0 - x - y;
           output.access(0, 0) =  2.0*(1.0 - z);     
           output.access(0, 1) =  2.0*(1.0 - z);     
           output.access(0, 2) =  2.0*w - 0.5 - z;
@@ -466,9 +467,9 @@ namespace Intrepid2 {
       }
       case OPERATOR_D3: {
         if constexpr (!serendipity) {
-          const auto x = input(0);
-          const auto y = input(1);
-          const auto z = input(2);
+          const value_type x = input(0);
+          const value_type y = input(1);
+          const value_type z = input(2);
 
           output.access(0, 0) =  0.;
           output.access(0, 1) =  0.;
@@ -1080,6 +1081,57 @@ namespace Intrepid2 {
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
+  }
+
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_WEDGE_DEG2_FEM<serendipity,DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perTeamSpaceSize = 0;
+    perThreadSpaceSize = 0;
+  }
+
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_WEDGE_DEG2_FEM<serendipity,DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_WEDGE_DEG2_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      (void) scratchStorage; //avoid unused variable warning
+
+      const int numPoints = inputPoints.extent(0);
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            using SerialValue = typename Impl::Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::template Serial<OPERATOR_VALUE>;
+            SerialValue::getValues( output, input);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            using SerialGrad = typename Impl::Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::template Serial<OPERATOR_GRAD>;
+            SerialGrad::getValues( output, input);
+          });
+          break;
+        default: {}
+    }
   }
 
 }// namespace Intrepid2
