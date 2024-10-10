@@ -484,13 +484,13 @@ typename std::enable_if<
     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),layout);
+  return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(src.label(),layout);
 }
 
 template< class T , class ... P >
@@ -565,14 +565,14 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ),
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(
+  return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(
     Kokkos::view_alloc(src.label(), wi), layout);
 }
 

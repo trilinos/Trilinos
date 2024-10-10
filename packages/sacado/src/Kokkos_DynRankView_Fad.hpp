@@ -44,7 +44,7 @@ class DynRankView ;
 namespace Impl {
 
 template<class Space, class T, class ... P>
-struct MirrorDRVType;
+struct MirrorDRViewType;
 
 }
 
@@ -93,7 +93,7 @@ create_mirror(
       Kokkos::LayoutStride >::value >::type * = 0);
 
 template<class Space, class T, class ... P>
-typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type
 create_mirror(
   const Space&,
   const Kokkos::DynRankView<T,P...> & src,
@@ -1246,7 +1246,7 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
 }
 
 template<class Space, class T, class ... P>
-typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type
 create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
              , typename std::enable_if<
                  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
@@ -1257,7 +1257,7 @@ create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
   typedef DynRankView<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorDRVType<Space,T,P ...>::view_type(
+  return typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type(
     src.label(),Impl::reconstructLayout(layout, src.rank()+1));
 }
 
