@@ -43,6 +43,12 @@
 #ifndef _IFPACK_CrsGRAPH_H_
 #define _IFPACK_CrsGRAPH_H_
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 class Ifpack_CrsGraph
 {
 public:
@@ -57,10 +63,3 @@ public:
 };
 
 #endif // _IFPACK_CrsGRAPH_H_
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

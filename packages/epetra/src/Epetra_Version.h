@@ -53,4 +53,3 @@ std::string Epetra_Version() {
 #warning "The Epetra package is deprecated"
 #endif
 #endif
-

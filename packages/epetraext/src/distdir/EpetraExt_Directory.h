@@ -41,6 +41,12 @@
 #ifndef EPETRAEXT_DIRECTORY_H
 #define EPETRAEXT_DIRECTORY_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 // ----------- Includes ----------
 
 #include <map>
@@ -350,10 +356,3 @@ pushData_( DataMap const & sData,
 } //namespace EpetraExt
 
 #endif
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

@@ -43,6 +43,12 @@
 #ifndef IFPACK_OVERLAPGRAPH_H
 #define IFPACK_OVERLAPGRAPH_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_CrsGraph.h"
@@ -143,10 +149,3 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   bool IsOverlapped_;
 };
 #endif // IFPACK_OVERLAPGRAPH_H
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

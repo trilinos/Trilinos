@@ -31,6 +31,12 @@
 #ifndef AMESOS_NOCOPIABLE_H
 #define AMESOS_NOCOPIABLE_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 /*!
  \class Amesos_NoCopiable
  
@@ -58,10 +64,3 @@ private:
   Amesos_NoCopiable& operator=(const Amesos_NoCopiable& rhs);
 };
 #endif
-
-#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Amesos package is deprecated"
-#endif
-#endif
-

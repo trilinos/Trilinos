@@ -5,6 +5,12 @@
 #ifndef ML_AGG_MIN_ENERGY
 #define ML_AGG_MIN_ENERGY
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_include.h"
 
@@ -47,10 +53,3 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
 #endif
 #endif
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

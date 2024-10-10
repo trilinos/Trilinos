@@ -40,6 +40,12 @@
 //@HEADER
 #ifndef EPETRAEXT_VECTOROUT_H
 #define EPETRAEXT_VECTOROUT_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_Vector;
 
@@ -129,10 +135,3 @@ namespace EpetraExt {
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_VECTOROUT_H */
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

@@ -43,6 +43,12 @@
 #ifndef HASH_D_DH
 #define HASH_D_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /* todo: rehash should be implemented in Hash_dhInsert();
          as of now, an error is set if the table overflows.
 */
@@ -105,10 +111,3 @@ extern "C"
 }
 #endif
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

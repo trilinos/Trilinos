@@ -43,6 +43,12 @@
 #ifndef IFPACK_ICT_H
 #define IFPACK_ICT_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ScalingType.h"
@@ -399,10 +405,3 @@ private:
 };
 
 #endif /* IFPACK_ICT_H */
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

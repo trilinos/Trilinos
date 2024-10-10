@@ -49,4 +49,3 @@ int CreateTridiPlus(Epetra_CrsMatrix& A) ;
 #warning "The Amesos package is deprecated"
 #endif
 #endif
-

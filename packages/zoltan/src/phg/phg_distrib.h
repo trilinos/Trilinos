@@ -43,4 +43,3 @@ int Zoltan_PHG_Redistribute(
 #endif
 
 #endif   /* __ZOLTAN_PHG_DISTRIB_H */
-    

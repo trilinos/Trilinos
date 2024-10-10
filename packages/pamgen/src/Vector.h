@@ -306,4 +306,4 @@ inline std::ostream& operator<<(std::ostream &str, const Vector &v)
   return str;
 }
 } // end namespace PAMGEN_NEVADA {
-#endif 
+#endif

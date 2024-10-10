@@ -10,6 +10,12 @@
 #ifndef IQR_GMRES_TOOLS_H
 #define IQR_GMRES_TOOLS_H
 
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+
 #include <iostream>
 #include <shylu_internal_gmres.h>
 
@@ -263,10 +269,3 @@ int GMRESManager< Map, MultiVector,
 } // namespace IQR
 
 #endif // IQR_GMRES_TOOLS_H
-
-#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ShyLU_DDCore package is deprecated"
-#endif
-#endif
-

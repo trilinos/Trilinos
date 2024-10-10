@@ -1,6 +1,12 @@
 #ifndef MLAPI_EIG_H
 #define MLAPI_EIG_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*!
 \file MLAPI_Eig.h
 
@@ -43,10 +49,3 @@ void Eigs(const Operator& A, int NumEigenvalues,
 } // namespace MLAPI
 
 #endif // MLAPI_EIG_H
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

@@ -158,4 +158,3 @@ public:
 } // namespace Galeri
 
 #endif
-

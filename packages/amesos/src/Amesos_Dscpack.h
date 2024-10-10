@@ -29,6 +29,12 @@
 #ifndef AMESOS_DSCPACK_H
 #define AMESOS_DSCPACK_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos_NoCopiable.h"
@@ -199,10 +205,3 @@ private:
   
 };  // class Amesos_Dscpack  
 #endif /* AMESOS_DSCPACK_H */
-
-#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Amesos package is deprecated"
-#endif
-#endif
-

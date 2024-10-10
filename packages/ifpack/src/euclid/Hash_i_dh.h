@@ -49,6 +49,12 @@
 #ifndef HASH_I_DH
 #define HASH_I_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "euclid_common.h"
 
 
@@ -86,10 +92,3 @@ extern "C"
 }
 #endif
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

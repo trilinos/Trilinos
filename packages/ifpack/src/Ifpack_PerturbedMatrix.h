@@ -43,6 +43,12 @@
 #ifndef IFPACK_PERTURBEDMATRIX_H
 #define IFPACK_PERTURBEDMATRIX_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Object.h"
@@ -83,10 +89,3 @@ class Ifpack_PerturbedMatrix: public Epetra_Object {
 
   //@}
 #endif // IFPACK_PERTURBEDMATRIX_H
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

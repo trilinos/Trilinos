@@ -44,6 +44,14 @@
 #ifndef EPETRA_BASICDIRECTORY_H
 #define EPETRA_BASICDIRECTORY_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Directory.h"
@@ -230,10 +238,3 @@ template<> inline const long long * Epetra_BasicDirectory::AllMinGIDs() const
 #endif
 
 #endif /* EPETRA_BASICDIRECTORY_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

@@ -81,4 +81,3 @@ void az2ifp_blockmatrix (void **bmat, AZ_MATRIX *Amat);
 #warning "The Ifpack package is deprecated"
 #endif
 #endif
-

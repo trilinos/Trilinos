@@ -119,4 +119,3 @@ extern int example_specific_comm_wrapper(double vec[], AZ_MATRIX *Amat);
 extern int  simple_example_specific_getrow( int columns[], double values[],
         int row_lengths[], struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
         int requested_rows[], int allocated_space);
-

@@ -44,6 +44,12 @@
 #ifndef _AZ_LAPACK_WRAPPERS_H_
 #define _AZ_LAPACK_WRAPPERS_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "az_f77func.h"
 
 #if defined(CRAY_T3X)
@@ -109,10 +115,3 @@ void PREFIX DGETRS_F77(az_fcd, int* n, int* nrhs, double* a,
                        int* lda, int*ipiv, double*x , int* ldx, int* info);
 void PREFIX SGETRS_F77(az_fcd, int* m, int* n, float* a,
                        int* lda, int*ipiv, float*x , int* ldx, int* info);
-
-#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The AztecOO package is deprecated"
-#endif
-#endif
-

@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_MULTIMPICOMM_H
 #define EPETRAEXT_MULTIMPICOMM_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include "EpetraExt_MultiComm.h" 
 #include "Epetra_MpiComm.h" 
@@ -214,10 +220,3 @@ class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm,
 } //namespace EpetraExt
 
 #endif /* EPETRAEXT_MULTIMPICOMM_H */
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

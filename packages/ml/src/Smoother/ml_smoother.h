@@ -13,6 +13,12 @@
 #ifndef __MLSMOOTHER__
 #define __MLSMOOTHER__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* ******************************************************************** */
 /* data structure type definition                                       */
 /* ******************************************************************** */
@@ -398,11 +404,3 @@ extern int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[]);
 #endif
 #endif
 #endif
-
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

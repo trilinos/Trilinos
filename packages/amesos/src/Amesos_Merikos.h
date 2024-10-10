@@ -120,6 +120,12 @@ Observations:
 #ifndef _AMESOS_MERIKOS_H_
 #define _AMESOS_MERIKOS_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
@@ -410,10 +416,3 @@ int m_per_p_;
   
 };  // End of  class Amesos_Merikos  
 #endif /* _AMESOS_MERIKOS_H_ */
-
-#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Amesos package is deprecated"
-#endif
-#endif
-

@@ -1,6 +1,12 @@
 #ifndef MLAPI_KRYLOV
 #define MLAPI_KRYLOV
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*!
 \file MLAPI_Krylov.h
 
@@ -44,10 +50,3 @@ void Krylov(const Operator& A, const MultiVector& LHS,
 } // namespace MLAPI
 
 #endif // ifdef MLAPI_KRYLOV
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

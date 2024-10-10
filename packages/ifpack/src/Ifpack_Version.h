@@ -53,4 +53,3 @@ std::string Ifpack_Version() {
 #warning "The Ifpack package is deprecated"
 #endif
 #endif
-

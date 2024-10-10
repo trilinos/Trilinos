@@ -47,14 +47,13 @@
 #ifndef __BLOCKH__
 #define __BLOCKH__
 
-#define DEFBLKSZ  64         /*  For  general 32 bit machines  */
-
-
-#endif
-
 #if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
 #ifdef __GNUC__
 #warning "The Pliris package is deprecated"
 #endif
 #endif
 
+#define DEFBLKSZ  64         /*  For  general 32 bit machines  */
+
+
+#endif

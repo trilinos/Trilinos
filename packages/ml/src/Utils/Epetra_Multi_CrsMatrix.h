@@ -17,6 +17,12 @@
 
 #ifndef ML_EPETRA_MULTI_CRS_MATRIX_H
 #define ML_EPETRA_MULTI_CRS_MATRIX_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 #if defined(HAVE_ML_EPETRA)
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -149,10 +155,3 @@ private:
 
 #endif
 #endif /*ML_EPETRA_MULTI_CRS_MATRIX_H*/
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

@@ -42,6 +42,12 @@
 #ifndef EpetraExt_CRSMATRIX_TRANSPOSE_H
 #define EpetraExt_CRSMATRIX_TRANSPOSE_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 
 class Epetra_RowMatrix;
@@ -117,10 +123,3 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
 } //namespace EpetraExt
 
 #endif //EpetraExt_ROWMATRIX_TRANSPOSE_H
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

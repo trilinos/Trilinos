@@ -43,6 +43,12 @@
 #ifndef _POISSON2DOPERATOR_H_
 #define _POISSON2DOPERATOR_H_
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 class Epetra_MultiVector;
 class Epetra_CrsMatrix;
 class Epetra_Map;
@@ -164,10 +170,3 @@ class Poisson2dOperator: public virtual Epetra_Operator {
 };
 
 #endif /* _POISSON2DOPERATOR_H_ */
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

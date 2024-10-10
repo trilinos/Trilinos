@@ -44,15 +44,14 @@
 #ifndef PLIRIS_VERSION_HPP
 #define PLIRIS_VERSION_HPP
 
-#include "Pliris_ConfigDefs.h"
-
-string Pliris_Version();
-
-#endif // PLIRIS_VERSION_HPP
-
 #if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
 #ifdef __GNUC__
 #warning "The Pliris package is deprecated"
 #endif
 #endif
 
+#include "Pliris_ConfigDefs.h"
+
+string Pliris_Version();
+
+#endif // PLIRIS_VERSION_HPP

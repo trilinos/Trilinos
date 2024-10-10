@@ -81,4 +81,3 @@ namespace RBGen {
 } // namespace RBGen
 
 #endif // EPETRA_CRSMATRIX_FILE_IO_HANDLER_H
-

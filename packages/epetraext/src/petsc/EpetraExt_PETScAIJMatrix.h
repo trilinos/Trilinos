@@ -49,6 +49,12 @@
 #ifndef _EPETRAEXT_PETSCAIJMATRIX_H_
 #define _EPETRAEXT_PETSCAIJMATRIX_H_
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_RowMatrix.h"
@@ -417,10 +423,3 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
   //Epetra_PETScAIJMatrix(const Epetra_PETScAIJMatrix & Matrix) {(void)Matrix;}
 };
 #endif /* _EPETRAEXT_PETSCAIJMATRIX_H_ */
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

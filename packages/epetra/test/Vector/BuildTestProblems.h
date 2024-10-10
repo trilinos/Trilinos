@@ -77,4 +77,3 @@ int  BuildVectorTests (Epetra_Vector & C,
 #warning "The Epetra package is deprecated"
 #endif
 #endif
-

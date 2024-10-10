@@ -13,6 +13,12 @@
 #ifndef _MLRAP_
 #define _MLRAP_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_struct.h"
@@ -138,10 +144,3 @@ extern int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
 #define ML_TRUE                1
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

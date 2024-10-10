@@ -21,4 +21,3 @@ extern void GAUSSQ_F77(int *kind, int *n, double *alpha, double *beta,
 #ifdef __cplusplus
 }
 #endif
-

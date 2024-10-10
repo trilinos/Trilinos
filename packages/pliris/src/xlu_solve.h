@@ -44,6 +44,12 @@
 #ifndef __XLUSOLVEH__
 #define __XLUSOLVEH__
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 #include "defines.h"
 
 #ifdef __cplusplus
@@ -65,10 +71,3 @@ double seconds_(double *);
 #endif
 
 #endif
-
-#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Pliris package is deprecated"
-#endif
-#endif
-

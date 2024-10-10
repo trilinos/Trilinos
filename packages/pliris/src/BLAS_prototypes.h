@@ -148,4 +148,3 @@ double ddot(int n, double *dx, int incx, double *dy, int incy);
 #warning "The Pliris package is deprecated"
 #endif
 #endif
-

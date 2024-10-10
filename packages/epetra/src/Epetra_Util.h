@@ -44,6 +44,14 @@
 #ifndef EPETRA_UTIL_H
 #define EPETRA_UTIL_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include <vector>
@@ -477,10 +485,3 @@ int EPETRA_LIB_DLL_EXPORT Epetra_Util_ExtractHbData(
 
 
 #endif /* EPETRA_UTIL_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

@@ -43,6 +43,12 @@
 #ifndef IFPACK_CRSILUT_H
 #define IFPACK_CRSILUT_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_OverlapGraph.h"
@@ -138,10 +144,3 @@ class Ifpack_CrsIlut: public Epetra_Object, public Epetra_CompObject, public Ifp
 };
 
 #endif /* IFPACK_CRSILUT_H */
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

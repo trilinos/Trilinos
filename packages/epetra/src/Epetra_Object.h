@@ -44,6 +44,14 @@
 #ifndef EPETRA_OBJECT_H
 #define EPETRA_OBJECT_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_CombineMode.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_ConfigDefs.h"
@@ -212,10 +220,3 @@ inline std::ostream& operator<<(std::ostream& os, const Epetra_Object& obj)
 }
 
 #endif /* EPETRA_OBJECT_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

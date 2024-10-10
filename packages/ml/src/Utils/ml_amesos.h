@@ -6,6 +6,12 @@
 #ifndef __ML_AMESOS_H__
 #define __ML_AMESOS_H__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include <stdlib.h>
 #include <assert.h>
 #include "ml_struct.h"
@@ -72,10 +78,3 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
 #endif
 
 #endif /* #ifndef __ML_AMESOS_H__ */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

@@ -5,6 +5,12 @@
 #ifndef __MLXYT__
 #define __MLXYT__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_operator.h"
 
@@ -49,10 +55,3 @@ extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
 #endif
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

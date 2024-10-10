@@ -44,6 +44,14 @@
 #ifndef EPETRA_SRCDISTOBJECT_H
 #define EPETRA_SRCDISTOBJECT_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 
 class Epetra_BlockMap;
@@ -77,10 +85,3 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SrcDistObject {
 };
 
 #endif /* EPETRA_SRCDISTOBJECT_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

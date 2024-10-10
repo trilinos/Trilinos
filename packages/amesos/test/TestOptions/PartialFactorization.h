@@ -16,4 +16,3 @@ int PartialFactorization( const char* AmesosClass,
 #warning "The Amesos package is deprecated"
 #endif
 #endif
-

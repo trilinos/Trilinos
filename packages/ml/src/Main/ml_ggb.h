@@ -5,6 +5,12 @@
 #ifndef __MLGGB_
 #define __MLGGB_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 
 
 #define SHIFTS   0
@@ -99,10 +105,3 @@ void PREFIX PDNAUPD_F77(int *, int *, char *, int *, char *, int *, double *, do
 #endif
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

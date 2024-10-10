@@ -170,6 +170,3 @@ public:
 } // namespace Galeri
 
 #endif
-
-
-

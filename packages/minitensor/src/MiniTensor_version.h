@@ -22,4 +22,3 @@ std::string version();
 } // namespace minitensor
 
 #endif // MINITENSOR_VERSION_H
- 

@@ -44,6 +44,14 @@
 #ifndef EPETRA_SERIALCOMMDATA_H
 #define EPETRA_SERIALCOMMDATA_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_Data.h"
 
 //! Epetra_SerialCommData:  The Epetra Serial Communication Data Class.
@@ -75,10 +83,3 @@ class Epetra_SerialCommData : public Epetra_Data {
 
 };
 #endif /* EPETRA_SERIALCOMMDATA_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

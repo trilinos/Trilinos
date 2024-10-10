@@ -119,5 +119,4 @@ private:
 } //end namespace Belos
 
 // end of file BELOS_EPETRA_OPERATOR_H
-#endif 
-
+#endif

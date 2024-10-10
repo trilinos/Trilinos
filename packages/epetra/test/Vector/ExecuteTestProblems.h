@@ -60,4 +60,3 @@ int BadResidual(bool verbose, double * Residual);
 #warning "The Epetra package is deprecated"
 #endif
 #endif
-

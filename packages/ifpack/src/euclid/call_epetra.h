@@ -43,6 +43,12 @@
 #ifndef CALL_EPETRA_H
 #define CALL_EPETRA_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /* This is a true C header file to be used to call Epetra functions from 
    the Euclid solver. They all pass the matrix as a void-pointer. */
 
@@ -69,10 +75,3 @@ extern "C"
 
 
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

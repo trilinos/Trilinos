@@ -72,4 +72,3 @@ void Trilinos_Util_CountTriples( const char *data_file,
 #warning "The Triutils package is deprecated"
 #endif
 #endif
-

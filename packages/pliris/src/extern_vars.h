@@ -98,4 +98,3 @@ extern MPI_Comm row_comm,col_comm;
 #warning "The Pliris package is deprecated"
 #endif
 #endif
-

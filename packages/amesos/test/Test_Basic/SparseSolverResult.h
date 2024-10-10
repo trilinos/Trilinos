@@ -30,6 +30,13 @@
 
 #ifndef SPARSESOLVERRESULT
 #define SPARSESOLVERRESULT
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Object.h"
 const double UnUsedDbl = 13e130;
 
@@ -85,10 +92,3 @@ class SparseSolverResult : public Epetra_Object {
 } ;
 
 #endif
-
-#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Amesos package is deprecated"
-#endif
-#endif
-

@@ -84,4 +84,3 @@ public:
 } // end namespace cusp
 
 #include <cusp/relaxation/block_jacobi.inl>
-

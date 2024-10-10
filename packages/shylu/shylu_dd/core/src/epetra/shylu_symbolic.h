@@ -10,6 +10,12 @@
 #ifndef SHYLU_SYMBOLIC_H
 #define SHYLU_SYMBOLIC_H
 
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_Map.h" 
 #include "Epetra_MultiVector.h" 
@@ -43,10 +49,3 @@ typedef struct
 
 
 #endif // SHYLU_SYMBOLIC_H
-
-#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ShyLU_DDCore package is deprecated"
-#endif
-#endif
-

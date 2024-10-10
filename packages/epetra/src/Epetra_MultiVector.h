@@ -44,6 +44,14 @@
 #ifndef EPETRA_MULTIVECTOR_H
 #define EPETRA_MULTIVECTOR_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_Map;
@@ -1074,10 +1082,3 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 };
 
 #endif /* EPETRA_MULTIVECTOR_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

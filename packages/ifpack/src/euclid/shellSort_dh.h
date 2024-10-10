@@ -43,6 +43,12 @@
 #ifndef SUPPORT_DH
 #define SUPPORT_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "euclid_common.h"
 
 #ifdef __cplusplus
@@ -62,10 +68,3 @@ extern void shellSort_int_int_float(int n, int *x, int *y, double *v);
 }
 #endif
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

@@ -42,6 +42,12 @@
 #ifndef EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_H
 #define EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Teuchos_PolynomialTraits.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
@@ -90,10 +96,3 @@ namespace Teuchos {
 } // namespace Teuchos
 
 #endif // EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_Hx
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

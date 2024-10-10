@@ -42,6 +42,12 @@
 #ifndef _AMESOS_SCALAPACK_H_
 #define _AMESOS_SCALAPACK_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos_NoCopiable.h"
@@ -408,10 +414,3 @@ revert to their default values.
   
 };  // End of  class Amesos_Scalapack  
 #endif /* _AMESOS_SCALAPACK_H_ */
-
-#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Amesos package is deprecated"
-#endif
-#endif
-

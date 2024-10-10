@@ -43,6 +43,14 @@
 
 #ifndef EPETRA_SERIALSPDDENSESOLVER_H
 #define EPETRA_SERIALSPDDENSESOLVER_H
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
 #include "Epetra_SerialDenseSolver.h"
 class Epetra_SerialSymDenseMatrix;
 
@@ -275,10 +283,3 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialSpdDenseSolver : public Epetra_SerialDe
 };
 
 #endif /* EPETRA_SERIALSPDDENSESOLVER_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

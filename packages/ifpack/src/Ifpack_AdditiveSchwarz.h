@@ -44,6 +44,12 @@
 #ifndef IFPACK_ADDITIVESCHWARZ_H
 #define IFPACK_ADDITIVESCHWARZ_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_ConfigDefs.h"
@@ -1233,10 +1239,3 @@ Condest(const Ifpack_CondestType CT, const int MaxIters,
 }
 
 #endif // IFPACK_ADDITIVESCHWARZ_H
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

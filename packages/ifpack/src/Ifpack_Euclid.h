@@ -43,6 +43,12 @@
 #ifndef IFPACK_EUCLID_H
 #define IFPACK_EUCLID_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #ifdef HAVE_EUCLID
 
@@ -349,10 +355,3 @@ std::ostream& operator << (std::ostream& os, const Ifpack_Euclid& A);
 
 #endif // HAVE_EUCLID
 #endif /* IFPACK_EUCLID_H */
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

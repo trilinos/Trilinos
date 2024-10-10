@@ -4,6 +4,12 @@
 /* ******************************************************************** */
 #ifndef __MLXYT__
 #define __MLXYT__
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 #include "ml_common.h"
 extern void setup_henry_xxt(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
@@ -20,10 +26,3 @@ extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
                       int start_location, int total_send, ML_Comm *comm,
                       int mask);
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

@@ -43,6 +43,12 @@
 #ifndef IFPACK_LOCALFILTER_H
 #define IFPACK_LOCALFILTER_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -443,10 +449,3 @@ private:
 };
 
 #endif /* IFPACK_LOCALFILTER_H */
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

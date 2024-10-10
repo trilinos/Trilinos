@@ -1,6 +1,12 @@
 #ifndef MLAPI_BASEOBJECT_H
 #define MLAPI_BASEOBJECT_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*!
 \file MLAPI_BaseObject.h
 
@@ -81,10 +87,3 @@ std::ostream& operator<< (std::ostream& os, const BaseObject& obj);
 } // namespace MLAPI
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

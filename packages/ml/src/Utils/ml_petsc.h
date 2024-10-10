@@ -18,6 +18,12 @@
 #ifndef ML_PETSC_H
 #define ML_PETSC_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #ifdef HAVE_ML_PETSC
 
 #include "petscksp.h"
@@ -29,10 +35,3 @@ typedef KSP ML_PetscKSP;
 #endif /*ifdef HAVE_ML_PETSC*/
 
 #endif /* define ML_PETSC_H */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

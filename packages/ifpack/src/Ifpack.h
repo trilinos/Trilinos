@@ -43,6 +43,12 @@
 #ifndef IFPACK_H
 #define IFPACK_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
@@ -284,10 +290,3 @@ TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(Ifpack::EPrecType)
 
 
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-
