@@ -37,10 +37,6 @@ namespace Sacado {
 namespace Kokkos {
 
   namespace Impl {
-#if KOKKOS_VERSION < 40499
-    template<class Space, class T, class ... P>
-    struct MirrorType;
-#endif
     template<class Space, class T, class ... P>
     struct MirrorViewType;
   }
@@ -87,11 +83,7 @@ template<class Space, class T, class ... P,
   typename std::enable_if<
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
-#if KOKKOS_VERSION >= 40499
   typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
-#else
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-#endif
 create_mirror(const Space&,
               const Kokkos::View<T,P...> & src);
 
@@ -122,11 +114,7 @@ template<class Space, class T, class ... P,
 typename std::enable_if<
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
-#if KOKKOS_VERSION >= 40499
   typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
-#else
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-#endif
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space&, const Kokkos::View<T,P...> & src);
 

@@ -128,11 +128,7 @@ inline auto create_mirror(
     arg_prop, std::string(src.label()).append("_mirror"));
 
   if constexpr (Impl::ViewCtorProp<ViewCtorArgs...>::has_memory_space){
-#if KOKKOS_VERSION >= 40499
     return typename Impl::MirrorViewType<typename Impl::ViewCtorProp<ViewCtorArgs...>::memory_space, T, P ...>::dest_view_type(prop_copy, layout);
-#else
-    return typename Impl::MirrorType<typename Impl::ViewCtorProp<ViewCtorArgs...>::memory_space, T, P ...>::view_type(prop_copy, layout);
-#endif
   } else {
     return typename View<T, P...>::HostMirror(prop_copy, layout);
   }

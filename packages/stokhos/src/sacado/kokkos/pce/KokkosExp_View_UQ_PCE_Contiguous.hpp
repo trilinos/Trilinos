@@ -229,23 +229,14 @@ template<class Space, class T, class ... P, typename Enabled>
   typename std::enable_if<
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
-#if KOKKOS_VERSION >= 40499
   typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
-#else
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-#endif
 create_mirror(const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-#if KOKKOS_VERSION >= 40499
   return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(
     view_alloc(src.label(), src.impl_map().cijk()),layout);
-#else
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(
-    view_alloc(src.label(), src.impl_map().cijk()),layout);
-#endif
 }
 
 template< class T , class ... P >
@@ -313,24 +304,15 @@ template<class Space, class T, class ... P, typename Enable>
 typename std::enable_if<
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
-#if KOKKOS_VERSION >= 40499
   typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
-#else
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-#endif
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-#if KOKKOS_VERSION >= 40499
   return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(
     view_alloc(src.label(), wi, src.impl_map().cijk()), layout);
-#else
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(
-    view_alloc(src.label(), wi, src.impl_map().cijk()), layout);
-#endif
 }
 
 template <class Space, class T, class... P>

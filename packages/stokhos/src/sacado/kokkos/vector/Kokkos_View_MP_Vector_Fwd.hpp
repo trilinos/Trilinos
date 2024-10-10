@@ -37,10 +37,6 @@ namespace Sacado {
 namespace Kokkos {
 
   namespace Impl {
-#if KOKKOS_VERSION < 40499
-    template<class Space, class T, class ... P>
-    struct MirrorType;
-#endif
     template<class Space, class T, class ... P>
     struct MirrorViewType;
   }
