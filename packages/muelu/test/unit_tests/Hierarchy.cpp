@@ -234,6 +234,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, Iterate, Scalar, LocalOrdinal, Glob
   UncoupledAggFact->SetMinNodesPerAggregate(3);
   UncoupledAggFact->SetMaxNeighAlreadySelected(0);
   UncoupledAggFact->SetOrdering("natural");
+  UncoupledAggFact->SetParameter("aggregation: deterministic", Teuchos::ParameterEntry(true));
 
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -443,6 +444,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, IterateWithImplicitRestriction, Sca
   UncoupledAggFact->SetMinNodesPerAggregate(3);
   UncoupledAggFact->SetMaxNeighAlreadySelected(0);
   UncoupledAggFact->SetOrdering("natural");
+  UncoupledAggFact->SetParameter("aggregation: deterministic", Teuchos::ParameterEntry(true));
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 

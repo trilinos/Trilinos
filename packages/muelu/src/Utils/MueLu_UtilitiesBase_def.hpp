@@ -584,12 +584,12 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>
+Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A) {
   // Get/Create distributed objects
   RCP<const Map> rowMap = A.getRowMap();
-  auto diag             = Xpetra::VectorFactory<Magnitude, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, false);
+  auto diag             = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, false);
 
   // Implement using Kokkos
   using local_vector_type = typename Vector::dual_view_type::t_dev_um;
@@ -597,10 +597,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
-  using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
   using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
-  using KAT_M             = typename Kokkos::ArithTraits<mag_type>;
-  using size_type         = typename local_matrix_type::non_const_size_type;
 
   auto diag_dev      = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
   auto local_mat_dev = A.getLocalMatrixDevice();
@@ -609,11 +606,12 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::parallel_for(
       "GetMatrixMaxMinusOffDiagonal", my_policy,
       KOKKOS_LAMBDA(const LocalOrdinal rowIdx) {
-        auto mymax = KAT_M::zero();
-        auto row   = local_mat_dev.row(rowIdx);
+        auto mymax = KAT_S::zero();
+        auto row   = local_mat_dev.rowConst(rowIdx);
         for (LocalOrdinal entryIdx = 0; entryIdx < row.length; ++entryIdx) {
           if (rowIdx != row.colidx(entryIdx)) {
-            mymax = std::max(mymax, -KAT_S::magnitude(row.value(entryIdx)));
+            if (KAT_S::real(mymax) < -KAT_S::real(row.value(entryIdx)))
+              mymax = -KAT_S::real(row.value(entryIdx));
           }
         }
         diag_dev(rowIdx, 0) = mymax;
@@ -623,14 +621,14 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>
+Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber) {
   TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()), std::runtime_error, "GetMatrixMaxMinusOffDiagonal: BlockNumber must match's A's column map.");
 
   // Get/Create distributed objects
   RCP<const Map> rowMap = A.getRowMap();
-  auto diag             = Xpetra::VectorFactory<Magnitude, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, false);
+  auto diag             = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, false);
 
   // Implement using Kokkos
   using local_vector_type = typename Vector::dual_view_type::t_dev_um;
@@ -638,10 +636,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
-  using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
   using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
-  using KAT_M             = typename Kokkos::ArithTraits<mag_type>;
-  using size_type         = typename local_matrix_type::non_const_size_type;
 
   auto diag_dev        = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
   auto local_mat_dev   = A.getLocalMatrixDevice();
@@ -651,11 +646,12 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::parallel_for(
       "GetMatrixMaxMinusOffDiagonal", my_policy,
       KOKKOS_LAMBDA(const LocalOrdinal rowIdx) {
-        auto mymax = KAT_M::zero();
+        auto mymax = KAT_S::zero();
         auto row   = local_mat_dev.row(rowIdx);
         for (LocalOrdinal entryIdx = 0; entryIdx < row.length; ++entryIdx) {
           if ((rowIdx != row.colidx(entryIdx)) && (local_block_dev(rowIdx, 0) == local_block_dev(row.colidx(entryIdx), 0))) {
-            mymax = std::max(mymax, -KAT_S::magnitude(row.value(entryIdx)));
+            if (KAT_S::real(mymax) < -KAT_S::real(row.value(entryIdx)))
+              mymax = -KAT_S::real(row.value(entryIdx));
           }
         }
         diag_dev(rowIdx, 0) = mymax;

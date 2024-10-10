@@ -75,6 +75,7 @@ class AggregateGenerator {
     aggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(0));
     aggFact->SetParameter("aggregation: ordering", Teuchos::ParameterEntry(std::string("natural")));
     aggFact->SetParameter("aggregation: allow user-specified singletons", Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: deterministic", Teuchos::ParameterEntry(true));
 
     aggFact->SetParameter("aggregation: enable phase 1", Teuchos::ParameterEntry(bPhase1));
     aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(bPhase2a));
@@ -155,6 +156,7 @@ class AggregateGenerator {
     aggFact->SetParameter("aggregation: min agg size", Teuchos::ParameterEntry(3));
     aggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(0));
     aggFact->SetParameter("aggregation: ordering", Teuchos::ParameterEntry(std::string("natural")));
+    aggFact->SetParameter("aggregation: deterministic", Teuchos::ParameterEntry(true));
     aggFact->SetParameter("aggregation: enable phase 1", Teuchos::ParameterEntry(true));
     aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(true));
     aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(true));
