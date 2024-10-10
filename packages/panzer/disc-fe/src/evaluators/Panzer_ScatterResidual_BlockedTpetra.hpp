@@ -239,6 +239,114 @@ private:
   ScatterResidual_BlockedTpetra();
 };
 
+// **************************************************************
+// Tangent
+// **************************************************************
+
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+class ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
+    public panzer::CloneableEvaluator {
+
+public:
+
+  /** The parameter list passed takes the following values
+      \verbatim
+      <ParameterList>
+         <Parameter name="Scatter Name" type="string" value=(required)/>
+         <Parameter name="Dependent Names" type="RCP<vector<string> >" value="(required)"/>
+         <Parameter name="Dependent Map" type="RCP<map<string,string> >" value="(required)"/>
+         <Parameter name="Basis" type="RCP<const PureBasis>" value=(required)/>
+         <Parameter name="Global Data Key" type="string" value="Residual Scatter Container" (default)/>
+      </ParameterList>
+      \endverbatim
+
+  * The "Scatter Name" is the name for the dummy field that is computed by this evaluator.
+  * This field should be required so that the evaluators is guranteed to run. "Dependent Names"
+  * specifies the field to be scatter to the operator.  The "Dependent Map" gives a mapping from the
+  * dependent field to the field string used in the global indexer. "Basis" is the basis
+  * used to define the size of the "Dependent Names" fields. Finally "Global Data Key" is the key
+  * used to index into the GlobalDataContainer object, for finding the operator and residual
+  * linear algebra data structures that need to be filled. By default this is the simple residual/Tangent
+  * with key "Residual Scatter Container".
+  */
+  ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
+     : globalIndexer_(indexer) {}
+
+  ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
+                                const Teuchos::ParameterList& p);
+
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                 PHX::FieldManager<TRAITS>& vm);
+
+  void preEvaluate(typename TRAITS::PreEvalData d);
+
+  void evaluateFields(typename TRAITS::EvalData workset);
+
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
+
+private:
+  typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  typedef typename TRAITS::RealType RealType;
+
+  typedef BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> ContainerType;
+  typedef Tpetra::Operator<RealType,LO,GO,NodeT> OperatorType;
+  typedef Tpetra::CrsMatrix<RealType,LO,GO,NodeT> CrsMatrixType;
+  typedef Tpetra::Map<LO,GO,NodeT> MapType;
+
+  typedef Thyra::TpetraLinearOp<RealType,LO,GO,NodeT> ThyraLinearOp;
+
+  // dummy field so that the evaluator will have something to do
+  Teuchos::RCP<PHX::FieldTag> scatterHolder_;
+
+  // fields that need to be scattered will be put in this vector
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
+
+  //! MPL: Added from he GatherTangent
+  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+
+  // maps the local (field,element,basis) triplet to a global ID
+  // for scattering
+  Teuchos::RCP<const BlockedDOFManager> globalIndexer_;
+
+  //! Vector of global indexers, one for each scattered field respectively
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
+
+  std::vector<int> fieldIds_; // field IDs needing mapping
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
+
+  // This maps the scattered field names to the DOF manager field
+  // For instance a Navier-Stokes map might look like
+  //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
+  //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
+  Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> > blockedContainer_;
+
+  //! Local indices for unknowns MPL: Not GatherTangent
+  Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device> worksetLIDs_;
+
+  //! Scratch space for local values. MPL: Not GatherTangent
+  Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device> workset_vals_;
+
+  //! Offset into the cell lids for each field. Size of number of fields to scatter. MPL: Not GatherTangent
+  std::vector<PHX::View<int*>> fieldOffsets_;
+
+  //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel. MPL: Not GatherTangent
+  PHX::View<LO*> blockOffsets_;
+
+  //! MPL: Added from he GatherTangent
+  bool useTimeDerivativeSolutionVector_;
+  ScatterResidual_BlockedTpetra();
+
+};
+
 }
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
