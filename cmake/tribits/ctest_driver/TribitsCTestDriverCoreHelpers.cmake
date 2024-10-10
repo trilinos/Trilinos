@@ -175,7 +175,7 @@ endfunction()
 #
 function(tribits_create_repo_updates_file)
   extrarepo_execute_process_wrapper(
-    COMMAND ${PYTHON_EXECUTABLE}
+    COMMAND ${Python3_EXECUTABLE}
       ${GITDIST_EXE} --dist-no-color
       log "--pretty=format:%h:  %s%nAuthor: %an <%ae>%nDate:   %ad%n"
       --name-status -C ORIG_HEAD..HEAD
@@ -376,14 +376,14 @@ macro(enable_only_modified_packages)
 
   # A.3) Get the names of the modified packages
 
-  if (NOT PYTHON_EXECUTABLE)
+  if (NOT Python3_EXECUTABLE)
     message(FATAL_ERROR "Error, Python must be enabled to map from modified"
       " files to packages!")
   endif()
 
   if (EXISTS "${MODIFIED_FILES_FILE_NAME}")
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE}
+      COMMAND ${Python3_EXECUTABLE}
         ${${PROJECT_NAME}_TRIBITS_DIR}/ci_support/get-tribits-packages-from-files-list.py
         --files-list-file=${MODIFIED_FILES_FILE_NAME}
         --project-dir=${TRIBITS_PROJECT_ROOT}
@@ -847,7 +847,7 @@ function(tribits_get_failed_packages_from_failed_tests
    LAST_TESTS_FAILED_FILE  FAILED_PACKAGES_OUT
    )
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE}
+    COMMAND ${Python3_EXECUTABLE}
       "${${PROJECT_NAME}_TRIBITS_DIR}/ci_support/get-tribits-packages-from-last-tests-failed.py"
       "--deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
       "--last-tests-failed-file=${LAST_TESTS_FAILED_FILE}"
