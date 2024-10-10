@@ -81,7 +81,8 @@ LSecantBAlgorithm<Real>::LSecantBAlgorithm(ParameterList &list,
   useSecantHessVec_ = true;
   ESecantMode mode = SECANTMODE_BOTH;
   if (secant == nullPtr) {
-    esec_   = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory Secant"));
+    std::string secantType = list.sublist("General").sublist("Secant").get("Type","Limited-Memory Secant");
+    esec_   = StringToESecant(secantType);
     secant_ = SecantFactory<Real>(list,mode);
   }
 }

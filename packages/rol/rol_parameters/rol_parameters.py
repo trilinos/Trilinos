@@ -1,146 +1,175 @@
+# File rol_parameters.py
+import sys
+import json
+import pathlib
 import re
 import subprocess
-import pathlib
-from typing import Dict, List, Tuple
-import xml.etree.ElementTree as ET
+from typing import Dict, List
+from collections import defaultdict
+
+def hierarchy_to_json(tuple_set):
+    def add_to_hierarchy(hierarchy, path, item_type):
+        current = hierarchy
+        for part in path[:-1]:
+            if part not in current["Sublists"]:
+                current["Sublists"][part] = {"Parameters": [], "Sublists": {}}
+            current = current["Sublists"][part]
+        
+        if item_type == "Parameter":
+            current["Parameters"].append(path[-1])
+        elif item_type == "Sublist":
+            if path[-1] not in current["Sublists"]:
+                current["Sublists"][path[-1]] = {"Parameters": [], "Sublists": {}}
+
+    root = {"Parameters": [], "Sublists": {}}
+    
+    for tuple_path in tuple_set:
+        path = [item[0] for item in tuple_path]
+        item_type = tuple_path[-1][1]
+        add_to_hierarchy(root, path, item_type)
+    
+    return root    
+
+from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
-def create_xml_from_dict(dict_data: Dict, root_name: str = "Inputs") -> ET.Element:
-    def create_element(name: str, content: Dict) -> ET.Element:
-        element = ET.Element(name)
-        if isinstance(content, dict):
-            for key, value in content.items():
-                if key == "Parameters" and value:
-                    param_element = ET.SubElement(element, "Parameter")
-                    param_element.set("name", "Valid Keys")
-                    param_element.set("type", "Array(string)")
-                    param_element.set("value", "{" + ",".join(value) + "}")
-                elif key == "Sublists":
-                    for sublist_name, sublist_content in value.items():
-                        sublist_element = create_element("ParameterList", sublist_content)
-                        sublist_element.set("name", sublist_name)
-                        element.append(sublist_element)
-        return element
+def json_to_xml(json_obj):
+    def create_parameter_list(name, data):
+        param_list = Element("ParameterList", name=name)
+        
+        if "Parameters" in data and data["Parameters"]:
+            param_str = ",".join(data["Parameters"])
+            param = SubElement(param_list, "Parameter", name="Parameters", type="Array(string)", value=f"{{{param_str}}}")
+        
+        if "Sublists" in data:
+            for sublist_name, sublist_data in data["Sublists"].items():
+                sub_param_list = create_parameter_list(sublist_name, sublist_data)
+                if len(sub_param_list) > 0:
+                    param_list.append(sub_param_list)
+        
+        return param_list
 
-    root = create_element("ParameterList", dict_data)
-    root.set("name", root_name)
-    return root
-
-def prettify(elem: ET.Element) -> str:
-    rough_string = ET.tostring(elem, 'utf-8')
+    root = create_parameter_list("ROL Parameters", json_obj)
+    
+    # Remove empty ParameterLists
+    for elem in root.iter("ParameterList"):
+        if len(elem) == 0:
+            root.remove(elem)
+    
+    # Convert to string and pretty print
+    rough_string = tostring(root, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def grep_source_files(src_directory: str) -> str:
-    grep_command = [
-        'grep',
-        '-rE',
-        '-e', r'(\.|\->)\s*(((s|g)et\s*\(\s*"([a-zA-Z0-9]|\s)+"\s*,\s*\S+\s*\))|sublist)',
-        '-e', r'(\.|\->)\s*sublist\s*\(\s*\"',
-        src_directory
-    ]
+def pretty_print_xml(xml_str : str):
+    def remove_extra_newlines(string : str):
+        return '\n'.join(line for line in string.split('\n') if line.strip())
+    parsed_xml = minidom.parseString(xml_str)
+    return remove_extra_newlines(parsed_xml.toprettyxml(indent="  "))
 
+
+def replace_whitespace(input_string):
+    return re.sub(r'\s{2,}', ' ', input_string)
+
+def dereference(code):
+    return re.sub(r'\&','',code)
+
+
+def extract_quoted_strings(input_string):
+    # Use a regular expression to find all substrings in double quotes
+    matches = re.findall(r'"(.*?)"', input_string)
+    # Convert the list of matches to a tuple
+    return tuple(matches)
+
+def get_lines( search_path : pathlib.Path ) -> List[str]:
     try:
-        result = subprocess.run(grep_command, capture_output=True, text=True, check=True)
-        return result.stdout
+        result = subprocess.run(['./find_parameters.sh', search_path], capture_output=True, text=True, check=True)
+        return result.stdout.splitlines()
     except subprocess.CalledProcessError as e:
         print(f"Error occurred: {e}")
-        return e.stderr
-
-def split_cpp_code(code_string: str) -> List[str]:
-    tokens = re.split(r'->|\.', code_string)
-    return [token.strip() for token in tokens if token.strip()]
-
-def extract_quoted_strings(string_list: List[str]) -> Tuple[str, ...]:
-    return tuple(s.strip('"') for s in string_list if s.startswith('"') and s.endswith('"'))
-
-def parse_cpp_strings(input_list: List[str]) -> List[str]:
-    parsed_list = []
-    for item in input_list:
-        match = re.search(r'(\w+)$|"([^"]*)"|\b(?:get|set)\s*\(\s*"([^"]*)"', item)
-        if match:
-            if match.group(1):
-                parsed_list.append(match.group(1))
-            elif match.group(2):
-                parsed_list.append(f'"{match.group(2)}"')
-            elif match.group(3):
-                parsed_list.append(f'"{match.group(3)}"')
-    return parsed_list
-
-def build_hierarchy(data: Dict[str, List[str]]) -> Dict[str, List[str]]:
-    def resolve_list(value_list: List[str]) -> List[str]:
-        if not value_list:
-            return value_list
-        first_item = value_list[0]
-        if first_item in data and not first_item.startswith('"'):
-            return resolve_list(data[first_item]) + value_list[1:]
-        else:
-            return [first_item] + resolve_list(value_list[1:])
-
-    return {key: resolve_list(value) for key, value in data.items()}
-
-def create_hierarchical_dict(list_of_lists: List[List[str]]) -> Dict:
-    result = {}
-    for path in list_of_lists:
-        current = result
-        for key in path[:-1]:
-            current = current.setdefault(key, {})
-        current[path[-1]] = {}
+    
+def prune_tuples(data):
+    # Sort the tuples by length in descending order
+    sorted_data = sorted(data, key=len, reverse=True)
+    
+    result = []
+    leading_elements_set = set()
+    
+    for tup in sorted_data:
+        # Create a leading element tuple (all but the last element)
+        leading_elements = tup[:-1]
+        
+        # Check if the leading elements are already in the set
+        if leading_elements not in leading_elements_set:
+            # If not, add the tuple to the result and update the set
+            result.append(tup)
+            leading_elements_set.add(leading_elements)
+    
     return result
 
-def parse(params: Dict) -> Dict:
-    result = {'Parameters': [], 'Sublists': {}}
-    for k, v in params.items():
-        if isinstance(v, dict):
-            if v:
-                result['Sublists'][k] = parse(v)
-            else:
-                result['Parameters'].append(k)
-        else:
-            result['Parameters'].append(k)
-    return result
 
 if __name__ == '__main__':
-    rol_src = (pathlib.Path.cwd().parents[0]/'src').resolve()
-    make_relative = lambda path_str: pathlib.Path(path_str).relative_to(rol_src, walk_up=True)
-    strip_excess_whitespace = lambda text: re.sub(r'\s+', ' ', text).strip()
 
-    local_sublist_pattern = re.compile(r'[ParameterList|auto]\s*[&]\s*(\w+)\s*=\s*(\w+)[\.|\->](.*)')
-    exclusions = ['compatibility', 'step', 'zoo', 'sol', 'oed', 'dynamic']
+    src = sys.argv[1]
+    grep_pattern = r'(\.|\->)\s*((s|g)et|sublist)\s*\(\s*\"'
+    exclude_dirs = 'compatability,dynamic,interiorpoint,oed,sol,zoo'
 
-    output = grep_source_files(str(rol_src))
-    data = {}
-    for line in output.splitlines():
-        file, *code_parts = line.split(':')
-        file = str(make_relative(file))
-        code = strip_excess_whitespace(':'.join(code_parts))
-        if not any(f'{e}/' in file for e in exclusions):
-            data.setdefault(file, []).append(code)
+    # Get all lines in C++ source in which a ParameterList's sublist, get, or set method is called
+    lines = get_lines(src)
 
-    paramset = set()
-    for file, code in data.items():
-        sublist = {}
-        parameters = []
-        for line in code:
-            match = re.search(local_sublist_pattern, line)
-            if match:
-                sublist[match.group(1)] = [match.group(2)] + parse_cpp_strings(split_cpp_code(match.group(3)))
-            else:
-                if '=' in line:
-                    line = line.split('=')[1].strip()
-                parameters.append(parse_cpp_strings(split_cpp_code(line)))
-        
-        sublist = build_hierarchy(sublist)
-        parameters = [build_hierarchy(sublist)[sublist_key] + param[1:] for param in parameters for sublist_key in sublist]
-        paramset.update(map(extract_quoted_strings, parameters))
+    data = defaultdict(list)
 
-    parameters = create_hierarchical_dict(sorted(filter(len, map(list, paramset))))
-    parameters.pop('SOL', None)
+    defines_local_sublist = lambda line: line.split('.')[-1].startswith('sublist')
 
-    xml_root = create_xml_from_dict(parse(parameters))
-    pretty_xml = prettify(xml_root)
-    
-    with open('rol_parameters.xml', 'w') as f:
-        f.write(pretty_xml)
-    
-    print("XML file 'rol_parameters.xml' has been created.")
+    for line in lines:
+        filename,code = line.split(':',1)
+        if not code.startswith('//'): # Excluded commented out lines
+            data[filename].append(replace_whitespace(code.strip()))
+
+    pattern = re.compile(r'(?:sublist|get|set)\s*\(\s*"([^"]*)"\s*(?:\)|,)')
+
+    expanded_lines = list()
+
+    for key, value in data.items():
+        ldefs = dict()
+        for line in value:
+            if defines_local_sublist(line):
+                lhs, rhs = line.split('=')
+                if len(dereference(lhs).split()) == 2:
+                    var = dereference(lhs).split()[1]
+                    ldefs[var] = rhs.strip()[:-1]
+
+        if len(ldefs):
+            for cycle in range(len(ldefs)):
+                for k,v in ldefs.items():
+                    vl,vr = v.split('.',1)
+                    if vl in ldefs.keys():
+                        ldefs[k] = f'{ldefs[vl]}.{vr}'
+
+             
+        for line in value:
+            exline = line
+            for k,v in ldefs.items():
+                exline = re.sub(rf' {k}.',rf' {v}.', exline)
+            expanded_lines.append(exline)
+                        
+    pair_tuples = set()
+    for line in expanded_lines:
+        if '=' in line:
+            line = line.split('=')[1]
+        if 'et(' in line and 'SOL' not in line:     
+            line = line.split(',')[0]
+            token_tuple = extract_quoted_strings(line)
+            depth = len(token_tuple)
+            if depth > 1:
+                type_tuple = ('Sublist',) * (depth-1) + ('Parameter',)
+                pair_tuples.add(tuple(zip(token_tuple,type_tuple)))
+
+    rol_json = hierarchy_to_json(set(pair_tuples))
+    with open('rol_parameters.json','w') as jsonfile:
+        jsonfile.write(json.dumps(rol_json,indent=2))
+
+    xml_output = json_to_xml(rol_json)
+    pretty_xml_output = pretty_print_xml(xml_output)
+    with open('rol_parameters.xml','w') as xmlfile:
+        xmlfile.write(pretty_xml_output)

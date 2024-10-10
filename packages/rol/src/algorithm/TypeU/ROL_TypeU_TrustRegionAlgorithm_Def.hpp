@@ -91,14 +91,16 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList &parlist,
   updateIter_  = vlist.get("Forcing Sequence Update Frequency", static_cast<int>(10));
   forceFactor_ = vlist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
   // Initialize Trust Region Subproblem Solver Object
-  etr_       = StringToETrustRegionU(trlist.get("Subproblem Solver", "Dogleg"));  
+  std::string solverName = trlist.get("Subproblem Solver", "Dogleg");
+  etr_       = StringToETrustRegionU(solverName);  
   solver_    = TrustRegionUFactory<Real>(parlist);
   verbosity_ = glist.get("Output Level", 0);
   // Secant Information
   useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
   useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = glist.sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
   }
   // Initialize trust region model
   model_ = makePtr<TrustRegionModel_U<Real>>(parlist,secant);

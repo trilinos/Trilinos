@@ -214,7 +214,8 @@ public:
     // Parse parameter list
     ROL::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     ROL::ParameterList& Glist = parlist.sublist("General");
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+    std::string condName = Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions");
+    econd_ = StringToECurvatureCondition(condName);
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
     computeObj_ = Glist.get("Recompute Objective Function",false);
@@ -237,9 +238,9 @@ public:
     d_ = x.clone();
 
     // Initialize unglobalized step
-    ROL::ParameterList& list
-      = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
-    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method"));
+    ROL::ParameterList& list = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
+    std::string descentName = list.get("Type","Quasi-Newton Method");
+    EDescent edesc = StringToEDescent(descentName);
     if (bnd.isActivated()) {
       switch(edesc) {
         case DESCENT_STEEPEST: {

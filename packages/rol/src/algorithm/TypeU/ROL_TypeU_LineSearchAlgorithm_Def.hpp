@@ -65,7 +65,8 @@ LineSearchAlgorithm<Real>::LineSearchAlgorithm( ParameterList &parlist,
   // Parse parameter list
   ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
   ParameterList& Glist = parlist.sublist("General");
-  econd_ = StringToECurvatureConditionU(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+  std::string condType = Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions");
+  econd_ = StringToECurvatureConditionU(condType);
   acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
   verbosity_ = Glist.get("Output Level",0);
   printHeader_ = verbosity_ > 2;

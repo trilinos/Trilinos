@@ -142,6 +142,7 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   useproj_   = ppl.sublist("Semismooth Newton").get("Project onto Separating Hyperplane", DEFAULT_useproj_);
   
   ParameterList klist;
+  
   klist.sublist("General").sublist("Krylov") = ppl.sublist("Semismooth Newton").sublist("Krylov");
   klist.sublist("General").set("Inexact Hessian-Times-A-Vector", false);
   krylov_ = KrylovFactory<Real>(klist);

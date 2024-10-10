@@ -69,8 +69,8 @@ namespace ROL {
 
   template<class Real>
   inline ROL::Ptr<Secant<Real> > SecantFactory( ROL::ParameterList &parlist, ESecantMode mode = SECANTMODE_BOTH ) {
-    ESecant esec = StringToESecant(
-             parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS") );
+    std::string secantName = parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+    ESecant esec = StringToESecant(secantName);
     int L    = parlist.sublist("General").sublist("Secant").get("Maximum Storage",10);
     int BB   = parlist.sublist("General").sublist("Secant").get("Barzilai-Borwein",1);
     bool uds = parlist.sublist("General").sublist("Secant").get("Use Default Scaling",true);

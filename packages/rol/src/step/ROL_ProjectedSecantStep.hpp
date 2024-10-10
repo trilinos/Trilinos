@@ -93,7 +93,8 @@ public:
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
     if ( secant == ROL::nullPtr ) {
-      esec_ = StringToESecant(parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+      std::string secantType = parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+      esec_ = StringToESecant(secantType);
       secant_ = SecantFactory<Real>(parlist);
     }
   }

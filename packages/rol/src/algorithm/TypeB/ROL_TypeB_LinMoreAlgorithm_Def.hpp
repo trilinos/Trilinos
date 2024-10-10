@@ -118,7 +118,8 @@ LinMoreAlgorithm<Real>::LinMoreAlgorithm(ParameterList &list,
   // Initialize trust region model
   model_ = makePtr<TrustRegionModel_U<Real>>(list,secant,mode);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
   }
 }
 
