@@ -13,15 +13,17 @@ on:
     - develop
   workflow_dispatch:
 
-# actions: write needed by skip-duplicate-actions
-permissions:
-  actions: write
+# actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
+permissions: 
   contents: read
 
 jobs:
   # Jobs depend on the output of pre-checks to run
   pre-checks:
         runs-on: ubuntu-latest
+        # actions: write needed by skip-duplicate-actions
+        permissions:
+          actions: write
         outputs:
             should_skip: ${{ steps.skip_check.outputs.should_skip }}
         steps:
