@@ -38,8 +38,6 @@ namespace Kokkos {
 
   namespace Impl {
     template<class Space, class T, class ... P>
-    struct MirrorType;
-    template<class Space, class T, class ... P>
     struct MirrorViewType;
   }
 
@@ -85,7 +83,7 @@ template<class Space, class T, class ... P,
   typename std::enable_if<
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(const Space&,
               const Kokkos::View<T,P...> & src);
 
@@ -116,7 +114,7 @@ template<class Space, class T, class ... P,
 typename std::enable_if<
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space&, const Kokkos::View<T,P...> & src);
 
