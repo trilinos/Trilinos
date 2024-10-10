@@ -53,21 +53,13 @@ void Jacobi(
   bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
   if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifndef HAVE_XPETRA_EPETRAEXT
     throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires EpetraExt to be compiled."));
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires you to use an Epetra-compatible data type."));
-#endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpB    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(B);
     Tpetra::CrsMatrix<SC, LO, GO, NO>& tpC          = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<SC, LO, GO, NO> >& tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
   }
 
   if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
@@ -81,32 +73,6 @@ void Jacobi(
   RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
   C.CreateView("stridedMaps", rcpA, false, rcpB, false);  // TODO use references instead of RCPs
 }  // end Jacobi
-
-#if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-template <>
-void Jacobi<double, int, int, EpetraNode>(double omega,
-                                          const Xpetra::Vector<double, int, int, EpetraNode>& Dinv,
-                                          const Xpetra::Matrix<double, int, int, EpetraNode>& A,
-                                          const Xpetra::Matrix<double, int, int, EpetraNode>& B,
-                                          Xpetra::Matrix<double, int, int, EpetraNode>& C,
-                                          bool call_FillComplete_on_result,
-                                          bool doOptimizeStorage,
-                                          const std::string& label,
-                                          const Teuchos::RCP<Teuchos::ParameterList>& params);
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-template <>
-void Jacobi<double, int, long long, EpetraNode>(double omega,
-                                                const Xpetra::Vector<double, int, long long, EpetraNode>& Dinv,
-                                                const Xpetra::Matrix<double, int, long long, EpetraNode>& A,
-                                                const Xpetra::Matrix<double, int, long long, EpetraNode>& B,
-                                                Xpetra::Matrix<double, int, long long, EpetraNode>& C,
-                                                bool call_FillComplete_on_result,
-                                                bool doOptimizeStorage,
-                                                const std::string& label,
-                                                const Teuchos::RCP<Teuchos::ParameterList>& params);
-#endif
 
 /*!
   @class IteratorOps

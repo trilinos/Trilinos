@@ -45,9 +45,7 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>
-#endif
 #include <BelosXpetraAdapter.hpp>  // => This header defines Belos::XpetraOp
 #endif
 #define FOURBYFOUR

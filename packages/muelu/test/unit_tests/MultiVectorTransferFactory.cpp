@@ -109,9 +109,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, ThreeLevels, Scala
 #if !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
 #endif
-#if !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
 
   out << "Tests usage on a three-level hierarchy." << std::endl;

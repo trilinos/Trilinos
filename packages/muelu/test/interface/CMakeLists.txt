@@ -1,9 +1,7 @@
 # Ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_Zoltan2Core
   )
 
@@ -50,75 +48,6 @@ SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD " --kokkos-num-thr
 # results in not setting the value correctly.
 IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "ON") )
 
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-      ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos AND
-      HAVE_MUELU_INST_DOUBLE_INT_INT)
-
-    string(CONCAT TEST_ARGS "--linAlgebra=Epetra" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
-
-    TRIBITS_ADD_TEST(
-      CreateOperator
-      NAME "CreateOperatorEpetra"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-      )
-    TRIBITS_ADD_TEST(
-      CreateOperator
-      NAME "CreateOperatorEpetra"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-      )
-
-    IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
-
-      TRIBITS_ADD_TEST(
-        ParameterListInterpreter
-        NAME "ParameterListInterpreterEpetra"
-        ARGS ${TEST_ARGS}
-        STANDARD_PASS_OUTPUT
-        NUM_MPI_PROCS 1
-        COMM mpi serial
-      )
-      TRIBITS_ADD_TEST(
-        ParameterListInterpreter
-        NAME "ParameterListInterpreterEpetra"
-        ARGS ${TEST_ARGS}
-        STANDARD_PASS_OUTPUT
-        NUM_MPI_PROCS 4
-        COMM mpi
-      )
-
-      string(CONCAT TEST_ARGS "--linAlgebra=Epetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
-
-      # This test only runs on the dashboard, not at checkin.
-      TRIBITS_ADD_TEST(
-        ParameterListInterpreter
-        NAME "ParameterListInterpreterEpetraHeavy"
-        ARGS ${TEST_ARGS}
-        STANDARD_PASS_OUTPUT
-        NUM_MPI_PROCS 1
-        COMM mpi serial
-        CATEGORIES CONTINUOUS
-      )
-
-      # This test only runs on the dashboard, not at checkin.
-      TRIBITS_ADD_TEST(
-        ParameterListInterpreter
-        NAME "ParameterListInterpreterEpetraHeavy"
-        ARGS ${TEST_ARGS}
-        STANDARD_PASS_OUTPUT
-        NUM_MPI_PROCS 4
-        COMM mpi
-        CATEGORIES CONTINUOUS
-      )
-
-    ENDIF()
-
-  ENDIF()
 
   IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 

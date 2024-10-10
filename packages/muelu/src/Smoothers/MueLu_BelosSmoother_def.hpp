@@ -19,9 +19,7 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
-#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
-#endif
 
 #include "MueLu_BelosSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
