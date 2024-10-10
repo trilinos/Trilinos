@@ -2230,6 +2230,21 @@ This will override the global behavior set by
 ``<TRIBITS_PACKAGE>``.
 
 
+Setting or disabling Python
+----------------------------
+
+To set which Python interpreter is used, configure with::
+
+  -D Python3_EXECUTABLE=<python-path>
+
+Otherwise, Python will be found automatically by default using
+``find_python(Python3)`` internally (see `FindPython3.cmake`_).
+
+To disable the finding and usage of Python, configure with (empty)::
+
+  -D Python3_EXECUTABLE=
+
+
 Outputting package dependency information
 -----------------------------------------
 
@@ -2952,7 +2967,7 @@ printed to cmake STDOUT.
 
 
 Show parent(s) commit info in the repo version output
-----------------------------------------------------
+-----------------------------------------------------
 
 .. _<Project>_SHOW_GIT_COMMIT_PARENTS:
 
@@ -4489,5 +4504,8 @@ dashboard``.
 .. _TriBITS TribitsExampleApp Tests: https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp_Tests.cmake
 
 .. _xSDK Community Package Policies: https://doi.org/10.6084/m9.figshare.4495136
+
+.. _FindPython3.cmake: https://cmake.org/cmake/help/latest/module/FindPython3.html
+
 
 ..  LocalWords:  templated instantiation Makefiles CMake

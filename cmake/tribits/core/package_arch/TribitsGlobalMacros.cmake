@@ -806,7 +806,7 @@ macro(tribits_define_global_options_and_define_extra_repos)
     "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
 
   if(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
-    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
+    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND Python3_EXECUTABLE
     )
     set(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
       "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
@@ -819,7 +819,7 @@ macro(tribits_define_global_options_and_define_extra_repos)
     "Output XML file used by CDash in ${PROJECT_NAME}-independent format (if not empty)." )
 
   if(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
-    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
+    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND Python3_EXECUTABLE
     )
     set(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
       "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
