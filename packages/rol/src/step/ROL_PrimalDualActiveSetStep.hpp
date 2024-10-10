@@ -260,7 +260,8 @@ public:
     gtol_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Relative Gradient Tolerance",oem6);
     scale_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Dual Scaling", one);
     // Build secant object
-    esec_ = StringToESecant(parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
     useSecantHessVec_ = parlist.sublist("General").sublist("Secant").get("Use as Hessian", false); 
     useSecantPrecond_ = parlist.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
     if ( useSecantHessVec_ || useSecantPrecond_ ) {

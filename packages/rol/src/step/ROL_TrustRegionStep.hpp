@@ -156,16 +156,21 @@ private:
     // Inexactness Information
     ROL::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
-    useInexact_.push_back(glist.get("Inexact Objective Function",     false));
-    useInexact_.push_back(glist.get("Inexact Gradient",               false));
-    useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
+    bool inexactObj     = glist.get("Inexact Objective Function",     false);
+    bool inexactGrad    = glist.get("Inexact Gradient",               false);
+    bool inexactHessVec = glist.get("Inexact Hessian-Times-A-Vector", false);
+    useInexact_.push_back(inexactObj    );
+    useInexact_.push_back(inexactGrad   );
+    useInexact_.push_back(inexactHessVec);
     // Trust-Region Inexactness Parameters
     ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Gradient");
     scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
     scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
     // Initialize Trust Region Subproblem Solver Object
-    etr_              = StringToETrustRegion(list.get("Subproblem Solver", "Dogleg"));  
-    TRmodel_          = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
+    std::string solverName = list.get("Subproblem Solver", "Dogleg");
+    etr_              = StringToETrustRegion(solverName);  
+    std::string modelName = list.get("Subproblem Model", "Kelley-Sachs");
+    TRmodel_          = StringToETrustRegionModel(modelName);
     useProjectedGrad_ = glist.get("Projected Gradient Criticality Measure", false);
     trustRegion_      = TrustRegionFactory<Real>(parlist);
     // Scale for epsilon active sets
@@ -294,7 +299,8 @@ public:
     parseParameterList(parlist);
     // Create secant object
     ROL::ParameterList &glist = parlist.sublist("General");
-    esec_             = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantName = glist.sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_             = StringToESecant(secantName);
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
     secant_           = SecantFactory<Real>(parlist);

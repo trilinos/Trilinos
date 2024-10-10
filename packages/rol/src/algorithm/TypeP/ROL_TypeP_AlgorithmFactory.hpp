@@ -96,7 +96,8 @@ inline EAlgorithmP StringToEAlgorithmP(std::string s) {
 
 template<typename Real>
 inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
-  EAlgorithmP ealg = StringToEAlgorithmP(parlist.sublist("Step").get("Type","Trust Region"));
+  std::string stepType = parlist.sublist("Step").get("Type","Trust Region");
+  EAlgorithmP ealg = StringToEAlgorithmP(stepType);
   switch(ealg) {
     case ALGORITHM_P_LINESEARCH:
     {
