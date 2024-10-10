@@ -85,7 +85,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 3D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -114,7 +113,7 @@ namespace Intrepid2 {
         const auto maxDeg   = 10; // 19; //Parameters::MaxCubatureDegreeEdge;
         const auto polySize = (maxDeg+1)*(maxDeg+2)*(maxDeg+3)/6;
 
-        // test inegral values
+        // test integral values
         DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
 
         // analytic integral values
@@ -123,31 +122,33 @@ namespace Intrepid2 {
 
         DynRankViewHost ConstructWithLabel(analyticInt, analyticPolySize, 1);
 
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints,
-                                       Parameters::MaxIntegrationPoints,
-                                       Parameters::MaxDimension);
-
-        DynRankView ConstructWithLabel(cubWeights,
-                                       Parameters::MaxIntegrationPoints);
-
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
           CubatureLineType line(cubDeg);
           CubatureTensorType hexCub( line, line, line );
           *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << "  Testing\n";
           
+          Kokkos::Array<int,3> degrees;
+          
+          auto cubPoints  = hexCub.allocateCubaturePoints();
+          auto cubWeights = hexCub.allocateCubatureWeights();
+          hexCub.getCubature(cubPoints, cubWeights);
+          
           ordinal_type cnt = 0;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
-            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg) 
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg)
+          {
+            degrees[0] = xDeg;
+            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg)
+            {
+              degrees[1] = yDeg;
               for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg,++cnt) {
-                testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(hexCub,
-                                                                            cubPoints,
+                degrees[2] = zDeg;
+                testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(cubPoints,
                                                                             cubWeights,
-                                                                            xDeg,
-                                                                            yDeg,
-                                                                            zDeg);
+                                                                            degrees);
               }
+            }
+          }
         }
 
 

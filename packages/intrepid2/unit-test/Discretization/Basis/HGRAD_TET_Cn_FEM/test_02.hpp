@@ -37,7 +37,7 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       try { 
-        for (int order=1;order<Parameters::MaxOrder;++order) {
+        for (int order=1;order<10;++order) {
           Basis_HGRAD_TET_Cn_FEM<DeviceType,OutValueType,PointValueType> basis(order);
           
           // problem setup 

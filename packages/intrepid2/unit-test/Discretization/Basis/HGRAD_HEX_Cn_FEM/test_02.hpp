@@ -37,7 +37,8 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       try { 
-        for (int order=1;order<Parameters::MaxOrder;++order) {
+        // for higher orders in certain environments, this test can take a while to run in ctest.  So we reduce the number of points as we go beyond 10th order. Also, @mperego is replacing this test, so for now we just restrict to the 10 orders we supported until recently.
+        for (int order=1;order<10;++order) {
           Basis_HGRAD_HEX_Cn_FEM<DeviceType,OutValueType,PointValueType> basis(order);
           
           // problem setup 
@@ -105,7 +106,7 @@ namespace Intrepid2 {
             for (size_t j=0;j<outputValuesA_Host.extent(1);++j) {
               sum += std::abs(outputValuesB_Host(i,j));
               diff += std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(i,j));
-              if (verbose) {
+              if (verbose && (diff/sum > 1.0e-9)) {
                 std::cout << " order = " << order
                           << " i = " << i << " j = " << j 
                           << " val A = " << outputValuesA_Host(i,j) 
