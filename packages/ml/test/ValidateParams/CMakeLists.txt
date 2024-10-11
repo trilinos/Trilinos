@@ -9,8 +9,8 @@ IF(ML_ENABLE_AztecOO AND ML_ENABLE_Amesos)
     COMM serial mpi
     )
 
-  ASSERT_DEFINED(PYTHONINTERP_FOUND)
-  IF (PYTHONINTERP_FOUND)
+  ASSERT_DEFINED(Python3_EXECUTABLE)
+  IF (Python3_EXECUTABLE)
 
     TRIBITS_ADD_ADVANCED_TEST( ValidateParameters_compareTestOutput
       COMM serial mpi
