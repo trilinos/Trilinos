@@ -44,7 +44,7 @@ reason for this is that CMake variable values can be substituted
 during the copy procedure.  For example, the first line of each test
 script source file is now::
 
-  #! ${PYTHON_EXECUTABLE}
+  #! ${Python3_EXECUTABLE}
 
 which means that the python executable that is recognized (and
 compiled against) by the CMake build system will also be the python
