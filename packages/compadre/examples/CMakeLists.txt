@@ -125,10 +125,10 @@ if (Compadre_EXAMPLES)
       # Multisite manifold test for GMLS
       #ADD_TEST(NAME GMLS_Manifold_MultiSite COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_MultiSite_Test "3" "4" "${KOKKOS_THREADS_ARG}=2")
       #SET_TESTS_PROPERTIES(GMLS_Manifold_MultiSite PROPERTIES LABELS "IntegrationTest;integration;kokkos;multi;manifold" TIMEOUT 10)
-      if (PYTHON_EXECUTABLE)
+      if (Python3_EXECUTABLE)
         # Python driven test of a C++ executable (Python changes command line arguments given to executable)
         CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py.in" "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py" @ONLY)
-        ADD_TEST(NAME GMLS_Manifold_MultiSite_Refinement_Study COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py" "--porder=3" "--grids=3")
+        ADD_TEST(NAME GMLS_Manifold_MultiSite_Refinement_Study COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py" "--porder=3" "--grids=3")
         SET_TESTS_PROPERTIES(GMLS_Manifold_MultiSite_Refinement_Study
           PROPERTIES
             LABELS "ConvergenceTest;convergence;manifold" 
@@ -136,7 +136,7 @@ if (Compadre_EXAMPLES)
             REQUIRED_FILES
               $<TARGET_FILE:GMLS_Manifold_MultiSite_Test>
         )
-      endif() # PYTHON_EXECUTABLE
+      endif() # Python3_EXECUTABLE
 
       # Divergence-free basis test for GMLS on non-manifold
       ADD_TEST(NAME GMLS_DivergenceFree_Dim3_P3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "--p" "3" "--nt" "200" "--d" "3" "${KOKKOS_THREADS_ARG}=2")
@@ -154,10 +154,10 @@ if (Compadre_EXAMPLES)
     #    ADD_TEST(NAME GMLS_Manifold_Dim3 COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Test "4" "200" "3" "1" "0" "0" "${KOKKOS_THREADS_ARG}=2")
     #    SET_TESTS_PROPERTIES(GMLS_Manifold_Dim3 PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 10)
 
-    if (PYTHON_EXECUTABLE)
+    if (Python3_EXECUTABLE)
       # Python driven test of a C++ executable (Python changes command line arguments given to executable) - calling QR solver
       CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Manifold.py.in" "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" @ONLY)
-      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_QR COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=3" "--grids=4" "--solver-type=QR")
+      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_QR COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=3" "--grids=4" "--solver-type=QR")
       SET_TESTS_PROPERTIES(GMLS_Manifold_Refinement_Study_QR
           PROPERTIES
             LABELS "ConvergenceTest;convergence;manifold" 
@@ -167,7 +167,7 @@ if (Compadre_EXAMPLES)
       )
 
       # Python driven test of a C++ executable (Python changes command line arguments given to executable) - calling LU solver
-      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_LU COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=3" "--grids=4" "--solver-type=LU")
+      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_LU COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=3" "--grids=4" "--solver-type=LU")
       SET_TESTS_PROPERTIES(GMLS_Manifold_Refinement_Study_LU
           PROPERTIES
             LABELS "ConvergenceTest;convergence;manifold" 
@@ -178,7 +178,7 @@ if (Compadre_EXAMPLES)
 
       # Python driven test of a C++ executable (Python changes command line arguments given to executable)
       CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Staggered_Manifold.py.in" "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py" @ONLY)
-      ADD_TEST(NAME GMLS_Staggered_Manifold_Refinement_Study COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py" "--porder=3" "--grids=4")
+      ADD_TEST(NAME GMLS_Staggered_Manifold_Refinement_Study COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py" "--porder=3" "--grids=4")
       SET_TESTS_PROPERTIES(GMLS_Staggered_Manifold_Refinement_Study
         PROPERTIES
           LABELS "ConvergenceTest;convergence;manifold;staggered" 
@@ -186,7 +186,7 @@ if (Compadre_EXAMPLES)
           REQUIRED_FILES
             $<TARGET_FILE:GMLS_Staggered_Manifold_Test>
       )
-    endif() # PYTHON_EXECUTABLE
+    endif() # Python3_EXECUTABLE
 
     # Utility test - Filter By ID
     ADD_TEST(NAME Test_Utilities COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TestUtility "200" "${KOKKOS_THREADS_ARG}=2")
@@ -225,13 +225,13 @@ if (Compadre_EXAMPLES)
     #SET_TESTS_PROPERTIES(NeighborKNNSearch3DTest_3 PROPERTIES LABELS "kdtree;nanoflann;" TIMEOUT 5)
 
     # WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH} )
-    if (Compadre_USE_PYTHON AND PYTHON_EXECUTABLE)
+    if (Compadre_USE_PYTHON AND Python3_EXECUTABLE)
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/test_pycompadre.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/test_pycompadre_manifold.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/test_tangent_planes_manifold.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/kokkos_test_case.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Python_3D_Convergence.py.in" "${CMAKE_CURRENT_BINARY_DIR}/Python_3D_Convergence.py" @ONLY)
-      ADD_TEST(NAME GMLS_Python_Convergence_Test_3d_Point_Reconstruction COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Python_3D_Convergence.py" "${KOKKOS_THREADS_ARG}=4")
+      ADD_TEST(NAME GMLS_Python_Convergence_Test_3d_Point_Reconstruction COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Python_3D_Convergence.py" "${KOKKOS_THREADS_ARG}=4")
       SET_TESTS_PROPERTIES(GMLS_Python_Convergence_Test_3d_Point_Reconstruction PROPERTIES LABELS "IntegrationTest;integration;python;kokkos" TIMEOUT 10)
 
       if (Compadre_USE_MATLAB)
@@ -239,7 +239,7 @@ if (Compadre_EXAMPLES)
         SET_TESTS_PROPERTIES(GMLS_Matlab_Python_Interface_1d_Point_Reconstruction PROPERTIES LABELS "IntegrationTest;integration;python;kokkos;matlab" TIMEOUT 10)
       endif()
 
-      ADD_TEST(NAME PyCOMPADRE_Tests COMMAND "${PYTHON_EXECUTABLE}" "-m" "unittest" "discover" "-s" "${PYTHON_LIBRARY_PREFIX}/pycompadre/examples")
+      ADD_TEST(NAME PyCOMPADRE_Tests COMMAND "${Python3_EXECUTABLE}" "-m" "unittest" "discover" "-s" "${PYTHON_LIBRARY_PREFIX}/pycompadre/examples")
       SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES ENVIRONMENT PYTHONPATH=${PYTHON_LIBRARY_PREFIX})
       SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES LABELS "pycompadre" TIMEOUT 30)
 
