@@ -10,8 +10,8 @@
 
 # @FUNCTION: tribits_get_package_enable_status()
 #
-# Function that determines if a given external or internal package's enable
-# status (e.g. 'ON' or 'OFF')
+# Function that determines a given external or internal package's enable
+# status (e.g. 'ON' or 'OFF' or any valid CMake bool)
 #
 # Usage::
 #
@@ -21,8 +21,8 @@
 # On return, if non-empty, the variable ``<packageEnableOut>`` will contain
 # the actual value of ``${${PROJECT_NAME}_ENABLE_<packageName>}`` or
 # ``${TPL_ENABLE_<packageName>}`` or will return empty "".  If
-# ``${packageName}_PACKAGE_BUILD_STATUS == "INTERNAL", then only the value of
-# ``${PROJECT_NAME}_ENABLE_<packageName>`` will be considered.
+# ``${packageName}_PACKAGE_BUILD_STATUS == "INTERNAL"``, then only the value
+# of ``${PROJECT_NAME}_ENABLE_<packageName>`` will be considered.
 #
 # On return, if non-empty, the variable ``<packageEnableVarNameOut>`` will be
 # either ``${${PROJECT_NAME}_ENABLE_<packageName>}`` or
@@ -58,6 +58,62 @@ function(tribits_get_package_enable_status  packageName  packageEnableOut
   if (packageEnableVarNameOut)
     set(${packageEnableVarNameOut} ${packageEnableVarName} PARENT_SCOPE)
   endif()
+endfunction()
+
+
+# @FUNCTION: tribits_package_is_enabled_or_unset()
+#
+# Function that determines if a package's enable variable evaluates to true or
+# is unset.
+#
+# Usage::
+#
+#   tribits_package_is_enabled_or_unset((<packageEnableVarName>
+#     <packageIsEnabledOrUnsetOut>)
+#
+# On return, the value of ``<packageIsEnabledOrUnsetOut>`` will set to
+# ``TRUE`` if the variable ``<packageEnableVarName>`` evaluates to true and
+# or is empty "".  Otherwise, ``<packageIsEnabledOrUnsetOut>`` will set
+# to ``FALSE`` on return.
+#
+function(tribits_package_is_enabled_or_unset  packageEnableVarName
+    packageIsEnabledOrUnsetOut
+  )
+  if (${packageEnableVarName} OR ("${${packageEnableVarName}}" STREQUAL ""))
+    set(packageIsEnabledOrUnset TRUE)
+  else()
+    set(packageIsEnabledOrUnset FALSE)
+  endif()
+  set(${packageIsEnabledOrUnsetOut} ${packageIsEnabledOrUnset}
+    PARENT_SCOPE)
+endfunction()
+
+
+# @FUNCTION: tribits_package_is_explicitly_disabled()
+#
+# Function that determines if a package's enable variable is
+# explicitly disabled (i.e. evaluates to false but is not emapty).
+#
+# Usage::
+#
+#   tribits_package_is_explicitly_disabled((<packageEnableVarName>
+#     <packageIsExplicitlyDisabledOut>)
+#
+# On return, the value of ``<packageIsExplicitlyDisabledOut>`` will set to
+# ``TRUE`` if the variable ``<packageEnableVarName>`` evaluates to false and
+# is not empty "".  Otherwise, ``<packageIsExplicitlyDisabledOut>`` will set
+# to ``FALSE`` on return.
+#
+function(tribits_package_is_explicitly_disabled  packageEnableVarName
+    packageIsExplicitlyDisabledOut
+  )
+  if ((NOT ${packageEnableVarName}) AND (NOT "${${packageEnableVarName}}" STREQUAL ""))
+    set(packageIsExplicitlyDisabled TRUE)
+  else()
+    set(packageIsExplicitlyDisabled FALSE)
+  endif()
+  set(${packageIsExplicitlyDisabledOut} ${packageIsExplicitlyDisabled}
+    PARENT_SCOPE)
 endfunction()
 
 
