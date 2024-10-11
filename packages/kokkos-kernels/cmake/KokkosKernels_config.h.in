@@ -29,7 +29,6 @@
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
-#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARK
