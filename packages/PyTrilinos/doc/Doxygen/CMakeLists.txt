@@ -63,7 +63,7 @@ FOREACH(Package ${PyTrilinos_PACKAGES})
           ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${Package}
           @ONLY
           )
-        EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docstrings.py
+        EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docstrings.py
           --doxygen=${DOXYGEN_EXECUTABLE} ${Package}
           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
           ERROR_VARIABLE Doxy_CONVERT_ERROR)

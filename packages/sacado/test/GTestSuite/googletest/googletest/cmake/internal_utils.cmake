@@ -243,7 +243,7 @@ function(cxx_executable name dir libs)
     ${name} "${cxx_default}" "${libs}" "${dir}/${name}.cc" ${ARGN})
 endfunction()
 
-# Sets PYTHONINTERP_FOUND and PYTHON_EXECUTABLE.
+# Sets PYTHONINTERP_FOUND and Python3_EXECUTABLE.
 find_package(PythonInterp)
 
 # cxx_test_with_flags(name cxx_flags libs srcs...)
@@ -285,11 +285,11 @@ function(py_test name)
         if (WIN32 OR MINGW)
           add_test(NAME ${name}
             COMMAND powershell -Command ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/RunTest.ps1
-              ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+              ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
               --build_dir=${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> ${ARGN})
         else()
           add_test(NAME ${name}
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
               --build_dir=${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> ${ARGN})
         endif()
       else (CMAKE_CONFIGURATION_TYPES)
@@ -298,11 +298,11 @@ function(py_test name)
         if (WIN32 OR MINGW)
           add_test(NAME ${name}
             COMMAND powershell -Command ${CMAKE_CURRENT_BINARY_DIR}/RunTest.ps1
-              ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+              ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
               --build_dir=${CMAKE_CURRENT_BINARY_DIR} ${ARGN})
         else()
           add_test(NAME ${name}
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
               --build_dir=${CMAKE_CURRENT_BINARY_DIR} ${ARGN})
         endif()
       endif (CMAKE_CONFIGURATION_TYPES)
@@ -314,11 +314,11 @@ function(py_test name)
       if (WIN32 OR MINGW)
         add_test(NAME ${name}
           COMMAND powershell -Command ${CMAKE_CURRENT_BINARY_DIR}/RunTest.ps1
-            ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+            ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
             --build_dir=${CMAKE_CURRENT_BINARY_DIR}/\${CTEST_CONFIGURATION_TYPE} ${ARGN})
       else()
         add_test(NAME ${name}
-          COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+          COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
             --build_dir=${CMAKE_CURRENT_BINARY_DIR}/\${CTEST_CONFIGURATION_TYPE} ${ARGN})
       endif()
     endif()

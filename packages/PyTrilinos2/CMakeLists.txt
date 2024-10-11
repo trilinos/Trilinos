@@ -33,14 +33,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_VERBOSE
 
 SET(PyTrilinos2_BINDER_NUM_FILES "100" CACHE STRING "Maxinum number of generated files by binder.")
 
-MESSAGE("-- PYTHON_EXECUTABLE:")
-IF(NOT DEFINED ${PYTHON_EXECUTABLE})
-  find_program(PYTHON_EXECUTABLE
+MESSAGE("-- Python3_EXECUTABLE:")
+IF(NOT DEFINED ${Python3_EXECUTABLE})
+  find_program(Python3_EXECUTABLE
       NAMES python3 python
       )
-  MESSAGE("  -- CMake has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  MESSAGE("  -- CMake has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 ELSE()
-  MESSAGE("  -- User has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  MESSAGE("  -- User has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 ENDIF()
 
 function(get_all_include_dirs  LIBRARY_NAME all_include_dirs all_visited_libs)
@@ -196,7 +196,7 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_custom_command(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp ${CMAKE_CURRENT_BINARY_DIR}/python/getTpetraTypeName.py
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_ETI.py ${CMAKE_CURRENT_BINARY_DIR} ${all_ETI_files_list} ${all_ETI_classes_list} "src/PyTrilinos2_Tpetra_ETI.hpp"
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_ETI.py ${CMAKE_CURRENT_BINARY_DIR} ${all_ETI_files_list} ${all_ETI_classes_list} "src/PyTrilinos2_Tpetra_ETI.hpp"
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/include_tmp
 )
 add_custom_target(generate_ETI_name DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp ${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
@@ -206,7 +206,7 @@ list (APPEND PyTrilinos2PyFiles ${PyTrilinos2PyFiles2})
 
 add_custom_command(
   OUTPUT  ${binder_include_name}
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
   DEPENDS generate_ETI_name ${CMAKE_CURRENT_BINARY_DIR}/include_tmp
 )
 add_custom_target(generate_include_name DEPENDS ${binder_include_name})
@@ -272,12 +272,12 @@ SET(PyTrilinos2_INSTALL_PREFIX ${PyTrilinos2_DEFAULT_INSTALL_PREFIX}
   CACHE PATH "The path prefix for where PyTrilinos2 will be installed, e.g. /usr/local")
 
 # Get the python version
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
                         "import sys; print(sys.version_info.major)"
   OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
                         "import sys; print(sys.version_info.minor)"
   OUTPUT_VARIABLE PYTHON_MINOR_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -300,7 +300,7 @@ INSTALL(FILES
 
 # Find the pybind11 CMake module
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
+  ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
   OUTPUT_VARIABLE pybind11_DIR
   ERROR_VARIABLE  pybind11_CMAKE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -310,7 +310,7 @@ MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
 find_package(pybind11 REQUIRED)
 
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
+  ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE Mpi4Py_INCLUDE_DIR
   ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -323,7 +323,7 @@ ELSE()
 ENDIF()
 
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_config()['mpicxx'])"
+  ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_config()['mpicxx'])"
   OUTPUT_VARIABLE Mpi4Py_MPICXX
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )

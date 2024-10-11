@@ -102,15 +102,15 @@ else() # Raw CMake Project
   bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
   bob_option(Compadre_USE_MPI "Use MPI (not needed for Compadre toolkit)" OFF)
   set(PYTHON_LIBRARY_PREFIX "..") # relative to examples folder
-  bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
-  IF(NOT(PYTHON_EXECUTABLE))
-    MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
+  bob_input(Python3_EXECUTABLE "" PATH "Python executable location")
+  IF(NOT(Python3_EXECUTABLE))
+    MESSAGE(STATUS "Python executable location Python3_EXECUTABLE not given. Search made using 'which python'")
     EXECUTE_PROCESS(
       COMMAND which "python"
-      OUTPUT_VARIABLE PYTHON_EXECUTABLE
+      OUTPUT_VARIABLE Python3_EXECUTABLE
       OUTPUT_STRIP_TRAILING_WHITESPACE )
   ENDIF()
-  MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
+  MESSAGE(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
   if (Compadre_USE_PYTHON)
     # change RPATH for a flat directory structure
     # when installing pycompadre as Python package

@@ -518,7 +518,7 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
   # This test is too slow in DEBUG (3x longer than all other tests
   # combined)
 
-  if (PYTHON_EXECUTABLE)
+  if (Python3_EXECUTABLE)
     # Python driven test of a C++ executable (Python changes command line
     # arguments given to executable)
     configure_file(
@@ -529,7 +529,7 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
     set(testName GMLS_Manifold_Multiple_Evaluation_Sites)
     TRIBITS_ADD_ADVANCED_TEST(
       ${testName}
-      TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py --porder=3 --grids=3 --in-trilinos=True
+      TEST_0 CMND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py --porder=3 --grids=3 --in-trilinos=True
       PASS_REGULAR_EXPRESSION "Passed."
       COMM mpi serial
       ADDED_TEST_NAME_OUT ${testName}_CREATED
@@ -546,7 +546,7 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
             $<TARGET_FILE:Compadre_GMLS_Manifold_MultiSite_Test>
       )
     endif() # test created
-  endif() # PYTHON_EXECUTABLE
+  endif() # Python3_EXECUTABLE
 
   # Divergence-free basis test for GMLS on non-manifold
   # Note: QR is needed to be used here due to the null space introduced
@@ -634,7 +634,7 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
   #endif() # test created
 endif() # not debug
 
-if (PYTHON_EXECUTABLE)
+if (Python3_EXECUTABLE)
   # Python driven test of a C++ executable (Python changes command line
   # arguments given to executable) - calling QR solver
   configure_file(
@@ -645,7 +645,7 @@ if (PYTHON_EXECUTABLE)
   set(testName GMLS_Manifold_Refinement_Study_QR)
   TRIBITS_ADD_ADVANCED_TEST(
     ${testName}
-    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=QR --in-trilinos=True
+    TEST_0 CMND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=QR --in-trilinos=True
     PASS_REGULAR_EXPRESSION "Passed."
     COMM mpi serial
     ADDED_TEST_NAME_OUT ${testName}_CREATED
@@ -668,7 +668,7 @@ if (PYTHON_EXECUTABLE)
   set(testName GMLS_Manifold_Refinement_Study_LU)
   TRIBITS_ADD_ADVANCED_TEST(
     ${testName}
-    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=LU --in-trilinos=True
+    TEST_0 CMND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=LU --in-trilinos=True
     PASS_REGULAR_EXPRESSION "Passed."
     COMM mpi serial
     ADDED_TEST_NAME_OUT ${testName}_CREATED
@@ -698,7 +698,7 @@ if (PYTHON_EXECUTABLE)
   set(testName GMLS_Staggered_Manifold_Refinement_Study)
   TRIBITS_ADD_ADVANCED_TEST(
     ${testName}
-    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py --porder=3 --grids=4 --in-trilinos=True
+    TEST_0 CMND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py --porder=3 --grids=4 --in-trilinos=True
     PASS_REGULAR_EXPRESSION "Passed."
     COMM mpi serial
     ADDED_TEST_NAME_OUT ${testName}_CREATED
@@ -715,7 +715,7 @@ if (PYTHON_EXECUTABLE)
           $<TARGET_FILE:Compadre_GMLS_Staggered_Manifold_Test>
     )
   endif() # test created
-endif() # PYTHON_EXECUTABLE
+endif() # Python3_EXECUTABLE
 
 # Utility test - Filter By ID
 set(testName Test_Utilities)
