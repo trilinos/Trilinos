@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef HAVE_AMESOS_CSPARSE
 #include "Amesos_CSparse.h"
+#ifdef HAVE_AMESOS_CSPARSE
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
@@ -134,8 +134,8 @@ int Amesos_CSparse::ConvertToCSparse()
 
   if (Comm().MyPID() == 0) 
   {
-    csMatrix.p = (ptrdiff_t *) malloc((SerialMatrix().NumMyRows()+1)*sizeof(ptrdiff_t));
-    csMatrix.i = (ptrdiff_t *) malloc(SerialMatrix().NumMyNonzeros()*sizeof(ptrdiff_t));
+    csMatrix.p = (int*)(ptrdiff_t *) malloc((SerialMatrix().NumMyRows()+1)*sizeof(ptrdiff_t));
+    csMatrix.i = (int*)(ptrdiff_t *) malloc(SerialMatrix().NumMyNonzeros()*sizeof(ptrdiff_t));
     csMatrix.x = (double *) malloc(SerialMatrix().NumMyNonzeros()*sizeof(double));
     csMatrix.nzmax = SerialMatrix().NumMyNonzeros();
     csMatrix.m = SerialMatrix().NumMyRows();
