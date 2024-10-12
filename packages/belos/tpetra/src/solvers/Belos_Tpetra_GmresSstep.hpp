@@ -75,7 +75,7 @@ public:
 
     // Compute R := A^T * A, using a single BLAS call.
     // MV with "static" memory (e.g., Tpetra manages the static GPU memory pool)
-    MV R_mv = makeStaticLocalMultiVector (A, ncols, ncols);
+    MV R_mv = impl::makeStaticLocalMultiVector (A, ncols, ncols);
     //R_mv.putScalar (STS::zero ());
 
     // compute R := A^T * A

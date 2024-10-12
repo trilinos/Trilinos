@@ -28,6 +28,9 @@ namespace Intrepid2
   */
   template<class Scalar, typename DeviceType>
   class TensorData {
+  public:
+    using value_type = Scalar;
+    using execution_space = typename DeviceType::execution_space;
   protected:
     Kokkos::Array< Data<Scalar,DeviceType>, Parameters::MaxTensorComponents> tensorComponents_;
     Kokkos::Array<ordinal_type, 7> extents_;

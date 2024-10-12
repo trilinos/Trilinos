@@ -38,8 +38,6 @@ namespace Kokkos {
 
   namespace Impl {
     template<class Space, class T, class ... P>
-    struct MirrorType;
-    template<class Space, class T, class ... P>
     struct MirrorViewType;
   }
 

@@ -76,6 +76,8 @@ public:
     stkField1 = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "variableLengthField1", numStates);
     stkField2 = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "variableLengthField2", numStates);
     stkField3 = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "variableLengthField3", numStates);
+    stkField4 = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "variableLengthField4", numStates);
+    stkField5 = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "variableLengthField5", numStates);
 
     stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
     stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
@@ -99,6 +101,19 @@ public:
     const std::vector<double> init6(numComponent2, -2);
     stk::mesh::put_field_on_mesh(*stkField3, block2, numComponent2, init6.data());
 
+
+    const std::vector<double> init7(numComponent1, -1);
+    stk::mesh::put_field_on_mesh(*stkField4, block1, numComponent1, init7.data());
+
+    const std::vector<double> init8(numComponent2, -2);
+    stk::mesh::put_field_on_mesh(*stkField4, block2, numComponent2, init8.data());
+
+    const std::vector<double> init9(numComponent1, -1);
+    stk::mesh::put_field_on_mesh(*stkField5, block1, numComponent1, init9.data());
+
+    const std::vector<double> init10(numComponent2, -2);
+    stk::mesh::put_field_on_mesh(*stkField5, block2, numComponent2, init10.data());
+
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                                  "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n"
                                  "0,3,HEX_8,9,13,14,15,16,17,18,19,block_2\n"
@@ -114,10 +129,8 @@ public:
   stk::mesh::Field<double>* stkField1 = nullptr;
   stk::mesh::Field<double>* stkField2 = nullptr;
   stk::mesh::Field<double>* stkField3 = nullptr;
-
-  stk::mesh::Field<double>* stkNodeField1 = nullptr;
-  stk::mesh::Field<double>* stkNodeField2 = nullptr;
-  stk::mesh::Field<double>* stkNodeField3 = nullptr;
+  stk::mesh::Field<double>* stkField4 = nullptr;
+  stk::mesh::Field<double>* stkField5 = nullptr;
 };
 
 class NgpFieldBLASNode : public stk::unit_test_util::MeshFixture
@@ -226,6 +239,33 @@ TEST_F(NgpFieldBLAS, field_fill_device)
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
 }
 
+TEST_F(NgpFieldBLAS, field_fill_device_multiple)
+{
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
+
+  const double myConstantValue = 55.5;
+
+  std::vector<const stk::mesh::FieldBase*> allFields = {stkField1, stkField2, stkField3, stkField4, stkField5};
+  stk::mesh::field_fill(myConstantValue, allFields, stk::ngp::ExecSpace());
+
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  for (const stk::mesh::FieldBase* field : allFields)
+  {
+    EXPECT_TRUE(field->need_sync_to_host());
+
+    stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(*field);
+
+    stk::mesh::Selector selector(*field);
+    ngp_field_test_utils::check_field_data_on_device(ngpMesh, ngpField, selector, myConstantValue);
+
+    const double initialValue = -1;
+    ngp_field_test_utils::check_field_data_on_host(get_bulk(), *field, selector, initialValue);
+
+    field->sync_to_host();
+    ngp_field_test_utils::check_field_data_on_host(get_bulk(), *field, selector, myConstantValue);
+  }
+}
+
 TEST_F(NgpFieldBLAS, field_fill_selector_device)
 {
   if (get_parallel_size() != 1) { GTEST_SKIP(); }
@@ -266,6 +306,36 @@ TEST_F(NgpFieldBLAS, field_fill_component_selector_device)
   stkField1->sync_to_host();
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue, component, myConstantComponentValue);
 }
+
+TEST_F(NgpFieldBLAS, field_fill_device_component_multiple)
+{
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
+
+  const int component = 1;
+  const double myConstantComponentValue = 15.5;
+  const double myConstantValue = 55.5;
+
+  std::vector<const stk::mesh::FieldBase*> allFields = {stkField1, stkField2, stkField3, stkField4, stkField5};
+  stk::mesh::Part& block2 = *get_meta().get_part("block_2");
+  stk::mesh::Selector selector = block2;
+  stk::mesh::field_fill(myConstantValue, allFields, selector, stk::ngp::ExecSpace());
+  stk::mesh::field_fill(myConstantComponentValue, allFields, component, selector, stk::ngp::ExecSpace());
+
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  for (const stk::mesh::FieldBase* field : allFields)
+  {
+    EXPECT_TRUE(field->need_sync_to_host());
+
+    stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(*field);
+
+    ngp_field_test_utils::check_field_data_on_device(ngpMesh, ngpField, selector, myConstantValue, component, myConstantComponentValue);
+
+    field->sync_to_host();
+
+    ngp_field_test_utils::check_field_data_on_host(get_bulk(), *field, selector, myConstantValue, component, myConstantComponentValue);
+  }
+}
+
 
 TEST_F(NgpFieldBLAS, field_fill_host_ngp)
 {

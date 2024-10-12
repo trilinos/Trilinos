@@ -403,8 +403,6 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
   Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
-  Kokkos::sort(hostIntersections);
-
   local_expect_search_results(hostIntersections);
 }
 
@@ -495,6 +493,10 @@ TEST(stk_search, Local_CoarseSearchWithViews_MORTON_LBVH)
 
 TEST(stk_search, Local_CoarseSearchWithViews_ARBORX)
 {
+#ifndef STK_HAS_ARBORX
+  GTEST_SKIP();
+#endif
+
   local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX);
   local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX);
 }
@@ -725,7 +727,7 @@ void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMeth
       ASSERT_EQ(3u, searchResults.extent(0));
     }
 
-    Kokkos::sort(goldResults);
+    Kokkos::sort(goldResults, stk::search::Comparator<typename SearchResultsViewType::value_type>());
 
     for (size_t i = 0; i < goldResults.extent(0); i++) {
       EXPECT_EQ(goldResults[i], searchResults[i])

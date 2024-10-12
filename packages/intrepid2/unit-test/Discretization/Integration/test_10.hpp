@@ -84,7 +84,7 @@ namespace Intrepid2 {
       typedef ValueType weightValueType;
       typedef CubaturePolylib<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
 
-      const auto tol = 10.0 * tolerence();
+      const auto tol = 100.0 * tolerence(); // relaxing this as we support higher-order cubature
 
       int errorFlag = 0;
 
@@ -119,14 +119,6 @@ namespace Intrepid2 {
                                         ">>> ERROR (Integration::Test02): Cannot open analytic solution file" );
         }
         
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints, 
-                                       Parameters::MaxIntegrationPoints, 
-                                       Parameters::MaxDimension);
-
-        DynRankView ConstructWithLabel(cubWeights, 
-                                       Parameters::MaxIntegrationPoints);
-        
         // compute integrals
         EPolyType polyType[4] = { POLYTYPE_GAUSS,
                                   POLYTYPE_GAUSS_RADAU_LEFT,
@@ -138,11 +130,17 @@ namespace Intrepid2 {
 
           for (ordinal_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
             CubatureLineType lineCub(cubDeg, ptype);
-            for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) 
-              testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(lineCub,
-                                                                              cubPoints,
+            auto cubPoints  = lineCub.allocateCubaturePoints();
+            auto cubWeights = lineCub.allocateCubatureWeights();
+            lineCub.getCubature(cubPoints,cubWeights);
+            Kokkos::Array<int,1> degrees;
+            for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg)
+            {
+              degrees[0] = polyDeg;
+              testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(cubPoints,
                                                                               cubWeights,
-                                                                              polyDeg);
+                                                                              degrees);
+            }
           }
                     
           // perform comparison

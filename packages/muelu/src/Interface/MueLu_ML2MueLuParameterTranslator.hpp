@@ -11,10 +11,12 @@
 #define MUELU_ML2MUELUPARAMETERTRANSLATOR_HPP
 
 #include <functional>
+#include <vector>
 #include <cctype>
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include <Teuchos_RCP.hpp>
 
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_MasterList.hpp>
@@ -61,6 +63,86 @@ class ML2MueLuParameterTranslator {
     return SetParameterList(*paramList, defaultVals);
   }
 
+  //! Sets ML's (not MueLu's) default parameters for aggregation-based preconditioners.
+  /*! This function is use to set ML's default parameters, as
+    defined in ml_MultiLevelPreconditioner.h. This has been ported to MueLu as a backwards
+    compatibility feature for ML users transitioning to MueLu.  These routines are designed
+    to be used with or without compiling ML.
+
+    NOTE: MueLu's SetDefaults does *NOT* support the AztecOO options supported by ML.
+
+    \param ProblemType (In) : a std::string, whose possible values are:
+       - "SA" : classical smoothed aggregation preconditioners;
+       - "NSSA" : default values for Petrov-Galerkin preconditioner for nonsymmetric systems
+       - "maxwell" : default values for aggregation preconditioner for eddy current systems
+       - "DD" : defaults for 2-level domain decomposition preconditioners based
+       on aggregation;
+       - "DD-LU" : Like "DD", but use exact LU decompositions on each subdomain;
+       - "DD-ML" : 3-level domain decomposition preconditioners, with coarser
+       spaces defined by aggregation;
+      - "DD-ML-LU" : Like "DD-ML", but with LU decompositions on each subdomain.
+    \param List (Out) : list which will populated by the default parameters
+    \param options (In/Out) : integer array, of size \c AZ_OPTIONS_SIZE.
+    NOTE: MueLu will ignore this parameter.
+    \param params (In/Out) : double array, of size \c AZ_PARAMS_SIZE.
+    NOTE: MueLu will ignore this parameter.
+    \param OverWrite (In) : boolean.  If false, any pre-existing values in the
+    parameter list will be preserved.  Default value is true, i.e., any
+    pre-existing values may be overwritten.
+   */
+  static int SetDefaults(std::string ProblemType, Teuchos::ParameterList& List,
+                         int* options = 0, double* params = 0, const bool OverWrite = true);
+
+  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
+  static int SetDefaultsDD(Teuchos::ParameterList& List,
+                           Teuchos::RCP<std::vector<int> >& options,
+                           Teuchos::RCP<std::vector<double> >& params,
+                           bool Overwrite = true);
+
+  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners, using LU on each subdomain
+  static int SetDefaultsDD_LU(Teuchos::ParameterList& List,
+                              Teuchos::RCP<std::vector<int> >& options,
+                              Teuchos::RCP<std::vector<double> >& params,
+                              bool Overwrite = true);
+
+  //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.
+  static int SetDefaultsDD_3Levels(Teuchos::ParameterList& List,
+                                   Teuchos::RCP<std::vector<int> >& options,
+                                   Teuchos::RCP<std::vector<double> >& params,
+                                   bool Overwrite = true);
+
+  //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners with LU.
+  static int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList& List,
+                                      Teuchos::RCP<std::vector<int> >& options,
+                                      Teuchos::RCP<std::vector<double> >& params,
+                                      bool Overwrite = true);
+
+  //! Sets default parameters for the eddy current equations equations.
+  static int SetDefaultsMaxwell(Teuchos::ParameterList& List,
+                                Teuchos::RCP<std::vector<int> >& options,
+                                Teuchos::RCP<std::vector<double> >& params,
+                                bool Overwrite = true);
+
+  //! Sets default parameters for classical smoothed aggregation.
+  static int SetDefaultsSA(Teuchos::ParameterList& List,
+                           Teuchos::RCP<std::vector<int> >& options,
+                           Teuchos::RCP<std::vector<double> >& params,
+                           bool Overwrite = true);
+
+  //! Sets defaults for energy minimization preconditioning for nonsymmetric problems.
+  static int SetDefaultsNSSA(Teuchos::ParameterList& List,
+                             Teuchos::RCP<std::vector<int> >& options,
+                             Teuchos::RCP<std::vector<double> >& params,
+                             bool Overwrite = true);
+
+  //! Sets defaults for classical amg
+  static int SetDefaultsClassicalAMG(Teuchos::ParameterList& List,
+                                     Teuchos::RCP<std::vector<int> >& options,
+                                     Teuchos::RCP<std::vector<double> >& params,
+                                     bool Overwrite = true);
+
+  //! Sets defaults for RefMaxwell / Maxwell2
+  static int SetDefaultsRefMaxwell(Teuchos::ParameterList& inList, bool OverWrite = true);
   //@}
 
  private:

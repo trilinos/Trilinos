@@ -1,4 +1,4 @@
-name: Check for git LFS pointers
+name: Per-Commit Checks
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  DCO-signoff:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,8 +16,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Search for oids in modified lines
+    - name: Search for signoff statements in commit messages
       run: |
-        $GITHUB_WORKSPACE/commonTools/test/utilities/check-lfs-oids.sh \
+        $GITHUB_WORKSPACE/commonTools/test/utilities/check-commit-signoffs.sh \
         origin/${{ github.event.pull_request.base.ref }} \
         ${{ github.event.pull_request.head.sha }}

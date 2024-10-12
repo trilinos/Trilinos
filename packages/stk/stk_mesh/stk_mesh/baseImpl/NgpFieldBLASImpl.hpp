@@ -99,15 +99,50 @@ void mark_field_modified(const mesh::FieldBase& field, EXEC_SPACE execSpace, boo
   }
 }
 
-template<class Scalar, class NGP_FIELD_TYPE>
+template<class Scalar, class NGP_FIELD_TYPE, typename ExecSpace>
 class FieldFill {
 public:
-  FieldFill(const NGP_FIELD_TYPE& field, Scalar inputAlpha)
-  : ngpField(field), alpha(inputAlpha)
-  {}
+  FieldFill(const NGP_FIELD_TYPE* fields, int fieldCount, Scalar inputAlpha)
+  : ngpFieldsDynamic("ngp_fields", 0), alpha(inputAlpha), nfields(fieldCount)
+  {
+    if (nfields <= STATIC_FIELD_LIMIT)
+    {
+      for (int i=0; i < nfields; ++i)
+      {
+        ngpFieldsStatic[i] = fields[i];
+      }
+    } else
+    {
+      Kokkos::resize(ngpFieldsDynamic, nfields);
+      auto ngpFieldsDynamicHost = Kokkos::create_mirror_view(ngpFieldsDynamic);
+      for (int i=0; i < nfields; ++i)
+      {
+        ngpFieldsDynamicHost[i] = fields[i];
+      }
+      Kokkos::deep_copy(ngpFieldsDynamic, ngpFieldsDynamicHost);
+    }
+  }
 
   KOKKOS_FUNCTION
   void operator()(const stk::mesh::FastMeshIndex& entityIndex) const
+  {
+    if (nfields <= STATIC_FIELD_LIMIT)
+    {
+      for (int i=0; i < nfields; ++i)
+      {
+        setComponents(ngpFieldsStatic[i], entityIndex);
+      }
+    } else
+    {
+      for (int i=0; i < nfields; ++i)
+      {
+        setComponents(ngpFieldsDynamic[i], entityIndex);
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void setComponents(const NGP_FIELD_TYPE& ngpField, const stk::mesh::FastMeshIndex& entityIndex) const
   {
     const int numComponents = ngpField.get_num_components_per_entity(entityIndex);
     for(int component=0; component<numComponents; ++component) {
@@ -115,76 +150,152 @@ public:
     }
   }
 
-  NGP_FIELD_TYPE ngpField;
+  using FieldView = Kokkos::View<NGP_FIELD_TYPE*, ExecSpace>;
+  using FieldHostView = typename FieldView::HostMirror;
+  static constexpr int STATIC_FIELD_LIMIT = 4;
+  NGP_FIELD_TYPE ngpFieldsStatic[STATIC_FIELD_LIMIT];
+  FieldView ngpFieldsDynamic;
   Scalar alpha;
+  int nfields;
 };
 
-template<class Scalar, class NGP_FIELD_TYPE>
+template<class Scalar, typename NGP_FIELD_TYPE, typename ExecSpace>
 class FieldFillComponent {
 public:
-  FieldFillComponent(const NGP_FIELD_TYPE& field, Scalar inputAlpha, int inputComponent)
-  : ngpField(field), alpha(inputAlpha), component(inputComponent)
-  {}
+  static_assert(std::is_same_v<NGP_FIELD_TYPE, stk::mesh::HostField<Scalar>> ||
+                std::is_same_v<NGP_FIELD_TYPE, stk::mesh::DeviceField<Scalar>>);
+  FieldFillComponent(const NGP_FIELD_TYPE* fields, int fieldCount, Scalar inputAlpha, int inputComponent)
+  : ngpFieldsDynamic("ngp_fields", 0), alpha(inputAlpha), component(inputComponent), nfields(fieldCount)
+  {
+    if (nfields <= STATIC_FIELD_LIMIT)
+    {
+      for (int i=0; i < nfields; ++i)
+      {
+        ngpFieldsStatic[i] = fields[i];
+      }
+    } else
+    {
+      Kokkos::resize(ngpFieldsDynamic, nfields);
+      auto ngpFieldsDynamicHost = Kokkos::create_mirror_view(ngpFieldsDynamic);
+      for (int i=0; i < nfields; ++i)
+      {
+        ngpFieldsDynamicHost(i) = fields[i];
+      }
+
+      Kokkos::deep_copy(ngpFieldsDynamic, ngpFieldsDynamicHost);
+    }
+  }
 
   KOKKOS_FUNCTION
   void operator()(const stk::mesh::FastMeshIndex& entityIndex) const
   {
-    const int numComponents = ngpField.get_num_components_per_entity(entityIndex);
-    STK_NGP_ThrowRequire(component < numComponents);
-    ngpField(entityIndex, component) = alpha;
+    if (nfields <= STATIC_FIELD_LIMIT)
+    {
+      for (int i=0; i < nfields; ++i)
+      {
+        setComponent(ngpFieldsStatic[i], entityIndex);
+      }
+    } else
+    {
+      for (int i=0; i < nfields; ++i)
+      {
+        setComponent(ngpFieldsDynamic(i), entityIndex);
+      }
+    }
   }
 
-  NGP_FIELD_TYPE ngpField;
+  KOKKOS_INLINE_FUNCTION
+  void setComponent(const NGP_FIELD_TYPE& ngpField, const stk::mesh::FastMeshIndex& entityIndex) const
+  {
+      for (int i=0; i < nfields; ++i)
+      {
+        const int numComponents = ngpField.get_num_components_per_entity(entityIndex);
+        STK_NGP_ThrowRequire(component < numComponents);
+        ngpField(entityIndex, component) = alpha;
+      }
+  }
+
+  using FieldView = Kokkos::View<NGP_FIELD_TYPE*, ExecSpace>;
+  using FieldHostView = typename FieldView::HostMirror;
+  static constexpr int STATIC_FIELD_LIMIT = 4;
+  NGP_FIELD_TYPE ngpFieldsStatic[STATIC_FIELD_LIMIT];
+  FieldView ngpFieldsDynamic;
   Scalar alpha;
   int component;
+  int nfields;
 };
 
 template<class Scalar, class NGP_MESH_TYPE, class NGP_FIELD_TYPE, class EXEC_SPACE>
 void field_fill_for_each_entity(const NGP_MESH_TYPE& ngpMesh,
-                                const NGP_FIELD_TYPE& ngpField,
+                                const NGP_FIELD_TYPE* ngpFields,
+                                int nfields,
                                 Scalar alpha,
                                 int component,
                                 const stk::mesh::Selector& selector,
                                 const EXEC_SPACE& execSpace)
 {
   if (component == -1) {
-    FieldFill<Scalar, NGP_FIELD_TYPE> fieldFill(ngpField, alpha);
-    stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), selector, fieldFill, execSpace);
+    FieldFill<Scalar, NGP_FIELD_TYPE, EXEC_SPACE> fieldFill(ngpFields, nfields, alpha);
+    stk::mesh::for_each_entity_run(ngpMesh, ngpFields[0].get_rank(), selector, fieldFill, execSpace);
   }
   else {
-    FieldFillComponent<Scalar, NGP_FIELD_TYPE> fieldFill(ngpField, alpha, component);
-    stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), selector, fieldFill, execSpace);
+    FieldFillComponent<Scalar, NGP_FIELD_TYPE, EXEC_SPACE> fieldFill(ngpFields, nfields, alpha, component);
+    stk::mesh::for_each_entity_run(ngpMesh, ngpFields[0].get_rank(), selector, fieldFill, execSpace);
   }
 }
 
 template<class Scalar, typename EXEC_SPACE>
 void field_fill_impl(const Scalar alpha,
-                     const stk::mesh::FieldBase& field,
+                     const stk::mesh::FieldBase*const* fields,
+                     int nfields,
                      int component,
                      const stk::mesh::Selector* selectorPtr,
                      const EXEC_SPACE& execSpace,
                      bool isDeviceExecSpaceUserOverride)
 {
-  field.clear_sync_state();
-
-  std::unique_ptr<stk::mesh::Selector> fieldSelector;
-  if (selectorPtr == nullptr) {
-    fieldSelector = std::make_unique<stk::mesh::Selector>(field);
+  STK_ThrowRequireMsg(nfields > 0, "must have one or more fields");
+  for (int i=0; i < nfields; ++i)
+  {
+    fields[i]->clear_sync_state();
   }
-  const stk::mesh::Selector& selector = selectorPtr != nullptr ? *selectorPtr : *(fieldSelector.get());
+
+  stk::mesh::Selector fieldSelector;
+  if (selectorPtr == nullptr) {
+    fieldSelector = stk::mesh::Selector(*fields[0]);
+    for (int i=1; i < nfields; ++i)
+    {
+      fieldSelector &= stk::mesh::Selector(*fields[i]);
+    }
+  } else
+  {
+    fieldSelector = *selectorPtr;
+  }
 
   if constexpr (operate_on_ngp_mesh<EXEC_SPACE>()) {
-    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(field.get_mesh());
-    stk::mesh::NgpField<Scalar>& ngpField = stk::mesh::get_updated_ngp_field<Scalar>(field);
-    field_fill_for_each_entity(ngpMesh, ngpField, alpha, component, selector, execSpace);
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(fields[0]->get_mesh());
+    if (nfields == 1)
+    {
+      stk::mesh::NgpField<Scalar> ngpField = stk::mesh::get_updated_ngp_field<Scalar>(*fields[0]);
+      field_fill_for_each_entity(ngpMesh, &ngpField, nfields, alpha, component, fieldSelector, execSpace);
+    } else
+    {
+      std::vector<stk::mesh::NgpField<Scalar>> ngpFields;
+      for (int i=0; i < nfields; ++i)
+      {
+        ngpFields.push_back(stk::mesh::get_updated_ngp_field<Scalar>(*fields[i]));
+      }
+      field_fill_for_each_entity(ngpMesh, ngpFields.data(), nfields, alpha, component, fieldSelector, execSpace);
+    }
   }
   else {
-    stk::mesh::HostMesh hostMesh(field.get_mesh());
-    stk::mesh::HostField<Scalar> hostField(field.get_mesh(), field);
-    field_fill_for_each_entity(hostMesh, hostField, alpha, component, selector, execSpace);
+    std::vector<const stk::mesh::FieldBase*> fieldsVec(fields, fields+nfields);
+    stk::mesh::field_fill(alpha, fieldsVec, fieldSelector);
   }
 
-  mark_field_modified(field, execSpace, isDeviceExecSpaceUserOverride);
+  for (int i=0; i < nfields; ++i)
+  {
+    mark_field_modified(*fields[i], execSpace, isDeviceExecSpaceUserOverride);
+  }
 }
 
 template<class NGP_FIELD_TYPE>
@@ -224,11 +335,7 @@ void field_copy_no_mark_t(const stk::mesh::FieldBase& xField,
   }
   else {
     xField.sync_to_host();
-    stk::mesh::HostField<Scalar> hostX(xField.get_mesh(), xField);
-    stk::mesh::HostField<Scalar> hostY(yField.get_mesh(), yField);
-    stk::mesh::HostMesh hostMesh(xField.get_mesh());
-    FieldCopy<stk::mesh::HostField<Scalar>> fieldCopy(hostX, hostY);
-    stk::mesh::for_each_entity_run(hostMesh, xField.entity_rank(), selector, fieldCopy);
+    stk::mesh::field_copy(xField, yField, selector);
   }
 }
 
