@@ -54,4 +54,3 @@ int IntMultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbos
 #warning "The Epetra package is deprecated"
 #endif
 #endif
-

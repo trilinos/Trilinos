@@ -33,4 +33,4 @@ int MM_readfile (int, int, ZOLTAN_FILE*, PARIO_INFO_PTR, int*, int*, int*, int**
 } /* closing bracket for extern "C" */
 #endif
 
-#endif 
+#endif

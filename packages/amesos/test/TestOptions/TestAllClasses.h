@@ -27,4 +27,3 @@ int TestAllClasses( const std::vector<std::string> AmesosClasses,
 #warning "The Amesos package is deprecated"
 #endif
 #endif
-

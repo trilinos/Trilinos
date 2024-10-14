@@ -44,6 +44,14 @@
 #ifndef EPETRA_CONFIGDEFS_H
 #define EPETRA_CONFIGDEFS_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #ifndef __cplusplus
 #define __cplusplus
 #endif
@@ -330,10 +338,3 @@ const int DefaultTracebackMode = 1;
 #include "Epetra_DLLExportMacro.h"
 
 #endif /* EPETRA_CONFIGDEFS_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-
