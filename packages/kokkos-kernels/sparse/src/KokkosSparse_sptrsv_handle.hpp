@@ -471,6 +471,14 @@ class SPTRSVHandle {
 #endif
     }
 
+#if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+        std::is_same_v<execution_space, Kokkos::Cuda> && block_size_ != 0) {
+      throw(std::runtime_error(
+          "sptrsv handle: SPTRSV may not work with blocks+clang+cuda+complex due to a compiler bug"));
+    }
+#endif
+
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     if (lower_tri) {
       // lower-triangular is stored in CSC
