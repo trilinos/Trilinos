@@ -179,6 +179,15 @@ struct SptrsvTest {
     const size_type nrows = row_map.size() - 1;
 
     for (auto alg : algs) {
+      // FIXME CUDA+Clang+Complex seems to expose a compiler bug
+#if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
+      if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+          std::is_same_v<execution_space, Kokkos::Cuda> && block_size != 0) {
+        std::cerr << "Skipping TP1 alg test for blocked mtx. There's a compiler bug "
+                  << "for clang+CUDA+complex" << std::endl;
+        continue;
+      }
+#endif
       KernelHandle kh;
       kh.create_sptrsv_handle(alg, nrows, is_lower, block_size);
       if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
