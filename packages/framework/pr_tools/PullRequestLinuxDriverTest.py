@@ -292,6 +292,7 @@ def parse_args():
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
     print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
     print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
+    print("| - [O] use_explicit_cacefile       : {use_explicit_cachefile}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 
