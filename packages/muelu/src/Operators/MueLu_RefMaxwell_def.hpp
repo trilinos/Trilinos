@@ -79,18 +79,18 @@ T pop(Teuchos::ParameterList &pl, std::string const &name_in, T def_value) {
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-Matrix2CrsMatrix(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &matrix) {
-  return Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(matrix, true)->getCrsMatrix();
+Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+Matrix2CrsMatrix(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &matrix) {
+  return Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(matrix, true)->getCrsMatrix();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return SM_Matrix_->getDomainMap();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
   return SM_Matrix_->getRangeMap();
 }
 
@@ -102,27 +102,27 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   RCP<ParameterList> params = rcp(new ParameterList("RefMaxwell"));
 
-  params->set<RCP<Matrix> >("Dk_1", Teuchos::null);
-  params->set<RCP<Matrix> >("Dk_2", Teuchos::null);
-  params->set<RCP<Matrix> >("D0", Teuchos::null);
+  params->set<RCP<Matrix>>("Dk_1", Teuchos::null);
+  params->set<RCP<Matrix>>("Dk_2", Teuchos::null);
+  params->set<RCP<Matrix>>("D0", Teuchos::null);
 
-  params->set<RCP<Matrix> >("M1_beta", Teuchos::null);
-  params->set<RCP<Matrix> >("M1_alpha", Teuchos::null);
+  params->set<RCP<Matrix>>("M1_beta", Teuchos::null);
+  params->set<RCP<Matrix>>("M1_alpha", Teuchos::null);
   // for backwards compatibility
-  params->set<RCP<Matrix> >("Ms", Teuchos::null);
+  params->set<RCP<Matrix>>("Ms", Teuchos::null);
 
-  params->set<RCP<Matrix> >("Mk_one", Teuchos::null);
-  params->set<RCP<Matrix> >("Mk_1_one", Teuchos::null);
+  params->set<RCP<Matrix>>("Mk_one", Teuchos::null);
+  params->set<RCP<Matrix>>("Mk_1_one", Teuchos::null);
   // for backwards compatibility
-  params->set<RCP<Matrix> >("M1", Teuchos::null);
+  params->set<RCP<Matrix>>("M1", Teuchos::null);
 
-  params->set<RCP<Matrix> >("invMk_1_invBeta", Teuchos::null);
-  params->set<RCP<Matrix> >("invMk_2_invAlpha", Teuchos::null);
+  params->set<RCP<Matrix>>("invMk_1_invBeta", Teuchos::null);
+  params->set<RCP<Matrix>>("invMk_2_invAlpha", Teuchos::null);
   // for backwards compatibility
-  params->set<RCP<Matrix> >("M0inv", Teuchos::null);
+  params->set<RCP<Matrix>>("M0inv", Teuchos::null);
 
-  params->set<RCP<MultiVector> >("Nullspace", Teuchos::null);
-  params->set<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
+  params->set<RCP<MultiVector>>("Nullspace", Teuchos::null);
+  params->set<RCP<RealValuedMultiVector>>("Coordinates", Teuchos::null);
 
   auto spaceValidator = rcp(new Teuchos::EnhancedNumberValidator<int>(1, 2));
   params->set("refmaxwell: space number", 1, "", spaceValidator);
@@ -146,6 +146,7 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   params->set("rap: fix zero diagonals", true);
   params->set("rap: fix zero diagonals threshold", MasterList::getDefault<double>("rap: fix zero diagonals threshold"));
   params->set("fuse prolongation and update", MasterList::getDefault<bool>("fuse prolongation and update"));
+  params->set("refmaxwell: async transfers", Node::is_gpu);
   params->set("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
   params->set("refmaxwell: subsolves striding", 1);
   params->set("refmaxwell: row sum drop tol (1,1)", MasterList::getDefault<double>("aggregation: row sum drop tol"));
@@ -220,8 +221,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
   std::string outputFilename = parameterList_.get<std::string>("output filename");
   if (outputFilename != "")
     VerboseObject::SetMueLuOFileStream(outputFilename);
-  if (parameterList_.isType<Teuchos::RCP<Teuchos::FancyOStream> >("output stream"))
-    VerboseObject::SetMueLuOStream(parameterList_.get<Teuchos::RCP<Teuchos::FancyOStream> >("output stream"));
+  if (parameterList_.isType<Teuchos::RCP<Teuchos::FancyOStream>>("output stream"))
+    VerboseObject::SetMueLuOStream(parameterList_.get<Teuchos::RCP<Teuchos::FancyOStream>>("output stream"));
 
   if (parameterList_.get<bool>("print initial parameters"))
     GetOStream(static_cast<MsgType>(Runtime1), 0) << parameterList_ << std::endl;
@@ -569,6 +570,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     if (Dk_1_T_R11_colMapsMatch_)
       GetOStream(Runtime0) << solverName_ + "::compute(): Dk_1_T and R11 have matching colMaps" << std::endl;
 
+    asyncTransfers_ = parameterList_.get<bool>("refmaxwell: async transfers");
+
     // Allocate MultiVectors for solve
     allocateMemory(1);
 
@@ -696,7 +699,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     buildAddon(const int spaceNumber) {
   if (spaceNumber == 0)
     return Teuchos::null;
@@ -958,12 +961,12 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   repartFactory->Build(coarseLevel);
 
   if (!precList11_.get<bool>("repartition: rebalance P and R", false))
-    ImporterCoarse11_ = coarseLevel.Get<RCP<const Import> >("Importer", repartFactory.get());
-  P11_            = coarseLevel.Get<RCP<Matrix> >("P", newP.get());
-  coarseA11_      = coarseLevel.Get<RCP<Matrix> >("A", newA.get());
-  CoordsCoarse11_ = coarseLevel.Get<RCP<RealValuedMultiVector> >("Coordinates", newP.get());
+    ImporterCoarse11_ = coarseLevel.Get<RCP<const Import>>("Importer", repartFactory.get());
+  P11_            = coarseLevel.Get<RCP<Matrix>>("P", newP.get());
+  coarseA11_      = coarseLevel.Get<RCP<Matrix>>("A", newA.get());
+  CoordsCoarse11_ = coarseLevel.Get<RCP<RealValuedMultiVector>>("Coordinates", newP.get());
   if (!NullspaceCoarse11_.is_null())
-    NullspaceCoarse11_ = coarseLevel.Get<RCP<MultiVector> >("Nullspace", newP.get());
+    NullspaceCoarse11_ = coarseLevel.Get<RCP<MultiVector>>("Nullspace", newP.get());
 
   if (!coarseA11_.is_null()) {
     // Set block size
@@ -979,7 +982,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (!disable_addon_ && enable_reuse_) {
     // Rebalance the addon for next setup
-    RCP<const Import> ImporterCoarse11 = coarseLevel.Get<RCP<const Import> >("Importer", repartFactory.get());
+    RCP<const Import> ImporterCoarse11 = coarseLevel.Get<RCP<const Import>>("Importer", repartFactory.get());
     RCP<const Map> targetMap           = ImporterCoarse11->getTargetMap();
     ParameterList XpetraList;
     XpetraList.set("Restrict Communicator", true);
@@ -1018,11 +1021,11 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::build22Matrix(const 
 
     if (!A22_AP_reuse_data_.is_null()) {
       coarseLevel.AddKeepFlag("AP reuse data", rapFact.get());
-      coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList> >("AP reuse data", A22_AP_reuse_data_, rapFact.get());
+      coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList>>("AP reuse data", A22_AP_reuse_data_, rapFact.get());
     }
     if (!A22_RAP_reuse_data_.is_null()) {
       coarseLevel.AddKeepFlag("RAP reuse data", rapFact.get());
-      coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList> >("RAP reuse data", A22_RAP_reuse_data_, rapFact.get());
+      coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList>>("RAP reuse data", A22_RAP_reuse_data_, rapFact.get());
     }
 
 #ifdef HAVE_MPI
@@ -1098,10 +1101,10 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::build22Matrix(const 
       repartFactory->Build(coarseLevel);
 
       if (!precList22_.get<bool>("repartition: rebalance P and R", false))
-        Importer22_ = coarseLevel.Get<RCP<const Import> >("Importer", repartFactory.get());
-      Dk_1_     = coarseLevel.Get<RCP<Matrix> >("P", newP.get());
-      A22_      = coarseLevel.Get<RCP<Matrix> >("A", newA.get());
-      Coords22_ = coarseLevel.Get<RCP<RealValuedMultiVector> >("Coordinates", newP.get());
+        Importer22_ = coarseLevel.Get<RCP<const Import>>("Importer", repartFactory.get());
+      Dk_1_     = coarseLevel.Get<RCP<Matrix>>("P", newP.get());
+      A22_      = coarseLevel.Get<RCP<Matrix>>("A", newA.get());
+      Coords22_ = coarseLevel.Get<RCP<RealValuedMultiVector>>("Coordinates", newP.get());
 
       if (!P22_.is_null()) {
         // Todo
@@ -1116,13 +1119,13 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::build22Matrix(const 
         coarseLevel.Request("RAP reuse data", rapFact.get());
       }
 
-      A22_ = coarseLevel.Get<RCP<Matrix> >("A", rapFact.get());
+      A22_ = coarseLevel.Get<RCP<Matrix>>("A", rapFact.get());
 
       if (enable_reuse_) {
         if (coarseLevel.IsAvailable("AP reuse data", rapFact.get()))
-          A22_AP_reuse_data_ = coarseLevel.Get<RCP<ParameterList> >("AP reuse data", rapFact.get());
+          A22_AP_reuse_data_ = coarseLevel.Get<RCP<ParameterList>>("AP reuse data", rapFact.get());
         if (coarseLevel.IsAvailable("RAP reuse data", rapFact.get()))
-          A22_RAP_reuse_data_ = coarseLevel.Get<RCP<ParameterList> >("RAP reuse data", rapFact.get());
+          A22_RAP_reuse_data_ = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", rapFact.get());
       }
     }
   } else {
@@ -1221,11 +1224,11 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setFineLevelSmoother
         level.Set("PostSmoother data", PostSmootherData11_, smootherFact.get());
     }
     smootherFact->Build(level);
-    PreSmoother11_  = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
-    PostSmoother11_ = level.Get<RCP<SmootherBase> >("PostSmoother", smootherFact.get());
+    PreSmoother11_  = level.Get<RCP<SmootherBase>>("PreSmoother", smootherFact.get());
+    PostSmoother11_ = level.Get<RCP<SmootherBase>>("PostSmoother", smootherFact.get());
     if (enable_reuse_) {
-      PreSmootherData11_  = level.Get<RCP<SmootherPrototype> >("PreSmoother data", smootherFact.get());
-      PostSmootherData11_ = level.Get<RCP<SmootherPrototype> >("PostSmoother data", smootherFact.get());
+      PreSmootherData11_  = level.Get<RCP<SmootherPrototype>>("PreSmoother data", smootherFact.get());
+      PostSmootherData11_ = level.Get<RCP<SmootherPrototype>>("PostSmoother data", smootherFact.get());
     }
   } else {
     std::string smootherType = parameterList_.get<std::string>("smoother: type");
@@ -1246,10 +1249,10 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setFineLevelSmoother
         level.Set("PreSmoother data", PreSmootherData11_, smootherFact.get());
     }
     smootherFact->Build(level);
-    PreSmoother11_  = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+    PreSmoother11_  = level.Get<RCP<SmootherBase>>("PreSmoother", smootherFact.get());
     PostSmoother11_ = PreSmoother11_;
     if (enable_reuse_)
-      PreSmootherData11_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data", smootherFact.get());
+      PreSmootherData11_ = level.Get<RCP<SmootherPrototype>>("PreSmoother data", smootherFact.get());
   }
 }
 
@@ -1318,6 +1321,13 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::allocateMemory(int n
     DxSubComm_->setObjectLabel("DxSubComm");
   }
 
+  if (asyncTransfers_) {
+    if (!rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null())
+      P11x_colmap_ = MultiVectorFactory::Build(P11_->getColMap(), numVectors);
+    if (!rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null())
+      Dx_colmap_ = MultiVectorFactory::Build(Dk_1_->getColMap(), numVectors);
+  }
+
   residual_ = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), numVectors);
   residual_->setObjectLabel("residual");
 }
@@ -1371,7 +1381,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dump(const Kokkos::V
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm) const {
+Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int>> comm) const {
   if (IsPrint(Timings)) {
     if (!syncTimers_)
       return Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name)));
@@ -1386,7 +1396,7 @@ Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdina
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     buildNullspace(const int spaceNumber, const Kokkos::View<bool *, typename Node::device_type> &bcs, const bool applyBCs) {
   std::string spaceLabel;
   if (spaceNumber == 0)
@@ -1418,7 +1428,7 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<
     coordinateType minLen, maxLen, meanLen;
     if (IsPrint(Statistics2) || normalize) {
       // compute edge lengths
-      ArrayRCP<ArrayRCP<const Scalar> > localNullspace(dim_);
+      ArrayRCP<ArrayRCP<const Scalar>> localNullspace(dim_);
       for (size_t i = 0; i < dim_; i++)
         localNullspace[i] = Nullspace->getData(i);
       coordinateType localMinLen  = Teuchos::ScalarTraits<coordinateType>::rmax();
@@ -1434,7 +1444,7 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<
         localMeanLen += len;
       }
 
-      RCP<const Teuchos::Comm<int> > comm = Nullspace->getMap()->getComm();
+      RCP<const Teuchos::Comm<int>> comm = Nullspace->getMap()->getComm();
       MueLu_minAll(comm, localMinLen, minLen);
       MueLu_sumAll(comm, localMeanLen, meanLen);
       MueLu_maxAll(comm, localMaxLen, maxLen);
@@ -1538,7 +1548,7 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildProjection(const int spaceNumber, const RCP<MultiVector> &Nullspace) const {
   using ATS         = Kokkos::ArithTraits<Scalar>;
   using impl_Scalar = typename ATS::val_type;
@@ -1779,7 +1789,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildNodalProlongato
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildVectorNodalProlongator(const Teuchos::RCP<Matrix> &P_nodal) const {
   RCP<Teuchos::TimeMonitor> tm = getTimer("vectorial nodal prolongator");
   GetOStream(Runtime0) << solverName_ + "::compute(): building vectorial nodal prolongator" << std::endl;
@@ -2004,10 +2014,10 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupSubSolve(Teucho
     if (params.get<std::string>("Preconditioner Type") == "MueLu") {
       ParameterList &userParamList = params.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
       if (!Nullspace.is_null())
-        userParamList.set<RCP<MultiVector> >("Nullspace", Nullspace);
+        userParamList.set<RCP<MultiVector>>("Nullspace", Nullspace);
       if (!Material.is_null())
-        userParamList.set<RCP<MultiVector> >("Material", Material);
-      userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords);
+        userParamList.set<RCP<MultiVector>>("Material", Material);
+      userParamList.set<RCP<RealValuedMultiVector>>("Coordinates", Coords);
     }
     thyraPrecOp = rcp(new XpetraThyraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(coarseA11_, rcp(&params, false)));
   } else
@@ -2018,11 +2028,11 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupSubSolve(Teucho
     if (!reuse) {
       ParameterList &userParamList = params.sublist("user data");
       if (!Coords.is_null())
-        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords);
+        userParamList.set<RCP<RealValuedMultiVector>>("Coordinates", Coords);
       if (!Nullspace.is_null())
-        userParamList.set<RCP<MultiVector> >("Nullspace", Nullspace);
+        userParamList.set<RCP<MultiVector>>("Nullspace", Nullspace);
       if (!Material.is_null())
-        userParamList.set<RCP<MultiVector> >("Material", Material);
+        userParamList.set<RCP<MultiVector>>("Material", Material);
 
       if (isSingular) {
         std::string coarseType = "";
@@ -2199,30 +2209,138 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverseAdditive
       DresTmp_->endImport(*Dres_, *Importer22_, Xpetra::INSERT);
   }
 
-  if (fuseProlongationAndUpdate_) {
-    {  // prolongate (1,1) block
-      RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (fused)");
-      P11_->apply(*P11x_, X, Teuchos::NO_TRANS, one, one);
-    }
+  {
+    RCP<Teuchos::TimeMonitor> tmProlongations = getTimer("prolongations");
 
-    if (!onlyBoundary22_) {  // prolongate (2,2) block
-      RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (fused)");
-      Dk_1_->apply(*Dx_, X, Teuchos::NO_TRANS, one, one);
-    }
-  } else {
-    {  // prolongate (1,1) block
-      RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (unfused)");
-      P11_->apply(*P11x_, *residual_, Teuchos::NO_TRANS);
-    }
+    if (asyncTransfers_) {
+      auto tpP11  = rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(P11_, true)->getCrsMatrix())->getTpetra_CrsMatrix();
+      auto tpP11x = rcp_dynamic_cast<TpetraMultiVector>(P11x_, true)->getTpetra_MultiVector();
+      RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpP11x_colmap;
+      auto tpX        = rcp_dynamic_cast<TpetraMultiVector>(Teuchos::rcpFromRef(X), true)->getTpetra_MultiVector();
+      auto tpResidual = rcp_dynamic_cast<TpetraMultiVector>(residual_, true)->getTpetra_MultiVector();
 
-    if (!onlyBoundary22_) {  // prolongate (2,2) block
-      RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (unfused)");
-      Dk_1_->apply(*Dx_, *residual_, Teuchos::NO_TRANS, one, one);
-    }
+      auto tpDk_1 = rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_, true)->getCrsMatrix())->getTpetra_CrsMatrix();
+      auto tpDx   = rcp_dynamic_cast<TpetraMultiVector>(Dx_, true)->getTpetra_MultiVector();
+      RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpDx_colmap;
 
-    {  // update current solution
-      RCP<Teuchos::TimeMonitor> tmUpdate = getTimer("update");
-      X.update(one, *residual_, one);
+      unsigned completedImports = 0;
+      std::vector<bool> completedImport(2, false);
+      auto tpP11importer = tpP11->getCrsGraph()->getImporter();
+      if (!tpP11importer.is_null()) {
+        tpP11x_colmap = rcp_dynamic_cast<TpetraMultiVector>(P11x_colmap_, true)->getTpetra_MultiVector();
+        tpP11x_colmap->beginImport(*tpP11x, *tpP11importer, Tpetra::INSERT);
+      }
+
+      RCP<const Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>> tpDk_1importer;
+      if (!onlyBoundary22_) {
+        tpDk_1importer = tpDk_1->getCrsGraph()->getImporter();
+        if (!tpDk_1importer.is_null()) {
+          tpDx_colmap = rcp_dynamic_cast<TpetraMultiVector>(Dx_colmap_, true)->getTpetra_MultiVector();
+          tpDx_colmap->beginImport(*tpDx, *tpDk_1importer, Tpetra::INSERT);
+        }
+      } else {
+        completedImport[1] = true;
+        completedImports++;
+      }
+
+      if (!fuseProlongationAndUpdate_) {
+        Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+        tpResidual->putScalar(zero);
+      }
+
+      while (completedImports < completedImport.size()) {
+        for (unsigned i = 0; i < completedImport.size(); i++) {
+          if (completedImport[i]) continue;
+
+          if (i == 0) {
+            if (!tpP11importer.is_null()) {
+              if (tpP11x_colmap->transferArrived()) {
+                tpP11x_colmap->endImport(*tpP11x, *tpP11importer, Tpetra::INSERT);
+                completedImport[i] = true;
+                completedImports++;
+
+                if (fuseProlongationAndUpdate_) {
+                  RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (fused, local)");
+                  tpP11->localApply(*tpP11x_colmap, *tpX, Teuchos::NO_TRANS, one, one);
+                } else {
+                  RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (unfused, local)");
+                  tpP11->localApply(*tpP11x_colmap, *tpResidual, Teuchos::NO_TRANS, one, one);
+                }
+              }
+            } else {
+              completedImport[i] = true;
+              completedImports++;
+
+              if (fuseProlongationAndUpdate_) {
+                RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (fused, local)");
+                tpP11->localApply(*tpP11x, *tpX, Teuchos::NO_TRANS, one, one);
+              } else {
+                RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (unfused, local)");
+                tpP11->localApply(*tpP11x, *tpResidual, Teuchos::NO_TRANS, one, one);
+              }
+            }
+          } else {
+            if (!tpDk_1importer.is_null()) {
+              if (tpDx_colmap->transferArrived()) {
+                tpDx_colmap->endImport(*tpDx, *tpDk_1importer, Tpetra::INSERT);
+                completedImport[i] = true;
+                completedImports++;
+
+                if (fuseProlongationAndUpdate_) {
+                  RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (fused, local)");
+                  tpDk_1->localApply(*tpDx_colmap, *tpX, Teuchos::NO_TRANS, one, one);
+                } else {
+                  RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (unfused, local)");
+                  tpDk_1->localApply(*tpDx_colmap, *tpResidual, Teuchos::NO_TRANS, one, one);
+                }
+              }
+            } else {
+              completedImport[i] = true;
+              completedImports++;
+
+              if (fuseProlongationAndUpdate_) {
+                RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (fused, local)");
+                tpDk_1->localApply(*tpDx, *tpX, Teuchos::NO_TRANS, one, one);
+              } else {
+                RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (unfused, local)");
+                tpDk_1->localApply(*tpDx, *tpResidual, Teuchos::NO_TRANS, one, one);
+              }
+            }
+          }
+        }
+      }
+
+      if (!fuseProlongationAndUpdate_) {  // update current solution
+        RCP<Teuchos::TimeMonitor> tmUpdate = getTimer("update");
+        X.update(one, *residual_, one);
+      }
+    } else {
+      if (fuseProlongationAndUpdate_) {
+        {  // prolongate (1,1) block
+          RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (fused)");
+          P11_->apply(*P11x_, X, Teuchos::NO_TRANS, one, one);
+        }
+
+        if (!onlyBoundary22_) {  // prolongate (2,2) block
+          RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (fused)");
+          Dk_1_->apply(*Dx_, X, Teuchos::NO_TRANS, one, one);
+        }
+      } else {
+        {  // prolongate (1,1) block
+          RCP<Teuchos::TimeMonitor> tmP11 = getTimer("prolongation coarse (1,1) (unfused)");
+          P11_->apply(*P11x_, *residual_, Teuchos::NO_TRANS);
+        }
+
+        if (!onlyBoundary22_) {  // prolongate (2,2) block
+          RCP<Teuchos::TimeMonitor> tmD = getTimer("prolongation (2,2) (unfused)");
+          Dk_1_->apply(*Dx_, *residual_, Teuchos::NO_TRANS, one, one);
+        }
+
+        {  // update current solution
+          RCP<Teuchos::TimeMonitor> tmUpdate = getTimer("update");
+          X.update(one, *residual_, one);
+        }
+      }
     }
   }
 }
@@ -2374,44 +2492,44 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<RealValuedMultiVector> NodalCoords;
 
   Dk_1 = pop(List, "Dk_1", Dk_1);
-  Dk_2 = pop<RCP<Matrix> >(List, "Dk_2", Dk_2);
-  D0   = pop<RCP<Matrix> >(List, "D0", D0);
+  Dk_2 = pop<RCP<Matrix>>(List, "Dk_2", Dk_2);
+  D0   = pop<RCP<Matrix>>(List, "D0", D0);
 
-  M1_beta  = pop<RCP<Matrix> >(List, "M1_beta", M1_beta);
-  M1_alpha = pop<RCP<Matrix> >(List, "M1_alpha", M1_alpha);
+  M1_beta  = pop<RCP<Matrix>>(List, "M1_beta", M1_beta);
+  M1_alpha = pop<RCP<Matrix>>(List, "M1_alpha", M1_alpha);
 
-  Mk_one   = pop<RCP<Matrix> >(List, "Mk_one", Mk_one);
-  Mk_1_one = pop<RCP<Matrix> >(List, "Mk_1_one", Mk_1_one);
+  Mk_one   = pop<RCP<Matrix>>(List, "Mk_one", Mk_one);
+  Mk_1_one = pop<RCP<Matrix>>(List, "Mk_1_one", Mk_1_one);
 
-  invMk_1_invBeta  = pop<RCP<Matrix> >(List, "invMk_1_invBeta", invMk_1_invBeta);
-  invMk_2_invAlpha = pop<RCP<Matrix> >(List, "invMk_2_invAlpha", invMk_2_invAlpha);
+  invMk_1_invBeta  = pop<RCP<Matrix>>(List, "invMk_1_invBeta", invMk_1_invBeta);
+  invMk_2_invAlpha = pop<RCP<Matrix>>(List, "invMk_2_invAlpha", invMk_2_invAlpha);
 
-  Nullspace11 = pop<RCP<MultiVector> >(List, "Nullspace11", Nullspace11);
-  Nullspace22 = pop<RCP<MultiVector> >(List, "Nullspace22", Nullspace22);
-  NodalCoords = pop<RCP<RealValuedMultiVector> >(List, "Coordinates", NodalCoords);
+  Nullspace11 = pop<RCP<MultiVector>>(List, "Nullspace11", Nullspace11);
+  Nullspace22 = pop<RCP<MultiVector>>(List, "Nullspace22", Nullspace22);
+  NodalCoords = pop<RCP<RealValuedMultiVector>>(List, "Coordinates", NodalCoords);
 
   // old parameter names
-  if (List.isType<RCP<Matrix> >("Ms")) {
+  if (List.isType<RCP<Matrix>>("Ms")) {
     if (M1_beta.is_null())
-      M1_beta = pop<RCP<Matrix> >(List, "Ms");
+      M1_beta = pop<RCP<Matrix>>(List, "Ms");
     else
       TEUCHOS_ASSERT(false);
   }
-  if (List.isType<RCP<Matrix> >("M1")) {
+  if (List.isType<RCP<Matrix>>("M1")) {
     if (Mk_one.is_null())
-      Mk_one = pop<RCP<Matrix> >(List, "M1");
+      Mk_one = pop<RCP<Matrix>>(List, "M1");
     else
       TEUCHOS_ASSERT(false);
   }
-  if (List.isType<RCP<Matrix> >("M0inv")) {
+  if (List.isType<RCP<Matrix>>("M0inv")) {
     if (invMk_1_invBeta.is_null())
-      invMk_1_invBeta = pop<RCP<Matrix> >(List, "M0inv");
+      invMk_1_invBeta = pop<RCP<Matrix>>(List, "M0inv");
     else
       TEUCHOS_ASSERT(false);
   }
-  if (List.isType<RCP<MultiVector> >("Nullspace")) {
+  if (List.isType<RCP<MultiVector>>("Nullspace")) {
     if (Nullspace11.is_null())
-      Nullspace11 = pop<RCP<MultiVector> >(List, "Nullspace");
+      Nullspace11 = pop<RCP<MultiVector>>(List, "Nullspace");
     else
       TEUCHOS_ASSERT(false);
   }
@@ -2680,7 +2798,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */) const {
   std::ostringstream oss;
 
-  RCP<const Teuchos::Comm<int> > comm = SM_Matrix_->getDomainMap()->getComm();
+  RCP<const Teuchos::Comm<int>> comm = SM_Matrix_->getDomainMap()->getComm();
 
 #ifdef HAVE_MPI
   int root;
@@ -2749,8 +2867,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   std::string outstr = oss.str();
 
 #ifdef HAVE_MPI
-  RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-  MPI_Comm rawComm                          = (*mpiComm->getRawMpiComm())();
+  RCP<const Teuchos::MpiComm<int>> mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  MPI_Comm rawComm                         = (*mpiComm->getRawMpiComm())();
 
   int strLength = outstr.size();
   MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
@@ -2776,9 +2894,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     int numProcs = comm->getSize();
 #ifdef HAVE_MPI
-    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    RCP<const Teuchos::MpiComm<int>> tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
     TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawMpiComm = tmpic->getRawMpiComm();
 #endif
 
     char status = 0;
