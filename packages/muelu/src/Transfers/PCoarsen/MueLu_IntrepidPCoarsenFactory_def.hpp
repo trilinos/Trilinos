@@ -524,9 +524,9 @@ void GenerateRepresentativeBasisNodes(const Basis &basis, const SCFieldContainer
     for (size_t j = 0; j < numFieldsHi; j++)
       vmax = std::max(vmax, Teuchos::ScalarTraits<SC>::magnitude(LoValues_host(i, j)));
 
-    // 2nd pass: Find all values w/i threshhold of target
+    // 2nd pass: Find all values w/i threshold of target
     for (size_t j = 0; j < numFieldsHi; j++) {
-      if (Teuchos::ScalarTraits<SC>::magnitude(vmax - Teuchos::ScalarTraits<SC>::magnitude(LoValues_host(i, j))) < threshold * vmax)
+      if (Teuchos::ScalarTraits<SC>::magnitude(vmax - LoValues_host(i, j)) < threshold * vmax)
         representative_node_candidates[i].push_back(j);
     }
   }
