@@ -41,6 +41,12 @@
 
 #ifndef MATLAB_ENGINE_H
 #define MATLAB_ENGINE_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
 #include <Epetra_ConfigDefs.h>
 
 #ifdef EPETRA_MPI
@@ -393,10 +399,3 @@ class EpetraExt_MatlabEngine {
 } // namespace EpetraExt
 
 #endif /* MATLAB_ENGINE_H */
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

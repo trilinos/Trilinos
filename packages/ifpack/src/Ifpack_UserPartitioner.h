@@ -43,6 +43,12 @@
 #ifndef IFPACK_USERPARTITIONER_H
 #define IFPACK_USERPARTITIONER_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
@@ -89,10 +95,3 @@ private:
 };
 
 #endif // IFPACK_USERPARTITIONER_H
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

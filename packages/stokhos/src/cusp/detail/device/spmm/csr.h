@@ -177,4 +177,3 @@ void spmm_csr_scalar(const Matrix1& A,
 } // end namespace device
 } // end namespace detail
 } // end namespace cusp
-

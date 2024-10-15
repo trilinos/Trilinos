@@ -462,10 +462,3 @@ template< class T > Vector< T >& Vector< T >::operator = (const T& val)
 } // Namespace FAD
 
 #endif
-
-
-
-
-
-
-

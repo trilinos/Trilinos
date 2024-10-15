@@ -43,6 +43,12 @@
 #ifndef MEM_DH_DH
 #define MEM_DH_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "euclid_common.h"
 #ifdef __cplusplus
 extern "C"
@@ -67,10 +73,3 @@ extern "C"
 }
 #endif
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

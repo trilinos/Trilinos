@@ -42,6 +42,12 @@
 #ifndef EpetraExt_CRSGRAPH_SUBCOPY_H
 #define EpetraExt_CRSGRAPH_SUBCOPY_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 #include <Epetra_Map.h>
 
@@ -99,10 +105,3 @@ private:
 } //namespace EpetraExt
 
 #endif //EpetraExt_CRSGRAPH_SUBCOPY_H
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

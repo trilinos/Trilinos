@@ -64,4 +64,3 @@ int Zoltan_KVHash_GetValue(KVHash *hash, ZOLTAN_GNO_TYPE key);
     
 
 #endif
-

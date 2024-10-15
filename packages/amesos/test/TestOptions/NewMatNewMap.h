@@ -14,4 +14,3 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 #warning "The Amesos package is deprecated"
 #endif
 #endif
-

@@ -46,8 +46,8 @@ namespace MueLuTests {
 
 /**** some helper methods and classes by Nate ****/
 #ifndef TEST_MORE_COMBINATIONS
-static const int MAX_LINE_DEGREE_EQUISPACED = 10; // equispaced line basis for p >= 10 leads to failures in GenerateRepresentativeBasisNodes: for p_lo = 7, p_hi = 10, e.g., some low-order basis members have no "candidates" found.  (Change this to "11" to see the failure.)
-static const int MAX_QUAD_DEGREE_EQUISPACED = 10;
+static const int MAX_LINE_DEGREE_EQUISPACED = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10; // equispaced line basis for p >= 10 leads to failures in GenerateRepresentativeBasisNodes: for p_lo = 7, p_hi = 10, e.g., some low-order basis members have no "candidates" found.  (Change this to "11" to see the failure.)
+static const int MAX_QUAD_DEGREE_EQUISPACED = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10;
 static const int MAX_HEX_DEGREE_EQUISPACED  = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder  :  4;
 static const int MAX_LINE_DEGREE_SPECTRAL   = Intrepid2::Parameters::MaxOrder;
 static const int MAX_QUAD_DEGREE_SPECTRAL   = Intrepid2::Parameters::MaxOrder;
