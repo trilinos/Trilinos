@@ -46,13 +46,13 @@ namespace MueLuTests {
 
 /**** some helper methods and classes by Nate ****/
 #ifndef TEST_MORE_COMBINATIONS
-static const int MAX_LINE_DEGREE_EQUISPACED = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10; // equispaced line basis for p >= 10 leads to failures in GenerateRepresentativeBasisNodes: for p_lo = 7, p_hi = 10, e.g., some low-order basis members have no "candidates" found.  (Change this to "11" to see the failure.)
+static const int MAX_LINE_DEGREE_EQUISPACED = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10;  // equispaced line basis for p >= 10 leads to failures in GenerateRepresentativeBasisNodes: for p_lo = 7, p_hi = 10, e.g., some low-order basis members have no "candidates" found.  (Change this to "11" to see the failure.)
 static const int MAX_QUAD_DEGREE_EQUISPACED = (Intrepid2::Parameters::MaxOrder < 10) ? Intrepid2::Parameters::MaxOrder : 10;
-static const int MAX_HEX_DEGREE_EQUISPACED  = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder  :  4;
+static const int MAX_HEX_DEGREE_EQUISPACED  = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder : 4;
 static const int MAX_LINE_DEGREE_SPECTRAL   = Intrepid2::Parameters::MaxOrder;
 static const int MAX_QUAD_DEGREE_SPECTRAL   = Intrepid2::Parameters::MaxOrder;
-static const int MAX_HEX_DEGREE_SPECTRAL    = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder  :  4;
-static const int MAX_RANK_COUNT  = 4;
+static const int MAX_HEX_DEGREE_SPECTRAL    = (Intrepid2::Parameters::MaxOrder < 4) ? Intrepid2::Parameters::MaxOrder : 4;
+static const int MAX_RANK_COUNT             = 4;
 #else
 static const int MAX_LINE_DEGREE_EQUISPACED = 10;
 static const int MAX_QUAD_DEGREE_EQUISPACED = 10;
@@ -60,7 +60,7 @@ static const int MAX_HEX_DEGREE_EQUISPACED  = 10;
 static const int MAX_LINE_DEGREE_SPECTRAL   = Intrepid2::Parameters::MaxOrder;
 static const int MAX_QUAD_DEGREE_SPECTRAL   = Intrepid2::Parameters::MaxOrder;
 static const int MAX_HEX_DEGREE_SPECTRAL    = Intrepid2::Parameters::MaxOrder;
-static const int MAX_RANK_COUNT  = 16;
+static const int MAX_RANK_COUNT             = 16;
 #endif
 
 using namespace std;
@@ -1760,15 +1760,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string &na
       bool no_candidates = false;
       {
         // DEBUGGING
-        if ((lowPolyDegree == 7) && (highPolyDegree == 10))
-        {
+        if ((lowPolyDegree == 7) && (highPolyDegree == 10)) {
           cout << "lo = " << lowPolyDegree << "; hi = " << highPolyDegree << std::endl;
         }
       }
-      
+
       for (int lowOrderDof = 0; no_doubles && lowOrderDof < (int)candidates.size(); lowOrderDof++) {
-        if (candidates[lowOrderDof].size() == 0)
-        {
+        if (candidates[lowOrderDof].size() == 0) {
           no_candidates = true;  // this low DOF has no candidates!
           break;
         }
@@ -2853,7 +2851,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LO, GO, Node)                           \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Equispaced, Scalar, LO, GO, Node)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Equispaced, Scalar, LO, GO, Node)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Spectral, Scalar, LO, GO, Node)  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Spectral, Scalar, LO, GO, Node)    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Spectral, Scalar, LO, GO, Node)    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Equispaced, Scalar, LO, GO, Node)   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Spectral, Scalar, LO, GO, Node)     \
