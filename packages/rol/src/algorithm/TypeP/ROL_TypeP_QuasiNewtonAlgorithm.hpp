@@ -61,7 +61,7 @@ private:
   ESecant esec_;             ///< Secant type
   std::string secantName_;   ///< Secant name
 
-  int t0_;
+  Real t0_;
   bool initProx_;
 
   int maxit_;         ///< Maximum number of line search steps (default: 20)
