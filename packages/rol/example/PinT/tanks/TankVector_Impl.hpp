@@ -13,7 +13,7 @@
 
 namespace details {
 
-using namespace std;
+using std::vector;
 
 
 using size_type = typename vector<double>::size_type;
