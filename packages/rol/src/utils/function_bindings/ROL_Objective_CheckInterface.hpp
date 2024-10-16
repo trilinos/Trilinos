@@ -52,7 +52,6 @@
 namespace ROL {
 namespace details {
 
-using namespace std;
 namespace ph = std::placeholders;
 
 template<typename Real>
@@ -68,19 +67,19 @@ public:
     obj_(obj), tol_(sqrt(ROL_EPSILON<Real>())) {}
 
   f_update_t<Real> update() {
-    return bind( (void(Objective<Real>::*)(const Vector<Real>&,bool,int))&Objective<Real>::update, &obj_, ph::_1, true, 0 );
+    return std::bind( (void(Objective<Real>::*)(const Vector<Real>&,bool,int))&Objective<Real>::update, &obj_, ph::_1, true, 0 );
   }
 
   f_scalar_t<Real> value() {
-    return bind( &Objective<Real>::value, &obj_, ph::_1, tol_);
+    return std::bind( &Objective<Real>::value, &obj_, ph::_1, tol_);
   }
 
   f_vector_t<Real> gradient() {
-    return bind( &Objective<Real>::gradient, &obj_, ph::_1, ph::_2, tol_);
+    return std::bind( &Objective<Real>::gradient, &obj_, ph::_1, ph::_2, tol_);
   }
 
   f_dderiv_t<Real> hessVec() {
-    return bind( &Objective<Real>::hessVec, &obj_, ph::_1, ph::_2, ph::_3, tol_);
+    return std::bind( &Objective<Real>::hessVec, &obj_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
 }; // Objective_CheckInterface

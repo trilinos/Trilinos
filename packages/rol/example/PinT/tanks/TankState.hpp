@@ -52,7 +52,7 @@
 
 namespace details {
 
-using namespace std;
+using std::vector;
 
 template<typename Real> 
 class TankState {

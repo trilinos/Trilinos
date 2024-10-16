@@ -103,7 +103,7 @@ private:
   //--------- Subvector addressing ---------------------------------------------
   size_type  h_, Qout_, Qin_,  z_;
 
-  shared_ptr<Matrix> L_, R_, S_;
+  std::shared_ptr<Matrix> L_, R_, S_;
 
   State   zero_state_;
   Control zero_ctrl_;
@@ -148,9 +148,9 @@ public:
       p_( ptrows.at(i), ptcols.at(i) ) = 0.0;
     }
   
-    L_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_,  alphaL_, *(p_.getVector()) );
-    R_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_, -alphaR_, *(p_.getVector()) );
-    S_ = make_shared<SplitterMatrix<Real>>( rows_, cols_ );  
+    L_ = std::make_shared<TankLevelMatrix<Real>>( rows_, cols_,  alphaL_, *(p_.getVector()) );
+    R_ = std::make_shared<TankLevelMatrix<Real>>( rows_, cols_, -alphaR_, *(p_.getVector()) );
+    S_ = std::make_shared<SplitterMatrix<Real>>( rows_, cols_ );  
   }
 
   static ROL::Ptr<DynamicConstraint> create( ROL::ParameterList& pl ) {

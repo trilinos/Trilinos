@@ -46,8 +46,6 @@
 
 namespace Tanks {
 
-using namespace std;
-
 using size_type = typename vector<double>::size_type;
 
 template<typename Real>

@@ -61,27 +61,25 @@ namespace ROL {
 
 namespace details {
 
-using namespace std;
-
 template<typename _CharT, typename _Traits>
-class basic_nullstream : virtual public basic_ostream<_CharT, _Traits> {
+class basic_nullstream : virtual public std::basic_ostream<_CharT, _Traits> {
 public:
-  explicit basic_nullstream() : basic_ostream<_CharT, _Traits>(NULL) {}
+  explicit basic_nullstream() : std::basic_ostream<_CharT, _Traits>(NULL) {}
 }; 
 
-using nullstream = basic_nullstream<char, char_traits<char>>;
+using nullstream = basic_nullstream<char, std::char_traits<char>>;
 
 inline
-Ptr<ostream> makeStreamPtr( ostream& os, bool noSuppressOutput=true ) {
-  Ptr<ostream> retstream;
-  if( noSuppressOutput ) retstream = makePtrFromRef<ostream>(os);
+Ptr<std::ostream> makeStreamPtr( std::ostream& os, bool noSuppressOutput=true ) {
+  Ptr<std::ostream> retstream;
+  if( noSuppressOutput ) retstream = makePtrFromRef<std::ostream>(os);
   else retstream = makePtr<nullstream>();
   return retstream; // noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();
 }
 
 inline
-Ptr<ostream> makeStreamPtr( Ptr<ostream> os, bool noSuppressOutput=true ) {
-  Ptr<ostream> retstream;
+Ptr<std::ostream> makeStreamPtr( Ptr<std::ostream> os, bool noSuppressOutput=true ) {
+  Ptr<std::ostream> retstream;
   if( noSuppressOutput ) retstream = os;
   else retstream = makePtr<nullstream>();
   return retstream; // noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();

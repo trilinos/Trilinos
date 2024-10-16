@@ -63,8 +63,6 @@ namespace ROL {
 
 namespace details {
 
-using namespace std;
-
 template<typename Real>
 class FiniteDifference {
 public:

@@ -53,7 +53,6 @@ namespace ROL {
 namespace details {
 
 
-using namespace std;
 namespace ph = std::placeholders;
 
 template<typename Real>
@@ -69,28 +68,28 @@ public:
     con_(con), tol_(sqrt(ROL_EPSILON<Real>())) {}
    
   f_update_t<Real> update() {
-    return bind( (void(Constraint<Real>::*)(const Vector<Real>&,bool,int))&Constraint<Real>::update, &con_, ph::_1, true, 0 );
+    return std::bind( (void(Constraint<Real>::*)(const Vector<Real>&,bool,int))&Constraint<Real>::update, &con_, ph::_1, true, 0 );
   }
 
   f_vector_t<Real> value() {
-    return bind( &Constraint<Real>::value, &con_, ph::_1, ph::_2, tol_);
+    return std::bind( &Constraint<Real>::value, &con_, ph::_1, ph::_2, tol_);
   }
 
 
   f_dderiv_t<Real> jacobian() {
-    return bind( &Constraint<Real>::applyJacobian, &con_, ph::_1, ph::_2, ph::_3, tol_);
+    return std::bind( &Constraint<Real>::applyJacobian, &con_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
   // Provide a vector in the dual constraint space
   f_dderiv_t<Real> adjointJacobian( ) {
-    return bind( static_cast<void (Constraint<Real>::*)
+    return std::bind( static_cast<void (Constraint<Real>::*)
                               ( V&, const V&, const V&, Real& )>
                (&Constraint<Real>::applyAdjointJacobian), 
                 &con_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
   f_dderiv_t<Real> adjointHessian( const V& l ) {
-    return bind( &Constraint<Real>::applyAdjointHessian, &con_, ph::_1, cref(l), ph::_2, ph::_3, tol_);
+    return std::bind( &Constraint<Real>::applyAdjointHessian, &con_, ph::_1, std::cref(l), ph::_2, ph::_3, tol_);
   }
 
 

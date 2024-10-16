@@ -6,7 +6,6 @@ namespace ROL {
 
 namespace details { 
 
-using namespace std;
 
 template<typename Real>
 ValidateFunction<Real>::ValidateFunction( const int order,

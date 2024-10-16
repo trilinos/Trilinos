@@ -64,8 +64,6 @@ namespace ROL {
 
 namespace details {
 
-using namespace std;
-
 template<typename Real>
 class VectorClone {
 private:
@@ -80,9 +78,9 @@ public:
   Ptr<Vector<Real>> operator() ( const Vector<Real>& x ) {
     if( is_allocated_ ) {
       if( typeid(x) != typeid(*vec_) )
-        throw logic_error("Argument and member vector types are different!");
+        throw std::logic_error("Argument and member vector types are different!");
       if( x.dimension() != vec_->dimension() )
-        throw logic_error("Argument and member vector types have different dimensions!");
+        throw std::logic_error("Argument and member vector types have different dimensions!");
     }
     else {
       vec_ = x.clone();
@@ -94,9 +92,9 @@ public:
   Ptr<Vector<Real>> operator() ( const Ptr<const Vector<Real>>& x ) {
     if( is_allocated_ ) {
       if( typeid(*x) != typeid(*vec_) )
-        throw logic_error("Argument and member vector types are different!");
+        throw std::logic_error("Argument and member vector types are different!");
       if( x->dimension() != vec_->dimension() )
-        throw logic_error("Argument and member vector types have different dimensions!");
+        throw std::logic_error("Argument and member vector types have different dimensions!");
     }
     else {
       vec_ = x->clone();
@@ -118,7 +116,7 @@ public:
 template<typename Real, typename KeyType=const char*>
 class VectorCloneMap {
 private:
-  map<KeyType, VectorClone<Real>> clones_;
+  std::map<KeyType, VectorClone<Real>> clones_;
  
   template<typename First, typename...Rest>
   void Constructor_Impl( First first, Rest... rest ) {
