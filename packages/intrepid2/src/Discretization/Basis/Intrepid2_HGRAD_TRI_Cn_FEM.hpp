@@ -60,53 +60,57 @@ namespace Intrepid2 {
          work is a rank 1 view having the same value_type of inputPoints
          and having size equal to getWorkSizePerPoint()*inputPoints.extent(0);
       */
-      template<EOperator opType>
+      template<EOperator OpType>
       struct Serial {
-        template<typename outputValueViewType,
-                 typename inputPointViewType,
-                 typename workViewType,
-                 typename vinvViewType>
+        template<typename OutputValueViewType,
+                 typename InputPointViewType,
+                 typename WorkViewType,
+                 typename VinvViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues(       outputValueViewType outputValues,
-                         const inputPointViewType  inputPoints,
-                         workViewType        work,
-                         const vinvViewType        vinv );
+        getValues(       OutputValueViewType outputValues,
+                         const InputPointViewType  inputPoints,
+                         WorkViewType              work,
+                         const VinvViewType        vinv,
+                         const ordinal_type        order);
       };
 
       template<typename DeviceType, ordinal_type numPtsPerEval,
-               typename outputValueValueType, class ...outputValueProperties,
-               typename inputPointValueType,  class ...inputPointProperties,
-               typename vinvValueType,        class ...vinvProperties>
+               typename OutputValueValueType, class ...OutputValueProperties,
+               typename InputPointValueType,  class ...InputPointProperties,
+               typename VinvValueType,        class ...VinvProperties>
       static void
-      getValues(const typename DeviceType::execution_space& space,
-                      Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-                const EOperator operatorType);
+      getValues( const typename DeviceType::execution_space& space,
+                       Kokkos::DynRankView<OutputValueValueType,OutputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<InputPointValueType, InputPointProperties...>  inputPoints,
+                 const Kokkos::DynRankView<VinvValueType,       VinvProperties...>        vinv,
+                 const ordinal_type order,
+                 const EOperator operatorType);
 
       /**
          \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM
       */
-      template<typename outputValueViewType,
-               typename inputPointViewType,
-               typename vinvViewType,
-               typename workViewType,
-               EOperator opType,
+      template<typename OutputValueViewType,
+               typename InputPointViewType,
+               typename VinvViewType,
+               typename WorkViewType,
+               EOperator OpType,
                ordinal_type numPtsEval>
       struct Functor {
-        outputValueViewType _outputValues;
-        const inputPointViewType  _inputPoints;
-        const vinvViewType        _vinv;
-        workViewType        _work;
+        OutputValueViewType _outputValues;
+        const InputPointViewType  _inputPoints;
+        const VinvViewType        _vinv;
+        WorkViewType              _work;
+        const ordinal_type        _order;
 
         KOKKOS_INLINE_FUNCTION
-        Functor(       outputValueViewType outputValues_,
-                       inputPointViewType  inputPoints_,
-                       vinvViewType        vinv_,
-                       workViewType        work_)
+        Functor(       OutputValueViewType outputValues_,
+                       InputPointViewType  inputPoints_,
+                       VinvViewType        vinv_,
+                       WorkViewType        work_,
+                       ordinal_type        order_)
           : _outputValues(outputValues_), _inputPoints(inputPoints_),
-            _vinv(vinv_), _work(work_) {}
+            _vinv(vinv_), _work(work_), _order(order_) {}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -116,22 +120,22 @@ namespace Intrepid2 {
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
+          typename WorkViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
           auto vcprop = Kokkos::common_view_alloc_prop(_work);
-          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
+          WorkViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
+          switch (OpType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
-            Serial<opType>::getValues( output, input, work, _vinv );
+            Serial<OpType>::getValues( output, input, work, _vinv, _order );
             break;
           }
           case OPERATOR_CURL:
           case OPERATOR_D1:
           case OPERATOR_D2:  {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-            Serial<opType>::getValues( output, input, work, _vinv );
+            Serial<OpType>::getValues( output, input, work, _vinv, _order );
             break;
           }
           default: {
@@ -200,8 +204,28 @@ namespace Intrepid2 {
                                             outputValues,
                                             inputPoints,
                                             this->vinv_,
+                                            this->basisDegree_,
                                             operatorType);
     }
+
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
+                              ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPoints,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
+
 
     virtual
     void

@@ -198,69 +198,8 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,n>::ge
     const inputViewType  /* input */,
     workViewType   /* work */,
     const ordinal_type   /* order */ ) {
-#if 0   //#ifdef HAVE_INTREPID2_SACADO
-
-constexpr ordinal_type spaceDim = 2;
-constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
-
-typedef typename OutputViewType::value_type value_type;
-typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
-
-const ordinal_type
-npts = input.extent(0),
-card = output.extent(0);
-
-// use stack buffer
-fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
-outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
-
-typedef typename inputViewType::memory_space memory_space;
-typedef typename Kokkos::View<fad_type***, memory_space> outViewType;
-typedef typename Kokkos::View<fad_type**, memory_space> inViewType;
-auto vcprop = Kokkos::common_view_alloc_prop(input);
-
-inViewType in(Kokkos::view_wrap((value_type*)&inBuf[0][0], vcprop), npts, spaceDim);
-outViewType out(Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, n);
-
-for (ordinal_type i=0;i<npts;++i)
-  for (ordinal_type j=0;j<spaceDim;++j) {
-    in(i,j) = input(i,j);
-    in(i,j).diff(j,spaceDim);
-  }
-
-typedef typename Kokkos::DynRankView<fad_type, memory_space> outViewType_;
-outViewType_ workView;
-if (n==2) {
-  //char outBuf[bufSize*sizeof(typename inViewType::value_type)];
-  fad_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1];
-  auto vcprop = Kokkos::common_view_alloc_prop(in);
-  workView = outViewType_( Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, spaceDim+1);
-}
-OrthPolynomialTri<outViewType,inViewType,outViewType_,hasDeriv,n-1>::generate(out, in, workView, order);
-
-for (ordinal_type i=0;i<card;++i)
-  for (ordinal_type j=0;j<npts;++j) {
-    for (ordinal_type i_dx = 0; i_dx <= n; ++i_dx) {
-      ordinal_type i_dy =  n-i_dx;
-      ordinal_type i_Dn = i_dy;
-      if(i_dx > 0) {
-        //n=2:  (f_x)_x, (f_y)_x
-        //n=3:  (f_xx)_x, (f_xy)_x, (f_yy)_x
-        ordinal_type i_Dnm1 = i_dy;
-        output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
-      }
-      else {
-        //n=2:  (f_y)_y, (f_z)_y
-        //n=3:  (f_yy)_y
-        ordinal_type i_Dnm1 = i_dy-1;
-        output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
-      }
-    }
-  }
-#else
 INTREPID2_TEST_FOR_ABORT( true,
     ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::OrthPolynomialTri) Computing of second and higher-order derivatives is not currently supported");
-#endif
 }
 
 
