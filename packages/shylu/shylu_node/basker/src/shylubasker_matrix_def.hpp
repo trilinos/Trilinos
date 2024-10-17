@@ -328,7 +328,7 @@ namespace BaskerNS
     if(nnz == _nnz)
     {
       copy_vec(_row_idx, _nnz, row_idx);
-      copy_vec(_val,_nnz,     val);
+      copy_vec(_val,     _nnz,     val);
     }
     else
     {
@@ -498,6 +498,13 @@ namespace BaskerNS
     return 0;
   }
   
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_ptr()
+  {
+    for (Int i = 0; i < ncol+1; i ++) col_ptr(i) = 0;
+  }
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::convert2D

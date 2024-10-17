@@ -1096,11 +1096,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     find_2D_convert(BTF_A);
     //now we can fill submatrices
     #ifdef BASKER_KOKKOS
-    kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
-    Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-    Kokkos::fence();
+     #ifdef BASKER_PARALLEL_INIT_2D
+     kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
+     Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+     Kokkos::fence();
+     #else
+     bool alloc = true;
+     //bool keep_zeros = true;
+     for (Int p = 0; p < num_threads; p++) {
+       this->t_init_2DA(p, alloc, keep_zeros);
+     }
+     #endif
     #else
-    //Comeback
+     //Comeback
     #endif
     #ifdef BASKER_TIMER
     double init_2d_time = scotch_timer.seconds();
