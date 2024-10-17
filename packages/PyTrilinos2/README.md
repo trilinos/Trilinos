@@ -48,7 +48,7 @@ cmake -S ../llvm/llvm -DLLVM_ENABLE_PROJECTS="clang;libcxx;libcxxabi;clang-tools
 
 ```
 -D Trilinos_ENABLE_PyTrilinos2:BOOL=ON \
--D PYTHON_EXECUTABLE=... \
+-D Python3_EXECUTABLE=... \
 -D PyTrilinos2_ENABLE_TESTS=ON \
 -D PyTrilinos2_BINDER_EXECUTABLE=... \
 -D PyTrilinos2_BINDER_GCC_TOOLCHAIN=...\

@@ -37,14 +37,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_ENABLE_BINDER_UPDATE
   "Enable the update of the generated source files with Binder."
   OFF )
 
-MESSAGE("-- PYTHON_EXECUTABLE:")
-IF(NOT DEFINED ${PYTHON_EXECUTABLE})
-  find_program(PYTHON_EXECUTABLE
+MESSAGE("-- Python3_EXECUTABLE:")
+IF(NOT DEFINED ${Python3_EXECUTABLE})
+  find_program(Python3_EXECUTABLE
       NAMES python3 python
       )
-  MESSAGE("  -- CMake has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  MESSAGE("  -- CMake has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 ELSE()
-  MESSAGE("  -- User has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  MESSAGE("  -- User has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 ENDIF()
 
 
@@ -257,7 +257,7 @@ IF (PYROL_GENERATE_SRC)
   list (APPEND PyROLPyFiles ${PyROLPyFiles2})
 
   EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
+  ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
   )
 
   set(BINDER_OPTIONS "")
@@ -322,12 +322,12 @@ ELSE()
 ENDIF()
 
 # Get the python version
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
                         "import sys; print(sys.version_info.major)"
   OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
                         "import sys; print(sys.version_info.minor)"
   OUTPUT_VARIABLE PYTHON_MINOR_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -385,7 +385,7 @@ ENDFOREACH()
 
 # Find the pybind11 CMake module
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
+  ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
   OUTPUT_VARIABLE pybind11_DIR
   ERROR_VARIABLE  pybind11_CMAKE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -395,7 +395,7 @@ MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
 find_package(pybind11 REQUIRED)
 
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
+  ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE Mpi4Py_INCLUDE_DIR
   ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE

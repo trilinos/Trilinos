@@ -242,13 +242,13 @@ function(cxx_executable name dir libs)
     ${name} "${cxx_default}" "${libs}" "${dir}/${name}.cc" ${ARGN})
 endfunction()
 
-# Sets PYTHONINTERP_FOUND and PYTHON_EXECUTABLE.
+# Sets PYTHONINTERP_FOUND and Python3_EXECUTABLE.
 if ("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
   find_package(PythonInterp)
 else()
   find_package(Python COMPONENTS Interpreter)
   set(PYTHONINTERP_FOUND ${Python_Interpreter_FOUND})
-  set(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
+  set(Python3_EXECUTABLE ${Python_EXECUTABLE})
 endif()
 
 # cxx_test_with_flags(name cxx_flags libs srcs...)
@@ -282,13 +282,13 @@ function(py_test name)
         # output in a subdirectory of CMAKE_CURRENT_BINARY_DIR (Debug,
         # Release etc.), so we have to provide it here.
         add_test(NAME ${name}
-          COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+          COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
               --build_dir=${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> ${ARGN})
       else (CMAKE_CONFIGURATION_TYPES)
         # Single-configuration build generators like Makefile generators
         # don't have subdirs below CMAKE_CURRENT_BINARY_DIR.
         add_test(NAME ${name}
-          COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+          COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
             --build_dir=${CMAKE_CURRENT_BINARY_DIR} ${ARGN})
       endif (CMAKE_CONFIGURATION_TYPES)
     else()
@@ -297,7 +297,7 @@ function(py_test name)
       # only at ctest runtime (by calling ctest -c <Configuration>), so
       # we have to escape $ to delay variable substitution here.
       add_test(NAME ${name}
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.py
           --build_dir=${CMAKE_CURRENT_BINARY_DIR}/\${CTEST_CONFIGURATION_TYPE} ${ARGN})
     endif()
     # Make the Python import path consistent between Bazel and CMake.

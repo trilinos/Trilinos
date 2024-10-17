@@ -5,20 +5,23 @@ on:
     types:
       - opened
       - synchronize
-  pull_request_review:
-    types: 
-      - submitted
     branches:
     - master
     - develop
   workflow_dispatch:
+
+# Cancels any in progress 'workflows' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 # actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
 permissions: 
   contents: read
 
 jobs:
-  # Jobs depend on the output of pre-checks to run
+  # Jobs depend on the output of pre-checks to run.
+  # Cancels new workflows if prior runs were successful (same tree hash)
   pre-checks:
         runs-on: ubuntu-latest
         # actions: write needed by skip-duplicate-actions
