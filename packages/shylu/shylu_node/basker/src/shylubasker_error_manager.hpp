@@ -46,66 +46,66 @@ namespace BaskerNS
     for(Int ti = 0; ti < num_threads; ti++)
     {
       //Note: jdb we can make this into a switch
-      if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
+      if(thread_array[ti].error_type == BASKER_ERROR_NOERROR)
       {
         threads_start(ti) = BASKER_MAX_IDX;
         continue;
-      } else if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
+      } else if(thread_array[ti].error_type == BASKER_ERROR_SINGULAR)
       {
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK SINGULAR: blk=" << thread_array(ti).error_blk
+            << " DOMBLK SINGULAR: blk=" << thread_array[ti].error_blk
             << std::endl;
         }
         return BASKER_ERROR;
-      } else if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
+      } else if(thread_array[ti].error_type == BASKER_ERROR_NOMALLOC)
       {
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK NOMALLOC : blk=" << thread_array(ti).error_blk
+            << " DOMBLK NOMALLOC : blk=" << thread_array[ti].error_blk
             << std::endl;
         }
         return BASKER_ERROR;
-      } else if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
+      } else if(thread_array[ti].error_type == BASKER_ERROR_REMALLOC)
       {
-        BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_dom_error error_blk");
+        BASKER_ASSERT(thread_array[ti].error_blk >= 0, "nfactor_dom_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREAD: " << ti 
-            << " DOMBLK MALLOC : blk=" << thread_array(ti).error_blk
-            << " subblk=" << thread_array(ti).error_subblk
-            << " newsize=" << thread_array(ti).error_info
+            << " DOMBLK MALLOC : blk=" << thread_array[ti].error_blk
+            << " subblk=" << thread_array[ti].error_subblk
+            << " newsize=" << thread_array[ti].error_info
             << std::endl;
         }
 
         //If on diagonal, want to compare L and U
         Int resize_L = BASKER_MAX_IDX;   
         Int resize_U = BASKER_MAX_IDX;
-        if(thread_array(ti).error_subblk != BASKER_MAX_IDX)
+        if(thread_array[ti].error_subblk != BASKER_MAX_IDX)
         {
-          BASKER_ASSERT(thread_array(ti).error_info > 0, "L) newsize not big enough");
-          resize_L = thread_array(ti).error_info;
+          BASKER_ASSERT(thread_array[ti].error_info > 0, "L) newsize not big enough");
+          resize_L = thread_array[ti].error_info;
 
           //if L is already bigger and U, 
           //We will want re size U as, well
-          if(thread_array(ti).error_subblk == 0)
+          if(thread_array[ti].error_subblk == 0)
           {
-            Int blkcol = thread_array(ti).error_blk;
+            Int blkcol = thread_array[ti].error_blk;
             Int blkUrow = LU_size(blkcol)-1;
-            if(LL(blkcol)(0).nnz >=
-                LU(blkcol)(blkUrow).nnz)
+            if(LL[blkcol][0].nnz >=
+                LU[blkcol][blkUrow].nnz)
             {
-              resize_U = thread_array(ti).error_info;
+              resize_U = thread_array[ti].error_info;
             }
           }//if - a domain
         }
         //We don't care about the other way since,
         //L is already checked before U.
-        if(thread_array(ti).error_subblk == -1)
+        if(thread_array[ti].error_subblk == -1)
         {  
-          resize_U = thread_array(ti).error_info;
+          resize_U = thread_array[ti].error_info;
         }
 
         //Resize L, if resize_L != -1 (meaning realloc-L is requested)
@@ -116,7 +116,7 @@ namespace BaskerNS
             std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl;
           }
           BASKER_MATRIX &L =
-            LL(thread_array(ti).error_blk)(thread_array(ti).error_subblk);
+            LL[thread_array[ti].error_blk][thread_array[ti].error_subblk];
           REALLOC_INT_1DARRAY(L.row_idx,
               L.nnz,
               resize_L);
@@ -142,7 +142,7 @@ namespace BaskerNS
             std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl;
           }
           BASKER_MATRIX &U = 
-            LU(thread_array(ti).error_blk)(0);
+            LU[thread_array[ti].error_blk][0];
           REALLOC_INT_1DARRAY(U.row_idx,
               U.nnz,
               resize_U);
@@ -153,7 +153,7 @@ namespace BaskerNS
           U.nnz = resize_U;
           //Still need to clear pend
           BASKER_MATRIX &L = 
-            LL(thread_array(ti).error_blk)(0);
+            LL[thread_array[ti].error_blk][0];
           L.clear_pend();
         }
 
@@ -163,11 +163,11 @@ namespace BaskerNS
         {
           //Clear workspace, whole column
           for(Int sb = 0; 
-              sb < LL_size(thread_array(ti).error_blk);
+              sb < LL_size(thread_array[ti].error_blk);
               sb++)
           {
             BASKER_MATRIX &SL = 
-              LL(thread_array(ti).error_blk)(sb);
+              LL[thread_array[ti].error_blk][sb];
             for(Int i = 0; i < SL.iws_size*SL.iws_mult; ++i)
             {
               SL.iws(i) = (Int) 0;
@@ -198,13 +198,13 @@ namespace BaskerNS
           }//for - sb (subblks)
         }//if ws is filled
 
-        threads_start(ti) = thread_array(ti).error_blk;
+        threads_start(ti) = thread_array[ti].error_blk;
 
 
         //Reset 
-        thread_array(ti).error_type = BASKER_ERROR_NOERROR;
-        thread_array(ti).error_blk  = BASKER_MAX_IDX;
-        thread_array(ti).error_info = BASKER_MAX_IDX;
+        thread_array[ti].error_type = BASKER_ERROR_NOERROR;
+        thread_array[ti].error_blk  = BASKER_MAX_IDX;
+        thread_array[ti].error_info = BASKER_MAX_IDX;
 
         nthread_remalloc++;
       }//if REMALLOC
@@ -231,26 +231,26 @@ namespace BaskerNS
     for(Int ti = 0; ti < num_threads; ti++)
     {
       //Note: jdb we can make this into a switch
-      if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
+      if(thread_array[ti].error_type == BASKER_ERROR_NOERROR)
       {
         thread_start(ti) = BASKER_MAX_IDX;
         continue;
       }
-      else if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
+      else if(thread_array[ti].error_type == BASKER_ERROR_SINGULAR)
       {
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " SEPBLK SINGULAR: blk=" << thread_array(ti).error_blk
+            << " SEPBLK SINGULAR: blk=" << thread_array[ti].error_blk
             << std::endl;
         }
         return BASKER_ERROR;
-      } else if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
+      } else if(thread_array[ti].error_type == BASKER_ERROR_NOMALLOC)
       {
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREADS: " << ti 
-            << " SEPBLK NOMALLOC: blk=" << thread_array(ti).error_blk
+            << " SEPBLK NOMALLOC: blk=" << thread_array[ti].error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -260,22 +260,22 @@ namespace BaskerNS
       Int error_sep_lvl = BASKER_MAX_IDX;
       for(Int l = 1; l < tree.nlvls+1; l++)
       {
-        if(thread_array(ti).error_blk ==  S(l)(ti))
+        if(thread_array[ti].error_blk ==  S[l][ti])
         {
           error_sep_lvl = l;
           break;
         }
       }
 
-      if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
+      if(thread_array[ti].error_type == BASKER_ERROR_REMALLOC)
       {
-        BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_SEP_error error_blk");
+        BASKER_ASSERT(thread_array[ti].error_blk >= 0, "nfactor_SEP_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
-            << " SEPBLK MALLOC: blk=" << thread_array(ti).error_blk 
-            << " subblk=" << thread_array(ti).error_subblk
-            << " newsize=" << thread_array(ti).error_info
+            << " SEPBLK MALLOC: blk=" << thread_array[ti].error_blk 
+            << " subblk=" << thread_array[ti].error_subblk
+            << " newsize=" << thread_array[ti].error_info
             << std::endl;
           std::cout << " > SEPLVL: " << error_sep_lvl << std::endl;
         }
@@ -283,9 +283,9 @@ namespace BaskerNS
         //If on diagonal, want to compare L and U
         Int resize_L = BASKER_MAX_IDX;   
         Int resize_U = BASKER_MAX_IDX;
-        if(thread_array(ti).error_subblk <= -1)
+        if(thread_array[ti].error_subblk <= -1)
         {
-          resize_L = thread_array(ti).error_info;    
+          resize_L = thread_array[ti].error_info;    
           if(Options.verbose == BASKER_TRUE)
           {
             std::cout << " ++ L size: " << resize_L << std::endl;
@@ -293,9 +293,9 @@ namespace BaskerNS
         }
         //We don't care about the other way since,
         //L is already checked before U.
-        if(thread_array(ti).error_subblk > -1)
+        if(thread_array[ti].error_subblk > -1)
         {
-          resize_U = thread_array(ti).error_info;
+          resize_U = thread_array[ti].error_info;
           if(Options.verbose == BASKER_TRUE)
           {
             std::cout << " ++ U size: " << resize_U << std::endl;
@@ -305,9 +305,9 @@ namespace BaskerNS
         //Resize L, if resize_L != -1 (meaning realloc-L is requested)
         if(resize_L != BASKER_MAX_IDX)
         {
-          const Int tsb = (-1*thread_array(ti).error_subblk)-1;
+          const Int tsb = (-1*thread_array[ti].error_subblk)-1;
           BASKER_MATRIX &L =
-            LL(thread_array(ti).error_blk)(tsb);
+            LL[thread_array[ti].error_blk][tsb];
           REALLOC_INT_1DARRAY(L.row_idx,
               L.nnz,
               resize_L);
@@ -322,9 +322,9 @@ namespace BaskerNS
         //Resize U, if resize_U != -1 (meaning realloc-U is requested)
         if(resize_U != BASKER_MAX_IDX)
         {
-          const Int tsb = thread_array(ti).error_subblk;
+          const Int tsb = thread_array[ti].error_subblk;
           BASKER_MATRIX &U = 
-            LU(thread_array(ti).error_blk)(tsb);
+            LU[thread_array[ti].error_blk][tsb];
           REALLOC_INT_1DARRAY(U.row_idx,
               U.nnz,
               resize_U);
@@ -346,13 +346,13 @@ namespace BaskerNS
         //Though this could be done in parallel in the future
         for(Int p = 0; p < num_threads; p++)
         {
-          Int blk = S(0)(p);
+          Int blk = S[0][p];
           //if(LL(blk)(0).w_fill == BASKER_TRUE)
           {
             //Clear workspace, whole column
             for(Int sb = 0; sb < LL_size(blk); sb++)
             {
-              BASKER_MATRIX &SL =  LL(blk)(sb);
+              BASKER_MATRIX &SL =  LL[blk][sb];
               for(Int i = 0; i < SL.iws_size*SL.iws_mult; ++i)
               {
                 SL.iws(i) = (Int) 0;
@@ -369,10 +369,10 @@ namespace BaskerNS
         Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
         for(Int p = 0; p < num_threads; p++)
         {
-          Int blk = S(error_sep_lvl)(p);
+          Int blk = S[error_sep_lvl][p];
           //if(LL(blk)(0).w_fill == BASKER_TRUE)
           {
-            BASKER_MATRIX &TM = LL(blk)(0);
+            BASKER_MATRIX &TM = LL[blk][0];
             //printf( " > p=%d: scol_top = %d, scol = %d, ncol = %d\n",p,scol_top,TM.scol,TM.ncol );
             for(Int i = scol_top + TM.scol; i < scol_top + (TM.scol+TM.ncol); i++)
             {
@@ -386,7 +386,7 @@ namespace BaskerNS
         //Note, will have to clear the perm in all sep blk in that level
         //Clear permuation
         BASKER_MATRIX &SL = 
-          LL(thread_array(ti).error_blk)(0);
+          LL[thread_array[ti].error_blk][0];
         //printf( " + scol_top = %d, srow = %d, nrowl = %d\n",scol_top,SL.srow,SL.nrow );
         for(Int i = scol_top + SL.srow; i < scol_top + (SL.srow+SL.nrow); i++)
         {
@@ -394,12 +394,12 @@ namespace BaskerNS
           gperm(i) = BASKER_MAX_IDX;
         }//for--to clear perm
 
-        thread_start(ti) = thread_array(ti).error_blk;
+        thread_start(ti) = thread_array[ti].error_blk;
 
         //Reset 
-        thread_array(ti).error_type = BASKER_ERROR_NOERROR;
-        thread_array(ti).error_blk  = BASKER_MAX_IDX;
-        thread_array(ti).error_info = BASKER_MAX_IDX;
+        thread_array[ti].error_type = BASKER_ERROR_NOERROR;
+        thread_array[ti].error_blk  = BASKER_MAX_IDX;
+        thread_array[ti].error_info = BASKER_MAX_IDX;
 
         for(Int i = 0; i < num_threads; i++)
         {
@@ -451,9 +451,9 @@ namespace BaskerNS
     Int btab = btf_tabs_offset;
     for(Int ti = 0; ti < num_threads; ti++)
     {
-      Int c = thread_array(ti).error_blk;
+      Int c = thread_array[ti].error_blk;
       //Note: jdb we can make this into a switch
-      if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
+      if(thread_array[ti].error_type == BASKER_ERROR_NOERROR)
       {
         if (c >= btab) {
           thread_start(ti) = BASKER_MAX_IDX;
@@ -463,7 +463,7 @@ namespace BaskerNS
         continue;
       }//end if NOERROR
 
-      if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
+      if(thread_array[ti].error_type == BASKER_ERROR_SINGULAR)
       {
         if(Options.verbose == BASKER_TRUE)
         {
@@ -474,7 +474,7 @@ namespace BaskerNS
         return BASKER_ERROR;
       }//end if SINGULAR
 
-      if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
+      if(thread_array[ti].error_type == BASKER_ERROR_NOMALLOC)
       {
         std::cout << "ERROR_THREADS: " << ti
                   << " DIAGBLK NOMALLOC blk=" << c
@@ -482,16 +482,16 @@ namespace BaskerNS
         return BASKER_ERROR;
       }//end if NOMALLOC
 
-      if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
+      if(thread_array[ti].error_type == BASKER_ERROR_REMALLOC)
       {
-        Int liwork = thread_array(ti).iws_size*thread_array(ti).iws_mult;
-        Int lework = thread_array(ti).ews_size*thread_array(ti).ews_mult;
+        Int liwork = thread_array[ti].iws_size*thread_array[ti].iws_mult;
+        Int lework = thread_array[ti].ews_size*thread_array[ti].ews_mult;
         BASKER_ASSERT(c >= 0, "nfactor_diag_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
             << " DIAGBLK MALLOC blk=" << c
-            << " newsize=" << thread_array(ti).error_info
+            << " newsize=" << thread_array[ti].error_info
             << " for both L( " << c << " ) and U( " << c << " )"
             << std::endl;
 
@@ -504,24 +504,24 @@ namespace BaskerNS
 
         for(Int i = 0; i < liwork; i++)
         {
-          thread_array(ti).iws(i) = (Int) 0;
+          thread_array[ti].iws(i) = (Int) 0;
         }
         for(Int i = 0; i < lework; i++)
         {
-          thread_array(ti).ews(i) = zero;
+          thread_array[ti].ews(i) = zero;
         }
 
         //Resize L
-        BASKER_MATRIX &L = (c >= btab ? LBTF(c-btab) : L_D(c));
+        BASKER_MATRIX &L = (c >= btab ? LBTF[c-btab] : L_D[c]);
         L.clear_pend();
         REALLOC_INT_1DARRAY(L.row_idx,
             L.nnz,
-            thread_array(ti).error_info);
+            thread_array[ti].error_info);
         REALLOC_ENTRY_1DARRAY(L.val,
             L.nnz,
-            thread_array(ti).error_info);
-        L.mnnz = thread_array(ti).error_info;
-        L.nnz = thread_array(ti).error_info;
+            thread_array[ti].error_info);
+        L.mnnz = thread_array[ti].error_info;
+        L.nnz = thread_array[ti].error_info;
         for(Int i = 0; i < L.ncol; i++)
         {
           L.col_ptr(i) = 0;
@@ -533,15 +533,15 @@ namespace BaskerNS
         }
 
         //Resize U
-        BASKER_MATRIX &U = (c >= btab ? UBTF(c-btab) : U_D(c));
+        BASKER_MATRIX &U = (c >= btab ? UBTF[c-btab] : U_D[c]);
         REALLOC_INT_1DARRAY(U.row_idx,
             U.nnz,
-            thread_array(ti).error_info);
+            thread_array[ti].error_info);
         REALLOC_ENTRY_1DARRAY(U.val,
             U.nnz,
-            thread_array(ti).error_info);
-        U.mnnz = thread_array(ti).error_info;
-        U.nnz = thread_array(ti).error_info;
+            thread_array[ti].error_info);
+        U.mnnz = thread_array[ti].error_info;
+        U.nnz = thread_array[ti].error_info;
         for(Int i = 0; i < U.ncol; i++)
         {
           U.col_ptr(i) = 0;
@@ -561,9 +561,9 @@ namespace BaskerNS
         }
 
         //Reset 
-        thread_array(ti).error_type = BASKER_ERROR_NOERROR;
-        thread_array(ti).error_blk  = BASKER_MAX_IDX;
-        thread_array(ti).error_info = BASKER_MAX_IDX;
+        thread_array[ti].error_type = BASKER_ERROR_NOERROR;
+        thread_array[ti].error_blk  = BASKER_MAX_IDX;
+        thread_array[ti].error_info = BASKER_MAX_IDX;
 
         nthread_remalloc++;
 
@@ -593,7 +593,7 @@ namespace BaskerNS
   {
     for(Int ti = 0; ti < num_threads; ti++)
     {
-        thread_array(ti).error_type = BASKER_ERROR_NOERROR;
+        thread_array[ti].error_type = BASKER_ERROR_NOERROR;
     }
   }
 

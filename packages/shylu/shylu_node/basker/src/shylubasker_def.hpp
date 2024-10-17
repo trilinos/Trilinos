@@ -92,16 +92,8 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::Finalize()
   {
-    //finalize all matrices
-    A.Finalize();
-    At.Finalize(); //??? is At even used
-    BTF_A.Finalize();
-    BTF_C.Finalize();
-    BTF_B.Finalize();
-    BTF_D.Finalize();
-    BTF_E.Finalize();
-   
     //finalize array of 2d matrics
+    // Actuall Finalize is called by desctructor
     FREE_MATRIX_2DARRAY(AVM, tree.nblks);
     FREE_MATRIX_2DARRAY(ALM, tree.nblks);
     
@@ -120,7 +112,6 @@ namespace BaskerNS
        
     //Thread Array
     FREE_THREAD_1DARRAY(thread_array);
-    basker_barrier.Finalize();
        
     //S (Check on this)
     FREE_INT_2DARRAY(S, tree.nblks);
@@ -187,12 +178,6 @@ namespace BaskerNS
 
     FREE_ENTRY_1DARRAY(x_view_ptr_scale);
     FREE_ENTRY_1DARRAY(y_view_ptr_scale);
-
-    //Structures
-    part_tree.Finalize();
-    tree.Finalize();
-    stree.Finalize();
-    stats.Finalize();
   }//end Finalize()
 
 
@@ -239,7 +224,7 @@ namespace BaskerNS
     //Option = 2, BTF BASKER
 
     if(option == 1)
-    {	
+    {
       default_order();
     }
     else if(option == 2)
@@ -475,12 +460,16 @@ namespace BaskerNS
       //Find BTF ordering
       if(btf_order2() != BASKER_SUCCESS)
       {
+        if(Options.verbose == BASKER_TRUE)
+        {
+          printf("Basker Ordering Failed \n"); fflush(stdout);
+        }
         return BASKER_ERROR;
       }
 
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Basker Ordering Found \n");
+        printf("Basker Ordering Found \n"); fflush(stdout);
       }
 
       /*if((Options.btf == BASKER_TRUE) && (btf_tabs_offset != 0))
@@ -512,7 +501,7 @@ namespace BaskerNS
     if(symb_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE) {
-        printf("BASKER: YOU CANNOT RERUN SFACTOR\n");
+        printf("BASKER: YOU CANNOT RERUN SFACTOR\n"); fflush(stdout);
       }
       return BASKER_ERROR;
     }
@@ -547,7 +536,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf(" == Basker Symbolic Done ==\n\n");
+      printf(" == Basker Symbolic Done ==\n\n"); fflush(stdout);
     }
 
     #ifdef BASKER_TIMER
@@ -1573,7 +1562,7 @@ namespace BaskerNS
             #endif
           }
 
-	  // ----------------------------------------------------------------------------------------------
+          // ----------------------------------------------------------------------------------------------
           // 'sort' rows of BTF_A into ND structure
           #if 0
           for (Int i = 0; i < BTF_A.nnz; ++i) {
@@ -1621,6 +1610,7 @@ namespace BaskerNS
         symmetric_sfactor();
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_symbolic_timer.seconds() << std::endl;
+          fflush(stdout);
         }
 
         Kokkos::Timer nd_last_dense_timer;
@@ -1628,16 +1618,23 @@ namespace BaskerNS
         btf_last_dense(flag);
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for last-dense after ND on a big block A: " << nd_last_dense_timer.seconds() << std::endl;
+          fflush(stdout);
         }
 
 
         #ifdef BASKER_KOKKOS
         // ----------------------------------------------------------------------------------------------
         // Allocate & Initialize blocks
+        #ifdef BASKER_PARALLEL_INIT_FACTOR
         kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
           iF(this);
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
         Kokkos::fence();
+        #else
+        for (Int p = 0; p < num_threads; p++) {
+          this->t_init_factor(p);
+        }
+        #endif
 
         /*kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
           iWS(flag, this);
@@ -1950,10 +1947,16 @@ namespace BaskerNS
       }*/
 
       Kokkos::Timer nd_setup2_timer;
+#ifdef BASKER_PARALLEL_INIT_WORKSPACE
       kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
         iWS(flag, this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
       Kokkos::fence();
+#else
+      for (Int p = 0; p < num_threads; p++) {
+        this->t_init_workspace(flag, p);
+      }
+#endif
       if(Options.verbose == BASKER_TRUE) {
         std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
       }

@@ -117,9 +117,11 @@ namespace BaskerNS
       //	      thread.team_rank());
       Int kid = basker->t_get_kid(thread);
       #endif
+      printf( " * kokkos_sfactor_init_factor(%d) *\n",kid ); fflush(stdout);
 
       basker->t_init_factor(kid);
 
+      printf( " * kokkos_sfactor_init_factor(%d) done *\n",kid ); fflush(stdout);
       //This needs to be done earlier in ordering now
       //basker->t_init_2DA(kid);
 
@@ -159,7 +161,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("Total NNZ: %ld \n", (long)global_nnz);
       printf(" > blk_matching = %d\n", (int)Options.blk_matching );
       printf("----------------------------------\n");
-      printf("\n");
+      printf("\n"); fflush(stdout);
     }
   }
 
@@ -169,28 +171,45 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   }
 
   //Allocate Factorspace
-  //printf(" >> kokkos_sfactor_init_factor( btf_tabs_offset = %d, allocate_nd_workspace = %d ) <<\n",
-  //       btf_tabs_offset,allocate_nd_workspace);
+  #ifdef BASKER_TIMER 
+  printf(" >> kokkos_sfactor_init_factor( btf_tabs_offset = %d, allocate_nd_workspace = %d ) <<\n",
+         btf_tabs_offset,allocate_nd_workspace); fflush(stdout);
+  #endif
   if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
   #ifdef BASKER_KOKKOS
+    #ifdef BASKER_PARALLEL_INIT_FACTOR
     kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
       iF(this);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
     Kokkos::fence();
+    #else
+    for (Int p = 0; p < num_threads; p++) {
+      this->t_init_factor(p);
+    }
+    #endif
   #else
   #endif
   }
 
+  #ifdef BASKER_TIMER 
+  printf(" >> kokkos_sfactor_workspace <<\n"); fflush(stdout);
+  #endif
   //if(btf_tabs_offset != 0)
   {
     //Allocate workspace
   #ifdef BASKER_KOKKOS
+    #ifdef BASKER_PARALLEL_INIT_WORKSPACE
     typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
     kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
       iWS(setup_flag, this);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
     Kokkos::fence();
+    #else
+    for (Int p = 0; p < num_threads; p++) {
+      this->t_init_workspace(setup_flag, p);
+    }
+    #endif
   #endif
   }
 
@@ -292,7 +311,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     double time2 = 0.0;
     double time3 = 0.0;
     Kokkos::Timer timer1;
+    Kokkos::Timer timer2;
     timer.reset();
+    timer2.reset();
     #endif
 
     //split_num = num_threads/2;
@@ -303,7 +324,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("\n --------------- OVER DOMS ---------------\n");
       printf("\n");
     }
-    #define SHYLU_BASKER_STREE_LIST
+    //#define SHYLU_BASKER_STREE_LIST
     std::vector <BASKER_SYMBOLIC_TREE> stree_list (num_threads);
     #ifdef SHYLU_BASKER_STREE_LIST
     Kokkos::parallel_for(
@@ -313,7 +334,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     for(Int p = 0; p < num_threads; ++p)
     #endif
     {
-      Int blk = S(0)(p);
+      Int blk = S[0][p];
       if(Options.verbose == BASKER_TRUE)
       {
         printf(" ============= DOMAIN BLK (p=%d) ============\n",(int)p);
@@ -323,34 +344,34 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //printf("\n\n STREE SIZE: %d \n", AL[blk][0].ncol);
       //printf("Here 0\n");
       //Find nnz_counts for leafs
-      #ifdef BASKER_TIMER 
+      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
       #ifdef SHYLU_BASKER_STREE_LIST
       auto stree_p = stree_list[p];
-      e_tree    (ALM(blk)(0), stree_p, 1);
+      e_tree    (ALM[blk][0], stree_p, 1);
       #else
-      e_tree    (ALM(blk)(0), stree, 1);
+      e_tree    (ALM[blk][0], stree, 1);
       #endif
-      #ifdef BASKER_TIMER 
+      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       time1_2 += timer1.seconds();
       timer1.reset();
       #endif
       #ifdef SHYLU_BASKER_STREE_LIST
-      post_order(ALM(blk)(0), stree_p);
+      post_order(ALM[blk][0], stree_p);
       #else
-      post_order(ALM(blk)(0), stree);
+      post_order(ALM[blk][0], stree);
       #endif
-      #ifdef BASKER_TIMER 
+      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       time1_3 += timer1.seconds();
       timer1.reset();
       #endif
       #ifdef SHYLU_BASKER_STREE_LIST
-      col_count (ALM(blk)(0), stree_p);
+      col_count (ALM[blk][0], stree_p);
       #else
-      col_count (ALM(blk)(0), stree);
+      col_count (ALM[blk][0], stree);
       #endif
-      #ifdef BASKER_TIMER 
+      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       time1 += timer1.seconds();
       #endif
 
@@ -362,17 +383,17 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,0);
         printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
       }
-      #ifdef BASKER_TIMER 
+      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
       #ifdef SHYLU_BASKER_STREE_LIST
-      leaf_assign_nnz(LL(blk)(0),              stree_p, 0);
-      leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree_p, 0);
+      leaf_assign_nnz(LL[blk][0],              stree_p, 0);
+      leaf_assign_nnz(LU[blk][LU_size(blk)-1], stree_p, 0);
       #else
-      leaf_assign_nnz(LL(blk)(0),              stree, 0);
-      leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
+      leaf_assign_nnz(LL[blk][0],              stree, 0);
+      leaf_assign_nnz(LU[blk][LU_size(blk)-1], stree, 0);
       #endif
-      #ifdef BASKER_TIMER 
+      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       time2 += timer1.seconds();
       #endif
     }
@@ -380,22 +401,26 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     );
     Kokkos::fence();
     #endif
+    #ifdef BASKER_TIMER 
+    double dom_time = timer2.seconds();
+    std::cout << " DOMAIN BLKs done : " << dom_time << std::endl;
+    #endif
 
     for(Int p = 0; p < num_threads; ++p)
     {
       //Do off diag
-      Int blk = S(0)(p);
+      Int blk = S[0][p];
       #ifdef SHYLU_BASKER_STREE_LIST
       auto stree_p = stree_list[p];
       #endif
       for(Int l =0; l < tree.nlvls; l++)
       {
-        Int U_col = S(l+1)(p);
+        Int U_col = S[l+1][p];
         //Note: Need to think more about this flow
         //Should be subtracted by how many times in the 
         //future
 
-        Int my_row_leader = S(0)(find_leader(p,l));
+        Int my_row_leader = S[0][find_leader(p,l)];
         //Int my_new_row = 
         // blk - my_row_leader;
         Int U_row = blk-my_row_leader;
@@ -416,10 +441,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         timer1.reset();
         #endif
         #ifdef SHYLU_BASKER_STREE_LIST
-        U_blk_sfactor(AVM(U_col)(U_row), stree_p,
+        U_blk_sfactor(AVM[U_col][U_row], stree_p,
                       gScol[l], gSrow[glvl], off_diag);
         #else
-        U_blk_sfactor(AVM(U_col)(U_row), stree,
+        U_blk_sfactor(AVM[U_col][U_row], stree,
                       gScol[l], gSrow[glvl], off_diag);
         #endif
         #ifdef BASKER_TIMER 
@@ -448,11 +473,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //printf( " U_assign_nnz(LU(%d,%d))\n",U_col,U_row );
         double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; 
         #ifdef SHYLU_BASKER_STREE_LIST
-        U_assign_nnz(LU(U_col)(U_row), stree_p, fill_factor, 0);
-        L_assign_nnz(LL(blk)(l+1),     stree_p, fill_factor, 0);
+        U_assign_nnz(LU[U_col][U_row], stree_p, fill_factor, 0);
+        L_assign_nnz(LL[blk][l+1],     stree_p, fill_factor, 0);
         #else
-        U_assign_nnz(LU(U_col)(U_row), stree, fill_factor, 0);
-        L_assign_nnz(LL(blk)(l+1),     stree, fill_factor, 0);
+        U_assign_nnz(LU[U_col][U_row], stree, fill_factor, 0);
+        L_assign_nnz(LL[blk][l+1],     stree, fill_factor, 0);
         #endif
         #ifdef BASKER_TIMER 
         time2 += timer1.seconds();
@@ -484,13 +509,17 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
       //over all the seps in a lvle
       #ifdef SHYLU_BASKER_STREE_LIST
+      //printf( " parallel for \n" );
       Kokkos::parallel_for(
         "permute_col", p, KOKKOS_LAMBDA(const int pp)
       #else
+      //printf( " serial for \n" );
       for(Int pp = 0; pp < p; pp++)
       #endif
       {
-        //printf( " -- level = %d separator = %d --\n",lvl,pp );
+        #ifdef BASKER_TIMER 
+        printf( " -- level = %d/%d separator = %d/%d --\n",lvl,tree.nlvls, pp,p ); fflush(stdout);
+        #endif
         //S blks
         Int ppp;
         ppp =  pp*pow(tree.nparts, lvl+1);
@@ -505,43 +534,50 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
             (long)U_col, (long)U_row, (long)lvl, (long)pp);
         #endif
 
-        Int U_col = S(lvl+1)(ppp);
+        Int U_col = S[lvl+1][ppp];
         Int U_row = 0;
 
         //S_blk_sfactor(AL[U_col][U_row], stree,
         //gScol[lvl], gSrow[pp]);
 
-        //printf( " >>> S_blk_sfactor( ALM(%d)(%d) with %dx%d and nnz=%d) <<<\n",U_col,U_row, ALM(U_col)(U_row).nrow,ALM(U_col)(U_row).ncol,ALM(U_col)(U_row).nnz );
+        #ifdef BASKER_TIMER 
+        printf( " >>> S_blk_sfactor( ALM(%d)(%d) with %dx%d and nnz=%d) <<<\n",U_col,U_row, ALM[U_col][U_row].nrow,ALM[U_col][U_row].ncol,ALM[U_col][U_row].nnz ); fflush(stdout);
+        #endif
         #ifdef SHYLU_BASKER_STREE_LIST
         auto stree_p = stree_list[pp];
-        S_blk_sfactor(ALM(U_col)(U_row), stree_p,
-            gScol(lvl), gSrow(pp));
+        S_blk_sfactor(ALM[U_col][U_row], stree_p,
+            gScol[lvl], gSrow[pp]);
         #else
-        S_blk_sfactor(ALM(U_col)(U_row), stree,
-            gScol(lvl), gSrow(pp));
+        S_blk_sfactor(ALM[U_col][U_row], stree,
+            gScol[lvl], gSrow[pp]);
         #endif
-        //printf( " >>> -> nnz = %d\n",ALM(U_col)(U_row).nnz );
+        #ifdef BASKER_TIMER 
+        printf( " >>> -> nnz = %d\n",ALM[U_col][U_row].nnz ); fflush(stdout);
+        #endif
 
         //S_assign_nnz(LL[U_col][U_row], stree, 0);
         if(Options.verbose == BASKER_TRUE)
         {
-          printf( "   >>  S_assign_nnz( LL(%d,%d) )\n",(int)U_col,(int)U_row );
+          printf( "   >>  S_assign_nnz( LL(%d,%d) )\n",(int)U_col,(int)U_row ); fflush(stdout);
         }
         #ifdef SHYLU_BASKER_STREE_LIST
-        S_assign_nnz(LL(U_col)(U_row), stree_p, 0);
+        S_assign_nnz(LL[U_col][U_row], stree_p, 0);
         #else
-        S_assign_nnz(LL(U_col)(U_row), stree, 0);
+        S_assign_nnz(LL[U_col][U_row], stree, 0);
         #endif
         //S_assign_nnz(LU[U_col][LU_size[U_col]-1], stree,0);
         //printf( " >>>  S_assign_nnz( LU(%d,%d) )\n",U_col,LU_size(U_col)-1 );
         if(Options.verbose == BASKER_TRUE)
         {
-          printf( "   ++ S_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)LU_size(U_col)-1);
+          printf( "   ++ S_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)LU_size(U_col)-1); fflush(stdout);
         }
         #ifdef SHYLU_BASKER_STREE_LIST
-        S_assign_nnz(LU(U_col)(LU_size(U_col)-1), stree_p, 0);
+        S_assign_nnz(LU[U_col][LU_size(U_col)-1], stree_p, 0);
         #else
-        S_assign_nnz(LU(U_col)(LU_size(U_col)-1), stree, 0);
+        S_assign_nnz(LU[U_col][LU_size(U_col)-1], stree, 0);
+        #endif
+        #ifdef BASKER_TIMER 
+        printf( " >>> -> nnz = %d\n",LU[U_col][LU_size(U_col)-1].nnz); fflush(stdout);
         #endif
       }
       #ifdef SHYLU_BASKER_STREE_LIST
@@ -557,19 +593,20 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int ppp;
         ppp =  pp*pow(tree.nparts, lvl+1);
 
-        Int U_col = S(lvl+1)(ppp);
+        Int U_col = S[lvl+1][ppp];
         Int U_row = 0;
 
         Int inner_blk = U_col;
         for(Int l = lvl+1; l < tree.nlvls; l++)
         {
-          U_col = S(l+1)(ppp);
-          U_row = S(lvl+1)(ppp)%LU_size(U_col);
+          //printf( " --- pp = %d/%d, l = %d/%d ---\n",pp,p, l,tree.nlvls ); fflush(stdout);
+          U_col = S[l+1][ppp];
+          U_row = S[lvl+1][ppp]%LU_size(U_col);
 
-          Int my_row_leader = S(0)(find_leader(ppp,l));
+          Int my_row_leader = S[0][find_leader(ppp,l)];
           //Int my_new_row = 
           // S(lvl+1)(ppp) - my_row_leader;
-          U_row =  S(lvl+1)(ppp) - my_row_leader;
+          U_row =  S[lvl+1][ppp] - my_row_leader;
 
           #ifdef BASKER_DEBUG_SFACTOR
           printf("offida sep, lvl: %d l: %d U_col: %d U_row: %d \n", lvl, l, U_col, U_row);
@@ -578,11 +615,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
           Int off_diag = 1;
           #ifdef SHYLU_BASKER_STREE_LIST
-          U_blk_sfactor(AVM(U_col)(U_row), stree_p,
-              gScol(l), gSrow(pp), off_diag);
+          U_blk_sfactor(AVM[U_col][U_row], stree_p,
+              gScol[l], gSrow[pp], off_diag);
           #else
-          U_blk_sfactor(AVM(U_col)(U_row), stree,
-              gScol(l), gSrow(pp), off_diag);
+          U_blk_sfactor(AVM[U_col][U_row], stree,
+              gScol[l], gSrow[pp], off_diag);
           #endif
 
           //In symmetric will not need
@@ -598,14 +635,15 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           {
             printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
             printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)inner_blk,(int)(l-lvl));
+	    fflush(stdout);
           }
           double fill_factor = BASKER_SEP_NNZ_OVER+Options.user_fill; 
           #ifdef SHYLU_BASKER_STREE_LIST
-          U_assign_nnz(LU(U_col)(U_row), stree_p, fill_factor, 0);
-          L_assign_nnz(LL(inner_blk)(l-lvl), stree_p, fill_factor, 0);
+          U_assign_nnz(LU[U_col][U_row], stree_p, fill_factor, 0);
+          L_assign_nnz(LL[inner_blk][l-lvl], stree_p, fill_factor, 0);
           #else
-          U_assign_nnz(LU(U_col)(U_row), stree, fill_factor, 0);
-          L_assign_nnz(LL(inner_blk)(l-lvl), stree, fill_factor, 0);
+          U_assign_nnz(LU[U_col][U_row], stree, fill_factor, 0);
+          L_assign_nnz(LL[inner_blk][l-lvl], stree, fill_factor, 0);
           #endif
           //printf("Here 1 \n");
         }
@@ -625,6 +663,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     FREE(gScol);
     FREE(gSrow);
 
+    #ifdef BASKER_TIMER 
+    std::cout << " >> symmetric_sfactor done << " << std::endl;
+    #endif
     return 0;
   }//end symmetric_symbolic()
 
@@ -1151,7 +1192,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    BASKER_SYMBOLIC_TREE &ST
   )
   {
-printf( " col_count:: view \n" );
     //Still like to find a way to do this without transpose
     BASKER_MATRIX  Mt;
     matrix_transpose(MV, Mt);
@@ -2419,6 +2459,9 @@ printf( " col_count:: view \n" );
     //printf("number of blks: %d \n",
     //	   btf_nblks-btf_tabs_offset);
     #endif
+    #ifdef BASKER_TIMER
+    printf( " > btf_last_dense(%s) <\n",(flag ? "true" : "false") ); fflush(stdout);
+    #endif
 
     Int max_blk_size = 0;
 #if defined(BASKER_SPLIT_A)
@@ -2440,7 +2483,7 @@ printf( " col_count:: view \n" );
             nnz = lblk_size*lblk_size;
         }
         //printf( " LBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
-        L_D(i).init_matrix("LBFT",
+        L_D[i].init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
           btf_tabs(i),
@@ -2448,9 +2491,9 @@ printf( " col_count:: view \n" );
           nnz);
 
         //For pruning
-        L_D(i).init_pend();
+        L_D[i].init_pend();
 
-        U_D(i).init_matrix("UBFT",
+        U_D[i].init_matrix("UBFT",
           btf_tabs(i),
           lblk_size,
           btf_tabs(i),
@@ -2459,6 +2502,9 @@ printf( " col_count:: view \n" );
       }//over all blks
     }
 #endif
+    #ifdef BASKER_TIMER
+    printf( " > top blocks done <\n" ); fflush(stdout);
+    #endif
 
     //Malloc L and U
     #ifdef BASKER_DEBUG_SFACTOR
@@ -2487,7 +2533,7 @@ printf( " col_count:: view \n" );
           nnz = lblk_size*lblk_size;
         }
         //printf( " LBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
-        LBTF(i-btf_tabs_offset).init_matrix("LBFT",
+        LBTF[i-btf_tabs_offset].init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
           btf_tabs(i),
@@ -2496,10 +2542,10 @@ printf( " col_count:: view \n" );
 
         //For pruning
         //printf( " LBTF(%d).init_pend()\n",(int)(i-btf_tabs_offset) );
-        LBTF(i-btf_tabs_offset).init_pend();
+        LBTF[i-btf_tabs_offset].init_pend();
 
         //printf( " UBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
-        UBTF(i-btf_tabs_offset).init_matrix("UBFT",
+        UBTF[i-btf_tabs_offset].init_matrix("UBFT",
           btf_tabs(i),
           lblk_size,
           btf_tabs(i),
@@ -2511,6 +2557,9 @@ printf( " col_count:: view \n" );
         //MALLOC workspace
       }//over all blks
     }
+    #ifdef BASKER_TIMER
+    printf( " > left blocks done <\n" ); fflush(stdout);
+    #endif
 
     //JDB: This needs to be fixed
     max_blk_size = BTF_D.nrow + BTF_C.nrow;
@@ -2525,14 +2574,14 @@ printf( " col_count:: view \n" );
 
       for(Int i = 0 ; i < num_threads; i++)
       {
-        thread_array(i).iws_size = max_blk_size;
-        thread_array(i).ews_size = max_blk_size;
+        thread_array[i].iws_size = max_blk_size;
+        thread_array[i].ews_size = max_blk_size;
 
         //BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
         //BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
         if (max_blk_size > 0) {
-          MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
-          MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
+          MALLOC_INT_1DARRAY(thread_array[i].iws, thread_array[i].iws_size*thread_array[i].iws_mult);
+          MALLOC_ENTRY_1DARRAY(thread_array[i].ews, thread_array[i].ews_size*thread_array[i].ews_mult);
         }
         #ifdef BASKER_DEBUG_SFACTOR
         printf("Malloc Thread: %d iws: %d \n",
@@ -2545,8 +2594,12 @@ printf( " col_count:: view \n" );
       }
     }
 
+    #ifdef BASKER_TIMER
+    printf( " > btf_last_dense done <\n" );
+    #endif
   }//end btf_last_dense()
   
 }//end namespace Bakser
 
+#undef BASKER_TIMER 
 #endif//endif BASKER_SFACTOR_NEWFRM_HPP
