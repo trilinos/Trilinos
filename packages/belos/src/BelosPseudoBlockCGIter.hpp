@@ -24,9 +24,8 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -44,16 +43,17 @@
 
 namespace Belos {
 
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:
 
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
 
@@ -67,7 +67,7 @@ namespace Belos {
      */
     PseudoBlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                           const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                           Teuchos::ParameterList &params );
 
     //! Destructor.
@@ -223,7 +223,7 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
 
     //
     // Algorithmic parameters
@@ -270,10 +270,10 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  PseudoBlockCGIter<ScalarType,MV,OP>::PseudoBlockCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  PseudoBlockCGIter<ScalarType,MV,OP,DM>::PseudoBlockCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                                                                Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -290,8 +290,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockCGIter<ScalarType,MV,OP,DM>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
   {
     // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
@@ -325,10 +325,6 @@ namespace Belos {
     //
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-
     if (!Teuchos::is_null(newstate.R)) {
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
@@ -339,7 +335,7 @@ namespace Belos {
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+        MVT::Assign( *newstate.R, *R_ );
       }
 
       // Compute initial direction vectors
@@ -359,7 +355,7 @@ namespace Belos {
       else {
         Z_ = R_;
       }
-      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
+      MVT::Assign( *Z_, *P_ );
     }
     else {
 
@@ -374,8 +370,8 @@ namespace Belos {
 
  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockCGIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -388,7 +384,7 @@ namespace Belos {
     int i=0;
     std::vector<int> index(1);
     std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ ), beta( numRHS_ );
-    Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ );
+    Teuchos::RCP<DM> alpha = DMT::Create( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -427,13 +423,14 @@ namespace Belos {
                                 CGPositiveDefiniteFailure,
                                 "Belos::PseudoBlockCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
-        alpha(i,i) = rHz[i] / pAp[i];
+        DMT::Value(*alpha,i,i) = rHz[i] / pAp[i];
       }
+      DMT::SyncHostToDevice( *alpha );
 
       //
       // Update the solution std::vector x := x + alpha * P_
       //
-      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
+      MVT::MvTimesMatAddMv( one, *P_, *alpha, one, *cur_soln_vec );
       lp_->updateSolution();// what does this do?
       //
       // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
@@ -444,7 +441,7 @@ namespace Belos {
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
+      MVT::MvTimesMatAddMv( -one, *AP_, *alpha, one, *R_ );
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ],
       // and the new direction std::vector p.

@@ -34,9 +34,9 @@ typedef Teuchos::ScalarTraits<scalar_type> SCT;
 typedef SCT::magnitudeType magnitude_type;
 typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
-typedef Belos::MultiVecTraits<scalar_type, MV> MVT;
-typedef Belos::OperatorTraits<scalar_type, MV, OP> OPT;
 typedef Teuchos::SerialDenseMatrix<int, scalar_type> serial_matrix_type;
+typedef Belos::MultiVecTraits<scalar_type, MV, serial_matrix_type> MVT;
+typedef Belos::OperatorTraits<scalar_type, MV, OP> OPT;
 typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
 
@@ -66,7 +66,7 @@ main (int argc, char *argv[])
     // subclass, given a name for the subclass.  The name is not the
     // same as the class' syntactic name: e.g., "TSQR" is the name of
     // TsqrOrthoManager.
-    OrthoManagerFactory<scalar_type, MV, OP> factory;
+    OrthoManagerFactory<scalar_type, MV, OP, serial_matrix_type> factory;
 
     // The name of the (Mat)OrthoManager subclass to instantiate.
     std::string orthoManName (factory.defaultName());
@@ -240,7 +240,7 @@ main (int argc, char *argv[])
     // subclass to be tested.  Specify "fast" parameters for a fair
     // benchmark comparison, but override the fast parameters to get the
     // desired normalization method for SimpleOrthoManaager.
-    RCP<OrthoManager<scalar_type, MV> > orthoMan;
+    RCP<OrthoManager<scalar_type, MV, serial_matrix_type> > orthoMan;
     {
       std::string label (orthoManName);
       RCP<ParameterList> params =
@@ -273,7 +273,7 @@ main (int argc, char *argv[])
       (displayResultsCompactly && Teuchos::rank(*pComm) != 0) ? bitBucket : std::cout;
 
     // Benchmark the OrthoManager subclass.
-    typedef Belos::Test::OrthoManagerBenchmarker<scalar_type, MV> benchmarker_type;
+    typedef Belos::Test::OrthoManagerBenchmarker<scalar_type, MV, serial_matrix_type> benchmarker_type;
     benchmarker_type::benchmark (orthoMan, orthoManName, normalization, X,
         numCols, numBlocks, numTrials,
         outMan, resultStream, displayResultsCompactly);
