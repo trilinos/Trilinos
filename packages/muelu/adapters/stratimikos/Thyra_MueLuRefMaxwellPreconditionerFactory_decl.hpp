@@ -22,10 +22,6 @@
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
-#ifdef HAVE_MUELU_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#endif
 
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -42,10 +38,6 @@
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_EpetraOperator.hpp>
-#include <Xpetra_EpetraOperator.hpp>
-#endif
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 

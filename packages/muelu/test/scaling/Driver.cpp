@@ -56,9 +56,6 @@
 #include <BelosXpetraAdapter.hpp>  // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>   // => This header defines Belos::MueLuOp
 #include <BelosTpetraAdapter.hpp>  // => This header defines Belos::TpetraOp
-#ifdef HAVE_MUELU_EPETRA
-#include <BelosEpetraAdapter.hpp>  // => This header defines Belos::EpetraPrecOp
-#endif
 #endif
 
 #ifdef HAVE_MUELU_CUDA
@@ -76,10 +73,6 @@
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
 
 /*********************************************************************/
 

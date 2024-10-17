@@ -1,9 +1,7 @@
 # Ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Epetra
   )
 
 #
@@ -24,12 +22,8 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   SET(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK YES)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-  SET(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK YES)
-ENDIF()
 
-
-IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_EXECUTABLE(
     Driver
@@ -168,7 +162,6 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
-# not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   TRIBITS_ADD_EXECUTABLE(
     Reuse
@@ -194,120 +187,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
-
-  TRIBITS_ADD_EXECUTABLE(
-    ImportPerformanceEpetra
-    SOURCES ImportPerformance
-    COMM mpi
-    TARGET_DEFINES ${PACKAGE_NAME}_UNDEFINE_Tpetra=1
-    )
-
-ENDIF()
-
-
 
 #
 # Tests
 #
 
-
-
-IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
-
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
-    TRIBITS_ADD_TEST(
-      Driver
-      NAME "DriverEpetra_Defaults"
-      ARGS "--linAlgebra=Epetra"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-    TRIBITS_ADD_TEST(
-      Driver
-      NAME "DriverEpetra_Rerun"
-      ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-    TRIBITS_ADD_TEST(
-      Driver
-      NAME "DriverEpetra_isotropic_poisson"
-      ARGS "--linAlgebra=Epetra --xml=iso_poisson.xml"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-
-    TRIBITS_ADD_TEST(
-      Driver
-      NAME "DriverEpetra_Milestone"
-      ARGS "--linAlgebra=Epetra --xml=conchas_milestone_zoltan.xml"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
-      TRIBITS_ADD_TEST(
-        Driver
-        NAME "DriverEpetra_IsorropiaPoisson"
-        ARGS "--linAlgebra=Epetra --xml=isorropia.xml"
-        NUM_MPI_PROCS 4
-        COMM mpi # HAVE_MPI required
-      )
-    ENDIF()
-
-    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
-      TRIBITS_ADD_TEST(
-        Driver
-        NAME "DriverEpetra_CircNspDependency"
-        ARGS "--linAlgebra=Epetra --xml=circ_nsp_dependency.xml"
-        NUM_MPI_PROCS 4
-        COMM mpi # HAVE_MPI required
-      )
-    ENDIF()
-
-  ENDIF()
-
-  MUELU_ADD_SERIAL_AND_MPI_TEST(
-    Driver
-    NAME "RAPScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-  MUELU_ADD_SERIAL_AND_MPI_TEST(
-    Driver
-    NAME "SmootherScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-  MUELU_ADD_SERIAL_AND_MPI_TEST(
-    ReadMatrix
-    NAME "ReadMatrixEpetra"
-    ARGS "--linAlgebra=Epetra --xml=simple.xml"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-ENDIF()
-
-IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
-
-  TRIBITS_ADD_TEST(
-    ImportPerformanceEpetra
-    NAME "ImportPerformance_Epetra"
-    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
-    NUM_MPI_PROCS 4
-    COMM mpi # HAVE_MPI required
-  )
-
-ENDIF()
 
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
@@ -641,29 +525,6 @@ IF(Tpetra_INST_SERIAL)
   )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  TRIBITS_ADD_TEST(
-    SpMVPerformance
-    NAME_POSTFIX "Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 1
-    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
-    PASS_REGULAR_EXPRESSION "Complete"
-    RUN_SERIAL
-    CATEGORIES PERFORMANCE
-  )
-
-  TRIBITS_ADD_TEST(
-    SpMVPerformance
-    NAME_POSTFIX "Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
-    PASS_REGULAR_EXPRESSION "Complete"
-    RUN_SERIAL
-    CATEGORIES PERFORMANCE
-  )
-ENDIF()
 
 # Driver to evaluate low level Matrix Matrix multiply kernels potentially using different TPLs
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
