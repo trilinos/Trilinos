@@ -31,6 +31,7 @@
 @FUNCTION: tribits_find_most_recent_binary_file_timestamp() +
 @FUNCTION: tribits_find_most_recent_file_timestamp() +
 @FUNCTION: tribits_find_most_recent_source_file_timestamp() +
+@FUNCTION: tribits_get_package_enable_status() +
 @FUNCTION: tribits_install_headers() +
 @MACRO:    tribits_include_directories() +
 @MACRO:    tribits_pkg_export_cache_var() +
@@ -38,9 +39,11 @@
 @MACRO:    tribits_package_decl() +
 @MACRO:    tribits_package_def() +
 @MACRO:    tribits_package_define_dependencies() +
+@MACRO:    tribits_process_enabled_standard_tpl() +
+@FUNCTION: tribits_package_is_enabled_or_unset() +
+@FUNCTION: tribits_package_is_explicitly_disabled() +
 @MACRO:    tribits_package_postprocess() +
 @MACRO:    tribits_process_subpackages() +
-@MACRO:    tribits_process_enabled_standard_tpl() +
 @MACRO:    tribits_project() +
 @MACRO:    tribits_project_define_extra_repositories() +
 @MACRO:    tribits_project_enable_all() +
