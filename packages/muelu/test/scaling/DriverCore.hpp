@@ -169,6 +169,8 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
       Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
       if (!coordinates.is_null())
         userParamList.set<RCP<CoordinateMultiVector>>("Coordinates", coordinates);
+      if (!material.is_null())
+        userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Material", material);
       if (!nullspace.is_null() && setNullSpace)
         userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Nullspace", nullspace);
       userParamList.set<Teuchos::Array<LO>>("Array<LO> lNodesPerDim", lNodesPerDim);

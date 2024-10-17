@@ -185,6 +185,8 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
                                 int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Coordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                         int levelID, std::vector<keep_pair>& keeps) const;
+  void UpdateFactoryManager_Material(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                     int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                         int levelID, std::vector<keep_pair>& keeps, RCP<Factory>& nullSpaceFactory) const;
   void UpdateFactoryManager_LowPrecision(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
@@ -218,6 +220,7 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
 
   bool useCoordinates_;
   bool useBlockNumber_;
+  bool useMaterial_;
   bool useKokkos_;
   //@}
 

@@ -44,6 +44,7 @@
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
+#include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -274,6 +275,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       this->nullspaceToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
     if (printList.isParameter("Coordinates"))
       this->coordinatesToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Coordinates");
+    if (printList.isParameter("Material"))
+      this->materialToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Material");
     if (printList.isParameter("Aggregates"))
       this->aggregatesToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Aggregates");
     if (printList.isParameter("pcoarsen: element to node map"))
@@ -283,7 +286,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     for (auto iter = printList.begin(); iter != printList.end(); iter++) {
       const std::string& name = printList.name(iter);
       // Ignore the special cases
-      if (name == "Nullspace" || name == "Coordinates" || name == "Aggregates" || name == "pcoarsen: element to node map")
+      if (name == "Nullspace" || name == "Coordinates" || name == "Material" || name == "Aggregates" || name == "pcoarsen: element to node map")
         continue;
 
       this->matricesToPrint_[name] = Teuchos::getArrayFromStringParameter<int>(printList, name);
@@ -353,6 +356,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         }
       }
     }
+  }
+
+  useMaterial_ = false;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: distance laplacian metric", std::string, "material")) {
+    useMaterial_ = true;
   }
 
   if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true)) {
@@ -643,6 +651,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // === Coordinates ===
   UpdateFactoryManager_Coordinates(paramList, defaultList, manager, levelID, keeps);
+
+  // === Material ===
+  UpdateFactoryManager_Material(paramList, defaultList, manager, levelID, keeps);
 
   // === Pre-Repartition Keeps for Reuse ===
   if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
@@ -1038,6 +1049,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold", double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet", bool, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian metric", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian directional weights", Teuchos::Array<double>, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring: localize color graph", bool, dropParams);
@@ -1391,6 +1403,37 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       } else {
         auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
         RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+      }
+    }
+  }
+}
+
+// ======================================================================================================
+// ========================================  Material ==================================================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_Material(ParameterList& paramList, const ParameterList& /* defaultList */,
+                                  FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const {
+  bool have_userMaterial = false;
+  if (paramList.isParameter("Material") && !paramList.get<RCP<MultiVector> >("Material").is_null())
+    have_userMaterial = true;
+
+  if (useMaterial_) {
+    if (have_userMaterial) {
+      manager.SetFactory("Material", NoFactory::getRCP());
+
+    } else {
+      RCP<Factory> material = rcp(new MultiVectorTransferFactory("Material"));
+      material->SetFactory("R", manager.GetFactory("R"));
+      manager.SetFactory("Material", material);
+
+      auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+      if (!RAP.is_null()) {
+        RAP->AddTransferFactory(manager.GetFactory("Material"));
+      } else {
+        auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+        RAPs->AddTransferFactory(manager.GetFactory("Material"));
       }
     }
   }

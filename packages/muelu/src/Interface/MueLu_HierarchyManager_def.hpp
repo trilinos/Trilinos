@@ -198,6 +198,7 @@ void MueLu::HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHi
   // Vectors, aggregates and other things that need special case handling
   ExportDataSetKeepFlags(H, nullspaceToPrint_, "Nullspace");
   ExportDataSetKeepFlags(H, coordinatesToPrint_, "Coordinates");
+  ExportDataSetKeepFlags(H, materialToPrint_, "Material");
   // NOTE: Aggregates use the next level's Factory
   ExportDataSetKeepFlagsNextLevel(H, aggregatesToPrint_, "Aggregates");
 #ifdef HAVE_MUELU_INTREPID2
@@ -251,6 +252,7 @@ void MueLu::HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHi
   // Vectors, aggregates and all things we need to print manually
   WriteData<MultiVector>(H, nullspaceToPrint_, "Nullspace");
   WriteData<MultiVector>(H, coordinatesToPrint_, "Coordinates");
+  WriteData<MultiVector>(H, materialToPrint_, "Material");
   WriteDataAggregates(H, aggregatesToPrint_, "Aggregates");
 
 #ifdef HAVE_MUELU_INTREPID2

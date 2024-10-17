@@ -438,6 +438,23 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       }
     }
 
+    if (material.is_null()) {
+      int blkSize = 1;
+      material    = MultiVectorFactory::Build(map, blkSize);
+      for (int i = 0; i < blkSize; i++) {
+        RCP<const Map> domainMap = A->getDomainMap();
+        GO indexBase             = domainMap->getIndexBase();
+
+        ArrayRCP<SC> materialData = material->getDataNonConst(i);
+        for (int j = 0; j < materialData.size(); j++) {
+          GO GID = domainMap->getGlobalElement(j) - indexBase;
+
+          if ((GID - i) % blkSize == 0)
+            materialData[j] = Teuchos::ScalarTraits<SC>::real(2.0);
+        }
+      }
+    }
+
     // If doing user based block smoothing, read block information from file.
     // Must do this for both smoothers and coarse solvers
 
