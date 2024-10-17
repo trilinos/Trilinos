@@ -258,8 +258,8 @@ namespace BaskerNS
     Int btab = btf_tabs_offset;
 
     BASKER_MATRIX  &M = (c >= btab ? BTF_C        : BTF_D);
-    BASKER_MATRIX  &U = (c >= btab ? UBTF(c-btab) : U_D(c));
-    BASKER_MATRIX  &L = (c >= btab ? LBTF(c-btab) : L_D(c));
+    BASKER_MATRIX  &U = (c >= btab ? UBTF[c-btab] : U_D[c]);
+    BASKER_MATRIX  &L = (c >= btab ? LBTF[c-btab] : L_D[c]);
 
     Int k = btf_tabs(c);
     Int bcol = M.scol;
@@ -294,9 +294,9 @@ namespace BaskerNS
           printf("Error: NaN diag in single factor\n");
         }
       }
-      thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
-      thread_array(kid).error_blk  = c;
-      thread_array(kid).error_info = k;
+      thread_array[kid].error_type = BASKER_ERROR_SINGULAR;
+      thread_array[kid].error_blk  = c;
+      thread_array[kid].error_info = k;
       return BASKER_ERROR;
     }
 
@@ -336,8 +336,8 @@ namespace BaskerNS
     Int btab = btf_tabs_offset;
 
     BASKER_MATRIX  &M = (c >= btab ? BTF_C : BTF_D);
-    BASKER_MATRIX  &U = (c >= btab ? UBTF(c-btab) : U_D(c));
-    BASKER_MATRIX  &L = (c >= btab ? LBTF(c-btab) : L_D(c));
+    BASKER_MATRIX  &U = (c >= btab ? UBTF[c-btab] : U_D[c]);
+    BASKER_MATRIX  &L = (c >= btab ? LBTF[c-btab] : L_D[c]);
 
     Int bcol = M.scol;
     //JDB: brow hack: fix.
@@ -373,9 +373,9 @@ namespace BaskerNS
     Mag rmin_ (0.0);
 
     //workspace
-    Int ws_size       = thread_array(kid).iws_size;
-    INT_1DARRAY    ws = thread_array(kid).iws;
-    ENTRY_1DARRAY   X = thread_array(kid).ews;
+    Int ws_size       = thread_array[kid].iws_size;
+    INT_1DARRAY    ws = thread_array[kid].iws;
+    ENTRY_1DARRAY   X = thread_array[kid].ews;
 
     Int *color    = &(ws(0));
     Int *pattern  = &(color[ws_size]);
@@ -580,9 +580,9 @@ namespace BaskerNS
               << " Column: "
               << k << std::endl;
           }
-          thread_array(kid).error_type = BASKER_ERROR_NAN;
-          thread_array(kid).error_blk = c;
-          thread_array(kid).error_info = k;
+          thread_array[kid].error_type = BASKER_ERROR_NAN;
+          thread_array[kid].error_blk = c;
+          thread_array[kid].error_info = k;
           return BASKER_ERROR;
         }
         absv = abs(value);
@@ -714,9 +714,9 @@ namespace BaskerNS
           pivot = normA_blk * eps;
           X(maxindex) = pivot;
         } else {
-          thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
-          thread_array(kid).error_blk  = c;
-          thread_array(kid).error_info = k;
+          thread_array[kid].error_type = BASKER_ERROR_SINGULAR;
+          thread_array[kid].error_blk  = c;
+          thread_array[kid].error_info = k;
           return BASKER_ERROR;
         }
       }
@@ -780,16 +780,16 @@ namespace BaskerNS
               (long)btf_tabs(c), (long)btf_tabs(c+1), (long)(btf_tabs(c+1)-btf_tabs(c)));
         }
 
-        thread_array(kid).error_blk = c;
+        thread_array[kid].error_blk = c;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+          thread_array[kid].error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
-          thread_array(kid).error_info = newsize;
+          thread_array[kid].error_type = BASKER_ERROR_REMALLOC;
+          thread_array[kid].error_info = newsize;
           return BASKER_ERROR;
         }
       }
@@ -804,16 +804,16 @@ namespace BaskerNS
           printf("blk: %ld column: %ld \n", (long)c, (long)k);
         }
 
-        thread_array(kid).error_blk = c;
+        thread_array[kid].error_blk = c;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+          thread_array[kid].error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
-          thread_array(kid).error_info = newsize;
+          thread_array[kid].error_type = BASKER_ERROR_REMALLOC;
+          thread_array[kid].error_info = newsize;
           return BASKER_ERROR;
         }
       }
@@ -991,8 +991,8 @@ namespace BaskerNS
   )
   {
     //printf("=======LOCAL REACH BTF SHORT CALLED (pattern[top=%d - 1] = %d) =====\n",(int)top, (int)j);
-    INT_1DARRAY    ws  = thread_array(kid).iws;
-    Int        ws_size = thread_array(kid).iws_size;
+    INT_1DARRAY    ws  = thread_array[kid].iws;
+    Int        ws_size = thread_array[kid].iws_size;
 
     Int *color   = &(ws(0));
     Int *pattern = &(ws(ws_size));
@@ -1014,8 +1014,8 @@ namespace BaskerNS
   {
     //printf("=======LOCAL REACH BTF CALLED =====\n");
 
-    INT_1DARRAY    ws  = thread_array(kid).iws;
-    Int        ws_size = thread_array(kid).iws_size;
+    INT_1DARRAY    ws  = thread_array[kid].iws;
+    Int        ws_size = thread_array[kid].iws_size;
  
     /*{
       printf("ws_size: %d \n", ws_size);
@@ -1144,8 +1144,8 @@ namespace BaskerNS
   )
   {
     
-    INT_1DARRAY    ws  = thread_array(kid).iws;
-    Int        ws_size = thread_array(kid).iws_size;
+    INT_1DARRAY    ws  = thread_array[kid].iws;
+    Int        ws_size = thread_array[kid].iws_size;
  
     /*
     printf("ws_size: %d \n", ws_size);
@@ -1289,9 +1289,9 @@ namespace BaskerNS
   {
     const Entry zero (0.0);
     
-    INT_1DARRAY   ws = thread_array(kid).iws;
-    ENTRY_1DARRAY  X = thread_array(kid).ews;
-    Int      ws_size = thread_array(kid).iws_size;
+    INT_1DARRAY   ws = thread_array[kid].iws;
+    ENTRY_1DARRAY  X = thread_array[kid].ews;
+    Int      ws_size = thread_array[kid].iws_size;
     
     Int brow     = L.srow;
     Int *color   = &(ws(0));

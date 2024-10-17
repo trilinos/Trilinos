@@ -293,7 +293,7 @@ namespace BaskerNS
     for(Int b = nblks_c-1; b>= 0; b--) {
 
       //---Lower solve
-      BASKER_MATRIX &LC = LBTF(b);
+      BASKER_MATRIX &LC = LBTF[b];
       #ifdef BASKER_DEBUG_SOLVE_RHS
       printf("\n\n btf b=%ld (%d x %d), LBTF(%d)\n", (long)b, (int)LC.nrow, (int)LC.ncol, (int)b);
       #endif
@@ -303,7 +303,7 @@ namespace BaskerNS
 
       //printVec(y,gn);
 
-      BASKER_MATRIX &UC = UBTF(b);
+      BASKER_MATRIX &UC = UBTF[b];
       //U(C)\x -> y
       upper_tri_solve(UC,x,y);
 
@@ -420,7 +420,7 @@ namespace BaskerNS
       for(Int b = btf_top_tabs_offset-1; b>= 0; b--)
       {
         //L(C)\x -> y 
-        BASKER_MATRIX &LC = L_D(b);
+        BASKER_MATRIX &LC = L_D[b];
         lower_tri_solve(LC, x, y);
         #ifdef BASKER_DEBUG_SOLVE_RHS
         printf( "\n after L solve (b=%d)\n",b ); fflush(stdout);
@@ -429,7 +429,7 @@ namespace BaskerNS
         #endif
 
         //U(C)\y -> x
-        BASKER_MATRIX &UC = U_D(b);
+        BASKER_MATRIX &UC = U_D[b];
         upper_tri_solve(UC, y, x);
         #ifdef BASKER_DEBUG_SOLVE_RHS
         printf( "\n after U solve\n" ); fflush(stdout);
@@ -476,7 +476,7 @@ namespace BaskerNS
     //Forward solve on A
     for(Int b = 0; b < tree.nblks; ++b)
     {
-      BASKER_MATRIX &L = LL(b)(0);
+      BASKER_MATRIX &L = LL[b][0];
 
       //L\x -> y 
       lower_tri_solve(L, x, y, scol_top);
@@ -500,7 +500,7 @@ namespace BaskerNS
       //Update offdiag
       for(Int bb = 1; bb < LL_size(b); ++bb)
       {
-        BASKER_MATRIX &LD = LL(b)(bb);
+        BASKER_MATRIX &LD = LL[b][bb];
         //x = LD*y;
         #ifdef BASKER_DEBUG_SOLVE_RHS
         char filename[200];
@@ -549,7 +549,7 @@ namespace BaskerNS
       #endif
 
       //U\y -> x
-      BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
+      BASKER_MATRIX &U = LU[b][LU_size(b)-1];
       upper_tri_solve(U, y, x, scol_top); // NDE: y , x positions swapped...
                                           //      seems role of x and y changed...
       #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -568,7 +568,7 @@ namespace BaskerNS
         #endif
 
         //y = UB*x;
-        BASKER_MATRIX &UB = LU(b)(bb);
+        BASKER_MATRIX &UB = LU[b][bb];
         neg_spmv(UB, x, y, scol_top);
 
         #ifdef BASKER_DEBUG_SOLVE_RHS

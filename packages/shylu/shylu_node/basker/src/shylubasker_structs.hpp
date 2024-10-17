@@ -54,7 +54,7 @@ namespace BaskerNS
       #ifndef BASKER_KOKKOS
       FREE_INT_1DARRAY(iws);
       FREE_ENTRY_1DARRAY(ews);
-      C.Finalize();
+      //C.Finalize();
       #endif
     }
 
@@ -129,13 +129,12 @@ namespace BaskerNS
     BASKER_INLINE
     ~basker_tree()
     {
-      //Finalize();
+      Finalize();
     }//end ~basker_tree
 
     BASKER_INLINE
     void Finalize()
     {
-      //printf("basker_tree Finalize todo \n");
       if(nroots > 0)
       {
         FREE_INT_1DARRAY(roots);
@@ -267,7 +266,7 @@ namespace BaskerNS
 
     ~basker_symbolic_tree()
     {
-      //Finalize();
+      Finalize();
     }//end ~basker_symbolic_tree
 
     BASKER_INLINE
