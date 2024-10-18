@@ -272,8 +272,7 @@ namespace BaskerNS
     BASKER_INLINE
     void atomic_barrier_fanout(volatile Int &value, const Int l_size)
     {
-      Kokkos::atomic_increment(&(value));
-      while(value < l_size)
+      while(Kokkos::atomic_inc_fetch(&value) < l_size)
       {
         BASKER_NO_OP;
       }

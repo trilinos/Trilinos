@@ -237,7 +237,7 @@ std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, 
                                    for(size_t dim = 0; dim < 3; dim++) {
                                      Kokkos::atomic_add(&deviceAverageView(dim), ngpField(elem, dim));
                                    }
-                                   Kokkos::atomic_increment(&deviceAverageView(3));
+                                   Kokkos::atomic_inc(&deviceAverageView(3));
                                  });
 
   Kokkos::deep_copy(hostAverageView, deviceAverageView);
