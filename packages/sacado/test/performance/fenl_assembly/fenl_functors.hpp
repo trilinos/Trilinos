@@ -250,10 +250,10 @@ public:
           if ( result.success() ) {
 
             // If row node is owned then increment count
-            if ( row_node < row_count.extent(0) ) { atomic_increment( & row_count( row_node ) ); }
+            if ( row_node < row_count.extent(0) ) { Kokkos::atomic_inc( & row_count( row_node ) ); }
 
             // If column node is owned and not equal to row node then increment count
-            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_increment( & row_count( col_node ) ); }
+            if ( col_node < row_count.extent(0) && col_node != row_node ) { Kokkos::atomic_inc( & row_count( col_node ) ); }
           }
           else if ( result.failed() ) {
             ++count ;
@@ -276,12 +276,12 @@ public:
       const unsigned col_node = key.second ;
 
       if ( row_node < row_count.extent(0) ) {
-        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
+        const unsigned offset = graph.row_map( row_node ) + Kokkos::atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = col_node ;
       }
 
       if ( col_node < row_count.extent(0) && col_node != row_node ) {
-        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
+        const unsigned offset = graph.row_map( col_node ) + Kokkos::atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = row_node ;
       }
     }
@@ -650,12 +650,12 @@ public:
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
       if ( row < this->residual.extent(0) ) {
-        atomic_add( & this->residual( row ) , res[i] );
+              Kokkos::atomic_add( & this->residual( row ) , res[i] );
 
         for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
           const unsigned entry = this->elem_graph( ielem , i , j );
           if ( entry != ~0u ) {
-            atomic_add( & this->jacobian.coeff( entry ) , mat[i][j] );
+                  Kokkos::atomic_add( & this->jacobian.coeff( entry ) , mat[i][j] );
           }
         }
       }
@@ -835,12 +835,12 @@ public:
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
       if ( row < this->residual.extent(0) ) {
-        atomic_add( & this->residual( row ) , res[i].val() );
+              Kokkos::atomic_add( & this->residual( row ) , res[i].val() );
 
         for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
           const unsigned entry = this->elem_graph( ielem , i , j );
           if ( entry != ~0u ) {
-            atomic_add( & this->jacobian.coeff( entry ) ,
+                  Kokkos::atomic_add( & this->jacobian.coeff( entry ) ,
                         res[i].fastAccessDx(j) );
           }
         }

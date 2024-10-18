@@ -330,7 +330,7 @@ void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
                 break;
               } else {
                 // Decrement back the value of aggSizesView(agg)
-                Kokkos::atomic_decrement(&aggSizesView(agg));
+                Kokkos::atomic_dec(&aggSizesView(agg));
               }
             }
           }
