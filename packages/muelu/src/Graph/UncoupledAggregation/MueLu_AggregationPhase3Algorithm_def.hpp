@@ -255,7 +255,7 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
             procWinner(nodeIdx, 0)   = myRank;
             vertex2AggId(nodeIdx, 0) = aggId;
             // aggregates.SetIsRoot(nodeIdx);
-            Kokkos::atomic_decrement(&numNonAggregated());
+            Kokkos::atomic_dec(&numNonAggregated());
             for (int neigh = 0; neigh < neighbors.length; ++neigh) {
               neighIdx = neighbors(neigh);
               if ((neighIdx != nodeIdx) &&
@@ -264,7 +264,7 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
                 aggStat(neighIdx)         = AGGREGATED;
                 procWinner(neighIdx, 0)   = myRank;
                 vertex2AggId(neighIdx, 0) = aggId;
-                Kokkos::atomic_decrement(&numNonAggregated());
+                Kokkos::atomic_dec(&numNonAggregated());
               }
             }
             return;
@@ -279,7 +279,7 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
               aggStat(nodeIdx)         = AGGREGATED;
               procWinner(nodeIdx, 0)   = myRank;
               vertex2AggId(nodeIdx, 0) = vertex2AggId(neighIdx, 0);
-              Kokkos::atomic_decrement(&numNonAggregated());
+              Kokkos::atomic_dec(&numNonAggregated());
               return;
             }
           }
@@ -293,7 +293,7 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
                 aggStat(nodeIdx)         = AGGREGATED;
                 procWinner(nodeIdx, 0)   = myRank;
                 vertex2AggId(nodeIdx, 0) = vertex2AggId(otherNodeIdx, 0);
-                Kokkos::atomic_decrement(&numNonAggregated());
+                Kokkos::atomic_dec(&numNonAggregated());
                 return;
               }
             }
@@ -306,7 +306,7 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
             aggStat(nodeIdx)         = AGGREGATED;
             procWinner(nodeIdx, 0)   = myRank;
             vertex2AggId(nodeIdx, 0) = aggId;
-            Kokkos::atomic_decrement(&numNonAggregated());
+            Kokkos::atomic_dec(&numNonAggregated());
           }
         });
     // LBV on 09/27/19: here we could copy numNonAggregated to host

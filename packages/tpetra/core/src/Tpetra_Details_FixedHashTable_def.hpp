@@ -107,7 +107,7 @@ public:
     typedef typename hash_type::result_type hash_value_type;
 
     const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
-    Kokkos::atomic_increment (&counts_[hashVal]);
+    Kokkos::atomic_inc (&counts_[hashVal]);
   }
 
   using value_type = Kokkos::pair<int, key_type>;
@@ -128,7 +128,7 @@ public:
       dst.second = keyVal;
     }
     else {
-      Kokkos::atomic_increment (&counts_[hashVal]);
+      Kokkos::atomic_inc (&counts_[hashVal]);
     }
   }
 
