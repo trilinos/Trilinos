@@ -2,6 +2,46 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2024-10-08:
+
+* **Changed:** The TriBITS framework find operation for
+  Python<sup>[&dagger;](#tribits_python_support)</sup> has been changed from
+  calling `find_package(PythonInterp)` (which uses the deprecated
+  `FindPythonInterp.cmake` module) to calling `find_package(Python3)` (which
+  uses [FindPython3.cmake]).  In the process, the internal CMake cache
+  variable set by this operation was changed from `PYTHON_EXECUTABLE` to
+  `Python3_EXECUTABLE`, and TriBITS projects need make that change as well
+  when upgrading TriBITS.  (This change can be made automatically in all of
+  the project's CMake files by running the script
+  `tribits/refactoring/to-python3.sh <dir>`.)  However, backward compatibility
+  is provided for users confiugring TriBITS CMake projects which set `-D
+  PYTHON_EXECUTABLE=<path>`.  In this case, if user sets `-D
+  PYTHON_EXECUTABLE=<path>` in the cache, TriBITS will set that value `<path>`
+  to the variable `Python3_EXECUTABLE` and avoid the call to
+  `find_package(Python3)` (however, a deprecation warning we be issued by
+  default, see [tribits_deprecated()] and [adjusting CMake DEPRECATION
+  warnings]).  TriBITS project users should change to use `-D
+  Python3_EXECUTABLE=<path>` instead, or just remove setting
+  `PYTHON_EXECUTABLE` or `Python3_EXECUTABLE` altogether and just make sure
+  that the desired `python3` executable is in the path.  See issue
+  [TriBITSPub/TriBITS#610] for more details.
+
+<a name="tribits_python_support"/>&dagger; **TriBITS Python Support**: See "Find Python" at [Full Processing of TriBITS Project Files], [Python Support] and [Setting or disabling Python]
+
+[FindPython3.cmake]: https://cmake.org/cmake/help/latest/module/FindPython3.html
+
+[Full Processing of TriBITS Project Files]: https://tribitspub.github.io/TriBITS/users_guide/index.html#full-tribits-project-configuration
+
+[Python Support]: https://tribitspub.github.io/TriBITS/users_guide/index.html#python-support
+
+[Setting or disabling Python]: https://tribitspub.github.io/TriBITS/build_ref/index.html#setting-or-disabling-python
+
+[tribits_deprecated()]: https://tribitspub.github.io/TriBITS/users_guide/index.html#tribits-deprecated
+
+[Adjusting CMake DEPRECATION warnings]: https://tribitspub.github.io/TriBITS/build_ref/index.html#adjusting-cmake-deprecation-warnings
+
+[TriBITSPub/TriBITS#610]: https://github.com/TriBITSPub/TriBITS/issues/610
+
 ## 2023-06-22:
 
 * **Added:** Packages are now determined to be missing if their dependencies

@@ -58,7 +58,7 @@ FOREACH(MODULE ${LOCAL_MODULES})
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
   ADD_CUSTOM_COMMAND(TARGET PyTrilinos_Teuchos_Pure_Python_Modules
-    COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py', '${MODULE}.pyc')"
+    COMMAND ${Python3_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py', '${MODULE}.pyc')"
     COMMENT "Byte compiling Teuchos/${MODULE}.py"
     BYPRODUCTS ${MODULE}.pyc
     VERBATIM)

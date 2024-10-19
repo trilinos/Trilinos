@@ -204,5 +204,3 @@ public:
 } // namespace Galeri
 
 #endif
-
-

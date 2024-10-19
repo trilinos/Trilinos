@@ -41,6 +41,12 @@
 #ifndef EPETRAEXT_MIGRATE_H
 #define EPETRAEXT_MIGRATE_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 // ---------- Includes ----------
 
 #include <string>
@@ -487,10 +493,3 @@ rvs( std::vector<int> const & pList,
 } //namespace EpetraExt
 
 #endif
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

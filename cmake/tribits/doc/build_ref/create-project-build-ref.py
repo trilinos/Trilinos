@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 usageHelp = r"""create-project-build-ref.py [options]
 

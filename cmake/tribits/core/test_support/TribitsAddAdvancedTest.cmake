@@ -345,7 +345,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/../utils/PrintVar.cmake")
 #     instead.  **WARNING:** If you want to run such tests using valgrind, you
 #     have to use the raw executable as the ``<cmndExec>`` argument and *not*
 #     the script.  For example, if you have a python script
-#     ``my_python_test.py`` with ``/usr/bin/env python`` at the top, you can't
+#     ``my_python_test.py`` with ``/usr/bin/env python3`` at the top, you can't
 #     just use::
 #
 #       CMND <path>/my_python_test.py ARGS "<arg0>" "<arg1>" ...
@@ -354,7 +354,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/../utils/PrintVar.cmake")
 #
 #     Instead, you have to use::
 #
-#       CMND ${PYTHON_EXECUTABLE} ARGS <path>/my_python_test.py <arg0> <arg1> ...
+#       CMND ${Python3_EXECUTABLE} ARGS <path>/my_python_test.py <arg0> <arg1> ...
 #
 #  ``ARGS "<arg0>" "<arg1>" ... "<argN>"``
 #

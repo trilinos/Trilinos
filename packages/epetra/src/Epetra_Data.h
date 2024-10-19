@@ -44,6 +44,14 @@
 #ifndef EPETRA_DATA_H
 #define EPETRA_DATA_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 
 //! Epetra_Data:  The Epetra Base Data Class.
@@ -106,10 +114,3 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Data {
 };
 
 #endif /* EPETRA_DATA_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

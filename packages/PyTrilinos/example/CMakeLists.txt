@@ -47,7 +47,7 @@ ENABLE_TESTING()
 INCLUDE(PyTrilinosMakeTest)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
-  COMMAND ${PYTHON_EXECUTABLE}
+  COMMAND ${Python3_EXECUTABLE}
           ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
           ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
@@ -57,7 +57,7 @@ ADD_CUSTOM_TARGET(PyTrilinos_Example_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
-  COMMAND ${PYTHON_EXECUTABLE}
+  COMMAND ${Python3_EXECUTABLE}
           ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
           ${CMAKE_CURRENT_SOURCE_DIR}/gre__115.mx
 	  ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua

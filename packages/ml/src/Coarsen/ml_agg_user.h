@@ -5,6 +5,12 @@
 #ifndef ML_AGG_USER_H
 #define ML_AGG_USER_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
@@ -31,10 +37,3 @@ extern int ML_Aggregate_CoarsenUser( ML_Aggregate *ml_ag,
 #endif
 
 #endif /* #ifndef ML_AGG_USER_H */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

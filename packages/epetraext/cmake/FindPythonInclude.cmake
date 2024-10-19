@@ -1,16 +1,16 @@
 # - Find the python include path
 
 # This module determines where the python include file Python.h is,
-# based on the current value of PYTHON_EXECUTABLE. This code sets the
+# based on the current value of Python3_EXECUTABLE. This code sets the
 # following variable:
 #
 #  PYTHON_INCLUDE_PATH  = path to where Python.h is found
 #
 
-IF(PYTHON_EXECUTABLE)
+IF(Python3_EXECUTABLE)
   # Obtain the candidate path for python include
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c 
+    ${Python3_EXECUTABLE} -c 
     "import sys; print(sys.prefix + '/include/python' + sys.version[:3])"
     OUTPUT_VARIABLE CANDIDATE
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -24,13 +24,13 @@ IF(PYTHON_EXECUTABLE)
   ENDIF(EXISTS "${CANDIDATE}")
   # Obtain the candidate path for python library
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c 
+    ${Python3_EXECUTABLE} -c 
     "import sys; print('python' + sys.version[:3])"
     OUTPUT_VARIABLE PYVERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c 
+    ${Python3_EXECUTABLE} -c 
     "import sys; print(sys.prefix + '/lib/python' + sys.version[:3] + '/config')"
     OUTPUT_VARIABLE CANDIDATE
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -46,7 +46,7 @@ IF(PYTHON_EXECUTABLE)
       ENDIF(EXISTS ${LIB_CANDIDATE})
     ENDFOREACH(SUFFIX)
   ENDIF(EXISTS "${CANDIDATE}")
-ENDIF(PYTHON_EXECUTABLE)
+ENDIF(Python3_EXECUTABLE)
 
 # Set any python variables that did not get set by the above logic
 IF(PYTHON_INCLUDE_FOUND AND PYTHON_LIB_FOUND)
