@@ -96,6 +96,9 @@ namespace BaskerNS
     int fill();
 
     BASKER_INLINE
+    void init_ptr();
+
+    BASKER_INLINE
     void init_inc_lvl();
 
 

@@ -346,10 +346,10 @@ namespace BaskerNS
       // Update off-diag in the block-row before the diag solve
       for(int bb = LL_size(b)-1; bb > 0; bb--)
       {
-        BASKER_MATRIX &LD = LL(b)(bb);
+        BASKER_MATRIX &LD = LL[b][bb];
         neg_spmv_perm_tr(LD, x, y, scol_top); // update y as mod. rhs, x as solution
       }
-      BASKER_MATRIX &L = LL(b)(0);
+      BASKER_MATRIX &L = LL[b][0];
       if (L.nrow != 0 && L.ncol != 0) // Avoid degenerate case e.g. empty block following nd-partitioning
         lower_tri_solve_tr(L, y, x, scol_top); // x and y should be equal after in M range...
     }
@@ -373,10 +373,10 @@ namespace BaskerNS
       for(Int bb = 0; bb <  LU_size(b)-1; bb++)
       {
         // update offdiag corresponding to the block-row
-        BASKER_MATRIX &UB = LU(b)(bb);
+        BASKER_MATRIX &UB = LU[b][bb];
         neg_spmv_tr(UB, x, y, scol_top);
       }
-      BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
+      BASKER_MATRIX &U = LU[b][LU_size(b)-1];
       if (U.nrow != 0 && U.ncol != 0) // Avoid degenerate case
         upper_tri_solve_tr(U, x, y, scol_top);
     }
@@ -410,7 +410,7 @@ if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_of
     {
       for(Int b = 0; b < btf_top_tabs_offset; b++)
       {
-        BASKER_MATRIX &UC = U_D(b);
+        BASKER_MATRIX &UC = U_D[b];
 
         if ( b > 0 )
           spmv_BTF_tr(b, BTF_D, x, y, false);
@@ -418,7 +418,7 @@ if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_of
         if (UC.nrow != 0 && UC.ncol != 0) // Avoid degenerate case
           upper_tri_solve_tr(UC, x, y);
 
-        BASKER_MATRIX &LC = L_D(b);
+        BASKER_MATRIX &LC = L_D[b];
 
         if (LC.nrow != 0 && LC.ncol != 0) // Avoid degenerate case
           lower_tri_solve_tr(LC, x, y);
@@ -462,7 +462,7 @@ if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_of
     if (nblks_c > 0) {
       Int offset = 0;
       for(Int b = 0;  b < nblks_c; b++) {
-        BASKER_MATRIX &UC = UBTF(b);
+        BASKER_MATRIX &UC = UBTF[b];
 
         // Update off-diag
         //  Update X with Y
@@ -472,7 +472,7 @@ if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_of
         if (UC.nrow != 0 && UC.ncol != 0) // Avoid degenerate case
           upper_tri_solve_tr(UC,x,y);
 
-        BASKER_MATRIX &LC = LBTF(b);
+        BASKER_MATRIX &LC = LBTF[b];
 
         if (LC.nrow != 0 && LC.ncol != 0) // Avoid degenerate case
           lower_tri_solve_tr(LC,x,y);

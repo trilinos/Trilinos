@@ -99,20 +99,20 @@ namespace BaskerNS
     
     for(Int p=0; p < num_threads; ++p)
     {
-      Int blk = S(0)(p);
-      sfactor_nd_dom_estimate(ALM(blk)(0), 
-          LL(blk)(0), 
-          LU(blk)(LU_size(blk)-1));
+      Int blk = S[0][p];
+      sfactor_nd_dom_estimate(ALM[blk][0],
+          LL[blk][0],
+          LU[blk][LU_size(blk)-1]);
 
       for(Int l=0; l < tree.nlvls; l++)
       {
-        Int U_col = S(l+1)(p);
+        Int U_col = S[l+1][p];
 
         Int my_row_leader = find_leader(p,l);
         Int my_new_row   = 
-          blk - S(0)(my_row_leader);
+          blk - S[0][my_row_leader];
 
-        Int U_row = (l==0)?(p%2):S(0)(p)%LU_size(U_col);
+        Int U_row = (l==0)?(p%2):S[0][p]%LU_size(U_col);
         if((blk > 14) &&
             (blk > LU_size(U_col)) &&
             (l!=0))
@@ -124,11 +124,11 @@ namespace BaskerNS
         //JDB TEST PASSED
         U_row = my_new_row;
 
-        sfactor_nd_upper_estimate(AVM(U_col)(U_row),
-            LU(U_col)(U_row));
+        sfactor_nd_upper_estimate(AVM[U_col][U_row],
+            LU[U_col][U_row]);
 
-        sfactor_nd_lower_estimate(ALM(blk)(l+1),
-            LL(blk)(l+1));
+        sfactor_nd_lower_estimate(ALM[blk][l+1],
+            LL[blk][l+1]);
 
       } // end for l
 
@@ -138,41 +138,41 @@ namespace BaskerNS
         for(Int pp=0; pp < pow(tree.nparts, tree.nlvls-lvl-1); pp++)
         {
           Int ppp = pp*pow(tree.nparts, lvl+1);
-          Int U_col = S(lvl+1)(ppp);
+          Int U_col = S[lvl+1][ppp];
           Int U_row = 0;
 
-          sfactor_nd_sep_estimate(ALM(U_col)(U_row),
-              LL(U_col)(U_row),
-              LU(U_col)(LU_size(U_col)-1));
+          sfactor_nd_sep_estimate(ALM[U_col][U_row],
+              LL[U_col][U_row],
+              LU[U_col][LU_size(U_col)-1]);
 
           Int innerblk = U_col;
           for(Int l = lvl+1; l < tree.nlvls; l++)
           {
-            U_col = S(l+1)(ppp);
+            U_col = S[l+1][ppp];
 
             Int my_row_leader = find_leader(ppp,l);
             Int my_new_row = 
-              S(lvl+1)(ppp) - S(0)(my_row_leader);
+              S[lvl+1][ppp] - S[0][my_row_leader];
 
-            U_row = S(lvl+1)(ppp)%LU_size(U_col);	 
-            if((S(lvl+1)(ppp) > 14) &&
-                (S(lvl+1)(ppp) > LU_size(U_col)) 
+            U_row = S[lvl+1][ppp]%LU_size(U_col);	 
+            if((S[lvl+1][ppp] > 14) &&
+                (S[lvl+1][ppp] > LU_size(U_col)) 
               )
             {
-              Int tm = (S(lvl+1)(ppp)+1)/16;
-              U_row = ((S(lvl+1)(ppp)+1) - 
+              Int tm = (S[lvl+1][ppp]+1)/16;
+              U_row = ((S[lvl+1][ppp]+1) - 
                   (tm*16))%LU_size(U_col);
             }
 
             //JDB TEST PASS
             U_row = my_new_row;
 
-            sfactor_nd_sep_upper_estimate(AVM(U_col)(U_row),
-                LU(U_col)(U_row));
+            sfactor_nd_sep_upper_estimate(AVM[U_col][U_row],
+                LU[U_col][U_row]);
 
             sfactor_nd_sep_lower_estimate(
-                ALM(innerblk)(l-lvl),
-                LL(innerblk)(l-lvl));
+                ALM[innerblk][l-lvl],
+                LL[innerblk][l-lvl]);
 
           }//for - l
         }//for -p
