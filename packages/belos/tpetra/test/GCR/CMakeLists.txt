@@ -1,0 +1,19 @@
+
+
+ASSERT_DEFINED(Anasazi_SOURCE_DIR)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(Tpetra_INST_FLOAT)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_GCR_hb_test
+  SOURCES test_gcr_hb.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_GCR_hb_CopyFiles
+  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+  SOURCE_FILES bcsstk14.hb
+  EXEDEPS Tpetra_GCR_hb_test
+  )
+
