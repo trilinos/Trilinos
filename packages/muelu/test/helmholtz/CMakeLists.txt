@@ -1,9 +1,7 @@
 # Ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Epetra
 
   ${PACKAGE_NAME}_ENABLE_Zoltan2Core
   )
@@ -48,15 +46,6 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core AND HAVE_MUELU_COMPLEX)
     SOURCES HelmholtzFEM3D.cpp
     COMM serial mpi
     )
-
-  # TRIBITS_ADD_TEST(
-  #   CreateOperator
-  #   NAME "CreateOperatorEpetra"
-  #   ARGS "--linAlgebra=Epetra"
-  #   STANDARD_PASS_OUTPUT
-  #   NUM_MPI_PROCS 1
-  #   COMM mpi serial
-  #   )
 
   TRIBITS_ADD_TEST(
     Helmholtz1D

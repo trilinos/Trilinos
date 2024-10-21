@@ -28,28 +28,6 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 ENDIF()
 
 #
-# Epetra
-#
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-
-  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
-  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/aztecoo)
-
-  APPEND_SET(HEADERS
-    epetra/MueLu_EpetraOperator.hpp
-    epetra/MueLu_CreateEpetraPreconditioner.hpp
-    aztecoo/MueLu_AztecEpetraOperator.hpp
-    )
-
-  APPEND_SET(SOURCES
-    epetra/MueLu_EpetraOperator.cpp
-    epetra/MueLu_CreateEpetraPreconditioner.cpp
-    aztecoo/MueLu_AztecEpetraOperator.cpp
-    )
-
-ENDIF()
-
-#
 # Tpetra
 #
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)

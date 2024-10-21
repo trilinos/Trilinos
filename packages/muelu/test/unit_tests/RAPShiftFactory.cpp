@@ -238,9 +238,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Factory,
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -348,9 +345,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Easy, Sc
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -426,9 +420,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Easy_Dia
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -515,9 +506,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -606,9 +594,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -699,9 +684,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;

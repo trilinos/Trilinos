@@ -11,12 +11,6 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   SET(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK YES)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
-  SET(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK YES)
-ENDIF()
-
-
-
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   TRIBITS_ADD_EXECUTABLE(
     Simple
@@ -50,7 +44,7 @@ ENDIF()
 # Stratimikos example
 #
 IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
-  
+
   # build executable
   TRIBITS_ADD_EXECUTABLE(
     Stratimikos
@@ -77,18 +71,6 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
     mg-gpu.xml
     )
 
-  IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
-
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Stratimikos
-      NAME Stratimikos_Epetra
-      ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Epetra"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      )
-
-  ENDIF()
-
   IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
@@ -98,7 +80,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
-    
+
   ENDIF()
 
 ENDIF()

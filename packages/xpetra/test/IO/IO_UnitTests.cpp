@@ -87,28 +87,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryMissingRows, M, MA, Scalar, LO, GO, 
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
 #define XPETRA_TPETRA_TYPES(S, LO, GO, N)                     \
   typedef typename Xpetra::TpetraMap<LO, GO, N> M##LO##GO##N; \
   typedef typename Xpetra::TpetraCrsMatrix<S, LO, GO, N> MA##S##LO##GO##N;
 
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(S, LO, GO, N)                  \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N; \
-  typedef typename Xpetra::EpetraCrsMatrixT<GO, N> MA##S##LO##GO##N;
-
-#endif
-
 // list of all tests which run both with Epetra and Tpetra
 #define XP_IO_INSTANT(S, LO, GO, N)                                                                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, MMMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
-
-#if defined(HAVE_XPETRA_TPETRA)
 
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
@@ -116,23 +103,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryMissingRows, M, MA, Scalar, LO, GO, 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_IO_INSTANT)
-
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double, int, int, EpetraNode)
-XP_IO_INSTANT(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double, int, LongLong, EpetraNode)
-XP_IO_INSTANT(double, int, LongLong, EpetraNode)
-#endif
-
-#endif
 
 }  // namespace
