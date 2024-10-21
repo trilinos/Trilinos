@@ -18,8 +18,6 @@
 #include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 
-using Kokkos::ALL;
-
 namespace Zoltan2 {
 
 /*! \brief This class represents a collection of global Identifiers
@@ -48,13 +46,17 @@ template <typename User>
   class BasicKokkosIdentifierAdapter: public IdentifierAdapter<User> {
 
 public:
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::part_t   part_t;
-  typedef typename InputTraits<User>::node_t   node_t;
-  typedef typename node_t::device_type         device_t;
-  typedef User user_t;
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  using scalar_t = typename InputTraits<User>::scalar_t;
+  using lno_t    = typename InputTraits<User>::lno_t;
+  using gno_t    = typename InputTraits<User>::gno_t;
+  using part_t   = typename InputTraits<User>::part_t;
+  using node_t   = typename InputTraits<User>::node_t;
+  using device_t = typename node_t::device_type;
+  using user_t   = User;
+
+  using Base = IdentifierAdapter<User>;
+#endif
 
   /*! \brief Constructor
    *  \param ids should point to a View of identifiers.
@@ -78,38 +80,63 @@ public:
   ////////////////////////////////////////////////////////////////
 
   size_t getLocalNumIDs() const override {
-    return idsView_.extent(0);
+    return localNumIds_;
   }
 
   void getIDsView(const gno_t *&ids) const override {
-    auto kokkosIds = idsView_.view_host();
-    ids = kokkosIds.data();
+    auto h_ids = Kokkos::create_mirror_view(idsView_);
+    Kokkos::deep_copy(h_ids, idsView_);
+    ids = h_ids.data();
   }
 
   void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const override {
-    ids = idsView_.view_device();
+    ids = idsView_;
+  }
+
+  void getIDsDeviceView(
+      typename Base::ConstIdsDeviceView &ids) const {
+    ids = idsView_;
+  }
+
+  void getIDsHostView(
+      typename Base::ConstIdsHostView &ids) const {
+    auto hostIds = Kokkos::create_mirror_view(idsView_);
+    Kokkos::deep_copy(hostIds, idsView_);
+    ids = hostIds;
   }
 
   int getNumWeightsPerID() const override {
-    return weightsView_.extent(1);
+    return numWeightsPerID_;
   }
 
   void getWeightsView(const scalar_t *&wgt, int &stride,
-                      int idx = 0) const override
-  {
-    auto h_wgts_2d = weightsView_.view_host();
+                      int idx = 0) const override {
+    auto h_wgts_2d = Kokkos::create_mirror_view(weightsView_);
+    Kokkos::deep_copy(h_wgts_2d,weightsView_);
 
     wgt = Kokkos::subview(h_wgts_2d, Kokkos::ALL, idx).data();
     stride = 1;
   }
 
   void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> &wgts) const override {
-    wgts = weightsView_.template view<device_t>();
+    wgts = weightsView_;
+  }
+
+  void getWeightsDeviceView(typename Base::WeightsDeviceView &wgts) const override {
+    wgts = weightsView_;
+  }
+
+  void getWeightsHostView(typename Base::WeightsHostView &wgts) const override {
+    auto hostWgts = Kokkos::create_mirror_view(weightsView_);
+    Kokkos::deep_copy(hostWgts, weightsView_);
+    wgts = hostWgts;
   }
 
 private:
-  Kokkos::DualView<gno_t *, device_t> idsView_;
-  Kokkos::DualView<scalar_t **, device_t> weightsView_;
+  Kokkos::View<gno_t *, device_t> idsView_;
+  Kokkos::View<scalar_t **, device_t> weightsView_;
+  lno_t localNumIds_ = 0;
+  int numWeightsPerID_ = 0;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -119,23 +146,16 @@ private:
 template <typename User>
 BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
     Kokkos::View<gno_t *, device_t> &ids,
-    Kokkos::View<scalar_t **, device_t> &weights)
-{
-  idsView_ = Kokkos::DualView<gno_t *, device_t>("idsView_", ids.extent(0));
-  Kokkos::deep_copy(idsView_.h_view, ids);
+    Kokkos::View<scalar_t **, device_t> &weights) {
+  localNumIds_ = ids.extent(0);
+  numWeightsPerID_ = weights.extent(1);
+  idsView_ = Kokkos::View<gno_t *, device_t>("idsView_", localNumIds_);
+  Kokkos::deep_copy(idsView_, ids);
 
-  weightsView_ = Kokkos::DualView<scalar_t **, device_t>("weightsView_",
+  weightsView_ = Kokkos::View<scalar_t **, device_t>("weightsView_",
                                                          weights.extent(0),
                                                          weights.extent(1));
-  Kokkos::deep_copy(weightsView_.h_view, weights);
-
-  weightsView_.modify_host();
-  weightsView_.sync_host();
-  weightsView_.template sync<device_t>();
-
-  idsView_.modify_host();
-  idsView_.sync_host();
-  idsView_.template sync<device_t>();
+  Kokkos::deep_copy(weightsView_, weights);
 }
 
 } //namespace Zoltan2
