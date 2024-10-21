@@ -2028,22 +2028,27 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapsAreNested(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& rowMap, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& colMap) {
-  ArrayView<const GlobalOrdinal> rowElements = rowMap.getLocalElementList();
-  ArrayView<const GlobalOrdinal> colElements = colMap.getLocalElementList();
+  using execution_space = typename Node::execution_space;
+  using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
-  const size_t numElements = rowElements.size();
+  auto rowLocalMap = rowMap.getLocalMap();
+  auto colLocalMap = colMap.getLocalMap();
 
-  if (size_t(colElements.size()) < numElements)
+  const size_t numRows = rowLocalMap.getLocalNumElements();
+  const size_t numCols = colLocalMap.getLocalNumElements();
+
+  if (numCols < numRows)
     return false;
 
-  bool goodMap = true;
-  for (size_t i = 0; i < numElements; i++)
-    if (rowElements[i] != colElements[i]) {
-      goodMap = false;
-      break;
-    }
+  size_t numDiff = 0;
+  Kokkos::parallel_reduce(
+      "MueLu:TentativePF:isGoodMap", range_type(0, numRows),
+      KOKKOS_LAMBDA(const LO i, size_t& diff) {
+        diff += (rowLocalMap.getGlobalElement(i) != colLocalMap.getGlobalElement(i));
+      },
+      numDiff);
 
-  return goodMap;
+  return (numDiff == 0);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
