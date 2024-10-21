@@ -108,6 +108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_ML, Scalar,
 
   RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
 
+  aggFact->SetParameter("aggregation: deterministic", Teuchos::ParameterEntry(true));
   // Test the ML style options
   aggFact->SetParameter("aggregation: match ML phase2a", Teuchos::ParameterEntry(true));
   aggFact->SetParameter("aggregation: match ML phase2b", Teuchos::ParameterEntry(true));

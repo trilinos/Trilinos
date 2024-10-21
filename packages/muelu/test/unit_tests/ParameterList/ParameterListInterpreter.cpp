@@ -82,7 +82,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
       if (found == std::string::npos) continue;
 
       out << "Processing file: " << fileList[i] << std::endl;
-      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+
+      Teuchos::RCP<Teuchos::ParameterList> mueluList = rcp(new Teuchos::ParameterList());
+      Teuchos::updateParametersFromXmlFileAndBroadcast("ParameterList/ParameterListInterpreter/" + fileList[i], mueluList.ptr(), *comm);
+      mueluList->set("use kokkos refactor", false);
+
+      ParameterListInterpreter mueluFactory(*mueluList, comm);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
       H->GetLevel(0)->Set("A", A);
@@ -168,14 +173,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
 
       out << "Processing file: " << fileList[i] << std::endl;
 
+      Teuchos::RCP<Teuchos::ParameterList> mueluList = rcp(new Teuchos::ParameterList());
+      Teuchos::updateParametersFromXmlFileAndBroadcast("ParameterList/ParameterListInterpreter/" + fileList[i], mueluList.ptr(), *comm);
+      mueluList->set("use kokkos refactor", false);
+
       // Point Hierarchy
-      ParameterListInterpreter mueluFactory1("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+      ParameterListInterpreter mueluFactory1(*mueluList, comm);
       RCP<Hierarchy> PointH = mueluFactory1.CreateHierarchy();
       PointH->GetLevel(0)->Set("A", PointA);
       mueluFactory1.SetupHierarchy(*PointH);
 
       // Block Hierachy
-      ParameterListInterpreter mueluFactory2("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+      ParameterListInterpreter mueluFactory2(*mueluList, comm);
       RCP<Hierarchy> BlockH = mueluFactory2.CreateHierarchy();
       BlockH->GetLevel(0)->Set("A", BlockA);
       mueluFactory2.SetupHierarchy(*BlockH);

@@ -128,12 +128,12 @@ class TpetraOperator<double, int, int, EpetraNode>
   //@{
 
   //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const {
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const {
     return Teuchos::null;
   }
 
   //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const {
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const {
     return Teuchos::null;
   }
 
@@ -199,12 +199,12 @@ class TpetraOperator<double, int, long long, EpetraNode>
   //@{
 
   //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const {
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const {
     return Teuchos::null;
   }
 
   //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const {
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const {
     return Teuchos::null;
   }
 

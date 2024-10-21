@@ -5,9 +5,7 @@ Level 0
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
@@ -15,6 +13,8 @@ BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -32,9 +32,7 @@ matrixmatrix: kernel params ->
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
@@ -42,6 +40,8 @@ BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
