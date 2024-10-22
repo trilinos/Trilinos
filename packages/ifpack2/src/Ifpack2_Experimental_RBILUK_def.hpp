@@ -1108,8 +1108,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       auto U_values  = lclU.values;
 
       const auto numRows = L_block_->getLocalNumRows();
-      local_matrix_host_type L_block_local_host("L_block_local_host", numRows, numRows, L_entries.size(), L_values, L_rowmap, L_entries, blockSize_);
-      local_matrix_host_type U_block_local_host("U_block_local_host", numRows, numRows, U_entries.size(), U_values, U_rowmap, U_entries, blockSize_);
 
       if (mode == Teuchos::NO_TRANS) {
         KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP;
