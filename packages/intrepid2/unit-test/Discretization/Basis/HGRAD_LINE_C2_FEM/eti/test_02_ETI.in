@@ -1,0 +1,52 @@
+// @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+/** \file test_02.cpp
+    \brief  Unit test of Intrepid2::Basis_HGRAD_LINE_C2_FEM team-level get Values.
+    \author Kyungjoo Kim
+*/
+
+#include "Kokkos_Core.hpp"
+
+#define ETI_SACADO @ETI_SACADO@
+#if (ETI_SACADO != 0)  /// SACADO
+#include "Kokkos_ViewFactory.hpp"
+#include "Sacado.hpp"
+#endif
+
+#if (ETI_SACADO == 0)  /// double double
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+#elif (ETI_SACADO == 11 /* SFAD SFAD */ || ETI_SACADO == 33 /* DFAD DFAD */)
+constexpr int num_deriv = 3;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#elif (ETI_SACADO == 23)
+constexpr int num_deriv = 3;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#elif (ETI_SACADO == 20)
+constexpr int num_deriv = 2;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+#endif
+
+#include "test_02.hpp"
+
+int main(int argc, char *argv[]) {
+
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
+
+  Intrepid2::Test::HGRAD_LINE_C2_FEM_Test02<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
+
+  Kokkos::finalize();
+  return 0;
+}
+

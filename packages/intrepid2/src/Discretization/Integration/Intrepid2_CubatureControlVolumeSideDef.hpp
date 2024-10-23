@@ -113,7 +113,7 @@ namespace Intrepid2 {
     const auto numSideNodeMaps = (spaceDim == 2 ? 1 : 2);
     const ordinal_type sideOrd[2] = { 1, 5 };
 
-    Kokkos::pair<ordinal_type,ordinal_type> nodeRangePerSide[2];
+    Kokkos::pair<ordinal_type,ordinal_type> nodeRangePerSide[2]={};
 
     // the second rage is cell specific to handle remained sides
     switch (primaryCellTopo_.getKey()) {

@@ -233,7 +233,7 @@ namespace Intrepid2 {
 
       outStream->precision(5);
 
-      const ordinal_type npLower = 5, npUpper = Polylib::MaxPolylibPoint; // npUpper: 31 right now
+      const ordinal_type npLower = 5, npUpper = 21; // Polylib::MaxPolylibPoint; 
       const ValueType tol = 1000.0 * tolerence();
       const double  lowOrderTol = tol;
       const double highOrderTol = tol * 100;

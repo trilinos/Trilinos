@@ -591,57 +591,50 @@ namespace Intrepid2 {
         for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = 0.5*(alpha + beta + two);
     } else {
-      double a1, a2, a3, a4;
+      INTREPID2_TEST_FOR_ABORT(polyd.data() && !polyd.data() , 
+                               ">>> ERROR (Polylib::Serial::JacobiPolynomial): polyi view needed to compute polyd view.");
+      if(!polyi.data()) return;
+
+      constexpr ordinal_type maxOrder = 2*MaxPolylibPoint-1;
+
+      INTREPID2_TEST_FOR_ABORT(maxOrder < n, 
+          ">>> ERROR (Polylib::Serial::JacobiPolynomial): Requested order exceeds maxOrder .");
+      
+
+      double a2[maxOrder]={}, a3[maxOrder]={}, a4[maxOrder]={};
+      double ad1(0.0), ad2(0.0), ad3(0.0);
       const double apb = alpha + beta;
+      const double amb = alpha - beta;
 
-      typename polyiViewType::value_type
-        poly[MaxPolylibPoint]={}, polyn1[MaxPolylibPoint]={}, polyn2[MaxPolylibPoint]={};
-
-      if (polyi.data()) 
-        for (ordinal_type i=0;i<np;++i)
-          poly[i] = polyi(i);
-
-      for (ordinal_type i = 0; i < np; ++i) {
-        polyn2[i] = one;
-        polyn1[i] = 0.5*(alpha - beta + (alpha + beta + two)*z(i));
-      }
+      typename polyiViewType::value_type polyn1 = polyi(0), polyn2 = polyi(0);
 
       for (auto k = 2; k <= n; ++k) {
-        a1 =  two*k*(k + apb)*(two*k + apb - two);
-        a2 = (two*k + apb - one)*(alpha*alpha - beta*beta);
-        a3 = (two*k + apb - two)*(two*k + apb - one)*(two*k + apb);
-        a4 =  two*(k + alpha - one)*(k + beta - one)*(two*k + apb);
-
-        a2 /= a1;
-        a3 /= a1;
-        a4 /= a1;
-
-        for (ordinal_type i = 0; i < np; ++i) {
-          poly  [i] = (a2 + a3*z(i))*polyn1[i] - a4*polyn2[i];
-          polyn2[i] = polyn1[i];
-          polyn1[i] = poly  [i];
-        }
+        double a1 =  two*k*(k + apb)*(two*k + apb - two);
+        a2[k] = (two*k + apb - one)*(apb*amb)/a1;
+        a3[k] = (two*k + apb - two)*(two*k + apb - one)*(two*k + apb)/a1;
+        a4[k] =  two*(k + alpha - one)*(k + beta - one)*(two*k + apb)/a1;
       }
 
       if (polyd.data()) {
-        a1 = n*(alpha - beta);
-        a2 = n*(two*n + alpha + beta);
-        a3 = two*(n + alpha)*(n + beta);
-        a4 = (two*n + alpha + beta);
-        a1 /= a4;
-        a2 /= a4;
-        a3 /= a4;
+        double ad4 = (two*n + alpha + beta);
+        ad1 = n*(alpha - beta)/ad4;
+        ad2 = n*(two*n + alpha + beta)/ad4;
+        ad3 = two*(n + alpha)*(n + beta)/ad4;
+      }
 
-        // note polyn2 points to polyn1 at end of poly iterations
-        for (ordinal_type i = 0; i < np; ++i) {
-          polyd(i)  = (a1- a2*z(i))*poly[i] + a3*polyn2[i];
+      for (ordinal_type i = 0; i < np; ++i) {
+        polyn2 = one;
+        polyn1 = 0.5*(amb + (apb + two)*z(i));
+        for (auto k = 2; k <= n; ++k) {
+          polyi(i) = (a2[k] + a3[k]*z(i))*polyn1 - a4[k]*polyn2;
+          polyn2 = polyn1;
+          polyn1 = polyi(i);
+        }
+        if (polyd.data()) {
+          polyd(i)  = (ad1- ad2*z(i))*polyi(i) + ad3*polyn2;
           polyd(i) /= (one - z(i)*z(i));
         }
       }
-
-      if (polyi.data()) 
-        for (ordinal_type i=0;i<np;++i)
-          polyi(i) = poly[i];
     }
   }
 
