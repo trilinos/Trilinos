@@ -54,7 +54,6 @@ namespace BaskerNS
       #ifndef BASKER_KOKKOS
       FREE_INT_1DARRAY(iws);
       FREE_ENTRY_1DARRAY(ews);
-      //C.Finalize();
       #endif
     }
 

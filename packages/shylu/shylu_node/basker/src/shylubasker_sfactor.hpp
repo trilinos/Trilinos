@@ -381,7 +381,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       if(Options.verbose == BASKER_TRUE)
       {
         printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,0);
-        printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
+        printf( " >> leaf_assign_nnz(LU(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
       }
       #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
@@ -403,7 +403,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     #endif
     #ifdef BASKER_TIMER 
     double dom_time = timer2.seconds();
-    std::cout << " DOMAIN BLKs done : " << dom_time << std::endl;
+    std::cout << " DOMAIN BLKs done : " << dom_time << std::endl << std::endl;
     #endif
 
     for(Int p = 0; p < num_threads; ++p)
@@ -462,16 +462,15 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //Assign nnz counts for leaf off-diag
         //U_assign_nnz(LU[U_col][U_row], stree, 0);
         //L_assign_nnz(LL[blk][l+1], stree, 0);
-        if(Options.verbose == BASKER_TRUE)
-        {
-          printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
-          printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)blk,(int)l+1);
-        }
         #ifdef BASKER_TIMER 
         timer1.reset();
         #endif
-        //printf( " U_assign_nnz(LU(%d,%d))\n",U_col,U_row );
         double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; 
+        if(Options.verbose == BASKER_TRUE)
+        {
+          printf( "   ++ U_assign_nnz(LU(%d, %d)) fill-factor x(%f+%f = %f)\n",(int)U_col,(int)U_row, BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor);
+          printf( "   ++ L_assign_nnz(LL(%d, %d)) fill-factor x(%f+%f = %f)\n",(int)blk,(int)l+1, BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor);
+        }
         #ifdef SHYLU_BASKER_STREE_LIST
         U_assign_nnz(LU[U_col][U_row], stree_p, fill_factor, 0);
         L_assign_nnz(LL[blk][l+1],     stree_p, fill_factor, 0);
@@ -490,7 +489,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     std::cout << " >> symmetric_sfactor::domain : " << timer.seconds() << " seconds" << std::endl;
     std::cout << "  ++ symmetric_sfactor::domain::postorder : " << time1_2 << " + " << time1_3 << " + " << time1 << " seconds" << std::endl;
     std::cout << "  ++ symmetric_sfactor::domain::init      : " << time2 << " seconds" << std::endl;
-    std::cout << "  ++ symmetric_sfactor::domain::sfactor   : " << time3 << " seconds" << std::endl;
+    std::cout << "  ++ symmetric_sfactor::domain::sfactor   : " << time3 << " seconds" << std::endl << std::endl;
     timer.reset();
     #endif
 
@@ -631,13 +630,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
 
           //Assign nnz
+          double fill_factor = BASKER_SEP_NNZ_OVER+Options.user_fill; 
           if(Options.verbose == BASKER_TRUE)
           {
-            printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
-            printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)inner_blk,(int)(l-lvl));
+            printf( "   ++ leaf_assign_nnz(LU(%d, %d)) fill-factor x(%d+%f = %f)\n",(int)U_col,(int)U_row, (int)BASKER_SEP_NNZ_OVER,Options.user_fill,fill_factor);
+            printf( "   ++ leaf_assign_nnz(LL(%d, %d)) fill-factor x(%d+%f = %f)\n",(int)inner_blk,(int)(l-lvl), (int)BASKER_SEP_NNZ_OVER,Options.user_fill,fill_factor);
 	    fflush(stdout);
           }
-          double fill_factor = BASKER_SEP_NNZ_OVER+Options.user_fill; 
           #ifdef SHYLU_BASKER_STREE_LIST
           U_assign_nnz(LU[U_col][U_row], stree_p, fill_factor, 0);
           L_assign_nnz(LL[inner_blk][l-lvl], stree_p, fill_factor, 0);
@@ -2260,6 +2259,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    Int option
   )
   {
+    #ifdef BASKER_TIMER
+    printf("leaf_assign_nnz:\n");
+    #endif
     if(option == 0)
     {
       const Int Int_MAX = std::numeric_limits<Int>::max();
@@ -2268,19 +2270,23 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       for(Int i = 0; i < M.ncol; i++)
       {
         if (t_nnz <= Int_MAX - ST.col_counts[i]) {
+          #ifdef BASKER_TIMER
+          //printf( " > %d: %d += %d\n",i,t_nnz, ST.col_counts[i] );
+          #endif
           t_nnz += ST.col_counts[i];
         } else {
           // let's just hope it is enough, if overflow
           break;
         }
       }
-      #ifdef BASKER_DEBUG_SFACTOR
-      printf("leaf nnz: %ld \n", (long)t_nnz);
+      #ifdef BASKER_TIMER
+      printf(" > leaf nnz: (%ld + %ld) / 2 = %ld\n", (long)t_nnz,(long)M.ncol,(long)(t_nnz+M.ncol)/2);
       #endif
+      t_nnz = long(t_nnz+M.ncol)/2;
 
       //double nnz_shoulder = 1.05;
       double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
-      Int temp = fill_factor*t_nnz;
+      Int temp = fill_factor*t_nnz; // assuming (t_nnz/2) as triangular part
       if (temp > t_nnz) {
         M.nnz = temp;
       } else {
@@ -2298,8 +2304,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("leaf with elbow-room global_nnz = %ld, t_nnz = %ld, M.nnz = %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol);
+        printf("leaf with elbow-room global_nnz = %ld, t_nnz = %ld, M.nnz = %ld (%ld x %ld) with fill-factor x(%d+%f = %f)\n",
+               (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol,(int)BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor);
       }
     }
   }//end assign_leaf_nnz
@@ -2330,12 +2336,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         }
       }
 
-      #ifdef BASKER_DEBUG_SFACTOR
+      #ifdef BASKER_TIMER
       printf("U_assing_nnz: %ld \n", t_nnz);
       #endif
 
       //double fill_factor = 1.05;
-      Int temp = fill_factor*t_nnz;
+      Int temp = min(M.nrow*M.ncol, Int(fill_factor*t_nnz));
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {
@@ -2352,8 +2358,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #endif
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f + %f = %f), M.nnz = %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz, BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol);
+        printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f), M.nnz = %ld (%ld x %ld)\n",
+               (long)global_nnz,(long)t_nnz, fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol);
       }
     }
   }//end assign_upper_nnz
@@ -2384,13 +2390,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         }
       }
 
-      #ifdef BASKER_DEBUG_SFACTOR
+      #ifdef BASKER_TIMER
       printf("L_assign_nnz: %ld \n", t_nnz);
       #endif
 
       // double fill_factor = 2.05;
       double old_nnz = M.nnz;
-      Int temp = fill_factor*t_nnz;
+      Int temp = min(M.nrow*M.ncol, Int(fill_factor*t_nnz));
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {
@@ -2407,8 +2413,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("L_assign with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %e + %e = %e), M.nnz = %ld -> %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz, BASKER_DOM_NNZ_OVER,Options.user_fill, fill_factor, (long)old_nnz,(long)M.nnz, (long)M.nrow,(long)M.ncol);
+        printf("L_assign with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f), M.nnz = %ld -> %ld (%ld x %ld)\n",
+               (long)global_nnz,(long)t_nnz, fill_factor, (long)old_nnz,(long)M.nnz, (long)M.nrow,(long)M.ncol);
       }
     }
   }//end assign_lower_nnz
@@ -2482,7 +2488,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
             nnz = lblk_size*lblk_size;
         }
-        //printf( " LBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
+        #ifdef BASKER_TIMER
+        printf( "  L_D[%d](%d, size = %d, nnz = %d)\n",i,(int)(i-btf_tabs_offset), (int)lblk_size, (int)nnz );
+        #endif
         L_D[i].init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
@@ -2493,6 +2501,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //For pruning
         L_D[i].init_pend();
 
+        #ifdef BASKER_TIMER
+        printf( "  U_D[%d](%d, size = %d, nnz = %d)\n",i,(int)(i-btf_tabs_offset), (int)lblk_size, (int)nnz );
+        #endif
         U_D[i].init_matrix("UBFT",
           btf_tabs(i),
           lblk_size,
@@ -2532,7 +2543,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
           nnz = lblk_size*lblk_size;
         }
-        //printf( " LBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
+        #ifdef BASKER_TIMER
+        printf( " LBTF(%d, size = %d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)lblk_size, (int)nnz );
+        #endif
         LBTF[i-btf_tabs_offset].init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
@@ -2544,7 +2557,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //printf( " LBTF(%d).init_pend()\n",(int)(i-btf_tabs_offset) );
         LBTF[i-btf_tabs_offset].init_pend();
 
-        //printf( " UBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
+        #ifdef BASKER_TIMER
+        printf( " UBTF(%d, size = %d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)lblk_size, (int)nnz );
+        #endif
         UBTF[i-btf_tabs_offset].init_matrix("UBFT",
           btf_tabs(i),
           lblk_size,
@@ -2579,18 +2594,18 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
         //BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
         //BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
+        #ifdef BASKER_TIMER
+        printf("Malloc Thread: %d iws: %d \n",
+            i, (thread_array[i].iws_size*
+              thread_array[i].iws_mult));
+        printf("Malloc Thread: %d ews: %d \n",
+            i, (thread_array[i].ews_size*
+              thread_array[i].ews_mult));
+        #endif
         if (max_blk_size > 0) {
           MALLOC_INT_1DARRAY(thread_array[i].iws, thread_array[i].iws_size*thread_array[i].iws_mult);
           MALLOC_ENTRY_1DARRAY(thread_array[i].ews, thread_array[i].ews_size*thread_array[i].ews_mult);
         }
-        #ifdef BASKER_DEBUG_SFACTOR
-        printf("Malloc Thread: %d iws: %d \n",
-            i, (thread_array(i).iws_size*
-              thread_array(i).iws_mult));
-        printf("Malloc Thread: %d ews: %d \n", 
-            i, (thread_array(i).ews_size*
-              thread_array(i).ews_mult));
-        #endif
       }
     }
 
