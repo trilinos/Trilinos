@@ -68,6 +68,7 @@ struct topology_data<topology::INVALID_TOPOLOGY>
   static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
   static constexpr bool is_valid = false;
   static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool has_mixed_rank_sides = false;
   static constexpr bool is_shell = false;
   static constexpr uint8_t dimension = 0;
   static constexpr uint8_t num_vertices = 0;
@@ -773,6 +774,7 @@ struct topology_data<topology::SHELL_TRI_3>
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
   static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_mixed_rank_sides = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
 
@@ -797,6 +799,7 @@ struct topology_data<topology::SHELL_TRI_4>
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
   static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_mixed_rank_sides = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
 
@@ -821,6 +824,7 @@ struct topology_data<topology::SHELL_TRI_6>
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
   static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_mixed_rank_sides = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
 
@@ -846,7 +850,7 @@ struct topology_data<topology::SHELL_TRI_3_ALL_FACE_SIDES>
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
-  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_homogeneous_faces = false;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 5;
 
@@ -873,7 +877,7 @@ struct topology_data<topology::SHELL_TRI_4_ALL_FACE_SIDES>
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
-  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_homogeneous_faces = false;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 5;
 
@@ -900,7 +904,7 @@ struct topology_data<topology::SHELL_TRI_6_ALL_FACE_SIDES>
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
-  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_homogeneous_faces = false;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 5;
 
@@ -1177,6 +1181,7 @@ struct topology_data<topology::SHELL_QUAD_4>
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
   static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_mixed_rank_sides = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
 
@@ -1201,6 +1206,7 @@ struct topology_data<topology::SHELL_QUAD_8>
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
   static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_mixed_rank_sides = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
 
@@ -1226,6 +1232,7 @@ struct topology_data<topology::SHELL_QUAD_9>
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
   static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_mixed_rank_sides = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
 
@@ -1252,7 +1259,7 @@ struct topology_data<topology::SHELL_QUAD_4_ALL_FACE_SIDES>
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
-  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_homogeneous_faces = false;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 6;
 
@@ -1280,7 +1287,7 @@ struct topology_data<topology::SHELL_QUAD_8_ALL_FACE_SIDES>
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
-  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_homogeneous_faces = false;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 6;
 
@@ -1309,7 +1316,7 @@ struct topology_data<topology::SHELL_QUAD_9_ALL_FACE_SIDES>
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
-  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool has_homogeneous_faces = false;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 6;
 

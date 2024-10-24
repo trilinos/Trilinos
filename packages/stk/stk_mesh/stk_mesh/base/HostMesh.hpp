@@ -56,10 +56,15 @@
 namespace stk {
 namespace mesh {
 
-class HostMesh : public NgpMeshBase
+template<typename NgpMemSpace>
+class HostMeshT : public NgpMeshBase
 {
 public:
-  using MeshExecSpace     = stk::ngp::HostExecSpace;
+  typedef NgpMemSpace ngp_mem_space;
+
+  static_assert(Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, NgpMemSpace>::accessible);
+  static_assert(Kokkos::is_memory_space_v<NgpMemSpace>);
+  using MeshExecSpace     = typename NgpMemSpace::execution_space;
   using MeshIndex         = FastMeshIndex;
   using BucketType        = stk::mesh::Bucket;
   using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
@@ -67,14 +72,14 @@ public:
   using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
   using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
-  HostMesh()
+  HostMeshT()
     : NgpMeshBase(),
       bulk(nullptr)
   {
 
   }
 
-  HostMesh(const stk::mesh::BulkData& b)
+  HostMeshT(const stk::mesh::BulkData& b)
     : NgpMeshBase(),
       bulk(&b),
       m_syncCountWhenUpdated(bulk->synchronized_count())
@@ -82,12 +87,12 @@ public:
     require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
 
-  virtual ~HostMesh() override = default;
+  virtual ~HostMeshT() override = default;
 
-  HostMesh(const HostMesh &) = default;
-  HostMesh(HostMesh &&) = default;
-  HostMesh& operator=(const HostMesh&) = default;
-  HostMesh& operator=(HostMesh&&) = default;
+  HostMeshT(const HostMeshT &) = default;
+  HostMeshT(HostMeshT &&) = default;
+  HostMeshT& operator=(const HostMeshT&) = default;
+  HostMeshT& operator=(HostMeshT&&) = default;
 
   void update_mesh() override
   {
@@ -229,9 +234,9 @@ public:
     return *bulk->buckets(rank)[i];
   }
 
-  HostCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+  NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
   {
-    return bulk->volatile_fast_shared_comm_map(rank, proc);
+    return bulk->volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
   }
 
   const stk::mesh::BulkData &get_bulk_on_host() const
@@ -248,6 +253,8 @@ private:
   const stk::mesh::BulkData *bulk;
   size_t m_syncCountWhenUpdated;
 };
+
+using HostMesh = HostMeshT<typename stk::ngp::HostExecSpace::memory_space>;
 
 }
 }

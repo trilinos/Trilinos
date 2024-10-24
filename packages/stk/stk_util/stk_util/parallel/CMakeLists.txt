@@ -44,6 +44,7 @@ ELSE()
 
 FILE(GLOB HEADERS
      CommBuffer.hpp
+     OutputStreams.hpp
      Parallel.hpp
      ParallelComm.hpp
      ParallelReduce.hpp
@@ -53,6 +54,7 @@ FILE(GLOB HEADERS
     )
 FILE(GLOB SOURCES
      CommBuffer.cpp
+     OutputStreams.cpp
      Parallel.cpp
      ParallelComm.cpp
      ParallelReduce.cpp

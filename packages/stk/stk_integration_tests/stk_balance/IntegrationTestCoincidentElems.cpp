@@ -91,6 +91,8 @@ private:
 
 TEST_F(CoincidentElems, balance_coincidentsNotSplit)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   std::string meshDesc =
       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
