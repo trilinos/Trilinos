@@ -136,10 +136,12 @@ public:
 
     void add_shared_nodes(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId>& sharedNodeIds)
     {
-        int otherProc = 1 - bulkData.parallel_rank();
-        for(stk::mesh::EntityId nodeID : sharedNodeIds) {
-            stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, nodeID);
-            bulkData.add_node_sharing(node, otherProc);
+        if (bulkData.parallel_size() > 1) {
+          const int otherProc = 1 - bulkData.parallel_rank();
+          for(stk::mesh::EntityId nodeID : sharedNodeIds) {
+              stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, nodeID);
+              bulkData.add_node_sharing(node, otherProc);
+          }
         }
     }
 
@@ -415,11 +417,13 @@ public:
 
     void add_shared_nodes(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId>& sharedNodeIds)
     {
-        int otherProc = 1 - bulkData.parallel_rank();
+      if (bulkData.parallel_size() > 1) {
+        const int otherProc = 1 - bulkData.parallel_rank();
         for(stk::mesh::EntityId nodeID : sharedNodeIds) {
             stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, nodeID);
             bulkData.add_node_sharing(node, otherProc);
         }
+      }
     }
 
 protected:

@@ -137,7 +137,7 @@ void local_coarse_search_morton_lbvh(
 
   stk::search::CollisionList<HostSpace> collisionList("Collision List");
   Callback callback(domain, range, searchResults);
-  stk::search::morton_lbvh_search<DomainViewType,RangeViewType, HostSpace,Callback>(domainTree, rangeTree, callback, HostSpace{});
+  stk::search::morton_lbvh_search<DomainViewType,RangeViewType,Callback,HostSpace>(domainTree, rangeTree, callback, HostSpace{});
   searchResults = callback.get_search_results();
   
   if (sortSearchResults) {
@@ -335,7 +335,7 @@ local_coarse_search_morton_lbvh(
   Callback& callback = mortonData->callback;
   Kokkos::Profiling::popRegion();
 
-  stk::search::morton_lbvh_search<MDomainViewType,MRangeViewType, ExecutionSpace,Callback>(domainTree, rangeTree, callback, execSpace);
+  stk::search::morton_lbvh_search<MDomainViewType,MRangeViewType,Callback,ExecutionSpace>(domainTree, rangeTree, callback, execSpace);
   searchResults = callback.get_search_results();
   Kokkos::Profiling::popRegion();
 

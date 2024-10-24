@@ -259,24 +259,21 @@ void field_fill_impl(const Scalar alpha,
     fields[i]->clear_sync_state();
   }
 
-  stk::mesh::Selector fieldSelector;
+  std::unique_ptr<stk::mesh::Selector> fieldSelector;
   if (selectorPtr == nullptr) {
-    fieldSelector = stk::mesh::Selector(*fields[0]);
-    for (int i=1; i < nfields; ++i)
-    {
-      fieldSelector &= stk::mesh::Selector(*fields[i]);
+    fieldSelector = std::make_unique<stk::mesh::Selector>(stk::mesh::Selector(*fields[0]));
+    for (int i=1; i < nfields; ++i) {
+      *(fieldSelector.get()) &= stk::mesh::Selector(*fields[i]);
     }
-  } else
-  {
-    fieldSelector = *selectorPtr;
   }
+  const stk::mesh::Selector& selector = selectorPtr != nullptr ? *selectorPtr : *(fieldSelector.get());
 
   if constexpr (operate_on_ngp_mesh<EXEC_SPACE>()) {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(fields[0]->get_mesh());
     if (nfields == 1)
     {
       stk::mesh::NgpField<Scalar> ngpField = stk::mesh::get_updated_ngp_field<Scalar>(*fields[0]);
-      field_fill_for_each_entity(ngpMesh, &ngpField, nfields, alpha, component, fieldSelector, execSpace);
+      field_fill_for_each_entity(ngpMesh, &ngpField, nfields, alpha, component, selector, execSpace);
     } else
     {
       std::vector<stk::mesh::NgpField<Scalar>> ngpFields;
@@ -284,18 +281,114 @@ void field_fill_impl(const Scalar alpha,
       {
         ngpFields.push_back(stk::mesh::get_updated_ngp_field<Scalar>(*fields[i]));
       }
-      field_fill_for_each_entity(ngpMesh, ngpFields.data(), nfields, alpha, component, fieldSelector, execSpace);
+      field_fill_for_each_entity(ngpMesh, ngpFields.data(), nfields, alpha, component, selector, execSpace);
     }
   }
   else {
-    std::vector<const stk::mesh::FieldBase*> fieldsVec(fields, fields+nfields);
-    stk::mesh::field_fill(alpha, fieldsVec, fieldSelector);
+    if (nfields == 1) {
+      stk::mesh::field_fill(alpha, *fields[0], selector);
+    }
+    else {
+      std::vector<const stk::mesh::FieldBase*> fieldsVec(fields, fields+nfields);
+      stk::mesh::field_fill(alpha, fieldsVec, selector);
+    }
   }
 
   for (int i=0; i < nfields; ++i)
   {
     mark_field_modified(*fields[i], execSpace, isDeviceExecSpaceUserOverride);
   }
+}
+
+template <class Scalar, class NGP_FIELD_TYPE>
+class FieldAMax
+{
+ public:
+  FieldAMax(const NGP_FIELD_TYPE& ngpXfield) : ngpX(ngpXfield), resultDevice("deviceResult", 1) {}
+
+  KOKKOS_INLINE_FUNCTION Scalar abs(const Scalar& x) const { return x > 0 ? x : -x; }
+
+  Scalar get_amax_val() const
+  {
+    auto resultHost = Kokkos::create_mirror_view(resultDevice);
+    Kokkos::deep_copy(resultHost, resultDevice);
+    return resultHost(0);
+  }
+
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& entityIndex) const
+  {
+    const unsigned numComponents = ngpX.get_num_components_per_entity(entityIndex);
+    for (unsigned d = 0; d < numComponents; ++d) {
+      Scalar fieldVal = ngpX(entityIndex, d);
+      Scalar absFieldVal = abs(fieldVal);
+      Kokkos::atomic_max(&resultDevice(0), absFieldVal);
+    }
+  }
+
+  NGP_FIELD_TYPE ngpX;
+  Kokkos::View<Scalar*, stk::ngp::ExecSpace> resultDevice;
+};
+
+template <class Scalar, class EXEC_SPACE>
+Scalar field_amax_no_mark_t(
+    const stk::mesh::FieldBase& xField, const stk::mesh::Selector& selector, const EXEC_SPACE& execSpace)
+{
+  if constexpr (operate_on_ngp_mesh<EXEC_SPACE>()) {
+    xField.sync_to_device();
+    stk::mesh::NgpField<Scalar>& ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
+    auto ngpMesh = stk::mesh::get_updated_ngp_mesh(xField.get_mesh());
+    FieldAMax<Scalar, stk::mesh::NgpField<Scalar>> fieldAMax(ngpX);
+    stk::mesh::for_each_entity_run(ngpMesh, xField.entity_rank(), selector, fieldAMax);
+
+    Scalar localAmax = fieldAMax.get_amax_val();
+    Scalar globalAmax = localAmax;
+    auto comm = xField.get_mesh().parallel();
+    stk::all_reduce_max(comm, &localAmax, &globalAmax, 1u);
+    return globalAmax;
+  } else {
+    xField.sync_to_host();
+    double amaxOut{0.0};
+    stk::mesh::field_amax(amaxOut, xField, selector);
+    return amaxOut;
+  }
+}
+
+template <class Scalar, class EXEC_SPACE>
+void field_amax_no_mark_mod(Scalar& amaxOut,
+    const stk::mesh::FieldBase& xField,
+    const stk::mesh::Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  const stk::mesh::DataTraits& dataTraits = xField.data_traits();
+
+  if (dataTraits.type_info == typeid(double)) {
+    amaxOut = field_amax_no_mark_t<double>(xField, selector, execSpace);
+  } else if (dataTraits.type_info == typeid(float)) {
+    amaxOut = field_amax_no_mark_t<float>(xField, selector, execSpace);
+  } else if (dataTraits.type_info == typeid(int)) {
+    amaxOut = field_amax_no_mark_t<int>(xField, selector, execSpace);
+  } else if (dataTraits.type_info == typeid(unsigned)) {
+    amaxOut = field_amax_no_mark_t<unsigned>(xField, selector, execSpace);
+  } else {
+    STK_ThrowErrorMsg("field_amax doesn't yet support fields of type " << dataTraits.type_info.name());
+  }
+}
+
+template <class Scalar, class EXEC_SPACE>
+void field_amax_impl(Scalar& amaxOut,
+    const stk::mesh::FieldBase& xField,
+    const stk::mesh::Selector* selectorPtr,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride)
+{
+  std::unique_ptr<stk::mesh::Selector> fieldSelector;
+  if (selectorPtr == nullptr) {
+    fieldSelector = std::make_unique<stk::mesh::Selector>(stk::mesh::Selector(xField));
+  }
+  const stk::mesh::Selector& selector = selectorPtr != nullptr ? *selectorPtr : *(fieldSelector.get());
+
+  field_amax_no_mark_mod(amaxOut, xField, selector, execSpace);
 }
 
 template<class NGP_FIELD_TYPE>
@@ -577,27 +670,25 @@ inline void field_axpbyz_impl(const stk::mesh::BulkData& mesh,
   STK_ThrowRequireMsg(dataTraits == yField.data_traits(), "xField and yField must have same datatype");
   STK_ThrowRequireMsg(dataTraits == zField.data_traits(), "xField and zField must have same datatype");
 
-  stk::mesh::Selector fieldSelector;
+  std::unique_ptr<stk::mesh::Selector> fieldSelector;
   if (selectorPtr == nullptr) {
-    fieldSelector = stk::mesh::Selector(xField) & stk::mesh::Selector(yField);
-  } else
-  {
-    fieldSelector = *selectorPtr;
+    fieldSelector = std::make_unique<stk::mesh::Selector>(stk::mesh::Selector(xField) & stk::mesh::Selector(yField));
   }
+  const stk::mesh::Selector& selector = selectorPtr != nullptr ? *selectorPtr : *(fieldSelector.get());
 
   if constexpr (ngp_field_blas::impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
     if (dataTraits.type_info == typeid(double)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldAXPBYZFunctor<double>>(
-        mesh, zField, xField, yField, alpha, beta, fieldSelector);
+        mesh, zField, xField, yField, alpha, beta, selector);
     } else if (dataTraits.type_info == typeid(float)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldAXPBYZFunctor<float>>(
-        mesh, zField, xField, yField, alpha, beta, fieldSelector);
+        mesh, zField, xField, yField, alpha, beta, selector);
     } else if (dataTraits.type_info == typeid(int)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldAXPBYZFunctor<int>>(
-        mesh, zField, xField, yField, alpha, beta, fieldSelector);
+        mesh, zField, xField, yField, alpha, beta, selector);
     } else if (dataTraits.type_info == typeid(unsigned)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldAXPBYZFunctor<unsigned>>(
-        mesh, zField, xField, yField, alpha, beta, fieldSelector);
+        mesh, zField, xField, yField, alpha, beta, selector);
     } else
     {
       STK_ThrowErrorMsg("axpbyz doesn't yet support fields of type "<<dataTraits.type_info.name());
@@ -606,8 +697,8 @@ inline void field_axpbyz_impl(const stk::mesh::BulkData& mesh,
   else {
     xField.sync_to_host();
     yField.sync_to_host();
-    stk::mesh::field_copy(yField, zField, fieldSelector);
-    stk::mesh::field_axpby(alpha, xField, beta, zField, fieldSelector);
+    stk::mesh::field_copy(yField, zField, selector);
+    stk::mesh::field_axpby(alpha, xField, beta, zField, selector);
   }
 
   mark_field_modified(zField, execSpace, isDeviceExecSpaceUserOverride);

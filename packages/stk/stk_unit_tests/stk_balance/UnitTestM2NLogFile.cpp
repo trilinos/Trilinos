@@ -35,7 +35,7 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_balance/setup/DefaultSettings.hpp"
 #include <stk_balance/setup/M2NParser.hpp>
-#include "stk_util/environment/Env.hpp"
+#include "stk_util/parallel/OutputStreams.hpp"
 #include <stk_unit_test_utils/TextMeshToFile.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/m2n/m2nRebalance.hpp>
@@ -96,8 +96,8 @@ TEST_F(TestM2NLogFile, defaultLogFile)
   set_up_output_streams({});
 
   const std::string expectedOutput{"This is a test\n"};
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
 
   if (get_parallel_rank() == 0) {
     ASSERT_TRUE(test_file_exists(logFileName));
@@ -114,8 +114,8 @@ TEST_F(TestM2NLogFile, customLogFile)
   set_up_output_streams({"-l", logFileName.c_str()});
 
   const std::string expectedOutput{"This is a test\n"};
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
 
   if (get_parallel_rank() == 0) {
     ASSERT_TRUE(test_file_exists(logFileName));
@@ -133,8 +133,8 @@ TEST_F(TestM2NLogFile, standardOutLog)
   const std::string expectedOutput{"This is a test\n"};
 
   testing::internal::CaptureStdout();
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
   std::string stdoutString = testing::internal::GetCapturedStdout();
 
   if (get_parallel_rank() == 0) {
@@ -150,8 +150,8 @@ TEST_F(TestM2NLogFile, standardErrLog)
   const std::string expectedOutput{"This is a test\n"};
 
   testing::internal::CaptureStderr();
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
   std::string stderrString = testing::internal::GetCapturedStderr();
 
   if (get_parallel_rank() == 0) {

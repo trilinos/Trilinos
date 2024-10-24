@@ -180,6 +180,14 @@ void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
     }
 }
 
+stk::mesh::EntityRank get_side_rank(Ioss::Region* region, Ioss::SideBlock *block)
+{
+    bool useShellAllFaceSides = region->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+    int par_dimen = block->topology()->parametric_dimension();
+    stk::mesh::EntityRank side_rank = par_dimen == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
+    return (block->parent_element_topology()->is_shell() && useShellAllFaceSides) ? stk::topology::FACE_RANK : side_rank;
+}
+
 template <typename INT>
 void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
 {
@@ -215,7 +223,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
             //       be the same and this could fail (a sideset of mixed edges and faces)
             int par_dimen = block->topology()->parametric_dimension();
 
-            stk::mesh::EntityRank side_rank = par_dimen == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
+            stk::mesh::EntityRank side_rank = get_side_rank(region, block);
 
             // Would be nice to do:
             //    std::vector<stk::mesh::Entity> sides ;
@@ -242,15 +250,15 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
                 stk::topology elemTopo = bulk.bucket(elem).topology();
                 if(par_dimen == 0)
                 {
-                  stk::topology faceTopo = elemTopo.sub_topology(elemTopo.side_rank(), elemSide);
+                  stk::topology sideTopo = elemTopo.sub_topology(elemTopo.side_rank(elemSide), elemSide);
 
-                  Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(faceTopo.name(), false);
+                  Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(sideTopo.name(), false);
                   par_dimen = ioss_topo->parametric_dimension();
-                  side_rank = par_dimen == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
+                  side_rank = get_side_rank(region, block);
                 }
                 STKIORequire(par_dimen == 1 || par_dimen == 2);
 
-                if (par_dimen == 1) {
+                if (par_dimen == 1 && side_rank == stk::topology::EDGE_RANK) {
                   // conversion from face ordinal to edge ordinal for shells
                   if (elemTopo.is_shell()) {
                     elemSide -= elemTopo.num_faces();

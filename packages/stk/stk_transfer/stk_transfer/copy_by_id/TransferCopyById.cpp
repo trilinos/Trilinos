@@ -35,8 +35,7 @@
 #include "TransferCopyById.hpp"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/diag/SlibDiagWriter.hpp>
-#include <sstream>
+#include <cstring>
 
 namespace stk {
 namespace transfer {
