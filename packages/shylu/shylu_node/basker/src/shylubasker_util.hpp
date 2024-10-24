@@ -532,7 +532,11 @@ namespace BaskerNS
             LU[b][LU_size[b]-1].nnz);
         #endif
 
-        //printf( " lvl=%d: LU(%d,%d): nnz=%d, mnnz=%d\n", (int)lvl, (int)b, (int)LU_size(b)-1, (int)LU(b)(LU_size(b)-1).nnz, (int)LU(b)(LU_size(b)-1).mnnz);
+        #ifdef BASKER_TIMER
+        printf( " lvl=%d: LU(%d,%d): %dx%d, nnz=%d, mnnz=%d, at (%d,%d)\n", (int)lvl, (int)b, (int)LU_size(b)-1,
+                (int)LU[b][LU_size(b)-1].nrow,(int)LU[b][LU_size(b)-1].ncol,(int)LU[b][LU_size(b)-1].nnz, (int)LU[b][LU_size(b)-1].mnnz,
+                (int)LU[b][LU_size(b)-1].srow,(int)LU[b][LU_size(b)-1].scol);
+        #endif
         LU[b][LU_size(b)-1].init_matrix("Udiag",
             LU[b][LU_size(b)-1].srow,
             LU[b][LU_size(b)-1].nrow,
@@ -582,7 +586,12 @@ namespace BaskerNS
               LU[U_col][U_row].nnz);
           #endif
 
-          //printf( " > l=%d: LU(%d,%d): nnz=%d, mnnz=%d\n", (int)l, (int)U_col, (int)U_row, (int)LU(U_col)(U_row).nnz, (int)LU(U_col)(U_row).mnnz);
+          #ifdef BASKER_TIMER
+          printf( "  +++ l=%d: LU(%d,%d): %dx%d, nnz=%d, mnnz=%d at (%d,%d)\n", (int)l, (int)U_col, (int)U_row,
+                  (int)LU[U_col][U_row].nrow,(int)LU[U_col][U_row].ncol,
+                  (int)LU[U_col][U_row].nnz, (int)LU[U_col][U_row].mnnz,
+                  (int)LU[U_col][U_row].srow,(int)LU[U_col][U_row].scol);
+          #endif
           LU[U_col][U_row].init_matrix("Uoffdiag",
               LU[U_col][U_row].srow,
               LU[U_col][U_row].nrow,

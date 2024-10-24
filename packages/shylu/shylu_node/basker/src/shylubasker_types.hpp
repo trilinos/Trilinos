@@ -90,7 +90,7 @@ enum BASKER_INCOMPLETE_CODE
 #define BASKER_INC_TOL_VALUE      0.0001
 
 //MACRO INC FILL (this will become dynamic in the future)
-#define BASKER_FILL_USER           1.00
+#define BASKER_FILL_USER           0.00
 #define BASKER_FILL_LESTIMATE      1.50
 #define BASKER_FILL_UESTIMATE      1.50
 #define BASKER_FILL_LLOWERESTIMATE 2.00
@@ -149,13 +149,12 @@ enum BASKER_INCOMPLETE_CODE
 #define BOOL_2DARRAY              Kokkos::View<BOOL_1DARRAY*,        BASKER_EXE_SPACE>
 
 #define INT_2DARRAY               std::vector<INT_1DARRAY        >
-#define ENTRY_2DARRAY             std::vector<ENTRY_1DARRAY      > 
+#define ENTRY_2DARRAY             std::vector<ENTRY_1DARRAY      >
 #define MATRIX_1DARRAY            std::vector<BASKER_MATRIX      >
 #define MATRIX_2DARRAY            std::vector<MATRIX_1DARRAY     >
 #define MATRIX_VIEW_1DARRAY       std::vector<BASKER_MATRIX_VIEW >
 #define MATRIX_VIEW_2DARRAY       std::vector<MATRIX_VIEW_1DARRAY>
 #define THREAD_1DARRAY            std::vector<BASKER_THREAD      >
-#define THREAD_2DARRAY            std::vector<THREAD_1DARRAY     >
 
 #define INT_1DARRAY_PAIRS        Kokkos::View<std::pair<Int,Int>*,  BASKER_EXE_SPACE>
 //Macro Memory Calls
@@ -193,7 +192,7 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s >= 0,"BASKER ASSERT MALLOC int_2d: size to alloc >= 0 fails"); \
     if (s > 0) {                   \
-      /*a = INT_2DARRAY("int_2d",s);*/ \
+      /*a = INT_2DARRAY(Kokkos::view_alloc("int_2d", Kokkos::SequentialHostInit),s);*/ \
       a.resize(s);                 \
       if(a.data() == NULL)         \
         throw std::bad_alloc();    \
@@ -289,16 +288,7 @@ enum BASKER_INCOMPLETE_CODE
         throw std::bad_alloc();          \
     }                                    \
   }
-#define MALLOC_THREAD_2DARRAY(a,s) \
-  { \
-    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC thread_2d: size to alloc >= 0 fails"); \
-    if (s > 0) {                         \
-      /*a = THREAD_2DARRAY("thread_2d",s);*/ \
-      a.resize(s);                       \
-      if(a.data() == NULL)               \
-        throw std::bad_alloc();          \
-    }                                    \
-  }
+
 //RESIZE (with copy)
 #define RESIZE_1DARRAY(a,os,s)           \
   { \
@@ -427,12 +417,6 @@ enum BASKER_INCOMPLETE_CODE
     a.resize(0);               \
   }
 
-#define FREE_THREAD_2DARRAY(a,n) \
-  {                              \
-    /*a = TRHEAD_2DARRAY();*/    \
-    Kokkos::resize(a,0);         \
-  }
-
 #else // not BASKER_KOKKOS
 
 //Execution Space
@@ -458,7 +442,6 @@ enum BASKER_INCOMPLETE_CODE
 #define MATRIX_VIEW_1DARRAY  BASKER_MATRIX_VIEW*
 #define MATRIX_VIEW_2DARRAY  BASKER_MATRIX_VIEW**
 #define THREAD_1DARRAY       BASKER_THREAD*
-#define THREAD_2DARRAY       BASKER_THREAD**
 
 //Macro Memory Calls
 //Malloc
@@ -473,7 +456,6 @@ enum BASKER_INCOMPLETE_CODE
 #define MALLOC_MATRIX_VIEW_1DARRAY(a,s)  a = new BASKER_MATRIX_VIEW [s]
 #define MALLOC_MATRIX_VIEW_2DARRAY(a,s)  a = new MATRIX_VIEW_1DARRAY[s]
 #define MALLOC_THREAD_1DARRAY(a,s)       a = new BASKER_THREAD      [s]
-#define MALLOC_THREAD_2DARRAY(a,s)       a = new THREAD_1DARRAY     [s]
 //Resize (copy old data) (come back and add)
 #define RESIZE_1DARRAY(a,os,s)               BASKER_NO_OP
 #define RESIZE_2DARRAY(a,os1,os2,s1,s2)      BASKER_NO_OP
@@ -553,13 +535,6 @@ enum BASKER_INCOMPLETE_CODE
 #define FREE_THREAD_1DARRAY(a) \
   { \
     FREE(a);  \
-  }
-
-#define FREE_THREAD_2DARRAY(a,n)                 \
-  { \
-    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
-      FREE(a[MACRO_I]); \
-    FREE(a); \
   }
 
 #endif //end ifdef BASKER_KOKKOS
