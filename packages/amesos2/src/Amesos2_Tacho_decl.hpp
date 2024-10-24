@@ -194,6 +194,8 @@ private:
     int method;
     int variant;
     int small_problem_threshold_size;
+    int streams;
+    bool verbose;
     // int num_kokkos_threads;
     // int max_num_superblocks;
   } data_;
