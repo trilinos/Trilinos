@@ -39,11 +39,9 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
         "--verbose --filename=mhd1280b.cua"
       )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE(
       Tpetra_KokkosDense_gcrodr_complex_hb
       SOURCES test_kokkos_gcrodr_complex_hb.cpp
-      ARGS
-        "--verbose --filename=mhd1280b.cua"
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraGCRODRComplexFiles
