@@ -132,7 +132,7 @@ struct ThreadReductionFunctor
   const AlgorithmPerEntity &functor;
 };
 
-template <typename Mesh, typename ReductionOpT, typename AlgorithmPerEntity>
+template <typename Mesh, typename ReductionOpT, typename AlgorithmPerEntity, typename NgpExecSpace>
 struct TeamReductionFunctor
 {
   using ReductionOp = ReductionOpT;
@@ -141,7 +141,7 @@ struct TeamReductionFunctor
   TeamReductionFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, ReductionOp & red, const AlgorithmPerEntity& f)
     : mesh(m), rank(r), bucketIds(b), reduction(red), functor(f) {}
 
-  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<NgpExecSpace>::member_type;
 
   KOKKOS_FUNCTION
   void operator()(const TeamHandleType& team, value_type& team_reduction) const
@@ -176,8 +176,21 @@ void for_each_entity_reduce(Mesh& mesh,
 {
   stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
   const unsigned numBuckets = bucketIds.size();
-  TeamReductionFunctor<Mesh,ReductionOp, AlgorithmPerEntity> teamFunctor(mesh, rank, bucketIds, reduction, functor);
+  TeamReductionFunctor<Mesh,ReductionOp, AlgorithmPerEntity, typename Mesh::MeshExecSpace> teamFunctor(mesh, rank, bucketIds, reduction, functor);
   Kokkos::parallel_reduce(stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO), teamFunctor, reduction);
+}
+
+template <typename Mesh, typename ReductionOp, typename AlgorithmPerEntity, typename NgpExecSpace>
+void for_each_entity_reduce(Mesh& mesh,
+    stk::topology::rank_t rank,
+    const stk::mesh::Selector& selector,
+    ReductionOp& reduction,
+    const AlgorithmPerEntity& functor)
+{
+  stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
+  const unsigned numBuckets = bucketIds.size();
+  TeamReductionFunctor<Mesh,ReductionOp, AlgorithmPerEntity, NgpExecSpace> teamFunctor(mesh, rank, bucketIds, reduction, functor);
+  Kokkos::parallel_reduce(stk::ngp::TeamPolicy<NgpExecSpace>(numBuckets, Kokkos::AUTO), teamFunctor, reduction);
 }
 
 template <typename Mesh, typename Field, typename Reduction, typename Modifier>

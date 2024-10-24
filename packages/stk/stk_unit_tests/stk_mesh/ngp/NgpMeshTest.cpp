@@ -54,6 +54,8 @@
 
 #include <limits>
 
+using NgpMeshDefaultMemSpace = stk::mesh::NgpMeshDefaultMemSpace;
+
 class NgpMeshTest : public stk::mesh::fixtures::TestHexFixture
 {
 public:
@@ -74,10 +76,35 @@ public:
     numNodesVec.copy_device_to_host();
     ASSERT_EQ(8u, numNodesVec[0]);
   }
+
+  template <typename NgpMemSpace>
+  void run_get_nodes_using_FastMeshIndex_test()
+  {
+    setup_mesh(1, 1, 4);
+
+    stk::NgpVector<double> numNodesVec("numNodes", 1);
+
+    stk::mesh::NgpMeshT<NgpMemSpace> & ngpMesh = stk::mesh::get_updated_ngp_mesh<NgpMemSpace>(get_bulk());
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
+                         KOKKOS_LAMBDA(const int i)
+                         {
+                           stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, stk::mesh::FastMeshIndex{0,0});
+                           numNodesVec.device_get(0) = nodes.size();
+                         });
+
+    numNodesVec.copy_device_to_host();
+    ASSERT_EQ(8u, numNodesVec[0]);
+  }
 };
+
 TEST_F(NgpMeshTest, get_nodes_using_FastMeshIndex)
 {
   run_get_nodes_using_FastMeshIndex_test();
+}
+
+TEST_F(NgpMeshTest, get_nodes_using_FastMeshIndex_custom_NgpMemSpace)
+{
+  run_get_nodes_using_FastMeshIndex_test<NgpMeshDefaultMemSpace>();
 }
 
 class NgpMeshRankLimit : public stk::mesh::fixtures::TestHexFixture {};
@@ -88,6 +115,21 @@ TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
 
   try {
     stk::mesh::get_updated_ngp_mesh(get_bulk());
+    FAIL()<< "expected throw but didn't throw";
+  }
+  catch(std::exception& e) {
+    std::string expectedMsg("stk::mesh::NgpMesh: too many entity ranks (6). Required to be less-or-equal stk::topology::NUM_RANKS");
+    std::string msg(e.what());
+    EXPECT_TRUE((msg.find(expectedMsg) != std::string::npos));
+  }
+}
+
+TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage_custom_NgpMemSpace)
+{
+  setup_mesh(1,1,1, {"NODE","EDGE","FACE","ELEM","CONSTRAINT","JULIA"});
+
+  try {
+    stk::mesh::get_updated_ngp_mesh<NgpMeshDefaultMemSpace>(get_bulk());
     FAIL()<< "expected throw but didn't throw";
   }
   catch(std::exception& e) {
@@ -168,8 +210,6 @@ void check_volatile_fast_shared_comm_map_values_on_device(const stk::mesh::NgpMe
   }
 }
 
-using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::HostExecSpace>;
-
 NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) { GTEST_SKIP(); }
@@ -180,7 +220,25 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {
-    stk::mesh::DeviceCommMapIndices::HostMirror hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
+    stk::mesh::HostCommMapIndices hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, proc);
+    stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", hostNgpMeshIndices.extent(0));
+
+    Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
+    check_volatile_fast_shared_comm_map_values_on_device(ngpMesh, proc, deviceNgpMeshIndices);
+  }
+}
+
+NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap_custom_NgpMemSpace)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) { GTEST_SKIP(); }
+
+  setup_mesh(1, 1, 4);
+
+  stk::mesh::NgpMeshT<stk::mesh::NgpMeshDefaultMemSpace> & ngpMesh = stk::mesh::get_updated_ngp_mesh<stk::mesh::NgpMeshDefaultMemSpace>(get_bulk());
+  std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
+
+  for (int proc : comm_procs) {
+    stk::mesh::HostCommMapIndices hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map<stk::mesh::NgpMeshDefaultMemSpace>(stk::topology::NODE_RANK, proc);
     stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", hostNgpMeshIndices.extent(0));
 
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);

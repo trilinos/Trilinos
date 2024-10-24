@@ -35,162 +35,250 @@
 #ifndef STK_MATH_H
 #define STK_MATH_H
 
-#include <cmath>
 #include <cstdlib>
 #include <cassert>
 #include <type_traits>
 #include <Kokkos_Macros.hpp>
+#include <Kokkos_MathematicalFunctions.hpp>
 
 #define STK_MATH_FORCE_INLINE KOKKOS_FORCEINLINE_FUNCTION
 
 namespace stk {
 namespace math {
 
-namespace hidden {
-static STK_MATH_FORCE_INLINE double Cbrt(double x) { return cbrt(x); }
-static STK_MATH_FORCE_INLINE float CbrtF(float x) { return cbrtf(x); }
-}
-
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T fmadd(T a, T b, T c) {
   return a*b+c;
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
-STK_MATH_FORCE_INLINE T sqrt(T x) {
-  return std::sqrt(x);
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
+STK_MATH_FORCE_INLINE T sqrt(T x)
+{
+  return Kokkos::sqrt(x);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double sqrt(long double x) {
+  return Kokkos::sqrtl(x);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T cbrt(T x) {
-  return hidden::Cbrt(x);
+  return Kokkos::cbrt(x);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double cbrt(long double x) {
+  return Kokkos::cbrtl(x);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T log(T x) {
-  return std::log(x);
+  return Kokkos::log(x);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double log(long double x) {
+  return Kokkos::logl(x);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T log10(T x) {
-  return std::log10(x);
+  return Kokkos::log10(x);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double log10(long double x) {
+  return Kokkos::log10l(x);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T exp(T x) {
-  return std::exp(x);
+  return Kokkos::exp(x);
+}
+
+inline long double exp(long double x) {
+  return Kokkos::expl(x);
 }
    
 STK_MATH_FORCE_INLINE double pow(const double x, const double y) {
-  return std::pow(x, y);
+  return Kokkos::pow(x, y);
 }
 
 STK_MATH_FORCE_INLINE float pow(const float x, const float y) {
-  return std::pow(x, y);
+  return Kokkos::pow(x, y);
 }
 
 STK_MATH_FORCE_INLINE double pow(const double x, int y) {
-  return std::pow(x, y);
+  return Kokkos::pow(x, y);
 }
 
 STK_MATH_FORCE_INLINE float pow(const float x, int y) {
-  return std::pow(x, y);
+  return Kokkos::pow(x, y);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T sin(T a) {
-  return std::sin(a);
+  return Kokkos::sin(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double sin(long double a) {
+  return Kokkos::sinl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T cos(T a) {
-  return std::cos(a);
+  return Kokkos::cos(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double cos(long double a) {
+  return Kokkos::cosl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T tan(T a) {
-  return std::tan(a);
+  return Kokkos::tan(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double tan(long double a) {
+  return Kokkos::tanl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T sinh(T a) {
-  return std::sinh(a);
+  return Kokkos::sinh(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double sinh(long double a) {
+  return Kokkos::sinhl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T cosh(T a) {
-  return std::cosh(a);
+  return Kokkos::cosh(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double cosh(long double a) {
+  return Kokkos::coshl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T tanh(T a) {
-  return std::tanh(a);
+  return Kokkos::tanh(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double tanh(long double a) {
+  return Kokkos::tanhl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T asin(T a) {
-  return std::asin(a);
+  return Kokkos::asin(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double asin(long double a) {
+  return Kokkos::asinl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T acos(T a) {
-  return std::acos(a);
+  return Kokkos::acos(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double acos(long double a) {
+  return Kokkos::acosl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T atan(T a) {
-  return std::atan(a);
+  return Kokkos::atan(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double atan(long double a) {
+  return Kokkos::atanl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T atan2(T a, T b) {
-  return std::atan2(a, b);
+  return Kokkos::atan2(a,b);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double atan2(long double a, long double b) {
+  return Kokkos::atan2l(a,b);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T asinh(T a) {
-  return std::asinh(a);
+  return Kokkos::asinh(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double asinh(long double a) {
+  return Kokkos::asinhl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T acosh(T a) {
-  return std::acosh(a);
+  return Kokkos::acosh(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double acosh(long double a) {
+  return Kokkos::acoshl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T atanh(T a) {
-  return std::atanh(a);
+  return Kokkos::atanh(a);
 }
 
-template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+inline long double atanh(long double a) {
+  return Kokkos::atanhl(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T erf(T a) {
-  return std::erf(a);
+  return Kokkos::erf(a);
+}
+
+inline long double erf(long double a) {
+  return Kokkos::erf(a);
+}
+
+template <typename T,
+    typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, long double>::value, int>::type = 0>
+STK_MATH_FORCE_INLINE T copysign(T x, T y) {
+  return Kokkos::copysign(x,y);
+}
+
+inline long double copysign(long double x, long double y) {
+  return Kokkos::copysignl(x,y);
 }
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T multiplysign(T x, T y) { // return x times sign of y
-  return x * std::copysign(static_cast<T>(1.0), y);
-}
-
-//template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
-//STK_MATH_FORCE_INLINE T copysign(T x, T y) { // return abs(x) times sign of y
-//  return std::copysign(x, y);
-//}
-
-STK_MATH_FORCE_INLINE double copysign(double x, double y) { // return abs(x) times sign of y
-  return std::copysign(x, y);
-}
-
-STK_MATH_FORCE_INLINE float copysign(float x, float y) { // return abs(x) times sign of y
-  return std::copysign(x, y);
+  return x * copysign(static_cast<T>(1.0), y);
 }
 
 STK_MATH_FORCE_INLINE double abs(const double x) {
-  return std::abs(x);
+  return Kokkos::abs(x);
 }
 
 STK_MATH_FORCE_INLINE float abs(const float x) {
-  return std::abs(x);
+  return Kokkos::abs(x);
 }
 
 STK_MATH_FORCE_INLINE double max(const double x, const double y) {
@@ -211,7 +299,7 @@ STK_MATH_FORCE_INLINE float min(const float& x, const float& y) {
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE bool isnan(T a) {
-  return std::isnan(a);
+  return Kokkos::isnan(a);
 }
 
 //template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>

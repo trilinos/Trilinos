@@ -15,7 +15,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
+#include "TestElemElemGraphUtils.hpp"
 
 namespace {
 using stk::unit_test_util::build_mesh;
@@ -1563,6 +1563,7 @@ TEST(DeclareElementSide, destroyElemAndReconnectElem_sidesBetweenTwoTriangles)
 
   //if the elem-elem-graph correctly knows that elements 1 and 4 share a
   //graph edge, then there should still be just 1 side between them.
+  stk::unit_test::verify_graph_edge_between_elems(*bulk, elem1, elem4);
   EXPECT_EQ(1u, stk::mesh::count_entities(*bulk, meta.side_rank(), meta.universal_part()));
 }
 
@@ -1711,3 +1712,59 @@ TEST(Skinning, createAllSidesForBlock_separatePartForInteriorSides)
   EXPECT_EQ(4u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, interiorSkin));
 }
 
+TEST(CreateAndConvert, read_write_shell_4_all_face_sides)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+
+  const std::string meshDesc =
+      "0,1,SHELL_QUAD_4, 1,2,3,4, block_1 \
+       |sideset:name=surface_1; data=1,1, 1,2, 1,3, 1,4, 1,5, 1,6; split=topology";
+
+  std::vector<double> coords = {0,0,0, 1,0,0, 1,1,0, 0,1,0};
+  auto fullDesc = stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords);
+  stk::io::StkMeshIoBroker ioBroker;
+  ioBroker.set_enable_all_face_sides_shell_topo(true);
+  stk::io::fill_mesh("textmesh:" + fullDesc, *bulk, ioBroker);
+
+  stk::mesh::EntityVector entities;
+  stk::mesh::get_entities(*bulk, stk::topology::ELEM_RANK, entities);
+
+  for (auto entity : entities) {
+    EXPECT_EQ(4u, bulk->num_nodes(entity)) << bulk->entity_key(entity);
+    EXPECT_EQ(0u, bulk->num_edges(entity)) << bulk->entity_key(entity);
+    EXPECT_EQ(6u, bulk->num_faces(entity)) << bulk->entity_key(entity);
+    EXPECT_EQ(6u, bulk->num_sides(entity)) << bulk->entity_key(entity);
+  }
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().locally_owned_part(), bulk->buckets(stk::topology::EDGE_RANK)));
+  EXPECT_EQ(6u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().locally_owned_part(), bulk->buckets(stk::topology::FACE_RANK)));
+
+  std::string fileName("shell_quad4_all_face_sides_test.g");
+  stk::io::write_mesh(fileName, ioBroker);
+
+  std::shared_ptr<stk::mesh::BulkData> newBulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  stk::io::StkMeshIoBroker newIoBroker;
+  newIoBroker.set_bulk_data(*newBulk);
+  size_t index = newIoBroker.add_mesh_database(fileName, stk::io::READ_MESH);
+  newIoBroker.set_active_mesh(index);
+  newIoBroker.set_enable_all_face_sides_shell_topo(true);
+  newIoBroker.create_input_mesh();
+  newIoBroker.populate_bulk_data();
+
+  ASSERT_EQ(newIoBroker.bulk_data_ptr().get(), newBulk.get());
+
+  stk::mesh::get_entities(*newBulk, stk::topology::ELEM_RANK, entities);
+  for (auto entity : entities) {
+    EXPECT_EQ(4u, newBulk->num_nodes(entity)) << newBulk->entity_key(entity);
+    EXPECT_EQ(0u, newBulk->num_edges(entity)) << newBulk->entity_key(entity);
+    EXPECT_EQ(6u, newBulk->num_faces(entity)) << newBulk->entity_key(entity);
+    EXPECT_EQ(6u, newBulk->num_sides(entity)) << newBulk->entity_key(entity);
+  }
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(newBulk->mesh_meta_data().locally_owned_part(), newBulk->buckets(stk::topology::EDGE_RANK)));
+  EXPECT_EQ(6u, stk::mesh::count_selected_entities(newBulk->mesh_meta_data().locally_owned_part(), newBulk->buckets(stk::topology::FACE_RANK)));
+
+  unlink(fileName.c_str());
+}

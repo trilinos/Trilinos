@@ -187,7 +187,7 @@ inline void export_box_view_to_morton_tree(const BoxView boxes,
   Kokkos::parallel_for(policy, func);
 }
 
-template <typename View1Type, typename View2Type, typename ExecutionSpace, typename Callback>
+template <typename View1Type, typename View2Type, typename Callback, typename ExecutionSpace>
 inline void morton_lbvh_search(MortonAabbTree<View1Type, ExecutionSpace> &tree1,
                                MortonAabbTree<View2Type, ExecutionSpace> &tree2,
                                Callback& resultCallback,

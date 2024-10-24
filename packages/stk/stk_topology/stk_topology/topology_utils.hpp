@@ -38,6 +38,7 @@
 // IWYU pragma: private, include "stk_topology/topology.hpp"
 #include "stk_topology/topology_decl.hpp"
 #include "stk_util/stk_config.h"
+#include <type_traits>
 
 namespace stk { namespace topology_detail {
 
@@ -108,6 +109,26 @@ struct lexicographical_smallest_permutation_preserve_polarity_impl {
   const NodeArray & m_element_nodes;
 };
 
+// temporary helpers until shell side conversions are fully complete
+template <typename Topology, typename = void>
+struct HasMixedRankSides : std::false_type {};
+
+template <typename Topology>
+struct HasMixedRankSides<Topology, decltype(void(Topology::has_mixed_rank_sides))> : std::true_type {};
+
+struct has_mixed_rank_sides_impl {
+  using result_type = bool;
+
+  template <typename Topology>
+  STK_INLINE_FUNCTION
+  result_type operator()(Topology) const {
+    if constexpr (HasMixedRankSides<Topology>::value) {
+      return Topology::has_mixed_rank_sides;
+    }
+    return false;
+  }
+};
+
 struct has_homogeneous_faces_impl {
   using result_type = bool;
 
@@ -139,9 +160,22 @@ struct is_shell_with_face_sides_impl {
 struct side_rank_impl {
   using result_type = stk::topology::rank_t;
 
+  STK_INLINE_FUNCTION
+  side_rank_impl(unsigned ordinal)
+    : m_ordinal(ordinal)
+  {}
+
   template <typename Topology>
   STK_INLINE_FUNCTION
-  result_type operator()(Topology) const { return Topology::side_rank; }
+  result_type operator()(Topology) const { 
+    if (!has_mixed_rank_sides_impl{}(Topology{})) {
+      return Topology::side_rank;
+    } else {
+      return Topology::side_topology_rank(m_ordinal);
+    }
+  }
+
+  unsigned m_ordinal;
 };
 
 struct dimension_impl {

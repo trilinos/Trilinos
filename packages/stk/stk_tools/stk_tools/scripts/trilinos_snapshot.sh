@@ -85,5 +85,5 @@ echo "*** Example: 5.19.2 translates to STK_VERSION 5190200"
 echo "*** Also edit CHANGELOG.md with any API changes made"
 echo "*** since the last version."
 
-exe git commit -am '"'$COMMIT_MESSAGE'"'
+exe git commit --signoff -am '"'$COMMIT_MESSAGE'"'
 exe git push --force origin $SNAPSHOT_BRANCH

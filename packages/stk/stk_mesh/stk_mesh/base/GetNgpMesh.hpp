@@ -41,18 +41,24 @@
 namespace stk {
 namespace mesh {
 
-inline NgpMesh & get_updated_ngp_mesh(const BulkData & bulk)
+template<typename NgpMemSpace = NgpMeshDefaultMemSpace>
+inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
 {
   NgpMeshBase * ngpMeshBase = impl::get_ngp_mesh(bulk);
 
   if (ngpMeshBase == nullptr) {
-    ngpMeshBase = new NgpMesh(bulk);
+    ngpMeshBase = new NgpMeshT<NgpMemSpace>(bulk);
     impl::set_ngp_mesh(bulk, ngpMeshBase);
   }
   else {
     ngpMeshBase->update_mesh();
   }
-  return dynamic_cast<NgpMesh&>(*ngpMeshBase);
+  return dynamic_cast<NgpMeshT<NgpMemSpace>&>(*ngpMeshBase);
+}
+
+inline NgpMesh & get_updated_ngp_mesh(const BulkData & bulk)
+{
+  return get_updated_ngp_mesh<NgpMeshDefaultMemSpace>(bulk);
 }
 
 }}

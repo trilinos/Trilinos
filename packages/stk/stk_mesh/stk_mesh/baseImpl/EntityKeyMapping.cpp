@@ -98,6 +98,8 @@ void EntityKeyMapping::clear_all_cache()
 
 void EntityKeyMapping::clear_destroyed_entity_cache(EntityRank rank) const
 {
+  STK_ThrowAssertMsg(static_cast<unsigned>(rank) < m_destroy_cache.size(), "clear_destroyed_entity_cache rank="<<rank<<" out of range, m_destroy_cache.size()="<<m_destroy_cache.size());
+
   if (!m_destroy_cache[rank].empty()) {
     std::vector<EntityKey>& destroy = m_destroy_cache[rank];
     std::sort(destroy.begin(), destroy.end());
@@ -252,6 +254,8 @@ Entity EntityKeyMapping::get_entity(const EntityKey &key) const
   if (rank >= entity_rank_count()) {
     return Entity();
   }
+
+  STK_ThrowAssertMsg(static_cast<unsigned>(rank) < m_destroy_cache.size(), "get_entity rank="<<rank<<" out of range, m_destroy_cache.size()="<<m_destroy_cache.size());
 
   if (!m_destroy_cache[rank].empty()) {
     const std::vector<EntityKey>& destroyed = m_destroy_cache[rank];

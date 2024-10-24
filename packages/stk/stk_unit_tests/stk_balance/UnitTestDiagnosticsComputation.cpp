@@ -41,7 +41,7 @@
 #include "stk_balance/rebalance.hpp"
 #include "stk_balance/balance.hpp"
 #include <stk_unit_test_utils/TextMesh.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_unit_test_utils/TextMeshToFile.hpp>
 
 class TestDiagnosticsComputation : public stk::unit_test_util::MeshFixture
@@ -53,13 +53,13 @@ protected:
 
   virtual void NGPSetUp() override {
     stk::balance::impl::g_diagnosticsContainer.clear();
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     testing::internal::CaptureStderr();
   }
 
   virtual void NGPTearDown() override {
     stk::balance::impl::g_diagnosticsContainer.clear();
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
     testing::internal::GetCapturedStderr();
   }
 
@@ -136,7 +136,7 @@ protected:
     stk::balance::rebalance(ioBroker, balanceSettings);
 
     stk::balance::DiagnosticsPrinter diagPrinter(get_comm(), balanceSettings.get_num_output_processors());
-    diagPrinter.print(sierra::Env::outputP0());
+    diagPrinter.print(stk::outputP0());
   }
 
   std::string mesh_desc_four_beams() {

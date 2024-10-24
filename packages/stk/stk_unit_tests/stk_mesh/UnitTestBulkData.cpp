@@ -2846,7 +2846,7 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
     stk::mesh::RelationIdentifier node_rel_id = 1;
     stkMeshBulkData.declare_relation(element1, sharedNode1, node_rel_id);
   }
-  EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+  stkMeshBulkData.modification_end();
 
   {
     stk::mesh::Bucket & nodeBucket = stkMeshBulkData.bucket(sharedNode1);

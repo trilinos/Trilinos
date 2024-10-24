@@ -165,7 +165,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_autoLoadDistributionFactorPerNodeSet(true),
   m_enableEdgeIO(false),
   m_cacheEntityListForTransientSteps(false),
-  m_throwOnMissingInputFields(false)
+  m_throwOnMissingInputFields(false),
+  m_enableAllFaceSidesShellTopo(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -179,7 +180,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_autoLoadDistributionFactorPerNodeSet(true),
   m_enableEdgeIO(false),
   m_cacheEntityListForTransientSteps(false),
-  m_throwOnMissingInputFields(false)
+  m_throwOnMissingInputFields(false),
+  m_enableAllFaceSidesShellTopo(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -496,6 +498,10 @@ void StkMeshIoBroker::create_input_mesh()
     STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
+    if (get_enable_all_face_sides_shell_topo()) {
+        region->property_add(Ioss::Property("ENABLE_ALL_FACE_SIDES_SHELL", "YES"));
+    }
+
     // See if meta data is null, if so, create a new one...
     if (is_meta_data_null()) {
         m_metaData = m_meshBuilder->create_meta_data();
@@ -533,6 +539,11 @@ void StkMeshIoBroker::create_input_mesh()
 
     process_assemblies(*region,   meta_data());
     build_assembly_hierarchies(*region, meta_data());
+
+    //declare_stk_aliases adds aliases for each of the entity-types
+    //processed in the above few lines. If we add a new entity-type
+    //here, update the implementation of declare_stk_aliases!!!
+    declare_stk_aliases(*region, meta_data());
 
     create_surface_to_block_mapping();
     store_attribute_field_ordering();
@@ -592,6 +603,11 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
     auto output_file = std::shared_ptr<impl::OutputFile>(new impl::OutputFile(out_filename, 
                                                          m_communicator, db_type,
                                                          properties, input_region, type, openFileImmediately));
+
+    if (get_enable_all_face_sides_shell_topo()) {
+        output_file->get_output_ioss_region()->property_add(Ioss::Property("ENABLE_ALL_FACE_SIDES_SHELL", "YES"));
+    }
+
     m_outputFiles.push_back(output_file);
     size_t index_of_output_file = m_outputFiles.size()-1;
     return index_of_output_file;
@@ -781,10 +797,14 @@ void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle
     stk::mesh::toggle_sideset_updaters(bulk_data(), true);
 }
 
-void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
+void StkMeshIoBroker::populate_mesh(bool delayFieldDataAllocation)
 {
-    bool i_started_modification_cycle = populate_mesh_elements_and_nodes(delay_field_data_allocation);
+    bool i_started_modification_cycle = populate_mesh_elements_and_nodes(delayFieldDataAllocation);
     populate_mesh_entitysets(i_started_modification_cycle);
+
+    if(check_integer_size_requirements() == 8) {
+        m_bulkData->set_large_ids_flag(true);
+    }
 }
 
 template<typename INT>
@@ -813,6 +833,11 @@ void StkMeshIoBroker::populate_field_data()
         process_field_data<int64_t>(*region, bulk_data(), m_autoLoadAttributes);
     } else {
         process_field_data<int>(*region, bulk_data(), m_autoLoadAttributes);
+    }
+
+    if(m_bulkData->is_automatic_aura_on()) {
+        std::vector< const stk::mesh::FieldBase *> fields(m_metaData->get_fields().begin(), m_metaData->get_fields().end());
+        stk::mesh::communicate_field_data(m_bulkData->aura_ghosting(), fields);
     }
 }
 
@@ -844,23 +869,10 @@ void StkMeshIoBroker::populate_bulk_data()
 
     create_bulk_data();
 
-    // to preserve behavior for callers of this method, don't do the
-    // delay-field-data-allocation optimization.
-    // If want the optimization, call the population_mesh/populate_field_data methods separately.
-
-    bool delay_field_data_allocation = false;
-    populate_mesh(delay_field_data_allocation);
+    const bool delayFieldDataAllocation = true;
+    populate_mesh(delayFieldDataAllocation);
 
     populate_field_data();
-
-    if(m_bulkData->is_automatic_aura_on()) {
-        std::vector< const stk::mesh::FieldBase *> fields(m_metaData->get_fields().begin(), m_metaData->get_fields().end());
-        stk::mesh::communicate_field_data(m_bulkData->aura_ghosting(), fields);
-    }
-
-    if(check_integer_size_requirements() == 8) {
-        m_bulkData->set_large_ids_flag(true);
-    }
 }
 
 void StkMeshIoBroker::add_input_field(const stk::io::MeshField &mesh_field)
@@ -1258,6 +1270,16 @@ void StkMeshIoBroker::set_throw_on_missing_input_fields(bool flag)
 bool StkMeshIoBroker::get_throw_on_missing_input_fields() const
 {
   return m_throwOnMissingInputFields;
+}
+
+void StkMeshIoBroker::set_enable_all_face_sides_shell_topo(bool flag)
+{
+  m_enableAllFaceSidesShellTopo = flag;
+}
+
+bool StkMeshIoBroker::get_enable_all_face_sides_shell_topo() const
+{
+  return m_enableAllFaceSidesShellTopo;
 }
 
 void StkMeshIoBroker::set_option_to_not_collapse_sequenced_fields()

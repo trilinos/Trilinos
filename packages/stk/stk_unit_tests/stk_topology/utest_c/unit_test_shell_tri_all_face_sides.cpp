@@ -76,7 +76,7 @@ TEST(stk_topology, shell_tri_3_all_face_sides)
   stk::topology t = stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
 
   EXPECT_TRUE(t.is_valid());
-  EXPECT_TRUE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
@@ -133,7 +133,7 @@ void check_shell_tri_3_all_face_sides_on_device()
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     NGP_EXPECT_TRUE(t.is_valid());
-    NGP_EXPECT_TRUE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
@@ -219,7 +219,7 @@ TEST(stk_topology, shell_tri_4_all_face_sides)
   stk::topology t = stk::topology::SHELL_TRI_4_ALL_FACE_SIDES;
 
   EXPECT_TRUE(t.is_valid());
-  EXPECT_TRUE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
@@ -276,7 +276,7 @@ void check_shell_tri_4_all_face_sides_on_device()
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     NGP_EXPECT_TRUE(t.is_valid());
-    NGP_EXPECT_TRUE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
@@ -362,7 +362,7 @@ TEST(stk_topology, shell_tri_6_all_face_sides)
   stk::topology t = stk::topology::SHELL_TRI_6_ALL_FACE_SIDES;
 
   EXPECT_TRUE(t.is_valid());
-  EXPECT_TRUE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
@@ -419,7 +419,7 @@ void check_shell_tri_6_all_face_sides_on_device()
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     NGP_EXPECT_TRUE(t.is_valid());
-    NGP_EXPECT_TRUE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);

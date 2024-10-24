@@ -62,7 +62,7 @@ void test_device_buffers_set_data()
 
   Kokkos::parallel_for("set_buffer_vals", policy, setFunc);
 
-  auto buffersHost = Kokkos::create_mirror_view_and_copy(ExecutionSpace{}, buffers.buffers);
+  auto buffersHost = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace{}, buffers.buffers);
   for (int i=0; i < totalSize; ++i)
   {
     EXPECT_EQ(buffersHost(i), i);

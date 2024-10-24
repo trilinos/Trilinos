@@ -35,7 +35,7 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_balance/setup/LifeCycle.hpp"
 #include "stk_balance/setup/DefaultSettings.hpp"
-#include "stk_util/environment/Env.hpp"
+#include "stk_util/parallel/OutputStreams.hpp"
 #include <stk_unit_test_utils/TextMeshToFile.hpp>
 #include <vector>
 #include <fstream>
@@ -97,8 +97,8 @@ TEST_F(TestLogFile, defaultLogFile)
   stk::balance::LifeCycle balance(get_comm(), args.size(), args.data());
 
   const std::string expectedOutput{"This is a test\n"};
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
 
   if (get_parallel_rank() == 0) {
     ASSERT_TRUE(test_file_exists(logFileName));
@@ -119,8 +119,8 @@ TEST_F(TestLogFile, customLogFile)
   stk::balance::LifeCycle balance(get_comm(), args.size(), args.data());
 
   const std::string expectedOutput{"This is a test\n"};
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
 
   if (get_parallel_rank() == 0) {
     ASSERT_TRUE(test_file_exists(customLogFileName));
@@ -142,8 +142,8 @@ TEST_F(TestLogFile, standardOutLog)
   const std::string expectedOutput{"This is a test\n"};
 
   testing::internal::CaptureStdout();
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
   std::string stdoutString = testing::internal::GetCapturedStdout();
 
   if (get_parallel_rank() == 0) {
@@ -163,8 +163,8 @@ TEST_F(TestLogFile, standardErrLog)
   const std::string expectedOutput{"This is a test\n"};
 
   testing::internal::CaptureStderr();
-  sierra::Env::outputP0() << expectedOutput;
-  sierra::Env::outputP0().flush();
+  stk::outputP0() << expectedOutput;
+  stk::outputP0().flush();
   std::string stderrString = testing::internal::GetCapturedStderr();
 
   if (get_parallel_rank() == 0) {

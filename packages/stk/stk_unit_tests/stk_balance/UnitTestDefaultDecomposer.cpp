@@ -108,9 +108,9 @@ public:
     m_balanceSettings.set_num_output_processors(numFinalProcs);
     m_balanceSettings.setDecompMethod(decompMethod);
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::rebalance(m_ioBroker, m_balanceSettings);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
   }
 };
 

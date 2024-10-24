@@ -190,7 +190,7 @@ lib stk_middle_mesh
         [ glob $(stk_middle_mesh-root)/stk_middle_mesh/predicates/*.cpp ]
         [ glob $(stk_middle_mesh-root)/stk_middle_mesh_utils/*.cpp ]
     ]
-    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
     /sierra/stk_search//stk_search
     /mpi//mpi

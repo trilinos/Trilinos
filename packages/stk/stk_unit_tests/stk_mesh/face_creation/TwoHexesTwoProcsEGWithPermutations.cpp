@@ -4,7 +4,6 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "FaceCreatorFixture.hpp"
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace
 {

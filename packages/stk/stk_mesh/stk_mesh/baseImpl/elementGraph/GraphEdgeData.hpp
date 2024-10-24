@@ -37,6 +37,7 @@
 #include "ElemElemGraphImpl.hpp"
 #include <stk_util/util/PairIter.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <iostream>
 
 namespace stk
 {
@@ -64,6 +65,7 @@ public:
     void delete_sorted_edges(const std::vector<GraphEdge>& graphEdge);
     void clear();
 
+    void print(std::ostream& os);
 private:
     using IndexRange = std::pair<unsigned, unsigned>;
 
@@ -98,8 +100,8 @@ public:
     ParallelInfoForGraphEdges(int procRank) : m_procRank(procRank) {}
     impl::ParallelInfo& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
     const impl::ParallelInfo& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const;
-    impl::ParallelGraphInfo::const_iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const;
-    impl::ParallelGraphInfo::iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge);
+    impl::ParallelGraphInfo::const_iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge, bool throwIfNotFound = true) const;
+    impl::ParallelGraphInfo::iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge, bool throwIfNotFound = true);
     impl::ParallelGraphInfo &get_parallel_graph_info() { return m_parallel_graph_info; }
     const impl::ParallelGraphInfo &get_parallel_graph_info() const { return m_parallel_graph_info; }
 

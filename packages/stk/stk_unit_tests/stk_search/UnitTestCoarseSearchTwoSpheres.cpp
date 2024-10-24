@@ -294,8 +294,8 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);
 
   for (unsigned i = 0; i < expectedNumOverlap; ++i) {
-    EXPECT_EQ(intersections(i).domainIdent, 1);
-    EXPECT_EQ(intersections(i).rangeIdent,  2);
+    EXPECT_EQ(hostIntersections(i).domainIdent, 1);
+    EXPECT_EQ(hostIntersections(i).rangeIdent,  2);
   }
 }
 

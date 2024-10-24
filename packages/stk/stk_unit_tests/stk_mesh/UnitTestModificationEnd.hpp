@@ -53,7 +53,6 @@
 #include <stk_mesh/base/DumpMeshInfo.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/CommandLineArgs.hpp>

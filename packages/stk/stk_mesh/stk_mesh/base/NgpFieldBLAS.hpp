@@ -126,6 +126,24 @@ void field_fill(const Scalar alpha,
   ngp_field_blas::impl::field_fill_impl(alpha, fields.data(), fields.size(), -1, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
 
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_amax(Scalar& amaxOut,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace, EXEC_SPACE>) )
+{
+  ngp_field_blas::impl::field_amax_impl(amaxOut, xField, nullptr, execSpace, isDeviceExecSpaceUserOverride);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_amax(Scalar& amaxOut,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace, EXEC_SPACE>) )
+{
+  ngp_field_blas::impl::field_amax_impl(amaxOut, xField, &selector, execSpace, isDeviceExecSpaceUserOverride);
+}
 
 template<typename EXEC_SPACE>
 inline

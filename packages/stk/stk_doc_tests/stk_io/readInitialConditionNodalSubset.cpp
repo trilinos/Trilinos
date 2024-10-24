@@ -90,8 +90,9 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionNodalSubset)
     stk::mesh::MetaData &meta_data = stkIo.meta_data();
 
     // Declare the nodal "temperature" field. Exists on all nodes.
+    constexpr int numStates = 1;
     stk::mesh::Field<double> &temperature =
-        stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, appFieldName,1);
+        stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, appFieldName,numStates);
 
     // "NodeBlock_1" is the name of the node field on the input mesh.
     stk::io::MeshField mf(temperature, dbFieldNameShell);

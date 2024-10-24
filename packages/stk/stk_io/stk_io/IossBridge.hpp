@@ -172,6 +172,8 @@ void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData 
 
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 
+void declare_stk_aliases(Ioss::Region& region, stk::mesh::MetaData& meta);
+
 /** This is the primary function used by an application to define
  *	the stk::mesh which corresponds to the Ioss mesh read from the
  *	finite element model (e.g. exodusII file). For all entities in
@@ -332,7 +334,7 @@ void define_io_fields(Ioss::GroupingEntity *entity,
  *  stk::topology. If a corresponding topology is not found, a
  *  runtime error exception will be thrown.
  */
-stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology, unsigned mesh_spatial_dimension);
+stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology, unsigned mesh_spatial_dimension, bool useShellAllFaceSides = false);
 
 /** Given a stk::topology, return the
  *	corresponding Ioss::ElementTopology string. If a corresponding
@@ -656,7 +658,8 @@ void fill_data_for_side_block( OutputParams &params,
 {
     STK_ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
 
-    stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension());
+    bool useShellAllFaceSides = io.get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+    stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension(), useShellAllFaceSides);
 
     const stk::mesh::Part *parentElementBlock = get_parent_element_block(params.bulk_data(), params.io_region(), part->name());
 

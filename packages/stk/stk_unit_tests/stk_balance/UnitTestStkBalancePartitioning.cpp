@@ -4,7 +4,7 @@
 #include <stk_balance/internal/Zoltan2ParallelGraph.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <vector>
 #include <string>
@@ -50,11 +50,11 @@ protected:
                     stk::balance::BalanceSettings & balanceSettings)
   {
     m_numFinalSubdomains = numFinalSubdomains;
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::internal::calculateGeometricOrGraphBasedDecomp(get_bulk(), selectors,
                                                                  decompCommunicator, numFinalSubdomains,
                                                                  balanceSettings, m_decomp);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
 
   }
 

@@ -137,6 +137,10 @@ struct topology
   STK_INLINE_FUNCTION
   bool has_homogeneous_faces() const;
 
+  /// does this topology use edge and face ranked topologies for sides
+  STK_INLINE_FUNCTION
+  bool has_mixed_rank_sides() const;
+
   /// is this topology a shell topology (i.e. an element with only two sides)
   STK_INLINE_FUNCTION
   bool is_shell() const;
@@ -153,7 +157,7 @@ struct topology
 
   /// what is the side rank of this topology
   STK_INLINE_FUNCTION
-  rank_t side_rank() const;
+  rank_t side_rank(unsigned ord = 0) const;
 
   /// what is the topological dimension of this topology
   STK_INLINE_FUNCTION

@@ -128,6 +128,20 @@ constexpr topology::topology_t face_topology_()
 
 //------------------------------------------------------------------------------
 
+template <typename Topology, unsigned SideOrdinal>
+STK_INLINE_FUNCTION
+constexpr topology::rank_t side_rank_()
+{
+  if constexpr (SideOrdinal < Topology::num_faces) {
+    return topology::FACE_RANK;
+  } else {
+    return topology::EDGE_RANK;
+  }
+  return Topology::side_rank;
+}
+
+//------------------------------------------------------------------------------
+
 template <typename Topology, unsigned ShellSideOrdinal>
 STK_INLINE_FUNCTION
 constexpr topology::topology_t shell_side_topology_()

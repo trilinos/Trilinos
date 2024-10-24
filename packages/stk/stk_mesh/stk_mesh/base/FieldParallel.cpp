@@ -429,7 +429,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
                       "Please don't mix fields with different primitive types in the same parallel assemble operation");
 
         f.sync_to_host();
-        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank(), proc);
+        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map<stk::ngp::MemSpace>(f.entity_rank(), proc);
         for(size_t i=0; i<commMapIndices.extent(0); ++i) {
             const unsigned bucket = commMapIndices(i).bucket_id;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
@@ -443,7 +443,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
 
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j];
-        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank(),proc);
+        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map<stk::ngp::MemSpace>(f.entity_rank(),proc);
 
         for(size_t i=0; i<commMapIndices.extent(0); ++i) {
             const unsigned bucket = commMapIndices(i).bucket_id;
@@ -468,7 +468,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
     unsigned recv_offset = 0;
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j] ;
-        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank(), iproc);
+        HostCommMapIndices commMapIndices = mesh.volatile_fast_shared_comm_map<stk::ngp::MemSpace>(f.entity_rank(), iproc);
 
         f.sync_to_host();
         f.modify_on_host();

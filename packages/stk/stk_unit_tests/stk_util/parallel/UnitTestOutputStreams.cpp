@@ -32,28 +32,75 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#include "gtest/gtest.h"
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
+#include <sstream>
+#include <string>
 
-#include <stk_util/registry/ProductRegistry.hpp>
-
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
-
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
-
-#define STK_VERSION 5210600
-
-
-namespace stk
+TEST(stkOutputStreams, set_outputP0)
 {
+  std::ostringstream oss;
+  stk::set_outputP0(&oss);
+  std::string expected("hello world");
+  stk::outputP0() << expected;
 
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  if (myProc == 0) {
+    EXPECT_EQ(expected, oss.str());
+  }
+  else {
+    EXPECT_EQ(std::string(""), oss.str());
+  }
 
-} // namespace stk
+  stk::reset_default_output_streams();
+}
 
-#endif /* stk_util_Version_hpp */
+TEST(stkOutputStreams, outputP0_np2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
 
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  stk::reset_default_output_streams();
+
+  testing::internal::CaptureStdout();
+
+  std::string expected("hello world");
+  stk::outputP0() << expected;
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  if (myProc == 0) {
+    EXPECT_EQ(expected, stdoutString);
+  }
+  else {
+    EXPECT_EQ(std::string(""), stdoutString);
+  }
+
+  stk::reset_default_output_streams();
+}
+
+TEST(stkOutputStreams, output_flush)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  stk::reset_default_output_streams();
+
+  std::ostringstream oss;
+  stk::set_outputP0(&oss);
+
+  stk::output() << "<hello from P"<<std::to_string(myProc)<<">";
+
+  stk::output_flush();
+
+  if (myProc == 0) {
+    EXPECT_EQ(std::string("<hello from P0>\n<hello from P1>\n"), oss.str());
+  }
+  else {
+    EXPECT_EQ(std::string(""), oss.str());
+  }
+
+  stk::reset_default_output_streams();
+}

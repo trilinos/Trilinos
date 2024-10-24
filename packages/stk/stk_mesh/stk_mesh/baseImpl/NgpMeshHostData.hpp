@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,30 +30,41 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#ifndef STK_DEVICEMESH_HOST_DATA_HPP
+#define STK_DEVICEMESH_HOST_DATA_HPP
 
-#include <stk_util/registry/ProductRegistry.hpp>
-
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
-
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
-
-#define STK_VERSION 5210600
-
+#include <Kokkos_Core.hpp>
+#include "stk_mesh/base/NgpTypes.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace stk
 {
+namespace mesh
+{
+namespace impl
+{
 
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
+struct NgpMeshHostDataBase {
+  virtual ~NgpMeshHostDataBase() = default;
+};
 
-} // namespace stk
+template <typename NgpMemSpace>
+struct NgpMeshHostData : NgpMeshHostDataBase {
 
-#endif /* stk_util_Version_hpp */
+  typename EntityKeyViewTypeT<NgpMemSpace>::HostMirror hostEntityKeys;
+  typename BucketEntityOffsetsViewTypeT<NgpMemSpace>::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
+  typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostEntityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  typename EntityViewTypeT<NgpMemSpace>::HostMirror hostSparseConnectivity[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  typename OrdinalViewTypeT<NgpMemSpace>::HostMirror hostSparseConnectivityOrdinals[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  typename PermutationViewTypeT<NgpMemSpace>::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
+  typename NgpCommMapIndicesT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
+  unsigned volatileFastSharedCommMapSyncCount = 0;
+};
 
+}  // namespace impl
+}  // namespace mesh
+}  // namespace stk
+
+#endif
