@@ -194,7 +194,9 @@ class HostField : public NgpFieldBase
   void sync_to_host() override
   {
     sync_to_host(Kokkos::DefaultExecutionSpace());
-    Kokkos::fence();
+    if constexpr (!std::is_same_v<Kokkos::DefaultExecutionSpace,Kokkos::Serial>) {
+      Kokkos::fence();
+    }
   }
 
   void sync_to_host(const ExecSpace& execSpace) override

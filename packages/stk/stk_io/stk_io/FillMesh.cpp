@@ -21,11 +21,9 @@ void fill_mesh_preexisting(stk::io::StkMeshIoBroker & stkIo,
     stkIo.add_mesh_database(meshSpec, purpose);
     stkIo.create_input_mesh();
     stkIo.add_all_mesh_fields_as_input_fields();
-    stkIo.populate_bulk_data();
-
-    if(stkIo.check_integer_size_requirements() == 8) {
-        bulkData.set_large_ids_flag(true);
-    }
+    const bool delayFieldDataAllocation = true;
+    stkIo.populate_mesh(delayFieldDataAllocation);
+    stkIo.populate_field_data();
 }
 
 void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo)

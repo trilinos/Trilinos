@@ -314,6 +314,22 @@ void set_sideset_topology(const Ioss::SideSet *ss, stk::mesh::Part *part, const 
   }
 }
 
+void adjust_par_dimen_for_shell_all_face_sides(stk::topology topo, int& par_dimen)
+{
+  switch (topo) {
+    case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
+    case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
+      par_dimen = 2;
+      break;
+    default: 
+      break;
+  }
+}
+
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, std::vector<ElemSidePartOrds> &sidesToMove, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
@@ -322,6 +338,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
     const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
+
+    bool useShellAllFaceSides = region->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
 
     stk::mesh::SideSet *stkSideSet = nullptr;
     stk::mesh::Part *stkSideSetPart = get_part_for_grouping_entity(*region, meta, sset);
@@ -410,9 +428,9 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     if(par_dimen == 0)
                     {
                         stk::topology elemTopo = bulk.bucket(elem).topology();
-                        stk::topology faceTopo = elemTopo.sub_topology(elemTopo.side_rank(), side_ordinal);
+                        stk::topology sideTopo = elemTopo.sub_topology(elemTopo.side_rank(side_ordinal), side_ordinal);
 
-                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(faceTopo.name(), false);
+                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(sideTopo.name(), false);
                         par_dimen = ioss_topo->parametric_dimension();
                     }
 
@@ -424,6 +442,11 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                          if(nullptr != stkSideSet) {
                            stkSideSet->add({elem, side_ordinal});
                          }
+                    }
+
+                    if (useShellAllFaceSides) {
+                      stk::topology elemTopo = bulk.bucket(elem).topology();
+                      adjust_par_dimen_for_shell_all_face_sides(elemTopo, par_dimen);
                     }
 
                     if (par_dimen == 1) {

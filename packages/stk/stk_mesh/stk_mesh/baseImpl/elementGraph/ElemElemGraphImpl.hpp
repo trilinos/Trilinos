@@ -55,8 +55,6 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
-static const LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
-
 struct RemoteElementData
 {
 public:

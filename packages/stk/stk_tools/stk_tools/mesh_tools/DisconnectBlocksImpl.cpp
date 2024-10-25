@@ -10,6 +10,7 @@
 #include "stk_mesh/base/SkinMeshUtil.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/baseImpl/AuraGhosting.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocks.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
@@ -710,10 +711,6 @@ void disconnect_faces(stk::mesh::BulkData& bulk, LinkInfo& info)
     update_internal_face_entity_relation(bulk, faceInfo);
   }
 
-  if (bulk.has_face_adjacent_element_graph()) {
-    bulk.get_face_adjacent_element_graph().fill_from_mesh();
-  }
-
   for (auto faceInfo : info.internalSides) {
     disconnect_internal_face(bulk, faceInfo);
   }
@@ -1260,33 +1257,30 @@ void update_node_id(stk::mesh::EntityId newNodeId, int proc, LinkInfo& info, con
   }
 }
 
-void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info)
+void remove_orphan_nodes(stk::mesh::BulkData& bulk)
 {
-  stk::mesh::EntityVector allNodes;
-  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().locally_owned_part(), allNodes);
-
-  for(stk::mesh::Entity node : allNodes) {
-    const int numElems = bulk.num_connectivity(node, stk::topology::ELEMENT_RANK);
-    const stk::mesh::Entity* elems = bulk.begin(node, stk::topology::ELEMENT_RANK);
-    int numDestroyedElems = 0;
-
-    for(int i = numElems-1; i >= 0; --i) {
-      stk::mesh::Entity elem = elems[i];
-      if(!bulk.bucket(elem).owned()) {
-        bulk.destroy_entity(elem);
-        ++numDestroyedElems;
-      }
-    }
-
-    if(numDestroyedElems == numElems) {
+  stk::mesh::EntityVector ownedNodes;
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().locally_owned_part(), ownedNodes);
+  for(stk::mesh::Entity node : ownedNodes) {
+    if (!stk::mesh::impl::has_upward_connectivity(bulk, node)) {
       bulk.destroy_entity(node);
     }
   }
 }
 
+void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info)
+{
+  stk::mesh::impl::AuraGhosting auraGhosting;
+  auraGhosting.remove_aura(bulk);
+}
+
 void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
                             LinkInfo& info)
 {
+  const bool haveGraph = bulk.has_face_adjacent_element_graph();
+  if (haveGraph) {
+    bulk.delete_face_adjacent_element_graph();
+  }
   bulk.modification_begin();
 
   for (size_t i = 0; i < blockPairsToDisconnect.size(); ++i) {
@@ -1314,11 +1308,11 @@ void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPa
   disconnect_faces(bulk, info);
 
   clean_up_aura(bulk, info);
+  remove_orphan_nodes(bulk);
 
   bulk.modification_end();
 
-  if (bulk.has_face_adjacent_element_graph()) {
-    bulk.delete_face_adjacent_element_graph();
+  if (haveGraph) {
     bulk.initialize_face_adjacent_element_graph();
   }
 }
@@ -1366,6 +1360,10 @@ stk::mesh::EntityVector get_affected_nodes(const stk::mesh::BulkData& bulk, cons
 void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToReconnect,
                            LinkInfo& info)
 {
+  const bool haveGraph = bulk.has_face_adjacent_element_graph();
+  if (haveGraph) {
+    bulk.delete_face_adjacent_element_graph();
+  }
   bulk.modification_begin();
 
   sanitize_node_map(info.originalNodeMap, info);
@@ -1381,8 +1379,12 @@ void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPai
   }
 
   clean_up_aura(bulk, info);
+  remove_orphan_nodes(bulk);
 
   bulk.modification_end();
+  if (haveGraph) {
+    bulk.initialize_face_adjacent_element_graph();
+  }
 }
 }
 }

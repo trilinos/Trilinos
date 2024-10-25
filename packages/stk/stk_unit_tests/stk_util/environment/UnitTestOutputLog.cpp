@@ -35,8 +35,7 @@
 #include "gtest/gtest.h"
 #include "stk_util/parallel/Parallel.hpp"
 #include "stk_util/environment/OutputLog.hpp"
-#include "stk_util/environment/EnvData.hpp"
-#include "stk_util/environment/Env.hpp"
+#include "stk_util/parallel/OutputStreams.hpp"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -147,11 +146,11 @@ TEST_F(TestOutputStreams, LogViaOutputP0)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
   stk::bind_output_streams("log=\"myfile.log\"");
-  stk::EnvData::instance().m_outputP0 = stk::get_log_ostream("log");
+  stk::set_outputP0(stk::get_log_ostream("log"));
 
   ASSERT_EQ((std::string("myfile.log") == stk::get_log_path("log")), true); 
   
-  sierra::Env::outputP0() << "This is a test" << std::endl;
+  stk::outputP0() << "This is a test" << std::endl;
 
   stk::bind_output_streams("log=\"\"");
 
