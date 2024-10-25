@@ -165,6 +165,8 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   //    <typename lno_row_view_t::non_const_value_type, typename lno_nonzero_view_t::non_const_value_type, typename scalar_nonzero_view_t::value_type,
   //    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;//test
   Teuchos::RCP<kk_handle_type> KernelHandle_;
+  Teuchos::RCP<kk_handle_type> L_Sptrsv_KernelHandle_;
+  Teuchos::RCP<kk_handle_type> U_Sptrsv_KernelHandle_;
 
   //@}
 
