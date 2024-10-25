@@ -118,7 +118,7 @@ namespace BaskerNS
     for(Int i =0; i < tree.nblks+1; i++)
     {
       BASKER_ASSERT(num_threads > 0, "tree num_threads");
-      MALLOC_INT_1DARRAY(S[i], num_threads);
+      MALLOC_INT_1DARRAY(S(i), num_threads);
     }
 
     //this will want to be across all threads 
@@ -335,7 +335,7 @@ namespace BaskerNS
             l, t, lvl_counter ,lvl_idx, tree.nblks);
         #endif
 
-        S[l][t] = tree.lvlset[lvl_idx];
+        S(l)(t) = tree.lvlset[lvl_idx];
         if(lvl_counter >= (pow(tree.nparts,l)-1))
         {
           lvl_idx++;
@@ -356,7 +356,7 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        cout << S[l][t] << " , " ; 
+        cout << S(l)(t) << " , " ; 
       }//end over nhreads
       cout << endl;
     }//end over nlvls
@@ -368,11 +368,11 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        Int s_element = S[l][t];
+        Int s_element = S(l)(t);
         Int row_size = (tree.row_tabs[s_element+1] - 
             tree.row_tabs[s_element]);
-        thread_array[t].iws_size += row_size;
-        thread_array[t].ews_size += row_size;
+        thread_array(t).iws_size += row_size;
+        thread_array(t).ews_size += row_size;
       }//end over threads
     }//end over lvls
     
@@ -592,7 +592,7 @@ namespace BaskerNS
             l, t, lvl_counter ,lvl_idx, tree.nblks);
         #endif
 
-        S[l][t] = tree.lvlset[lvl_idx];
+        S(l)(t) = tree.lvlset[lvl_idx];
         if(lvl_counter >= (pow(tree.nparts,l)-1))
         {
           lvl_idx++;
@@ -611,7 +611,7 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        cout << S[l][t] << " , " ; 
+        cout << S(l)(t) << " , " ; 
       }//end over nhreads
       cout << endl;
     }//end over nlvls
@@ -624,10 +624,10 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        Int s_element = S[l][t];
+        Int s_element = S(l)(t);
         Int row_size = (tree.row_tabs[s_element+1] - tree.row_tabs[s_element]);
-        thread_array[t].iws_size += row_size;
-        thread_array[t].ews_size += row_size;
+        thread_array(t).iws_size += row_size;
+        thread_array(t).ews_size += row_size;
       }//end over threads
     }//end over lvls
     

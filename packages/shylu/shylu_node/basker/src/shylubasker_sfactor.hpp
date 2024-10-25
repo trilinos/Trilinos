@@ -285,8 +285,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     for(Int ii=0; ii < split_num; ii++)
     {
       BASKER_ASSERT(A.ncol > 0, "Basker symmetric_sfactor assert: A.ncol malloc > 0 failed");
-      MALLOC_INT_1DARRAY(gScol[ii], A.ncol);
-      init_value(gScol[ii], A.ncol, (Int)0);
+      MALLOC_INT_1DARRAY(gScol(ii), A.ncol);
+      init_value(gScol(ii), A.ncol, (Int)0);
     }
 
  
@@ -298,8 +298,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     for(Int ii=0; ii < split_num; ii++)
     {
       BASKER_ASSERT(A.nrow > 0, "sfactor A.nrow malloc");
-      MALLOC_INT_1DARRAY(gSrow[ii], A.nrow);
-      init_value(gSrow[ii], A.nrow, (Int)0);
+      MALLOC_INT_1DARRAY(gSrow(ii), A.nrow);
+      init_value(gSrow(ii), A.nrow, (Int)0);
     }
 
     #ifdef BASKER_TIMER 
@@ -334,7 +334,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     for(Int p = 0; p < num_threads; ++p)
     #endif
     {
-      Int blk = S[0][p];
+      Int blk = S(0)(p);
       if(Options.verbose == BASKER_TRUE)
       {
         printf(" ============= DOMAIN BLK (p=%d) ============\n",(int)p);
@@ -409,18 +409,18 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     for(Int p = 0; p < num_threads; ++p)
     {
       //Do off diag
-      Int blk = S[0][p];
+      Int blk = S(0)(p);
       #ifdef SHYLU_BASKER_STREE_LIST
       auto stree_p = stree_list[p];
       #endif
       for(Int l =0; l < tree.nlvls; l++)
       {
-        Int U_col = S[l+1][p];
+        Int U_col = S(l+1)(p);
         //Note: Need to think more about this flow
         //Should be subtracted by how many times in the 
         //future
 
-        Int my_row_leader = S[0][find_leader(p,l)];
+        Int my_row_leader = S(0)(find_leader(p,l));
         //Int my_new_row = 
         // blk - my_row_leader;
         Int U_row = blk-my_row_leader;
@@ -436,16 +436,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int off_diag = 1;
         //printf( " U_blk_sfactor(AVM(%d,%d))\n",U_col,U_row );
         //U_blk_sfactor(AV[U_col][U_row], stree,
-        //		  gScol[l], gSrow[glvl],0);
+        //		  gScol(l), gSrow(glvl),0);
         #ifdef BASKER_TIMER 
         timer1.reset();
         #endif
         #ifdef SHYLU_BASKER_STREE_LIST
         U_blk_sfactor(AVM[U_col][U_row], stree_p,
-                      gScol[l], gSrow[glvl], off_diag);
+                      gScol(l), gSrow(glvl), off_diag);
         #else
         U_blk_sfactor(AVM[U_col][U_row], stree,
-                      gScol[l], gSrow[glvl], off_diag);
+                      gScol(l), gSrow(glvl), off_diag);
         #endif
         #ifdef BASKER_TIMER 
         time3 += timer1.seconds();
@@ -533,11 +533,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
             (long)U_col, (long)U_row, (long)lvl, (long)pp);
         #endif
 
-        Int U_col = S[lvl+1][ppp];
+        Int U_col = S(lvl+1)(ppp);
         Int U_row = 0;
 
         //S_blk_sfactor(AL[U_col][U_row], stree,
-        //gScol[lvl], gSrow[pp]);
+        //gScol(lvl), gSrow(pp));
 
         #ifdef BASKER_TIMER 
         printf( " >>> S_blk_sfactor( ALM(%d)(%d) with %dx%d and nnz=%d) <<<\n",U_col,U_row, ALM[U_col][U_row].nrow,ALM[U_col][U_row].ncol,ALM[U_col][U_row].nnz ); fflush(stdout);
@@ -545,10 +545,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         #ifdef SHYLU_BASKER_STREE_LIST
         auto stree_p = stree_list[pp];
         S_blk_sfactor(ALM[U_col][U_row], stree_p,
-            gScol[lvl], gSrow[pp]);
+            gScol(lvl), gSrow(pp));
         #else
         S_blk_sfactor(ALM[U_col][U_row], stree,
-            gScol[lvl], gSrow[pp]);
+            gScol(lvl), gSrow(pp));
         #endif
         #ifdef BASKER_TIMER 
         printf( " >>> -> nnz = %d\n",ALM[U_col][U_row].nnz ); fflush(stdout);
@@ -592,20 +592,20 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int ppp;
         ppp =  pp*pow(tree.nparts, lvl+1);
 
-        Int U_col = S[lvl+1][ppp];
+        Int U_col = S(lvl+1)(ppp);
         Int U_row = 0;
 
         Int inner_blk = U_col;
         for(Int l = lvl+1; l < tree.nlvls; l++)
         {
           //printf( " --- pp = %d/%d, l = %d/%d ---\n",pp,p, l,tree.nlvls ); fflush(stdout);
-          U_col = S[l+1][ppp];
-          U_row = S[lvl+1][ppp]%LU_size(U_col);
+          U_col = S(l+1)(ppp);
+          U_row = S(lvl+1)(ppp)%LU_size(U_col);
 
-          Int my_row_leader = S[0][find_leader(ppp,l)];
+          Int my_row_leader = S(0)(find_leader(ppp,l));
           //Int my_new_row = 
           // S(lvl+1)(ppp) - my_row_leader;
-          U_row =  S[lvl+1][ppp] - my_row_leader;
+          U_row =  S(lvl+1)(ppp) - my_row_leader;
 
           #ifdef BASKER_DEBUG_SFACTOR
           printf("offida sep, lvl: %d l: %d U_col: %d U_row: %d \n", lvl, l, U_col, U_row);
@@ -615,10 +615,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           Int off_diag = 1;
           #ifdef SHYLU_BASKER_STREE_LIST
           U_blk_sfactor(AVM[U_col][U_row], stree_p,
-              gScol[l], gSrow[pp], off_diag);
+              gScol(l), gSrow(pp), off_diag);
           #else
           U_blk_sfactor(AVM[U_col][U_row], stree,
-              gScol[l], gSrow[pp], off_diag);
+              gScol(l), gSrow(pp), off_diag);
           #endif
 
           //In symmetric will not need
@@ -656,8 +656,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     for(Int ii = 0 ; ii < split_num; ++ii)
     {
       //printf("split\n");
-      FREE(gScol[ii]);
-      FREE(gSrow[ii]);
+      FREE(gScol(ii));
+      FREE(gSrow(ii));
     }
     FREE(gScol);
     FREE(gSrow);
@@ -2589,22 +2589,22 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
       for(Int i = 0 ; i < num_threads; i++)
       {
-        thread_array[i].iws_size = max_blk_size;
-        thread_array[i].ews_size = max_blk_size;
+        thread_array(i).iws_size = max_blk_size;
+        thread_array(i).ews_size = max_blk_size;
 
         //BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
         //BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
         #ifdef BASKER_TIMER
         printf("Malloc Thread: %d iws: %d \n",
-            i, (thread_array[i].iws_size*
-              thread_array[i].iws_mult));
+            i, (thread_array(i).iws_size*
+              thread_array(i).iws_mult));
         printf("Malloc Thread: %d ews: %d \n",
-            i, (thread_array[i].ews_size*
-              thread_array[i].ews_mult));
+            i, (thread_array(i).ews_size*
+              thread_array(i).ews_mult));
         #endif
         if (max_blk_size > 0) {
-          MALLOC_INT_1DARRAY(thread_array[i].iws, thread_array[i].iws_size*thread_array[i].iws_mult);
-          MALLOC_ENTRY_1DARRAY(thread_array[i].ews, thread_array[i].ews_size*thread_array[i].ews_mult);
+          MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
+          MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
         }
       }
     }

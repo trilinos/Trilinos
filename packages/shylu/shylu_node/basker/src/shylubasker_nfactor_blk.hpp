@@ -149,7 +149,7 @@ namespace BaskerNS
     const Mag normA     = BTF_A.gnorm;
     const Mag normA_blk = BTF_A.anorm;
 
-    Int b = S[0][kid]; //Which blk from schedule
+    Int b = S(0)(kid); //Which blk from schedule
     BASKER_MATRIX &L   = LL[b][0];
     BASKER_MATRIX &U   = LU[b][LU_size(b)-1];
     BASKER_MATRIX &M   = ALM[b][0]; //A->blk
@@ -159,9 +159,9 @@ namespace BaskerNS
     ENTRY_1DARRAY X    = LL[b][0].ews;
     Int        ws_size = LL[b][0].iws_size;
 #else  //else if BASKER_2DL
-    INT_1DARRAY   ws   = thread_array[kid].iws;
-    ENTRY_1DARRAY X    = thread_array[kid].ews;
-    Int       ws_size  = thread_array[kid].iws_size;
+    INT_1DARRAY   ws   = thread_array(kid).iws;
+    ENTRY_1DARRAY X    = thread_array(kid).ews;
+    Int       ws_size  = thread_array(kid).iws_size;
 #endif
     //Int          bcol  = L.scol;  //begining col //NOT UD
     Int          scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
@@ -577,11 +577,11 @@ namespace BaskerNS
 	    }
           }
 	  if (!explicit_pivot) {
-            thread_array[kid].error_type =
+            thread_array(kid).error_type =
               BASKER_ERROR_SINGULAR;
-            thread_array[kid].error_blk    = b;
-            thread_array[kid].error_subblk = 0; 
-            thread_array[kid].error_info   = k;
+            thread_array(kid).error_blk    = b;
+            thread_array(kid).error_subblk = 0; 
+            thread_array(kid).error_info   = k;
             return BASKER_ERROR;
           }
         }
@@ -676,17 +676,17 @@ namespace BaskerNS
                  (int)kid, (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (int)lnnz, (int)M.nrow, (long)newsize);
         }
 
-        thread_array[kid].error_blk = b;
-        thread_array[kid].error_subblk = 0;
+        thread_array(kid).error_blk = b;
+        thread_array(kid).error_subblk = 0;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array[kid].error_type = BASKER_ERROR_NOMALLOC;
+          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array[kid].error_type = BASKER_ERROR_REMALLOC;
-          thread_array[kid].error_info = newsize;
+          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+          thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
 
@@ -701,17 +701,17 @@ namespace BaskerNS
                  (int)kid, (long)b, (long)uunnz, (long)unnz+ucnt, (long)k, (int)uunnz, (int)M.nrow, (int)newsize);
         }
 
-        thread_array[kid].error_blk = b;
-        thread_array[kid].error_subblk = -1;
+        thread_array(kid).error_blk = b;
+        thread_array(kid).error_subblk = -1;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array[kid].error_type = BASKER_ERROR_NOMALLOC;
+          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array[kid].error_type = BASKER_ERROR_REMALLOC;
-          thread_array[kid].error_info = newsize;
+          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+          thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
 
@@ -981,7 +981,7 @@ namespace BaskerNS
    )
   {
     //Setup variables
-    const Int wsb    = S[0][kid];
+    const Int wsb    = S(0)(kid);
 
     INT_1DARRAY  ws   = LL[wsb][l].iws;
     const Int ws_size = LL[wsb][l].iws_size;
@@ -1011,11 +1011,11 @@ namespace BaskerNS
    )
   {
     const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
-    const Int  b      = S[lvl][kid];
+    const Int  b      = S(lvl)(kid);
 
     //const Int wsb    = S(0)(kid);
     BASKER_MATRIX &L = LL[b][0];
-    const Int U_col  = S[lvl][kid];
+    const Int U_col  = S(lvl)(kid);
     Int U_row        = LU_size(U_col)-1;
     if(lvl > 0)
     {
@@ -1128,8 +1128,8 @@ namespace BaskerNS
   {
     
     //Setup variables
-    const Int  b        = S[lvl][kid];
-    const Int  wsb      = S[0][kid];
+    const Int  b        = S(lvl)(kid);
+    const Int  wsb      = S(0)(kid);
     BASKER_MATRIX  &L   = LL[b][0];
     const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     const Int  brow_g   = L.srow + scol_top;   // global offset
@@ -1279,15 +1279,15 @@ namespace BaskerNS
   {
 
     //Setup variables
-    const Int      b   = S[lvl][kid];
-    const Int     wsb  = S[0][kid];
+    const Int      b   = S(lvl)(kid);
+    const Int     wsb  = S(0)(kid);
     BASKER_MATRIX  &L  = LL[b][0];
     #ifdef BASKER_2DL
     INT_1DARRAY    ws  = LL[wsb][l].iws;
     const Int  ws_size = LL[wsb][l].iws_size;
     #else
-    INT_1DARRAY    ws  = thread_array[kid].iws;
-    Int        ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY    ws  = thread_array(kid).iws;
+    Int        ws_size = thread_array(kid).iws_size;
     #endif
 
     const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
@@ -1452,17 +1452,17 @@ namespace BaskerNS
    Int k, Int top,
    Int xnnz)
   {
-    const Int      b = S[lvl][kid];
-    const Int    wsb = S[0][kid];
+    const Int      b = S(lvl)(kid);
+    const Int    wsb = S(0)(kid);
     BASKER_MATRIX &L = LL[b][0];
     #ifdef BASKER_2DL
     INT_1DARRAY   ws = LL[wsb][l].iws;
     ENTRY_1DARRAY X  = LL[wsb][l].ews;
     Int      ws_size = LL[wsb][l].iws_size;
     #else
-    INT_1DARRAY   ws = thread_array[kid].iws;
-    ENTRY_1DARRAY  X = thread_array[kid].ews;
-    Int      ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY   ws = thread_array(kid).iws;
+    ENTRY_1DARRAY  X = thread_array(kid).ews;
+    Int      ws_size = thread_array(kid).iws_size;
     #endif
     
     const Entry zero (0.0);
@@ -1658,17 +1658,17 @@ namespace BaskerNS
             (long)blkcol, (long)blkrow, (long)kid, (long)llnnz, (long)lnnz, (long)p_size  );
       }
 
-      thread_array[kid].error_blk    = blkcol;
-      thread_array[kid].error_subblk = blkrow;
+      thread_array(kid).error_blk    = blkcol;
+      thread_array(kid).error_subblk = blkrow;
       if(Options.realloc == BASKER_FALSE)
       {
-        thread_array[kid].error_type = BASKER_ERROR_NOMALLOC;
+        thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
         return BASKER_ERROR;
       }
       else
       {
-        thread_array[kid].error_type = BASKER_ERROR_REMALLOC;
-        thread_array[kid].error_info = newsize;
+        thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+        thread_array(kid).error_info = newsize;
         return BASKER_ERROR;
       }
       //BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");

@@ -135,7 +135,7 @@ namespace BaskerNS
     // 3) t_lower_col_factor          : factor A(7,7), sequential
     // 4) t_lower_col_factor_offdiag2 : compute L(8:end, 7)
 
-    const Int U_col = S[lvl][kid];
+    const Int U_col = S(lvl)(kid);
     const Int U_row = 0;
     Int ncol = LU[U_col][U_row].ncol;
     Int my_leader = find_leader(kid, 0);
@@ -181,7 +181,7 @@ namespace BaskerNS
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 0, LU[U_col][U_row].scol, 0);
     for(Int tid = 0; tid < num_threads; tid++) {
-      if (thread_array[tid].error_type != BASKER_SUCCESS) {
+      if (thread_array(tid).error_type != BASKER_SUCCESS) {
         info = BASKER_ERROR;
       }
     }
@@ -250,7 +250,7 @@ namespace BaskerNS
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 3, LU[U_col][U_row].scol, 0);
     for(Int ti = 0; ti < num_threads; ti++) {
-      if (thread_array[kid].error_type != BASKER_SUCCESS) {
+      if (thread_array(kid).error_type != BASKER_SUCCESS) {
         info = BASKER_ERROR;
       }
     }
@@ -336,7 +336,7 @@ namespace BaskerNS
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 4, k, lvl-1);
         for(Int tid = 0; tid < num_threads; tid++) {
-          if (thread_array[tid].error_type != BASKER_SUCCESS) {
+          if (thread_array(tid).error_type != BASKER_SUCCESS) {
             info = BASKER_ERROR;
           }
         }
@@ -395,7 +395,7 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       double time_factot = timer.seconds();
       if((kid%(Int)(pow(2,lvl))) == 0) {
-        const Int L_col = S[lvl][kid];
+        const Int L_col = S(lvl)(kid);
         const Int L_row = LU_size(U_col)-1;
 
         printf("Time Lower-Col(%d): %lf, n = %d, nnz(L) = %d, nnz(U) = %d \n", (int)kid, time_factot,
@@ -446,7 +446,7 @@ namespace BaskerNS
       #endif
 
       //This will do the correct spmv
-      if(thread_array[kid].error_type == BASKER_ERROR_NOERROR) {
+      if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
         t_upper_col_factor_offdiag2(kid, lvl, sl,l, k, lower);
       }
       //Barrier--Start
@@ -461,7 +461,7 @@ namespace BaskerNS
       //Barrier--End
 
       if(kid%((Int)pow(2,sl)) == 0 &&
-         thread_array[kid].error_type == BASKER_ERROR_NOERROR) {
+         thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
         t_dense_blk_col_copy_atomic2(kid, my_leader,
                                      lvl, sl, l, k, lower);
       }
@@ -477,7 +477,7 @@ namespace BaskerNS
       #endif
     }//over all sublevels
 
-    if(thread_array[kid].error_type == BASKER_ERROR_NOERROR) {
+    if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
       t_dense_copy_update_matrix2(kid, my_leader, lvl, l, k);
     }
   }//end t_add_add
@@ -507,10 +507,10 @@ namespace BaskerNS
       return;
     }
 
-    Int my_row_leader = S[0][find_leader(kid,lvl-1)];
-    const Int L_col = S[sl][my_leader];
-    const Int U_col = S[lvl][kid];
-    const Int X_col = S[0][my_leader];
+    Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+    const Int L_col = S(sl)(my_leader);
+    const Int U_col = S(lvl)(kid);
+    const Int X_col = S(0)(my_leader);
     Int L_row = l-sl+1; //Might have to think about th
     Int U_row = L_col-my_row_leader;
     Int X_row = l+1; //this will change for us 
@@ -588,10 +588,10 @@ namespace BaskerNS
     //Setup
     //printf("DEBUG, kid: %d k: %d A_col: %d A_row: %d \n", 
     //       kid, k, A_col, A_row);
-    const Int my_idx     = S[0][kid];
+    const Int my_idx     = S(0)(kid);
     //should remove either as a paramter or here
     Int team_leader      = find_leader(kid, sl);
-    const Int leader_idx = S[0][team_leader];
+    const Int leader_idx = S(0)(team_leader);
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(lower == BASKER_TRUE)
     {
@@ -709,8 +709,8 @@ namespace BaskerNS
     //printf("\n\n\n\n");
 
     const Entry zero (0.0);
-    const Int leader_idx = S[0][kid];
-    BASKER_MATRIX     &C = thread_array[kid].C;  
+    const Int leader_idx = S(0)(kid);
+    BASKER_MATRIX     &C = thread_array(kid).C;  
     Int nnz = 0;
 
     //Over each blk    
@@ -724,10 +724,10 @@ namespace BaskerNS
     // X += B(:, k)
     {
       Int bl = l+1;
-      Int A_col = S[lvl][kid];
+      Int A_col = S(lvl)(kid);
 
-      Int my_row_leader = S[0][find_leader(kid,lvl-1)];
-      Int A_row = S[bl][kid] - my_row_leader;
+      Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+      Int A_row = S(bl)(kid) - my_row_leader;
 
       BASKER_MATRIX *Bp;
       if(A_row != (LU_size(A_col)-1))
@@ -875,13 +875,13 @@ namespace BaskerNS
     const Int leader_id   = find_leader(kid, l);
     const Int lteam_size  = pow(2,l+1);
 
-    const Int L_col       = S[lvl][leader_id];
-    const Int U_col       = S[lvl][leader_id];
+    const Int L_col       = S(lvl)(leader_id);
+    const Int U_col       = S(lvl)(leader_id);
 
     Int L_row             = 0;
     Int U_row             = LU_size(U_col)-1;
 
-    Int X_col             = S[0][leader_id];
+    Int X_col             = S(0)(leader_id);
     Int X_row             = l+1;
 
     Int col_idx_offset    = 0;  //can get rid of?

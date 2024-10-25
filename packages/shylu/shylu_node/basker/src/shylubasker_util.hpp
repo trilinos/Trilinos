@@ -358,7 +358,7 @@ namespace BaskerNS
     {
       if(kid%((Int)pow(2,lvl)) == 0)
       {
-        Int b = S[lvl][kid];
+        Int b = S(lvl)(kid);
 
         for(Int row = 0; row < LL_size(b); row++)
         {
@@ -378,7 +378,7 @@ namespace BaskerNS
     {
       if(kid%((Int)pow(2,lvl)) == 0)
       {
-        Int b = S[lvl][kid];
+        Int b = S(lvl)(kid);
 
         #ifdef BASKER_DEBUG_INIT
         printf("U Factor init: %d %d, nnz: %ld \n",
@@ -402,13 +402,13 @@ namespace BaskerNS
         LU[b][LU_size(b)-1].nnz = LU[b][LU_size(b)-1].mnnz;
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
-          Int U_col = S[l][kid];
+          Int U_col = S(l)(kid);
 
           Int my_row_leader = find_leader(kid, l-1);
           Int my_new_row = 
-            b - S[0][my_row_leader];
+            b - S(0)(my_row_leader);
 
-          Int U_row = (l==1)?(kid%2):S[lvl][kid]%LU_size(U_col);
+          Int U_row = (l==1)?(kid%2):S(lvl)(kid)%LU_size(U_col);
 
           //JDB TEST PASS
           U_row = my_new_row;
@@ -460,7 +460,7 @@ namespace BaskerNS
     {
       if(kid%((Int)pow(2,lvl)) == 0)
       {
-        Int b = S[lvl][kid];
+        Int b = S(lvl)(kid);
 
         for(Int row = 0; row < LL_size(b); row++)
         {
@@ -524,7 +524,7 @@ namespace BaskerNS
     {
       if(kid%((Int)pow(2,lvl)) == 0)
       {
-        Int b = S[lvl][kid];
+        Int b = S(lvl)(kid);
 
         #ifdef BASKER_DEBUG_INIT
         printf("U Factor init: %d %d, nnz: %ld \n",
@@ -550,13 +550,13 @@ namespace BaskerNS
 
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
-          Int U_col = S[l][kid];
+          Int U_col = S(l)(kid);
 
           Int my_row_leader = find_leader(kid, l-1);
           Int my_new_row = 
-            b - S[0][my_row_leader];
+            b - S(0)(my_row_leader);
 
-          Int U_row = (l==1)?(kid%2):S[lvl][kid]%LU_size(U_col);
+          Int U_row = (l==1)?(kid%2):S(lvl)(kid)%LU_size(U_col);
 
           if( (b > 14) &&  // NDE: Why is 14 specifically used here?
               (b  > LU_size(U_col)) &&
@@ -640,7 +640,7 @@ namespace BaskerNS
     {
       if(kid%((Int)pow(2,lvl)) == 0)
       {
-        Int b = S[lvl][kid];
+        Int b = S(lvl)(kid);
 
         for(Int row = 0; row < LL_size(b); row++)
         {
@@ -692,7 +692,7 @@ namespace BaskerNS
     {
       if(kid%((Int)pow(2,lvl)) == 0)
       {
-        Int b = S[lvl][kid];
+        Int b = S(lvl)(kid);
 
         #ifdef BASKER_DEBUG_INTI
         printf("AUM Factor init: %d %d, kid: %d nnz: %d nrow: %d ncol: %d \n",
@@ -731,10 +731,10 @@ namespace BaskerNS
 
           //TEST
           Int my_leader = find_leader(kid,l-1);
-          Int my_leader_row = S[0][my_leader];
+          Int my_leader_row = S(0)(my_leader);
           //Int my_col_size  = pow(2,l); Not used
           Int my_new_row  = 
-            (S[lvl][kid] - my_leader_row);
+            (S(lvl)(kid) - my_leader_row);
           //my_new_row = my_new_row%my_col_size;
 
           /*
@@ -745,7 +745,7 @@ namespace BaskerNS
              my_col_size, my_new_row);
           */
 
-          Int U_col = S[l][kid];
+          Int U_col = S(l)(kid);
           Int U_row = my_new_row;
 
           //Int U_row = (l==1)?(kid%2):S(lvl)(kid)%LU_size(U_col);
@@ -823,7 +823,7 @@ namespace BaskerNS
         {
           if(kid%((Int)pow(2,lvl)) == 0)
           {
-            Int b = S[lvl][kid];
+            Int b = S(lvl)(kid);
 
             for(Int l = 0; l < LL_size(b); l++)
             {
@@ -885,7 +885,7 @@ namespace BaskerNS
                 //printf("C: size: %d kid: %d \n",
                 //       iws_size, kid);
 
-                //thread_array[kid].C.init_matrix("cwork", 
+                //thread_array(kid).C.init_matrix("cwork", 
                 //       0, iws_size,
                 //       0, 2, 
                 //       iws_size*2);
@@ -895,7 +895,7 @@ namespace BaskerNS
         }
         //Also workspace matrix 
         //This could be made smaller
-        thread_array[kid].C.init_matrix("cwork", 0, max_sep_size,
+        thread_array(kid).C.init_matrix("cwork", 0, max_sep_size,
             0, 2, max_sep_size*2);
 
       } //end if btf_tabs_offset != 0
@@ -905,19 +905,19 @@ namespace BaskerNS
         { // if any left over for BLK factorization
           if(Options.btf == BASKER_TRUE)
           {
-            Int iws_mult = thread_array[kid].iws_mult;
-            Int iws_size = thread_array[kid].iws_size;
-            Int ews_mult = thread_array[kid].ews_mult;
-            Int ews_size = thread_array[kid].ews_size;
+            Int iws_mult = thread_array(kid).iws_mult;
+            Int iws_size = thread_array(kid).iws_size;
+            Int ews_mult = thread_array(kid).ews_mult;
+            Int ews_size = thread_array(kid).ews_size;
 
             for(Int i=0; i < iws_mult*iws_size; i++)
             {
-              thread_array[kid].iws[i] = 0;
+              thread_array(kid).iws[i] = 0;
             }
 
             for(Int i = 0; i < ews_mult*ews_size; i++)
             {
-              thread_array[kid].ews[i] = 0.0;
+              thread_array(kid).ews[i] = 0.0;
             }
           }
         }
@@ -928,23 +928,23 @@ namespace BaskerNS
     {
       if(btf_tabs_offset != 0)
       {
-        INT_1DARRAY  &ws = thread_array[kid].iws;
-        ENTRY_1DARRAY &X = thread_array[kid].ews;
-        Int iws_size     = thread_array[kid].iws_size;
-        Int iws_mult     = thread_array[kid].iws_mult;
-        Int ews_size     = thread_array[kid].ews_size;
-        Int ews_mult     = thread_array[kid].ews_mult;
+        INT_1DARRAY  &ws = thread_array(kid).iws;
+        ENTRY_1DARRAY &X = thread_array(kid).ews;
+        Int iws_size     = thread_array(kid).iws_size;
+        Int iws_mult     = thread_array(kid).iws_mult;
+        Int ews_size     = thread_array(kid).ews_size;
+        Int ews_mult     = thread_array(kid).ews_mult;
       }
     }
     printf("init_workspace 1d, kid: %d size: %d %d %d %d \n",
            kid, iws_mult, iws_size, ews_mult, ews_size);
     for(Int i=0; i< iws_mult*iws_size; i++)
     {
-      thread_array[kid].iws[i] = 0;
+      thread_array(kid).iws[i] = 0;
     }
     for(Int i = 0; i < ews_mult*ews_size; i++)
     {
-      thread_array[kid].ews[i] = 0;
+      thread_array(kid).ews[i] = 0;
     }
     #endif  //endif def basker_2dl
     //return 0;
@@ -2467,12 +2467,12 @@ namespace BaskerNS
   Int Basker<Int,Entry,Exe_Space>::find_leader(Int kid, Int l)
   {
     l = l+1;
-    Int my_token = S[l][kid];
+    Int my_token = S(l)(kid);
     Int my_loc = kid;
     while((my_loc > 0))
     {
       my_loc--;
-      if(S[l][my_loc] != my_token)
+      if(S(l)(my_loc) != my_token)
       {
         my_loc++;
         break;
