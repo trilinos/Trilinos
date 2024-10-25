@@ -337,7 +337,7 @@ private:
   //! The inverse of the diagonal
   Teuchos::RCP<block_crs_matrix_type> D_block_inverse_;
 
-  Kokkos::View<scalar_type*, typename values_device_view_type::device_type> tmp_;
+  Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type> tmp_;
 };
 
 
