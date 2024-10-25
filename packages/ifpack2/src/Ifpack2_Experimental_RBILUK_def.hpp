@@ -327,12 +327,21 @@ void RBILUK<MatrixType>::initialize ()
 
     if (this->isKokkosKernelsSpiluk_) {
       this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+      const auto numRows = this->A_local_->getLocalNumRows();
       KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
-                                           this->A_local_->getLocalNumRows(),
+                                           numRows,
                                            2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                            2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                            blockSize_);
       this->Graph_->initialize(KernelHandle_); // this calls spiluk_symbolic
+
+      this->L_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+      this->U_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+
+      KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
+
+      this->L_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
+      this->U_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
     }
     else {
       this->Graph_->initialize ();
@@ -919,6 +928,10 @@ void RBILUK<MatrixType>::compute ()
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
                                                   A_local_rowmap, A_local_entries, A_local_values,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+
+      // Now call symbolic for sptrsvs
+      KokkosSparse::Experimental::sptrsv_symbolic(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values);
+      KokkosSparse::Experimental::sptrsv_symbolic(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values);
     }
   } // Stop timing
 
@@ -1107,39 +1120,24 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       auto U_entries = lclU.graph.entries;
       auto U_values  = lclU.values;
 
-      const auto numRows = L_block_->getLocalNumRows();
-
       if (mode == Teuchos::NO_TRANS) {
-        KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP;
         {
-          KernelHandle_->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
-          KokkosSparse::Experimental::sptrsv_symbolic(KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values);
-          Kokkos::fence();
-
           const LO numVecs = X.getNumVectors();
           for (LO vec = 0; vec < numVecs; ++vec) {
             auto X_view = Kokkos::subview(X_views, Kokkos::ALL(), vec);
             auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
-            KokkosSparse::Experimental::sptrsv_solve(KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values, X_view, tmp_);
+            KokkosSparse::Experimental::sptrsv_solve(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values, X_view, tmp_);
           }
           Kokkos::fence();
-
-          KernelHandle_->destroy_sptrsv_handle();
         }
 
         {
-          KernelHandle_->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
-          KokkosSparse::Experimental::sptrsv_symbolic(KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values);
-          Kokkos::fence();
-
           const LO numVecs = X.getNumVectors();
           for (LO vec = 0; vec < numVecs; ++vec) {
             auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
-            KokkosSparse::Experimental::sptrsv_solve(KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values, tmp_, Y_view);
+            KokkosSparse::Experimental::sptrsv_solve(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values, tmp_, Y_view);
           }
           Kokkos::fence();
-
-          KernelHandle_->destroy_sptrsv_handle();
         }
 
         KokkosBlas::axpby(alpha, Y_views, beta, Y_views);
