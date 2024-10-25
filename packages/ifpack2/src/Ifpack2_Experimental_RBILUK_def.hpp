@@ -1128,7 +1128,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
             KokkosSparse::Experimental::sptrsv_solve(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values, X_view, tmp_);
           }
-          Kokkos::fence();
         }
 
         {
@@ -1137,7 +1136,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
             KokkosSparse::Experimental::sptrsv_solve(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values, tmp_, Y_view);
           }
-          Kokkos::fence();
         }
 
         KokkosBlas::axpby(alpha, Y_views, beta, Y_views);
