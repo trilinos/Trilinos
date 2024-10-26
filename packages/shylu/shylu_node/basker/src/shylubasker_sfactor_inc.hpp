@@ -100,9 +100,9 @@ namespace BaskerNS
     for(Int p=0; p < num_threads; ++p)
     {
       Int blk = S(0)(p);
-      sfactor_nd_dom_estimate(ALM[blk][0],
-          LL[blk][0],
-          LU[blk][LU_size(blk)-1]);
+      sfactor_nd_dom_estimate(ALM(blk)(0),
+          LL(blk)(0),
+          LU(blk)(LU_size(blk)-1));
 
       for(Int l=0; l < tree.nlvls; l++)
       {
@@ -124,11 +124,11 @@ namespace BaskerNS
         //JDB TEST PASSED
         U_row = my_new_row;
 
-        sfactor_nd_upper_estimate(AVM[U_col][U_row],
-            LU[U_col][U_row]);
+        sfactor_nd_upper_estimate(AVM(U_col)(U_row),
+            LU(U_col)(U_row));
 
-        sfactor_nd_lower_estimate(ALM[blk][l+1],
-            LL[blk][l+1]);
+        sfactor_nd_lower_estimate(ALM(blk)(l+1),
+            LL(blk)(l+1));
 
       } // end for l
 
@@ -141,9 +141,9 @@ namespace BaskerNS
           Int U_col = S(lvl+1)(ppp);
           Int U_row = 0;
 
-          sfactor_nd_sep_estimate(ALM[U_col][U_row],
-              LL[U_col][U_row],
-              LU[U_col][LU_size(U_col)-1]);
+          sfactor_nd_sep_estimate(ALM(U_col)(U_row),
+              LL(U_col)(U_row),
+              LU(U_col)(LU_size(U_col)-1));
 
           Int innerblk = U_col;
           for(Int l = lvl+1; l < tree.nlvls; l++)
@@ -167,12 +167,12 @@ namespace BaskerNS
             //JDB TEST PASS
             U_row = my_new_row;
 
-            sfactor_nd_sep_upper_estimate(AVM[U_col][U_row],
-                LU[U_col][U_row]);
+            sfactor_nd_sep_upper_estimate(AVM(U_col)(U_row),
+                LU(U_col)(U_row));
 
             sfactor_nd_sep_lower_estimate(
-                ALM[innerblk][l-lvl],
-                LL[innerblk][l-lvl]);
+                ALM(innerblk)(l-lvl),
+                 LL(innerblk)(l-lvl));
 
           }//for - l
         }//for -p

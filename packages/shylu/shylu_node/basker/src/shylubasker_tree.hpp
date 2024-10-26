@@ -827,16 +827,16 @@ namespace BaskerNS
       Int U_view_size = (U_view_count(i) > 0 ? U_view_count(i) : 1);
       if (U_view_size > 0)
       {
-        MALLOC_MATRIX_1DARRAY(AVM[i],     U_view_size);
-        MALLOC_MATRIX_1DARRAY(LU[i],      U_view_size);
+        MALLOC_MATRIX_1DARRAY(AVM(i),     U_view_size);
+        MALLOC_MATRIX_1DARRAY(LU(i),      U_view_size);
       }
       //Malloc AL subarray
       // NOTE: size at least one to allow empty block
       Int L_view_size = (L_view_count(i) > 0 ? L_view_count(i): 1);
       if (L_view_size > 0) 
       {
-        MALLOC_MATRIX_1DARRAY(ALM[i],     L_view_size);
-        MALLOC_MATRIX_1DARRAY(LL[i],      L_view_size);
+        MALLOC_MATRIX_1DARRAY(ALM(i),     L_view_size);
+        MALLOC_MATRIX_1DARRAY(LL(i),      L_view_size);
       }
 
       LU_size(i) = U_view_count(i);
@@ -855,11 +855,11 @@ namespace BaskerNS
       #endif
       for(Int j=i; j != -flat.ncol; j=tree.treetab[j])
       {
-        MATRIX_1DARRAY &UMtemp = AVM[j];
-        MATRIX_1DARRAY &LMtemp = ALM[i];
+        MATRIX_1DARRAY &UMtemp = AVM(j);
+        MATRIX_1DARRAY &LMtemp = ALM(i);
 
-        MATRIX_1DARRAY &LUtemp = LU[j];
-        MATRIX_1DARRAY &LLtemp = LL[i];
+        MATRIX_1DARRAY &LUtemp = LU(j);
+        MATRIX_1DARRAY &LLtemp = LL(i);
 
         #ifdef MY_DEBUG
         printf( " AVM(%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
@@ -1056,7 +1056,7 @@ namespace BaskerNS
                 (r_idx < tree.nblks && tree.row_tabs(r_idx+1) == tree.row_tabs(r_idx))) // skip empty blocks
           {
             if((L_row+1 < LL_size(L_col)) &&
-               (tree.row_tabs(r_idx+1) == ALM[L_col][L_row+1].srow))
+               (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
             {
               //printf( " > ALM(%d)(%d).srow = %d, row_tab(%d) = %d\n",L_col,L_row+1,ALM(L_col)(L_row+1).srow, r_idx+1,tree.row_tabs(r_idx+1) );
               L_row++;
@@ -1071,7 +1071,7 @@ namespace BaskerNS
                 (r_idx < tree.nblks && tree.row_tabs(r_idx+1) == tree.row_tabs(r_idx))) // skip empty blocks
           {
             if((U_row+1 < LU_size(U_col)) &&
-               (tree.row_tabs(r_idx+1) == AVM[U_col][U_row+1].srow))
+               (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
             {
               //printf( " + AVM(%d)(%d).srow = %d, row_tab(%d) = %d\n",U_col,U_row+1,AVM(U_col)(U_row+1).srow, r_idx+1,tree.row_tabs(r_idx+1) );
               U_row++;
@@ -1095,8 +1095,8 @@ namespace BaskerNS
 
 
         //Get Matrix Ref
-        BASKER_MATRIX &Ltemp = ALM[L_col][L_row];
-        BASKER_MATRIX &Utemp = AVM[U_col][U_row];
+        BASKER_MATRIX &Ltemp = ALM(L_col)(L_row);
+        BASKER_MATRIX &Utemp = AVM(U_col)(U_row);
         Int bcol  = Ltemp.scol;
 
         //diag blk
@@ -1162,11 +1162,11 @@ namespace BaskerNS
       for(Int sb = 0; sb < LL_size(b); ++sb)
       {
         //printf( " ALM(%d)(%d).clean_col()\n",b,sb );
-        ALM[b][sb].clean_col();
+        ALM(b)(sb).clean_col();
       }
       for(Int sb = 0; sb < LU_size(b); ++sb)
       {
-        AVM[b][sb].clean_col();
+        AVM(b)(sb).clean_col();
       }
     }//for - over all blks
 
