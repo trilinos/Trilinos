@@ -172,7 +172,6 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC int_1d: size to alloc >= 0 fails"); \
     if (s > 0) {                                  \
-      /*a = INT_1DARRAY(BASKER_KOKKOS_NOINIT("int_1d"),s);*/ \
       Kokkos::resize(a, s);                       \
       if(a.data() == NULL)                        \
         throw std::bad_alloc();                   \
@@ -182,7 +181,6 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s0>0, "BASKER ASSERT MALLOC int_rank2d: size to alloc > 0 fails"); \
     BASKER_ASSERT(s1>0, "BASKER ASSERT MALLOC int_rank2d: size to alloc > 0 fails"); \
-    /*a = INT_RANK2DARRAY(BASKER_KOKKOS_NOINIT("int_rank2d"),s0,s1);*/ \
     Kokkos::resize(a, s0,s1);      \
     if(a.data() == NULL)           \
       throw std::bad_alloc();	   \
@@ -237,7 +235,6 @@ enum BASKER_INCOMPLETE_CODE
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_1d: size to alloc >= 0 fails"); \
     if (s > 0) {                         \
       a = MATRIX_1DARRAY(Kokkos::view_alloc("matrix_1d", Kokkos::SequentialHostInit),s); \
-      Kokkos::resize(a,s);                       \
       if(a.data() == NULL)               \
         throw std::bad_alloc();          \
     }                                    \
@@ -247,7 +244,6 @@ enum BASKER_INCOMPLETE_CODE
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_2d: size to alloc >= 0 fails"); \
     if (s > 0) {                         \
       a = MATRIX_2DARRAY(Kokkos::view_alloc("matrix_2d", Kokkos::SequentialHostInit),s); \
-      Kokkos::resize(a,s);                       \
       if(a.data() == NULL)               \
         throw std::bad_alloc();          \
     }                                    \
