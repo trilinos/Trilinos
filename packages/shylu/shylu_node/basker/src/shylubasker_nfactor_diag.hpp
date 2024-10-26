@@ -258,8 +258,8 @@ namespace BaskerNS
     Int btab = btf_tabs_offset;
 
     BASKER_MATRIX  &M = (c >= btab ? BTF_C        : BTF_D);
-    BASKER_MATRIX  &U = (c >= btab ? UBTF[c-btab] : U_D[c]);
-    BASKER_MATRIX  &L = (c >= btab ? LBTF[c-btab] : L_D[c]);
+    BASKER_MATRIX  &U = (c >= btab ? UBTF(c-btab) : U_D(c));
+    BASKER_MATRIX  &L = (c >= btab ? LBTF(c-btab) : L_D(c));
 
     Int k = btf_tabs(c);
     Int bcol = M.scol;
@@ -336,8 +336,8 @@ namespace BaskerNS
     Int btab = btf_tabs_offset;
 
     BASKER_MATRIX  &M = (c >= btab ? BTF_C : BTF_D);
-    BASKER_MATRIX  &U = (c >= btab ? UBTF[c-btab] : U_D[c]);
-    BASKER_MATRIX  &L = (c >= btab ? LBTF[c-btab] : L_D[c]);
+    BASKER_MATRIX  &U = (c >= btab ? UBTF(c-btab) : U_D(c));
+    BASKER_MATRIX  &L = (c >= btab ? LBTF(c-btab) : L_D(c));
 
     Int bcol = M.scol;
     //JDB: brow hack: fix.

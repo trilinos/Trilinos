@@ -94,8 +94,8 @@ namespace BaskerNS
           {
             Int blkcol = thread_array(ti).error_blk;
             Int blkUrow = LU_size(blkcol)-1;
-            if(LL[blkcol][0].nnz >=
-                LU[blkcol][blkUrow].nnz)
+            if(LL(blkcol)(0).nnz >=
+               LU(blkcol)(blkUrow).nnz)
             {
               resize_U = thread_array(ti).error_info;
             }
@@ -116,7 +116,7 @@ namespace BaskerNS
             std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl;
           }
           BASKER_MATRIX &L =
-            LL[thread_array(ti).error_blk][thread_array(ti).error_subblk];
+            LL(thread_array(ti).error_blk)(thread_array(ti).error_subblk);
           REALLOC_INT_1DARRAY(L.row_idx,
               L.nnz,
               resize_L);
@@ -142,7 +142,7 @@ namespace BaskerNS
             std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl;
           }
           BASKER_MATRIX &U = 
-            LU[thread_array(ti).error_blk][0];
+            LU(thread_array(ti).error_blk)(0);
           REALLOC_INT_1DARRAY(U.row_idx,
               U.nnz,
               resize_U);
@@ -153,7 +153,7 @@ namespace BaskerNS
           U.nnz = resize_U;
           //Still need to clear pend
           BASKER_MATRIX &L = 
-            LL[thread_array(ti).error_blk][0];
+            LL(thread_array(ti).error_blk)(0);
           L.clear_pend();
         }
 
@@ -167,7 +167,7 @@ namespace BaskerNS
               sb++)
           {
             BASKER_MATRIX &SL = 
-              LL[thread_array(ti).error_blk][sb];
+              LL(thread_array(ti).error_blk)(sb);
             for(Int i = 0; i < SL.iws_size*SL.iws_mult; ++i)
             {
               SL.iws(i) = (Int) 0;
@@ -307,7 +307,7 @@ namespace BaskerNS
         {
           const Int tsb = (-1*thread_array(ti).error_subblk)-1;
           BASKER_MATRIX &L =
-            LL[thread_array(ti).error_blk][tsb];
+            LL(thread_array(ti).error_blk)(tsb);
           REALLOC_INT_1DARRAY(L.row_idx,
               L.nnz,
               resize_L);
@@ -324,7 +324,7 @@ namespace BaskerNS
         {
           const Int tsb = thread_array(ti).error_subblk;
           BASKER_MATRIX &U = 
-            LU[thread_array(ti).error_blk][tsb];
+            LU(thread_array(ti).error_blk)(tsb);
           REALLOC_INT_1DARRAY(U.row_idx,
               U.nnz,
               resize_U);
@@ -352,7 +352,7 @@ namespace BaskerNS
             //Clear workspace, whole column
             for(Int sb = 0; sb < LL_size(blk); sb++)
             {
-              BASKER_MATRIX &SL =  LL[blk][sb];
+              BASKER_MATRIX &SL =  LL(blk)(sb);
               for(Int i = 0; i < SL.iws_size*SL.iws_mult; ++i)
               {
                 SL.iws(i) = (Int) 0;
@@ -372,7 +372,7 @@ namespace BaskerNS
           Int blk = S(error_sep_lvl)(p);
           //if(LL(blk)(0).w_fill == BASKER_TRUE)
           {
-            BASKER_MATRIX &TM = LL[blk][0];
+            BASKER_MATRIX &TM = LL(blk)(0);
             //printf( " > p=%d: scol_top = %d, scol = %d, ncol = %d\n",p,scol_top,TM.scol,TM.ncol );
             for(Int i = scol_top + TM.scol; i < scol_top + (TM.scol+TM.ncol); i++)
             {
@@ -386,7 +386,7 @@ namespace BaskerNS
         //Note, will have to clear the perm in all sep blk in that level
         //Clear permuation
         BASKER_MATRIX &SL = 
-          LL[thread_array(ti).error_blk][0];
+          LL(thread_array(ti).error_blk)(0);
         //printf( " + scol_top = %d, srow = %d, nrowl = %d\n",scol_top,SL.srow,SL.nrow );
         for(Int i = scol_top + SL.srow; i < scol_top + (SL.srow+SL.nrow); i++)
         {
@@ -512,7 +512,7 @@ namespace BaskerNS
         }
 
         //Resize L
-        BASKER_MATRIX &L = (c >= btab ? LBTF[c-btab] : L_D[c]);
+        BASKER_MATRIX &L = (c >= btab ? LBTF(c-btab) : L_D(c));
         L.clear_pend();
         REALLOC_INT_1DARRAY(L.row_idx,
             L.nnz,
@@ -533,7 +533,7 @@ namespace BaskerNS
         }
 
         //Resize U
-        BASKER_MATRIX &U = (c >= btab ? UBTF[c-btab] : U_D[c]);
+        BASKER_MATRIX &U = (c >= btab ? UBTF(c-btab) : U_D(c));
         REALLOC_INT_1DARRAY(U.row_idx,
             U.nnz,
             thread_array(ti).error_info);

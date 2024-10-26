@@ -137,7 +137,7 @@ namespace BaskerNS
 
     const Int U_col = S(lvl)(kid);
     const Int U_row = 0;
-    Int ncol = LU[U_col][U_row].ncol;
+    Int ncol = LU(U_col)(U_row).ncol;
     Int my_leader = find_leader(kid, 0);
     if(Options.verbose == BASKER_TRUE && kid == my_leader)
     {
@@ -179,7 +179,7 @@ namespace BaskerNS
     #else
     Int b_size = pow(2, 1);
     t_basker_barrier(thread, kid, my_leader,
-                     b_size, 0, LU[U_col][U_row].scol, 0);
+                     b_size, 0, LU(U_col)(U_row).scol, 0);
     for(Int tid = 0; tid < num_threads; tid++) {
       if (thread_array(tid).error_type != BASKER_SUCCESS) {
         info = BASKER_ERROR;
@@ -204,7 +204,7 @@ namespace BaskerNS
         // > Accumulate the update from (l-1)th level:
         //    LU(U_col)(U_row) -= L(U_col)(l-1) * U(l-1)(U_row)
         t_add_extend(thread, kid, lvl, l-1, k,
-                     LU[U_col][U_row].scol,
+                     LU(U_col)(U_row).scol,
                      BASKER_FALSE);
 
         if(kid%((Int)pow(2, l)) == 0)
@@ -248,7 +248,7 @@ namespace BaskerNS
     // printf("[3] barrier test, kid: %d leader: %d b_size: %d lvl: %d \n",
     //        kid,  my_leader, b_size, lvl);
     t_basker_barrier(thread, kid, my_leader,
-                     b_size, 3, LU[U_col][U_row].scol, 0);
+                     b_size, 3, LU(U_col)(U_row).scol, 0);
     for(Int ti = 0; ti < num_threads; ti++) {
       if (thread_array(kid).error_type != BASKER_SUCCESS) {
         info = BASKER_ERROR;
@@ -287,7 +287,7 @@ namespace BaskerNS
           printf( " kid=%d: calling t_add_extend(k=%d/%d)\n",kid,k,ncol ); fflush(stdout);
           #endif
           t_add_extend(thread, kid,lvl,lvl-1, k,
-                       LU[U_col][U_row].scol,
+                       LU(U_col)(U_row).scol,
                        BASKER_TRUE);
         }
         #ifdef BASKER_TIMER
@@ -515,7 +515,7 @@ namespace BaskerNS
     Int U_row = L_col-my_row_leader;
     Int X_row = l+1; //this will change for us 
 
-    BASKER_MATRIX &U = LU[U_col][U_row];
+    BASKER_MATRIX &U = LU(U_col)(U_row);
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(L_row >= LL_size(L_col))
     {
@@ -609,10 +609,10 @@ namespace BaskerNS
       Int endblk = (lower)?(LL_size(my_idx)):(l+2);
       for(Int blk = l+1; blk < endblk; ++blk)
       {
-        ENTRY_1DARRAY &XL = LL[leader_idx][blk].ews;
-        Int      p_sizeL  = LL[leader_idx][blk].p_size;
-        ENTRY_1DARRAY &X  = LL[my_idx][blk].ews;
-        INT_1DARRAY   &ws = LL[my_idx][blk].iws;
+        ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
+        Int      p_sizeL  = LL(leader_idx)(blk).p_size;
+        ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
+        INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
         Int       *color  = &(ws[0]);
         //printf( " + t_dense_blk_col_copy_atomic2(kid=%d: LL(%d)(%d) += LL(%d)(%d)\n",kid,leader_idx, blk,my_idx,blk);
 
@@ -629,7 +629,7 @@ namespace BaskerNS
         #endif
 
         //over all nnnz found
-        for(Int jj = 0; jj < LL[my_idx][blk].nrow; ++jj)
+        for(Int jj = 0; jj < LL(my_idx)(blk).nrow; ++jj)
         {
           color[jj] = 0;
           #ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -677,7 +677,7 @@ namespace BaskerNS
         //This can be removed in the future
         if(kid != team_leader)
         {
-          LL[my_idx][blk].p_size = 0;
+          LL(my_idx)(blk).p_size = 0;
         }
         else
         {
@@ -685,7 +685,7 @@ namespace BaskerNS
           printf("SETTING PS: %d L:%d %d kid: %d\n",
                  p_sizeL, leader_idx, blk, kid);
           #endif
-          LL[leader_idx][blk].p_size = p_sizeL;
+          LL(leader_idx)(blk).p_size = p_sizeL;
           //p_size = 0; //not needed
         }//over all blks
       }
@@ -735,12 +735,12 @@ namespace BaskerNS
         //printf("upper picked, kid: %d \n", kid);
         //printf("up: %d %d kid: %d \n",
         //       A_col, A_row, kid);
-        Bp = &(AVM[A_col][A_row]);
+        Bp = &(AVM(A_col)(A_row));
       }
       else
       {
         //printf("lower picked, kid: %d\n", kid);
-        Bp = &(ALM[A_col][0]);
+        Bp = &(ALM(A_col)(0));
       }
       #ifdef BASKER_DEBUG_NFACTOR_COL2
       printf("copy, kid: %d bl: %d  A: %d %d \n", 
@@ -749,7 +749,7 @@ namespace BaskerNS
 
       // X += B(:, k)
       BASKER_MATRIX &B = *Bp;
-      ENTRY_1DARRAY  X = LL[leader_idx][bl].ews;
+      ENTRY_1DARRAY  X = LL(leader_idx)(bl).ews;
       //printf( " -- t_dense_copy_update_matrix2(kid=%d: LL(%d)(%d) += B)\n",kid,leader_idx,bl );
       //printf("ADDING UPDATES TO B\n");
       //B.info();
@@ -800,9 +800,9 @@ namespace BaskerNS
 
       //For recounting patterns in dense blk
       //Need better sparse update
-      ENTRY_1DARRAY   X   = LL[leader_idx][bl].ews;
-      INT_1DARRAY    ws   = LL[leader_idx][bl].iws;
-      const Int      nrow = LL[leader_idx][bl].nrow;
+      ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
+      INT_1DARRAY    ws   = LL(leader_idx)(bl).iws;
+      const Int      nrow = LL(leader_idx)(bl).nrow;
       Int *color   = &(ws(0));
       #ifdef BASKER_DEBUG_NFACTOR_COL2
       printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
@@ -886,7 +886,7 @@ namespace BaskerNS
 
     Int col_idx_offset    = 0;  //can get rid of?
    
-    BASKER_MATRIX        &U = LU[U_col][U_row];
+    BASKER_MATRIX        &U = LU(U_col)(U_row);
     pivot = U.tpivot;
     
     //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
