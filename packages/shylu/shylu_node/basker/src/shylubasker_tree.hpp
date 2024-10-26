@@ -1178,7 +1178,6 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::sfactor_copy()
   {
-    printf( " .. sfactor_copy ..\n" ); fflush(stdout);
     //Reorder A;
     //Match order
     if(match_flag == BASKER_TRUE)
