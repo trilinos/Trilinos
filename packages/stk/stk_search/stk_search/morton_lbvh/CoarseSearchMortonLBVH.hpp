@@ -169,7 +169,7 @@ inline void coarse_search_morton_lbvh(std::vector<std::pair<DomainBoxType, Domai
 
   Kokkos::Profiling::pushRegion("Perform Morton query");
   Callback callback(localDomain, localRange, extendedRangeBoxes, remoteRangeIdentProcs, searchResults);
-  stk::search::morton_lbvh_search<DomainViewType,RangeViewType,HostSpace,Callback>(domainTree, rangeTree, callback, HostSpace{});
+  stk::search::morton_lbvh_search<DomainViewType,RangeViewType,Callback,HostSpace>(domainTree, rangeTree, callback, HostSpace{});
   Kokkos::Profiling::popRegion();
 
   if (enforceSearchResultSymmetry) {
@@ -365,7 +365,7 @@ inline void coarse_search_morton_lbvh(
   Kokkos::Profiling::pushRegion("Inner morton search");
   BoundingShapeIntersectionChecker intersectionChecker(localDomain, localRange, extendedRangeBoxes,
                                                        remoteRangeIdentProcs, searchResults);
-  stk::search::morton_lbvh_search<MDomainViewType, MRangeViewType, ExecutionSpace, BoundingShapeIntersectionChecker>(domainTree, rangeTree, intersectionChecker, execSpace);
+  stk::search::morton_lbvh_search<MDomainViewType, MRangeViewType, BoundingShapeIntersectionChecker, ExecutionSpace>(domainTree, rangeTree, intersectionChecker, execSpace);
   searchResults = intersectionChecker.get_search_results();
   Kokkos::Profiling::popRegion();
 

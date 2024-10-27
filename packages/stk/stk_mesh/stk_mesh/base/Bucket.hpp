@@ -51,7 +51,7 @@
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { class DeviceMesh; } }
+namespace stk { namespace mesh { template<typename NgpMemSpace> class DeviceMeshT; } }
 namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor; } } }
@@ -506,7 +506,7 @@ private:
   friend class impl::Partition;
   friend struct impl::OverwriteEntityFunctor;
   friend class BulkData;
-  friend class DeviceMesh;
+  template<typename NgpMemSpace> friend class DeviceMeshT;
 
   BulkData             & m_mesh;
   const EntityRank       m_entity_rank;

@@ -277,8 +277,8 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos2)
     )
 
   ## These are regression tests, that also compare residual convergence history
-  ASSERT_DEFINED(PYTHONINTERP_FOUND)
-  IF (PYTHONINTERP_FOUND)
+  ASSERT_DEFINED(Python3_EXECUTABLE)
+  IF (Python3_EXECUTABLE)
 
     TRIBITS_ADD_ADVANCED_TEST(
       Structured_Region_Star2D_Tpetra_GS_MPI_4_regression

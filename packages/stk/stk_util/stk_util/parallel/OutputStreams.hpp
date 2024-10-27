@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,36 +30,44 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef STK_DEVICEMESH_HOST_DATA_HPP
-#define STK_DEVICEMESH_HOST_DATA_HPP
+#ifndef STK_UTIL_PARALLEL_OutputStreams_hpp
+#define STK_UTIL_PARALLEL_OutputStreams_hpp
 
-#include <Kokkos_Core.hpp>
-#include "stk_mesh/base/NgpTypes.hpp"
-#include "stk_util/ngp/NgpSpaces.hpp"
+#include <stk_util/parallel/Parallel.hpp>
+#include <iosfwd>
 
-namespace stk
-{
-namespace mesh
-{
-namespace impl
-{
+namespace stk {
 
-struct DeviceMeshHostData {
+// outputP0() defaults to std::cout on MPI rank 0 (of comm-world)
+//            and a 'null' stream (which discards everything) on other ranks.
+//
+// If default stream (or comm-world) is not suitable, it can be altered
+// with set_outputP0(..) below.
+//
+std::ostream& outputP0();
 
-  EntityKeyViewType::HostMirror hostEntityKeys;
-  BucketEntityOffsetsViewType::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
-  UnsignedViewType::HostMirror hostEntityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  EntityViewType::HostMirror hostSparseConnectivity[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  OrdinalViewType::HostMirror hostSparseConnectivityOrdinals[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  PermutationViewType::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  UnsignedViewType::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
-  FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
-  unsigned volatileFastSharedCommMapSyncCount = 0;
-};
+std::ostream& outputNull();
 
-}  // namespace impl
-}  // namespace mesh
-}  // namespace stk
+// output() is an ostream that holds output until output_flush() is
+// called.
+//
+std::ostream& output();
 
-#endif
+// output_flush() sends all output in the 'output()' stream on each
+// mpi rank to 'outputP0()'.
+// output_flush() must be called on each mpi rank in the communicator
+//
+void output_flush();
+
+void set_outputP0(std::ostream* ostreamPtr, ParallelMachine comm = MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
+
+// if you fear that the output streams are in a bad state,
+// this resets them to their defaults
+void reset_default_output_streams(ParallelMachine comm = MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
+
+}
+
+#endif // STK_UTIL_PARALLEL_OutputStreams_hpp
+

@@ -146,6 +146,12 @@ namespace stk {
         {
           const Ioss::SideBlock *sblk = dynamic_cast<const Ioss::SideBlock*>(entity);
           assert(sblk != nullptr);
+
+          bool useShellAllFaceSides = sblk->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+          if (sblk->parent_element_topology()->is_shell() && useShellAllFaceSides) {
+            return stk::topology::FACE_RANK;
+          }
+
           int rank = sblk->topology()->parametric_dimension();
           if (sblk->topology()->shape() == Ioss::ElementShape::UNKNOWN) {
             rank = sblk->owner()->max_parametric_dimension();
@@ -1269,10 +1275,42 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         return stk::topology::BEGIN_TOPOLOGY;
     }
 
-    stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology,
-                                           unsigned meshSpatialDimension)
+    stk::topology map_ioss_to_all_face_sides_shell(const Ioss::ElementTopology* topology)
     {
+      auto name = topology->name();
+
+      if (name == "edge2" || name == "edge3d2") {
+        return stk::topology::SHELL_SIDE_BEAM_2;
+      } else if (name == "edge3" || name == "edge3d3") {
+        return stk::topology::SHELL_SIDE_BEAM_3;
+      } else if (name == "trishell3") {
+        return stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
+      } else if (name == "trishell4") {
+        return stk::topology::SHELL_TRI_4_ALL_FACE_SIDES;
+      } else if (name == "trishell6") {
+        return stk::topology::SHELL_TRI_6_ALL_FACE_SIDES;
+      } else if (name == "shell4") {
+        return stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+      } else if (name == "shel8") {
+        return stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES;
+      } else if (name == "shell9") {
+        return stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES;
+      } else {
+        return stk::topology::INVALID_TOPOLOGY;
+      }
+    }
+
+    stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology,
+                                           unsigned meshSpatialDimension, bool useShellAllFaceSides)
+    {
+      if (useShellAllFaceSides) {
+        auto topo = map_ioss_to_all_face_sides_shell(topology);
+        if (topo != stk::topology::INVALID_TOPOLOGY)
+          return topo;
+      }
+
       stk::topology beginTopo = get_start_topology(topology, meshSpatialDimension);
+
       for (stk::topology topo=beginTopo; topo < stk::topology::END_TOPOLOGY; ++topo) {
         if (topology->is_alias(topo.name()))
         {
@@ -1293,13 +1331,27 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return stk::topology::INVALID_TOPOLOGY;
     }
 
+    std::string map_all_face_sides_shell_to_ioss(stk::topology topo)
+    {
+      switch (topo) {
+        case stk::topology::SHELL_SIDE_BEAM_2 : return "edge3d2";
+        case stk::topology::SHELL_SIDE_BEAM_3 : return "edge3d3";
+        case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES : return "trishell3";
+        case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES : return "trishell4";
+        case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES : return "trishell6";
+        case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES : return "shell4";
+        case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES : return "shell8";
+        case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES : return "shell9";
+        default : return topo.name();
+      }
+    }
+
     std::string map_stk_topology_to_ioss(stk::topology topo)
     {
       std::string name = topo.name();
 
       // FIXME SHELL SIDE TOPOLOGY
-      if (topo == stk::topology::SHELL_SIDE_BEAM_2) { name = "edge3d2"; }
-      if (topo == stk::topology::SHELL_SIDE_BEAM_3) { name = "edge3d3"; }
+      name = map_all_face_sides_shell_to_ioss(topo);
 
       Ioss::ElementTopology *iossTopo = Ioss::ElementTopology::factory(name, true);
       return iossTopo != nullptr ? iossTopo->name() : "invalid";
@@ -1331,25 +1383,30 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
-    void declare_stk_aliases(stk::mesh::Part& part, Ioss::GroupingEntity *ge, stk::mesh::MetaData &meta)
+    void declare_stk_aliases(Ioss::Region &region, stk::mesh::MetaData &meta, Ioss::EntityType entityType)
     {
-      meta.add_part_alias(part, part.name());
+      const Ioss::AliasMap& ioss_alias_map = region.get_alias_map(entityType);
+      for(const auto& alias : ioss_alias_map) {
+        stk::mesh::Part* part = meta.get_part(alias.second);
+        if (part != nullptr) {
+          meta.add_part_alias(*part, part->name());
 
-      if(nullptr != ge && ge->get_database() != nullptr) {
-        Ioss::Region* region = ge->get_database()->get_region();
-
-        if(ge->property_exists("db_name")) {
-          std::string canonName = ge->get_property("db_name").get_string();
-          meta.add_part_alias(part, canonName);
-        }
-
-        const Ioss::AliasMap& ioss_alias_map = region->get_alias_map(ge->type());
-        for(auto&& alias : ioss_alias_map) {
-          if(stk::equal_case(alias.second, part.name())) {
-            meta.add_part_alias(part, alias.first);
-          }
+          meta.add_part_alias(*part, alias.first);
         }
       }
+    }
+
+    void declare_stk_aliases(Ioss::Region &region, stk::mesh::MetaData &meta)
+    {
+      //There should be a line here for each entity-type processed in
+      //StkMeshIoBroker::create_input_mesh.
+      declare_stk_aliases(region, meta, Ioss::NODEBLOCK);
+      declare_stk_aliases(region, meta, Ioss::ELEMENTBLOCK);
+      declare_stk_aliases(region, meta, Ioss::SIDESET);
+      declare_stk_aliases(region, meta, Ioss::FACEBLOCK);
+      declare_stk_aliases(region, meta, Ioss::EDGEBLOCK);
+      declare_stk_aliases(region, meta, Ioss::NODESET);
+      declare_stk_aliases(region, meta, Ioss::ASSEMBLY);
     }
 
     stk::mesh::Part& declare_stk_part(Ioss::GroupingEntity* entity, stk::mesh::MetaData& meta)
@@ -1366,7 +1423,10 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     {
       if (include_entity(entity)) {
         stk::mesh::Part & part = declare_stk_part(entity, meta);
-        declare_stk_aliases(part, entity, meta);
+        if(entity->property_exists("db_name")) {
+          std::string canonName = entity->get_property("db_name").get_string();
+          meta.add_part_alias(part, canonName);
+        }
         if (entity->property_exists("id")) {
           meta.set_part_id(part, entity->get_property("id").get_int());
         }
@@ -1380,7 +1440,10 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         mesh::EntityRank type = get_entity_rank(entity, meta);
         stk::mesh::Part * part = nullptr;
         part = &meta.declare_part(entity->name(), type);
-        declare_stk_aliases(*part, entity, meta);
+        if(entity->property_exists("db_name")) {
+          std::string canonName = entity->get_property("db_name").get_string();
+          meta.add_part_alias(*part, canonName);
+        }
         if (entity->property_exists("id")) {
             meta.set_part_id(*part, entity->get_property("id").get_int());
         }
@@ -1412,7 +1475,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           set_original_topology_type_from_ioss(entity, *part);
         }
 
-        stk::topology stkTopology = map_ioss_topology_to_stk(topology, meta.spatial_dimension());
+        auto useShellAllFaceSides = entity->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+        stk::topology stkTopology = map_ioss_topology_to_stk(topology, meta.spatial_dimension(), useShellAllFaceSides);
         if (stkTopology != stk::topology::INVALID_TOPOLOGY) {
           if (stkTopology.rank() != part->primary_entity_rank() && entity->entity_count() == 0) {
             std::ostringstream os;
@@ -2238,7 +2302,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     }
 
       std::tuple<std::string, const Ioss::ElementTopology *, stk::topology>
-      get_touching_element_block_topology_from_side_block_by_tokenization(stk::io::OutputParams &params, const stk::mesh::Part& part)
+      get_touching_element_block_topology_from_side_block_by_tokenization(stk::io::OutputParams &params, const stk::mesh::Part& part, Ioss::SideSet *sset)
       {
         const stk::mesh::BulkData &bulk = params.bulk_data();
 
@@ -2288,7 +2352,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 	  
           if (elementTopo != nullptr) {
             elementTopoName = elementTopo->name();
-            stkElementTopology = map_ioss_topology_to_stk(elementTopo, bulk.mesh_meta_data().spatial_dimension());
+            bool useShellAllFaceSides = sset->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+            stkElementTopology = map_ioss_topology_to_stk(elementTopo, bulk.mesh_meta_data().spatial_dimension(), useShellAllFaceSides);
           }
         }
 
@@ -2296,9 +2361,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
 
       std::tuple<std::string, const Ioss::ElementTopology *, stk::topology>
-      get_touching_element_block_topology_from_side_block(stk::io::OutputParams &params, const stk::mesh::Part& part)
+      get_touching_element_block_topology_from_side_block(stk::io::OutputParams &params, const stk::mesh::Part& part, Ioss::SideSet *sset)
       {
-        return get_touching_element_block_topology_from_side_block_by_tokenization(params, part);
+        return get_touching_element_block_topology_from_side_block_by_tokenization(params, part, sset);
       }
 
       void define_side_block(stk::io::OutputParams &params,
@@ -2320,7 +2385,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         stk::topology stkElementTopology = stk::topology::INVALID_TOPOLOGY;
 
         std::tie(elementTopoName, elementTopo, stkElementTopology) =
-            get_touching_element_block_topology_from_side_block(params, part);
+            get_touching_element_block_topology_from_side_block(params, part, sset);
 
         const stk::mesh::BulkData &bulk = params.bulk_data();
 
