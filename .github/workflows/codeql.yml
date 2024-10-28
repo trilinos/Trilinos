@@ -76,7 +76,7 @@ jobs:
       run: |
           git fetch origin ${GITHUB_BASE_REF}
           git branch
-          bash -lc "${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh ${GITHUB_BASE_REF} ${GITHUB_HEAD_REF} package_enables.cmake package_subprojects.cmake"
+          bash -lc "${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake"
     - if: matrix.build-mode == 'manual'
       name: Configure and Build Trilinos
       shell: bash -lc {0}
