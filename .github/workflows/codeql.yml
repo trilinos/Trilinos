@@ -72,20 +72,20 @@ jobs:
       run: |
           bash -lc "${GITHUB_WORKSPACE}/packages/framework/get_dependencies.sh --container"
     - if: matrix.build-mode == 'manual'
-      name: Generate CMake fragment for changed packages
+      name: Generate CMake fragments
       run: |
           git fetch origin ${GITHUB_BASE_REF}
-          git branch
+
+          mkdir -p trilinos_build && cd trilinos_build
+
+          source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           bash -lc "${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake"
     - if: matrix.build-mode == 'manual'
       name: Configure and Build Trilinos
       shell: bash -lc {0}
       run: |
-          mkdir -p trilinos_build
-          mv package_enables.cmake trilinos_build
           cd trilinos_build
 
-          source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           cmake -C genconfig_fragment.cmake -C package_enables.cmake ..
           ninja -j 16
             
