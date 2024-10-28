@@ -57,20 +57,24 @@ jobs:
           query-filters:
           - exclude:
              tags: cpp/integer-multiplication-cast-to-long
-    - name: env
+
+    - name: Print environment
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
       run: |
         env
-    - name: module list
+
+    - name: Module list
       shell: bash -l {0}
       run: |
         module list
         printenv PATH
+
     - if: matrix.build-mode == 'manual'
       name: Get dependencies
       run: |
           bash -lc "${GITHUB_WORKSPACE}/packages/framework/get_dependencies.sh --container"
+
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
       run: |
@@ -80,15 +84,16 @@ jobs:
 
           source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           bash -lc "${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake"
+
     - if: matrix.build-mode == 'manual'
-      name: Configure and Build Trilinos
+      name: Configure and build Trilinos
       shell: bash -lc {0}
       run: |
           cd trilinos_build
 
           cmake -C genconfig_fragment.cmake -C package_enables.cmake ..
           ninja -j 16
-            
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@662472033e021d55d94146f66f6058822b0b39fd # v3.27.0
       with:
