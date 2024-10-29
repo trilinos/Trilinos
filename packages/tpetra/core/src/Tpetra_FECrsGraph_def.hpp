@@ -182,8 +182,8 @@ setup(const Teuchos::RCP<const map_type>  & ownedRowMap,
  if(ownedPlusSharedColMap.is_null()) this->allocateIndices(GlobalIndices);
  else this->allocateIndices(LocalIndices);
 
- activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
- fillState_ = Teuchos::rcp(new FillState(FillState::closed));
+ activeCrsGraph_     = Teuchos::rcp(new FE::WhichActive(FE::ACTIVE_OWNED_PLUS_SHARED));
+ fillState_ = Teuchos::rcp(new FE::FillState(FE::FillState::closed));
 
  // Use a very strong map equivalence check
  bool maps_are_the_same = ownedRowMap->isSameAs(*ownedPlusSharedRowMap);
@@ -221,7 +221,7 @@ setup(const Teuchos::RCP<const map_type>  & ownedRowMap,
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   const char tfecfFuncName[] = "FECrsGraph::doOwnedPlusSharedToOwned(CombineMode): ";
-  if(!ownedRowsImporter_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+  if(!ownedRowsImporter_.is_null() && *activeCrsGraph_ == FE::ACTIVE_OWNED_PLUS_SHARED) {
     Teuchos::RCP<const map_type> ownedRowMap = ownedRowsImporter_->getSourceMap();
 
     // Do a self-export in "restricted mode"
@@ -296,10 +296,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(con
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsGraph() {
-  if(*activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED)
-    *activeCrsGraph_ = FE_ACTIVE_OWNED;
+  if(*activeCrsGraph_ == FE::ACTIVE_OWNED_PLUS_SHARED)
+    *activeCrsGraph_ = FE::ACTIVE_OWNED;
   else
-    *activeCrsGraph_ = FE_ACTIVE_OWNED_PLUS_SHARED;
+    *activeCrsGraph_ = FE::ACTIVE_OWNED_PLUS_SHARED;
 
   if(inactiveCrsGraph_.is_null()) return;
 
@@ -318,10 +318,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill(
      doing finite differences, things are easy --- just call fillComplete().
 
      If, we are in the parallel FE case, then:
-     Precondition: FE_ACTIVE_OWNED_PLUS_SHARED mode
+     Precondition: FE::ACTIVE_OWNED_PLUS_SHARED mode
 
      Postconditions:
-     1) FE_ACTIVE_OWNED mode
+     1) FE::ACTIVE_OWNED mode
      2) The OWNED graph has been fillCompleted with an Aztec-compatible column map
      3) rowptr & (local) colinds are aliased between the two graphs
      4) The OWNED_PLUS_SHARED graph has been fillCompleted with a column map whose first chunk
@@ -333,7 +333,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill(
    */
   // Precondition
   const char tfecfFuncName[] = "FECrsGraph::endFill(domainMap, rangeMap): ";
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ != FE_ACTIVE_OWNED_PLUS_SHARED,std::runtime_error, "must be in owned+shared mode.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ != FE::ACTIVE_OWNED_PLUS_SHARED,std::runtime_error, "must be in owned+shared mode.");
   if(ownedRowsImporter_.is_null()) {
     // The easy case: One graph
     switchActiveCrsGraph();
@@ -365,7 +365,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
 
   // Unlike FECrsMatrix and FEMultiVector, we do not allow you to call beginFill() after calling endFill()
   // So we throw an exception if you're in owned mode
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ == FE_ACTIVE_OWNED,std::runtime_error, "can only be called once.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ == FE::ACTIVE_OWNED,std::runtime_error, "can only be called once.");
 
 }
 
@@ -373,11 +373,11 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginAssembly() {
   const char tfecfFuncName[] = "FECrsGraph::beginAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::closed,
+    *fillState_ != FE::FillState::closed,
     std::runtime_error,
     "Cannot beginAssembly, matrix is not in a closed state"
   );
-  *fillState_ = FillState::open;
+  *fillState_ = FE::FillState::open;
   this->beginFill();
 }
 
@@ -385,11 +385,11 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
   const char tfecfFuncName[] = "FECrsGraph::endAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open,
+    *fillState_ != FE::FillState::open,
     std::logic_error,
     "Cannot endAssembly, matrix is not open to fill but is closed."
   );
-  *fillState_ = FillState::closed;
+  *fillState_ = FE::FillState::closed;
   this->endFill();
 }
 
@@ -400,11 +400,11 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endAssembly(
 {
   const char tfecfFuncName[] = "FECrsGraph::endAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open,
+    *fillState_ != FE::FillState::open,
     std::logic_error,
     "Cannot endAssembly, matrix is not open to fill but is closed."
   );
-  *fillState_ = FillState::closed;
+  *fillState_ = FE::FillState::closed;
   this->endFill(domainMap, rangeMap);
 }
 
@@ -428,7 +428,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl (
 ){
   const char tfecfFuncName[] = "FECrsGraph::insertGlobalIndices: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open,
+    *fillState_ != FE::FillState::open,
     std::logic_error,
     "Cannot replace global values, matrix is not open to fill but is closed."
   );
@@ -445,7 +445,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl (
 ){
   const char tfecfFuncName[] = "FECrsGraph::insertGlobalIndices: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open,
+    *fillState_ != FE::FillState::open,
     std::logic_error,
     "Cannot replace global values, matrix is not open to fill but is closed."
   );
@@ -461,7 +461,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertLocalIndicesImpl (
 ){
   const char tfecfFuncName[] = "FECrsGraph::insertLocalIndices: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open,
+    *fillState_ != FE::FillState::open,
     std::logic_error,
     "Cannot replace global values, matrix is not open to fill but is closed."
   );
