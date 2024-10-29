@@ -77,6 +77,7 @@ jobs:
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
+      shell: bash -lc {0}
       run: |
           git fetch origin ${GITHUB_BASE_REF}
 
