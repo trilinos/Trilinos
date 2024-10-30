@@ -2307,10 +2307,6 @@ namespace BaskerNS
     printU();
     printUMTX();
     std::cout << "U printed" << std::endl;
-    //printRHS();
-    std::cout << "RHS printed" << std::endl;
-    //printSOL();
-    std::cout << "SOL printed" << std::endl;
     //printTree();
     std::cout << "Tree printed" << std::endl;
 
