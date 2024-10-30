@@ -100,8 +100,8 @@ namespace BaskerNS
     for(Int p=0; p < num_threads; ++p)
     {
       Int blk = S(0)(p);
-      sfactor_nd_dom_estimate(ALM(blk)(0), 
-          LL(blk)(0), 
+      sfactor_nd_dom_estimate(ALM(blk)(0),
+          LL(blk)(0),
           LU(blk)(LU_size(blk)-1));
 
       for(Int l=0; l < tree.nlvls; l++)
@@ -156,7 +156,7 @@ namespace BaskerNS
 
             U_row = S(lvl+1)(ppp)%LU_size(U_col);	 
             if((S(lvl+1)(ppp) > 14) &&
-                (S(lvl+1)(ppp) > LU_size(U_col)) 
+               (S(lvl+1)(ppp) > LU_size(U_col)) 
               )
             {
               Int tm = (S(lvl+1)(ppp)+1)/16;
@@ -172,7 +172,7 @@ namespace BaskerNS
 
             sfactor_nd_sep_lower_estimate(
                 ALM(innerblk)(l-lvl),
-                LL(innerblk)(l-lvl));
+                 LL(innerblk)(l-lvl));
 
           }//for - l
         }//for -p

@@ -1494,13 +1494,6 @@ namespace BaskerNS
 
     //end NDE
 
-
-    //RHS and solutions (These are not used anymore)
-    ENTRY_2DARRAY rhs;
-    ENTRY_2DARRAY sol;
-    Int nrhs;
-
-    
     BASKER_TREE   part_tree;
     BASKER_TREE   tree;
     BASKER_SYMBOLIC_TREE stree;
