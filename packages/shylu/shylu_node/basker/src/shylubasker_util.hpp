@@ -1472,61 +1472,6 @@ namespace BaskerNS
   }//end readMTX()
 
 
-  //Print out RHS  RHS.txt
-  template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::printRHS()
-  {
-    if(solve_flag == false)
-    {return -1;}
-
-    FILE *fp;
-    fp = fopen("RHS.txt", "w");
-
-    //over each row
-    for(Int r = 0; r < A.nrow; r++)
-    {
-      //over each column NOTE: come back to
-      //for(Int k = 0; k < rhs.size(); k++)
-      for(Int k = 0; k < 1; k++)
-      {
-        //fprintf(fp, "%ld %ld %f, ", (long)r, (long)gperm[r], rhs[k][r]);
-        fprintf(fp, "%ld %ld %.16e, ", (long)r, (long)gperm[r], rhs[k][r]);
-      }//end over each column
-      fprintf(fp, "\n");
-    }//end over each row
-
-    fclose(fp);
-
-    return 0;
-  }//end printRHS()
-
-  //Print solution SOL.txt
-  template <class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::printSOL()
-  {
-    if(solve_flag == false)
-    {return -1;}
-
-    FILE *fp;
-    fp = fopen("SOL.txt", "w");
-    
-    //over each row
-    for(Int r = 0; r < A.nrow; r++)
-    {
-      //over each column Note: come back to
-      //for(Int k = 0; k < rhs.size(); k++)
-      for(Int k = 0 ; k < 1; k++)
-      {
-        fprintf(fp, "%ld %ld %f, ", (long)r, (long)gperm[r], sol[k][r]);
-      }//end over each column
-      fprintf(fp, "\n");
-    }//end over each row
-    
-    fclose(fp);
-
-    return 0;
-  }//end printSOL()
-
   //Prints the given tree into a file to analyze
   template<class Int, class Entry, class Exe_Space>
   void Basker<Int,Entry,Exe_Space>::printTree()
