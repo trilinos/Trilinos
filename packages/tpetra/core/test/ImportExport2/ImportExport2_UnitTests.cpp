@@ -730,7 +730,7 @@ namespace {
         // MV::imports_ and MV::view_ have the same memory space, the
         // imports_ view is aliased to the data view of the target MV.
         if ((myImageID == collectRank) && (myImageID == 0)) {
-          if (mv_type::dual_view_type::impl_dualview_is_single_device::value)
+          if (std::is_same_v<typename mv_type::dual_view_type::t_dev::device_type, typename mv_type::dual_view_type::t_host::device_type>)
             TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
           // else {
           //   We do not know if copyAndPermute was run on host or device.
@@ -800,7 +800,7 @@ namespace {
         // MV::imports_ and MV::view_ have the same memory space, the
         // imports_ view is aliased to the data view of the target MV.
         if ((myImageID == collectRank) && (myImageID == 0)) {
-          if (mv_type::dual_view_type::impl_dualview_is_single_device::value)
+          if (std::is_same_v<typename mv_type::dual_view_type::t_dev::device_type, typename mv_type::dual_view_type::t_host::device_type>)
             TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
           // else {
           //   We do not know if copyAndPermute was run on host or device.
