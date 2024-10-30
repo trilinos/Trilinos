@@ -198,6 +198,24 @@ namespace Tpetra {
     Backward,
     Symmetric
   };
+
+  // FE* enums
+  namespace FE {
+
+    // Enum for activity
+    enum WhichActive
+    {
+      ACTIVE_OWNED,
+      ACTIVE_OWNED_PLUS_SHARED
+    };
+
+    enum class FillState
+    {
+      open,  // matrix is "open".  Values can freely summed in to and replaced
+      modify,  // matrix is open for modification.  *local* values can be replaced
+      closed
+    };
+  }
 }
 
 // For backwards compatibility
