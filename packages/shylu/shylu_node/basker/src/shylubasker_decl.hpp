@@ -1160,8 +1160,6 @@ namespace BaskerNS
     void printMTX(std::string fname, BASKER_MATRIX &M);
     void printMTX(std::string fname, BASKER_MATRIX &M, BASKER_BOOL  off);
     void readMTX(std::string fname, BASKER_MATRIX &M);
-    int printRHS();
-    int printSOL();
     void printTree();
 
     BASKER_INLINE
