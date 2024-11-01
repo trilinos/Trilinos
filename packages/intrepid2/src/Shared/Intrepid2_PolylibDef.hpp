@@ -226,21 +226,22 @@ namespace Intrepid2 {
     } else {
       const double one = 1.0, two = 2.0;
 
-      typename zViewType::value_type pd_buf[MaxPolylibPoint];
-      Kokkos::View<typename zViewType::value_type*,
-        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
-        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
-
+      auto pd = Kokkos::subview(D, np-1, Kokkos::pair<int,int>(0,np)); 
       JacobiPolynomialDerivative(np, z, pd, np, alpha, beta);
 
-      for (ordinal_type i = 0; i < np; ++i)
-        for (ordinal_type j = 0; j < np; ++j)
-          if (i != j)
-            //D(i*np+j) = pd(j)/(pd(i)*(z(j)-z(i))); <--- This is either a bug, or the derivative matrix is not defined consistently.
-            D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
-          else
-            D(i,j) = (alpha - beta + (alpha + beta + two)*z(j))/
-              (two*(one - z(j)*z(j)));
+      // The temporary view pd is stored in the last row of the matrix D
+      // This loop is designed so that we do not overwrite pd entries before we read them
+      for (ordinal_type i = 0; i < np; ++i) {
+        const auto & pd_i = pd(i);
+        const auto &  z_i =  z(i);
+        for (ordinal_type j = 0; j < i; ++j) {
+          const auto & pd_j = pd(j);
+          const auto &  z_j =  z(j);
+          D(j,i) = pd_j/(pd_i*(z_j-z_i));
+          D(i,j) = pd_i/(pd_j*(z_i-z_j));
+        }
+        D(i,i) = (alpha - beta + (alpha + beta + two)*z_i) / (two*(one - z_i*z_i));
+      }
     }
   }
 
@@ -260,13 +261,8 @@ namespace Intrepid2 {
     } else {
       const double one = 1.0, two = 2.0;
 
-      typename zViewType::value_type pd_buf[MaxPolylibPoint];
-      Kokkos::View<typename zViewType::value_type*,
-        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged>
-        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
-      
-      pd(0) = pow(-one,np-1)*GammaFunction(np+beta+one);
-      pd(0) /= GammaFunction(np)*GammaFunction(beta+two);
+      auto pd = Kokkos::subview(D, np-1, Kokkos::pair<int,int>(0,np)); 
+      pd(0) = pow(-one,np-1)*GammaFunction(np+beta+one) / (GammaFunction(np)*GammaFunction(beta+two));
 
       auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.extent(0)));
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.extent(0)));
@@ -275,17 +271,22 @@ namespace Intrepid2 {
       for(ordinal_type i = 1; i < np; ++i)
         pd(i) *= (1+z(i));
 
-      for (ordinal_type i = 0; i < np; ++i) 
-        for (ordinal_type j = 0; j < np; ++j) 
-          if (i != j)
-            D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
-          else 
-            if (j == 0)
-              D(i,j) = -(np + alpha + beta + one)*(np - one)/
-                (two*(beta + two));
-            else
-              D(i,j) = (alpha - beta + one + (alpha + beta + one)*z(j))/
-                (two*(one - z(j)*z(j)));
+      // The temporary view pd is stored in the last row of the matrix D
+      // This loop is designed so that we do not overwrite pd entries before we read them
+      for (ordinal_type i = 0; i < np; ++i) {
+        const auto & pd_i = pd(i);
+        const auto &  z_i =  z(i);
+        for (ordinal_type j = 0; j < i; ++j) {
+          const auto & pd_j = pd(j);
+          const auto &  z_j =  z(j);
+          D(j,i) = pd_j/(pd_i*(z_j-z_i));
+          D(i,j) = pd_i/(pd_j*(z_i-z_j));
+        }
+        if (i == 0)
+          D(i,i) = -(np + alpha + beta + one)*(np - one) / (two*(beta + two));
+        else
+          D(i,i) = (alpha - beta + one + (alpha + beta + one)*z_i) / (two*(one - z_i*z_i));
+      }
     }
   }
 
@@ -305,29 +306,30 @@ namespace Intrepid2 {
     } else {
       const double one = 1.0, two = 2.0;
 
-      typename zViewType::value_type pd_buf[MaxPolylibPoint];
-      Kokkos::View<typename zViewType::value_type*,
-        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged>
-        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
+      auto pd = Kokkos::subview(D, np-1, Kokkos::pair<int,int>(0,np)); 
 
       JacobiPolynomialDerivative(np-1, z, pd, np-1, alpha+1, beta);
       for (ordinal_type i = 0; i < np-1; ++i)
         pd(i) *= (1-z(i));
 
-      pd(np-1) = -GammaFunction(np+alpha+one);
-      pd(np-1) /= GammaFunction(np)*GammaFunction(alpha+two);
+      pd(np-1) = -GammaFunction(np+alpha+one) / (GammaFunction(np)*GammaFunction(alpha+two));
 
-      for (ordinal_type i = 0; i < np; ++i) 
-        for (ordinal_type j = 0; j < np; ++j) 
-          if (i != j)
-            D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
-          else 
-            if (j == np-1)
-              D(i,j) = (np + alpha + beta + one)*(np - one)/
-                (two*(alpha + two));
-            else
-              D(i,j) = (alpha - beta - one + (alpha + beta + one)*z(j))/
-                (two*(one - z(j)*z(j)));
+      // The temporary view pd is stored in the last row of the matrix D
+      // This loop is designed so that we do not overwrite pd entries before we read them
+      for (ordinal_type i = 0; i < np; ++i) {
+        const auto & pd_i = pd(i);
+        const auto &  z_i =  z(i);
+        for (ordinal_type j = 0; j < i; ++j) {
+          const auto & pd_j = pd(j);
+          const auto &  z_j =  z(j);
+          D(j,i) = pd_j/(pd_i*(z_j-z_i));
+          D(i,j) = pd_i/(pd_j*(z_i-z_j));
+        }
+        if (i == np-1)
+          D(i,i) = (np + alpha + beta + one)*(np - one) / (two*(alpha + two));
+        else
+          D(i,i) = (alpha - beta - one + (alpha + beta + one)*z_i) / (two*(one - z_i*z_i));
+      }
     }
   }
 
@@ -347,10 +349,7 @@ namespace Intrepid2 {
     } else {
       const double one = 1.0, two = 2.0;
 
-      typename zViewType::value_type pd_buf[MaxPolylibPoint];
-      Kokkos::View<typename zViewType::value_type*,
-        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged>
-        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
+      auto pd = Kokkos::subview(D, np-1, Kokkos::pair<int,int>(0,np)); 
 
       pd(0)  = two*pow(-one,np)*GammaFunction(np + beta);
       pd(0) /= GammaFunction(np - one)*GammaFunction(beta + two);
@@ -359,24 +358,32 @@ namespace Intrepid2 {
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.extent(0)));
 
       JacobiPolynomialDerivative(np-2, z_plus_1, pd_plus_1, np-2, alpha+1, beta+1);
-      for (ordinal_type i = 1; i < np-1; ++i) 
-        pd(i) *= (one-z(i)*z(i));
+      for (ordinal_type i = 1; i < np-1; ++i) {
+        const auto & z_i = z(i);
+        pd(i) *= (one-z_i*z_i);
+      }
 
       pd(np-1)  = -two*GammaFunction(np + alpha);
       pd(np-1) /= GammaFunction(np - one)*GammaFunction(alpha + two);
 
-      for (ordinal_type i = 0; i < np; ++i) 
-        for (ordinal_type j = 0; j < np; ++j) 
-          if (i != j)
-            D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
-          else 
-            if (j == 0)
-              D(i,j) = (alpha - (np-1)*(np + alpha + beta))/(two*(beta+ two));
-            else if (j == np-1)
-              D(i,j) =-(beta - (np-1)*(np + alpha + beta))/(two*(alpha+ two));
-            else
-              D(i,j) = (alpha - beta + (alpha + beta)*z(j))/
-                (two*(one - z(j)*z(j)));
+      // The temporary view pd is stored in the last row of the matrix D
+      // This loop is designed so that we do not overwrite pd entries before we read them
+      for (ordinal_type i = 0; i < np; ++i) { 
+        const auto & pd_i = pd(i);
+        const auto &  z_i =  z(i);
+        for (ordinal_type j = 0; j < i; ++j) {
+          const auto & pd_j = pd(j);
+          const auto &  z_j =  z(j);
+          D(j,i) = pd_j/(pd_i*(z_j-z_i));
+          D(i,j) = pd_i/(pd_j*(z_i-z_j));
+        }
+        if (i == 0)
+          D(i,i) = (alpha - (np-1)*(np + alpha + beta))/(two*(beta+ two));
+        else if (i == np-1)
+          D(i,i) =-(beta - (np-1)*(np + alpha + beta))/(two*(alpha+ two));
+        else
+          D(i,i) = (alpha - beta + (alpha + beta)*z_i)/(two*(one - z_i*z_i));
+      }
     }
   }
   
@@ -591,57 +598,51 @@ namespace Intrepid2 {
         for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = 0.5*(alpha + beta + two);
     } else {
-      double a1, a2, a3, a4;
+      INTREPID2_TEST_FOR_ABORT(polyd.data() && !polyd.data() , 
+                               ">>> ERROR (Polylib::Serial::JacobiPolynomial): polyi view needed to compute polyd view.");
+      if(!polyi.data()) return;
+
+      constexpr ordinal_type maxOrder = 2*MaxPolylibPoint-1;
+
+      INTREPID2_TEST_FOR_ABORT(maxOrder < n, 
+          ">>> ERROR (Polylib::Serial::JacobiPolynomial): Requested order exceeds maxOrder .");
+
+      double a2[maxOrder-1]={}, a3[maxOrder-1]={}, a4[maxOrder-1]={};
+      double ad1(0.0), ad2(0.0), ad3(0.0);
       const double apb = alpha + beta;
+      const double amb = alpha - beta;
 
-      typename polyiViewType::value_type
-        poly[MaxPolylibPoint]={}, polyn1[MaxPolylibPoint]={}, polyn2[MaxPolylibPoint]={};
-
-      if (polyi.data()) 
-        for (ordinal_type i=0;i<np;++i)
-          poly[i] = polyi(i);
-
-      for (ordinal_type i = 0; i < np; ++i) {
-        polyn2[i] = one;
-        polyn1[i] = 0.5*(alpha - beta + (alpha + beta + two)*z(i));
-      }
 
       for (auto k = 2; k <= n; ++k) {
-        a1 =  two*k*(k + apb)*(two*k + apb - two);
-        a2 = (two*k + apb - one)*(alpha*alpha - beta*beta);
-        a3 = (two*k + apb - two)*(two*k + apb - one)*(two*k + apb);
-        a4 =  two*(k + alpha - one)*(k + beta - one)*(two*k + apb);
-
-        a2 /= a1;
-        a3 /= a1;
-        a4 /= a1;
-
-        for (ordinal_type i = 0; i < np; ++i) {
-          poly  [i] = (a2 + a3*z(i))*polyn1[i] - a4*polyn2[i];
-          polyn2[i] = polyn1[i];
-          polyn1[i] = poly  [i];
-        }
+        double a1 =  two*k*(k + apb)*(two*k + apb - two);
+        a2[k-2] = (two*k + apb - one)*(apb*amb)/a1;
+        a3[k-2] = (two*k + apb - two)*(two*k + apb - one)*(two*k + apb)/a1;
+        a4[k-2] =  two*(k + alpha - one)*(k + beta - one)*(two*k + apb)/a1;
       }
 
       if (polyd.data()) {
-        a1 = n*(alpha - beta);
-        a2 = n*(two*n + alpha + beta);
-        a3 = two*(n + alpha)*(n + beta);
-        a4 = (two*n + alpha + beta);
-        a1 /= a4;
-        a2 /= a4;
-        a3 /= a4;
-
-        // note polyn2 points to polyn1 at end of poly iterations
-        for (ordinal_type i = 0; i < np; ++i) {
-          polyd(i)  = (a1- a2*z(i))*poly[i] + a3*polyn2[i];
-          polyd(i) /= (one - z(i)*z(i));
-        }
+        double ad4 = (two*n + alpha + beta);
+        ad1 = n*(alpha - beta)/ad4;
+        ad2 = n*(two*n + alpha + beta)/ad4;
+        ad3 = two*(n + alpha)*(n + beta)/ad4;
       }
 
-      if (polyi.data()) 
-        for (ordinal_type i=0;i<np;++i)
-          polyi(i) = poly[i];
+      typename polyiViewType::value_type polyn0, polyn1, polyn2;
+      for(ordinal_type i = 0; i < np; ++i) {
+        const auto & z_i = z(i);
+        polyn2 = one;
+        polyn1 = 0.5*(amb + (apb + two)*z_i);
+        polyn0 = (a2[0] + a3[0]*z_i)*polyn1 - a4[0]*polyn2;
+        for (ordinal_type k = 1; k < n-1; ++k) {
+          polyn2 = polyn1;
+          polyn1 = polyn0;
+          polyn0 = (a2[k] + a3[k]*z_i)*polyn1 - a4[k]*polyn2;
+        }
+        if (polyd.data()) {
+          polyd(i)  = (ad1- ad2*z_i)*polyn0 + ad3*polyn1 / (one - z_i*z_i);
+        }
+        polyi(i) = polyn0;
+      }
     }
   }
 
