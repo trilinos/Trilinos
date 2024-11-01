@@ -379,6 +379,61 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       }
     }
 
+
+    /** \brief  Return the size of the scratch space, in bytes, needed for using the team-level implementation of getValues.
+
+        Warning, <var>inputPoints</var> is only used to deduce the type of the points where to evaluate basis functions.
+        The rank of </var>inputPoints</var> and its size are not relevant, however, 
+        when using DFAD types, </var>inputPoints</var> cannot be empty, 
+        otherwise the size of the scracth space needed won't be deduced correctly.
+
+        \param  space             [in]  - inputPoints
+        \param  perTeamSpaceSize  [out] - size of the scratch space needed per team
+        \param  perThreadeSize    [out] - size of the scratch space beeded per thread
+    */
+    virtual
+    void getScratchSpaceSize(       ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                                const PointViewType inputPoints,
+                                const EOperator operatorType = OPERATOR_VALUE) const {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( true, std::logic_error,
+                                    ">>> ERROR (Basis::getValuesScratchSpace): this method is not supported or should be overridden accordingly by derived classes.");
+    }
+
+
+    /** \brief  Team-level evaluation of basis functions on a <strong>reference cell</strong>.
+
+        Returns values of <var>operatorType</var> acting on basis functions for a set of
+        points in the <strong>reference cell</strong> for which the basis is defined.
+
+        The interface allow also to select basis functions associated to a particular entity. 
+        As an example, if <var>subcellDim==1</var> (edges) and <var>subcellOrdinal==0</var>, <var>outputValues</var> will contain all the basis functions associated with the first edge.
+        <var>outputValues</var> will contain all the cell basis functions when the default value (-1) is used for <var>subcellDim</var> and <var>subcellOrdinal</var>
+
+        \param  outputValues      [out] - variable rank array with the basis values
+        \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
+        \param  operatorType      [in]  - the operator acting on the basis functions
+        \param  teamMember        [in]  - team member of the Kokkos::TemaPolicy
+        \param  scratchStorage    [in]  - scratch space to use by each team
+        \param  subcellDim        [in]  - the dimension of the subcells, the default values of -1 returns basis functions associated to subcells of all dimensions
+        \param  subcellOrdinal    [in]  - the ordinal of the subcell, the default values of -1 returns basis functions associated to subcells of all ordinals
+
+        \remark This function is supposed to be called within a TeamPolicy kernel. 
+                The size of the required scratch space is determined by the getScratchSpaceSize function.
+    */
+    KOKKOS_INLINE_FUNCTION
+    virtual
+    void getValues(       OutputViewType /* outputValues */,
+                    const PointViewType  /* inputPoints */,
+                    const EOperator /* operatorType */,
+                    const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& teamMember,
+                    const typename ExecutionSpace::scratch_memory_space &scratchStorage, 
+                    const ordinal_type subcellDim=-1,
+                    const ordinal_type subcellOrdinal=-1) const {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( true, std::logic_error,
+                                    ">>> ERROR (Basis::getValues): this method is not supported or should be overridden accordingly by derived classes.");
+    }
+
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
