@@ -7,9 +7,9 @@
 // *****************************************************************************
 // @HEADER
 
-/** \file test_01.hpp
+/** \file test_02.hpp
     \brief  Unit tests for the Intrepid2::HGRAD_TRI_Cn_FEM class.
-    \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim
+    \author Created by Kyungjoo Kim, Mauro Perego
  */
 
 
@@ -23,99 +23,196 @@
 #include "Intrepid2_Utils.hpp"
 
 #include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
 
-    // This code provides an example to use serial interface of high order elements
+    // This test evaluates the basis functions at a set of points on a batch of cells using the team-level getValues,
+    // and compares the results with those obtained using the classic getValues function.
     template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HGRAD_TRI_Cn_FEM_Test02(const bool verbose) {
+
+      //! Setup test output stream.
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "HGRAD_TRI_Cn_FEM, Test 2", {}
+      );
+
+      *outStream
+      << "\n"
+      << "===============================================================================\n"
+      << "| Testing Team-level Implemntation of getValues                               |\n"
+      << "===============================================================================\n";
+
       using DeviceSpaceType = typename DeviceType::execution_space;
       Kokkos::print_configuration(std::cout, false);
 
       int errorFlag = 0;
-
+      constexpr int maxOrder = 9;
       try { 
-        for (int order=1;order<Parameters::MaxOrder;++order) {
-          Basis_HGRAD_TRI_Cn_FEM<DeviceType,OutValueType,PointValueType> basis(order);
+        for (int order=1;order<=maxOrder;++order) {
+          using BasisType = Basis_HGRAD_TRI_Cn_FEM<DeviceType,OutValueType,PointValueType>;
+          auto basisPtr = Teuchos::rcp(new BasisType(order));
           
-          // problem setup 
-          //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
-          //   A is compuated via serial interface and B is computed with top-level interface.
-          const int npts = 1000, ndim = 2;
-          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesA("outputValuesA", basis.getCardinality(), npts);
-          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesB("outputValuesB", basis.getCardinality(), npts);
+          const int ncells = 5, npts = 10, ndim = 2;
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputValuesA, ncells, basisPtr->getCardinality(), npts);
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputValuesB, basisPtr->getCardinality(), npts);
+
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputGradsA, ncells, basisPtr->getCardinality(), npts, ndim);
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputGradsB, basisPtr->getCardinality(), npts, ndim);
+
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputCurlsA, ncells, basisPtr->getCardinality(), npts, ndim);
+          Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputCurlsB, basisPtr->getCardinality(), npts, ndim);
+
+          Kokkos::DynRankView<PointValueType,DeviceType> ConstructWithLabelPointView(point, 1);
           
-          Kokkos::View<PointValueType**,DeviceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
-          Kokkos::DynRankView<PointValueType,DeviceType> inputPoints (inputPointsViewToUseRandom.data(),  npts, ndim);
+          using ScalarType = typename ScalarTraits<PointValueType>::scalar_type;
           
-          // random values between (-1,1) x (-1,1)
+          Kokkos::View<ScalarType*,DeviceType> inputPointsViewToUseRandom("inputPoints", npts*ndim*get_dimension_scalar(point));
+          auto vcprop = Kokkos::common_view_alloc_prop(point);
+          Kokkos::DynRankView<PointValueType,DeviceType> inputPoints (Kokkos::view_wrap(inputPointsViewToUseRandom.data(), vcprop),  npts, ndim);
+          
+          // random values between (0,1)
           Kokkos::Random_XorShift64_Pool<DeviceType> random(13718);
           Kokkos::fill_random(inputPointsViewToUseRandom, random, 1.0);
           
-          // compute setup
-          //   we need vinv and workspace
-          const auto vinv = basis.getVandermondeInverse();
-          
-          // worksize 
-          //   workspace per thread is required for serial interface. 
-          //   parallel_for with range policy would be good to use stack workspace 
-          //   as team policy only can create shared memory 
-          //   this part would be tricky as the max size should be determined at compile time
-          //   let's think about this and find out the best practice. for now I use the following.
-          constexpr int worksize = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+1);
-          
-          // if you use team policy, worksize can be gathered from the basis object and use 
-          // kokkos shmem_size APIs to create workspace per team or per thread.
-          //const auto worksize_for_teampolicy = basis.getWorksizePerPoint(OPERATOR_VALUE);
-          
-          // extract point range to be evaluated in each thread
-          typedef Kokkos::pair<int,int> range_type;
-          
-          // parallel execution with serial interface
-          Kokkos::RangePolicy<DeviceSpaceType> policy(0, npts);
-          Kokkos::parallel_for(policy, KOKKOS_LAMBDA(int i) {
-              // we evaluate a single point 
-              const range_type pointRange = range_type(i,i+1);
+
+          *outStream << "Order: " << order << ": Computing values and gradients for " << ncells << " cells and " << npts << " points using team-level getValues function" <<std::endl;
+
+          { // evaluation using parallel loop over cell
+            auto basisPtr_device = copy_virtual_class_to_device<DeviceType,BasisType>(*basisPtr);
+            auto basisRawPtr_device = basisPtr_device.get();
+
+            int scratch_space_level =1;
+            const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
+            Kokkos::TeamPolicy<DeviceSpaceType> teamPolicy(ncells, Kokkos::AUTO,vectorSize);
+
+            { //compute values
+              auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
+                  auto valsACell = Kokkos::subview(outputValuesA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+                  basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
+              };              
               
-              // out (# dofs, # pts), input (# pts, # dims)
-              auto output = Kokkos::subview(outputValuesA, Kokkos::ALL(), pointRange);
-              auto input  = Kokkos::subview(inputPoints,   pointRange, Kokkos::ALL());
-              
-              // wrap static workspace with a view; serial interface has a template view interface.
-              // either view or dynrankview with a right size is okay.
-              OutValueType workbuf[worksize];
-              Kokkos::View<OutValueType*,Kokkos::AnonymousSpace> work(&workbuf[0], worksize);
-              
-              // evaluate basis using serial interface
-              Impl::Basis_HGRAD_TRI_Cn_FEM
-                ::Serial<OPERATOR_VALUE>::getValues(output, input, work, vinv);
-            });
-          
-          // evaluation using high level interface
-          basis.getValues(outputValuesB, inputPoints, OPERATOR_VALUE);
-          
-          // compare 
-          const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
-          const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
-          
-          double sum = 0, diff = 0;
-          for (size_t i=0;i<outputValuesA_Host.extent(0);++i)
-            for (size_t j=0;j<outputValuesA_Host.extent(1);++j) {
-              sum += std::abs(outputValuesB_Host(i,j));
-              diff += std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(i,j));
-              if (verbose) {
-                std::cout << " order = " << order
-                          << " i = " << i << " j = " << j 
-                          << " val A = " << outputValuesA_Host(i,j) 
-                          << " val B = " << outputValuesB_Host(i,j) 
-                          << " diff  = " << (outputValuesA_Host(i,j) - outputValuesB_Host(i,j)) 
-                          << std::endl;
-              }
+              //Get the required size of the scratch space per team and per thread.
+              int perThreadSpaceSize(0), perTeamSpaceSize(0);
+              basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
+              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+
+              Kokkos::parallel_for (teamPolicy,functor);
             }
-          if (diff/sum > 1.0e-9) {
-            errorFlag = -1;
+
+            { //compute gradients
+              auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
+                  auto gradsACell = Kokkos::subview(outputGradsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+                  basisRawPtr_device->getValues(gradsACell, inputPoints, OPERATOR_GRAD, team_member, team_member.team_scratch(scratch_space_level));
+              };              
+              
+              //Get the required size of the scratch space per team and per thread.
+              int perThreadSpaceSize(0), perTeamSpaceSize(0);
+              basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_GRAD);
+              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+
+              Kokkos::parallel_for (teamPolicy,functor);
+            }
+
+            { //compute curls
+              auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
+                  auto curlsACell = Kokkos::subview(outputCurlsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+                  basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, team_member.team_scratch(scratch_space_level));
+              };              
+              
+              //Get the required size of the scratch space per team and per thread.
+              int perThreadSpaceSize(0), perTeamSpaceSize(0);
+              basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
+              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+
+              Kokkos::parallel_for (teamPolicy,functor);
+            }
+          }
+
+          *outStream << "Order: " << order << ": Computing values and gradients for " << npts << " points using high-level getValues function" <<std::endl;
+
+
+          // evaluation using high level interface (on one cell)
+          basisPtr->getValues(outputValuesB, inputPoints, OPERATOR_VALUE);
+          basisPtr->getValues(outputGradsB, inputPoints, OPERATOR_GRAD);
+          basisPtr->getValues(outputCurlsB, inputPoints, OPERATOR_CURL);
+          
+          *outStream << "Order: " << order << ": Comparing values and gradients on host" <<std::endl;
+          { // compare values
+            const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
+            const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
+            
+            OutValueType diff = 0; 
+            auto tol = epsilon<double>();
+            for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
+              for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
+                for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
+                  diff = std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(ic,i,j));
+                  if (diff > tol) {
+                    ++errorFlag;
+                    std::cout << " order: " << order
+                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                              << ", val A: " << outputValuesA_Host(ic,i,j) 
+                              << ", val B: " << outputValuesB_Host(i,j) 
+                              << ", |diff|: " << diff
+                              << ", tol: " << tol
+                              << std::endl;
+                  }
+                }
+          }
+
+          { 
+            // compare grads
+            const auto outputGradsA_Host = Kokkos::create_mirror_view(outputGradsA); Kokkos::deep_copy(outputGradsA_Host, outputGradsA);
+            const auto outputGradsB_Host = Kokkos::create_mirror_view(outputGradsB); Kokkos::deep_copy(outputGradsB_Host, outputGradsB);
+            
+            OutValueType diff = 0;
+            auto tol = epsilon<double>();
+            for (size_t ic=0;ic<outputGradsA_Host.extent(0);++ic)
+              for (size_t i=0;i<outputGradsA_Host.extent(1);++i)
+                for (size_t j=0;j<outputGradsA_Host.extent(2);++j) {
+                  diff = 0;
+                  for (int d=0;d<ndim;++d)
+                    diff += std::abs(outputGradsB_Host(i,j,d) - outputGradsA_Host(ic,i,j,d));
+                  if (diff > tol) {
+                    ++errorFlag;
+                    std::cout << " order: " << order
+                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                              << ", grads A: [" << outputGradsA_Host(ic,i,j,0) << ", " << outputGradsA_Host(ic,i,j,1) << "]"
+                              << ", grads B: [" << outputGradsB_Host(i,j,0) << ", " <<  outputGradsB_Host(i,j,1) << "]"
+                              << ", |diff|: " << diff
+                              << ", tol: " << tol
+                              << std::endl;
+                  }
+                }
+          }
+
+          { 
+            // compare curls
+            const auto outputCurlsA_Host = Kokkos::create_mirror_view(outputCurlsA); Kokkos::deep_copy(outputCurlsA_Host, outputCurlsA);
+            const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
+            
+            OutValueType diff = 0;
+            auto tol = epsilon<double>();
+            for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
+              for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
+                for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
+                  diff = 0;
+                  for (int d=0;d<ndim;++d)
+                    diff += std::abs(outputCurlsB_Host(i,j,d) - outputCurlsA_Host(ic,i,j,d));
+                  if (diff > tol) {
+                    ++errorFlag;
+                    std::cout << " order: " << order
+                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                              << ", curls A: [" << outputCurlsA_Host(ic,i,j,0) << ", " << outputCurlsA_Host(ic,i,j,1) <<"]"
+                              << ", curls B: [" << outputCurlsB_Host(i,j,0) << ", " <<  outputCurlsB_Host(i,j,1) << "]"
+                              << ", |diff|: " << diff
+                              << ", tol: " << tol
+                              << std::endl;
+                  }
+                }
           }
         }
       } catch (std::exception &err) {
