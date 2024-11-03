@@ -77,7 +77,7 @@ namespace BaskerNS
             << " DOMBLK MALLOC : blk=" << thread_array(ti).error_blk
             << " subblk=" << thread_array(ti).error_subblk
             << " newsize=" << thread_array(ti).error_info
-            << std::endl;
+            << std::endl << std::flush;
         }
 
         //If on diagonal, want to compare L and U
@@ -113,7 +113,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl;
+            std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl << std::flush;
           }
           BASKER_MATRIX &L =
             LL(thread_array(ti).error_blk)(thread_array(ti).error_subblk);
@@ -139,7 +139,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl;
+            std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl << std::flush;
           }
           BASKER_MATRIX &U = 
             LU(thread_array(ti).error_blk)(0);

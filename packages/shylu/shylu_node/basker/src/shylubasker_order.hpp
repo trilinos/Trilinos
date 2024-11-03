@@ -1160,8 +1160,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         std::cout << " > scotch_partition returned with info = " << info_scotch << " and apply_nd = " << apply_nd << std::endl;
       }
       return info_scotch;
+    } else if(Options.verbose == BASKER_TRUE) {
+      printf( "\n part_scotch done (num_threads = %d,%d)\n",num_threads,part_tree.leaf_nnz.extent(0) );
+      //for (Int i = 0; i < num_threads; i++) printf( " nnz_leaf[%d] = %d\n",i,part_tree.leaf_nnz[i] ); printf( "\n" );
     }
-
     nd_flag = BASKER_TRUE;
     //permute
     permute_row(M, part_tree.permtab);
@@ -2200,7 +2202,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    INT_1DARRAY row
   )
   {
-    permute_row(M.nnz, &(M.row_idx(0)), &(row(0)));
+    if (M.nnz > 0) {
+      permute_row(M.nnz, &(M.row_idx(0)), &(row(0)));
+    }
     return 0;
   }//end permute_row(matrix,int)
 

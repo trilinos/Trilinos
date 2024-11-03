@@ -233,7 +233,7 @@ namespace BaskerNS
     }//for - over all sublevel 1...lvl-2
     #ifdef BASKER_TIMER
     printf("Time Upper-Col(%d): %lf \n", (int)kid, timer.seconds());
-    timer.reset();
+    fflush(stdout); timer.reset();
     #endif
 
     //---------Lower Factor (old sublevel lvl-1)-------
@@ -255,11 +255,11 @@ namespace BaskerNS
       }
     }
     #endif
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_TIMER
     printf("\n done with UPPER, kid: %d \n\n", kid);
+    printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
+    fflush(stdout);
     #endif
-
-    //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
     //return;
     // > accumulate the last update
     // > factor the diagonal block LU(U_col)(U_row)
@@ -284,7 +284,8 @@ namespace BaskerNS
         if (info == BASKER_SUCCESS)
         {
           #ifdef BASKER_DEBUG_NFACTOR_COL2
-          printf( " kid=%d: calling t_add_extend(k=%d/%d)\n",kid,k,ncol ); fflush(stdout);
+          printf( " kid=%d: calling t_add_extend(k=%d/%d) with LU(%d,%d).nnz = %d\n",
+                  kid,k,ncol,U_col,U_row,LU(U_col)(U_row).nnz ); fflush(stdout);
           #endif
           t_add_extend(thread, kid,lvl,lvl-1, k,
                        LU(U_col)(U_row).scol,
@@ -316,12 +317,12 @@ namespace BaskerNS
           }
         }
         #ifdef BASKER_DEBUG_NFACTOR_COL2
-        printf(" > done calling lower factor, kid: %d k: %d info=%d\n", kid, k, info); fflush(stdout);
-        #endif
-        #ifdef BASKER_DEBUG_NFACTOR_COL2
         else {
           printf(" + skipping lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
         }
+        #endif
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf(" > done calling lower factor, kid: %d k: %d info=%d\n", kid, k, info); fflush(stdout);
         #endif
         //need barrier if multiple thread uppdate
         #ifdef USE_TEAM_BARRIER_NFACTOR_COL2
@@ -356,12 +357,12 @@ namespace BaskerNS
           timer_facoff.reset();
           #endif
           #ifdef BASKER_DEBUG_NFACTOR_COL2
-          printf(" calling lower diag factor, kid: %d k: %d \n",
+          printf(" calling lower offdiag factor, kid: %d k: %d \n",
                  kid, k); fflush(stdout);
           #endif
           t_lower_col_factor_offdiag2(kid, lvl, lvl-1, k, pivot);
           #ifdef BASKER_DEBUG_NFACTOR_COL2
-          printf(" done lower diag factor, kid: %d k: %d \n",
+          printf(" done lower offdiag factor, kid: %d k: %d \n",
                  kid, k); fflush(stdout);
           #endif
         }
@@ -906,7 +907,10 @@ namespace BaskerNS
          L_row < LL_size(L_col);
          X_row+=(lteam_size), L_row+=(lteam_size))
     {
-      //printf("OFF_DIAG_LOWER. kid: %d k: %d  U: %d %d L: %d %d X: %d %d pivot: %f \n", kid, k, U_col, U_row, L_col, L_row, X_col, X_row, pivot);
+      #ifdef BASKER_TIMER
+      printf("OFF_DIAG_LOWER. kid: %d k: %d  U(%d, %d).nnz = %d  L(%d, %d) X(%d, %d) pivot: %f \n", 
+             kid, k, U_col, U_row, LU(U_col)(U_row).nnz, L_col, L_row, X_col, X_row, pivot);
+      #endif
       /*old
        t_back_solve_offdiag(leader_id,
                             L_col, L_row,
