@@ -72,8 +72,8 @@ struct ViewCtorProp<void> {};
  */
 template <typename Specialize, typename T>
 struct ViewCtorProp<void, CommonViewAllocProp<Specialize, T>> {
-  ViewCtorProp()                     = default;
-  ViewCtorProp(const ViewCtorProp &) = default;
+  ViewCtorProp()                                = default;
+  ViewCtorProp(const ViewCtorProp &)            = default;
   ViewCtorProp &operator=(const ViewCtorProp &) = default;
 
   using type = CommonViewAllocProp<Specialize, T>;
@@ -92,8 +92,8 @@ struct ViewCtorProp<std::enable_if_t<std::is_same_v<P, AllowPadding_t> ||
                                      std::is_same_v<P, WithoutInitializing_t> ||
                                      std::is_same_v<P, SequentialHostInit_t>>,
                     P> {
-  ViewCtorProp()                     = default;
-  ViewCtorProp(const ViewCtorProp &) = default;
+  ViewCtorProp()                                = default;
+  ViewCtorProp(const ViewCtorProp &)            = default;
   ViewCtorProp &operator=(const ViewCtorProp &) = default;
 
   using type = P;
@@ -106,14 +106,14 @@ struct ViewCtorProp<std::enable_if_t<std::is_same_v<P, AllowPadding_t> ||
 /* Map input label type to std::string */
 template <typename Label>
 struct ViewCtorProp<std::enable_if_t<is_view_label<Label>::value>, Label> {
-  ViewCtorProp()                     = default;
-  ViewCtorProp(const ViewCtorProp &) = default;
+  ViewCtorProp()                                = default;
+  ViewCtorProp(const ViewCtorProp &)            = default;
   ViewCtorProp &operator=(const ViewCtorProp &) = default;
 
   using type = std::string;
 
   ViewCtorProp(const type &arg) : value(arg) {}
-  ViewCtorProp(type &&arg) : value(arg) {}
+  ViewCtorProp(type &&arg) : value(std::move(arg)) {}
 
   type value;
 };
@@ -122,8 +122,8 @@ template <typename Space>
 struct ViewCtorProp<std::enable_if_t<Kokkos::is_memory_space<Space>::value ||
                                      Kokkos::is_execution_space<Space>::value>,
                     Space> {
-  ViewCtorProp()                     = default;
-  ViewCtorProp(const ViewCtorProp &) = default;
+  ViewCtorProp()                                = default;
+  ViewCtorProp(const ViewCtorProp &)            = default;
   ViewCtorProp &operator=(const ViewCtorProp &) = default;
 
   using type = Space;
@@ -135,8 +135,8 @@ struct ViewCtorProp<std::enable_if_t<Kokkos::is_memory_space<Space>::value ||
 
 template <typename T>
 struct ViewCtorProp<void, T *> {
-  ViewCtorProp()                     = default;
-  ViewCtorProp(const ViewCtorProp &) = default;
+  ViewCtorProp()                                = default;
+  ViewCtorProp(const ViewCtorProp &)            = default;
   ViewCtorProp &operator=(const ViewCtorProp &) = default;
 
   using type = T *;
@@ -213,14 +213,19 @@ struct ViewCtorProp : public ViewCtorProp<void, P>... {
   using execution_space = typename var_execution_space::type;
   using pointer_type    = typename var_pointer::type;
 
-  /*  Copy from a matching argument list.
-   *  Requires  std::is_same< P , ViewCtorProp< void , Args >::value ...
-   */
-  template <typename... Args>
-  inline ViewCtorProp(Args const &... args) : ViewCtorProp<void, P>(args)... {}
+  // Construct from a matching argument list.
+  //
+  // Note that if P is empty, this constructor is the default constructor.
+  // On the other hand, if P is not empty, the constraint implies that
+  // there is no default constructor.
+  template <typename... Args,
+            typename = std::enable_if_t<std::conjunction_v<
+                std::is_constructible<view_ctor_prop_base<P>, Args &&>...>>>
+  ViewCtorProp(Args &&...args)
+      : ViewCtorProp<void, P>(std::forward<Args>(args))... {}
 
   template <typename... Args>
-  KOKKOS_FUNCTION ViewCtorProp(pointer_type arg0, Args const &... args)
+  KOKKOS_FUNCTION ViewCtorProp(pointer_type arg0, Args const &...args)
       : ViewCtorProp<void, pointer_type>(arg0),
         ViewCtorProp<void, typename ViewCtorProp<void, Args>::type>(args)... {}
 
@@ -252,7 +257,7 @@ auto with_properties_if_unset(const ViewCtorProp<P...> &view_ctor_prop) {
 template <typename... P, typename Property, typename... Properties>
 auto with_properties_if_unset(const ViewCtorProp<P...> &view_ctor_prop,
                               [[maybe_unused]] const Property &property,
-                              const Properties &... properties) {
+                              const Properties &...properties) {
   if constexpr ((is_execution_space<Property>::value &&
                  !ViewCtorProp<P...>::has_execution_space) ||
                 (is_memory_space<Property>::value &&
@@ -302,7 +307,7 @@ template <class... P, class Property, class... Properties>
 struct WithPropertiesIfUnset<ViewCtorProp<P...>, Property, Properties...> {
   static constexpr auto apply_prop(const ViewCtorProp<P...> &view_ctor_prop,
                                    const Property &prop,
-                                   const Properties &... properties) {
+                                   const Properties &...properties) {
     if constexpr ((is_execution_space<Property>::value &&
                    !ViewCtorProp<P...>::has_execution_space) ||
                   (is_memory_space<Property>::value &&
@@ -328,7 +333,7 @@ struct WithPropertiesIfUnset<ViewCtorProp<P...>, Property, Properties...> {
 
 template <typename... P, class... Properties>
 auto with_properties_if_unset(const ViewCtorProp<P...> &view_ctor_prop,
-                              const Properties &... properties) {
+                              const Properties &...properties) {
   return WithPropertiesIfUnset<ViewCtorProp<P...>, Properties...>::apply_prop(
       view_ctor_prop, properties...);
 }
@@ -436,6 +441,48 @@ struct ViewCtorProp<WithoutInitializing_t, std::string,
 using ViewAllocateWithoutInitializing =
     Impl::ViewCtorProp<Impl::WithoutInitializing_t, std::string,
                        Impl::ViewAllocateWithoutInitializingBackwardCompat>;
+
+inline constexpr Kokkos::Impl::SequentialHostInit_t SequentialHostInit{};
+
+inline constexpr Kokkos::Impl::WithoutInitializing_t WithoutInitializing{};
+
+inline constexpr Kokkos::Impl::AllowPadding_t AllowPadding{};
+
+/** \brief  Create View allocation parameter bundle from argument list.
+ *
+ *  Valid argument list members are:
+ *    1) label as a "string" or std::string
+ *    2) memory space instance of the View::memory_space type
+ *    3) execution space instance compatible with the View::memory_space
+ *    4) Kokkos::WithoutInitializing to bypass initialization
+ *    4) Kokkos::AllowPadding to allow allocation to pad dimensions for memory
+ * alignment
+ */
+template <class... Args>
+auto view_alloc(Args &&...args) {
+  using return_type = Impl::ViewCtorProp<typename Impl::ViewCtorProp<
+      void, Kokkos::Impl::remove_cvref_t<Args>>::type...>;
+
+  static_assert(!return_type::has_pointer,
+                "Cannot give pointer-to-memory for view allocation");
+
+  return return_type(std::forward<Args>(args)...);
+}
+
+template <class... Args>
+KOKKOS_INLINE_FUNCTION
+    Impl::ViewCtorProp<typename Impl::ViewCtorProp<void, Args>::type...>
+    view_wrap(Args const &...args) {
+  using return_type =
+      Impl::ViewCtorProp<typename Impl::ViewCtorProp<void, Args>::type...>;
+
+  static_assert(!return_type::has_memory_space &&
+                    !return_type::has_execution_space &&
+                    !return_type::has_label && return_type::has_pointer,
+                "Must only give pointer-to-memory for view wrapping");
+
+  return return_type(args...);
+}
 
 } /* namespace Kokkos */
 

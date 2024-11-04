@@ -57,6 +57,7 @@
 * SIMD: Allow flexible vector width for 32 bit types [\#6802](https://github.com/kokkos/kokkos/pull/6802)
 * Updates for `Kokkos::Array`: add `kokkos_swap(Array<T, N>)` specialization [\#6943](https://github.com/kokkos/kokkos/pull/6943), add `Kokkos::to_array` [\#6375](https://github.com/kokkos/kokkos/pull/6375),  make `Kokkos::Array` equality-comparable [\#7148](https://github.com/kokkos/kokkos/pull/7148)
 * Structured binding support for `Kokkos::complex` [\#7040](https://github.com/kokkos/kokkos/pull/7040)
+* Introduce `KOKKOS_DEDUCTION_GUIDE` macro to allow for portable user-defined deduction guides [\#6954](https://github.com/kokkos/kokkos/pull/6954)
 
 ### Build System Changes
 * Do not require OpenMP support for languages other than CXX [\#6965](https://github.com/kokkos/kokkos/pull/6965)
@@ -1388,7 +1389,7 @@
 **Closed issues:**
 
 - Silent error (Validate storage level arg to set_scratch_size) [\#3097](https://github.com/kokkos/kokkos/issues/3097)
-- Remove KOKKKOS\_ENABLE\_PROFILING Option [\#3095](https://github.com/kokkos/kokkos/issues/3095)
+- Remove KOKKOS\_ENABLE\_PROFILING Option [\#3095](https://github.com/kokkos/kokkos/issues/3095)
 - Cuda 11 -\> allow C++17 [\#3083](https://github.com/kokkos/kokkos/issues/3083)
 - In source build failure not explained [\#3081](https://github.com/kokkos/kokkos/issues/3081)
 - Allow naming of Views for initialization kernel [\#3070](https://github.com/kokkos/kokkos/issues/3070)
