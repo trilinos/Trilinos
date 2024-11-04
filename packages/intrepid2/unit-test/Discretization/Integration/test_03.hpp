@@ -86,7 +86,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 2D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -113,7 +112,7 @@ namespace Intrepid2 {
         const auto maxDeg   = Parameters::MaxCubatureDegreeEdge;
         const auto polySize = (maxDeg+1)*(maxDeg+2)/2;
         
-        // test inegral values
+        // test integral values
         DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
         
         // analytic integral values
@@ -121,27 +120,28 @@ namespace Intrepid2 {
         const auto analyticPolySize = (analyticMaxDeg+1)*(analyticMaxDeg+2)/2;
         DynRankViewHost ConstructWithLabel(analyticInt, analyticPolySize, 1);
         
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints,
-                                       Parameters::MaxIntegrationPoints,
-                                       Parameters::MaxDimension);
-        
-        DynRankView ConstructWithLabel(cubWeights,
-                                       Parameters::MaxIntegrationPoints);
-        
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
           CubatureLineType line(cubDeg);
           CubatureTensorType quadCub( line, line );
+          Kokkos::Array<int,2> degrees;
+          
+          auto cubPoints  = quadCub.allocateCubaturePoints();
+          auto cubWeights = quadCub.allocateCubatureWeights();
+          quadCub.getCubature(cubPoints, cubWeights);
 
           ordinal_type cnt = 0;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
-            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) 
-              testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(quadCub,
-                                                                          cubPoints,
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg)
+          {
+            degrees[0] = xDeg;
+            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt)
+            {
+              degrees[1] = yDeg;
+              testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(cubPoints,
                                                                           cubWeights,
-                                                                          xDeg, 
-                                                                          yDeg);
+                                                                          degrees);
+            }
+          }
         }
 
         // get analytic values

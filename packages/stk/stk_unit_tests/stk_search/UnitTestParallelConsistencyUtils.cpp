@@ -27,14 +27,16 @@ TEST(ParallelConsistencyUtils, ProcBoundingBoxView1Proc)
 
   int myrank = stk::parallel_machine_rank(stk::parallel_machine_world());
   Kokkos::View<BoxIdentProcType*, ExecutionSpace> boxIdentProcs("box_ident_procs", 2);
+  auto boxIdentProcsHost = Kokkos::create_mirror_view(boxIdentProcs);
   double delta = 0.5;
   double x0 = delta * myrank;
-  boxIdentProcs(0) = BoxIdentProcType{BoxType(x0, 0,     0, x0 + delta,   delta, delta), IdentProcType(0, myrank)};
-  boxIdentProcs(1) = BoxIdentProcType{BoxType(x0, delta, 0, x0 + delta, 2*delta, delta), IdentProcType(1, myrank)};
+  boxIdentProcsHost(0) = BoxIdentProcType{BoxType(x0, 0,     0, x0 + delta,   delta, delta), IdentProcType(0, myrank)};
+  boxIdentProcsHost(1) = BoxIdentProcType{BoxType(x0, delta, 0, x0 + delta, 2*delta, delta), IdentProcType(1, myrank)};
+  Kokkos::deep_copy(boxIdentProcs, boxIdentProcsHost);
 
   Kokkos::View<BoxType*, ExecutionSpace> procBoxes = stk::search::gather_all_processor_superset_domain_boxes(boxIdentProcs, execSpace, stk::parallel_machine_world());
 
-  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(execSpace, procBoxes);
+  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace{}, procBoxes);
 
   EXPECT_EQ(procBoxesHost.extent(0), 1u);
   EXPECT_EQ(procBoxesHost(0), BoxType(0, 0, 0,   delta, 2*delta, delta));
@@ -54,12 +56,14 @@ TEST(ParallelConsistencyUtils, ProcBoundingBoxView1ProcSphere)
 
   int myrank = stk::parallel_machine_rank(stk::parallel_machine_world());
   Kokkos::View<BoxIdentProcType*, ExecutionSpace> boxIdentProcs("box_ident_procs", 2);
-  boxIdentProcs(0) = BoxIdentProcType{BoxType({0, 0, 0}, 1), IdentProcType(0, myrank)};
-  boxIdentProcs(1) = BoxIdentProcType{BoxType({1, 0, 0}, 1), IdentProcType(1, myrank)};
+  auto boxIdentProcsHost = Kokkos::create_mirror_view(boxIdentProcs);
+  boxIdentProcsHost(0) = BoxIdentProcType{BoxType({0, 0, 0}, 1), IdentProcType(0, myrank)};
+  boxIdentProcsHost(1) = BoxIdentProcType{BoxType({1, 0, 0}, 1), IdentProcType(1, myrank)};
+  Kokkos::deep_copy(boxIdentProcs, boxIdentProcsHost);
 
   Kokkos::View<stk::search::Box<double>*, ExecutionSpace> procBoxes = stk::search::gather_all_processor_superset_domain_boxes(boxIdentProcs, execSpace, stk::parallel_machine_world());
 
-  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(execSpace, procBoxes);
+  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace{}, procBoxes);
 
   EXPECT_EQ(procBoxesHost.extent(0), 1u);
   EXPECT_EQ(procBoxesHost(0), stk::search::Box<double>(-1, -1, -1, 2, 1, 1));
@@ -76,14 +80,16 @@ TEST(ParallelConsistencyUtils, ProcBoundingBoxView2Proc)
 
   int myrank = stk::parallel_machine_rank(stk::parallel_machine_world());
   Kokkos::View<BoxIdentProcType*, ExecutionSpace> boxIdentProcs("box_ident_procs", 2);
+  auto boxIdentProcsHost = Kokkos::create_mirror_view(boxIdentProcs);
   double delta = 0.5;
   double x0 = delta * myrank;
-  boxIdentProcs(0) = BoxIdentProcType{BoxType(x0, 0,     0, x0 + delta,   delta, delta), IdentProcType(0, myrank)};
-  boxIdentProcs(1) = BoxIdentProcType{BoxType(x0, delta, 0, x0 + delta, 2*delta, delta), IdentProcType(1, myrank)};
+  boxIdentProcsHost(0) = BoxIdentProcType{BoxType(x0, 0,     0, x0 + delta,   delta, delta), IdentProcType(0, myrank)};
+  boxIdentProcsHost(1) = BoxIdentProcType{BoxType(x0, delta, 0, x0 + delta, 2*delta, delta), IdentProcType(1, myrank)};
+  Kokkos::deep_copy(boxIdentProcs, boxIdentProcsHost);
 
   Kokkos::View<BoxType*, ExecutionSpace> procBoxes = stk::search::gather_all_processor_superset_domain_boxes(boxIdentProcs, execSpace, stk::parallel_machine_world());
 
-  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(execSpace, procBoxes);
+  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace{}, procBoxes);
 
   EXPECT_EQ(procBoxesHost.extent(0), 2u);
   EXPECT_EQ(procBoxesHost(0), BoxType(0,     0, 0,   delta, 2*delta, delta));
@@ -103,15 +109,17 @@ TEST(ParallelConsistencyUtils, ProcBoundingBoxView4Proc)
   int i = myrank % 2;
   int j = myrank / 2;
   Kokkos::View<BoxIdentProcType*, ExecutionSpace> boxIdentProcs("box_ident_procs", 1);
+  auto hostBoxIdentProcs = Kokkos::create_mirror_view(boxIdentProcs);
 
   double delta = 0.5;
   double x0 = delta * i;
   double y0 = delta * j;
-  boxIdentProcs(0) = BoxIdentProcType{BoxType(x0, y0, 0, x0 + delta, y0 + delta, delta), IdentProcType(0, myrank)};
+  hostBoxIdentProcs(0) = BoxIdentProcType{BoxType(x0, y0, 0, x0 + delta, y0 + delta, delta), IdentProcType(0, myrank)};
+  Kokkos::deep_copy(boxIdentProcs, hostBoxIdentProcs);
 
   Kokkos::View<BoxType*, ExecutionSpace> procBoxes = stk::search::gather_all_processor_superset_domain_boxes(boxIdentProcs, execSpace, stk::parallel_machine_world());
 
-  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(execSpace, procBoxes);
+  auto procBoxesHost = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace{}, procBoxes);
 
   EXPECT_EQ(procBoxesHost.extent(0), 4u);
   EXPECT_EQ(procBoxesHost(0), BoxType(0,     0,     0, delta,   delta,   delta));

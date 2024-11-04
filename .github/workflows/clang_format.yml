@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
     - uses: DoozyX/clang-format-lint-action@c71d0bf4e21876ebec3e5647491186f8797fde31 # v0.18.2
       with:
         source: './packages/muelu ./packages/tempus ./packages/teko ./packages/xpetra'
@@ -22,7 +22,7 @@ jobs:
     - run: git diff HEAD > format_patch.txt
     - run: if [ "$(cat format_patch.txt)" == "" ] ; then rm format_patch.txt ; else cat format_patch.txt; fi
 
-    - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+    - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
       id: upload-artf
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:

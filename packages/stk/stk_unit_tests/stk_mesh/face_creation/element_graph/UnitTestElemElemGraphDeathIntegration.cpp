@@ -3,7 +3,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for process_killed_elements
+#include <stk_mesh/baseImpl/elementGraph/ProcessKilledElements.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc

@@ -38,7 +38,7 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START_LEVELID(resetCoarseSpaceBlockTime,"RGDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-        FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        FROSCH_ASSERT(blockId<=this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
         if (!this->DistributionList_->get("Type","linear").compare("ZoltanDual")) {
             FROSCH_ASSERT(false,"RGDSWCoarseOperator:: Distribution Type ZoltanDual only works for IPOUHarmonicCoarseOperator");
@@ -88,20 +88,27 @@ namespace FROSch {
             FROSCH_WARNING("FROSch::RGDSWCoarseOperator",this->Verbose_,"Rotations cannot be used since nodeList.is_null().");
         }
 
-        this->DofsMaps_[blockId] = dofsMaps;
-        this->DofsPerNode_[blockId] = dofsPerNode;
-
-        Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
-        sortunique(tmpDirichletBoundaryDofs);
-
-        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,this->LevelID_,communicationStrategy));
-        this->DDInterface_->resetGlobalDofs(dofsMaps);
-        this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
-
-        EntitySetPtr interface = this->DDInterface_->getInterface();
-        EntitySetPtr interior = this->DDInterface_->getInterior();
-
         if (useForCoarseSpace) {
+            this->NumberOfBlocks_++;
+
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+            this->IDofs_.resize(this->IDofs_.size()+1);
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
+
+            this->DofsMaps_[blockId] = dofsMaps;
+            this->DofsPerNode_[blockId] = dofsPerNode;
+
+            Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
+            sortunique(tmpDirichletBoundaryDofs);
+
+            this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap.getConst(),verbosity,this->LevelID_,communicationStrategy));
+            this->DDInterface_->resetGlobalDofs(dofsMaps);
+            this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
+
+            EntitySetPtr interface = this->DDInterface_->getInterface();
+            EntitySetPtr interior = this->DDInterface_->getInterior();
 
             if (this->Verbose_) {
                 cout

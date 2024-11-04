@@ -377,12 +377,9 @@ Eval::initialize_function_map()
   m_functionMap["weibull_pdf"] = FunctionType::WEIBULL_PDF;
   m_functionMap["gamma_pdf"] = FunctionType::GAMMA_PDF;
 
-  m_functionMap["rand"] = FunctionType::RAND;
-  m_functionMap["srand"] = FunctionType::SRAND;
-  m_functionMap["random"] = FunctionType::RANDOM;
+
   m_functionMap["ts_random"] = FunctionType::TS_RANDOM;
   m_functionMap["ts_normal"] = FunctionType::TS_NORMAL;
-  m_functionMap["time"] = FunctionType::TIME;
 }
 
 Eval &

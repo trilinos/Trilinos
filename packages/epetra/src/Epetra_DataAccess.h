@@ -43,6 +43,14 @@
 
 #ifndef EPETRA_DATAACCESS_H
 #define EPETRA_DATAACCESS_H
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
 /*! \file Epetra_DataAccess.h
     \brief Epetra_DataAccess Mode enumerable type
  */
@@ -59,10 +67,3 @@ enum Epetra_DataAccess {Copy, /*!< User data will be copied at
                        };
 
 #endif // EPETRA_DATAACCESS_H
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

@@ -35,10 +35,15 @@
 #ifndef STK_MESH_BASE_DELETE_EDGES_ON_FACES_H
 #define STK_MESH_BASE_DELETE_EDGES_ON_FACES_H
 
-#include "stk_mesh/base/BulkData.hpp"
+#include <vector>
 
 namespace stk {
 namespace mesh {
+
+class BulkData;
+class Part;
+struct Entity;
+
 namespace impl {
 
 class EdgesOnFacesDeleter

@@ -43,6 +43,12 @@
 #ifndef IFPACK_DIAG_PRECONDITIONER_H
 #define IFPACK_DIAG_PRECONDITIONER_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Vector.h"
@@ -134,10 +140,3 @@ class Ifpack_DiagPreconditioner : public Epetra_Operator
 };
 
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

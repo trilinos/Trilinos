@@ -44,6 +44,7 @@ ELSE()
 
 FILE(GLOB HEADERS
      CommBuffer.hpp
+     OutputStreams.hpp
      Parallel.hpp
      ParallelComm.hpp
      ParallelReduce.hpp
@@ -53,6 +54,7 @@ FILE(GLOB HEADERS
     )
 FILE(GLOB SOURCES
      CommBuffer.cpp
+     OutputStreams.cpp
      Parallel.cpp
      ParallelComm.cpp
      ParallelReduce.cpp
@@ -76,6 +78,11 @@ ELSE()
   ENDIF()
 
   target_link_libraries(stk_util_parallel PUBLIC stk_util_util)
+
+  IF(${PROJECT_NAME}_ENABLE_SEACASAprepro_lib)
+    find_package(SEACASAprepro_lib REQUIRED)
+    target_link_libraries(stk_util_parallel PUBLIC SEACASAprepro_lib::aprepro_lib)
+  ENDIF()
 ENDIF()
 
 target_include_directories(stk_util_parallel PUBLIC

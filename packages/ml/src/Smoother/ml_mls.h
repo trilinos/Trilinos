@@ -5,6 +5,12 @@
 #ifndef __MLMLS__
 #define __MLMLS__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 
 #define MLS_MAX_DEG  5 /* max. degree of MLS smoother        */
@@ -61,10 +67,3 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[]);
 #endif
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

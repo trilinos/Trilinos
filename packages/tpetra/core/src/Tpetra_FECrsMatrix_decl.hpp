@@ -14,6 +14,7 @@
 /// \file Tpetra_FECrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::FECrsMatrix class
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_FECrsGraph.hpp"
 
@@ -292,12 +293,6 @@ public:
     //@}
 
   private:
-    // Enum for activity
-    enum FEWhichActive
-    {
-      FE_ACTIVE_OWNED,
-      FE_ACTIVE_OWNED_PLUS_SHARED
-    };
 
     // The FECrsGraph from construction time
     Teuchos::RCP<const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node> > feGraph_;
@@ -305,15 +300,9 @@ public:
     // This is whichever multivector isn't currently active
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsMatrix_;
     // This is in RCP to make shallow copies of the FECrsMatrix work correctly
-    Teuchos::RCP<FEWhichActive> activeCrsMatrix_;
+    Teuchos::RCP<FE::WhichActive> activeCrsMatrix_;
 
-    enum class FillState
-    {
-      open,  // matrix is "open".  Values can freely summed in to and replaced
-      modify,  // matrix is open for modification.  *local* values can be replaced
-      closed
-    };
-    Teuchos::RCP<FillState> fillState_;
+    Teuchos::RCP<FE::FillState> fillState_;
 
 };    // end class FECrsMatrix
 

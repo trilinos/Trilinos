@@ -20,5 +20,3 @@ extern const Real a_little_positive;
 extern const Real a_little_negative;
 
 } // end element_dictionary.C:namespace PAMGEN_NEVADA {
-
-

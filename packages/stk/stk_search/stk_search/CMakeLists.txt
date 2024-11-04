@@ -66,8 +66,6 @@ else()
         ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search/arborx)
   endif()
 
-#  find_package(KokkosKernels REQUIRED)
-#  target_link_libraries(stk_search PUBLIC KokkosKernels::all_libs)
 endif()
 
 target_include_directories(stk_search PUBLIC

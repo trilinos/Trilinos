@@ -84,7 +84,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 1D                                        |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -112,28 +111,26 @@ namespace Intrepid2 {
         const auto maxDeg   = Parameters::MaxCubatureDegreeEdge;
         const auto polySize = maxDeg + 1;
 
-        // test inegral values
+        // test integral values
         DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
         
         // analytic integral values
         DynRankViewHost ConstructWithLabel(analyticInt, maxDeg+1, polySize);
         
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints, 
-                                       Parameters::MaxIntegrationPoints, 
-                                       Parameters::MaxDimension);
-
-        DynRankView ConstructWithLabel(cubWeights, 
-                                       Parameters::MaxIntegrationPoints);
-        
         // compute integrals
         for (ordinal_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
           CubatureLineType lineCub(cubDeg);
+          auto cubPoints  = lineCub.allocateCubaturePoints();
+          auto cubWeights = lineCub.allocateCubatureWeights();
+          lineCub.getCubature(cubPoints, cubWeights);
+          Kokkos::Array<int,1> degrees;
           for (ordinal_type polyDeg=0;polyDeg<=cubDeg;++polyDeg)
-            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(lineCub,
-                                                                            cubPoints,
+          {
+            degrees[0] = polyDeg;
+            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(cubPoints,
                                                                             cubWeights,
-                                                                            polyDeg);
+                                                                            degrees);
+          }
         }
         
         // get analytic values

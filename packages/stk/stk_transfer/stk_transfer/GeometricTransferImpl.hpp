@@ -12,7 +12,7 @@
 
 #include <algorithm>
 #include <vector>
-#include <stk_util/environment/Env.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 
@@ -128,9 +128,9 @@ void print_expansion_warnings(stk::ParallelMachine comm, int not_empty_count, si
   // sum and provide message to user
   size_t g_range_vector_size = 0;
   stk::all_reduce_max( comm, &range_vector_size, &g_range_vector_size, 1);
-  sierra::Env::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: " << g_range_vector_size
+  stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: " << g_range_vector_size
       << " after expanding bounding boxes: " << not_empty_count << " time(s)" << std::endl;
-  sierra::Env::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search" << std::endl;
+  stk::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search" << std::endl;
 }
 
 template <class INTERPOLATE>
@@ -189,7 +189,7 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_
             size_t range_vector_size = range_vector.size();
             size_t g_range_vector_size = 0;
             stk::all_reduce_max( comm, &range_vector_size, &g_range_vector_size, 1);
-            sierra::Env::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
+            stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
                                     << g_range_vector_size
                                     << " in initial coarse search" << std::endl;
         }

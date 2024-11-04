@@ -583,18 +583,40 @@ stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData
     newSelector.m_meta = &differentMeta;
     for(SelectorNode &selectorNode : newSelector.m_expr)
     {
-        if(selectorNode.m_type == SelectorNodeType::PART)
+        if(selectorNode.m_type == SelectorNodeType::PART ||
+           selectorNode.m_type == SelectorNodeType::PART_UNION ||
+           selectorNode.m_type == SelectorNodeType::PART_INTERSECTION)
         {
+          if (selectorNode.m_partOrd != InvalidPartOrdinal) {
             const std::string& oldPartName = oldMeta.get_part(selectorNode.part()).name();
             Part* differentPart = differentMeta.get_part(oldPartName);
             STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
             selectorNode.m_partOrd = differentPart->mesh_meta_data_ordinal();
+          }
+          for(unsigned i=0; i<selectorNode.m_partOrds.size(); ++i) {
+            unsigned oldOrd = selectorNode.m_partOrds[i];
+            if (oldOrd != InvalidPartOrdinal) {
+              const std::string& oldPartName = oldMeta.get_part(oldOrd).name();
+              Part* differentPart = differentMeta.get_part(oldPartName);
+              STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
+              selectorNode.m_partOrds[i] = differentPart->mesh_meta_data_ordinal();
+            }
+          }
+          for(unsigned i=0; i<selectorNode.m_subsetPartOrds.size(); ++i) {
+            unsigned oldOrd = selectorNode.m_subsetPartOrds[i];
+            if (oldOrd != InvalidPartOrdinal) {
+              const std::string& oldPartName = oldMeta.get_part(oldOrd).name();
+              Part* differentPart = differentMeta.get_part(oldPartName);
+              STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
+              selectorNode.m_subsetPartOrds[i] = differentPart->mesh_meta_data_ordinal();
+            }
+          }
         }
         else if(selectorNode.m_type == SelectorNodeType::FIELD)
         {
             unsigned ord = selectorNode.m_field_ptr->mesh_meta_data_ordinal();
             STK_ThrowRequireMsg(selectorNode.m_field_ptr->name() == differentMeta.get_fields()[ord]->name(),
-                            "Attepting to clone selector into mesh with different parts");
+                            "Attepting to clone selector into mesh with different fields");
             selectorNode.m_field_ptr = differentMeta.get_fields()[ord];
         }
     }

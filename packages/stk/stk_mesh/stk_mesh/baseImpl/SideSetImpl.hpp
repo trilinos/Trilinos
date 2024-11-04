@@ -42,7 +42,6 @@
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
 #include <functional>                   // for less, equal_to
-#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
 #include <set>

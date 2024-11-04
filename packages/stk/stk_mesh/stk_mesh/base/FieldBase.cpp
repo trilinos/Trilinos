@@ -150,19 +150,18 @@ void FieldBase::set_initial_value(const void* new_initial_value, unsigned num_sc
   data_traits().copy(init_val, new_initial_value, num_scalars);
 }
 
-void FieldBase::insert_restriction(
-  const char     * arg_method ,
-  const Part     & arg_part ,
-  const unsigned   arg_num_scalars_per_entity ,
-  const unsigned   arg_first_dimension ,
-  const void*      arg_init_value )
+void FieldBase::insert_restriction(const char     * arg_method,
+                                   const Part     & arg_part,
+                                   const unsigned   arg_num_scalars_per_entity,
+                                   const unsigned   arg_first_dimension,
+                                   const void*      arg_init_value)
 {
   FieldRestriction tmp( arg_part );
 
   tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
   tmp.set_dimension(arg_first_dimension);
 
-  if (arg_init_value != NULL) {
+  if (arg_init_value != nullptr) {
     //insert_restriction can be called multiple times for the same field, giving
     //the field different lengths on different mesh-parts.
     //We will only store one initial-value array, we need to store the one with
@@ -182,7 +181,7 @@ void FieldBase::insert_restriction(
     size_t nbytes = sizeof_scalar * num_scalars;
 
     size_t old_nbytes = 0;
-    if (get_initial_value() != NULL) {
+    if (get_initial_value() != nullptr) {
       old_nbytes = get_initial_value_num_bytes();
     }   
     if (nbytes > old_nbytes) {
@@ -269,19 +268,18 @@ void FieldBase::insert_restriction(
   }
 }
 
-void FieldBase::insert_restriction(
-  const char     * arg_method ,
-  const Selector & arg_selector ,
-  const unsigned   arg_num_scalars_per_entity ,
-  const unsigned   arg_first_dimension ,
-  const void*      arg_init_value )
+void FieldBase::insert_restriction(const char     * arg_method,
+                                   const Selector & arg_selector,
+                                   const unsigned   arg_num_scalars_per_entity,
+                                   const unsigned   arg_first_dimension,
+                                   const void*      arg_init_value)
 {
   FieldRestriction tmp( arg_selector );
 
   tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
   tmp.set_dimension(arg_first_dimension);
 
-  if (arg_init_value != NULL) {
+  if (arg_init_value != nullptr) {
     //insert_restriction can be called multiple times for the same field, giving
     //the field different lengths on different mesh-parts.
     //We will only store one initial-value array, we need to store the one with
@@ -301,7 +299,7 @@ void FieldBase::insert_restriction(
     size_t nbytes = sizeof_scalar * num_scalars;
 
     size_t old_nbytes = 0;
-    if (get_initial_value() != NULL) {
+    if (get_initial_value() != nullptr) {
       old_nbytes = get_initial_value_num_bytes();
     }   
     if (nbytes > old_nbytes) {
@@ -440,7 +438,7 @@ void FieldBase::verify_and_clean_restrictions(const Part& superset, const Part& 
 
 void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
 {
-  if (m_mesh == NULL || bulk == NULL) {
+  if (m_mesh == nullptr || bulk == nullptr) {
     m_mesh = bulk;
   }
   else {

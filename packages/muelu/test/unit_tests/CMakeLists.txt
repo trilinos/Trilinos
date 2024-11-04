@@ -75,6 +75,7 @@ APPEND_SET(SOURCES
   MueLu_CoupledRBMFactory.cpp
   PermutationFactory.cpp
   RigidBodyModeFactory.cpp
+  ML2MueLuParameterTranslator.cpp
 )
 
 APPEND_SET(SOURCES_INTREPID2

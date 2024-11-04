@@ -168,14 +168,7 @@ namespace FROSch {
 
         // Das könnte man noch ändern
         // Todo: Check the lengths of the vectors against NumberOfBlocks_
-        this->GammaDofs_.resize(this->GammaDofs_.size()+1);
-        this->IDofs_.resize(this->IDofs_.size()+1);
-        this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
-        this->DofsMaps_.resize(this->DofsMaps_.size()+1);
-        this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-        this->NumberOfBlocks_++;
-
-        return resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
+        return resetCoarseSpaceBlock(this->NumberOfBlocks_,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -189,27 +182,21 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
 
-        this->NumberOfBlocks_ = repeatedNodesMapVec.size();
+        UN TotalNumberOfBlocks = repeatedNodesMapVec.size();
 
-        FROSCH_ASSERT(dofsPerNodeVec.size()==this->NumberOfBlocks_,"dofsPerNodeVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(repeatedDofMapsVec.size()==this->NumberOfBlocks_,"repeatedDofMapsVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(nullSpaceBasisVec.size()==this->NumberOfBlocks_,"nullSpaceBasisVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(dirichletBoundaryDofsVec.size()==this->NumberOfBlocks_,"dirichletBoundaryDofsVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(nodeListVec.size()==this->NumberOfBlocks_,"nodeListVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(dofsPerNodeVec.size()==TotalNumberOfBlocks,"dofsPerNodeVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(repeatedDofMapsVec.size()==TotalNumberOfBlocks,"repeatedDofMapsVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(nullSpaceBasisVec.size()==TotalNumberOfBlocks,"nullSpaceBasisVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(dirichletBoundaryDofsVec.size()==TotalNumberOfBlocks,"dirichletBoundaryDofsVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(nodeListVec.size()==TotalNumberOfBlocks,"nodeListVec.size()!=TotalNumberOfBlocks");
 
         // Todo: Move this to a function in HarmonicCoarseOperator at some point
-        for (UN i=0; i<this->NumberOfBlocks_; i++) {
+        for (UN i=0; i<TotalNumberOfBlocks; i++) {
             FROSCH_ASSERT(!repeatedNodesMapVec[i].is_null(),"repeatedNodesMapVec[i].is_null()");
             FROSCH_ASSERT(!repeatedDofMapsVec[i].is_null(),"repeatedDofMapsVec[i].is_null()");
             FROSCH_ASSERT(!nullSpaceBasisVec[i].is_null(),"nullSpaceBasisVec[i].is_null()");
 
-            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
-            this->IDofs_.resize(this->IDofs_.size()+1);
-            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
-            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
-            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-
-            resetCoarseSpaceBlock(i,
+            resetCoarseSpaceBlock(this->NumberOfBlocks_,
                                   dimension,
                                   dofsPerNodeVec[i],
                                   repeatedNodesMapVec[i],
@@ -234,7 +221,7 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START_LEVELID(resetCoarseSpaceBlockTime,"IPOUHarmonicCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-        FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        FROSCH_ASSERT(blockId<=this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset ("+to_string(blockId)+", "+to_string(this->NumberOfBlocks_)+").");
 
         // Process the parameter list
         stringstream blockIdStringstream;
@@ -254,6 +241,12 @@ namespace FROSch {
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
 
         if (useForCoarseSpace) {
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+            this->IDofs_.resize(this->IDofs_.size()+1);
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
+            this->NumberOfBlocks_++;
 
             if (this->Verbose_) {
                 cout

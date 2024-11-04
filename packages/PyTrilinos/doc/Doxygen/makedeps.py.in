@@ -1,4 +1,4 @@
-#! ${PYTHON_EXECUTABLE}
+#! ${Python3_EXECUTABLE}
 
 """
 Create a Makefile dependency file that includes all of the names of the source

@@ -4,10 +4,15 @@ on:
     types:
       - opened
       - synchronize
-  pull_request_review:
-    types: 
-      - submitted
+    branches:
+      - master
+      - develop
   workflow_dispatch:
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,16 +20,11 @@ permissions:
 jobs:
   gcc10-openmpi416:
     permissions:
-      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
       contents: read  # for actions/checkout to fetch code
     runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # 0.11.0
-        with:
-          access_token: ${{ github.token }}
       - name: Clone Trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           fetch-depth: 1
       - name: Spack build

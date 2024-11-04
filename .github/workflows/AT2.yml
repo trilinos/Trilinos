@@ -5,23 +5,28 @@ on:
     types:
       - opened
       - synchronize
-  pull_request_review:
-    types: 
-      - submitted
     branches:
-    - master
-    - develop
+      - master
+      - develop
   workflow_dispatch:
 
-# actions: write needed by skip-duplicate-actions
-permissions:
-  actions: write
+# Cancels any in progress 'workflows' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
+permissions: 
   contents: read
 
 jobs:
-  # Jobs depend on the output of pre-checks to run
+  # Jobs depend on the output of pre-checks to run.
+  # Cancels new workflows if prior runs were successful (same tree hash)
   pre-checks:
         runs-on: ubuntu-latest
+        # actions: write needed by skip-duplicate-actions
+        permissions:
+          actions: write
         outputs:
             should_skip: ${{ steps.skip_check.outputs.should_skip }}
         steps:
@@ -55,7 +60,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           fetch-depth: 0
       - name: Repo status
@@ -82,8 +87,8 @@ jobs:
           popd
 
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
 
           printf "\n\n\n"
 
@@ -103,6 +108,23 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
   gcc830-serial-EXPERIMENTAL:
     needs: pre-checks
@@ -129,7 +151,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           fetch-depth: 0
       - name: Repo status
@@ -156,8 +178,8 @@ jobs:
           popd
 
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
 
           printf "\n\n\n"
 
@@ -177,6 +199,23 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
   cuda11-uvm-EXPERIMENTAL:
     needs: pre-checks
@@ -203,7 +242,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           fetch-depth: 0
       - name: Repo status
@@ -229,8 +268,8 @@ jobs:
           popd
 
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
 
           printf "\n\n\n"
 
@@ -252,3 +291,111 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=96 \
             --num-concurrent-tests=96
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+
+  framework-tests-EXPERIMENTAL:
+    needs: pre-checks
+    runs-on: [self-hosted, python-3.9]
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
+    steps:
+      - name: env
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          env
+      - name: module list
+        shell: bash
+        run: |
+          bash -l -c "module list"
+          printenv PATH
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
+        with:
+          access_token: ${{ github.token }}
+      - name: make dirs
+        working-directory: /
+        run: |
+          mkdir -p /home/Trilinos/src/Trilinos
+          mkdir -p /home/Trilinos/build
+      - name: Clone trilinos
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          fetch-depth: 0
+      - name: Repo status
+        run: |
+          git fetch --all
+          pwd
+          ls -lhat
+          git status
+          git branch -vv
+          git branch -a
+      - name: get dependencies
+        working-directory: ./packages/framework
+        run: |
+          bash -l -c "./get_dependencies.sh --container"
+      - name: PullRequestLinuxDriverTest.py
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
+
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
+
+          printf "\n\n\n"
+
+          echo "image: ${AT2_IMAGE:-unknown}"
+          type python
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+            --target-branch-name ${{ github.event.pull_request.base.ref }} \
+            --genconfig-build-name rhel8_python_debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_pr-framework \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
+            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
+            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
+            --workspace-dir /home/runner/_work/Trilinos \
+            --source-dir ${GITHUB_WORKSPACE} \
+            --build-dir /home/Trilinos/build \
+            --dashboard-build-name `cat /etc/hostname` \
+            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
+            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --filename-subprojects ./package_subproject_list.cmake \
+            --filename-packageenables ./packageEnables.cmake \
+      - name: Summary
+        if: ${{ !cancelled() }}
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          echo "## Image" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
+          AT2_URL=$(</home/runner/AT2_URL.txt)
+          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
+          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
+          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
+          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
+          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+

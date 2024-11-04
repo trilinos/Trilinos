@@ -45,6 +45,12 @@
 #ifndef _EPETRA_MSRMATRIX_H_
 #define _EPETRA_MSRMATRIX_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_RowMatrix.h"
@@ -416,10 +422,3 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
   Epetra_MsrMatrix(const Epetra_MsrMatrix & Matrix) : Epetra_Object(Matrix), Epetra_CompObject(Matrix) {}
 };
 #endif /* _EPETRA_MSRMATRIX_H_ */
-
-#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The AztecOO package is deprecated"
-#endif
-#endif
-
