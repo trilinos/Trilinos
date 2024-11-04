@@ -35,19 +35,20 @@ jobs:
       # only required for workflows in private repositories
       actions: read
       contents: read
-
     strategy:
       fail-fast: false
       matrix:
         include:
         - language: c-cpp
           build-mode: manual
+    defaults:
+      run:
+        shell: bash -l
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-    # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@294a9d92911152fe08befb9ec03e240add280cb3 # v3.26.8
       with:
@@ -65,33 +66,31 @@ jobs:
         env
 
     - name: Module list
-      shell: bash -l {0}
       run: |
         module list
         printenv PATH
 
     - if: matrix.build-mode == 'manual'
       name: Get dependencies
+      working-directory: ${GITHUB_WORKSPACE}/packages/framework
       run: |
-          bash -lc "${GITHUB_WORKSPACE}/packages/framework/get_dependencies.sh --container"
+          ./get_dependencies.sh --container
+          ${GITHUB_WORKSPACE}/packages/framework/get_dependencies.sh --container
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
-      shell: bash -lc {0}
       run: |
           git fetch origin ${GITHUB_BASE_REF}
 
           mkdir -p trilinos_build && cd trilinos_build
 
           source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
-          bash -lc "${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake"
+          ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake
 
     - if: matrix.build-mode == 'manual'
       name: Configure and build Trilinos
-      shell: bash -lc {0}
+      working-directory: ./trilinos_build
       run: |
-          cd trilinos_build
-
           cmake -C genconfig_fragment.cmake -C package_enables.cmake \
             -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=OFF \
             -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
