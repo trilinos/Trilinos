@@ -238,6 +238,10 @@ GatherSolution_BlockedTpetra(
     gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+    // TODO BWR WHY IS THIS A THING? ASK
+    // Don't allow for sharing so that we can avoid zeroing out the
+    // off-diagonal values of the FAD derivative array.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   }
 
   // Setup dependent tangent fields if requested
@@ -343,7 +347,6 @@ evaluateFields(typename TRAITS::EvalData workset)
       Teuchos::ArrayRCP<const double> local_x;
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-         std::cout << "FIELD NUM " << fieldNum << std::endl;
          int indexerId = gidIndexer_->getFieldBlock(fieldNum);
 
          // grab local data for inputing

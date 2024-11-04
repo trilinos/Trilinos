@@ -167,6 +167,8 @@ namespace panzer
     Teuchos::RCP<Thyra::VectorBase<double>> x_vec = t_loc->get_x_th();
     Thyra::assign(x_vec.ptr(), 123.0 + myRank);
 
+    // need a place to evaluate the tangent fields, so we create a 
+    // unblocked DOFManager and LOF and set up if needed
     std::vector<Teuchos::RCP<GlobalEvaluationData>> tangentContainers;
     Teuchos::RCP<panzer::DOFManager> dofManager = Teuchos::rcp(new panzer::DOFManager(conn_manager, MPI_COMM_WORLD));
     Teuchos::RCP<TpetraLinObjFactoryType> tangent_lof = Teuchos::rcp(new TpetraLinObjFactoryType(tComm.getConst(), dofManager));
@@ -179,11 +181,6 @@ namespace panzer
       using Teuchos::rcp_dynamic_cast;
       using Thyra::ProductVectorBase;
       using LOCPair = panzer::LOCPair_GlobalEvaluationData;
-
-      // generate and evaluate some fields
-      Teuchos::RCP<LinearObjContainer> tangent_loc = tangent_lof->buildGhostedLinearObjContainer();
-      tangent_lof->initializeGhostedContainer(LinearObjContainer::X, *tangent_loc);
-      tangent_loc->initialize();
 
       std::vector<std::string> tangent_fieldOrder;
       for (int i(0); i < num_tangent; ++i) {
@@ -202,6 +199,11 @@ namespace panzer
       }
       dofManager->setFieldOrder(tangent_fieldOrder);
       dofManager->buildGlobalUnknowns();
+
+      // generate and evaluate some fields
+      Teuchos::RCP<LinearObjContainer> tangent_loc = tangent_lof->buildGhostedLinearObjContainer();
+      tangent_lof->initializeGhostedContainer(LinearObjContainer::X, *tangent_loc);
+      tangent_loc->initialize();
 
       for (int i(0); i < num_tangent; ++i)
       {
