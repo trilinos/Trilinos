@@ -11,7 +11,7 @@
 #define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_AggregateQualityEstimateFactory_fwd.hpp"
 
 #include <Xpetra_Matrix_fwd.hpp>
@@ -41,8 +41,11 @@ namespace MueLu {
   computing, 34(2), A1079-A1109.
 */
 
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-class AggregateQualityEstimateFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class AggregateQualityEstimateFactory : public TwoLevelFactoryBase {
 #undef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -70,7 +73,7 @@ class AggregateQualityEstimateFactory : public SingleLevelFactoryBase {
     If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
     will fall back to the settings in FactoryManager.
   */
-  void DeclareInput(Level& currentLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
   //@}
 
@@ -78,7 +81,7 @@ class AggregateQualityEstimateFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Build aggregate quality esimates with this factory.
-  void Build(Level& currentLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const;
 
   //@}
 
