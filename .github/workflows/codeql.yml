@@ -72,10 +72,9 @@ jobs:
 
     - if: matrix.build-mode == 'manual'
       name: Get dependencies
-      working-directory: ${GITHUB_WORKSPACE}/packages/framework
+      working-directory: ./packages/framework
       run: |
           ./get_dependencies.sh --container
-          ${GITHUB_WORKSPACE}/packages/framework/get_dependencies.sh --container
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
