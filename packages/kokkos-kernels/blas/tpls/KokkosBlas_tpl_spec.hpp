@@ -29,7 +29,11 @@ struct CudaBlasSingleton {
 
   CudaBlasSingleton();
 
+  static bool is_initialized();
   static CudaBlasSingleton& singleton();
+
+ private:
+  static std::unique_ptr<CudaBlasSingleton>& get_instance();
 };
 
 inline void cublas_internal_error_throw(cublasStatus_t cublasState, const char* name, const char* file,
@@ -82,7 +86,8 @@ inline void cublas_internal_safe_call(cublasStatus_t cublasState, const char* na
 // The macro below defines the interface for the safe cublas calls.
 // The functions themselves are protected by impl namespace and this
 // is not meant to be used by external application or libraries.
-#define KOKKOS_CUBLAS_SAFE_CALL_IMPL(call) KokkosBlas::Impl::cublas_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(call) \
+  KokkosBlas::Impl::cublas_internal_safe_call(call, #call, __FILE__, __LINE__)
 
 /// \brief This function converts KK transpose mode to cuBLAS transpose mode
 inline cublasOperation_t trans_mode_kk_to_cublas(const char kkMode[]) {
@@ -111,7 +116,12 @@ struct RocBlasSingleton {
 
   RocBlasSingleton();
 
+  static bool is_initialized();
+
   static RocBlasSingleton& singleton();
+
+ private:
+  static std::unique_ptr<RocBlasSingleton>& get_instance();
 };
 
 inline void rocblas_internal_error_throw(rocblas_status rocblasState, const char* name, const char* file,
@@ -171,7 +181,7 @@ inline void rocblas_internal_safe_call(rocblas_status rocblasState, const char* 
 // The macro below defines the interface for the safe rocblas calls.
 // The functions themselves are protected by impl namespace and this
 // is not meant to be used by external application or libraries.
-#define KOKKOS_ROCBLAS_SAFE_CALL_IMPL(call) \
+#define KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(call) \
   KokkosBlas::Impl::rocblas_internal_safe_call(call, #call, __FILE__, __LINE__)
 
 /// \brief This function converts KK transpose mode to rocBLAS transpose mode

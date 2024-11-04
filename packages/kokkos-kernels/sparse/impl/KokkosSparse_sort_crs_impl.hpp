@@ -329,11 +329,32 @@ Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPerm
 }
 
 // Heuristic for choosing bulk sorting algorithm
-template <typename Ordinal>
+template <typename ExecSpace, typename Ordinal>
 bool useBulkSortHeuristic(Ordinal avgDeg, Ordinal maxDeg) {
-  // Use bulk sort if matrix is highly imbalanced,
-  // OR the longest rows have many entries.
-  return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
+  // Issue 2352: the KokkosSparse::sort_crs_matrix uses Kokkos::Experimental::sort_by_key when this returns true.
+  // sort_by_key executes on the host when a thrust-like library is not available, which really kills the performance in
+  // a scenario where the bulk sort algorithm would otherwise be appropriate. Additionally, On MI300A, sorting via
+  // ROCTHRUST was observed to be ~3x slower than the Kokkos kernels native implementation on some matrices of interest,
+  // so on that architecture only always bypass bulk sort.
+  // * GPU execution space, SYLC is enabled, but no ONEDPL does not have sort_by_key
+  // * GPU execution space, HIP is enabled, but no ROCTHRUST
+  // * GPU execution space, HIP is enabled, and GPU is GFX942
+  // (Kokkos seems to require thrust when CUDA is enabled)
+  if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<ExecSpace>) {
+#if (defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ONEDPL_HAS_SORT_BY_KEY)) || \
+    (defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_ROCTHRUST)) ||        \
+    (defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ARCH_AMD_GFX942))
+    return false;
+#else
+    // Use bulk sort if matrix is highly imbalanced,
+    // OR the longest rows have many entries.
+    return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
+#endif
+  } else {
+    // Use bulk sort if matrix is highly imbalanced,
+    // OR the longest rows have many entries.
+    return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
+  }
 }
 #endif
 

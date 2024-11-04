@@ -49,8 +49,8 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
                                         typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  using RVector_Internal =
-      Kokkos::View<mag_type, default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using RVector_Internal = Kokkos::View<mag_type, KokkosKernels::default_layout, Kokkos::HostSpace,
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result);

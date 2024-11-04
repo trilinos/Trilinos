@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_CRSMATRIX_HPP__
-#define __KOKKOSBATCHED_CRSMATRIX_HPP__
+#ifndef KOKKOSBATCHED_CRSMATRIX_HPP
+#define KOKKOSBATCHED_CRSMATRIX_HPP
 
 /// \author Kim Liegeois (knliege@sandia.gov)
 

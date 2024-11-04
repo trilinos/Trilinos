@@ -35,7 +35,7 @@ namespace Impl {
 
 // Note: using GEMM because there is no GEMV in MKL compact routines
 
-#define __IMPL_KK_MKL_DGEMM_COMPACT(SCALAR, MKL_ROUTINE)                                                               \
+#define KOKKOSBLAS_IMPL_MKL_DGEMM_COMPACT(SCALAR, MKL_ROUTINE)                                                         \
   inline void kk_mkl_gemm_compact(MKL_LAYOUT layout, MKL_TRANSPOSE transa, MKL_TRANSPOSE transb, MKL_INT m, MKL_INT n, \
                                   MKL_INT k, SCALAR alpha, const SCALAR *a, MKL_INT ldap, const SCALAR *b,             \
                                   MKL_INT ldbp, SCALAR beta, SCALAR *c, MKL_INT ldcp, MKL_COMPACT_PACK format,         \
@@ -43,12 +43,12 @@ namespace Impl {
     MKL_ROUTINE(layout, transa, transb, m, n, k, alpha, a, ldap, b, ldbp, beta, c, ldcp, format, nm);                  \
   }
 
-__IMPL_KK_MKL_DGEMM_COMPACT(double, mkl_dgemm_compact)
-__IMPL_KK_MKL_DGEMM_COMPACT(float, mkl_sgemm_compact)
+KOKKOSBLAS_IMPL_MKL_DGEMM_COMPACT(double, mkl_dgemm_compact)
+KOKKOSBLAS_IMPL_MKL_DGEMM_COMPACT(float, mkl_sgemm_compact)
 // Note: MKL compact format packs real and imaginary components separately
 //       which makes it not directly compatible with our Vector types
 
-#undef __IMPL_KK_MKL_DGEMM_COMPACT
+#undef KOKKOSBLAS_IMPL_MKL_DGEMM_COMPACT
 
 template <typename ScalarType, int VecLen>
 inline MKL_COMPACT_PACK mkl_compact_format() {

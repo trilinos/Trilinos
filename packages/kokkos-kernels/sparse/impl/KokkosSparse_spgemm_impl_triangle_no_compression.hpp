@@ -778,7 +778,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   const int num_left_side_nnz_per_row          = 2;
   const nnz_lno_t *min_result_row_for_each_row = this->handle->get_spgemm_handle()->get_min_col_of_row().data();
   nnz_lno_t max_row_size                       = this->handle->get_spgemm_handle()->get_max_result_nnz();
-  constexpr bool exec_gpu                      = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu                      = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
 
   typedef KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, nnz_lno_t> pool_memory_space;
   int suggested_vector_size = this->handle->get_suggested_vector_size(this->b_row_cnt, bnnz);

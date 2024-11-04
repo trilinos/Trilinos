@@ -193,12 +193,12 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_CUBLAS,double]");                                         \
       rotg_print_specialization<double, EXECSPACE>();                                                               \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();            \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                     \
       cublasPointerMode_t pointer_mode;                                                                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                          \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDrotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));          \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                           \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasDrotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
   };
@@ -219,12 +219,12 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_CUBLAS,float]");                                             \
       rotg_print_specialization<float, EXECSPACE>();                                                                   \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();               \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                        \
       cublasPointerMode_t pointer_mode;                                                                                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                              \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSrotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                          \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -246,14 +246,14 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_CUBLAS,complex<double>]");                                \
       rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();                                              \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();            \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                     \
       cublasPointerMode_t pointer_mode;                                                                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                          \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZrotg(singleton.handle, reinterpret_cast<cuDoubleComplex*>(a.data()),      \
-                                               reinterpret_cast<cuDoubleComplex*>(b.data()), c.data(),              \
-                                               reinterpret_cast<cuDoubleComplex*>(s.data())));                      \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                           \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasZrotg(singleton.handle, reinterpret_cast<cuDoubleComplex*>(a.data()),  \
+                                                   reinterpret_cast<cuDoubleComplex*>(b.data()), c.data(),          \
+                                                   reinterpret_cast<cuDoubleComplex*>(s.data())));                  \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
   };
@@ -275,14 +275,14 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_CUBLAS,complex<float>]");                                    \
       rotg_print_specialization<Kokkos::complex<float>, EXECSPACE>();                                                  \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();               \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                        \
       cublasPointerMode_t pointer_mode;                                                                                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasCrotg(singleton.handle, reinterpret_cast<cuComplex*>(a.data()),               \
-                                               reinterpret_cast<cuComplex*>(b.data()), c.data(),                       \
-                                               reinterpret_cast<cuComplex*>(s.data())));                               \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                              \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasCrotg(singleton.handle, reinterpret_cast<cuComplex*>(a.data()),           \
+                                                   reinterpret_cast<cuComplex*>(b.data()), c.data(),                   \
+                                                   reinterpret_cast<cuComplex*>(s.data())));                           \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                          \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -351,12 +351,12 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_ROCBLAS,double]");                                        \
       rotg_print_specialization<double, EXECSPACE>();                                                               \
       KokkosBlas::Impl::RocBlasSingleton& singleton = KokkosBlas::Impl::RocBlasSingleton::singleton();              \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(singleton.handle, space.hip_stream()));                      \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(singleton.handle, space.hip_stream()));                  \
       rocblas_pointer_mode pointer_mode;                                                                            \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));       \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_drotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));       \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                      \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                 \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));   \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_drotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));   \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                  \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
   };
@@ -377,44 +377,44 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_ROCBLAS,float]");                                            \
       rotg_print_specialization<float, EXECSPACE>();                                                                   \
       KokkosBlas::Impl::RocBlasSingleton& singleton = KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(singleton.handle, space.hip_stream()));                         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(singleton.handle, space.hip_stream()));                     \
       rocblas_pointer_mode pointer_mode;                                                                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));          \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_srotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));          \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                    \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));      \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_srotg(singleton.handle, a.data(), b.data(), c.data(), s.data()));      \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                     \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)                        \
-  template <>                                                                                                       \
-  struct Rotg<                                                                                                      \
-      EXECSPACE,                                                                                                    \
-      Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-      true, ETI_SPEC_AVAIL> {                                                                                       \
-    using SViewType = Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,            \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                        \
-    using MViewType =                                                                                               \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    static void rotg(EXECSPACE const& space, SViewType const& a, SViewType const& b, MViewType const& c,            \
-                     SViewType const& s) {                                                                          \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_ROCBLAS,complex<double>]");                               \
-      rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();                                              \
-      KokkosBlas::Impl::RocBlasSingleton& singleton = KokkosBlas::Impl::RocBlasSingleton::singleton();              \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(singleton.handle, space.hip_stream()));                      \
-      rocblas_pointer_mode pointer_mode;                                                                            \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));       \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zrotg(singleton.handle,                                                 \
-                                                  reinterpret_cast<rocblas_double_complex*>(a.data()),              \
-                                                  reinterpret_cast<rocblas_double_complex*>(b.data()), c.data(),    \
-                                                  reinterpret_cast<rocblas_double_complex*>(s.data())));            \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                      \
-      Kokkos::Profiling::popRegion();                                                                               \
-    }                                                                                                               \
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)                         \
+  template <>                                                                                                        \
+  struct Rotg<                                                                                                       \
+      EXECSPACE,                                                                                                     \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                         \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
+      true, ETI_SPEC_AVAIL> {                                                                                        \
+    using SViewType = Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,             \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
+    using MViewType =                                                                                                \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
+    static void rotg(EXECSPACE const& space, SViewType const& a, SViewType const& b, MViewType const& c,             \
+                     SViewType const& s) {                                                                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_ROCBLAS,complex<double>]");                                \
+      rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();                                               \
+      KokkosBlas::Impl::RocBlasSingleton& singleton = KokkosBlas::Impl::RocBlasSingleton::singleton();               \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(singleton.handle, space.hip_stream()));                   \
+      rocblas_pointer_mode pointer_mode;                                                                             \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                  \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));    \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_zrotg(singleton.handle,                                              \
+                                                      reinterpret_cast<rocblas_double_complex*>(a.data()),           \
+                                                      reinterpret_cast<rocblas_double_complex*>(b.data()), c.data(), \
+                                                      reinterpret_cast<rocblas_double_complex*>(s.data())));         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                   \
+      Kokkos::Profiling::popRegion();                                                                                \
+    }                                                                                                                \
   };
 
 #define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)                           \
@@ -434,15 +434,15 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_ROCBLAS,complex<float>]");                                   \
       rotg_print_specialization<Kokkos::complex<float>, EXECSPACE>();                                                  \
       KokkosBlas::Impl::RocBlasSingleton& singleton = KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(singleton.handle, space.hip_stream()));                         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(singleton.handle, space.hip_stream()));                     \
       rocblas_pointer_mode pointer_mode;                                                                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));          \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_crotg(singleton.handle,                                                    \
-                                                  reinterpret_cast<rocblas_float_complex*>(a.data()),                  \
-                                                  reinterpret_cast<rocblas_float_complex*>(b.data()), c.data(),        \
-                                                  reinterpret_cast<rocblas_float_complex*>(s.data())));                \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(singleton.handle, &pointer_mode));                    \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, rocblas_pointer_mode_device));      \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_crotg(singleton.handle,                                                \
+                                                      reinterpret_cast<rocblas_float_complex*>(a.data()),              \
+                                                      reinterpret_cast<rocblas_float_complex*>(b.data()), c.data(),    \
+                                                      reinterpret_cast<rocblas_float_complex*>(s.data())));            \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(singleton.handle, pointer_mode));                     \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

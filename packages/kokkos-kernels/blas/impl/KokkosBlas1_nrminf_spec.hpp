@@ -233,5 +233,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
                          2, false, true>;
 
 #include <KokkosBlas1_nrminf_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_nrminf_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_nrminf_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_NRMINF_SPEC_HPP_

@@ -148,7 +148,7 @@ struct RocSparse_CRS_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
   ~RocSparse_CRS_SpMV_Data() {
     // note: hipFree includes an implicit device synchronize
     KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(buffer));
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_spmat_descr(mat));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_spmat_descr(mat));
   }
 
   rocsparse_spmat_descr mat;
@@ -159,9 +159,9 @@ struct RocSparse_CRS_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
 struct RocSparse_BSR_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
   RocSparse_BSR_SpMV_Data(const Kokkos::HIP& exec_) : TPL_SpMV_Data(exec_) {}
   ~RocSparse_BSR_SpMV_Data() {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_mat_descr(mat));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_mat_descr(mat));
 #if (KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400)
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_mat_info(info));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_mat_info(info));
 #endif
   }
 
@@ -190,7 +190,7 @@ struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
 };
 #endif
 
-#if defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 struct OneMKL_SpMV_Data : public TPL_SpMV_Data<Kokkos::Experimental::SYCL> {
   OneMKL_SpMV_Data(const Kokkos::Experimental::SYCL& exec_) : TPL_SpMV_Data(exec_) {}
   ~OneMKL_SpMV_Data() {

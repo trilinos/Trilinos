@@ -25,12 +25,24 @@ namespace Impl {
 CudaBlasSingleton::CudaBlasSingleton() {
   cublasStatus_t stat = cublasCreate(&handle);
   if (stat != CUBLAS_STATUS_SUCCESS) Kokkos::abort("CUBLAS initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { cublasDestroy(handle); });
 }
 
 CudaBlasSingleton& CudaBlasSingleton::singleton() {
-  static CudaBlasSingleton s;
+  std::unique_ptr<CudaBlasSingleton>& instance = get_instance();
+  if (!instance) {
+    instance = std::make_unique<CudaBlasSingleton>();
+    Kokkos::push_finalize_hook([&]() {
+      cublasDestroy(instance->handle);
+      instance.reset();
+    });
+  }
+  return *instance;
+}
+
+bool CudaBlasSingleton::is_initialized() { return get_instance() != nullptr; }
+
+std::unique_ptr<CudaBlasSingleton>& CudaBlasSingleton::get_instance() {
+  static std::unique_ptr<CudaBlasSingleton> s;
   return s;
 }
 

@@ -56,15 +56,15 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,double]");                                            \
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                                  \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                         \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                                 \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                             \
       if (A_is_ll) {                                                                                                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                                                                 \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                             \
             rocblas_dger(s.handle, M, N, &alpha, X.data(), one, Y.data(), one, A.data(), LDA));                        \
       } else {                                                                                                         \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                                                                 \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                             \
             rocblas_dger(s.handle, M, N, &alpha, Y.data(), one, X.data(), one, A.data(), LDA));                        \
       }                                                                                                                \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                               \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));                                           \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -95,15 +95,15 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,float]");                                            \
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                                 \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                                \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                            \
       if (A_is_ll) {                                                                                                  \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                                                                \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                            \
             rocblas_sger(s.handle, M, N, &alpha, X.data(), one, Y.data(), one, A.data(), LDA));                       \
       } else {                                                                                                        \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                                                                \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                            \
             rocblas_sger(s.handle, M, N, &alpha, Y.data(), one, X.data(), one, A.data(), LDA));                       \
       }                                                                                                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                              \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));                                          \
       Kokkos::Profiling::popRegion();                                                                                 \
     }                                                                                                                 \
   };
@@ -135,34 +135,34 @@ namespace Impl {
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                                 \
       bool justTranspose                    = (trans[0] == 'T') || (trans[0] == 't');                                 \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                                \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                            \
       if (A_is_ll) {                                                                                                  \
         if (justTranspose) {                                                                                          \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgeru(s.handle, M, N,                                                 \
-                                                      reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
-                                                      reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
-                                                      reinterpret_cast<const rocblas_double_complex*>(Y.data()), one, \
-                                                      reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
+          KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                          \
+              rocblas_zgeru(s.handle, M, N, reinterpret_cast<const rocblas_double_complex*>(&alpha),                  \
+                            reinterpret_cast<const rocblas_double_complex*>(X.data()), one,                           \
+                            reinterpret_cast<const rocblas_double_complex*>(Y.data()), one,                           \
+                            reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));                               \
         } else {                                                                                                      \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgerc(s.handle, M, N,                                                 \
-                                                      reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
-                                                      reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
-                                                      reinterpret_cast<const rocblas_double_complex*>(Y.data()), one, \
-                                                      reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
+          KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                          \
+              rocblas_zgerc(s.handle, M, N, reinterpret_cast<const rocblas_double_complex*>(&alpha),                  \
+                            reinterpret_cast<const rocblas_double_complex*>(X.data()), one,                           \
+                            reinterpret_cast<const rocblas_double_complex*>(Y.data()), one,                           \
+                            reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));                               \
         }                                                                                                             \
       } else {                                                                                                        \
         if (justTranspose) {                                                                                          \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgeru(s.handle, M, N,                                                 \
-                                                      reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
-                                                      reinterpret_cast<const rocblas_double_complex*>(Y.data()), one, \
-                                                      reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
-                                                      reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
+          KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                          \
+              rocblas_zgeru(s.handle, M, N, reinterpret_cast<const rocblas_double_complex*>(&alpha),                  \
+                            reinterpret_cast<const rocblas_double_complex*>(Y.data()), one,                           \
+                            reinterpret_cast<const rocblas_double_complex*>(X.data()), one,                           \
+                            reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));                               \
         } else {                                                                                                      \
           /* rocblas_zgerc() + ~A_ll => call k-kernels' implementation */                                             \
           GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A); \
         }                                                                                                             \
       }                                                                                                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                              \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));                                          \
       Kokkos::Profiling::popRegion();                                                                                 \
     }                                                                                                                 \
   };
@@ -194,34 +194,34 @@ namespace Impl {
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                                 \
       bool justTranspose                    = (trans[0] == 'T') || (trans[0] == 't');                                 \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                                \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                            \
       if (A_is_ll) {                                                                                                  \
         if (justTranspose) {                                                                                          \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgeru(s.handle, M, N,                                                 \
-                                                      reinterpret_cast<const rocblas_float_complex*>(&alpha),         \
-                                                      reinterpret_cast<const rocblas_float_complex*>(X.data()), one,  \
-                                                      reinterpret_cast<const rocblas_float_complex*>(Y.data()), one,  \
-                                                      reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));      \
+          KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                          \
+              rocblas_cgeru(s.handle, M, N, reinterpret_cast<const rocblas_float_complex*>(&alpha),                   \
+                            reinterpret_cast<const rocblas_float_complex*>(X.data()), one,                            \
+                            reinterpret_cast<const rocblas_float_complex*>(Y.data()), one,                            \
+                            reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));                                \
         } else {                                                                                                      \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgerc(s.handle, M, N,                                                 \
-                                                      reinterpret_cast<const rocblas_float_complex*>(&alpha),         \
-                                                      reinterpret_cast<const rocblas_float_complex*>(X.data()), one,  \
-                                                      reinterpret_cast<const rocblas_float_complex*>(Y.data()), one,  \
-                                                      reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));      \
+          KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                          \
+              rocblas_cgerc(s.handle, M, N, reinterpret_cast<const rocblas_float_complex*>(&alpha),                   \
+                            reinterpret_cast<const rocblas_float_complex*>(X.data()), one,                            \
+                            reinterpret_cast<const rocblas_float_complex*>(Y.data()), one,                            \
+                            reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));                                \
         }                                                                                                             \
       } else {                                                                                                        \
         if (justTranspose) {                                                                                          \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgeru(s.handle, M, N,                                                 \
-                                                      reinterpret_cast<const rocblas_float_complex*>(&alpha),         \
-                                                      reinterpret_cast<const rocblas_float_complex*>(Y.data()), one,  \
-                                                      reinterpret_cast<const rocblas_float_complex*>(X.data()), one,  \
-                                                      reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));      \
+          KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                          \
+              rocblas_cgeru(s.handle, M, N, reinterpret_cast<const rocblas_float_complex*>(&alpha),                   \
+                            reinterpret_cast<const rocblas_float_complex*>(Y.data()), one,                            \
+                            reinterpret_cast<const rocblas_float_complex*>(X.data()), one,                            \
+                            reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));                                \
         } else {                                                                                                      \
           /* rocblas_cgerc() + ~A_ll => call k-kernels' implementation */                                             \
           GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A); \
         }                                                                                                             \
       }                                                                                                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                              \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));                                          \
       Kokkos::Profiling::popRegion();                                                                                 \
     }                                                                                                                 \
   };

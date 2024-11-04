@@ -145,6 +145,8 @@ struct SPADD_NUMERIC<ExecSpace, KernelHandle, a_size_view_t, a_lno_view_t, a_sca
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spadd_numeric_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPADD_NUMERIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
                                                  MEM_SPACE_TYPE)                                                       \
   template struct SPADD_NUMERIC<                                                                                       \

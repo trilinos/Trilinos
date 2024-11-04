@@ -16,7 +16,7 @@
 
 #include "KokkosODE_BDF.hpp"
 
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #include <benchmark/benchmark.h>

@@ -19,7 +19,7 @@
 
 #include "KokkosBlas2_gemv.hpp"
 
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #include <Benchmark_Context.hpp>

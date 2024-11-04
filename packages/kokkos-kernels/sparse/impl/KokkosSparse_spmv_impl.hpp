@@ -187,7 +187,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
 
   // Determine rows per thread
   if (rows_per_thread < 1) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>())
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>)
       rows_per_thread = 1;
     else {
       if (nnz_per_row < 20 && nnz > 5000000) {
@@ -198,7 +198,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
   }
 
   if (team_size < 1) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
       team_size = 256 / vector_length;
     } else {
       team_size = 1;
@@ -220,7 +220,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
 // spmv_beta_no_transpose: version for CPU execution spaces (RangePolicy or
 // trivial serial impl used)
 template <class execution_space, class Handle, class AMatrix, class XVector, class YVector, int dobeta, bool conjugate,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_beta_no_transpose(const execution_space& exec, Handle* handle,
                                    typename YVector::const_value_type& alpha, const AMatrix& A, const XVector& x,
                                    typename YVector::const_value_type& beta, const YVector& y) {
@@ -334,7 +334,7 @@ static void spmv_beta_no_transpose(const execution_space& exec, Handle* handle,
 
 // spmv_beta_no_transpose: version for GPU execution spaces (TeamPolicy used)
 template <class execution_space, class Handle, class AMatrix, class XVector, class YVector, int dobeta, bool conjugate,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_beta_no_transpose(const execution_space& exec, Handle* handle,
                                    typename YVector::const_value_type& alpha, const AMatrix& A, const XVector& x,
                                    typename YVector::const_value_type& beta, const YVector& y) {
@@ -380,7 +380,7 @@ static void spmv_beta_no_transpose(const execution_space& exec, Handle* handle,
 // spmv_beta_transpose: version for CPU execution spaces (RangePolicy or trivial
 // serial impl used)
 template <class execution_space, class AMatrix, class XVector, class YVector, int dobeta, bool conjugate,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_beta_transpose(const execution_space& exec, typename YVector::const_value_type& alpha,
                                 const AMatrix& A, const XVector& x, typename YVector::const_value_type& beta,
                                 const YVector& y) {
@@ -460,7 +460,7 @@ static void spmv_beta_transpose(const execution_space& exec, typename YVector::c
 
 // spmv_beta_transpose: version for GPU execution spaces (TeamPolicy used)
 template <class execution_space, class AMatrix, class XVector, class YVector, int dobeta, bool conjugate,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_beta_transpose(const execution_space& exec, typename YVector::const_value_type& alpha,
                                 const AMatrix& A, const XVector& x, typename YVector::const_value_type& beta,
                                 const YVector& y) {
@@ -1005,7 +1005,7 @@ struct SPMV_MV_LayoutLeft_Functor {
 // spmv_alpha_beta_mv_no_transpose: version for CPU execution spaces
 // (RangePolicy)
 template <class execution_space, class AMatrix, class XVector, class YVector, int doalpha, int dobeta, bool conjugate,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_alpha_beta_mv_no_transpose(const execution_space& exec,
                                             const typename YVector::non_const_value_type& alpha, const AMatrix& A,
                                             const XVector& x, const typename YVector::non_const_value_type& beta,
@@ -1054,7 +1054,7 @@ static void spmv_alpha_beta_mv_no_transpose(const execution_space& exec,
 // spmv_alpha_beta_mv_no_transpose: version for GPU execution spaces
 // (TeamPolicy)
 template <class execution_space, class AMatrix, class XVector, class YVector, int doalpha, int dobeta, bool conjugate,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_alpha_beta_mv_no_transpose(const execution_space& exec,
                                             const typename YVector::non_const_value_type& alpha, const AMatrix& A,
                                             const XVector& x, const typename YVector::non_const_value_type& beta,
@@ -1119,7 +1119,7 @@ static void spmv_alpha_beta_mv_no_transpose(const execution_space& exec,
 
 // spmv_alpha_beta_mv_transpose: version for CPU execution spaces (RangePolicy)
 template <class execution_space, class AMatrix, class XVector, class YVector, int doalpha, int dobeta, bool conjugate,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_alpha_beta_mv_transpose(const execution_space& exec,
                                          const typename YVector::non_const_value_type& alpha, const AMatrix& A,
                                          const XVector& x, const typename YVector::non_const_value_type& beta,
@@ -1160,7 +1160,7 @@ static void spmv_alpha_beta_mv_transpose(const execution_space& exec,
 
 // spmv_alpha_beta_mv_transpose: version for GPU execution spaces (TeamPolicy)
 template <class execution_space, class AMatrix, class XVector, class YVector, int doalpha, int dobeta, bool conjugate,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr>
 static void spmv_alpha_beta_mv_transpose(const execution_space& exec,
                                          const typename YVector::non_const_value_type& alpha, const AMatrix& A,
                                          const XVector& x, const typename YVector::non_const_value_type& beta,

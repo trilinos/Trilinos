@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_ARITHTRAITS_HPP
-#define KOKKOS_ARITHTRAITS_HPP
+#ifndef KOKKOSKERNELS_KOKKOS_ARITHTRAITS_HPP
+#define KOKKOSKERNELS_KOKKOS_ARITHTRAITS_HPP
 
 /// \file Kokkos_ArithTraits.hpp
 /// \brief Declaration and definition of Kokkos::ArithTraits
@@ -1641,4 +1641,4 @@ using ArithTraits [[deprecated("Use Kokkos::ArithTraits instead")]] = ::Kokkos::
 }  // namespace Details
 }  // namespace Kokkos
 
-#endif  // KOKKOS_ARITHTRAITS_HPP
+#endif  // KOKKOSKERNELS_KOKKOS_ARITHTRAITS_HPP
