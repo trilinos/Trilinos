@@ -1402,36 +1402,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
   TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
 
   const global_size_t globalIndices = 12;
-  const GO indexBase = 0;
-  RCP<const map_type> map = rcp(new map_type(globalIndices, indexBase, comm));
+  const GO indexBase                = 0;
+  RCP<const map_type> map           = rcp(new map_type(globalIndices, indexBase, comm));
   RCP<crs_matrix_type> A_t(new crs_matrix_type(map, 5));
-  const SC two = static_cast<SC>(2.0);
-  const SC one = static_cast<SC>(1.0);
+  const SC two    = static_cast<SC>(2.0);
+  const SC one    = static_cast<SC>(1.0);
   const SC negOne = static_cast<SC>(-1.0);
-  for(LO lclRow = 0; lclRow < static_cast<LO> (map->getLocalNumElements()); lclRow++) {
+  for (LO lclRow = 0; lclRow < static_cast<LO>(map->getLocalNumElements()); lclRow++) {
     const GO gblRow = map->getGlobalElement(lclRow);
-    if(gblRow == 0) {
+    if (gblRow == 0) {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow, gblRow + 1), Teuchos::tuple<SC>(two, negOne));
-    }
-    else if(static_cast<Tpetra::global_size_t>(gblRow) == globalIndices - 1) {
+    } else if (static_cast<Tpetra::global_size_t>(gblRow) == globalIndices - 1) {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow), Teuchos::tuple<SC>(negOne, two));
-    }
-    else if(gblRow == 2 || gblRow == 9) {
+    } else if (gblRow == 2 || gblRow == 9) {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow), Teuchos::tuple<SC>(one));
-    }
-    else if(gblRow == 5) {
-      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow-2, gblRow-1, gblRow, gblRow+1, gblRow+2), Teuchos::tuple<SC>(negOne, negOne, two, negOne, negOne));
-    }
-    else if(gblRow == 6) {
-      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow-2, gblRow-1, gblRow, gblRow+1, gblRow+2), Teuchos::tuple<SC>(negOne, two, two, two, negOne));
-    }
-    else {
+    } else if (gblRow == 5) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, negOne, two, negOne, negOne));
+    } else if (gblRow == 6) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, two, two, two, negOne));
+    } else {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow, gblRow + 1), Teuchos::tuple<SC>(negOne, two, negOne));
     }
   }
   A_t->fillComplete();
   RCP<CrsMatrix> A_x = rcp(new TpetraCrsMatrix(A_t));
-  RCP<Matrix> A = rcp(new CrsMatrixWrap(A_x));
+  RCP<Matrix> A      = rcp(new CrsMatrixWrap(A_x));
   fineLevel.Set("A", A);
 
   Teuchos::ParameterList galeriList;
@@ -1461,19 +1456,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
   const RCP<const Map> myImportMap = graph->GetImportMap();  // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
   const RCP<const Map> myDomainMap = graph->GetDomainMap();
 
-  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), globalIndices-1);
+  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myImportMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(globalIndices + (comm->getSize() - 1) * 2));
 
-  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), globalIndices-1);
+  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myDomainMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(myDomainMap->getGlobalNumElements(), globalIndices);
 
   TEST_EQUALITY(graph->GetGlobalNumEdges(), 28);
 
-  int rows[13] = {0, 2, 4, 5, 7, 10, 15, 18, 21, 23, 24, 26, 28};
+  int rows[13]    = {0, 2, 4, 5, 7, 10, 15, 18, 21, 23, 24, 26, 28};
   int columns[28] = {0, 1,
                      0, 1,
                      2,
@@ -1486,23 +1481,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
                      9,
                      10, 11,
                      10, 11};
-  auto rowPtrs = graph->getRowPtrs();
-  auto entries = graph->getEntries();
-  size_t rowID = 0;
+  auto rowPtrs    = graph->getRowPtrs();
+  auto entries    = graph->getEntries();
+  size_t rowID    = 0;
   TEST_EQUALITY(rowPtrs(0), rowID);
-  for(size_t i = 0; i < rowPtrs.size()-1; i++) {
+  for (size_t i = 0; i < rowPtrs.size() - 1; i++) {
     auto gblID = myDomainMap->getGlobalElement(i);
-    int rownnz = rows[gblID+1]-rows[gblID];
+    int rownnz = rows[gblID + 1] - rows[gblID];
     rowID += rownnz;
-    TEST_EQUALITY(rowPtrs(i+1), rowID);
+    TEST_EQUALITY(rowPtrs(i + 1), rowID);
 
     std::vector<int> colID;
-    for(int j = 0; j < rownnz; j++) {
-      colID.push_back(myImportMap->getGlobalElement(entries(rowPtrs(i)+j)));
+    for (int j = 0; j < rownnz; j++) {
+      colID.push_back(myImportMap->getGlobalElement(entries(rowPtrs(i) + j)));
     }
     std::sort(std::begin(colID), std::end(colID));
-    for(int j = 0; j < rownnz; j++) {
-      TEST_EQUALITY(colID[j], columns[rows[gblID]+j]);
+    for (int j = 0; j < rownnz; j++) {
+      TEST_EQUALITY(colID[j], columns[rows[gblID] + j]);
     }
   }
 }  // ClassicalScaledCut
@@ -1525,36 +1520,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Sca
   TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
 
   const global_size_t globalIndices = 12;
-  const GO indexBase = 0;
-  RCP<const map_type> map = rcp(new map_type(globalIndices, indexBase, comm));
+  const GO indexBase                = 0;
+  RCP<const map_type> map           = rcp(new map_type(globalIndices, indexBase, comm));
   RCP<crs_matrix_type> A_t(new crs_matrix_type(map, 5));
-  const SC two = static_cast<SC>(2.0);
-  const SC one = static_cast<SC>(1.0);
+  const SC two    = static_cast<SC>(2.0);
+  const SC one    = static_cast<SC>(1.0);
   const SC negOne = static_cast<SC>(-1.0);
-  for(LO lclRow = 0; lclRow < static_cast<LO> (map->getLocalNumElements()); lclRow++) {
+  for (LO lclRow = 0; lclRow < static_cast<LO>(map->getLocalNumElements()); lclRow++) {
     const GO gblRow = map->getGlobalElement(lclRow);
-    if(gblRow == 0) {
+    if (gblRow == 0) {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow, gblRow + 1), Teuchos::tuple<SC>(two, negOne));
-    }
-    else if(static_cast<Tpetra::global_size_t>(gblRow) == globalIndices - 1) {
+    } else if (static_cast<Tpetra::global_size_t>(gblRow) == globalIndices - 1) {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow), Teuchos::tuple<SC>(negOne, two));
-    }
-    else if(gblRow == 2 || gblRow == 9) {
+    } else if (gblRow == 2 || gblRow == 9) {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow), Teuchos::tuple<SC>(one));
-    }
-    else if(gblRow == 5) {
-      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow-2, gblRow-1, gblRow, gblRow+1, gblRow+2), Teuchos::tuple<SC>(negOne, negOne, two, negOne, negOne));
-    }
-    else if(gblRow == 6) {
-      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow-2, gblRow-1, gblRow, gblRow+1, gblRow+2), Teuchos::tuple<SC>(negOne, two, two, two, negOne));
-    }
-    else {
+    } else if (gblRow == 5) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, negOne, two, negOne, negOne));
+    } else if (gblRow == 6) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, two, two, two, negOne));
+    } else {
       A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow, gblRow + 1), Teuchos::tuple<SC>(negOne, two, negOne));
     }
   }
   A_t->fillComplete();
   RCP<CrsMatrix> A_x = rcp(new TpetraCrsMatrix(A_t));
-  RCP<Matrix> A = rcp(new CrsMatrixWrap(A_x));
+  RCP<Matrix> A      = rcp(new CrsMatrixWrap(A_x));
   fineLevel.Set("A", A);
 
   Teuchos::ParameterList galeriList;
@@ -1584,19 +1574,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Sca
   const RCP<const Map> myImportMap = graph->GetImportMap();  // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
   const RCP<const Map> myDomainMap = graph->GetDomainMap();
 
-  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), globalIndices-1);
+  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myImportMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(globalIndices + (comm->getSize() - 1) * 2));
 
-  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), globalIndices-1);
+  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myDomainMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(myDomainMap->getGlobalNumElements(), globalIndices);
 
   TEST_EQUALITY(graph->GetGlobalNumEdges(), 28);
 
-  int rows[13] = {0, 2, 4, 5, 7, 10, 15, 18, 21, 23, 24, 26, 28};
+  int rows[13]    = {0, 2, 4, 5, 7, 10, 15, 18, 21, 23, 24, 26, 28};
   int columns[28] = {0, 1,
                      0, 1,
                      2,
@@ -1609,23 +1599,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Sca
                      9,
                      10, 11,
                      10, 11};
-  auto rowPtrs = graph->getRowPtrs();
-  auto entries = graph->getEntries();
-  size_t rowID = 0;
+  auto rowPtrs    = graph->getRowPtrs();
+  auto entries    = graph->getEntries();
+  size_t rowID    = 0;
   TEST_EQUALITY(rowPtrs(0), rowID);
-  for(size_t i = 0; i < rowPtrs.size()-1; i++) {
+  for (size_t i = 0; i < rowPtrs.size() - 1; i++) {
     auto gblID = myDomainMap->getGlobalElement(i);
-    int rownnz = rows[gblID+1]-rows[gblID];
+    int rownnz = rows[gblID + 1] - rows[gblID];
     rowID += rownnz;
-    TEST_EQUALITY(rowPtrs(i+1), rowID);
+    TEST_EQUALITY(rowPtrs(i + 1), rowID);
 
     std::vector<int> colID;
-    for(int j = 0; j < rownnz; j++) {
-      colID.push_back(myImportMap->getGlobalElement(entries(rowPtrs(i)+j)));
+    for (int j = 0; j < rownnz; j++) {
+      colID.push_back(myImportMap->getGlobalElement(entries(rowPtrs(i) + j)));
     }
     std::sort(std::begin(colID), std::end(colID));
-    for(int j = 0; j < rownnz; j++) {
-      TEST_EQUALITY(colID[j], columns[rows[gblID]+j]);
+    for (int j = 0; j < rownnz; j++) {
+      TEST_EQUALITY(colID[j], columns[rows[gblID] + j]);
     }
   }
 }  // ClassicalUnScaledCut
