@@ -8,8 +8,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
-#define PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
+#ifndef PANZER_GATHER_SOLUTION_BLOCKED_TPETRA_IMPL_HPP
+#define PANZER_GATHER_SOLUTION_BLOCKED_TPETRA_IMPL_HPP
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -250,7 +250,7 @@ GatherSolution_BlockedTpetra(
       tangentFields_[fd].resize(tangent_field_names[fd].size());
       for (std::size_t i=0; i<tangent_field_names[fd].size(); ++i) {
         tangentFields_[fd][i] =
-          PHX::MDField<const ScalarT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
+          PHX::MDField<const RealT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
         this->addDependentField(tangentFields_[fd][i]);
       }
     }
@@ -343,6 +343,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       Teuchos::ArrayRCP<const double> local_x;
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
+         std::cout << "FIELD NUM " << fieldNum << std::endl;
          int indexerId = gidIndexer_->getFieldBlock(fieldNum);
 
          // grab local data for inputing
@@ -362,7 +363,7 @@ evaluateFields(typename TRAITS::EvalData workset)
               (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = local_x[lid];
               for (std::size_t i=0; i<tangentFields_[fieldIndex].size(); ++i)
                 (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(i) =
-                  tangentFields_[fieldIndex][i](worksetCellIndex,basis).val();
+                  tangentFields_[fieldIndex][i](worksetCellIndex,basis);
             }
          }
       }

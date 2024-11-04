@@ -182,7 +182,7 @@ public:
 private:
   typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
-  //typedef typename panzer::Traits::RealType RealT;
+  typedef typename panzer::Traits::RealType RealT;
 
   typedef BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> ContainerType;
   typedef Tpetra::Vector<S,LO,GO,NodeT> VectorType;
@@ -208,7 +208,7 @@ private:
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const RealT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_BlockedTpetra();
 };
