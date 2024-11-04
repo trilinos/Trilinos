@@ -20,6 +20,10 @@
 
 namespace MueLu::DistanceLaplacian {
 
+/*!
+@class DistanceFunctor
+@brief Computes the unscaled distance Laplacian.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class DistanceFunctor {
  private:
@@ -66,6 +70,9 @@ class DistanceFunctor {
   }
 };
 
+/*!
+Method to compute ghosted distance Laplacian diagonal.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
@@ -115,6 +122,16 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   }
 }
 
+/*!
+@class DropFunctor
+@brief Drops entries the unscaled distance Laplacian.
+
+Evaluates the dropping criterion
+\f[
+\frac{|d_{ij}|^2}{|d_{ii}| |d_{jj}|} \le \theta^2
+\f]
+where \f$d_{ij}\f$ is a distance metric.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
 class DropFunctor {
  private:

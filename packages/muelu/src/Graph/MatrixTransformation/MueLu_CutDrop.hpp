@@ -20,11 +20,16 @@
 
 namespace MueLu::CutDrop {
 
+/*! Cut drop algorithm options*/
 enum decisionAlgoType { defaultAlgo,
                         unscaled_cut,
                         scaled_cut,
                         scaled_cut_symmetric };
 
+/*!
+  @class UnscaledComparison
+  @brief Orders entries of row \f$i\f$ by \f$|A_{ij}|^2\f$.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class UnscaledComparison {
  public:
@@ -104,6 +109,10 @@ class UnscaledComparison {
   }
 };
 
+/*!
+  @class ScaledComparison
+  @brief Orders entries of row \f$i\f$ by \f$\frac{|A_{ij}|^2}{|A_{ii}| |A_{jj}|}\f$.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class ScaledComparison {
  public:
@@ -303,6 +312,10 @@ class UnscaledDistanceLaplacianComparison {
   }
 };
 
+/*!
+  @class ScaledDistanceLaplacianComparison
+  @brief Orders entries of row \f$i\f$ by \f$\frac{|d_{ij}|^2}{|d_{ii}| |d_{jj}|}\f$ where \f$d_ij\f$ is the distance Laplacian.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
 class ScaledDistanceLaplacianComparison {
  public:
@@ -441,6 +454,10 @@ KOKKOS_INLINE_FUNCTION void serialHeapSort(view_type& v, comparator_type compara
   }
 }
 
+/*!
+  @class CutDropFunctor
+  @brief Order each row by a criterion, compare the ratio of values and drop all entries once the ratio is below the threshold.
+*/
 template <class comparison_type>
 class CutDropFunctor {
  private:

@@ -18,6 +18,15 @@
 
 namespace MueLu::ClassicalDropping {
 
+/*!
+  @class AbsDropFunctor
+  @brief Classical dropping criterion
+
+  Evaluates the dropping criterion
+  \f[
+  \frac{|A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
+  \f]
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class AbsDropFunctor {
  private:
@@ -68,6 +77,15 @@ class AbsDropFunctor {
   }
 };
 
+/*!
+  @class SignedClassicalRSDropFunctor
+  @brief Signed classical Ruge-Stueben dropping criterion
+
+  Evaluates the dropping criterion
+  \f[
+  \frac{-\operatorname{Re}A_{ij}}{|A_{ii}|} \le \theta
+  \f]
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class SignedClassicalRSDropFunctor {
  private:
@@ -116,6 +134,15 @@ class SignedClassicalRSDropFunctor {
   }
 };
 
+/*!
+  @class SignedClassicalSADropFunctor
+  @brief Signed classical smoothed aggregation dropping criterion
+
+  Evaluates the dropping criterion
+  \f[
+  \frac{-\operatorname{sign}(A_{ij}) |A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
+  \f]
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class SignedClassicalSADropFunctor {
  private:

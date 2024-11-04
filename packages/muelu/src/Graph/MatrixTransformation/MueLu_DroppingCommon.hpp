@@ -17,6 +17,7 @@
 
 namespace MueLu {
 
+/*! Possible decision for a single entry */
 enum DecisionType {
   UNDECIDED = 0,  // no decision has been taken yet, used for initialization
   KEEP      = 1,  // keeep the entry
@@ -36,6 +37,10 @@ class NoOpFunctor {
   }
 };
 
+/*!
+  @class PointwiseDropBoundaryFunctor
+  @brief Functor that drops boundary nodes for a blockSize == 1 problem.
+*/
 template <class local_matrix_type>
 class PointwiseDropBoundaryFunctor {
  private:
@@ -70,6 +75,10 @@ class PointwiseDropBoundaryFunctor {
   }
 };
 
+/*!
+  @class VectorDropBoundaryFunctor
+  @brief Functor that drops boundary nodes for a blockSize > 1 problem.
+*/
 template <class local_matrix_type>
 class VectorDropBoundaryFunctor {
  private:
@@ -107,6 +116,10 @@ class VectorDropBoundaryFunctor {
   }
 };
 
+/*!
+@class KeepDiagonalFunctor
+@brief Functor that marks diagonal as kept, unless the are already marked as boundary.
+*/
 template <class local_matrix_type>
 class KeepDiagonalFunctor {
  private:
@@ -137,6 +150,10 @@ class KeepDiagonalFunctor {
   }
 };
 
+/*!
+@class DropOffRankFunctor
+@brief Functor that drops off-rank entries
+*/
 template <class local_matrix_type>
 class DropOffRankFunctor {
  private:
@@ -166,6 +183,10 @@ class DropOffRankFunctor {
   }
 };
 
+/*!
+@class MarkSingletonFunctor
+@brief Functor that marks singletons (all off-diagonal entries in a row are dropped) as boundary.
+*/
 template <class local_matrix_type>
 class MarkSingletonFunctor {
  private:
@@ -206,6 +227,10 @@ class MarkSingletonFunctor {
   }
 };
 
+/*!
+@class MarkSingletonVectorFunctor
+@brief Functor that marks singletons (all off-diagonal entries in a row are dropped) as boundary.
+*/
 template <class local_matrix_type>
 class MarkSingletonVectorFunctor {
  private:
@@ -250,6 +275,10 @@ class MarkSingletonVectorFunctor {
   }
 };
 
+/*!
+@class BlockDiagonalizeFunctor
+@brief Functor that drops all entries that are not on the block diagonal.
+*/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BlockDiagonalizeFunctor {
  private:
@@ -291,6 +320,10 @@ class BlockDiagonalizeFunctor {
   }
 };
 
+/*!
+@class DebugFunctor
+@brief Functor that checks that all entries have been marked.
+*/
 template <class local_matrix_type>
 class DebugFunctor {
  private:
@@ -322,6 +355,10 @@ class DebugFunctor {
   }
 };
 
+/*!
+@class SymmetrizeFunctor
+@brief Functor that symmetrizes the dropping decisions.
+*/
 template <class local_matrix_type>
 class SymmetrizeFunctor {
  private:

@@ -23,9 +23,13 @@
 
 namespace MueLu::BoundaryDetection {
 
-// These functors all assume that the boundaryNodes view has been initialized to false.
+/*!
+  @class PointDirichletFunctor
+  @brief Functor for marking nodes as Dirichlet.
 
-// Marks rows as Dirichlet based on value threshold and number of off-diagonal entries.
+  A row is marked as Dirichlet boundary if fewer than dirichletNonzeroThreshold entries are larger in absolute value than dirichletThreshold.
+  It is assumed that boundaryNodes was initialized to false.
+*/
 template <class local_matrix_type>
 class PointDirichletFunctor {
  private:
@@ -67,116 +71,15 @@ class PointDirichletFunctor {
   }
 };
 
-// Marks rows as Dirichlet based on abs(rowsum) and abs(diag).
-template <class local_matrix_type>
-class RowSumFunctor {
- private:
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
+/*!
+  @class VectorDirichletFunctor
+  @brief Functor for marking nodes as Dirichlet in a block operator.
 
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
-  using magnitudeType       = typename ATS::magnitudeType;
-  using magATS              = Kokkos::ArithTraits<magnitudeType>;
-  using boundary_nodes_view = Kokkos::View<bool*, memory_space>;
-
-  local_matrix_type A;
-  boundary_nodes_view boundaryNodes;
-  magnitudeType rowSumTol;
-
- public:
-  RowSumFunctor(local_matrix_type& A_, boundary_nodes_view boundaryNodes_, magnitudeType rowSumTol_)
-    : A(A_)
-    , boundaryNodes(boundaryNodes_)
-    , rowSumTol(rowSumTol_) {}
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  void operator()(const local_ordinal_type rlid) const {
-    scalar_type rowsum  = ATS::zero();
-    scalar_type diagval = ATS::zero();
-    auto row            = A.rowConst(rlid);
-    for (local_ordinal_type k = 0; k < row.length; ++k) {
-      auto clid = row.colidx(k);
-      auto val  = row.value(k);
-      if (rlid == static_cast<local_ordinal_type>(clid))
-        diagval = val;
-      rowsum += val;
-    }
-    if (ATS::magnitude(rowsum) > ATS::magnitude(diagval) * rowSumTol) {
-      boundaryNodes(rlid) = true;
-    }
-  }
-};
-
-template <class local_matrix_type,
-          class functor_type_0 = int,
-          class functor_type_1 = int,
-          class functor_type_2 = int,
-          class functor_type_3 = int>
-class BoundaryFunctor {
- private:
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
-
-  local_matrix_type A;
-  functor_type_0 functor0;
-  functor_type_1 functor1;
-  functor_type_2 functor2;
-  functor_type_3 functor3;
-
- public:
-  BoundaryFunctor(local_matrix_type& A_)
-    : A(A_)
-    , functor0(0)
-    , functor1(0)
-    , functor2(0)
-    , functor3(0) {}
-
-  BoundaryFunctor(local_matrix_type& A_, functor_type_0& functor0_)
-    : A(A_)
-    , functor0(functor0_)
-    , functor1(0)
-    , functor2(0)
-    , functor3(0) {}
-
-  BoundaryFunctor(local_matrix_type& A_, functor_type_0& functor0_, functor_type_1& functor1_)
-    : A(A_)
-    , functor0(functor0_)
-    , functor1(functor1_)
-    , functor2(0)
-    , functor3(0) {}
-
-  BoundaryFunctor(local_matrix_type& A_, functor_type_0& functor0_, functor_type_1& functor1_, functor_type_2& functor2_)
-    : A(A_)
-    , functor0(functor0_)
-    , functor1(functor1_)
-    , functor2(functor2_)
-    , functor3(0) {}
-
-  BoundaryFunctor(local_matrix_type& A_, functor_type_0& functor0_, functor_type_1& functor1_, functor_type_2& functor2_, functor_type_3& functor3_)
-    : A(A_)
-    , functor0(functor0_)
-    , functor1(functor1_)
-    , functor2(functor2_)
-    , functor3(functor3_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  operator()(const local_ordinal_type rlid) const {
-    if constexpr (!std::is_same_v<functor_type_0, int>)
-      functor0(rlid);
-    if constexpr (!std::is_same_v<functor_type_1, int>)
-      functor1(rlid);
-    if constexpr (!std::is_same_v<functor_type_2, int>)
-      functor2(rlid);
-    if constexpr (!std::is_same_v<functor_type_3, int>)
-      functor3(rlid);
-  }
-};
-
-// Marks rows as Dirichlet based on value threshold and number of off-diagonal entries.
-// Marks blocks as Dirichlet when one row is Dirichlet (useGreedyDirichlet==true) or when all rows are Dirichlet (useGreedyDirichlet==false).
+  Assumes a single fixed block size specified by blockSize.
+  Marks blocks as Dirichlet when one row is Dirichlet (useGreedyDirichlet==true) or when all rows are Dirichlet (useGreedyDirichlet==false).
+  A row is marked as Dirichlet boundary if fewer than dirichletNonzeroThreshold entries are larger in absolute value than dirichletThreshold.
+  It is assumed that boundaryNodes was initialized to false.
+*/
 template <class local_matrix_type, bool useGreedyDirichlet>
 class VectorDirichletFunctor {
  private:
@@ -235,6 +138,94 @@ class VectorDirichletFunctor {
       boundaryNodes(rblid) = false;
     else
       boundaryNodes(rblid) = true;
+  }
+};
+
+/*!
+  @class RowSumFunctor
+  @brief Functor for marking nodes as Dirichlet based on rowsum.
+
+  A row is marked as Dirichlet boundary if the sum of off-diagonal values is smaller in absolute value than the diagonal multiplied by the threshold rowSumTol.
+  It is assumed that boundaryNodes was initialized to false.
+*/
+template <class local_matrix_type>
+class RowSumFunctor {
+ private:
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+  using memory_space       = typename local_matrix_type::memory_space;
+
+  using ATS                 = Kokkos::ArithTraits<scalar_type>;
+  using magnitudeType       = typename ATS::magnitudeType;
+  using magATS              = Kokkos::ArithTraits<magnitudeType>;
+  using boundary_nodes_view = Kokkos::View<bool*, memory_space>;
+
+  local_matrix_type A;
+  boundary_nodes_view boundaryNodes;
+  magnitudeType rowSumTol;
+
+ public:
+  RowSumFunctor(local_matrix_type& A_, boundary_nodes_view boundaryNodes_, magnitudeType rowSumTol_)
+    : A(A_)
+    , boundaryNodes(boundaryNodes_)
+    , rowSumTol(rowSumTol_) {}
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(const local_ordinal_type rlid) const {
+    scalar_type rowsum  = ATS::zero();
+    scalar_type diagval = ATS::zero();
+    auto row            = A.rowConst(rlid);
+    for (local_ordinal_type k = 0; k < row.length; ++k) {
+      auto clid = row.colidx(k);
+      auto val  = row.value(k);
+      if (rlid == static_cast<local_ordinal_type>(clid))
+        diagval = val;
+      rowsum += val;
+    }
+    if (ATS::magnitude(rowsum) > ATS::magnitude(diagval) * rowSumTol) {
+      boundaryNodes(rlid) = true;
+    }
+  }
+};
+
+/*!
+  @class BoundaryFunctor
+  @brief Functor that serially applies sub-functors to rows.
+*/
+template <class local_matrix_type, class Functor, class... RemainingFunctors>
+class BoundaryFunctor {
+ private:
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+
+  Functor functor;
+  BoundaryFunctor<local_matrix_type, RemainingFunctors...> remainingFunctors;
+
+ public:
+  BoundaryFunctor(local_matrix_type& A_, Functor& functor_, RemainingFunctors&... remainingFunctors_)
+    : functor(functor_)
+    , remainingFunctors(A_, remainingFunctors_...) {}
+
+  KOKKOS_FUNCTION void operator()(const local_ordinal_type rlid) const {
+    functor(rlid);
+    remainingFunctors(rlid);
+  }
+};
+
+template <class local_matrix_type, class Functor>
+class BoundaryFunctor<local_matrix_type, Functor> {
+ private:
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+
+  local_matrix_type A;
+  Functor functor;
+
+ public:
+  BoundaryFunctor(local_matrix_type& A_, Functor& functor_)
+    : A(A_)
+    , functor(functor_) {}
+
+  KOKKOS_FUNCTION void operator()(const local_ordinal_type rlid) const {
+    functor(rlid);
   }
 };
 
