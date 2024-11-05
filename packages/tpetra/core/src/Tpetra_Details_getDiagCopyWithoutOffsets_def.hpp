@@ -108,7 +108,6 @@ public:
 
   void operator () (const LO& lclRowInd, LO& errCount) const {
     using KokkosSparse::findRelOffset;
-    Kokkos::printf("Not hanging yet [0]\n");
 
     D_lcl_1d_(lclRowInd) = Kokkos::ArithTraits<IST>::zero ();
     const GO gblInd = lclRowMap_.getGlobalElement (lclRowInd);
@@ -120,23 +119,19 @@ public:
     else { // row index is also in the column Map on this process
       typename row_matrix_type::local_inds_host_view_type lclColInds;
       typename row_matrix_type::values_host_view_type curVals;
-      Kokkos::printf("Not hanging yet [1]\n");
       A_.getLocalRowView(lclRowInd, lclColInds, curVals);
-      Kokkos::printf("Not hanging yet [2]\n");
       LO numEnt = lclColInds.extent(0);
       // The search hint is always zero, since we only call this
       // once per row of the matrix.
       const LO hint = 0;
       const LO offset =
         findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
-      Kokkos::printf("Not hanging yet [3]\n");
       if (offset == numEnt) { // didn't find the diagonal column index
         errCount++;
       }
       else {
         D_lcl_1d_(lclRowInd) = curVals[offset];
       }
-      Kokkos::printf("Not hanging yet [4]\n");
     }
   }
 
@@ -216,8 +211,6 @@ getLocalDiagCopyWithoutOffsetsNotFillComplete ( ::Tpetra::Vector<SC, LO, GO, NT>
     }
   }
   else { // ! debug
-    Kokkos::printf("\n\n\nRunning on Kokkos::Serial: %s\n", std::is_same_v<typename functor_type::host_execution_space, Kokkos::Serial> ? "true" : "false");
-
     functor_type functor (lclNumErrs, diag, A);
   }
 

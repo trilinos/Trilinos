@@ -3271,22 +3271,22 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       "a view with global column indices by calling getGlobalRowCopy().");
 
     const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
-    // if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
-    //     rowInfo.numEntries > 0) {
-    //   indices = staticGraph_->lclIndsUnpacked_wdv.getHostSubview(
-    //                                                      rowInfo.offset1D,
-    //                                                      rowInfo.numEntries,
-    //                                                      Access::ReadOnly);
-    //   values = valuesUnpacked_wdv.getHostSubview(rowInfo.offset1D,
-    //                                              rowInfo.numEntries,
-    //                                              Access::ReadOnly);
-    // }
-    // else {
-    //   // This does the right thing (reports an empty row) if the input
-    //   // row is invalid.
-    //   indices = local_inds_host_view_type();
-    //   values = values_host_view_type();
-    // }
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = staticGraph_->lclIndsUnpacked_wdv.getHostSubview(
+                                                         rowInfo.offset1D,
+                                                         rowInfo.numEntries,
+                                                         Access::ReadOnly);
+      values = valuesUnpacked_wdv.getHostSubview(rowInfo.offset1D,
+                                                 rowInfo.numEntries,
+                                                 Access::ReadOnly);
+    }
+    else {
+      // This does the right thing (reports an empty row) if the input
+      // row is invalid.
+      indices = local_inds_host_view_type();
+      values = values_host_view_type();
+    }
 
 #ifdef HAVE_TPETRA_DEBUG
     const char suffix[] = ".  This should never happen.  Please report this "
