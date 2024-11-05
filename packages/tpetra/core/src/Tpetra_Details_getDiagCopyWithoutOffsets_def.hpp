@@ -38,23 +38,23 @@ namespace Details {
 template<class SC, class LO, class GO, class NT>
 class GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor {
 public:
-  typedef ::Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
-  typedef ::Tpetra::Vector<SC, LO, GO, NT> vec_type;
+  using row_matrix_type = ::Tpetra::RowMatrix<SC, LO, GO, NT>;
+  using vec_type = ::Tpetra::Vector<SC, LO, GO, NT>;
 
-  typedef typename vec_type::impl_scalar_type IST;
+  using IST = typename vec_type::impl_scalar_type;
   // The output Vector determines the execution space.
 
+  using host_execution_space = typename vec_type::dual_view_type::t_host::execution_space;
 private:
-  typedef typename vec_type::dual_view_type::t_host::execution_space host_execution_space;
-  typedef typename vec_type::map_type map_type;
+  using map_type = typename vec_type::map_type;
 
   static bool
   graphIsSorted (const row_matrix_type& A)
   {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
-    typedef Tpetra::CrsGraph<LO, GO, NT> crs_graph_type;
-    typedef Tpetra::RowGraph<LO, GO, NT> row_graph_type;
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO, NT>;
+    using row_graph_type = Tpetra::RowGraph<LO, GO, NT>;
 
     // We conservatively assume not sorted.  RowGraph lacks an
     // "isSorted" predicate, so we can't know for sure unless the cast
@@ -108,6 +108,7 @@ public:
 
   void operator () (const LO& lclRowInd, LO& errCount) const {
     using KokkosSparse::findRelOffset;
+    Kokkos::printf("Not hanging yet [0]\n");
 
     D_lcl_1d_(lclRowInd) = Kokkos::ArithTraits<IST>::zero ();
     const GO gblInd = lclRowMap_.getGlobalElement (lclRowInd);
@@ -119,19 +120,23 @@ public:
     else { // row index is also in the column Map on this process
       typename row_matrix_type::local_inds_host_view_type lclColInds;
       typename row_matrix_type::values_host_view_type curVals;
+      Kokkos::printf("Not hanging yet [1]\n");
       A_.getLocalRowView(lclRowInd, lclColInds, curVals);
+      Kokkos::printf("Not hanging yet [2]\n");
       LO numEnt = lclColInds.extent(0);
       // The search hint is always zero, since we only call this
       // once per row of the matrix.
       const LO hint = 0;
       const LO offset =
         findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
+      Kokkos::printf("Not hanging yet [3]\n");
       if (offset == numEnt) { // didn't find the diagonal column index
         errCount++;
       }
       else {
         D_lcl_1d_(lclRowInd) = curVals[offset];
       }
+      Kokkos::printf("Not hanging yet [4]\n");
     }
   }
 
@@ -155,8 +160,7 @@ getLocalDiagCopyWithoutOffsetsNotFillComplete ( ::Tpetra::Vector<SC, LO, GO, NT>
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
-  typedef GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor<SC,
-    LO, GO, NT> functor_type;
+  using functor_type = GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor<SC, LO, GO, NT>;
 
   // The functor's constructor does error checking and executes the
   // thread-parallel kernel.
@@ -212,6 +216,8 @@ getLocalDiagCopyWithoutOffsetsNotFillComplete ( ::Tpetra::Vector<SC, LO, GO, NT>
     }
   }
   else { // ! debug
+    Kokkos::printf("\n\n\nRunning on Kokkos::Serial: %s\n", std::is_same_v<typename functor_type::host_execution_space, Kokkos::Serial> ? "true" : "false");
+
     functor_type functor (lclNumErrs, diag, A);
   }
 
