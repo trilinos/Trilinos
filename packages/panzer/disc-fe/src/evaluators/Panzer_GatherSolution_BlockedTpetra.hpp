@@ -163,7 +163,7 @@ class GatherSolution_BlockedTpetra<panzer::Traits::Tangent,TRAITS,S,LO,GO,NodeT>
 public:
 
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
-     : gidIndexer_(indexer) {}
+     : globalIndexer_(indexer) {}
 
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                 const Teuchos::ParameterList& p);
@@ -176,7 +176,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Tangent,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Tangent,TRAITS,S,LO,GO>(globalIndexer_,pl)); }
 
 
 private:
@@ -194,9 +194,13 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager> gidIndexer_;
+  Teuchos::RCP<const BlockedDOFManager> globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
@@ -206,9 +210,19 @@ private:
 
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
 
+  //! Local indices for unknowns
+  PHX::View<LO**> worksetLIDs_;
+
+  //! Offset into the cell lids for each field. Size of number of fields to scatter.
+  std::vector<PHX::View<int*>> fieldOffsets_;
+
+  //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel.
+  PHX::View<LO*> blockOffsets_;
+
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<const RealT,Cell,NODE> > > tangentFields_;
+  PHX::ViewOfViews<2,PHX::View<const RealT**>> tangentFieldsVoV_;
 
   GatherSolution_BlockedTpetra();
 };
