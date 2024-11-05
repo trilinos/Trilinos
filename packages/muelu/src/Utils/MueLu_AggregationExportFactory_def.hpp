@@ -167,12 +167,9 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     }
   }
   GetOStream(Runtime0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
-  Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
-  Teuchos::RCP<LocalOrdinalVector> procWinner_vector        = aggregates->GetProcWinner();
-  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId              = aggregates->GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LocalOrdinal> procWinner                = aggregates->GetProcWinner()->getDataNonConst(0);
 
-  vertex2AggId_ = vertex2AggId;
+  Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
+  vertex2AggId_                                      = vertex2AggId;
 
   // prepare for calculating global aggregate ids
   std::vector<GlobalOrdinal> numAggsGlobal(numProcs, 0);
@@ -263,9 +260,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     }
     if (aggStyle == "Point Cloud")
       this->doPointCloud(vertices, geomSizes, numAggs_, numNodes_);
-    else if (aggStyle == "Jacks")
-      this->doJacks(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_);
-    else if (aggStyle == "Jacks++")  // Not actually implemented
+    else if (aggStyle == "Jacks") {
+      auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
+      this->doJacks(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggIds);
+    } else if (aggStyle == "Jacks++")  // Not actually implemented
       doJacksPlus_(vertices, geomSizes);
     else if (aggStyle == "Convex Hulls")
       doConvexHulls(vertices, geomSizes);
@@ -305,11 +303,13 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConv
   Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
   Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
 
+  auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
+
   if (dims_ == 2) {
-    this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords);
+    this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggIds, xCoords, yCoords);
   } else {
     zCoords = coords_->getData(2);
-    this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords, zCoords);
+    this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggIds, xCoords, yCoords, zCoords);
   }
 }
 
@@ -571,6 +571,8 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
   if (dims_ == 3)
     zCoords = coords_->getData(2);
 
+  auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
+
   vector<int> uniqueFine = this->makeUnique(vertices);
   string indent          = "      ";
   fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
@@ -596,10 +598,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
   fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\">" << endl;
   fout << indent;
   for (size_t i = 0; i < uniqueFine.size(); i++) {
-    if (vertex2AggId_[uniqueFine[i]] == -1)
-      fout << vertex2AggId_[uniqueFine[i]] << " ";
+    if (vertex2AggIds[uniqueFine[i]] == -1)
+      fout << vertex2AggIds[uniqueFine[i]] << " ";
     else
-      fout << aggsOffset_ + vertex2AggId_[uniqueFine[i]] << " ";
+      fout << aggsOffset_ + vertex2AggIds[uniqueFine[i]] << " ";
     if (i % 10 == 9)
       fout << endl
            << indent;
