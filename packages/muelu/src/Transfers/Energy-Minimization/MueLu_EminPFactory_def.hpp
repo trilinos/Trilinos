@@ -70,7 +70,7 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level
   // NOTE: This is a very unique situation, please try not to propagate the
   // mode check any further
 
-  if (coarseLevel.GetRequestMode() == Level::REQUEST) {
+  if (coarseLevel.GetRequestMode() == Level::RequestModeRequest) {
     isAvailableP0          = coarseLevel.IsAvailable("P0", this);
     isAvailableConstraint0 = coarseLevel.IsAvailable("Constraint0", this);
   }

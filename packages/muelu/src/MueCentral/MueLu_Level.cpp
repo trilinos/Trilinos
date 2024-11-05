@@ -644,7 +644,7 @@ int Level::CountRequestedFactory(const FactoryBase* factory) const {
   return cnt;
 }
 
-Level::RequestMode Level::requestMode_ = UNDEF;
+Level::RequestMode Level::requestMode_ = RequestModeUndef;
 
 }  // namespace MueLu
 

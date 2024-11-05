@@ -40,7 +40,7 @@ RCP<const ParameterList> LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
   static bool isAvailableXfer = false;
-  if (coarseLevel.GetRequestMode() == Level::REQUEST) {
+  if (coarseLevel.GetRequestMode() == Level::RequestModeRequest) {
     isAvailableXfer = coarseLevel.IsAvailable(TransferVecName_, this);
     if (isAvailableXfer == false) {
       Input(fineLevel, TransferVecName_);

@@ -79,7 +79,7 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
       Input(fineLevel, "nodeOnCoarseInterface");
     }
   } else {
-    if (coarseLevel.GetRequestMode() == Level::REQUEST)
+    if (coarseLevel.GetRequestMode() == Level::RequestModeRequest)
       isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
 
     if (isAvailableCoords == false) {

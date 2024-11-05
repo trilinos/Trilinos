@@ -318,9 +318,9 @@ class Level : public BaseClass {
 
   //@}
 
-  enum RequestMode { REQUEST,
-                     RELEASE,
-                     UNDEF };
+  enum RequestMode { RequestModeRequest,
+                     RequestModeRelease,
+                     RequestModeUndef };
   RequestMode GetRequestMode() const { return requestMode_; }
 
   void setlib(Xpetra::UnderlyingLib lib2) { lib_ = lib2; }
