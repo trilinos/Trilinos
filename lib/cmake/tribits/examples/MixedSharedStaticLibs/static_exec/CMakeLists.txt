@@ -1,0 +1,3 @@
+tribits_subpackage(StaticExec)
+tribits_add_test_directories(test)
+tribits_subpackage_postprocess()

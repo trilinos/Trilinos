@@ -1,0 +1,20 @@
+#
+# TribitsExampleProjectAddons Documentation
+#
+
+This directory defines a CMake TriBITS Repository.  It is designed to provide
+a simple example to demonstrate how to add on additional CMake TriBITS
+packages to an existing TriBITS CMake project.
+
+This TriBITS repository is designed to be placed (cloned, copied, or
+symlinked) under the TribitsExampleProject repository using the structure:
+
+  TribitsExampleProject/
+    TribitsExampleProjectAddons/
+
+Then configure the base TribitsExampleProject like before, except add the
+cmake cache var:
+
+  -DTribtsExProj_EXTRA_REPOSITORIES=TribitsExampleProjectAddons \
+
+and then build and test as before.

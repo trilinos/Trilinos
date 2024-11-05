@@ -1,0 +1,3 @@
+This directory TriKota and TriKota/Dakota just exists to test out the repo
+updating commands in TribitsCTestDriverCore.cmake.  The package TriKota is not
+actually listed in MockTrilinos/PackagesList.cmake.

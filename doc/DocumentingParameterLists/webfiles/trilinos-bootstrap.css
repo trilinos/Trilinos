@@ -42,9 +42,6 @@ span.codeblock {
   text-decoration: none;
   border-bottom: 0px;
 }
-.collapse-style a:link, .collapse-style a:visited {}
-.collapse-style a:hover { border-bottom: 0px; }
-.collapse-style a:active {}
 
 .collapse-style ul, .collapse-style  li {
   list-style-type: none;
@@ -134,7 +131,7 @@ span.codeblock {
   width: 11px;
   height: 11px;
   margin-top: 1px;
-  *margin-right: .3em;
+  margin-right: .3em;
   line-height: 11px;
   vertical-align: text-top;
   background-position: center center;

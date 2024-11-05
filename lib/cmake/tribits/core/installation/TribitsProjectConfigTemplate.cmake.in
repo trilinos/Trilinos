@@ -1,0 +1,171 @@
+# @HEADER
+# *****************************************************************************
+#            TriBITS: Tribal Build, Integrate, and Test System
+#
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
+# @HEADER
+
+##############################################################################
+#
+# CMake variable for use by ${PROJECT_NAME} clients. 
+#
+# ${DISCOURAGE_EDITING}
+#
+##############################################################################
+
+if(CMAKE_VERSION VERSION_LESS 3.3)
+  set(${PDOLLAR}{CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE
+    "${PROJECT_NAME} requires CMake 3.3 or later for 'if (... IN_LIST ...)'"
+    )
+  set(${PDOLLAR}{CMAKE_FIND_PACKAGE_NAME}_FOUND FALSE)
+  return()
+endif()
+cmake_minimum_required(VERSION 3.3...${TRIBITS_CMAKE_MINIMUM_REQUIRED})
+
+## ---------------------------------------------------------------------------
+## Compilers used by ${PROJECT_NAME} build
+## ---------------------------------------------------------------------------
+
+set(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER_FOR_CONFIG_FILE}")
+
+set(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER_FOR_CONFIG_FILE}")
+
+set(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE}")
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by ${PROJECT_NAME} build
+## ---------------------------------------------------------------------------
+
+set(${PROJECT_NAME}_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+
+set(${PROJECT_NAME}_CXX_COMPILER_FLAGS [[${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}]])
+
+set(${PROJECT_NAME}_C_COMPILER_FLAGS [[${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}]])
+
+set(${PROJECT_NAME}_Fortran_COMPILER_FLAGS [[${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}]])
+
+## Extra link flags (e.g., specification of fortran libraries)
+set(${PROJECT_NAME}_EXTRA_LD_FLAGS [[${${PROJECT_NAME}_EXTRA_LINK_FLAGS}]])
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+set(${PROJECT_NAME}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
+set(${PROJECT_NAME}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
+
+set(${PROJECT_NAME}_LINKER ${CMAKE_LINKER})
+set(${PROJECT_NAME}_AR ${CMAKE_AR})
+
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## The project version number
+set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
+
+# For best practices in handling of components, see
+# <http://www.cmake.org/cmake/help/v3.2/manual/cmake-developer.7.html#find-modules>.
+#
+# If components were requested, include only those. If not, include all of
+# Trilinos.
+if (${PROJECT_NAME}_FIND_COMPONENTS)
+  set(COMPONENTS_LIST ${PDOLLAR}{${PROJECT_NAME}_FIND_COMPONENTS})
+else()
+  set(COMPONENTS_LIST ${FULL_PACKAGE_SET})
+endif()
+
+# Initialize ${PROJECT_NAME}_FOUND with true, and set it to FALSE if any of
+# the required components wasn't found.
+set(${PROJECT_NAME}_FOUND TRUE)
+set(${PROJECT_NAME}_NOT_FOUND_MESSAGE "")
+set(selectedComponentsFound "")
+foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
+  set(compPkgConfigFile
+    ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
+    )
+  if (EXISTS ${PDOLLAR}{compPkgConfigFile})
+    # Set ${PROJECT_NAME}_<component>_FOUND.
+    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
+    # Include the package file.
+    include(${PDOLLAR}{compPkgConfigFile})
+    # Add variables to lists.
+    list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
+    list(APPEND selectedComponentsFound ${PDOLLAR}{comp})
+  else()
+    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+    if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+      string(APPEND ${PROJECT_NAME}_NOT_FOUND_MESSAGE
+        "ERROR: Could not find component '${PDOLLAR}{comp}'!\n")
+      set(${PROJECT_NAME}_FOUND FALSE)
+    endif()
+  endif()
+endforeach()
+
+# Deprecated (see #299)!
+set(${PROJECT_NAME}_INCLUDE_DIRS "${TRIBITS_PROJECT_INSTALL_INCLUDE_DIR}")
+
+# Remove duplicates in ${PROJECT_NAME}_LIBRARIES
+list(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+
+## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+set(${PROJECT_NAME}_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}")
+set(${PROJECT_NAME}_MPI_LIBRARIES "${TPL_MPI_LIBRARIES}")
+set(${PROJECT_NAME}_MPI_LIBRARY_DIRS "${TPL_MPI_LIBRARY_DIRS}")
+set(${PROJECT_NAME}_MPI_INCLUDE_DIRS "${TPL_MPI_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_MPI_EXEC "${MPI_EXEC}")
+set(${PROJECT_NAME}_MPI_EXEC_PRE_NUMPROCS_FLAGS "${MPI_EXEC_PRE_NUMPROCS_FLAGS}")
+set(${PROJECT_NAME}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
+set(${PROJECT_NAME}_MPI_EXEC_POST_NUMPROCS_FLAGS "${MPI_EXEC_POST_NUMPROCS_FLAGS}")
+set(${PROJECT_NAME}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
+
+## ---------------------------------------------------------------------------
+## Compiler vendor identifications
+## ---------------------------------------------------------------------------
+set(${PROJECT_NAME}_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}")
+set(${PROJECT_NAME}_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
+set(${PROJECT_NAME}_C_COMPILER_ID "${CMAKE_C_COMPILER_ID}")
+set(${PROJECT_NAME}_Fortran_COMPILER_ID "${CMAKE_Fortran_COMPILER_ID}")
+set(${PROJECT_NAME}_Fortran_IMPLICIT_LINK_LIBRARIES "${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+set(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
+
+## The selected packages for this project
+set(${PROJECT_NAME}_SELECTED_PACKAGE_LIST "${PDOLLAR}{selectedComponentsFound}")
+
+## ---------------------------------------------------------------------------
+## Modern CMake (IMPORTED) targets
+## ---------------------------------------------------------------------------
+
+# ${PROJECT_NAME}::all_libs  (Does *not* depend on COMPONENTS)
+if (NOT TARGET ${PROJECT_NAME}::all_libs)
+  set(${PROJECT_NAME}_ALL_PACKAGES_TARGETS)
+  foreach (pkg IN ITEMS ${FULL_PACKAGE_SET})
+    list(APPEND ${PROJECT_NAME}_ALL_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
+  endforeach()
+  add_library(${PROJECT_NAME}::all_libs IMPORTED INTERFACE GLOBAL)
+  target_link_libraries(${PROJECT_NAME}::all_libs
+  INTERFACE ${PDOLLAR}{${PROJECT_NAME}_ALL_PACKAGES_TARGETS} )
+endif()
+
+# ${PROJECT_NAME}::all_selected_libs  (Depend on COMPONENTS)
+if (NOT TARGET ${PROJECT_NAME}::all_selected_libs)
+  set(${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS)
+  foreach (pkg IN ITEMS ${PDOLLAR}{selectedComponentsFound})
+    list(APPEND ${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
+  endforeach()
+  add_library(${PROJECT_NAME}::all_selected_libs IMPORTED INTERFACE GLOBAL)
+  target_link_libraries(${PROJECT_NAME}::all_selected_libs
+    INTERFACE ${PDOLLAR}{${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS} )
+endif()

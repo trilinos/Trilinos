@@ -1,0 +1,3 @@
+*** Base Git Repo: Trilinos
+017cae824ee [Fri Nov 1 23:01:30 2024 -0500] <trilinos@sandia.gov>
+Merge Pull Request #13568 from trilinos/Trilinos/master_merge_20241101_175831

@@ -1,0 +1,3 @@
+include("@Tpl2_DIR@/Tpl2Config.cmake")
+include("@Tpl3_DIR@/Tpl3Config.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/Tpl4ConfigTargets.cmake")

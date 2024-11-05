@@ -1,0 +1,28 @@
+#
+# TribitsExampleMetaProject Documentation
+#
+
+The project TribitsExampleMetaProject defines a TriBITS CMake project designed
+to provide a simple example to demonstrate how to compose a TriBITS Meta
+project out of one or more other TriBITS Repositories.
+
+To get started building you can create a directory structure like:
+
+    ~/TribitsExampleMetaProject.base/
+        TribitsExampleMetaProject/       # This directory
+          TribitsExampleProject/         # Copied or cloned in
+          TribitsExampleProjectAddons/   # Copied or cloned in
+        BUILDS/
+          SERIAL_DEBUG/
+
+Then configure with:
+
+  cd BUILDS/SERIAL_DEBUG/
+  cmake -DTribitsExMetaProj_ENABLE_ALL_PACKAGES=ON \
+     -DTribitsExMetaProj_ENABLE_TESTS=ON \
+     ../../TribitsExampleMetaProject
+
+and build and test with:
+
+  make -j4
+  ctest -j4

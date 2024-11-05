@@ -1,0 +1,36 @@
+Enabling all packages that are not currently disabled because of \
+ Trilinos_ENABLE_ALL_PACKAGES=ON (Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF) ...
+
+-- Setting Trilinos_ENABLE_Teuchos=ON
+-- Setting Trilinos_ENABLE_RTOp=ON
+-- Setting Trilinos_ENABLE_Epetra=ON
+-- Setting Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting Trilinos_ENABLE_ThyraEpetra=ON
+-- Setting Trilinos_ENABLE_Thyra=ON
+
+Enabling all required (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON) upstream packages for current set of enabled packages
+(Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF) ...
+
+-- NOTE: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- NOTE: Not Setting Trilinos_ENABLE_ThyraEpetraExt=ON even though Thyra has an optional dependence on ThyraEpetraExt because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- Setting TPL_ENABLE_BLAS=ON because Epetra has a required dependence on BLAS
+-- Setting TPL_ENABLE_LAPACK=ON because Epetra has a required dependence on LAPACK
+
+Final set of enabled top-level packages:  Teuchos RTOp Epetra Thyra 4
+Final set of enabled packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6
+Final set of non-enabled top-level packages:  Triutils EpetraExt 2
+Final set of non-enabled packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5
+Final set of enabled external packages/TPLs:  BLAS LAPACK 2
+Final set of non-enabled external packages/TPLs:  MPI Boost UMFPACK AMD PETSC 5
+
+Getting information for all enabled external packages/TPLs ...
+
+Processing enabled external package/TPL: BLAS
+Processing enabled external package/TPL: LAPACK
+
+Configuring individual enabled Trilinos packages ...
+
+Processing enabled top-level package: Teuchos (Libs)
+Processing enabled top-level package: RTOp (Libs)
+Processing enabled top-level package: Epetra (Libs)
+Processing enabled top-level package: Thyra (CoreLibs, Epetra)

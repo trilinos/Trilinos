@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+project(blasmangle C)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+add_executable(blasmangle blasmangle.c)
+add_definitions(${MANGLE_FLAGS})

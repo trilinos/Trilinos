@@ -1,0 +1,6 @@
+#ifndef PACAKGE2_CONFIG_H
+#define PACAKGE2_CONFIG_H
+
+#cmakedefine HAVE_PACKAGE2_TPL3
+
+#endif /** PACAKGE2_CONFIG **/

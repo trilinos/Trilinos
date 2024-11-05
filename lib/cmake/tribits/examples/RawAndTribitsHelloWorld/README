@@ -1,0 +1,22 @@
+This is a simple CMake project shows how to have a default raw CMake build
+system and secondary TriBITS build system sit side-by-side.
+
+To configure this, you just create a build dir as:
+
+$ cd $SOME_BASE_DIR
+$ mkdir BUILD
+$ cd BUILD
+
+and then configure, build, and test with the raw CMake build system, use:
+
+$ cmake $TRIBITS_DIR/doc/example/RawAndTribitsHelloWorld
+$ make
+$ ctest
+
+To configure, build, and test with the TriBITS CMake build system, use:
+
+$ cmake \
+   -DRawAndTribitsHelloWorld_TRIBITS_DIR=${TRIBITS_DIR} \
+   $TRIBITS_DIR/doc/example/RawAndTribitsHelloWorld
+$ make
+$ ctest

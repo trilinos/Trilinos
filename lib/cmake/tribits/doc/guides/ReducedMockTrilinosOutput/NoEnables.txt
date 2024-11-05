@@ -1,0 +1,22 @@
+Explicitly enabled top-level packages on input (by user):  0
+Explicitly enabled packages on input (by user):  0
+Explicitly disabled top-level packages on input (by user or by default):  0
+Explicitly disabled packages on input (by user or by default):  ThyraCrazyStuff 1
+Explicitly enabled external packages/TPLs on input (by user):  0
+Explicitly disabled external packages/TPLs on input (by user or by default):  0
+
+...
+
+Final set of enabled top-level packages:  0
+Final set of enabled packages:  0
+Final set of non-enabled top-level packages:  Teuchos RTOp Epetra Triutils EpetraExt Thyra 6
+Final set of non-enabled packages:  Teuchos RTOp Epetra Triutils EpetraExt \
+ ThyraCoreLibs ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt Thyra 11
+Final set of enabled external packages/TPLs:  0
+Final set of non-enabled external packages/TPLs:  MPI BLAS LAPACK Boost UMFPACK AMD PETSC 7
+
+...
+
+***
+*** WARNING:  There were no packages configured so no libraries or tests/examples will be built!
+***

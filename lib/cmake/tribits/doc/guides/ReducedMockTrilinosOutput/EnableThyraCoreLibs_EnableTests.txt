@@ -1,0 +1,29 @@
+Explicitly enabled top-level packages on input (by user):  0
+
+Explicitly enabled packages on input (by user):  ThyraCoreLibs 1
+
+Explicitly disabled top-level packages on input (by user or by default):  0
+
+Explicitly disabled packages on input (by user or by default):  ThyraCrazyStuff 1
+
+Explicitly enabled external packages/TPLs on input (by user):  0
+
+Explicitly disabled external packages/TPLs on input (by user or by default):  0
+
+Enabling the shell of non-enabled parent packages (mostly for show) that have at least one subpackage enabled ...
+
+-- Setting Trilinos_ENABLE_Thyra=ON because Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting Thyra_ENABLE_TESTS=ON because ThyraCoreLibs_ENABLE_TESTS=ON
+-- Setting Thyra_ENABLE_EXAMPLES=ON because ThyraCoreLibs_ENABLE_EXAMPLES=ON
+
+Enabling the shell of non-enabled parent packages (mostly for show) that have at least one subpackage enabled ...
+
+-- Setting Trilinos_ENABLE_Thyra=ON because Trilinos_ENABLE_ThyraCoreLibs=ON
+
+Final set of enabled top-level packages:  Teuchos RTOp Thyra 3
+
+Final set of enabled packages:  Teuchos RTOp ThyraCoreLibs Thyra 4
+
+Final set of non-enabled top-level packages:  Epetra Triutils EpetraExt 3
+
+Final set of non-enabled packages:  Epetra Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt 7

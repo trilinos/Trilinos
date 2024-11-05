@@ -1,3 +1,7 @@
+cmake -DCMAKE_MODULE_PATH=/ ../home/as/ThirdParty-v2406/Trilinos/commonTools/build_stats/CMakeLists.txt
+
+
+
 tribits_package(TrilinosBuildStats)
 
 include("${CMAKE_CURRENT_LIST_DIR}/BuildStatsGatherTarget.cmake")

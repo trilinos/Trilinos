@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.23)
+project(fmangle C Fortran)
+add_definitions(${COMMON_DEFS})
+set(CMAKE_VERBOSE_MAKEFILE ON)
+add_library(fmangle fmangle.f)
+add_executable(cmangle cmangle.c)
+target_link_libraries(cmangle fmangle)
