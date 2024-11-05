@@ -141,20 +141,20 @@ KeepType Level::GetKeepFlag(const std::string& ename, const FactoryBase* factory
 
 void Level::Request(const FactoryBase& factory) {
   RequestMode prev = requestMode_;
-  requestMode_     = REQUEST;
+  requestMode_     = RequestModeRequest;
   factory.CallDeclareInput(*this);
   requestMode_ = prev;
 }
 
 void Level::Release(const FactoryBase& factory) {
   RequestMode prev = requestMode_;
-  requestMode_     = RELEASE;
+  requestMode_     = RequestModeRelease;
   factory.CallDeclareInput(*this);
   requestMode_ = prev;
 }
 
 void Level::DeclareInput(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
-  if (requestMode_ == REQUEST) {
+  if (requestMode_ == RequestModeRequest) {
     try {
       Request(ename, factory, requestedBy);
 
@@ -173,7 +173,7 @@ void Level::DeclareInput(const std::string& ename, const FactoryBase* factory, c
       throw Exceptions::RuntimeError(msg.str());
     }
 
-  } else if (requestMode_ == RELEASE) {
+  } else if (requestMode_ == RequestModeRelease) {
     Release(ename, factory, requestedBy);
 
   } else
@@ -184,10 +184,10 @@ void Level::DeclareDependencies(const FactoryBase* factory, bool bRequestOnly, b
   if (bRequestOnly && bReleaseOnly)
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareDependencies(): Both bRequestOnly and bReleaseOnly set to true makes no sense.");
 
-  if (requestMode_ == REQUEST) {
+  if (requestMode_ == RequestModeRequest) {
     if (bReleaseOnly == false) Request(*factory);
 
-  } else if (requestMode_ == RELEASE) {
+  } else if (requestMode_ == RequestModeRelease) {
     if (bRequestOnly == false) Release(*factory);
 
   } else
