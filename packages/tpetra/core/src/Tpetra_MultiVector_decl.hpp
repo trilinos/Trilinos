@@ -2016,7 +2016,7 @@ namespace Tpetra {
     /// \brief Multiply a Vector A elementwise by a MultiVector B.
     ///
     /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
-    /// where <tt>@</tt> denotes element-wise multiplication.  In
+    /// where <tt>\@</tt> denotes element-wise multiplication.  In
     /// pseudocode, if C denotes <tt>*this</tt> MultiVector:
     /// \code
     /// C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
