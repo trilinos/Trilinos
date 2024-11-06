@@ -44,6 +44,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tGatherSolution_BlockedTpetra
+  SOURCES tpetra_blocked_gather_solution.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tScatterResidual_Tpetra
   SOURCES tpetra_scatter_residual.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
