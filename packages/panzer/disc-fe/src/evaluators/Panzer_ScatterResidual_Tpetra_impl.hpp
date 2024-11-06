@@ -24,6 +24,7 @@
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_Scratch_Utilities.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -130,6 +131,7 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer
   : globalIndexer_(indexer)
   , globalDataKey_("Residual Scatter Container")
 {
+
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
@@ -166,7 +168,7 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
+postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
@@ -201,15 +203,19 @@ preEvaluate(typename TRAITS::PreEvalData d)
   std::vector<std::string> activeParameters =
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc->getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
-  dfdp_vectors_.clear();
+  dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
+
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<typename LOC::VectorType> vec =
       rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
-    auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access:ReadOnly);
-    
-    Teuchos::ArrayRCP<double> vec_array = vec->get1dViewNonConst();
-    dfdp_vectors_.push_back(vec_array);
+    auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    // TODO BWR not sure this will be checked by tests...
+    TEUCHOS_ASSERT(dfdp_view.extent_int(1)==1);
+    dfdpFieldsVoV_.addView(Kokkos::subview(dfdp_view,Kokkos::ALL(),0),i);
   }
+
+  dfdpFieldsVoV_.syncHostToDevice();
 
   // TODO BWR DO WE WANT TO BE ABLE TO FILL RESIDUAL TOO?
   // extract linear object container
@@ -220,61 +226,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
   }  
-}
-
-// **********************************************************************
-template<typename TRAITS,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
-evaluateFields(typename TRAITS::EvalData workset)
-{
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
-  // for convenience pull out some objects from workset
-  std::string blockId = this->wda(workset).block_id;
-
-  Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
-
-  globalIndexer_->getElementLIDs(this->wda(workset).getLocalCellIDs(),scratch_lids_);
-
-  ScatterResidual_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
-  functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
-  functor.lids = scratch_lids_;
-
-  // for each field, do a parallel for loop
-  for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-    functor.offsets = scratch_offsets_[fieldIndex];
-    functor.field = scatterFields_[fieldIndex];
-    functor.tangents = dfdp_vectors_; // TODO ???
-
-    Kokkos::parallel_for(workset.num_cells,functor);
-  }
-
-  // NOTE: A reordering of these loops will likely improve performance
-  //       The "getGIDFieldOffsets may be expensive.  However the
-  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-  //       may be more expensive!
-
-  // scatter operation for each cell in workset
-  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-     std::size_t cellLocalId = localCellIds[worksetCellIndex];
-
-     auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-     // loop over each field to be scattered
-     for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-        int fieldNum = fieldIds_[fieldIndex];
-        const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-        // loop over basis functions
-        for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-           int offset = elmtOffset[basis];
-           LO lid = LIDs[offset];
-           ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-           for(int d=0;d<value.size();d++)
-             dfdp_vectors_[d][lid] += value.fastAccessDx(d);
-        }
-     }
-  }
 }
 
 // **********************************************************************
@@ -432,7 +383,6 @@ public:
   PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
 
-
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
@@ -444,6 +394,45 @@ public:
        Kokkos::atomic_add(&r_data(lid,0), field(cell,basis));
 
    } // end basis
+  }
+};
+
+template <typename ScalarT,typename LO,typename GO,typename NodeT>
+class ScatterResidual_Tangent_Functor {
+public:
+  typedef typename PHX::Device execution_space;
+  typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
+
+  bool fillResidual;
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
+
+  Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> lids; // local indices for unknowns.
+  PHX::View<const int*> offsets; // how to get a particular field
+  FieldType field;
+
+  PHX::ViewOfViews<1,PHX::View<double*>>  dfdp_fields; // tangent fields
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+
+    const std::size_t numDerivs = PHX::getFadSize(field.get_static_view());
+    const auto tangents = dfdp_fields.getViewDevice();
+    // loop over the basis functions (currently they are nodes)
+    for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
+       typename FieldType::array_type::reference_type scatterField = field(cell,basis);
+       int offset = offsets(basis);
+       LO lid    = lids(cell,offset);
+
+       // Sum residual
+       if(fillResidual)
+         Kokkos::atomic_add(&r_data(lid,0), scatterField.val());
+
+       // loop over the tangents
+       for(int i_param=0; i_param<numDerivs; i_param++)
+          tangents(i_param)(lid) += scatterField.fastAccessDx(i_param);
+
+    } // end basis
   }
 };
 
@@ -521,6 +510,34 @@ evaluateFields(typename TRAITS::EvalData workset)
      Kokkos::parallel_for(workset.num_cells,functor);
    }
 
+}
+
+// **********************************************************************
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
+{
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+  // for convenience pull out some objects from workset
+  std::string blockId = this->wda(workset).block_id;
+
+  Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
+
+  globalIndexer_->getElementLIDs(this->wda(workset).getLocalCellIDs(),scratch_lids_);
+
+  ScatterResidual_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
+  functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  functor.lids = scratch_lids_;
+
+  // for each field, do a parallel for loop
+  for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+    functor.offsets = scratch_offsets_[fieldIndex];
+    functor.field = scatterFields_[fieldIndex];
+    functor.dfdp_fields = dfdpFieldsVoV_;
+
+    Kokkos::parallel_for(workset.num_cells,functor);
+  }
 }
 
 // **********************************************************************
