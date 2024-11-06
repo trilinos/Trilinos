@@ -75,14 +75,12 @@ RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal
   SET_VALID_ENTRY("aggregation: use interface aggregation");
   SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
   SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
-  SET_VALID_ENTRY("aggregation: compute aggregate qualities");
   SET_VALID_ENTRY("aggregation: phase 1 algorithm");
 #undef SET_VALID_ENTRY
 
   // general variables needed in AggregationFactory
   validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
   validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase>>("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
   // special variables necessary for OnePtAggregationAlgorithm
   validParamList->set<std::string>("OnePt aggregate map name", "", "Name of input map for single node aggregates. (default='')");
@@ -130,10 +128,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInpu
     } else {
       Input(currentLevel, "nodeOnInterface");
     }
-  }
-
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    Input(currentLevel, "AggregateQualities");
   }
 }
 
@@ -375,10 +369,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   aggregates->ComputeAggregateSizes(true /*forceRecompute*/);
 
   Set(currentLevel, "Aggregates", aggregates);
-
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    RCP<Xpetra::MultiVector<DefaultScalar, LO, GO, Node>> aggQualities = Get<RCP<Xpetra::MultiVector<DefaultScalar, LO, GO, Node>>>(currentLevel, "AggregateQualities");
-  }
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
