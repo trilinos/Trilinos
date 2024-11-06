@@ -111,7 +111,7 @@ namespace Tpetra {
 	  /// if operator is not a matrix.  This is not necessarily
 	  /// an error, but no scaling can be done if the user passes
     /// in an operator that is not an matrix.
-    int checkInput(bool fail_on_error = true) const;
+    void checkInput() const;
 
     //@}
 

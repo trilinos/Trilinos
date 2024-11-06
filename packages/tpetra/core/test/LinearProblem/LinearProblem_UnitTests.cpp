@@ -88,7 +88,7 @@ namespace { // (anonymous)
             myOut << "]" << endl;
         }
         // Synchronize processes before printing
-        MPI_Barrier(MPI_COMM_WORLD);
+        comm->barrier();
     }
   }
 
@@ -116,7 +116,7 @@ namespace { // (anonymous)
         }
         myOut << endl;
       }
-      MPI_Barrier(MPI_COMM_WORLD);
+      comm->barrier();
     }
   }
 
