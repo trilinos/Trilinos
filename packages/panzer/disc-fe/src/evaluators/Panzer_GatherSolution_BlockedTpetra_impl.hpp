@@ -304,19 +304,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                                                 gatherFields_[0].extent(0),
                                                 maxElementBlockGIDCount);
 
-  // Compute the block offsets
-  const auto& blockGlobalIndexers = globalIndexer_->getFieldDOFManagers();
-  const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
-  blockOffsets_ = PHX::View<LO*>("GatherSolution_BlockedTpetra(Tangent):blockOffsets_",
-                                                numBlocks+1); // Number of blocks, plus a sentinel
-  const auto hostBlockOffsets = Kokkos::create_mirror_view(blockOffsets_);
-  for (int blk=0;blk<numBlocks;++blk) {
-    int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
-    hostBlockOffsets(blk) = blockOffset;
-  }
-  hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
-  Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
-
   // Set up storage for tangentFields using view of views
   // We also need storage for the number of tangent fields associated with
   // each gatherField
@@ -329,7 +316,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     tangentFieldsVoV_.initialize("GatherSolution_BlockedTpetra<Tangent>::tangentFieldsVoV_",gatherFields_.size(),inner_vector_max_size);
 
     for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-      const std::string& fieldName = indexerNames_[fd];
       for (std::size_t i=0; i<tangentFields_[fd].size(); ++i) {
         tangentFieldsVoV_.addView(tangentFields_[fd][i].get_static_view(),fd,i);
       }
@@ -396,10 +382,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];
     const PHX::View<const LO**> worksetLIDs = worksetLIDs_;
     const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
-    const PHX::View<const LO*> blockOffsets = blockOffsets_;
-    auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets);
-    Kokkos::deep_copy(blockOffsets_h, blockOffsets);
-    const int blockStart = blockOffsets_h(blockRowIndex);
 
     if (has_tangent_fields_) { 
       const int numTangents = tangentFields_[fieldIndex].size();

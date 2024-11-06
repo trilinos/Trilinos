@@ -216,9 +216,6 @@ private:
   //! Offset into the cell lids for each field. Size of number of fields to scatter.
   std::vector<PHX::View<int*>> fieldOffsets_;
 
-  //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel.
-  PHX::View<LO*> blockOffsets_;
-
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<const RealT,Cell,NODE> > > tangentFields_;
