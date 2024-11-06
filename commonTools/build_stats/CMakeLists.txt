@@ -1,6 +1,4 @@
-cmake -DCMAKE_MODULE_PATH=/ ../home/as/ThirdParty-v2406/Trilinos/commonTools/build_stats/CMakeLists.txt
-
-
+cmake -DCMAKE_MODULE_PATH=~/home/as/ThirdParty-v2406/Trilinos/commonTools/build_stats/CMakeLists.txt
 
 tribits_package(TrilinosBuildStats)
 
