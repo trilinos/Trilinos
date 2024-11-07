@@ -61,7 +61,6 @@ namespace Tpetra {
     using row_matrix_type = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using multivector_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using vector_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using operator_type = Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using linear_problem_type = LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     //@}
@@ -71,25 +70,16 @@ namespace Tpetra {
 
     /// \brief Default Constructor.
     ///
-	  /// Creates an empty LinearProblem instance. The operator
+	  /// Creates an empty LinearProblem instance. The matrix
 	  /// A, left-hand-side X and right-hand-side B must be set
-	  /// use the setOperator(), SetLHS() and SetRHS() methods
+	  /// use the setMatrix(), SetLHS() and SetRHS() methods
 	  /// respectively.
     LinearProblem();
 
-    /// \brief Constructor with a matrix as the operator.
+    /// \brief Constructor with a matrix.
     ///
-    /// Creates a LinearProblem instance where the operator
-	  /// is passed in as a matrix.
+    /// Creates a LinearProblem instance with a matrix.
     LinearProblem(const Teuchos::RCP<row_matrix_type> & A,
-                  const Teuchos::RCP<multivector_type>& X,
-                  const Teuchos::RCP<multivector_type>& B);
-
-    /// \brief Constructor with Operator.
-    ///
-    /// Creates a LinearProblem instance for the case where
-	  /// an operator is not necessarily a matrix.
-    LinearProblem(const Teuchos::RCP<operator_type>   & A,
                   const Teuchos::RCP<multivector_type>& X,
                   const Teuchos::RCP<multivector_type>& B);
 
@@ -127,17 +117,11 @@ namespace Tpetra {
     //! @name Set methods
     //@{
 
-    /// \brief Set Operator A of linear problem AX = B using a RowMatrix.
+    /// \brief Set Matrix A of linear problem AX = B using a RowMatrix.
     ///
     /// Sets an RCP to a RowMatrix.  No copy of the operator is made.
-    void setOperator(Teuchos::RCP<row_matrix_type> A)
-      { A_ = A; Operator_ = A; }
-
-    /// \brief Set Operator A of linear problem AX = B using an Operator.
-    ///
-    /// Sets an RCP to an Operator.  No copy of the operator is made.
-    void setOperator(Teuchos::RCP<operator_type> A)
-      { A_ = Teuchos::rcp_dynamic_cast<row_matrix_type>(A); Operator_ = A; }
+    void setMatrix(Teuchos::RCP<row_matrix_type> A)
+      { A_ = A; }
 
     /// \brief Set left-hand-side X of linear problem AX = B.
     ///
@@ -157,8 +141,7 @@ namespace Tpetra {
     /// \brief Perform left scaling of a linear problem.
     ///
     /// Applies the scaling vector D to the left side of the
-	  /// matrix A() and to the right hand side B().  Note that
-	  /// the operator must be a RowMatrix, not just an Operator.
+	  /// matrix A() and to the right hand side B().
     ///
     /// \param In
     ///      D - Vector containing scaling values.  D[i] will
@@ -173,8 +156,7 @@ namespace Tpetra {
     ///
 	  /// Applies the scaling vector D to the right side of the
 	  /// matrix A().  Apply the inverse of D to the initial
-	  /// guess.  Note that the operator must be a RowMatrix,
-	  /// not just an Operator.
+	  /// guess.
     /// 
     /// \param In
     ///      D - Vector containing scaling values.  D[i] will
@@ -191,20 +173,17 @@ namespace Tpetra {
     //! @name Accessor methods
     //@{
 
-    //! Get an RCP to the operator A.
-    Teuchos::RCP<operator_type> getOperator() const {return(Operator_);};
     //! Get an RCP to the matrix A.
-    Teuchos::RCP<row_matrix_type> getMatrix() const {return(A_);};
+    Teuchos::RCP<row_matrix_type> getMatrix() const {return(A_);}
     //! Get an RCP to the left-hand-side X.
-    Teuchos::RCP<multivector_type> getLHS() const {return(X_);};
+    Teuchos::RCP<multivector_type> getLHS() const {return(X_);}
     //! Get an RCP to the right-hand-side B.
-    Teuchos::RCP<multivector_type> getRHS() const {return(B_);};
+    Teuchos::RCP<multivector_type> getRHS() const {return(B_);}
 
     //@}
 
  private:
 
-  Teuchos::RCP<operator_type> Operator_;
   Teuchos::RCP<row_matrix_type> A_;
   Teuchos::RCP<multivector_type> X_;
   Teuchos::RCP<multivector_type> B_;

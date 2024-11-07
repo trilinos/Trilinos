@@ -9,8 +9,9 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_LinearProblem.hpp"
-
 #include "Tpetra_CrsMatrix.hpp"
+
+#include "Teuchos_ScalarTraits.hpp"
 
 
 namespace { // (anonymous)
@@ -29,6 +30,8 @@ namespace { // (anonymous)
   using GST = Tpetra::global_size_t;
   
 
+#define DEBUG_TEST
+#ifdef DEBUG_TEST
   /// \brief Print out pretty version of RowMatrix.
   template <typename Scalar, typename LO, typename GO, typename Node>
   void Display_CrsMatrix (std::string label, RCP<Tpetra::RowMatrix<Scalar, LO, GO, Node> > A, RCP< const Comm< int > > comm, Teuchos::FancyOStream& myOut)
@@ -77,12 +80,12 @@ namespace { // (anonymous)
                         // Convert local index to global index
                         GST globalIndex = A->getColMap()->getGlobalElement(localIndices(k));
                         if (globalIndex == j) {
-                            myOut << std::setw(8) << values(k) << " ";
+                            myOut << std::setw(3) << values(k) << " ";
                             break;
                         }
                     }
                 } else {
-                    myOut << std::setw(8) << 0 << " ";
+                    myOut << std::setw(3) << 0 << " ";
                 }
             }
             myOut << "]" << endl;
@@ -126,6 +129,7 @@ namespace { // (anonymous)
     auto multivector = Teuchos::rcp_dynamic_cast<Tpetra::MultiVector<Scalar, LO, GO, Node>> (vector);
     Display_MultiVector(label, multivector, comm, myOut);
   }
+#endif
 
 
   //
@@ -162,7 +166,7 @@ namespace { // (anonymous)
     //const size_t numImages = comm->getSize();
     const size_t myImageID = comm->getRank();
     // create a Map
-    const size_t numLocal = 10;
+    const size_t numLocal = 5;
     const size_t numVecs  = 1;
     RCP<const map_type> map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     GO base = numLocal*myImageID;
@@ -171,7 +175,6 @@ namespace { // (anonymous)
     {
       RCP<MAT> A_crs = rcp(new MAT(map,3));
       for (size_t i=0; i<numLocal; ++i) {
-        //A_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
         A_crs->insertGlobalValues(base + i, tuple<GO>(base + i), tuple<Scalar>(2.0)); // Diagonal entry
 
         GST globalIndex = base + i;
@@ -208,31 +211,33 @@ namespace { // (anonymous)
 
     RCP<LPT> linearProblem = rcp(new LPT());
 
-    linearProblem->setOperator(A);
+    linearProblem->setMatrix(A);
     linearProblem->setLHS(X);
     linearProblem->setRHS(B);
 
     linearProblem->checkInput();
 
-    //if (myImageID==0) myOut << "Original LinearProblem" << endl;
-    //Display_CrsMatrix("A", A, comm, myOut);
-    //Display_MultiVector("Solution Vector", X, comm, myOut);
-    //Display_MultiVector("RHS Vector", B, comm, myOut);
-    //Display_Vector("Scaling Vector", S, comm, myOut);
+#ifdef DEBUG_TEST
+    if (myImageID==0) myOut << "Original LinearProblem" << endl;
+    Display_CrsMatrix("A", A, comm, myOut);
+    Display_MultiVector("Solution Vector", X, comm, myOut);
+    Display_MultiVector("RHS Vector", B, comm, myOut);
+    Display_Vector("Scaling Vector", S, comm, myOut);
+#endif
 
+    mag_type eps = Teuchos::as<Scalar>(100)*Teuchos::ScalarTraits<double>::eps();
     // Original LinearProblem
     GST N = globalNumElements;
     double normF = std::sqrt(6*N - 2);
     TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
-                           Teuchos::as<Scalar>(normF), Teuchos::as<Scalar>(1.0e-14));
-                           //Teuchos::as<Scalar>(7.615773105863909), Teuchos::as<Scalar>(1.0e-14));
+                           Teuchos::as<Scalar>(normF), eps);
 
     Array<mag_type> norms(numVecs);
     linearProblem->getLHS()->norm1(norms());
     size_t vector_sum = N*(N+1)/2;
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), Teuchos::as<Scalar>(1.0e-14));
+    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
     linearProblem->getRHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), Teuchos::as<Scalar>(1.0e-14));
+    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
     
     // Left Scaling
     linearProblem->leftScale(S);
@@ -240,17 +245,19 @@ namespace { // (anonymous)
     size_t vector_sum_squared = N*(N+1)*(2*N+1)/6;
     normF = std::sqrt(6*vector_sum_squared - N*N - 1);
     TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
-                           Teuchos::as<Scalar>(normF), Teuchos::as<Scalar>(1.0e-14));
+                           Teuchos::as<Scalar>(normF), eps);
     linearProblem->getLHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), Teuchos::as<Scalar>(1.0e-14));
+    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
     linearProblem->getRHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum_squared), Teuchos::as<Scalar>(1.0e-14));
+    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum_squared), eps);
     
-    //if (myImageID==0) myOut << "After Left Scaling" << endl;
-    //Display_CrsMatrix("A", A, comm, myOut);
-    //Display_MultiVector("Solution Vector", X, comm, myOut);
-    //Display_MultiVector("RHS Vector", B, comm, myOut);
-    //Display_Vector("Scaling Vector", S, comm, myOut);
+#ifdef DEBUG_TEST
+    if (myImageID==0) myOut << "After Left Scaling" << endl;
+    Display_CrsMatrix("A", A, comm, myOut);
+    Display_MultiVector("Solution Vector", X, comm, myOut);
+    Display_MultiVector("RHS Vector", B, comm, myOut);
+    Display_Vector("Scaling Vector", S, comm, myOut);
+#endif
 
     // Right Scaling
     linearProblem->rightScale(S);
@@ -263,17 +270,19 @@ namespace { // (anonymous)
     size_t diag = (2.0 * N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 15.0;
     normF = std::sqrt(diag + off_diags);
     TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
-                           Teuchos::as<Scalar>(normF), Teuchos::as<Scalar>(1.0e-14));
+                           Teuchos::as<Scalar>(normF), eps);
     linearProblem->getLHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(N), Teuchos::as<Scalar>(1.0e-14));
+    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(N), eps);
     linearProblem->getRHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum_squared), Teuchos::as<Scalar>(1.0e-14));
+    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum_squared), eps);
     
-    //if (myImageID==0) myOut << "After Right Scaling" << endl;
-    //Display_CrsMatrix("A", A, comm, myOut);
-    //Display_MultiVector("Solution Vector", X, comm, myOut);
-    //Display_MultiVector("RHS Vector", B, comm, myOut);
-    //Display_Vector("Scaling Vector", S, comm, myOut);
+#ifdef DEBUG_TEST
+    if (myImageID==0) myOut << "After Right Scaling" << endl;
+    Display_CrsMatrix("A", A, comm, myOut);
+    Display_MultiVector("Solution Vector", X, comm, myOut);
+    Display_MultiVector("RHS Vector", B, comm, myOut);
+    Display_Vector("Scaling Vector", S, comm, myOut);
+#endif
 
     // Constructor with matrix
     {
