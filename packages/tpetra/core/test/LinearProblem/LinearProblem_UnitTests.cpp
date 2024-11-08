@@ -30,7 +30,7 @@ namespace { // (anonymous)
   using GST = Tpetra::global_size_t;
   
 
-#define DEBUG_TEST
+#undef DEBUG_TEST
 #ifdef DEBUG_TEST
   /// \brief Print out pretty version of RowMatrix.
   template <typename Scalar, typename LO, typename GO, typename Node>
@@ -197,9 +197,8 @@ namespace { // (anonymous)
     RCP<VT> S = rcp (new VT (map));
 
     // Assign values to the MultiVector based on the global index
-    for (size_t i = 0; i < numLocal; ++i) {
-        auto localIndex = map->getLocalElement(i);
-        auto globalIndex = map->getGlobalElement(i);
+    for (size_t localIndex = 0; localIndex < numLocal; ++localIndex) {
+        auto globalIndex = map->getGlobalElement(localIndex);
         S->replaceLocalValue(localIndex, Teuchos::as<Scalar>(globalIndex + 1));
         for (size_t j = 0; j < numVecs; ++j) { // Loop over each vector (column)
                 // Assign a value (for example, the global index plus the vector index)
