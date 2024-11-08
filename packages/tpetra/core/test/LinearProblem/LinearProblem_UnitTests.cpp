@@ -140,8 +140,7 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( LinearProblem, basic, LO, GO, Scalar, Node )
   {
     using map_type = Tpetra::Map<LO, GO, Node>;
-    using ST = Teuchos::ScalarTraits<Scalar>;
-    using mag_type = typename ST::magnitudeType;
+    //using mag_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     
     using MAT = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
     using VT = Tpetra::Vector<Scalar,LO,GO,Node>;
@@ -198,15 +197,15 @@ namespace { // (anonymous)
     RCP<VT> S = rcp (new VT (map));
 
     // Assign values to the MultiVector based on the global index
-    for (size_t j = 0; j < numVecs; ++j) { // Loop over each vector (column)
-        for (GST i = 0; i < globalNumElements; ++i) {
-            // Assign a value (for example, the global index plus the vector index)
-            X->replaceGlobalValue(i, j, Teuchos::as<Scalar>(i + j + 1));
-            B->replaceGlobalValue(i, j, Teuchos::as<Scalar>(i + j + 1));
+    for (size_t i = 0; i < numLocal; ++i) {
+        auto localIndex = map->getLocalElement(i);
+        auto globalIndex = map->getGlobalElement(i);
+        S->replaceLocalValue(localIndex, Teuchos::as<Scalar>(globalIndex + 1));
+        for (size_t j = 0; j < numVecs; ++j) { // Loop over each vector (column)
+                // Assign a value (for example, the global index plus the vector index)
+                X->replaceLocalValue(localIndex, j, Teuchos::as<Scalar>(globalIndex + j + 1));
+                B->replaceLocalValue(localIndex, j, Teuchos::as<Scalar>(globalIndex + j + 1));
         }
-    }
-    for (GST i = 0; i < globalNumElements; ++i) {
-        S->replaceGlobalValue(i, Teuchos::as<Scalar>(i + 1));
     }
 
     RCP<LPT> linearProblem = rcp(new LPT());
@@ -225,14 +224,14 @@ namespace { // (anonymous)
     Display_Vector("Scaling Vector", S, comm, myOut);
 #endif
 
-    mag_type eps = Teuchos::as<Scalar>(100)*Teuchos::ScalarTraits<double>::eps();
+    Scalar eps = Teuchos::as<Scalar>(Teuchos::as<double>(100)*Teuchos::ScalarTraits<double>::eps());
     // Original LinearProblem
     GST N = globalNumElements;
     double normF = std::sqrt(6*N - 2);
     TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
                            Teuchos::as<Scalar>(normF), eps);
 
-    Array<mag_type> norms(numVecs);
+    Array<Scalar> norms(numVecs);
     linearProblem->getLHS()->norm1(norms());
     size_t vector_sum = N*(N+1)/2;
     TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
