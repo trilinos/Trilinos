@@ -84,4 +84,3 @@ int Trilinos_Util_ReadMatrixMarket2Epetra64(
 #warning "The Triutils package is deprecated"
 #endif
 #endif
-

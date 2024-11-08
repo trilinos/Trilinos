@@ -130,7 +130,7 @@ public:
             if (team.team_rank() == 0)
             {
                 tmp *= alpha_;
-                Kokkos::atomic_add<Scalar>(&y_(i), tmp);
+                Kokkos::atomic_add(&y_(i), tmp);
             }
         }
         for (IndexType i = 0; i < i_min; ++i)
@@ -144,7 +144,7 @@ public:
             if (team.team_rank() == 0)
             {
                 tmp *= alpha_;
-                Kokkos::atomic_add<Scalar>(&y_(i), tmp);
+                Kokkos::atomic_add(&y_(i), tmp);
             }
         }
     }

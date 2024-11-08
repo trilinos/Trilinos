@@ -1,5 +1,14 @@
 # CHANGELOG
 
+5.21.6 (STK_VERSION 5210600) 10/25/2024
+  stk_search: fix build-error (instantiation error for morton_lbvh_search) for gcc 13.2
+  stk_util: added parallel/OutputStreams.hpp
+    - which includes the functions outputP0(), output(), output_flush(), set_outputP0(..), reset_default_output_streams().
+
+5.21.5-2 (STK_VERSION 5210502) 10/07/2024
+  stk_search: Fixed HIP sort error.
+  stk_mesh: add multi-field NGP-FieldBLAS field_fill
+
 5.21.5-1 (STK_VERSION 5210501) 9/27/2024
   stk_mesh: deprecate BulkData::relation_exist
 

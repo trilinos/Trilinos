@@ -260,9 +260,11 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(cubPoints,  Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
         DynRankView ConstructWithLabel(cubWeights, Parameters::MaxIntegrationPoints);
 
+        int maxTotalCubatureDegree = Parameters::MaxCubatureDegreeEdge; // sum in all dimensions
+        
         *outStream << "-> Line testing\n\n";
         {
-          for (ordinal_type deg=0;deg<=Parameters::MaxCubatureDegreeEdge;++deg) {
+          for (ordinal_type deg=0;deg<=maxTotalCubatureDegree;++deg) {
             CubatureLineType cub(deg);
             cub.getCubature(cubPoints, cubWeights);
             const auto npts = cub.getNumPoints();
@@ -316,8 +318,8 @@ namespace Intrepid2 {
 
         *outStream << "-> Quad testing\n\n";
         {
-          for (ordinal_type y_deg=0;y_deg<=Parameters::MaxCubatureDegreeEdge;++y_deg)
-            for (ordinal_type x_deg=0;x_deg<=Parameters::MaxCubatureDegreeEdge;++x_deg) {
+          for (ordinal_type y_deg=0;y_deg<=maxTotalCubatureDegree-1;++y_deg)
+            for (ordinal_type x_deg=0;x_deg<=maxTotalCubatureDegree-y_deg;++x_deg) {
               const auto x_line = CubatureLineType(x_deg);
               const auto y_line = CubatureLineType(y_deg);
               CubatureTensorType cub( x_line, y_line );
@@ -377,10 +379,10 @@ namespace Intrepid2 {
         
         *outStream << "-> Hexahedron testing\n\n";
         {
-          // when hex is tested with max cubature degree edge, it exceeds max integration points 1001
-          for (ordinal_type z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
-            for (ordinal_type y_deg=0;y_deg<Parameters::MaxCubatureDegreeEdge;++y_deg)
-              for (ordinal_type x_deg=0;x_deg<Parameters::MaxCubatureDegreeEdge;++x_deg) {
+          // test up to 10th order in each dimension with standard (non-tensor) points; we'll test up to max degree with tensor points below.
+          for (ordinal_type z_deg=0;z_deg<10;++z_deg)
+            for (ordinal_type y_deg=0;y_deg<10;++y_deg)
+              for (ordinal_type x_deg=0;x_deg<10;++x_deg) {
                 const auto x_line = CubatureLineType(x_deg);
                 const auto y_line = CubatureLineType(y_deg);
                 const auto z_line = CubatureLineType(z_deg);
@@ -390,6 +392,32 @@ namespace Intrepid2 {
                 const auto npts = cub.getNumPoints();
 
                 const auto testVol = computeRefVolume(npts, cubWeights);
+                const auto refVol  = 8.0;
+                if (std::abs(testVol - refVol) > tol) {
+                  *outStream << std::setw(30) << "Hexahedron volume computed with tensor-product cubature of degree (" << x_deg << ", " << y_deg << ", " << z_deg << ") --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+
+                  ++errorFlag;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                }
+              }
+        }
+        
+        {
+          for (ordinal_type z_deg=0;z_deg<=maxTotalCubatureDegree-2;++z_deg)
+            for (ordinal_type y_deg=0;y_deg<=maxTotalCubatureDegree-z_deg;++y_deg)
+              for (ordinal_type x_deg=0;x_deg<=maxTotalCubatureDegree-z_deg-y_deg;++x_deg) {
+                const auto x_line = CubatureLineType(x_deg);
+                const auto y_line = CubatureLineType(y_deg);
+                const auto z_line = CubatureLineType(z_deg);
+                CubatureTensorType cub( x_line, y_line, z_line );
+
+                auto cubTensorPoints  = cub.allocateCubaturePoints();
+                auto cubTensorWeights = cub.allocateCubatureWeights();
+                cub.getCubature(cubTensorPoints, cubTensorWeights);
+                const auto npts = cub.getNumPoints();
+
+                const auto testVol = computeRefVolume(npts, cubTensorWeights);
                 const auto refVol  = 8.0;
                 if (std::abs(testVol - refVol) > tol) {
                   *outStream << std::setw(30) << "Hexahedron volume computed with tensor-product cubature of degree (" << x_deg << ", " << y_deg << ", " << z_deg << ") --> " << std::setw(10) << std::scientific << testVol <<
@@ -423,7 +451,8 @@ namespace Intrepid2 {
             }
 
           *outStream << "-> Prism symmetric quadrature testing\n\n";
-          for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
+          // test up to 10th order in the extrusion dimension with standard (non-tensor) points; we'll test up to max degree with tensor points below.
+          for (auto z_deg=0;z_deg<10;++z_deg)
             for (auto xy_deg=0;xy_deg<Parameters::MaxCubatureDegreeTri;++xy_deg) {
               const auto xy_tri = CubatureTriSymType(xy_deg);
               const auto z_line = CubatureLineType(z_deg);
@@ -433,6 +462,27 @@ namespace Intrepid2 {
               const auto npts = cub.getNumPoints();
               
               const auto testVol = computeRefVolume(npts, cubWeights);
+              const auto refVol  = 1.0;
+              if (std::abs(testVol - refVol) > tol) {
+                *outStream << std::setw(30) << "Wedge volume computed with symmetric tensor-product cubature of degree (" << xy_deg << ", " << z_deg << ") --> " << std::setw(10) << std::scientific << testVol <<
+                  std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+                ++errorFlag;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              }
+            }
+          
+          for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
+            for (auto xy_deg=0;xy_deg<Parameters::MaxCubatureDegreeTri;++xy_deg) {
+              const auto xy_tri = CubatureTriSymType(xy_deg);
+              const auto z_line = CubatureLineType(z_deg);
+              CubatureTensorType cub( xy_tri, z_line );
+              
+              auto cubTensorPoints  = cub.allocateCubaturePoints();
+              auto cubTensorWeights = cub.allocateCubatureWeights();
+              cub.getCubature(cubTensorPoints, cubTensorWeights);
+              const auto npts = cub.getNumPoints();
+              
+              const auto testVol = computeRefVolume(npts, cubTensorWeights);
               const auto refVol  = 1.0;
               if (std::abs(testVol - refVol) > tol) {
                 *outStream << std::setw(30) << "Wedge volume computed with symmetric tensor-product cubature of degree (" << xy_deg << ", " << z_deg << ") --> " << std::setw(10) << std::scientific << testVol <<

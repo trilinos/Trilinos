@@ -182,4 +182,3 @@ int mapCellFaceEdge( const CellTopologyData * cell_topology ,
 #endif
 
 #endif /* Shards_CellTopologyData_h */
-

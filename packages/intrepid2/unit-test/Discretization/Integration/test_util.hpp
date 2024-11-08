@@ -32,75 +32,50 @@ namespace Intrepid2 {
     typename cubWeightViewType::value_type
     computeRefVolume(const ordinal_type      numPoints,
                      const cubWeightViewType cubWeights) {
-      typename cubWeightViewType::value_type r_val = 0.0;
+      typename cubWeightViewType::value_type r_val;
+      Kokkos::parallel_reduce("computeRefVolume",
+                              Kokkos::RangePolicy<typename cubWeightViewType::execution_space>(0, numPoints),
+      KOKKOS_LAMBDA (const int& i, double& lsum) {
+          lsum += cubWeights(i);
+      }, r_val);
       Kokkos::fence();
-      auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
-      for (auto i=0;i<numPoints;++i) {
-        r_val += cubWeights_host(i);
-      }
 
       return r_val;
     }
 
-    // Monomial evaluation.
-    // in 1D, for point p(x)    : x^xDeg
-    // in 2D, for point p(x,y)  : x^xDeg * y^yDeg
-    // in 3D, for point p(x,y,z): x^xDeg * y^yDeg * z^zDeg
-    template<typename ValueType, 
-             typename PointViewType>
-    ValueType computeMonomial(PointViewType p, 
-                              const ordinal_type xDeg, 
-                              const ordinal_type yDeg = 0, 
-                              const ordinal_type zDeg = 0) {
-      ValueType r_val = 1.0;
-      const ordinal_type polydeg[3] = { xDeg, yDeg, zDeg };
-      const auto dim = p.extent(0);
-      Kokkos::fence();
-      
-      Kokkos::DynRankView<typename PointViewType::non_const_value_type,
-                          typename PointViewType::execution_space> p_device("p_device", p.extent(0));
-      Kokkos::deep_copy(p_device, p);
-      auto p_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), p_device);
-      for (size_type i=0;i<dim;++i) 
-        r_val *= std::pow(p_host(i),polydeg[i]);
-      
-      return r_val;
-    }
-
-    // Computes integrals of monomials 
     template<typename ValueType,
-             typename cubatureType,
-             typename cubPointViewType,
-             typename cubWeightViewType>
-    ValueType computeIntegralOfMonomial(cubatureType cub,
-                                        cubPointViewType cubPoints,
-                                        cubWeightViewType cubWeights,
-                                        const ordinal_type xDeg,
-                                        const ordinal_type yDeg = 0,
-                                        const ordinal_type zDeg = 0) {
-      ValueType r_val = 0.0;
-
-      // get cubature 
-      cub.getCubature(cubPoints, cubWeights);
-      auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
-      Kokkos::fence();
-
-      const auto dim  = cub.getDimension();
-      const auto npts = cub.getNumPoints();
-      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-
-      for (auto i=0;i<npts;++i) {
-        const auto pt = Kokkos::subdynrankview(cubPoints, i, range_type(0, dim));
-        r_val += computeMonomial<ValueType>(pt, xDeg, yDeg, zDeg)*cubWeights_host(i);
-      }
-
-      return r_val;
+             typename CubPointViewType,
+             typename CubWeightViewType,
+             size_t spaceDim>
+    ValueType computeIntegralOfMonomial(CubPointViewType cubPoints,
+                                        CubWeightViewType cubWeights,
+                                        Kokkos::Array<int,spaceDim> degrees) {
+      ValueType result = 0.0;
+      
+      const auto numPoints = cubPoints.extent_int(0); // P,D
+      const int  dim       = spaceDim;
+      
+      using ExecutionSpace = typename CubWeightViewType::execution_space;
+      
+      Kokkos::parallel_reduce("computeIntegralOfMonomial",
+                              Kokkos::RangePolicy(ExecutionSpace(), 0, numPoints),
+      KOKKOS_LAMBDA (const int& pointOrdinal, double& localSum )
+      {
+        ValueType value = 1.0;
+        for (int d=0; d<dim; d++)
+        {
+          auto x_d = cubPoints(pointOrdinal,d);
+          value *= pow(x_d, degrees[d]);
+        }
+        localSum += value * cubWeights(pointOrdinal);
+      }, result);
+      
+      return result;
     }
-
 
 
     /* 
-      Integral of monomial over unit triangle from initial implemetation by John Burkardt
+      Integral of monomial over unit triangle from initial implementation by John Burkardt
        Integral ( over unit triangle ) x^m y^n dx dy = m! * n! / ( m + n + 2 )!
     */
     template<typename ValueType>
@@ -170,13 +145,14 @@ namespace Intrepid2 {
        x_i gets mapped into X_i by a change in orientation, then there is a pair (x_j, w_j) in Q such that
        (X_i, w_i) = (x_j, w_j). 
     */
-    template<typename cubatureType,
-             typename cubPointViewType,
-             typename cubWeightViewType>
-    bool IsQuadratureInvariantToOrientation(cubatureType cub,
-                                        cubPointViewType cubPoints,
-                                        cubWeightViewType cubWeights,
-                                        const unsigned cellTopoKey) {
+    template<typename ValueType,
+             typename CubatureType,
+             typename CubPointViewType,
+             typename CubWeightViewType>
+    bool IsQuadratureInvariantToOrientation(CubatureType cub,
+                                            CubPointViewType cubPoints,
+                                            CubWeightViewType cubWeights,
+                                            const unsigned cellTopoKey) {
 
       
       ordinal_type numOrts = -1;
@@ -201,29 +177,34 @@ namespace Intrepid2 {
       bool r_val = true;
       const ordinal_type npts = cub.getNumPoints();
       const ordinal_type dim = cub.getDimension();
-      using DynRankView = Kokkos::DynRankView<typename cubPointViewType::non_const_value_type, Kokkos::HostSpace::execution_space>;
-      DynRankView cubPointsOriented("cubPointsOriented", npts,dim);
-      auto cubPoints_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubPoints);
-      auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
-
+      using DynRankViewHost = Kokkos::DynRankView<ValueType, Kokkos::HostSpace::execution_space>;
+      DynRankViewHost cubPointsOriented("cubPointsOriented", npts,dim);
+      
+      // these constructors do any necessary allocation and copying to host
+      using WeightValueType = typename CubWeightViewType::value_type;
+      using PointValueType  = typename CubPointViewType::value_type;
+      using HostDevice = Kokkos::HostSpace::device_type;
+      TensorPoints<PointValueType,HostDevice> cubPointsHost(cubPoints);
+      TensorData<WeightValueType,HostDevice> cubWeightsHost(cubWeights);
+      
       for (ordinal_type ort=0;ort<numOrts;++ort) {
 
-        Intrepid2::Impl::OrientationTools::mapToModifiedReference(cubPointsOriented, cubPoints_host, cellTopoKey, ort);      
+        Intrepid2::Impl::OrientationTools::mapToModifiedReference(cubPointsOriented, cubPointsHost, cellTopoKey, ort);
         
         for (ordinal_type i=0;i<npts;++i) {
           bool found = false;
           bool weightsMatch = false;
           for (ordinal_type j=0;j<npts;++j) {
-            auto norm2 = std::pow(cubPointsOriented(j,0)-cubPoints_host(i,0),2);
+            auto norm2 = std::pow(cubPointsOriented(j,0)-cubPointsHost(i,0),2);
             for(ordinal_type d=1; d<dim; ++d)
-              norm2 += std::pow(cubPointsOriented(j,d)-cubPoints_host(i,d),2);
+              norm2 += std::pow(cubPointsOriented(j,d)-cubPointsHost(i,d),2);
             norm2 = std::sqrt(norm2);
-            //std::cout << "\ni: " << i << ", j: " << j << ", ort: " << ort << ", norm2: " << norm2 << " weights diff: " << std::abs(cubWeights_host(i) - cubWeights_host(j));
+            //std::cout << "\ni: " << i << ", j: " << j << ", ort: " << ort << ", norm2: " << norm2 << " weights diff: " << std::abs(cubWeightsHost(i) - cubWeightsHost(j));
             if (norm2 < 1e-14) {
               found = true;
-              weightsMatch = std::abs(cubWeights_host(i) - cubWeights_host(j))<1e-14;
+              weightsMatch = std::abs(cubWeightsHost(i) - cubWeightsHost(j))<1e-14;
               //if(!weightsMatch)
-              //  std::cout << "\ni: " << i << ", j: " << j << ", ort: " << ort << ", norm2: " << norm2 << " weights diff: " << std::abs(cubWeights_host(i) - cubWeights_host(j));
+              //  std::cout << "\ni: " << i << ", j: " << j << ", ort: " << ort << ", norm2: " << norm2 << " weights diff: " << std::abs(cubWeightsHost(i) - cubWeightsHost(j));
               break;
             }
           }

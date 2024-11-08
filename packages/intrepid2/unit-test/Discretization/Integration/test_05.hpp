@@ -86,7 +86,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 2D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;
@@ -101,27 +100,25 @@ namespace Intrepid2 {
       // compute and compare integrals
       try {
         const auto maxDeg   = Parameters::MaxCubatureDegreeTri;
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints,
-                                       Parameters::MaxIntegrationPoints,
-                                       Parameters::MaxDimension);
-        
-        DynRankView ConstructWithLabel(cubWeights,
-                                       Parameters::MaxIntegrationPoints);
         
         // compute integrals
         for (auto cubDeg=0;cubDeg<=20;++cubDeg) {
           CubatureTriType triCub(cubDeg);
+          Kokkos::Array<int,2> degrees;
+          
+          auto cubPoints  = triCub.allocateCubaturePoints();
+          auto cubWeights = triCub.allocateCubatureWeights();
+          triCub.getCubature(cubPoints, cubWeights);
 
           *outStream << "Default Cubature of rder " << std::setw(2) << std::left << cubDeg << " Testing\n";   
           ordinal_type cnt = 0;
           for (auto xDeg=0;xDeg<=cubDeg;++xDeg) {
+            degrees[0] = xDeg;
             for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) {
-              auto computedIntegral = computeIntegralOfMonomial<ValueType>(triCub,
-                                                                          cubPoints,
-                                                                          cubWeights,
-                                                                          xDeg, 
-                                                                          yDeg);
+              degrees[1] = yDeg;
+              auto computedIntegral = computeIntegralOfMonomial<ValueType>(cubPoints,
+                                                                           cubWeights,
+                                                                           degrees);
 
               auto anlyticIntegral = analyticIntegralOfMonomialOverTri<ValueType>(xDeg,yDeg);
               const auto abstol  = std::fabs(tol*anlyticIntegral );
@@ -143,33 +140,37 @@ namespace Intrepid2 {
           *outStream << "Symmetric Cubature of order " << std::setw(2) << std::left << cubDeg << "  Testing\n";   
 
           CubatureTriSymType triCub(cubDeg);
+          auto cubPoints  = triCub.allocateCubaturePoints();
+          auto cubWeights = triCub.allocateCubatureWeights();
           triCub.getCubature(cubPoints, cubWeights);
-          bool isInvariant = IsQuadratureInvariantToOrientation(triCub, cubPoints, cubWeights, shards::Triangle<3>::key);
+          bool isInvariant = IsQuadratureInvariantToOrientation<ValueType>(triCub, cubPoints, cubWeights, shards::Triangle<3>::key);
 
           if (!isInvariant) {
             errorFlag++;
             *outStream << "   Cubature Rule is not invariant to rotations!\n" << std::right << std::setw(111) << "^^^^---FAILURE!\n";
           }
 
-          auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
-          ValueType minWeigth = 1.0;
+          using HostDevice = Kokkos::HostSpace::device_type;
+          TensorData<weightValueType,HostDevice> cubWeightsHost(cubWeights); // this constructor does any necessary allocation and copying to host
+          ValueType minWeight = 1.0;
           for(int i=0; i<triCub.getNumPoints();++i)
-            minWeigth = std::min(minWeigth,cubWeights_host(i));
+            minWeight = std::min(minWeight,cubWeightsHost(i));
 
-          if (minWeigth <= 0.0) {
+          if (minWeight <= 0.0) {
             errorFlag++;
             *outStream << "   Cubature Rule is not positive!\n" << std::right << std::setw(111) << "^^^^---FAILURE!\n";
           }
 
           
           ordinal_type cnt = 0;
+          Kokkos::Array<int,2> degrees;
           for (auto xDeg=0;xDeg<=cubDeg;++xDeg) {
+            degrees[0] = xDeg;
             for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) {
-              auto computedIntegral = computeIntegralOfMonomial<ValueType>(triCub,
-                                                                          cubPoints,
-                                                                          cubWeights,
-                                                                          xDeg, 
-                                                                          yDeg);
+              degrees[1] = yDeg;
+              auto computedIntegral = computeIntegralOfMonomial<ValueType>(cubPoints,
+                                                                           cubWeights,
+                                                                           degrees);
               auto anlyticIntegral = analyticIntegralOfMonomialOverTri<ValueType>(xDeg,yDeg);
               const auto abstol  = std::fabs(tol*anlyticIntegral );
               const auto absdiff = std::fabs(anlyticIntegral - computedIntegral);

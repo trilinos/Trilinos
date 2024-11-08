@@ -34,10 +34,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AggregateQualityEstimateFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
-  Input(currentLevel, "A");
-  Input(currentLevel, "Aggregates");
-  Input(currentLevel, "CoarseMap");
+void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  Input(fineLevel, "A");
+  Input(fineLevel, "Aggregates");
+  Input(fineLevel, "CoarseMap");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -64,13 +64,13 @@ RCP<const ParameterList> AggregateQualityEstimateFactory<Scalar, LocalOrdinal, G
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
-  FactoryMonitor m(*this, "Build", currentLevel);
+void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+  FactoryMonitor m(*this, "Build", fineLevel);
 
-  RCP<Matrix> A              = Get<RCP<Matrix>>(currentLevel, "A");
-  RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
+  RCP<Matrix> A              = Get<RCP<Matrix>>(fineLevel, "A");
+  RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(fineLevel, "Aggregates");
 
-  RCP<const Map> map = Get<RCP<const Map>>(currentLevel, "CoarseMap");
+  RCP<const Map> map = Get<RCP<const Map>>(fineLevel, "CoarseMap");
 
   assert(!aggregates->AggregatesCrossProcessors());
   ParameterList pL = GetParameterList();
@@ -81,15 +81,15 @@ void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
   if (mode == "eigenvalue" || mode == "both") {
     aggregate_qualities = Xpetra::MultiVectorFactory<magnitudeType, LO, GO, NO>::Build(map, 1);
     ComputeAggregateQualities(A, aggregates, aggregate_qualities);
-    OutputAggQualities(currentLevel, aggregate_qualities);
+    OutputAggQualities(fineLevel, aggregate_qualities);
   }
   if (mode == "size" || mode == "both") {
     RCP<LocalOrdinalVector> aggregate_sizes = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
     ComputeAggregateSizes(A, aggregates, aggregate_sizes);
-    Set(currentLevel, "AggregateSizes", aggregate_sizes);
-    OutputAggSizes(currentLevel, aggregate_sizes);
+    Set(fineLevel, "AggregateSizes", aggregate_sizes);
+    OutputAggSizes(fineLevel, aggregate_sizes);
   }
-  Set(currentLevel, "AggregateQualities", aggregate_qualities);
+  Set(coarseLevel, "AggregateQualities", aggregate_qualities);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -71,6 +71,12 @@
 
 #define __AZTECH__
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "az_aztec_defs.h"
 #include "az_f77func.h"
 /* Some older codes use AZ_MPI to set MPI mode for AztecOO/Aztec.
@@ -1643,10 +1649,3 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 #endif
 
 #endif
-
-#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The AztecOO package is deprecated"
-#endif
-#endif
-

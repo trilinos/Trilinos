@@ -64,6 +64,7 @@ struct topology::topology_type
   static const rank_t rank                    = data::rank;
   static const rank_t side_rank               = data::side_rank;
   static const bool has_homogeneous_faces     = data::has_homogeneous_faces;
+  static const bool has_mixed_rank_sides      = data::has_mixed_rank_sides;
   static const bool is_shell                  = data::is_shell;
   static const unsigned dimension                  = data::dimension;
   static const unsigned num_nodes                  = data::num_nodes;
@@ -93,6 +94,33 @@ struct topology::topology_type
     default: break;
     }
     return false;
+  }
+
+  STK_FUNCTION
+  static rank_t side_topology_rank(unsigned side_ordinal = 0)
+  {
+    switch (side_ordinal)
+    {
+      case 0:   return topology_detail::side_rank_<data, 0 >();
+      case 1:   return topology_detail::side_rank_<data, 1 >();
+      case 2:   return topology_detail::side_rank_<data, 2 >();
+      case 3:   return topology_detail::side_rank_<data, 3 >();
+      case 4:   return topology_detail::side_rank_<data, 4 >();
+      case 5:   return topology_detail::side_rank_<data, 5 >();
+      case 6:   return topology_detail::side_rank_<data, 6 >();
+      case 7:   return topology_detail::side_rank_<data, 7 >();
+      case 8:   return topology_detail::side_rank_<data, 8 >();
+      case 9:   return topology_detail::side_rank_<data, 9 >();
+      case 10:  return topology_detail::side_rank_<data, 10>();
+      case 11:  return topology_detail::side_rank_<data, 11>();
+      case 12:  return topology_detail::side_rank_<data, 12>();
+      case 13:  return topology_detail::side_rank_<data, 13>();
+      case 14:  return topology_detail::side_rank_<data, 14>();
+      case 15:  return topology_detail::side_rank_<data, 15>();
+      default: break;
+    }
+
+    return INVALID_RANK;
   }
 
   /// the topology of the edge at the given ordinal

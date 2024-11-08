@@ -250,10 +250,10 @@ public:
           if ( result.success() ) {
 
             // If row node is owned then increment count
-            if ( row_node < row_count.extent(0) ) { atomic_increment( & row_count( row_node ) ); }
+            if ( row_node < row_count.extent(0) ) { atomic_inc( & row_count( row_node ) ); }
 
             // If column node is owned and not equal to row node then increment count
-            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_increment( & row_count( col_node ) ); }
+            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_inc( & row_count( col_node ) ); }
           }
           else if ( result.failed() ) {
             ++count ;

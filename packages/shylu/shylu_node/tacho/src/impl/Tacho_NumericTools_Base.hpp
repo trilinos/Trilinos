@@ -125,9 +125,10 @@ protected:
   virtual void print_stat_factor() {
     const double kilo(1024);
     printf("  Time\n");
+    printf("             time for extra tasks (allocation):               %10.6f s\n", stat.t_extra);
     printf("             time for copying A into supernodes:              %10.6f s\n", stat.t_copy);
     printf("             time for numeric factorization:                  %10.6f s\n", stat.t_factor);
-    printf("             total time spent:                                %10.6f s\n", (stat.t_copy + stat.t_factor));
+    printf("             total time spent:                                %10.6f s\n", (stat.t_extra + stat.t_copy + stat.t_factor));
     printf("\n");
     printf("  Memory\n");
     printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used / kilo / kilo);

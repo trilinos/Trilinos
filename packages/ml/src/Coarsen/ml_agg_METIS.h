@@ -10,6 +10,12 @@
 #ifndef __MLAGGMETIS__
 #define __MLAGGMETIS__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*MS*/
 #define ML_AGGREGATE_OPTIONS_ID 13579
 
@@ -69,10 +75,3 @@ extern "C" {
 #endif
 
 #endif /* #ifndef __MLAGGMETIS__ */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

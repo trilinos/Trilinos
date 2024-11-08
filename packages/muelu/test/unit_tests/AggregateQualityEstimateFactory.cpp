@@ -90,26 +90,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, Poisson2D, Sc
 
   RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
 
-  Level level;
-  TestHelpers::TestFactory<Scalar, LO, GO, NO>::createSingleLevelHierarchy(level);
+  Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
   GO nx          = 20 * comm->getSize();
   GO ny          = nx;
   RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build2DPoisson(nx, ny);
-  level.Set("A", Op);
+  fineLevel.Set("A", Op);
 
-  AggregateQualityEstimateFactory aggQualityEstimateFactory;
-  std::cout << *(aggQualityEstimateFactory.GetValidParameterList()) << std::endl;
-  aggQualityEstimateFactory.SetParameter("aggregate qualities: check symmetry", Teuchos::ParameterEntry(false));
-  aggQualityEstimateFactory.SetParameter("aggregate qualities: good aggregate threshold", Teuchos::ParameterEntry(100.0));
-  aggQualityEstimateFactory.SetParameter("aggregate qualities: file output", Teuchos::ParameterEntry(false));
+  RCP<AggregateQualityEstimateFactory> aggQualityEstimateFactory = rcp(new AggregateQualityEstimateFactory());
+  aggQualityEstimateFactory->SetParameter("aggregate qualities: check symmetry", Teuchos::ParameterEntry(false));
+  aggQualityEstimateFactory->SetParameter("aggregate qualities: good aggregate threshold", Teuchos::ParameterEntry(100.0));
+  aggQualityEstimateFactory->SetParameter("aggregate qualities: file output", Teuchos::ParameterEntry(false));
 
-  level.Request("AggregateQualities", &aggQualityEstimateFactory);
-  level.Request(aggQualityEstimateFactory);
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+  dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
+  aggFact->SetFactory("Graph", dropFact);
+  RCP<CoarseMapFactory> coarsemapFact = Teuchos::rcp(new CoarseMapFactory());
+  coarsemapFact->SetFactory("Aggregates", aggFact);
+  aggQualityEstimateFactory->SetFactory("Aggregates", aggFact);
+  aggQualityEstimateFactory->SetFactory("CoarseMap", coarsemapFact);
+
+  coarseLevel.Request(*aggQualityEstimateFactory);
+  fineLevel.Request(*aggFact);
+  fineLevel.Request(*coarsemapFact);
+
+  aggQualityEstimateFactory->Build(fineLevel, coarseLevel);
+
+  coarseLevel.Request("AggregateQualities", aggQualityEstimateFactory.get());
 
   out << "Getting aggregate qualities...\n\n";
 
-  RCP<MultiVectorDouble> aggQualities = level.Get<RCP<MultiVectorDouble>>("AggregateQualities", &aggQualityEstimateFactory);
+  RCP<MultiVectorDouble> aggQualities = coarseLevel.Get<RCP<MultiVectorDouble>>("AggregateQualities", aggQualityEstimateFactory.get());
 
   out << "Testing aggregate qualities to make sure all aggregates are of good quality...\n\n";
 
@@ -536,7 +550,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, ConvectionDif
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory, Constructor, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory, Poisson2D, Scalar, LO, GO, Node)
 //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node)
-
 //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,ConvectionDiffusion2D,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>

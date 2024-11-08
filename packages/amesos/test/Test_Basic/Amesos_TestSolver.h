@@ -52,4 +52,3 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #warning "The Amesos package is deprecated"
 #endif
 #endif
-

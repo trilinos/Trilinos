@@ -174,20 +174,7 @@ namespace Tpetra {
     ///   you call this method.
     void replaceMap (const Teuchos::RCP<const map_type>& map);
 
-    //! Enum for activity
-    enum FEWhichActive
-    {
-      FE_ACTIVE_OWNED_PLUS_SHARED,
-      FE_ACTIVE_OWNED
-    };
-
-    enum class FillState
-    {
-      open,  // matrix is "open".  Values can freely summed in to and replaced
-      modify,  // matrix is open for modification.  *local* values can be replaced
-      closed
-    };
-    Teuchos::RCP<FillState> fillState_;
+    Teuchos::RCP<FE::FillState> fillState_;
 
     //! Whichever MultiVector is <i>not</i> currently active.
     Teuchos::RCP<base_type> inactiveMultiVector_;
@@ -197,7 +184,7 @@ namespace Tpetra {
     ///
     /// This is an RCP in order to make shallow copies of the
     /// FEMultiVector work correctly.
-    Teuchos::RCP<FEWhichActive> activeMultiVector_;
+    Teuchos::RCP<FE::WhichActive> activeMultiVector_;
 
     //! Import object used for communication between the two MultiVectors.
     Teuchos::RCP<const Import<local_ordinal_type, global_ordinal_type, node_type>> importer_;

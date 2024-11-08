@@ -52,7 +52,7 @@ macro(tribits_write_xml_dependency_files)
       " ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
     set(tribitsCiSupportDir "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CI_SUPPORT_DIR}")
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE}
+      COMMAND ${Python3_EXECUTABLE}
         ${tribitsCiSupportDir}/dump-package-dep-table.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
@@ -70,7 +70,7 @@ macro(tribits_write_xml_dependency_files)
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CTEST_DRIVER_DIR}")
     if (EXISTS "${tribitsCtestDriverDir}")
       execute_process(
-        COMMAND ${PYTHON_EXECUTABLE}
+        COMMAND ${Python3_EXECUTABLE}
           ${tribitsCtestDriverDir}/dump-cdash-deps-xml-file.py
           --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
           --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})

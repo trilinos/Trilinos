@@ -369,7 +369,7 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
     m_volatile_fast_shared_comm_map_sync_count(0),
-    m_ngpMeshHostData(),
+    m_ngpMeshHostDataBase(),
     m_all_sharing_procs(mesh_meta_data->entity_rank_count()),
     m_all_sharing_procs_sync_count(0),
     m_ghost_parts(),
@@ -925,6 +925,9 @@ void BulkData::entity_comm_list_insert(Entity node)
 
 void BulkData::add_node_sharing(Entity node, int sharing_proc)
 {
+  STK_ThrowRequireMsg(sharing_proc != parallel_rank() && sharing_proc < parallel_size(),
+      "add_node_sharing: illegal sharing_proc="<<sharing_proc
+       <<", must be < numProcs("<<parallel_size()<<") and != localProc("<<parallel_rank()<<")");
   // Only valid to specify sharing information for non-deleted nodes
   STK_ThrowRequire(entity_rank(node) == stk::topology::NODE_RANK);
   STK_ThrowRequire(state(node) != Deleted);
@@ -1951,27 +1954,25 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
             return;
         }
 
-        const std::vector<FieldBase *>& allFields = mesh_meta_data().get_fields(dst_rank);
-        for(int i = 0, iend = allFields.size(); i < iend; ++i)
-        {
-            const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytesPerEntity;
-            if(src_size == 0)
-            {
-                continue;
-            }
+        const std::vector<FieldBase *>& allFieldsForRank = mesh_meta_data().get_fields(dst_rank);
+        for(const FieldBase* field : allFieldsForRank) {
 
-            unsigned char * const src = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_data;
-            const int dst_size = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytesPerEntity;
+            const FieldMetaData& dstFieldMeta = field->get_meta_data_for_field()[dst_bucket_id];
+            const int dst_size = dstFieldMeta.m_bytesPerEntity;
 
-            if(dst_size)
-            {
-                unsigned char * const dst = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
-                STK_ThrowAssertMsg( dst_size == src_size,
-                        "Incompatible field sizes: " << dst_size << " != " << src_size);
+            if(dst_size) {
+                const FieldMetaData& srcFieldMeta = field->get_meta_data_for_field()[src_bucket_id];
+                const int src_size = srcFieldMeta.m_bytesPerEntity;
 
-                std::memcpy(dst + dst_size * dst_bucket_ord,
-                        src + src_size * src_bucket_ord,
-                        dst_size);
+                if (src_size) {
+                    STK_ThrowAssertMsg( dst_size == src_size, "Incompatible field sizes: " << dst_size << " != " << src_size);
+                    unsigned char * const src = srcFieldMeta.m_data;
+                    unsigned char * const dst = dstFieldMeta.m_data;
+
+                    std::memcpy(dst + dst_size * dst_bucket_ord,
+                            src + src_size * src_bucket_ord,
+                            dst_size);
+                }
             }
         }
     }
@@ -3342,8 +3343,10 @@ void BulkData::internal_change_ghosting(
 
   for (std::set<EntityKeyProc>::reverse_iterator reverseIterator = removeSendGhosts.rbegin(); reverseIterator != removeSendGhosts.rend(); ++reverseIterator) {
     const EntityKey key = reverseIterator->first;
+    Entity entity = get_entity(key);
     const int proc = reverseIterator->second;
-    if (impl::has_upward_send_ghost_connectivity(*this, ghosting, proc, get_entity(key))) {
+    if (!is_valid(entity) ||
+        impl::has_upward_send_ghost_connectivity(*this, ghosting, proc, get_entity(key))) {
       continue;
     }
 
@@ -4552,73 +4555,6 @@ void BulkData::internal_update_all_sharing_procs() const
     }
     m_all_sharing_procs_sync_count = synchronized_count();
   }
-}
-
-void BulkData::internal_update_ngp_fast_comm_maps() const
-{
-    if (m_ngpMeshHostData == nullptr) {
-      m_ngpMeshHostData = std::make_shared<impl::DeviceMeshHostData>();
-    }
-    impl::DeviceMeshHostData& ngpHostData = *m_ngpMeshHostData;
-
-    const EntityRank num_ranks = static_cast<EntityRank>(mesh_meta_data().entity_rank_count());
-    m_volatile_fast_shared_comm_map.resize(num_ranks);
-    if (parallel_size() > 1) {
-        const EntityCommListInfoVector& all_comm = m_entity_comm_list;
-        const EntityCommDatabase& commDB = internal_comm_db();
-
-        // Assemble map, find all shared entities and pack into volatile fast map
-        std::vector<std::vector<unsigned> > shared_entity_counts(num_ranks);
-        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
-            shared_entity_counts[r].assign(parallel_size(), 0);
-        }
-
-        for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
-            EntityKey const key   = all_comm[i].key;
-            EntityRank const rank = key.rank();
-
-            if (all_comm[i].entity_comm != -1) {
-                PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
-                for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-                    shared_entity_counts[rank][ec->proc]++;
-                }
-            }
-        }
-
-        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
-            Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData.hostVolatileFastSharedCommMapOffset[r], parallel_size()+1);
-            unsigned offset = 0;
-            for(int p=0; p<parallel_size(); ++p) {
-                ngpHostData.hostVolatileFastSharedCommMapOffset[r](p) = offset;
-                offset += shared_entity_counts[r][p];
-            }
-            ngpHostData.hostVolatileFastSharedCommMapOffset[r](parallel_size()) = offset;
-            Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData.hostVolatileFastSharedCommMap[r], offset);
-        }
-
-        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
-            shared_entity_counts[r].assign(parallel_size(), 0);
-        }
-
-        for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
-            Entity const e        = all_comm[i].entity;
-            MeshIndex const& idx  = mesh_index(e);
-            if (idx.bucket->shared() && all_comm[i].entity_comm != -1) {
-              const unsigned bucket_id  = idx.bucket->bucket_id();
-              const unsigned bucket_ord = idx.bucket_ordinal;
-
-              const EntityKey key   = all_comm[i].key;
-              const EntityRank rank = key.rank();
-
-              PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
-              for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-                const unsigned index = ngpHostData.hostVolatileFastSharedCommMapOffset[rank](ec->proc) + shared_entity_counts[rank][ec->proc]++;
-                ngpHostData.hostVolatileFastSharedCommMap[rank](index) = FastMeshIndex{bucket_id, bucket_ord};
-              }
-            }
-        }
-    }
-    ngpHostData.volatileFastSharedCommMapSyncCount = synchronized_count();
 }
 
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
@@ -5882,6 +5818,11 @@ std::vector<SideSet *> BulkData::get_sidesets()
 std::vector<const SideSet *> BulkData::get_sidesets() const
 {
     return m_sideSetData.get_sidesets();
+}
+
+EntityRank BulkData::get_entity_rank_count() const
+{
+  return mesh_meta_data().entity_rank_count();
 }
 
 } // namespace mesh

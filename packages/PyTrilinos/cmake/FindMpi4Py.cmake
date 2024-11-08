@@ -43,7 +43,7 @@
 # - Find the python mpi4py module
 
 # This cmake module determines whether the python module mpi4py exists
-# for the current PYTHON_EXECUTABLE. This code sets the following
+# for the current Python3_EXECUTABLE. This code sets the following
 # variables:
 #
 #  Mpi4Py_FOUND       = Set to TRUE if mpi4py is found
@@ -54,7 +54,7 @@
 #
 # If Mpi4Py is required and python executable does not exist, then send
 # an error
-IF(NOT PYTHON_EXECUTABLE)
+IF(NOT Python3_EXECUTABLE)
   IF(Mpi4Py_FIND_REQUIRED)
     MESSAGE(SEND_ERROR
       "Python executable not found, so required Mpi4Py module not found"
@@ -62,11 +62,11 @@ IF(NOT PYTHON_EXECUTABLE)
   ENDIF(Mpi4Py_FIND_REQUIRED)
 #
 # Continue processing if python executable is known
-ELSE(NOT PYTHON_EXECUTABLE)
+ELSE(NOT Python3_EXECUTABLE)
 
   # Retrieve the Mpi4Py version
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.__version__)"
+    ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.__version__)"
     OUTPUT_VARIABLE Mpi4Py_VERSION
     ERROR_VARIABLE  Mpi4Py_VERSION_ERROR
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -76,7 +76,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
   # now look for the Mpi4Py include directory
   IF(NOT Mpi4Py_VERSION_ERROR)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
+      ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
       OUTPUT_VARIABLE Mpi4Py_INCLUDE_DIR
       ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -112,4 +112,4 @@ ELSE(NOT PYTHON_EXECUTABLE)
 
   ENDIF(NOT Mpi4Py_VERSION_ERROR)
 
-ENDIF(NOT PYTHON_EXECUTABLE)
+ENDIF(NOT Python3_EXECUTABLE)

@@ -47,6 +47,7 @@ namespace impl
 {
 
 using LocalId = int64_t;
+static constexpr LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
 using PartOrdinals = std::vector<stk::mesh::PartOrdinal>;
 

@@ -110,8 +110,7 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
                                              _gid_colidx, _sid_ptr, _sid_colidx, _blk_colidx, _stree_parent,           \
                                              _stree_ptr, _stree_children, _stree_level, _stree_roots);                 \
     numeric_tools_levelset_name *N = dynamic_cast<numeric_tools_levelset_name *>(object);                              \
-    N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);                             \
-    N->createStream(_nstreams, _verbose);                                                                              \
+    N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _nstreams, _verbose);                  \
   } while (false)
 
 ///

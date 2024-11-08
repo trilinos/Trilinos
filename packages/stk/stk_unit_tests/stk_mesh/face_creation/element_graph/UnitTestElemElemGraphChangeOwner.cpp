@@ -25,6 +25,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for change_entity_owner, etc
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>  // for parallel_info
+#include <stk_mesh/baseImpl/elementGraph/ProcessKilledElements.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 
 namespace stk { namespace mesh { class Part; } }

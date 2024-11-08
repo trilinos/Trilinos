@@ -5,23 +5,28 @@ on:
     types:
       - opened
       - synchronize
-  pull_request_review:
-    types: 
-      - submitted
     branches:
-    - master
-    - develop
+      - master
+      - develop
   workflow_dispatch:
 
-# actions: write needed by skip-duplicate-actions
-permissions:
-  actions: write
+# Cancels any in progress 'workflows' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
+permissions: 
   contents: read
 
 jobs:
-  # Jobs depend on the output of pre-checks to run
+  # Jobs depend on the output of pre-checks to run.
+  # Cancels new workflows if prior runs were successful (same tree hash)
   pre-checks:
         runs-on: ubuntu-latest
+        # actions: write needed by skip-duplicate-actions
+        permissions:
+          actions: write
         outputs:
             should_skip: ${{ steps.skip_check.outputs.should_skip }}
         steps:
@@ -55,7 +60,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -146,7 +151,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -237,7 +242,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -329,7 +334,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
