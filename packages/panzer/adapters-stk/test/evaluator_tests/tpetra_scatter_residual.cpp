@@ -614,7 +614,7 @@ namespace panzer
          pl.set("Indexer Names", names);
          Teuchos::RCP<std::vector<std::vector<std::string>>> tangent_names = 
             Teuchos::rcp(new std::vector<std::vector<std::string>>(2));
-         for (int i = 0; i < numParams; ++i)
+         for (std::size_t i = 0; i < numParams; ++i)
          {
            std::stringstream ss1, ss2;
            ss1 << fieldName1_q1 << " Tangent " << i;
@@ -669,7 +669,7 @@ namespace panzer
          pl.set("Indexer Names", names);
          Teuchos::RCP<std::vector<std::vector<std::string>>> tangent_names = 
             Teuchos::rcp(new std::vector<std::vector<std::string>>(1));
-         for (int i = 0; i < numParams; ++i)
+         for (std::size_t i = 0; i < numParams; ++i)
          {
            std::stringstream ss;
            ss << fieldName_qedge1 << " Tangent " << i;
@@ -763,7 +763,7 @@ namespace panzer
             TEST_ASSERT(data[i] == target || data[i] == 2.0 * target);
          }
       }
-      for (int i=0; i<numParams; ++i)
+      for (std::size_t i=0; i<numParams; ++i)
       {
          // now check the tangent values
          Teuchos::ArrayRCP<const double> data;
