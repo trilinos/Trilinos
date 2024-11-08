@@ -763,14 +763,14 @@ namespace panzer
             TEST_ASSERT(data[i] == target || data[i] == 2.0 * target);
          }
       }
-      for (std::size_t i=0; i<numParams; ++i)
+      for (int i=0; i<numParams; ++i)
       {
          // now check the tangent values
          Teuchos::ArrayRCP<const double> data;
          Teuchos::RCP<const Thyra::VectorBase<double>> f_vec = Teuchos::rcp_dynamic_cast<TpetraLinObjContainerType>(paramContainers[i]->getGhostedLOC())->get_f_th();
          Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec)->getLocalData(Teuchos::ptrFromRef(data));
 
-         for (std::size_t j = 0; j < data.size(); ++j)
+         for (size_type j = 0; j < data.size(); ++j)
          {
             const double target = .123 + myRank + i;
             TEST_ASSERT(data[j] == target || data[j] == 2.0 * target);
