@@ -412,7 +412,7 @@ public:
   FieldType field;
   double num_params;
 
-  Kokkos::View<Kokkos::View<double*, Kokkos::LayoutRight, PHX::Device>*>  dfdp_fields; // tangent fields
+  Kokkos::View<PHX::View<double*>*>  dfdp_fields; // tangent fields
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
