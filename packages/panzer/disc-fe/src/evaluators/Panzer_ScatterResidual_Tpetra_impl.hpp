@@ -206,11 +206,12 @@ preEvaluate(typename TRAITS::PreEvalData d)
   dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
 
   for(std::size_t i=0;i<activeParameters.size();i++) {
+    // TODO BWR DO NOT UNDERSTAND THIS... Why is param->f dfdp?
     RCP<typename LOC::VectorType> vec =
       rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
     auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-    // TODO BWR not sure this will be checked by tests...
+    // TODO BWR not sure this will be checked by tests... Always true??
     TEUCHOS_ASSERT(dfdp_view.extent_int(1)==1);
     dfdpFieldsVoV_.addView(Kokkos::subview(dfdp_view,Kokkos::ALL(),0),i);
   }
@@ -409,15 +410,14 @@ public:
   Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> lids; // local indices for unknowns.
   PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
+  double num_derivs;
 
-  PHX::ViewOfViews<1,PHX::View<double*>>  dfdp_fields; // tangent fields
+  Kokkos::View<Kokkos::View<double*, Kokkos::LayoutRight, PHX::Device>*>  dfdp_fields; // tangent fields
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
 
-    const std::size_t numDerivs = PHX::getFadSize(field.get_static_view());
-    const auto tangents = dfdp_fields.getViewDevice();
     // loop over the basis functions (currently they are nodes)
     for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
        typename FieldType::array_type::reference_type scatterField = field(cell,basis);
@@ -429,8 +429,9 @@ public:
          Kokkos::atomic_add(&r_data(lid,0), scatterField.val());
 
        // loop over the tangents
-       for(int i_param=0; i_param<numDerivs; i_param++)
-          tangents(i_param)(lid) += scatterField.fastAccessDx(i_param);
+       // TODO BWR HERE WE ARE HITTING WRONG SLOT WITH TEST!!
+       for(int i_param=0; i_param<num_derivs; i_param++)
+          dfdp_fields(i_param)(lid) += scatterField.fastAccessDx(i_param);
 
     } // end basis
   }
@@ -534,7 +535,9 @@ evaluateFields(typename TRAITS::EvalData workset)
   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
     functor.offsets = scratch_offsets_[fieldIndex];
     functor.field = scatterFields_[fieldIndex];
-    functor.dfdp_fields = dfdpFieldsVoV_;
+    functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
+    // TODO BWR is there a better way? Is this correct?
+    functor.num_derivs = PHX::getFadSize(scatterFields_[fieldIndex].get_static_view())-1;
 
     Kokkos::parallel_for(workset.num_cells,functor);
   }

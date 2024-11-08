@@ -29,6 +29,8 @@ using Teuchos::rcp;
 #include "Panzer_ScatterResidual_Tpetra.hpp"
 #include "Panzer_GatherSolution_Tpetra.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -448,6 +450,318 @@ namespace panzer
          TEST_ASSERT(data[i] == target || data[i] == 2.0 * target);
       }
 
+   }
+
+ TEUCHOS_UNIT_TEST(assembly, scatter_solution_tangent)
+   {
+      // TODO BWR not checking the tangent calculation, just the residual part!!!
+
+#ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::MpiComm<int>> tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+#else
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+#endif
+
+      int myRank = tComm->getRank();
+
+      const std::size_t workset_size = 4;
+      const std::string fieldName1_q1 = "U";
+      const std::string fieldName2_q1 = "V";
+      const std::string fieldName_qedge1 = "B";
+
+      Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2, 2);
+
+      // build input physics block
+      Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size, "Q1");
+      Teuchos::RCP<panzer::PureBasis> basis_qedge1 = buildBasis(workset_size, "QEdge1");
+
+      Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
+      testInitialization(ipb);
+
+      const int default_int_order = 1;
+      std::string eBlockID = "eblock-0_0";
+      Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+      panzer::CellData cellData(workset_size, mesh->getCellTopology("eblock-0_0"));
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+      Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
+          Teuchos::rcp(new PhysicsBlock(ipb, eBlockID, default_int_order, cellData, eqset_factory, gd, false));
+
+      Teuchos::RCP<std::vector<panzer::Workset>> work_sets = panzer_stk::buildWorksets(*mesh, physicsBlock->elementBlockID(),
+                                                                                       physicsBlock->getWorksetNeeds());
+      TEST_EQUALITY(work_sets->size(), 1);
+
+      // build connection manager and field manager
+      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+      RCP<panzer::DOFManager> dofManager = Teuchos::rcp(new panzer::DOFManager(conn_manager, MPI_COMM_WORLD));
+
+      dofManager->addField(fieldName1_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
+      dofManager->addField(fieldName2_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
+      dofManager->addField(fieldName_qedge1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
+
+      std::vector<std::string> fieldOrder;
+      fieldOrder.push_back(fieldName1_q1);
+      fieldOrder.push_back(fieldName_qedge1);
+      fieldOrder.push_back(fieldName2_q1);
+      dofManager->setFieldOrder(fieldOrder);
+
+      dofManager->buildGlobalUnknowns();
+
+      // setup linear object factory
+      /////////////////////////////////////////////////////////////
+      Teuchos::RCP<TpetraLinObjFactoryType> t_lof = Teuchos::rcp(new TpetraLinObjFactoryType(tComm.getConst(), dofManager));
+      Teuchos::RCP<LinearObjFactory<panzer::Traits>> lof = t_lof;
+      Teuchos::RCP<LinearObjContainer> loc = t_lof->buildGhostedLinearObjContainer();
+      t_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F , *loc);
+      loc->initialize();
+
+      Teuchos::RCP<TpetraLinObjContainerType> t_loc = Teuchos::rcp_dynamic_cast<TpetraLinObjContainerType>(loc);
+      Teuchos::RCP<Thyra::VectorBase<double>> x_vec = t_loc->get_x_th();
+      Thyra::assign(x_vec.ptr(), 123.0 + myRank);
+
+      std::vector<Teuchos::RCP<GlobalEvaluationData>> tangentContainers;
+
+      using LOCPair = panzer::LOCPair_GlobalEvaluationData;
+      using Teuchos::rcp_dynamic_cast;
+
+      auto locPair = Teuchos::rcp(new LOCPair(t_lof, panzer::LinearObjContainer::X));
+
+      auto global_t_loc = rcp_dynamic_cast<TpetraLinObjContainerType>(locPair->getGlobalLOC());
+      Teuchos::RCP<Thyra::VectorBase<double>> global_x_vec = global_t_loc->get_x_th();
+      Thyra::assign(global_x_vec.ptr(), 0.123 + myRank);
+
+      auto ghosted_t_loc = rcp_dynamic_cast<TpetraLinObjContainerType>(locPair->getGhostedLOC());
+      Teuchos::RCP<Thyra::VectorBase<double>> ghosted_x_vec = ghosted_t_loc->get_x_th();
+      Thyra::assign(ghosted_x_vec.ptr(), 0.123 + myRank);
+
+      tangentContainers.push_back(locPair);
+
+      // setup field manager, add evaluator under test
+      /////////////////////////////////////////////////////////////
+
+      PHX::FieldManager<panzer::Traits> fm;
+
+      std::vector<PHX::index_size_type> derivative_dimensions;
+      derivative_dimensions.push_back(1);
+      fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
+
+      std::string resName = "";
+      Teuchos::RCP<std::map<std::string, std::string>> names_map =
+          Teuchos::rcp(new std::map<std::string, std::string>);
+      names_map->insert(std::make_pair(fieldName1_q1, resName + fieldName1_q1));
+      names_map->insert(std::make_pair(fieldName2_q1, resName + fieldName2_q1));
+      names_map->insert(std::make_pair(fieldName_qedge1, resName + fieldName_qedge1));
+
+      // evaluators under test
+      {
+         using Teuchos::RCP;
+         using Teuchos::rcp;
+         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+         names->push_back(resName + fieldName1_q1);
+         names->push_back(resName + fieldName2_q1);
+
+         Teuchos::ParameterList pl;
+         pl.set("Scatter Name", "ScatterQ1");
+         pl.set("Basis", basis_q1.getConst());
+         pl.set("Dependent Names", names);
+         pl.set("Dependent Map", names_map);
+
+         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildScatter<panzer::Traits::Tangent>(pl);
+
+         TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
+
+         fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+         fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+      }
+      {
+         using Teuchos::RCP;
+         using Teuchos::rcp;
+         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+         names->push_back(resName + fieldName_qedge1);
+
+         Teuchos::ParameterList pl;
+         pl.set("Scatter Name", "ScatterQEdge1");
+         pl.set("Basis", basis_qedge1.getConst());
+         pl.set("Dependent Names", names);
+         pl.set("Dependent Map", names_map);
+
+         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildScatter<panzer::Traits::Tangent>(pl);
+
+         TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
+
+         fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+         fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+      }
+
+      // support evaluators
+      {
+         using Teuchos::RCP;
+         using Teuchos::rcp;
+         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+         names->push_back(fieldName1_q1);
+         names->push_back(fieldName2_q1);
+
+         Teuchos::ParameterList pl;
+         pl.set("Basis", basis_q1);
+         pl.set("DOF Names", names);
+         pl.set("Indexer Names", names);
+         Teuchos::RCP<std::vector<std::vector<std::string>>> tangent_names = 
+            Teuchos::rcp(new std::vector<std::vector<std::string>>(2));
+         (*tangent_names)[0].push_back(fieldName1_q1 + " Tangent");
+         (*tangent_names)[1].push_back(fieldName2_q1 + " Tangent");
+         pl.set("Tangent Names", tangent_names);
+
+         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
+
+         fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+      }
+      {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+        RCP<std::vector<std::string>> tangent_names = rcp(new std::vector<std::string>);
+        names->push_back(fieldName1_q1);
+        names->push_back(fieldName2_q1);
+        tangent_names->push_back(fieldName1_q1 + " Tangent");
+        tangent_names->push_back(fieldName2_q1 + " Tangent");
+
+        Teuchos::ParameterList pl;
+        pl.set("Basis", basis_q1);
+        pl.set("DOF Names", tangent_names);
+        pl.set("Indexer Names", names);
+
+        pl.set("Global Data Key", "Tangent Container");
+
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator =
+            lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
+
+        fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+      }
+      {
+         using Teuchos::RCP;
+         using Teuchos::rcp;
+         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+         names->push_back(fieldName_qedge1);
+
+         Teuchos::ParameterList pl;
+         pl.set("Basis", basis_qedge1);
+         pl.set("DOF Names", names);
+         pl.set("Indexer Names", names);
+         Teuchos::RCP<std::vector<std::vector<std::string>>> tangent_names = 
+            Teuchos::rcp(new std::vector<std::vector<std::string>>(1));
+         (*tangent_names)[0].push_back(fieldName_qedge1 + " Tangent");
+         pl.set("Tangent Names", tangent_names);
+
+         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
+
+         fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+      }
+      {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+        RCP<std::vector<std::string>> tangent_names = rcp(new std::vector<std::string>);
+        names->push_back(fieldName_qedge1);
+        tangent_names->push_back(fieldName_qedge1 + " Tangent");
+
+        Teuchos::ParameterList pl;
+        pl.set("Basis", basis_qedge1);
+        pl.set("DOF Names", tangent_names);
+        pl.set("Indexer Names", names);
+
+        pl.set("Global Data Key", "Tangent Container");
+
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator =
+            lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
+
+        fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+      }
+
+      panzer::Traits::SD sd;
+      sd.worksets_ = work_sets;
+
+      fm.postRegistrationSetup(sd);
+
+      panzer::Traits::PED ped;
+      ped.gedc->addDataObject("Solution Gather Container", loc);
+      ped.gedc->addDataObject("Residual Scatter Container", loc);
+      ped.gedc->addDataObject("Tangent Container", tangentContainers[0]);
+      std::vector<std::string> params;
+      params.push_back("param1");
+      params.push_back("param2");
+      params.push_back("param3");
+      Teuchos::RCP<panzer::GlobalEvaluationData> activeParams =
+         Teuchos::rcp(new panzer::ParameterList_GlobalEvaluationData(params));
+      ped.gedc->addDataObject("PARAMETER_NAMES",activeParams);
+      auto paramContainer1 = Teuchos::rcp(new LOCPair(t_lof, panzer::LinearObjContainer::X | panzer::LinearObjContainer::F));
+      ped.gedc->addDataObject("param1",paramContainer1->getGhostedLOC());
+      auto paramContainer2 = Teuchos::rcp(new LOCPair(t_lof, panzer::LinearObjContainer::X | panzer::LinearObjContainer::F));
+      ped.gedc->addDataObject("param2",paramContainer2->getGhostedLOC());
+      auto paramContainer3 = Teuchos::rcp(new LOCPair(t_lof, panzer::LinearObjContainer::X | panzer::LinearObjContainer::F));
+      ped.gedc->addDataObject("param3",paramContainer3->getGhostedLOC());
+
+      fm.preEvaluate<panzer::Traits::Tangent>(ped);
+
+      // run tests
+      /////////////////////////////////////////////////////////////
+
+      panzer::Workset &workset = (*work_sets)[0];
+      workset.alpha = 0.0;
+      workset.beta = 2.0; // derivatives multiplied by 2
+      workset.time = 0.0;
+      workset.evaluate_transient_terms = false;
+
+      fm.evaluateFields<panzer::Traits::Tangent>(workset);
+      fm.postEvaluate<panzer::Traits::Tangent>(0);
+
+      // test Tangent fields
+      {
+         Teuchos::ArrayRCP<const double> data;
+         Teuchos::RCP<const Thyra::VectorBase<double>> f_vec = t_loc->get_f_th();
+
+         // check all the residual values. This is kind of crappy test since it simply checks twice the target
+         // value and the target. Its this way because you add two entries across elements.
+
+         Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec)->getLocalData(Teuchos::ptrFromRef(data));
+         for (size_type i = 0; i < data.size(); i++)
+         {
+            double target = 123.0 + myRank;
+            TEST_ASSERT(data[i] == target || data[i] == 2.0 * target);
+         }
+      }
+      {
+         // now check the tangent values
+         Teuchos::ArrayRCP<const double> data1, data2;
+         Teuchos::RCP<const Thyra::VectorBase<double>> f1_vec = Teuchos::rcp_dynamic_cast<TpetraLinObjContainerType>(paramContainer1->getGhostedLOC())->get_f_th();
+         Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f1_vec)->getLocalData(Teuchos::ptrFromRef(data1));
+
+         Teuchos::RCP<const Thyra::VectorBase<double>> f2_vec = Teuchos::rcp_dynamic_cast<TpetraLinObjContainerType>(paramContainer2->getGhostedLOC())->get_f_th();
+         Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f2_vec)->getLocalData(Teuchos::ptrFromRef(data2));
+
+         for (size_type i = 0; i < data1.size(); ++i)
+         {
+            std::cout << "DATA :: " << data1[i] << " " << data2[i] << std::endl;
+         }
+      }
+
+      PHX::MDField<panzer::Traits::Tangent::ScalarT, panzer::Cell, panzer::BASIS>
+          fieldData1_q1(fieldName1_q1, basis_q1->functional);
+      PHX::MDField<panzer::Traits::Tangent::ScalarT, panzer::Cell, panzer::BASIS>
+          fieldData2_q1(fieldName2_q1, basis_q1->functional);
+
+      fm.getFieldData<panzer::Traits::Tangent>(fieldData1_q1);
+      fm.getFieldData<panzer::Traits::Tangent>(fieldData2_q1);
+
+      auto fieldData1_q1_h = Kokkos::create_mirror_view(fieldData1_q1.get_static_view());
+      auto fieldData2_q1_h = Kokkos::create_mirror_view(fieldData2_q1.get_static_view());
+      Kokkos::deep_copy(fieldData1_q1_h, fieldData1_q1.get_static_view());
+      Kokkos::deep_copy(fieldData2_q1_h, fieldData2_q1.get_static_view());
+      for (unsigned int cell = 0; cell < fieldData1_q1.extent(0); ++cell)
+      {
+        for (unsigned int pt = 0; pt < fieldData1_q1.extent(1); pt++)
+        {
+         std::cout << fieldData1_q1_h(cell, pt).dx(0) << " " << fieldData2_q1_h(cell,pt).dx(0) << std::endl;
+        }
+      }
    }
 
    Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize, const std::string &basisName)
