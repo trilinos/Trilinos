@@ -263,8 +263,8 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   }
   Kokkos::deep_copy(tangentInnerVectorSizes_,tangentInnerVectorSizes_host);
 
-  gatherFieldsVoV_.initialize("GatherSolution_Teptra<Tangent>::gatherFieldsVoV_",gatherFields_.size());
-  tangentFieldsVoV_.initialize("GatherSolution_Teptra<Tangent>::tangentFieldsVoV_",gatherFields_.size(),inner_vector_max_size);
+  gatherFieldsVoV_.initialize("GatherSolution_Tpetra<Tangent>::gatherFieldsVoV_",gatherFields_.size());
+  tangentFieldsVoV_.initialize("GatherSolution_Tpetra<Tangent>::tangentFieldsVoV_",gatherFields_.size(),inner_vector_max_size);
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     const std::string& fieldName = indexerNames_[fd];

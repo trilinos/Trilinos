@@ -410,7 +410,7 @@ public:
   Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> lids; // local indices for unknowns.
   PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
-  double num_derivs;
+  double num_params;
 
   Kokkos::View<Kokkos::View<double*, Kokkos::LayoutRight, PHX::Device>*>  dfdp_fields; // tangent fields
 
@@ -429,8 +429,7 @@ public:
          Kokkos::atomic_add(&r_data(lid,0), scatterField.val());
 
        // loop over the tangents
-       // TODO BWR HERE WE ARE HITTING WRONG SLOT WITH TEST!!
-       for(int i_param=0; i_param<num_derivs; i_param++)
+       for(int i_param=0; i_param<num_params; i_param++)
           dfdp_fields(i_param)(lid) += scatterField.fastAccessDx(i_param);
 
     } // end basis
@@ -537,7 +536,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     functor.field = scatterFields_[fieldIndex];
     functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
     // TODO BWR is there a better way? Is this correct?
-    functor.num_derivs = PHX::getFadSize(scatterFields_[fieldIndex].get_static_view())-1;
+    functor.num_params = PHX::getFadSize(scatterFields_[fieldIndex].get_static_view())-1;
 
     Kokkos::parallel_for(workset.num_cells,functor);
   }
