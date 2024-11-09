@@ -257,9 +257,9 @@ template <typename T> struct LapackTeam {
         Kokkos::parallel_reduce(
             Kokkos::TeamVectorRange(member, 1 + iend),
             [&](const int &i, reducer_value_type &update) {
-              const mag_type val = arith_traits::abs(ABR[i * as0]);
-              if (val > update.val) {
-                update.val = val;
+              const mag_type val_i = arith_traits::abs(ABR[i * as0]);
+              if (val_i > update.val) {
+                update.val = val_i;
                 update.loc = i;
               }
             },
@@ -324,9 +324,9 @@ template <typename T> struct LapackTeam {
         Kokkos::parallel_reduce(
             Kokkos::TeamVectorRange(member, 1 + iend),
             [&](const int &i, reducer_value_type &update) {
-              const mag_type val = arith_traits::abs(ABR[i * as0]);
-              if (val > update.val) {
-                update.val = val;
+              const mag_type val_i = arith_traits::abs(ABR[i * as0]);
+              if (val_i > update.val) {
+                update.val = val_i;
                 update.loc = i;
               }
             },
