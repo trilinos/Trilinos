@@ -26,7 +26,7 @@ Driver<VT, DT>::Driver()
       _h_perm(), _peri(), _h_peri(), _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
       _h_peri_graph(), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024), _serial_thres_size(-1),
       _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0), _device_level_cut(0), _device_factor_thres(128),
-      _device_solve_thres(128), _variant(2), _nstreams(16), _max_num_superblocks(-1) {}
+      _device_solve_thres(128), _variant(2), _nstreams(16), _pivot_tol(0.0), _max_num_superblocks(-1) {}
 
 ///
 /// duplicate the object
@@ -155,6 +155,19 @@ template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgori
 
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
   _nstreams = nstreams;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::setPivotTolerance(const mag_type pivot_tol) {
+  _pivot_tol = pivot_tol;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
+  _pivot_tol = 0.0;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance() {
+  using arith_traits = ArithTraits<value_type>;
+  _pivot_tol = sqrt(arith_traits::epsilon());
 }
 
 ///
@@ -373,7 +386,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   if (_m < _small_problem_thres) {
     factorize_small_host(ax);
   } else {
-    _N->factorize(ax, _verbose);
+    _N->factorize(ax, _pivot_tol, _verbose);
   }
   return 0;
 }
@@ -541,7 +554,7 @@ double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const
   CrsMatrixBase<value_type, device_type> A;
   A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-  return Tacho::computeRelativeResidual(A, x, b);
+  return Tacho::computeRelativeResidual(A, x, b, _verbose);
 }
 
 template <typename VT, typename DT>

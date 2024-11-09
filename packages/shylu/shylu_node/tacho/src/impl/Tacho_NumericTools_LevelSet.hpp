@@ -88,6 +88,7 @@
   #endif
 #endif
 
+
 namespace Tacho {
 
 template <typename ValueType, typename DeviceType, int Var>
@@ -112,6 +113,7 @@ public:
   using typename base_type::supernode_info_type;
   using typename base_type::supernode_type_array_host;
   using typename base_type::value_type;
+  using typename base_type::mag_type;
   using typename base_type::int_type_array;
   using typename base_type::value_type_array;
   using typename base_type::value_type_matrix;
@@ -3669,7 +3671,7 @@ public:
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) { buf_solve_nrhs_ptr(i) = nrhs * buf_solve_ptr(i); });
         Kokkos::deep_copy(_h_buf_solve_nrhs_ptr, _buf_solve_nrhs_ptr);
-	_nrhs = nrhs;
+        _nrhs = nrhs;
       }
     }
   }
@@ -4204,7 +4206,7 @@ public:
     }
   }
 
-  inline void factorizeLU(const value_type_array &ax, const ordinal_type verbose) {
+  inline void factorizeLU(const value_type_array &ax, const mag_type pivot_tol, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -4278,7 +4280,12 @@ public:
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
         functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf, &rval);
-
+        if (pivot_tol > 0.0) {
+          using arith_traits = ArithTraits<value_type>;
+          using mag_type = typename arith_traits::mag_type;
+          const mag_type tol = sqrt(arith_traits::epsilon());
+          functor.setDiagPertubationTol(pivot_tol);
+        }
         // get max vector length
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
@@ -4333,7 +4340,9 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
             }
-
+            if (_status != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (device) returns non-zero error code.");
+            }
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
               Kokkos::fence(); time_update += tick.seconds();
@@ -4564,7 +4573,7 @@ public:
     }
   }
 
-  inline void factorize(const value_type_array &ax, const ordinal_type verbose = 0) override {
+  inline void factorize(const value_type_array &ax, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
     Kokkos::deep_copy(_superpanel_buf, value_type(0));
     switch (this->getSolutionMethod()) {
     case 1: { /// Cholesky
@@ -4600,7 +4609,7 @@ public:
           track_alloc(_piv.span() * sizeof(ordinal_type));
         }
       }
-      factorizeLU(ax, verbose);
+      factorizeLU(ax, pivot_tol, verbose);
       break;
     }
     default: {
