@@ -1187,7 +1187,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, DistanceLaplacianScaledCu
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(sqrt(0.125)));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
   coalesceDropFact.SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(std::string("scaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1253,7 +1253,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, DistanceLaplacianUnscaled
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(sqrt(0.125)));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
   coalesceDropFact.SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(std::string("unscaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1319,7 +1319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, DistanceLaplacianCutSym, 
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(sqrt(0.125)));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
   coalesceDropFact.SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(std::string("scaled cut symmetric")));
   fineLevel.Request("Graph", &coalesceDropFact);
@@ -1353,6 +1353,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
   typedef Teuchos::ScalarTraits<SC> STS;
   typedef typename STS::magnitudeType real_type;
   typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
+  typedef Tpetra::Map<LO, GO, NO> map_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NO> crs_matrix_type;
 
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -1363,11 +1365,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
   Level fineLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
 
-  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+  const global_size_t globalIndices = 12;
+  const GO indexBase                = 0;
+  RCP<const map_type> map           = rcp(new map_type(globalIndices, indexBase, comm));
+  RCP<crs_matrix_type> A_t(new crs_matrix_type(map, 5));
+  const SC two    = static_cast<SC>(2.0);
+  const SC one    = static_cast<SC>(1.0);
+  const SC negOne = static_cast<SC>(-1.0);
+  for (LO lclRow = 0; lclRow < static_cast<LO>(map->getLocalNumElements()); lclRow++) {
+    const GO gblRow = map->getGlobalElement(lclRow);
+    if (gblRow == 0) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow, gblRow + 1), Teuchos::tuple<SC>(two, negOne));
+    } else if (static_cast<Tpetra::global_size_t>(gblRow) == globalIndices - 1) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow), Teuchos::tuple<SC>(negOne, two));
+    } else if (gblRow == 2 || gblRow == 9) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow), Teuchos::tuple<SC>(one));
+    } else if (gblRow == 5) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, negOne, two, negOne, negOne));
+    } else if (gblRow == 6) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, two, two, two, negOne));
+    } else {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow, gblRow + 1), Teuchos::tuple<SC>(negOne, two, negOne));
+    }
+  }
+  A_t->fillComplete();
+  RCP<CrsMatrix> A_x = rcp(new TpetraCrsMatrix(A_t));
+  RCP<Matrix> A      = rcp(new CrsMatrixWrap(A_x));
   fineLevel.Set("A", A);
 
   Teuchos::ParameterList galeriList;
-  galeriList.set("nx", Teuchos::as<GlobalOrdinal>(36));
+  galeriList.set("nx", Teuchos::as<GlobalOrdinal>(globalIndices));
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
   fineLevel.Set("Coordinates", coordinates);
 
@@ -1393,25 +1420,59 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalScaledCut, Scala
   const RCP<const Map> myImportMap = graph->GetImportMap();  // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
   const RCP<const Map> myDomainMap = graph->GetDomainMap();
 
-  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myImportMap->getMinLocalIndex(), 0);
-  TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(36 + (comm->getSize() - 1) * 2));
+  TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(globalIndices + (comm->getSize() - 1) * 2));
 
-  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myDomainMap->getMinLocalIndex(), 0);
-  TEST_EQUALITY(myDomainMap->getGlobalNumElements(), 36);
+  TEST_EQUALITY(myDomainMap->getGlobalNumElements(), globalIndices);
 
-  TEST_EQUALITY(graph->GetGlobalNumEdges(), 72);
+  TEST_EQUALITY(graph->GetGlobalNumEdges(), 28);
 
-}  // SignaledClassical
+  int rows[13]    = {0, 2, 4, 5, 7, 10, 15, 18, 21, 23, 24, 26, 28};
+  int columns[28] = {0, 1,
+                     0, 1,
+                     2,
+                     3, 4,
+                     3, 4, 5,
+                     3, 4, 5, 6, 7,
+                     5, 6, 7,
+                     6, 7, 8,
+                     7, 8,
+                     9,
+                     10, 11,
+                     10, 11};
+  auto rowPtrs    = graph->getRowPtrs();
+  auto entries    = graph->getEntries();
+  size_t rowID    = 0;
+  TEST_EQUALITY(rowPtrs(0), rowID);
+  for (size_t i = 0; i < rowPtrs.size() - 1; i++) {
+    auto gblID = myDomainMap->getGlobalElement(i);
+    int rownnz = rows[gblID + 1] - rows[gblID];
+    rowID += rownnz;
+    TEST_EQUALITY(rowPtrs(i + 1), rowID);
+
+    std::vector<int> colID;
+    for (int j = 0; j < rownnz; j++) {
+      colID.push_back(myImportMap->getGlobalElement(entries(rowPtrs(i) + j)));
+    }
+    std::sort(std::begin(colID), std::end(colID));
+    for (int j = 0; j < rownnz; j++) {
+      TEST_EQUALITY(colID[j], columns[rows[gblID] + j]);
+    }
+  }
+}  // ClassicalScaledCut
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   typedef Teuchos::ScalarTraits<SC> STS;
   typedef typename STS::magnitudeType real_type;
   typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
+  typedef Tpetra::Map<LO, GO, NO> map_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NO> crs_matrix_type;
 
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -1422,11 +1483,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Sca
   Level fineLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
 
-  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+  const global_size_t globalIndices = 12;
+  const GO indexBase                = 0;
+  RCP<const map_type> map           = rcp(new map_type(globalIndices, indexBase, comm));
+  RCP<crs_matrix_type> A_t(new crs_matrix_type(map, 5));
+  const SC two    = static_cast<SC>(2.0);
+  const SC one    = static_cast<SC>(1.0);
+  const SC negOne = static_cast<SC>(-1.0);
+  for (LO lclRow = 0; lclRow < static_cast<LO>(map->getLocalNumElements()); lclRow++) {
+    const GO gblRow = map->getGlobalElement(lclRow);
+    if (gblRow == 0) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow, gblRow + 1), Teuchos::tuple<SC>(two, negOne));
+    } else if (static_cast<Tpetra::global_size_t>(gblRow) == globalIndices - 1) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow), Teuchos::tuple<SC>(negOne, two));
+    } else if (gblRow == 2 || gblRow == 9) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow), Teuchos::tuple<SC>(one));
+    } else if (gblRow == 5) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, negOne, two, negOne, negOne));
+    } else if (gblRow == 6) {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 2, gblRow - 1, gblRow, gblRow + 1, gblRow + 2), Teuchos::tuple<SC>(negOne, two, two, two, negOne));
+    } else {
+      A_t->insertGlobalValues(gblRow, Teuchos::tuple<GO>(gblRow - 1, gblRow, gblRow + 1), Teuchos::tuple<SC>(negOne, two, negOne));
+    }
+  }
+  A_t->fillComplete();
+  RCP<CrsMatrix> A_x = rcp(new TpetraCrsMatrix(A_t));
+  RCP<Matrix> A      = rcp(new CrsMatrixWrap(A_x));
   fineLevel.Set("A", A);
 
   Teuchos::ParameterList galeriList;
-  galeriList.set("nx", Teuchos::as<GlobalOrdinal>(36));
+  galeriList.set("nx", Teuchos::as<GlobalOrdinal>(globalIndices));
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
   fineLevel.Set("Coordinates", coordinates);
 
@@ -1452,19 +1538,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, ClassicalUnScaledCut, Sca
   const RCP<const Map> myImportMap = graph->GetImportMap();  // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
   const RCP<const Map> myDomainMap = graph->GetDomainMap();
 
-  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myImportMap->getMinLocalIndex(), 0);
-  TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(36 + (comm->getSize() - 1) * 2));
+  TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(globalIndices + (comm->getSize() - 1) * 2));
 
-  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), globalIndices - 1);
   TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(myDomainMap->getMinLocalIndex(), 0);
-  TEST_EQUALITY(myDomainMap->getGlobalNumElements(), 36);
+  TEST_EQUALITY(myDomainMap->getGlobalNumElements(), globalIndices);
 
-  TEST_EQUALITY(graph->GetGlobalNumEdges(), 72);
+  TEST_EQUALITY(graph->GetGlobalNumEdges(), 28);
 
-}  // SignaledClassical
+  int rows[13]    = {0, 2, 4, 5, 7, 10, 15, 18, 21, 23, 24, 26, 28};
+  int columns[28] = {0, 1,
+                     0, 1,
+                     2,
+                     3, 4,
+                     3, 4, 5,
+                     3, 4, 5, 6, 7,
+                     5, 6, 7,
+                     6, 7, 8,
+                     7, 8,
+                     9,
+                     10, 11,
+                     10, 11};
+  auto rowPtrs    = graph->getRowPtrs();
+  auto entries    = graph->getEntries();
+  size_t rowID    = 0;
+  TEST_EQUALITY(rowPtrs(0), rowID);
+  for (size_t i = 0; i < rowPtrs.size() - 1; i++) {
+    auto gblID = myDomainMap->getGlobalElement(i);
+    int rownnz = rows[gblID + 1] - rows[gblID];
+    rowID += rownnz;
+    TEST_EQUALITY(rowPtrs(i + 1), rowID);
+
+    std::vector<int> colID;
+    for (int j = 0; j < rownnz; j++) {
+      colID.push_back(myImportMap->getGlobalElement(entries(rowPtrs(i) + j)));
+    }
+    std::sort(std::begin(colID), std::end(colID));
+    for (int j = 0; j < rownnz; j++) {
+      TEST_EQUALITY(colID[j], columns[rows[gblID] + j]);
+    }
+  }
+}  // ClassicalUnScaledCut
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, SignaledClassical, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
@@ -1866,7 +1984,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, BlockDiagonal, Scalar, Lo
   coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
   coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
   coalesceDropFact.SetFactory("BlockNumber", ibFact);
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(sqrt(0.125)));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("block diagonal")));
   coalesceDropFact.SetParameter("aggregation: block diagonal: interleaved blocksize", Teuchos::ParameterEntry(3));
   coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
@@ -1913,7 +2031,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, BlockDiagonalClassical, S
   coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
   coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
   coalesceDropFact.SetFactory("BlockNumber", ibFact);
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(8.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(sqrt(0.125)));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("block diagonal classical")));
   coalesceDropFact.SetParameter("aggregation: block diagonal: interleaved blocksize", Teuchos::ParameterEntry(3));
   fineLevel.Request("Graph", &coalesceDropFact);
