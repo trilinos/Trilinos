@@ -25,7 +25,6 @@ template <> struct LU<Algo::Internal> {
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P) {
     typedef typename ViewTypeA::non_const_value_type value_type;
-    // typedef typename ViewTypeP::non_const_value_type p_value_type;
 
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
     static_assert(ViewTypeP::rank == 1, "P is not rank 1 view.");
@@ -37,6 +36,24 @@ template <> struct LU<Algo::Internal> {
     if (m > 0 && n > 0) {
       /// factorize LU
       LapackTeam<value_type>::getrf(member, m, n, A.data(), A.stride_1(), P.data(), &r_val);
+    }
+    return r_val;
+  }
+
+  template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A, const ViewTypeP &P) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+
+    static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+    static_assert(ViewTypeP::rank == 1, "P is not rank 1 view.");
+
+    TACHO_TEST_FOR_ABORT(P.extent(0) < 4 * A.extent(0), "P should be 4*A.extent(0) .");
+
+    int r_val(0);
+    const ordinal_type m = A.extent(0), n = A.extent(1);
+    if (m > 0 && n > 0) {
+      /// factorize LU
+      LapackTeam<value_type>::getrf(member, tol, m, n, A.data(), A.stride_1(), P.data(), &r_val);
     }
     return r_val;
   }
