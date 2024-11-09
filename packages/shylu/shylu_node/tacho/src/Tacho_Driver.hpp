@@ -393,9 +393,9 @@ public:
     if (blk_size > 1) {
       //condense graph before calling analyze
       const size_type nnz = ap(m);
-      size_type m_graph = m / blk_size;
+      ordinal_type m_graph = m / blk_size;
       size_type nnz_graph = nnz / (blk_size*blk_size);
-      TACHO_TEST_FOR_EXCEPTION((m != blk_size * m_graph || nnz != blk_size*blk_size * nnz_graph),
+      TACHO_TEST_FOR_EXCEPTION((m != blk_size * m_graph || nnz != size_type(blk_size*blk_size) * nnz_graph),
         std::logic_error, "Failed to initialize the condensed graph");
 
       size_type_array_host ap_graph
@@ -407,7 +407,7 @@ public:
       // condense the graph
       nnz_graph = 0;
       ap_graph(0) = 0;
-      for (size_type i = 0; i < m; i += blk_size) {
+      for (ordinal_type i = 0; i < m; i += blk_size) {
         for (size_type k = ap(i); k < ap(i+1); k++) {
           if (aj(k)%blk_size == 0) {
             aj_graph(nnz_graph) = aj(k)/blk_size;
@@ -417,7 +417,7 @@ public:
           ap_graph((i/blk_size)+1) = nnz_graph;
         }
       }
-      TACHO_TEST_FOR_EXCEPTION((nnz != blk_size*blk_size * nnz_graph),
+      TACHO_TEST_FOR_EXCEPTION((nnz != size_type(blk_size*blk_size) * nnz_graph),
         std::logic_error, "Failed to condense graph");
       return analyze(m, ap, aj, m_graph, ap_graph, aj_graph, aw_graph, duplicate);
     } else {

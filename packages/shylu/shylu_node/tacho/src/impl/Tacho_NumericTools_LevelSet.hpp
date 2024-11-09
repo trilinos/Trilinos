@@ -4281,9 +4281,6 @@ public:
         team_policy_update policy_update(1, 1, 1);
         functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf, &rval);
         if (pivot_tol > 0.0) {
-          using arith_traits = ArithTraits<value_type>;
-          using mag_type = typename arith_traits::mag_type;
-          const mag_type tol = sqrt(arith_traits::epsilon());
           functor.setDiagPertubationTol(pivot_tol);
         }
         // get max vector length
