@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_PRODUCT_OPERATOR_H
 #define EPETRAEXT_PRODUCT_OPERATOR_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Operator.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS_types.hpp"

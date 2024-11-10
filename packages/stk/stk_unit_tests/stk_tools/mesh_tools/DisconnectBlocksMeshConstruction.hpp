@@ -275,6 +275,8 @@ unsigned get_num_total_sides(const stk::mesh::BulkData & bulk);
 
 bool check_orphaned_nodes(stk::mesh::BulkData & bulk);
 
+bool verify_attached_faces(stk::mesh::BulkData & bulk);
+
 void output_mesh(stk::mesh::BulkData & bulk, const std::string & fileName);
 
 void output_mesh(stk::mesh::BulkData & bulk);
@@ -345,7 +347,11 @@ stk::mesh::PartVector setup_mesh_2block_1hex(stk::mesh::BulkData& bulk);
 
 stk::mesh::PartVector setup_mesh_2block_2hex(stk::mesh::BulkData& bulk);
 
-stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_sides(stk::mesh::BulkData& bulk);
+stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_sides(stk::mesh::BulkData& bulk, bool loadMeshFirst = false);
+
+stk::mesh::PartVector setup_mesh_2block_2hex_with_internal_and_external_sides(stk::mesh::BulkData& bulk);
+
+stk::mesh::PartVector setup_mesh_2block_2hex_with_dual_internal_and_external_sides(stk::mesh::BulkData& bulk);
 
 stk::mesh::PartVector setup_mesh_2block_2hex_with_external_sides(stk::mesh::BulkData& bulk);
 

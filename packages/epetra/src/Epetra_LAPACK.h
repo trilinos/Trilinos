@@ -44,6 +44,14 @@
 #ifndef EPETRA_LAPACK_H
 #define EPETRA_LAPACK_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 //! Epetra_LAPACK:  The Epetra LAPACK Wrapper Class.
 /*! The Epetra_LAPACK class is a wrapper that encapsulates LAPACK
     (Linear Algebra Package).  LAPACK provides portable, high-

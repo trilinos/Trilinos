@@ -47,3 +47,9 @@ std::string Ifpack_Version() {
   return("Ifpack in Trilinos " TRILINOS_VERSION_STRING);
 }
 
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif

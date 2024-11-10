@@ -37,8 +37,7 @@ C   --Common Variables:
       character*8 cdebug
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       INTEGER LINKF1(NLNKF)
       REAL XN(*), YN(*), ZN(*)

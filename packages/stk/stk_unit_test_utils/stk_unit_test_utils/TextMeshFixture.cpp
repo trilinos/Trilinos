@@ -21,23 +21,13 @@ namespace unit_test_util
 {
 namespace {
 struct PartLessByName {
-
-  inline bool operator()( const mesh::Part & lhs , const mesh::Part & rhs ) const
-    { return strcasecmp(lhs.name().c_str(), rhs.name().c_str()) < 0; }
-
-  inline bool operator()( const mesh::Part & lhs , const mesh::Part * rhs ) const
-    { return strcasecmp(lhs.name().c_str(), rhs->name().c_str()) < 0; }
-
-  inline bool operator()( const mesh::Part * lhs , const mesh::Part & rhs ) const
-    { return strcasecmp(lhs->name().c_str(), rhs.name().c_str()) < 0; }
-
   inline bool operator()( const mesh::Part * lhs , const mesh::Part * rhs ) const
     { return strcasecmp(lhs->name().c_str(), rhs->name().c_str()) < 0; }
 };
 }
 
 TextMeshFixture::TextMeshFixture(unsigned spatialDim)
-    : stk::unit_test_util::MeshFixture(spatialDim)
+  : stk::unit_test_util::MeshFixture(spatialDim)
 {
   m_topologyMapping.initialize_topology_map();
 }
@@ -269,13 +259,14 @@ void TextMeshFixture::verify_elements_on_part(stk::mesh::Part* blockPart, const 
   }
 }
 
-TextMeshFixture::CoordinateVerifier::CoordinateVerifier(
-    const stk::mesh::BulkData& b, const stk::mesh::EntityIdVector& ids, const std::vector<double>& coords)
-    : bulk(b),
-      meta(bulk.mesh_meta_data()),
-      spatialDim(meta.spatial_dimension()),
-      goldNodeIds(ids),
-      goldCoordinates(coords)
+TextMeshFixture::CoordinateVerifier::CoordinateVerifier(const stk::mesh::BulkData& b,
+                                                        const stk::mesh::EntityIdVector& ids,
+                                                        const std::vector<double>& coords)
+  : bulk(b),
+    meta(bulk.mesh_meta_data()),
+    spatialDim(meta.spatial_dimension()),
+    goldNodeIds(ids),
+    goldCoordinates(coords)
 {
 }
 
@@ -303,8 +294,8 @@ void TextMeshFixture::CoordinateVerifier::verify_num_nodes()
 
 const double* TextMeshFixture::CoordinateVerifier::get_nodal_coordinates(const stk::mesh::EntityId& nodeId)
 {
-  const stk::mesh::CoordinatesField& coordsField =
-      static_cast<const stk::mesh::CoordinatesField&>(*meta.coordinate_field());
+  const stk::mesh::Field<double>& coordsField =
+      static_cast<const stk::mesh::Field<double>&>(*meta.coordinate_field());
   return stk::mesh::field_data(coordsField, get_node(nodeId));
 }
 
@@ -331,7 +322,7 @@ std::string TextMeshFixture::CoordinateVerifier::error_message(const stk::mesh::
 namespace simple_fields {
 
 TextMeshFixture::TextMeshFixture(unsigned spatialDim)
-  : stk::unit_test_util::simple_fields::MeshFixture(spatialDim)
+  : stk::unit_test_util::MeshFixture(spatialDim)
 {
   m_topologyMapping.initialize_topology_map();
 }
@@ -343,7 +334,7 @@ std::string TextMeshFixture::get_topology_name(const std::string& textMeshTopolo
 
 void TextMeshFixture::setup_text_mesh(const std::string& meshDesc)
 {
-  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 }
 
 void TextMeshFixture::verify_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int sharingProc)

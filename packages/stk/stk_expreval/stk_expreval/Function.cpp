@@ -306,6 +306,7 @@ CFunctionMap::CFunctionMap()
   (*this).emplace("cosine_ramp",     new CFunction1(cosine_ramp1));
   (*this).emplace("cosine_ramp",     new CFunction2(cosine_ramp2));
   (*this).emplace("cosine_ramp",     new CFunction3(cosine_ramp3));
+  (*this).emplace("linear_ramp",     new CFunction3(linear_ramp3));
   (*this).emplace("haversine_pulse", new CFunction3(haversine_pulse));
   (*this).emplace("cycloidal_ramp",  new CFunction3(cycloidal_ramp));
 

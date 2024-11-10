@@ -13,6 +13,12 @@
 #ifndef __MLMATRIX__
 #define __MLMATRIX__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 
 /************************************************************************/

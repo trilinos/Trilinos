@@ -1,52 +1,11 @@
-// $Id$
-// $Source$
-
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
-// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
-//@HEADER
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Ptr.hpp"
@@ -1000,7 +959,7 @@ void NOX::Thyra::Group::updateLOWS() const
                           prec_,
                           shared_jacobian_->getObject(this).ptr());
     }
-    else if (nonnull(prec_factory_)) {
+    else if (nonnull(prec_factory_) && updatePreconditioner_) {
       // Automatically update using the user supplied prec factory
       prec_factory_->initializePrec(losb_, prec_.get());
 
@@ -1009,7 +968,7 @@ void NOX::Thyra::Group::updateLOWS() const
                           prec_,
                           shared_jacobian_->getObject(this).ptr());
     }
-    else if ( nonnull(prec_) && (model_->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
+    else if ( nonnull(prec_) && (model_->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) && updatePreconditioner_) {
       // Automatically update using the ModelEvaluator
       auto in_args = model_->createInArgs();
       auto out_args = model_->createOutArgs();
@@ -1143,3 +1102,23 @@ void NOX::Thyra::Group::unsetBasePoint()
 
 bool NOX::Thyra::Group::usingBasePoint() const
 { return use_base_point_; }
+
+Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double>>
+NOX::Thyra::Group::getLinearOpWithSolveFactory() const
+{ return lows_factory_; }
+
+Teuchos::RCP<::Thyra::PreconditionerFactoryBase<double>>
+NOX::Thyra::Group::getPreconditionerFactory() const
+{ return prec_factory_; }
+
+void
+NOX::Thyra::Group::
+takeControlOfPreconditionerUpdates(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& prec)
+{
+  prec_ = prec;
+  prec_factory_ = Teuchos::null;
+  updatePreconditioner_ = false;
+
+  // Unset factory so solver doesn't automatically update preconditioner
+  Teuchos::rcp_const_cast<::Thyra::LinearOpWithSolveFactoryBase<double>>(lows_factory_)->unsetPreconditionerFactory(nullptr,nullptr);
+}

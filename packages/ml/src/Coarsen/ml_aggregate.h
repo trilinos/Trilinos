@@ -13,6 +13,12 @@
 #ifndef __MLAGGH__
 #define __MLAGGH__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include <stdio.h>
 /* #include <stdlib.h> */
 
@@ -452,4 +458,3 @@ extern int ML_Aggregate_VizAndStats_Clean( ML *ml);
 #endif
 
 #endif
-

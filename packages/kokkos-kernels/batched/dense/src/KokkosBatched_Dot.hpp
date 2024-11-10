@@ -52,9 +52,7 @@ namespace KokkosBatched {
 template <typename ArgTrans = Trans::NoTranspose>
 struct SerialDot {
   template <typename XViewType, typename YViewType, typename NormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X,
-                                           const YViewType &Y,
-                                           const NormViewType &dot);
+  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const NormViewType &dot);
 };
 
 /// \brief Team Batched DOT:
@@ -86,9 +84,7 @@ struct SerialDot {
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
 struct TeamDot {
   template <typename XViewType, typename YViewType, typename NormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot);
 };
 
@@ -122,9 +118,7 @@ struct TeamDot {
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
 struct TeamVectorDot {
   template <typename XViewType, typename YViewType, typename NormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot);
 };
 

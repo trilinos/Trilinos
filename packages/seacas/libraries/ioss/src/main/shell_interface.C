@@ -1,32 +1,28 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#include "Ioss_CodeTypes.h"
+#include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
+#include <cstring> // for strcmp
+#include <fmt/core.h>
+#include <iostream> // for operator<<, basic_ostream, etc
+#include <stdio.h>
+#include <string> // for string, char_traits
+#include <vector> // for vector
+
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Sort.h"
 #include "Ioss_Utils.h" // for Utils
 #include "shell_interface.h"
 #include "tokenize.h"
 
-#include <cctype>  // for tolower
-#include <cstddef> // for nullptr
-#include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
-#include <cstring> // for strcmp
-#include <fmt/ostream.h>
-#include <iostream> // for operator<<, basic_ostream, etc
-#include <string>   // for string, char_traits
-#include <vector>   // for vector
-
-IOShell::Interface::Interface(const std::string &app_version) : version(app_version)
+IOShell::Interface::Interface(std::string app_version) : version(std::move(app_version))
 {
   enroll_options();
 }
-
-IOShell::Interface::~Interface() = default;
 
 void IOShell::Interface::enroll_options()
 {
@@ -52,6 +48,9 @@ void IOShell::Interface::enroll_options()
                   "Database type for output file:"
 #if defined(SEACAS_HAVE_EXODUS)
                   " exodus"
+#if defined(SEACAS_HAVE_EXONULL)
+                  " exonull"
+#endif
 #endif
 #if defined(SEACAS_HAVE_CGNS)
                   " cgns"
@@ -59,7 +58,7 @@ void IOShell::Interface::enroll_options()
 #if defined(SEACAS_HAVE_FAODEL)
                   " faodel"
 #endif
-                  ".\n\t\tIf not specified, guess from extension or exodus is the default.",
+                  " null.\n\t\tIf not specified, guess from extension or exodus is the default.",
                   "unknown");
   options_.enroll("compare", Ioss::GetLongOption::NoValue,
                   "Compare the contents of the INPUT and OUTPUT files.", nullptr);
@@ -72,9 +71,22 @@ void IOShell::Interface::enroll_options()
       "Absolute tolerance to use if comparing real field data. (diff > abs && diff > rel)",
       nullptr);
   options_.enroll("floor", Ioss::GetLongOption::MandatoryValue,
-                  "Only compare values if `|a| > floor && |b| > floor`", nullptr);
+                  "Only compare values if `|a| > floor || |b| > floor`", nullptr);
   options_.enroll("ignore_qa_info", Ioss::GetLongOption::NoValue,
                   "If comparing databases, do not compare the qa and info records.", nullptr,
+                  nullptr, true);
+
+  options_.enroll("ignore_node_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global node id map (if any) from the input database.", nullptr,
+                  nullptr);
+  options_.enroll("ignore_element_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global element id map (if any) from the input database.",
+                  nullptr, nullptr);
+  options_.enroll("ignore_edge_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global edge id map (if any) from the input database.", nullptr,
+                  nullptr);
+  options_.enroll("ignore_face_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global face id map (if any) from the input database.", nullptr,
                   nullptr, true);
 
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "Use 64-bit integers on output database",
@@ -88,6 +100,9 @@ void IOShell::Interface::enroll_options()
   options_.enroll("float", Ioss::GetLongOption::NoValue,
                   "Use 32-bit floating point values on output database; default is 64-bits",
                   nullptr);
+
+  options_.enroll("netcdf3", Ioss::GetLongOption::NoValue,
+                  "Output database will be a classical netcdf (CDF3) file.", nullptr);
 
   options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
                   "Output database will be a netcdf4 "
@@ -191,19 +206,25 @@ void IOShell::Interface::enroll_options()
                   "\t\t(if auto) by `int((max_entry+1)/proc_count)`.",
                   nullptr);
 
+  options_.enroll("line_decomp", Ioss::GetLongOption::OptionalValue,
+                  "Generate the `lines` or `columns` of elements from the specified surface(s).\n"
+                  "\t\tSpecify a comma-separated list of surface/sideset names from which the "
+                  "lines will grow.\n"
+                  "\t\tDo not split a line/column across processors.\n"
+                  "\t\tOmit or enter 'ALL' for all surfaces in model.",
+                  nullptr, "ALL");
+
   options_.enroll("external", Ioss::GetLongOption::NoValue,
                   "Files are decomposed externally into a file-per-processor in a parallel run.",
                   nullptr);
 
-#if defined(SEACAS_HAVE_CGNS)
-  options_.enroll(
-      "add_processor_id_field", Ioss::GetLongOption::NoValue,
-      "For CGNS, add a cell-centered field whose value is the processor id of that cell", nullptr);
-#endif
+  options_.enroll("add_processor_id_field", Ioss::GetLongOption::NoValue,
+                  "Add a cell-centered field whose value is the processor id of that cell",
+                  nullptr);
 
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
-                  "a parallel run; 0 to disable",
+                  "a parallel run;\n\t\t0 to disable",
                   nullptr, nullptr, true);
 #endif
 
@@ -215,10 +236,11 @@ void IOShell::Interface::enroll_options()
       "If non-zero, then put <$val> timesteps in each file. Then close file and start new file.",
       nullptr);
 
-  options_.enroll("split_cyclic", Ioss::GetLongOption::MandatoryValue,
-                  "If non-zero, then the `split_times` timesteps will be put into <$val> files and "
-                  "then recycle filenames.",
-                  nullptr);
+  options_.enroll(
+      "split_cyclic", Ioss::GetLongOption::MandatoryValue,
+      "If non-zero, then the `split_times` timesteps will be put into <$val> files\n\t\tand "
+      "then recycle filenames.",
+      nullptr);
 
   options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
                   "put transient data for each timestep in separate file (EXPERIMENTAL)", nullptr);
@@ -232,12 +254,14 @@ void IOShell::Interface::enroll_options()
   options_.enroll("Minimum_Time", Ioss::GetLongOption::MandatoryValue,
                   "Minimum time on input database to transfer to output database", nullptr);
 
+  options_.enroll("time_scale", Ioss::GetLongOption::MandatoryValue,
+                  "The output time = input_time * time_scale + time_offset", nullptr);
+
+  options_.enroll("time_offset", Ioss::GetLongOption::MandatoryValue,
+                  "The output time = input_time * time_scale + time_offset", nullptr);
+
   options_.enroll("select_times", Ioss::GetLongOption::MandatoryValue,
                   "comma-separated list of times that should be transferred to output database",
-                  nullptr);
-
-  options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
-                  "Do not transfer any timesteps or transient data to the output database",
                   nullptr);
 
   options_.enroll("append_after_time", Ioss::GetLongOption::MandatoryValue,
@@ -250,11 +274,19 @@ void IOShell::Interface::enroll_options()
                   "Specify the number of steps between database flushes.\n"
                   "\t\tIf not specified, then the default database-dependent setting is used.\n"
                   "\t\tA value of 0 disables flushing.",
-                  nullptr, nullptr, true);
+                  nullptr);
+  options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
+                  "Do not transfer any timesteps or transient data to the output database",
+                  nullptr);
+
+  options_.enroll("delete_qa_records", Ioss::GetLongOption::NoValue,
+                  "Do not output qa records to output database.", nullptr);
+  options_.enroll("delete_info_records", Ioss::GetLongOption::NoValue,
+                  "Do not output info records to output database.", nullptr, nullptr, true);
 
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
-                  "\t\t when recognizing vector, tensor fields. Enter '0' for no separator",
+                  "\t\twhen recognizing vector, tensor fields. Enter '0' for no separator",
                   "_");
 
   options_.enroll("disable_field_recognition", Ioss::GetLongOption::NoValue,
@@ -270,7 +302,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
-                  "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
+                  "\t\tOptions are: TOPOLOGY(default), BLOCK, NO_SPLIT",
                   nullptr);
 
   options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
@@ -283,8 +315,20 @@ void IOShell::Interface::enroll_options()
                   "\t\tDefault is to ignore empty blocks.",
                   nullptr);
 
+  options_.enroll("omit_blocks", Ioss::GetLongOption::MandatoryValue,
+                  "comma-separated list of element block names that should NOT be transferred to "
+                  "output database\n"
+                  "\t\tNote that currently any nodes connected to only empty blocks will be "
+                  "retained in the output.",
+                  nullptr);
+
+  options_.enroll("omit_sets", Ioss::GetLongOption::MandatoryValue,
+                  "comma-separated list of nodeset/edgeset/faceset/elemset/sideset names\n"
+                  "\t\tthat should NOT be transferred to output database",
+                  nullptr);
+
   options_.enroll("boundary_sideset", Ioss::GetLongOption::NoValue,
-                  "Output a sideset for all boundary faces of the model", nullptr);
+                  "Output a sideset for all boundary faces of the model", nullptr, nullptr, true);
 
   options_.enroll(
       "delay", Ioss::GetLongOption::MandatoryValue,
@@ -296,12 +340,12 @@ void IOShell::Interface::enroll_options()
                   "Data type used internally to store field data\n"
                   "\t\tOptions are: POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, "
                   "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE",
-                  "POINTER", nullptr, true);
+                  "POINTER");
 #else
   options_.enroll("data_storage", Ioss::GetLongOption::MandatoryValue,
                   "Data type used internally to store field data\n"
                   "\t\tOptions are: POINTER, STD_VECTOR",
-                  "POINTER", nullptr, true);
+                  "POINTER");
 #endif
 
   options_.enroll("debug", Ioss::GetLongOption::NoValue, "turn on debugging output", nullptr);
@@ -345,7 +389,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
         "\nThe following options were specified via the IO_SHELL_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, Ioss::GetLongOption::basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
@@ -367,7 +411,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
   if (options_.retrieve("version") != nullptr) {
-    fmt::print(stderr, "Version: {}\n", version);
+    fmt::print(stderr, "IO_SHELL\tVersion: {}\n", version);
     exit(0);
   }
 
@@ -375,14 +419,23 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   ints_32_bit  = (options_.retrieve("32-bit") != nullptr);
   reals_32_bit = (options_.retrieve("float") != nullptr);
 
+  if (options_.retrieve("netcdf3") != nullptr) {
+    netcdf3     = true;
+    netcdf4     = false;
+    netcdf5     = false;
+    ints_32_bit = true;
+  }
+
   if (options_.retrieve("netcdf4") != nullptr) {
+    netcdf3 = false;
     netcdf4 = true;
     netcdf5 = false;
   }
 
   if (options_.retrieve("netcdf5") != nullptr) {
-    netcdf5 = true;
+    netcdf3 = false;
     netcdf4 = false;
+    netcdf5 = true;
   }
 
   shuffle = (options_.retrieve("shuffle") != nullptr);
@@ -398,8 +451,14 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     }
     return false;
   }
-  compare        = (options_.retrieve("compare") != nullptr);
-  ignore_qa_info = (options_.retrieve("ignore_qa_info") != nullptr);
+  compare         = (options_.retrieve("compare") != nullptr);
+  ignore_qa_info  = (options_.retrieve("ignore_qa_info") != nullptr);
+  ignore_node_map = (options_.retrieve("ignore_node_map") != nullptr);
+  ignore_elem_map = (options_.retrieve("ignore_element_map") != nullptr);
+  ignore_edge_map = (options_.retrieve("ignore_edge_map") != nullptr);
+  ignore_face_map = (options_.retrieve("ignore_face_map") != nullptr);
+  delete_qa       = (options_.retrieve("delete_qa_records") != nullptr);
+  delete_info     = (options_.retrieve("delete_info_records") != nullptr);
 
   {
     const char *temp = options_.retrieve("absolute");
@@ -460,9 +519,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
 #if defined(SEACAS_HAVE_MPI)
-#if defined(SEACAS_HAVE_CGNS)
   add_processor_id_field = (options_.retrieve("add_processor_id_field") != nullptr);
-#endif
 
 #if !defined(NO_ZOLTAN_SUPPORT)
   if (options_.retrieve("rcb") != nullptr) {
@@ -504,6 +561,11 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   if (options_.retrieve("variable") != nullptr) {
     decomp_method = "VARIABLE";
     decomp_extra  = options_.get_option_value("variable", decomp_extra);
+  }
+
+  if (options_.retrieve("line_decomp") != nullptr) {
+    line_decomp  = true;
+    decomp_extra = options_.get_option_value("line_decomp", decomp_extra);
   }
 
   if (options_.retrieve("cyclic") != nullptr) {
@@ -570,6 +632,26 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
   {
+    const char *temp = options_.retrieve("omit_blocks");
+    if (temp != nullptr) {
+      auto omit_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : omit_str) {
+        omitted_blocks.push_back(str);
+      }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("omit_sets");
+    if (temp != nullptr) {
+      auto omit_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : omit_str) {
+        omitted_sets.push_back(str);
+      }
+    }
+  }
+
+  {
     const char *temp = options_.retrieve("surface_split_scheme");
     if (temp != nullptr) {
       if (std::strcmp(temp, "TOPOLOGY") == 0) {
@@ -594,9 +676,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
       if (std::strcmp(temp, "POINTER") == 0) {
         data_storage_type = 1;
       }
-      else if (std::strcmp(temp, "STD_VECTOR") == 0) {
-        data_storage_type = 2;
-      }
 #ifdef SEACAS_HAVE_KOKKOS
       else if (std::strcmp(temp, "KOKKOS_VIEW_1D") == 0) {
         data_storage_type = 3;
@@ -613,10 +692,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
         if (my_processor == 0) {
           fmt::print(stderr, "ERROR: Option data_storage must be one of\n");
 #ifdef SEACAS_HAVE_KOKKOS
-          fmt::print(stderr, "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
+          fmt::print(stderr, "       POINTER, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
                              "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n");
 #else
-          fmt::print(stderr, "       POINTER, or STD_VECTOR\n");
+          fmt::print(stderr, "       POINTER\n");
 #endif
         }
         return false;
@@ -626,6 +705,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   maximum_time = options_.get_option_value("Maximum_Time", maximum_time);
   minimum_time = options_.get_option_value("Minimum_Time", minimum_time);
+  time_scale   = options_.get_option_value("time_scale", time_scale);
+  time_offset  = options_.get_option_value("time_offset", time_offset);
 
   {
     const char *temp = options_.retrieve("select_times");

@@ -2,6 +2,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/ModificationObserver.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max
@@ -50,6 +51,37 @@ private:
   std::vector<size_t> buckets_changed;
 };
 
+TEST(BulkDataMod, synchronized_count_basic_fill_mesh)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) > 2) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
+
+  const std::string generatedMeshSpec = "generated:1x1x2";
+  stk::io::fill_mesh(generatedMeshSpec, *bulk);
+
+  EXPECT_EQ(1u, bulk->synchronized_count());
+}
+
+TEST(BulkDataMod, synchronized_count_empty_mod_cycle)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) > 2) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
+
+  const std::string generatedMeshSpec = "generated:1x1x2";
+  stk::io::fill_mesh(generatedMeshSpec, *bulk);
+
+  unsigned modCount = bulk->synchronized_count();
+
+  bulk->modification_begin();
+  bulk->modification_end();
+
+  EXPECT_EQ(modCount, bulk->synchronized_count());
+}
+
 TEST(BulkDataNotifications, test_listener_buckets_changed)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -57,7 +89,6 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
   if (numProcs==2)
   {
     stk::mesh::MetaData meta(3);
-    meta.use_simple_fields();
     stk::unit_test_util::BulkDataTester mesh(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
 
     const std::string generatedMeshSpec = "generated:1x1x2";

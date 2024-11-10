@@ -48,3 +48,9 @@
 #include "../epetra_test_err.h"
 
 int IntMultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose);
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

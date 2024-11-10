@@ -1,42 +1,28 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
-#include <algorithm>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Utils.h"
+#include "exonull/Ioexnl_BaseDatabaseIO.h"
 #include <cassert>
-#include <cctype>
-#include <cfloat>
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <ctime>
 #include <exodusII.h>
-#include <exonull/Ioexnl_BaseDatabaseIO.h>
-#include <exonull/Ioexnl_Utils.h>
+#include <fmt/core.h>
 #include <fmt/ostream.h>
-#include <functional>
-#include <iostream>
 #include <map>
-#include <set>
+#include <sstream>
 #include <string>
 #include <tokenize.h>
-#include <utility>
 #include <vector>
 
+#include "Ioexnl_Utils.h"
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
-#include "Ioss_CommSet.h"
-#include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EdgeBlock.h"
@@ -44,24 +30,23 @@
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementSet.h"
 #include "Ioss_EntityBlock.h"
-#include "Ioss_EntitySet.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_Map.h"
+#include "Ioss_MeshType.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_SmartAssert.h"
 #include "Ioss_State.h"
-#include "Ioss_VariableType.h"
-
-#include "Ioexnl_Utils.h"
 
 // Transitioning from treating global variables as Ioss::Field::TRANSIENT
 // to Ioss::Field::REDUCTION.  To get the old behavior, define the value
@@ -77,8 +62,6 @@ namespace {
                                             EX_NODE_SET, EX_EDGE_SET, EX_FACE_SET, EX_ELEM_SET,
                                             EX_SIDE_SET});
 
-  const size_t max_line_length = MAX_LINE_LENGTH;
-
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,
                                   const std::string &filename, const Ioss::ParallelUtils &util);
 
@@ -86,6 +69,25 @@ namespace {
 
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities);
+
+  char **get_name_array(size_t count, int size)
+  {
+    auto *names = new char *[count];
+    for (size_t i = 0; i < count; i++) {
+      names[i] = new char[size + 1];
+      std::memset(names[i], '\0', size + 1);
+    }
+    return names;
+  }
+
+  void delete_name_array(char **names, int count)
+  {
+    for (int i = 0; i < count; i++) {
+      delete[] names[i];
+    }
+    delete[] names;
+  }
+
 } // namespace
 
 namespace Ioexnl {
@@ -213,16 +215,6 @@ namespace Ioexnl {
   int BaseDatabaseIO::int_byte_size_db() const { return 8; }
 
   // common
-  BaseDatabaseIO::~BaseDatabaseIO()
-  {
-    try {
-      free_file_pointer();
-    }
-    catch (...) {
-    }
-  }
-
-  // common
   unsigned BaseDatabaseIO::entity_field_support() const
   {
     return Ioss::NODEBLOCK | Ioss::EDGEBLOCK | Ioss::FACEBLOCK | Ioss::ELEMENTBLOCK |
@@ -235,7 +227,7 @@ namespace Ioexnl {
 
   int BaseDatabaseIO::free_file_pointer() const { return 0; }
 
-  bool BaseDatabaseIO::ok__(bool, std::string *, int *) const { return true; }
+  bool BaseDatabaseIO::ok_nl(bool, std::string *, int *) const { return true; }
 
   // common
   void BaseDatabaseIO::put_qa()
@@ -249,7 +241,7 @@ namespace Ioexnl {
 
     if (using_parallel_io() && myProcessor != 0) {}
     else {
-      auto *qa = new qa_element[num_qa_records + 1];
+      std::vector<qa_element> qa(num_qa_records + 1);
       for (size_t i = 0; i < num_qa_records + 1; i++) {
         for (int j = 0; j < 4; j++) {
           qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
@@ -287,72 +279,11 @@ namespace Ioexnl {
           delete[] qa[i].qa_record[0][j];
         }
       }
-      delete[] qa;
     }
   }
 
   // common
-  void BaseDatabaseIO::put_info()
-  {
-    int    total_lines = 0;
-    char **info        = nullptr;
-
-    if (!using_parallel_io() || myProcessor == 0) {
-      // dump info records, include the product_registry
-      // See if the input file was specified as a property on the database...
-      std::vector<std::string> input_lines;
-      if (get_region()->property_exists("input_file_name")) {
-        std::string filename = get_region()->get_property("input_file_name").get_string();
-        // Determine size of input file so can embed it in info records...
-        Ioss::Utils::input_file(filename, &input_lines, max_line_length);
-      }
-
-      // Get configuration information for IOSS library.
-      // Split into strings and remove empty lines...
-      std::string config = Ioss::IOFactory::show_configuration();
-      std::replace(std::begin(config), std::end(config), '\t', ' ');
-      auto lines = Ioss::tokenize(config, "\n");
-      lines.erase(std::remove_if(lines.begin(), lines.end(),
-                                 [](const std::string &line) { return line.empty(); }),
-                  lines.end());
-
-      // See if the client added any "information_records"
-      size_t info_rec_size = informationRecords.size();
-      size_t in_lines      = input_lines.size();
-      size_t qa_lines      = 1; // Platform info
-      size_t config_lines  = lines.size();
-
-      total_lines = in_lines + qa_lines + info_rec_size + config_lines;
-
-      // 'total_lines' pointers to char buffers
-      info = Ioss::Utils::get_name_array(total_lines, max_line_length);
-
-      int i = 0;
-      Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information(), max_line_length + 1);
-
-      // Copy input file lines into 'info' array...
-      for (size_t j = 0; j < input_lines.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], input_lines[j], max_line_length + 1);
-      }
-
-      // Copy "information_records" property data ...
-      for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], informationRecords[j], max_line_length + 1);
-      }
-
-      for (size_t j = 0; j < lines.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], lines[j], max_line_length + 1);
-      }
-    }
-
-    if (using_parallel_io()) {
-      util().broadcast(total_lines);
-    }
-
-    if (!using_parallel_io() || myProcessor == 0) {
-      Ioss::Utils::delete_name_array(info, total_lines);
-    }
-  }
+  void BaseDatabaseIO::put_info() {}
 
   // common
   int BaseDatabaseIO::get_current_state() const
@@ -413,7 +344,7 @@ namespace Ioexnl {
      * elemMap.reverse[elemMap.map[eb_offset+i+1]]-eb_offset-1
      *
      * To determine which map to update on a call to this function, we
-     * use the following hueristics:
+     * use the following heuristics:
      * -- If the database state is 'Ioss::STATE_MODEL:', then update the
      *    'elemMap.reverse'.
      * -- If the database state is not Ioss::STATE_MODEL, then leave
@@ -449,8 +380,8 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::compute_block_membership__(Ioss::SideBlock          *efblock,
-                                                  std::vector<std::string> &block_membership) const
+  void BaseDatabaseIO::compute_block_membership_nl(Ioss::SideBlock *efblock,
+                                                   Ioss::NameList  &block_membership) const
   {
     const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
@@ -718,14 +649,14 @@ namespace Ioexnl {
   void BaseDatabaseIO::write_reduction_fields() const {}
 
   // common
-  bool BaseDatabaseIO::begin__(Ioss::State state)
+  bool BaseDatabaseIO::begin_nl(Ioss::State state)
   {
     dbState = state;
     return true;
   }
 
   // common
-  bool BaseDatabaseIO::end__(Ioss::State state)
+  bool BaseDatabaseIO::end_nl(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -756,7 +687,7 @@ namespace Ioexnl {
     return true;
   }
 
-  bool BaseDatabaseIO::begin_state__(int, double)
+  bool BaseDatabaseIO::begin_state_nl(int, double)
   {
     if (!is_input()) {
       // Zero global variable array...
@@ -772,7 +703,7 @@ namespace Ioexnl {
   }
 
   // common
-  bool BaseDatabaseIO::end_state__(int state, double time)
+  bool BaseDatabaseIO::end_state_nl(int state, double time)
   {
     if (!is_input()) {
       write_reduction_fields();
@@ -860,14 +791,14 @@ namespace Ioexnl {
       exo_params.num_sset  = m_variables[EX_SIDE_SET].size();
       exo_params.num_elset = m_variables[EX_ELEM_SET].size();
 
-      exo_params.edge_var_tab  = m_truthTable[EX_EDGE_BLOCK].data();
-      exo_params.face_var_tab  = m_truthTable[EX_FACE_BLOCK].data();
-      exo_params.elem_var_tab  = m_truthTable[EX_ELEM_BLOCK].data();
-      exo_params.nset_var_tab  = m_truthTable[EX_NODE_SET].data();
-      exo_params.eset_var_tab  = m_truthTable[EX_EDGE_SET].data();
-      exo_params.fset_var_tab  = m_truthTable[EX_FACE_SET].data();
-      exo_params.sset_var_tab  = m_truthTable[EX_SIDE_SET].data();
-      exo_params.elset_var_tab = m_truthTable[EX_ELEM_SET].data();
+      exo_params.edge_var_tab  = Data(m_truthTable[EX_EDGE_BLOCK]);
+      exo_params.face_var_tab  = Data(m_truthTable[EX_FACE_BLOCK]);
+      exo_params.elem_var_tab  = Data(m_truthTable[EX_ELEM_BLOCK]);
+      exo_params.nset_var_tab  = Data(m_truthTable[EX_NODE_SET]);
+      exo_params.eset_var_tab  = Data(m_truthTable[EX_EDGE_SET]);
+      exo_params.fset_var_tab  = Data(m_truthTable[EX_FACE_SET]);
+      exo_params.sset_var_tab  = Data(m_truthTable[EX_SIDE_SET]);
+      exo_params.elset_var_tab = Data(m_truthTable[EX_ELEM_SET]);
 
       if (isParallel) {
         // Check consistency among all processors.  They should all
@@ -1068,11 +999,11 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::flush_database__() const {}
+  void BaseDatabaseIO::flush_database_nl() const {}
 
   void BaseDatabaseIO::finalize_write(int, double) {}
 
-  void BaseDatabaseIO::common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior)
+  void BaseDatabaseIO::common_write_metadata(Ioss::IfDatabaseExistsBehavior behavior)
   {
     Ioss::Region *region = get_region();
 
@@ -1306,7 +1237,7 @@ namespace Ioexnl {
     }
   }
 
-  void BaseDatabaseIO::output_other_meta_data()
+  void BaseDatabaseIO::output_other_metadata()
   {
     // Write attribute names (if any)...
     write_attribute_names(get_file_pointer(), EX_NODE_SET, get_region()->get_nodesets());
@@ -1382,7 +1313,7 @@ namespace Ioexnl {
     }
 
     if (node_map_cnt > 0) {
-      char **names = Ioss::Utils::get_name_array(node_map_cnt, maximumNameLength);
+      char **names = get_name_array(node_map_cnt, maximumNameLength);
       auto  *node_block =
           get_region()->get_node_blocks()[0]; // If there are node_maps, then there is a node_block
       auto node_map_fields = node_block->field_describe(Ioss::Field::MAP);
@@ -1399,11 +1330,11 @@ namespace Ioexnl {
           }
         }
       }
-      Ioss::Utils::delete_name_array(names, node_map_cnt);
+      delete_name_array(names, node_map_cnt);
     }
 
     if (elem_map_cnt > 0) {
-      char **names = Ioss::Utils::get_name_array(elem_map_cnt, maximumNameLength);
+      char **names = get_name_array(elem_map_cnt, maximumNameLength);
       for (const auto &field_name : elem_map_fields) {
         // Now, we need to find an element block that has this field...
         for (const auto &block : blocks) {
@@ -1431,7 +1362,7 @@ namespace Ioexnl {
           }
         }
       }
-      Ioss::Utils::delete_name_array(names, elem_map_cnt);
+      delete_name_array(names, elem_map_cnt);
     }
 
     // Write coordinate frame data...
@@ -1454,8 +1385,8 @@ namespace {
 
         check_attribute_index_order(ge);
 
-        std::vector<char *>      names(attribute_count);
-        std::vector<std::string> names_str(attribute_count);
+        std::vector<char *> names(attribute_count);
+        Ioss::NameList      names_str(attribute_count);
 
         // Get the attribute fields...
         Ioss::NameList results_fields = ge->field_describe(Ioss::Field::ATTRIBUTE);

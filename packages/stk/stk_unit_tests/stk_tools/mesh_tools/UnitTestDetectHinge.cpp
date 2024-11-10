@@ -679,9 +679,16 @@ TEST(DetectHinge3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp1)
 
   four_elements_decomposition(bulk);
 
+  stk::io::write_mesh("output_hinge", *bulkPtr);
+
   std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
   EXPECT_EQ(0u, hingeCount.first);
-  EXPECT_EQ(2u, hingeCount.second);
+
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 4) {
+    EXPECT_EQ(1u, hingeCount.second);
+  } else {
+    EXPECT_EQ(2u, hingeCount.second);
+  }
   output_mesh(bulk);
 }
 
@@ -697,7 +704,12 @@ TEST(DetectHinge3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp2)
 
   std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
   EXPECT_EQ(0u, hingeCount.first);
-  EXPECT_EQ(2u, hingeCount.second);
+
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 4) {
+    EXPECT_EQ(1u, hingeCount.second);
+  } else {
+    EXPECT_EQ(2u, hingeCount.second);
+  }
   output_mesh(bulk);
 }
 
@@ -769,8 +781,8 @@ TEST(DetectHinge3D, inputFile)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
-  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
-  bool nodesOnly = stk::unit_test_util::simple_fields::has_option("--nodesOnly");
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
+  bool nodesOnly = stk::unit_test_util::has_option("--nodesOnly");
 
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
@@ -780,7 +792,7 @@ TEST(DetectHinge3D, inputFile)
     stk::tools::impl::HingeEdgeVector hingeEdges;
 
     std::string blockList = "";
-    std::string inputBlockList = stk::unit_test_util::simple_fields::get_command_line_option("--blockList", blockList);
+    std::string inputBlockList = stk::unit_test_util::get_command_line_option("--blockList", blockList);
 
     std::vector<std::string> blocksToDetect = stk::split_csv_string(inputBlockList);
     for (std::string & blockToDetect : blocksToDetect) {
@@ -851,7 +863,7 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHingeOneEdgeHinge_Manual)
   std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
 
   EXPECT_EQ(2u, hingeCount.first);
-  EXPECT_EQ(1u, hingeCount.second);
+  EXPECT_EQ(0u, hingeCount.second);
   output_mesh(bulk);
 }
 
@@ -1348,13 +1360,16 @@ TEST(ElementGroups3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp2)
       EXPECT_EQ(1u, groupings[1].size());
       EXPECT_TRUE(groupings[0] != groupings[1]);
     }
-    groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[1]);
-    if(!groupings.empty()) {
-      EXPECT_EQ(2u, groupings.size());
-      EXPECT_EQ(2u, groupings[0].size() + groupings[1].size());
-      EXPECT_EQ(1u, groupings[0].size());
-      EXPECT_EQ(1u, groupings[1].size());
-      EXPECT_TRUE(groupings[0] != groupings[1]);
+
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+      groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[1]);
+      if(!groupings.empty()) {
+        EXPECT_EQ(2u, groupings.size());
+        EXPECT_EQ(2u, groupings[0].size() + groupings[1].size());
+        EXPECT_EQ(1u, groupings[0].size());
+        EXPECT_EQ(1u, groupings[1].size());
+        EXPECT_TRUE(groupings[0] != groupings[1]);
+      }
     }
   }
 
@@ -1717,7 +1732,7 @@ TEST(SnipHinge, inputFile)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
-  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);

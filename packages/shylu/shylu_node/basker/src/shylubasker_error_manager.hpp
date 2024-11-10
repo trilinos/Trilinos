@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_ERROR_MANAGER
 #define SHYLUBASKER_ERROR_MANAGER
 
@@ -86,7 +95,7 @@ namespace BaskerNS
             Int blkcol = thread_array(ti).error_blk;
             Int blkUrow = LU_size(blkcol)-1;
             if(LL(blkcol)(0).nnz >=
-                LU(blkcol)(blkUrow).nnz)
+               LU(blkcol)(blkUrow).nnz)
             {
               resize_U = thread_array(ti).error_info;
             }

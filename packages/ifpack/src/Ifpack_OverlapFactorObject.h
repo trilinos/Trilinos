@@ -43,6 +43,12 @@
 #ifndef IFPACK_OVERLAPFACTOROBJECT_H
 #define IFPACK_OVERLAPFACTOROBJECT_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 //! Ifpack_OverlapFactorObject: Supports functionality common to Ifpack overlap factorization classes.
 
 class Ifpack_OverlapFactorObject {

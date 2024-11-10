@@ -1,47 +1,17 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
+
 // clang-format on
 #include <algorithm> // std::transform
-#include <cctype>    // std::toupper
-#include <cstdlib>   // std::getenv
+#include <array>
+#include <cctype>  // std::toupper
+#include <cstdlib> // std::getenv
 #include <functional>
 #include <map>
 #include <stdexcept>
@@ -53,6 +23,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
+#include "KokkosKernels_config.h"  // for TPL enable macros
 
 /*! \file Tpetra_Details_Behavior.cpp
 
@@ -128,6 +99,7 @@ constexpr const std::string_view HIERARCHICAL_UNPACK =
     "TPETRA_HIERARCHICAL_UNPACK";
 constexpr const std::string_view SKIP_COPY_AND_PERMUTE =
     "TPETRA_SKIP_COPY_AND_PERMUTE";
+constexpr const std::string_view FUSED_RESIDUAL = "TPETRA_FUSED_RESIDUAL";
 constexpr const std::string_view OVERLAP = "TPETRA_OVERLAP";
 constexpr const std::string_view SPACES_ID_WARN_LIMIT =
     "TPETRA_SPACES_ID_WARN_LIMIT";
@@ -155,8 +127,8 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     MULTIVECTOR_USE_MERGE_PATH, VECTOR_DEVICE_THRESHOLD,
     HIERARCHICAL_UNPACK_BATCH_SIZE, HIERARCHICAL_UNPACK_TEAM_SIZE,
     USE_TEUCHOS_TIMERS, USE_KOKKOS_PROFILING, DEBUG, VERBOSE, TIMING,
-    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, OVERLAP, SPACES_ID_WARN_LIMIT,
-    TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
+    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL, OVERLAP,
+    SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
     TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
 
 // clang-format off
@@ -419,44 +391,51 @@ T idempotentlyGetEnvironmentVariable(
 // clang-format on
 
 void Behavior::reject_unrecognized_env_vars() {
-  const char prefix[] = "Tpetra::Details::Behavior: ";
-  char **env;
+
+  static bool once = false;
+
+  if (!once) {
+    const char prefix[] = "Tpetra::Details::Behavior: ";
+    char **env;
 #if defined(WIN) && (_MSC_VER >= 1900)
-  env = *__p__environ();
+    env = *__p__environ();
 #else
-  env = environ; // defined at the top of this file as extern char **environ;
+    env = environ; // defined at the top of this file as extern char **environ;
 #endif
-  for (; *env; ++env) {
+    for (; *env; ++env) {
 
-    std::string name;
-    std::string value;
-    const std::string_view ev(*env);
+      std::string name;
+      std::string value;
+      const std::string_view ev(*env);
 
-    // split name=value on the first =, everything before = is name
-    split(
-        ev,
-        [&](const std::string &s) {
-          if (name.empty()) {
-            name = s;
-          } else {
-            value = s;
-          }
-        },
-        '=');
+      // split name=value on the first =, everything before = is name
+      split(
+          ev,
+          [&](const std::string &s) {
+            if (name.empty()) {
+              name = s;
+            } else {
+              value = s;
+            }
+          },
+          '=');
 
-    if (name.size() >= BehaviorDetails::RESERVED_PREFIX.size() &&
-        name.substr(0, BehaviorDetails::RESERVED_PREFIX.size()) ==
-            BehaviorDetails::RESERVED_PREFIX) {
-      const auto it = std::find(BehaviorDetails::RECOGNIZED_VARS.begin(),
-                                BehaviorDetails::RECOGNIZED_VARS.end(), name);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          it == BehaviorDetails::RECOGNIZED_VARS.end(), std::out_of_range,
-          prefix << "Environment "
-                    "variable \""
-                 << name << "\" (prefixed with \""
-                 << BehaviorDetails::RESERVED_PREFIX
-                 << "\") is not a recognized Tpetra variable.");
+      if (name.size() >= BehaviorDetails::RESERVED_PREFIX.size() &&
+          name.substr(0, BehaviorDetails::RESERVED_PREFIX.size()) ==
+              BehaviorDetails::RESERVED_PREFIX) {
+        const auto it = std::find(BehaviorDetails::RECOGNIZED_VARS.begin(),
+                                  BehaviorDetails::RECOGNIZED_VARS.end(), name);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            it == BehaviorDetails::RECOGNIZED_VARS.end(), std::out_of_range,
+            prefix << "Environment "
+                      "variable \""
+                   << name << "\" (prefixed with \""
+                   << BehaviorDetails::RESERVED_PREFIX
+                   << "\") is not a recognized Tpetra variable.");
+      }
     }
+
+    once = true;
   }
 }
 
@@ -669,6 +648,21 @@ bool Behavior::skipCopyAndPermuteIfPossible() {
   return idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::SKIP_COPY_AND_PERMUTE,
       defaultValue);
+}
+
+bool Behavior::fusedResidual() {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  constexpr bool defaultValue(false);
+#else
+  constexpr bool defaultValue(true);
+#endif
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariable(
+      value_, initialized_, BehaviorDetails::FUSED_RESIDUAL, defaultValue);
 }
 
 bool Behavior::overlapCommunicationAndComputation() {

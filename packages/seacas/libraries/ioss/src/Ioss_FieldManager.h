@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include "ioss_export.h"
-
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Field.h> // for Field, Field::RoleType
+#include "Ioss_CodeTypes.h"
+#include "Ioss_Field.h" // for Field, Field::RoleType
 #include <cstddef>      // for size_t
 #include <string>       // for string
 #include <vector>       // for vector
+
+#include "ioss_export.h"
 
 #define USE_ROBIN_MAP
 #if defined USE_ROBIN_MAP
@@ -35,9 +35,11 @@ namespace Ioss {
   {
   public:
     FieldManager() = default;
-    FieldManager(const FieldManager &other) : fields(other.fields) {}
+    FieldManager(const FieldManager &other)
+        : fields(other.fields)
+    { /* Do not make this `=default` since that breaks the thread-safe build */ }
+
     FieldManager &operator=(const FieldManager &) = delete;
-    ~FieldManager()                               = default;
 
     // If a field with the same 'name' exists, an exception will be thrown.
     // Add the specified field to the list.
@@ -50,20 +52,20 @@ namespace Ioss {
     void erase(const std::string &field_name);
 
     // Checks if a field with 'field_name' exists in the database.
-    bool exists(const std::string &field_name) const;
+    IOSS_NODISCARD bool exists(const std::string &field_name) const;
 
-    Field        get(const std::string &field_name) const;
-    const Field &getref(const std::string &field_name) const;
+    IOSS_NODISCARD Field        get(const std::string &field_name) const;
+    IOSS_NODISCARD const Field &getref(const std::string &field_name) const;
 
     // Returns the names of all fields
-    int      describe(NameList *names) const;
-    NameList describe() const;
+    int                     describe(NameList *names) const;
+    IOSS_NODISCARD NameList describe() const;
 
     // Returns the names of all fields with the specified 'RoleType'
-    int      describe(Field::RoleType role, NameList *names) const;
-    NameList describe(Field::RoleType role) const;
+    int                     describe(Field::RoleType role, NameList *names) const;
+    IOSS_NODISCARD NameList describe(Field::RoleType role) const;
 
-    size_t count() const;
+    IOSS_NODISCARD size_t count() const;
 
   private:
     FieldMapType fields;

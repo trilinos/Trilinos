@@ -91,8 +91,7 @@ Crs cached_read(const fs::path &path) {
   // if this is not the cached matrix, overwrite the cache
   if (CACHE_KEY != key) {
     CACHE_KEY = key;
-    CACHE_VAL = std::make_shared<Crs>(
-        KokkosSparse::Impl::read_kokkos_crst_matrix<Crs>(path.c_str()));
+    CACHE_VAL = std::make_shared<Crs>(KokkosSparse::Impl::read_kokkos_crst_matrix<Crs>(path.c_str()));
   }
 
   // the Crs type is part of the key, so we know this cast is safe
@@ -107,8 +106,7 @@ size_t detect_block_size(const fs::path &path) {
   using ReadScalar  = double;
   using ReadOrdinal = int64_t;
   using ReadOffset  = uint64_t;
-  using Crs = KokkosSparse::CrsMatrix<ReadScalar, ReadOrdinal, Device, void,
-                                      ReadOffset>;
+  using Crs         = KokkosSparse::CrsMatrix<ReadScalar, ReadOrdinal, Device, void, ReadOffset>;
 
   static std::map<fs::path, size_t> cache;
 
@@ -126,10 +124,8 @@ size_t detect_block_size(const fs::path &path) {
 // This needs the matrix, alpha, and beta to compute the error tolerance
 // properly
 template <typename View, typename Matrix, typename Alpha, typename Beta>
-void check_correctness(benchmark::State &state, const View &y_exp,
-                       const View &y_act, const Matrix &crs, const Alpha &alpha,
-                       const Beta &beta, const DieOnError &die,
-                       const SkipOnError &skip) {
+void check_correctness(benchmark::State &state, const View &y_exp, const View &y_act, const Matrix &crs,
+                       const Alpha &alpha, const Beta &beta, const DieOnError &die, const SkipOnError &skip) {
   using execution_space = typename View::execution_space;
   using scalar_type     = typename View::non_const_value_type;
   using AT              = Kokkos::ArithTraits<scalar_type>;
@@ -146,9 +142,8 @@ void check_correctness(benchmark::State &state, const View &y_exp,
       },
       maxA);
 
-  double eps = AT::epsilon();
-  const double max_val =
-      AT::abs(beta * 1.0 + crs.numCols() * alpha * maxA * 1.0);
+  double eps           = AT::epsilon();
+  const double max_val = AT::abs(beta * 1.0 + crs.numCols() * alpha * maxA * 1.0);
 
   auto h_exp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_exp);
   auto h_act = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_act);
@@ -170,16 +165,13 @@ void check_correctness(benchmark::State &state, const View &y_exp,
     std::cerr << "i\tk\texp\tact" << std::endl;
     std::cerr << "-\t-\t---\t---" << std::endl;
     for (auto [i, k] : errIdx) {
-      std::cerr << i << "\t" << k << "\t" << h_exp(i, k) << "\t" << h_act(i, k)
-                << std::endl;
+      std::cerr << i << "\t" << k << "\t" << h_exp(i, k) << "\t" << h_act(i, k) << std::endl;
       if (0 == --errLimit) {
         break;
       }
     }
-    std::cerr << __FILE__ << ":" << __LINE__ << ": ERROR: correctness failed "
-              << std::endl;
-    std::cerr << __FILE__ << ":" << __LINE__ << ": threshold was "
-              << eps * max_val << std::endl;
+    std::cerr << __FILE__ << ":" << __LINE__ << ": ERROR: correctness failed " << std::endl;
+    std::cerr << __FILE__ << ":" << __LINE__ << ": threshold was " << eps * max_val << std::endl;
 
     if (die) {
       exit(EXIT_FAILURE);
@@ -191,10 +183,9 @@ void check_correctness(benchmark::State &state, const View &y_exp,
 
 // Wrapper to create a common interface for all SpMVs to benchmark
 struct SpmvDefault {
-  template <typename Alpha, typename Matrix, typename XView, typename Beta,
-            typename YView>
-  static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
-                   const XView &x, const Beta &beta, const YView &y) {
+  template <typename Alpha, typename Matrix, typename XView, typename Beta, typename YView>
+  static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs, const XView &x, const Beta &beta,
+                   const YView &y) {
     return KokkosSparse::spmv(mode, alpha, crs, x, beta, y);
   }
 
@@ -203,13 +194,11 @@ struct SpmvDefault {
 
 // Wrapper to create a common interface for all SpMVs to benchmark
 struct SpmvNative {
-  template <typename Alpha, typename Matrix, typename XView, typename Beta,
-            typename YView>
-  static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
-                   const XView &x, const Beta &beta, const YView &y) {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", "native");
-    return KokkosSparse::spmv(controls, mode, alpha, crs, x, beta, y);
+  template <typename Alpha, typename Matrix, typename XView, typename Beta, typename YView>
+  static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs, const XView &x, const Beta &beta,
+                   const YView &y) {
+    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView, YView> handle(KokkosSparse::SPMV_NATIVE);
+    return KokkosSparse::spmv(&handle, mode, alpha, crs, x, beta, y);
   }
 
   static std::string name() { return "native"; }
@@ -217,13 +206,11 @@ struct SpmvNative {
 
 // Wrapper to create a common interface for all SpMVs to benchmark
 struct SpmvV41 {
-  template <typename Alpha, typename Matrix, typename XView, typename Beta,
-            typename YView>
-  static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
-                   const XView &x, const Beta &beta, const YView &y) {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", "v4.1");
-    return KokkosSparse::spmv(controls, mode, alpha, crs, x, beta, y);
+  template <typename Alpha, typename Matrix, typename XView, typename Beta, typename YView>
+  static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs, const XView &x, const Beta &beta,
+                   const YView &y) {
+    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView, YView> handle(KokkosSparse::SPMV_BSR_V41);
+    return KokkosSparse::spmv(&handle, mode, alpha, crs, x, beta, y);
   }
 
   static std::string name() { return "v4.1"; }
@@ -268,8 +255,7 @@ void run(benchmark::State &state, const Bsr &bsr, const size_t k) {
   KokkosSparse::spmv(mode, alpha, bsr, x, beta, y_exp);
   Kokkos::fence();
 
-  check_correctness(state, y_exp, y_act, bsr, alpha, beta, DieOnError(false),
-                    SkipOnError(true));
+  check_correctness(state, y_exp, y_act, bsr, alpha, beta, DieOnError(false), SkipOnError(true));
 
   Kokkos::fence();
   for (auto _ : state) {
@@ -277,28 +263,23 @@ void run(benchmark::State &state, const Bsr &bsr, const size_t k) {
     Kokkos::fence();
   }
 
-  const size_t bytesPerSpmv =
-      bsr.nnz() * bsr.blockDim() * bsr.blockDim() *
-          sizeof(scalar_type)                    // A values
-      + bsr.nnz() * sizeof(ordinal_type)         // A col indices
-      + (bsr.numRows() + 1) * sizeof(size_type)  // A row-map
-      + 2 * bsr.numRows() * bsr.blockDim() * k *
-            sizeof(scalar_type)  // load / store y
-      + bsr.numCols() * bsr.blockDim() * k * sizeof(scalar_type)  // load x
+  const size_t bytesPerSpmv = bsr.nnz() * bsr.blockDim() * bsr.blockDim() * sizeof(scalar_type)  // A values
+                              + bsr.nnz() * sizeof(ordinal_type)                                 // A col indices
+                              + (bsr.numRows() + 1) * sizeof(size_type)                          // A row-map
+                              + 2 * bsr.numRows() * bsr.blockDim() * k * sizeof(scalar_type)     // load / store y
+                              + bsr.numCols() * bsr.blockDim() * k * sizeof(scalar_type)         // load x
       ;
 
   state.SetBytesProcessed(bytesPerSpmv * state.iterations());
 }
 
 template <typename Bsr, typename Spmv>
-void read_expand_run(benchmark::State &state, const fs::path &path,
-                     const size_t blockSize, const size_t k) {
+void read_expand_run(benchmark::State &state, const fs::path &path, const size_t blockSize, const size_t k) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
 
   // read Crs into host memory
-  using Crs =
-      KokkosSparse::CrsMatrix<scalar_type, ordinal_type, Kokkos::HostSpace>;
+  using Crs = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, Kokkos::HostSpace>;
 
   const Crs crs = cached_read<Crs>(path);
   Bsr bsr;
@@ -313,13 +294,11 @@ void read_expand_run(benchmark::State &state, const fs::path &path,
 }
 
 template <typename Bsr, typename Spmv>
-void read_convert_run(benchmark::State &state, const fs::path &path,
-                      const size_t blockSize, const size_t k) {
+void read_convert_run(benchmark::State &state, const fs::path &path, const size_t blockSize, const size_t k) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
 
-  using Crs =
-      KokkosSparse::CrsMatrix<scalar_type, ordinal_type, Kokkos::HostSpace>;
+  using Crs = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, Kokkos::HostSpace>;
 
   const Crs crs = cached_read<Crs>(path);
   Bsr bsr;
@@ -333,44 +312,32 @@ void read_convert_run(benchmark::State &state, const fs::path &path,
   run<Spmv>(state, bsr, k);
 }
 
-template <typename Ordinal, typename Scalar, typename Offset, typename Device,
-          typename Spmv>
+template <typename Ordinal, typename Scalar, typename Offset, typename Device, typename Spmv>
 void register_expand_type(const fs::path &path) {
-  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
-                                                    void, Offset>;
+  using Bsr              = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   std::vector<size_t> ks = {1, 3};
   for (size_t bs : {4, 7, 10, 16}) {  // block sizes
     for (size_t k : ks) {             // multivector sizes
-      std::string name =
-          std::string("MatrixMarketExpanded") + "/" + std::string(path.stem()) +
-          "/" + Kokkos::ArithTraits<Scalar>::name() + "/" +
-          Kokkos::ArithTraits<Ordinal>::name() + "/" +
-          Kokkos::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" +
-          std::to_string(k) + "/" + Spmv::name() + "/" + Device::name();
-      benchmark::RegisterBenchmark(name.c_str(), read_expand_run<Bsr, Spmv>,
-                                   path, bs, k)
-          ->UseRealTime();
+      std::string name = std::string("MatrixMarketExpanded") + "/" + std::string(path.stem()) + "/" +
+                         Kokkos::ArithTraits<Scalar>::name() + "/" + Kokkos::ArithTraits<Ordinal>::name() + "/" +
+                         Kokkos::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" + std::to_string(k) +
+                         "/" + Spmv::name() + "/" + Device::name();
+      benchmark::RegisterBenchmark(name.c_str(), read_expand_run<Bsr, Spmv>, path, bs, k)->UseRealTime();
     }
   }
 }
 
-template <typename Ordinal, typename Scalar, typename Offset, typename Device,
-          typename Spmv>
+template <typename Ordinal, typename Scalar, typename Offset, typename Device, typename Spmv>
 void register_convert_type(const fs::path &path, size_t bs) {
-  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
-                                                    void, Offset>;
+  using Bsr              = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   std::vector<size_t> ks = {1, 3};
 
   for (size_t k : ks) {  // multivector sizes
-    std::string name =
-        std::string("MatrixMarketConvert") + "/" + std::string(path.stem()) +
-        "/" + Kokkos::ArithTraits<Scalar>::name() + "/" +
-        Kokkos::ArithTraits<Ordinal>::name() + "/" +
-        Kokkos::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" +
-        std::to_string(k) + "/" + Spmv::name() + "/" + Device::name();
-    benchmark::RegisterBenchmark(name.c_str(), read_convert_run<Bsr, Spmv>,
-                                 path, bs, k)
-        ->UseRealTime();
+    std::string name = std::string("MatrixMarketConvert") + "/" + std::string(path.stem()) + "/" +
+                       Kokkos::ArithTraits<Scalar>::name() + "/" + Kokkos::ArithTraits<Ordinal>::name() + "/" +
+                       Kokkos::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" + std::to_string(k) + "/" +
+                       Spmv::name() + "/" + Device::name();
+    benchmark::RegisterBenchmark(name.c_str(), read_convert_run<Bsr, Spmv>, path, bs, k)->UseRealTime();
   }
 }
 

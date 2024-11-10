@@ -35,7 +35,6 @@
 #ifndef SKINMESHUTIL_HPP_
 #define SKINMESHUTIL_HPP_
 
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -46,6 +45,8 @@
 
 namespace stk {
 namespace mesh {
+
+class BulkData;
 
 class SkinMeshUtil {
 public:
@@ -88,14 +89,14 @@ private:
                                 std::vector<int>& exposedSides);
 
     void mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
-                                std::vector<bool> &isOnlyConnectedRemotely);
+                                std::vector<int> &isOnlyConnectedRemotely);
 
     void mark_remote_connections(const stk::mesh::GraphEdge &graphEdge,
-                                 std::vector<bool> &isConnectedToRemoteElementInBodyToSkin);
+                                 std::vector<int> &isConnectedToRemoteElementInBodyToSkin);
 
     void mark_sides_exposed_on_other_procs(const stk::mesh::GraphEdge &graphEdge,
-                                           std::vector<bool> &isConnectedToRemoteElementInBodyToSkin,
-                                           std::vector<bool> &isOnlyConnectedRemotely);
+                                           std::vector<int> &isConnectedToRemoteElementInBodyToSkin,
+                                           std::vector<int> &isOnlyConnectedRemotely);
 
     stk::mesh::ElemElemGraph& eeGraph;
     stk::mesh::Selector skinSelector;
@@ -103,6 +104,8 @@ private:
     const bool useAirSelector = false;
     stk::mesh::Selector airSelector;
     stk::mesh::impl::ParallelSelectedInfo remoteAirSelector;
+    std::vector<int> m_isConnectedToRemoteElem;
+    std::vector<int> m_isOnlyConnectedRemotely;
 };
 
 }

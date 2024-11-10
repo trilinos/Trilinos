@@ -1,30 +1,18 @@
 #!/bin/bash
 
-source /projects/sems/modulefiles/utils/sems-modules-init.sh
+module load aue/cmake/3.27.7
+module load aue/gcc/10.3.0
+module load aue/metis/5.1.0-gcc-10.3.0
+module load aue/netlib-lapack/3.11.0-gcc-10.3.0
 
-module load sems-cmake/3.24.3
-module load sems-gcc/8.3.0
-module load sems-metis/5.1.0
+export BLAS_LIBRARIES=${BLAS_LIBRARIES:-$BLAS_ROOT/lib64/libblas.so}
+export LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-$LAPACK_ROOT/lib64/liblapack.so}
+export TPL_BLAS_LIBRARIES=${BLAS_LIBRARIES:-$BLAS_ROOT/lib64/libblas.so}
+export TPL_LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-$LAPACK_ROOT/lib64/liblapack.so}
 
-module load cde/v3/netlib-lapack/3.10.1-gcc-10.3.0
-#export BLAS_LIBRARIES=${BLAS_LIBRARIES:-/usr/lib64/libblas.so}
-#export LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-/usr/lib64/liblapack.so}
-#export TPL_BLAS_LIBRARIES=${BLAS_LIBRARIES:-/usr/lib64/libblas.so}
-#export TPL_LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-/usr/lib64/liblapack.so}
-
-module load sems-openmpi/1.10.7
-module load sems-hdf5/1.10.7
-module load sems-netcdf-c/4.7.3
-module load sems-parmetis/4.0.3
-module load sems-parallel-netcdf/1.12.1
-
-
-### Corresponding CDE v3 modules -- as of 2/6/23 these gave link errors
-#module load cde/v3/gcc/10.3.0
-#module load cde/v3/openmpi/4.1.2-gcc-10.3.0
-#module load cde/v3/hdf5/1.10.6-gcc-10.3.0-openmpi-4.1.2
-#module load cde/v3/netcdf-c/4.8.1-gcc-10.3.0-openmpi-4.1.2
-#module load cde/v3/parallel-netcdf/1.12.2-gcc-10.3.0-openmpi-4.1.2
-#module load cde/v3/metis/5.1.0-gcc-10.3.0
-#module load cde/v3/parmetis/4.0.3-gcc-10.3.0-openmpi-4.1.2
+module load aue/openmpi/4.1.6-gcc-10.3.0
+module load aue/hdf5/1.14.2-gcc-10.3.0-openmpi-4.1.6
+module load aue/netcdf-c/4.9.2-gcc-10.3.0-openmpi-4.1.6
+module load aue/parmetis/4.0.3-gcc-10.3.0-openmpi-4.1.6
+module load aue/parallel-netcdf/1.12.3-gcc-10.3.0-openmpi-4.1.6
 

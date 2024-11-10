@@ -49,10 +49,8 @@ struct Flush {
 
   void run() {
     double sum = 0;
-    Kokkos::parallel_reduce(
-        "KokkosGraph::PerfTest::Flush",
-        Kokkos::RangePolicy<SpaceType>(0, BufSize / sizeof(double)), *this,
-        sum);
+    Kokkos::parallel_reduce("KokkosGraph::PerfTest::Flush", Kokkos::RangePolicy<SpaceType>(0, BufSize / sizeof(double)),
+                            *this, sum);
     SpaceType().fence();
     std::cout << "Flush sum:" << sum << std::endl;
     FILE *fp = fopen("/dev/null", "w");
@@ -64,11 +62,8 @@ struct Flush {
 void print_options() {
   std::cerr << "Options\n" << std::endl;
   std::cerr << perf_test::list_common_options();
-  std::cerr
-      << "Input Matrix                       : --amtx [path_to_input_matrix]"
-      << std::endl;
-  std::cerr << "\tInput Matrix format can be multiple formats. If it ends with:"
-            << std::endl;
+  std::cerr << "Input Matrix                       : --amtx [path_to_input_matrix]" << std::endl;
+  std::cerr << "\tInput Matrix format can be multiple formats. If it ends with:" << std::endl;
   std::cerr << "\t\t.mtx: it will read matrix market format." << std::endl;
   std::cerr << "\t\t.bin: it will read binary crs matrix format." << std::endl;
   std::cerr << "\t\t.crs: it will read text crs matrix format." << std::endl;
@@ -82,8 +77,7 @@ void print_options() {
   //    << "\tTRIANGLEIAUNION: for Incidence x Adj -- implementing set union "
   //    << std::endl;
   std::cerr << "\tTRIANGLELL: Lower x Lower -- usually fastest " << std::endl;
-  std::cerr << "\tTRIANGLELU: Lower x Upper -- usually 2nd fastest "
-            << std::endl;
+  std::cerr << "\tTRIANGLELU: Lower x Upper -- usually 2nd fastest " << std::endl;
   std::cerr << "--FLOP                               : Calculate and print the "
                "number of operations. This will be calculated on the first run."
             << std::endl;
@@ -97,20 +91,16 @@ void print_options() {
   std::cerr << "--accumulator [default|dense|sparse] : what type of "
                "accumulator to use."
             << std::endl;
-  std::cerr
-      << "--RLT                                : If given, lower triangle will "
-         "be used for AdjxIncidence or Incidence x Adj algorithms."
-      << std::endl;
-  std::cerr
-      << "--dynamic                            : If set, dynamic schedule will "
-         "be used. Currently default is dynamic scheduling as well."
-      << std::endl;
+  std::cerr << "--RLT                                : If given, lower triangle will "
+               "be used for AdjxIncidence or Incidence x Adj algorithms."
+            << std::endl;
+  std::cerr << "--dynamic                            : If set, dynamic schedule will "
+               "be used. Currently default is dynamic scheduling as well."
+            << std::endl;
   std::cerr << "--verbose                            : If set, the inner timer "
                "stats will be printed."
             << std::endl;
-  std::cerr
-      << "--repeat [repeatnum]                 : how many repeats will be run."
-      << std::endl;
+  std::cerr << "--repeat [repeatnum]                 : how many repeats will be run." << std::endl;
   std::cerr << "--chunksize [chunksize]              : how many vertices are "
                "executed with in a loop index. Default is 16."
             << std::endl;
@@ -118,10 +108,9 @@ void print_options() {
                "be sorted. 0: for largest to bottom, 1 for largest to top, 2 "
                "for interleaved."
             << std::endl;
-  std::cerr
-      << "--cache_flush [0|1|2]                : Flush between repetitions. 0 "
-         "- no flush, 1 - soft flush, 2 - hard flush with random numbers."
-      << std::endl;
+  std::cerr << "--cache_flush [0|1|2]                : Flush between repetitions. 0 "
+               "- no flush, 1 - soft flush, 2 - hard flush with random numbers."
+            << std::endl;
 
   std::cerr << "\nSuggested use of LL: executable --amtx path_to_file.bin "
                "--algorithm TRIANGLELL --repeat 6 --verbose --chunksize [4|16]"
@@ -136,13 +125,11 @@ void print_options() {
   //    << std::endl;
 }
 
-int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
-                 char **argv) {
+int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(argv[++i]);
-    } else if (0 ==
-               Test::string_compare_no_case(argv[i], "--triangle_operation")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--triangle_operation")) {
       params.triangle_options = atoi(argv[++i]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--chunksize")) {
       params.chunk_size = atoi(argv[++i]);
@@ -164,8 +151,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
       params.multi_color_scale = atoi(argv[++i]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--shmem")) {
       params.shmemsize = atoi(argv[++i]);
-    } else if (0 ==
-               Test::string_compare_no_case(argv[i], "--compression2step")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--compression2step")) {
       params.compression2step = true;
     } else if (0 == Test::string_compare_no_case(argv[i], "--mklsort")) {
       params.mkl_sort_option = atoi(argv[++i]);
@@ -200,8 +186,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
       } else if (0 == Test::string_compare_no_case(argv[i], "sparse")) {
         params.accumulator = 2;
       } else {
-        std::cerr << "1-Unrecognized command line argument #" << i << ": "
-                  << argv[i] << std::endl;
+        std::cerr << "1-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
         print_options();
         return 1;
       }
@@ -217,8 +202,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
         std::cerr << "\nAlgorithm TRIANGLEIA is disabled (produces incorrect "
                      "triangle count)\n";
         return 1;
-      } else if (0 ==
-                 Test::string_compare_no_case(argv[i], "TRIANGLEIAUNION")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "TRIANGLEIAUNION")) {
         params.algorithm = 18;
         std::cerr << "\nAlgorithm TRIANGLEIAUNION is disabled (produces "
                      "incorrect triangle count)\n";
@@ -228,14 +212,12 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
       } else if (0 == Test::string_compare_no_case(argv[i], "TRIANGLELU")) {
         params.algorithm = 20;
       } else {
-        std::cerr << "2-Unrecognized command line argument #" << i << ": "
-                  << argv[i] << std::endl;
+        std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
         print_options();
         return 1;
       }
     } else {
-      std::cerr << "3-Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -250,14 +232,12 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
   using device_t  = Kokkos::Device<exec_space, mem_space>;
   using lno_t     = default_lno_t;
   using size_type = default_size_type;
-  using graph_t =
-      Kokkos::StaticCrsGraph<lno_t, default_layout, device_t, void, size_type>;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, lno_t, exec_space, mem_space, mem_space>;
+  using graph_t   = Kokkos::StaticCrsGraph<lno_t, default_layout, device_t, void, size_type>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, lno_t, exec_space, mem_space, mem_space>;
 
   if (KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>()) {
-    std::cerr
-        << "** Triangle counting is currently not supported on GPU backends.\n";
+    std::cerr << "** Triangle counting is currently not supported on GPU backends.\n";
     return;
   }
 
@@ -272,12 +252,10 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
     return;
   }
 
-  std::cout << "Sizeof(idx):" << sizeof(lno_t)
-            << " sizeof(size_type):" << sizeof(size_type) << std::endl;
+  std::cout << "Sizeof(idx):" << sizeof(lno_t) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
   // read graph
-  graph_t crsGraph = KokkosSparse::Impl::read_kokkos_crst_graph<graph_t>(
-      params.a_mtx_bin_file.c_str());
+  graph_t crsGraph = KokkosSparse::Impl::read_kokkos_crst_graph<graph_t>(params.a_mtx_bin_file.c_str());
 
   int algorithm  = params.algorithm;
   int repeat     = params.repeat;
@@ -333,62 +311,48 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
     kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
 
     kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
-    kh.get_spgemm_handle()->set_create_lower_triangular(
-        params.right_lower_triangle);
+    kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
     kh.get_spgemm_handle()->set_compression(params.apply_compression);
     kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
 
     switch (accumulator) {
       case 0:
-      default:
-        kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_DEFAULT);
-        break;
-      case 1:
-        kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_DENSE);
-        break;
-      case 2:
-        kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_SPARSE);
-        break;
+      default: kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_DEFAULT); break;
+      case 1: kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_DENSE); break;
+      case 2: kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_SPARSE); break;
     }
 
     constexpr size_t LLC_CAPACITY = 128 * 1024 * 1024;
     if (params.cache_flush) {
-      std::cout << "Flushing cache with option:" << params.cache_flush
-                << std::endl;
+      std::cout << "Flushing cache with option:" << params.cache_flush << std::endl;
       Flush<LLC_CAPACITY, exec_space> flush(params.cache_flush);
       flush.run();
     }
     if (i == 0) {
-      kh.get_spgemm_handle()->set_read_write_cost_calc(
-          params.calculate_read_write_cost);
+      kh.get_spgemm_handle()->set_read_write_cost_calc(params.calculate_read_write_cost);
     }
 
     Kokkos::Timer timer1;
 
-    row_mapC =
-        Kokkos::View<size_t *, exec_space>("non_const_lnow_row", rowmap_size);
+    row_mapC = Kokkos::View<size_t *, exec_space>("non_const_lnow_row", rowmap_size);
 
     double symbolic_time = 0;
     if (params.triangle_options == 0) {
       if (params.apply_compression) {
         KokkosGraph::Experimental::triangle_generic(
             &kh, m, crsGraph.row_map, crsGraph.entries,
-            KOKKOS_LAMBDA(const lno_t &row, const lno_t & /* col_set_index */,
-                          const lno_t &col_set, const lno_t & /* thread_id */) {
-              row_mapC(row) += KokkosKernels::Impl::pop_count(col_set);
-            });
+            KOKKOS_LAMBDA(const lno_t &row, const lno_t & /* col_set_index */, const lno_t &col_set,
+                          const lno_t & /* thread_id */) { row_mapC(row) += KokkosKernels::Impl::pop_count(col_set); });
       } else {
         KokkosGraph::Experimental::triangle_generic(
             &kh, m, crsGraph.row_map, crsGraph.entries,
-            KOKKOS_LAMBDA(const lno_t &row, const lno_t & /*col_set_index*/,
-                          const lno_t & /*col_set*/,
+            KOKKOS_LAMBDA(const lno_t &row, const lno_t & /*col_set_index*/, const lno_t & /*col_set*/,
                           const lno_t & /*thread_id*/) { row_mapC(row)++; });
       }
 
       size_t num_triangles = 0;
-      KokkosKernels::Impl::kk_reduce_view<Kokkos::View<size_t *, exec_space>,
-                                          exec_space>(rowmap_size, row_mapC,
-                                                      num_triangles);
+      KokkosKernels::Impl::kk_reduce_view<Kokkos::View<size_t *, exec_space>, exec_space>(rowmap_size, row_mapC,
+                                                                                          num_triangles);
       symbolic_time = timer1.seconds();
       std::cout << "num_triangles:" << num_triangles << std::endl;
     }
@@ -399,6 +363,4 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
 
 #define KOKKOSKERNELS_PERF_TEST_NAME run_experiment
 #include "KokkosKernels_perf_test_instantiation.hpp"
-int main(int argc, char **argv) {
-  return main_instantiation(argc, argv);
-}  // main
+int main(int argc, char **argv) { return main_instantiation(argc, argv); }  // main

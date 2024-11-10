@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //                 Belos: Block Linear Solvers Package
-//                  Copyright 2004 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef BELOS_CG_SINGLE_RED_ITER_HPP
 #define BELOS_CG_SINGLE_RED_ITER_HPP
@@ -332,30 +300,30 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::CGSingleRedIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 
-          // W_ = (R_, AZ_, Z_)
+          // W_ = (AZ_, R_, Z_)
           W_ = MVT::Clone( *tmp, 3 );
           std::vector<int> index2(2,0);
           std::vector<int> index(1,0);
 
-          // S_ = (R_, AZ_)
+          // S_ = (AZ_, R_)
           index2[0] = 0;
           index2[1] = 1;
           S_ = MVT::CloneViewNonConst( *W_, index2 );
 
           // U_ = (AZ_, Z_)
-          index2[0] = 1;
+          index2[0] = 0;
           index2[1] = 2;
           U_ = MVT::CloneViewNonConst( *W_, index2 );
 
-          index[0] = 0;
-          R_ = MVT::CloneViewNonConst( *W_, index );
           index[0] = 1;
+          R_ = MVT::CloneViewNonConst( *W_, index );
+          index[0] = 0;
           AZ_ = MVT::CloneViewNonConst( *W_, index );
           index[0] = 2;
           Z_ = MVT::CloneViewNonConst( *W_, index );
 
           // T_ = (R_, Z_)
-          index2[0] = 0;
+          index2[0] = 1;
           index2[1] = 2;
           T_ = MVT::CloneViewNonConst( *W_, index2 );
 
@@ -487,14 +455,14 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
       // Compute first <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R_> combined (also computes unneeded <AZ_,R_>)
       MVT::MvTransMv( one, *S_, *T_, sHt );
-      rHz_ = sHt(0,1);
-      delta = sHt(1,1);
-      rHr_ = sHt(0,0);
+      rHz_ = sHt(1,1);
+      delta = sHt(0,1);
+      rHr_ = sHt(1,0);
     } else {
       // Compute first <s,z> a.k.a. <r,z> and <Az,z> combined
       MVT::MvTransMv( one, *S_, *Z_, sHz );
-      rHz_ = sHz(0,0);
-      delta = sHz(1,0);
+      rHz_ = sHz(1,0);
+      delta = sHz(0,0);
     }
     if ((Teuchos::ScalarTraits<ScalarType>::magnitude(delta) < Teuchos::ScalarTraits<ScalarType>::eps()) &&
         (stest_->checkStatus(this) == Passed))
@@ -546,9 +514,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHt(0,1);
-        delta = sHt(1,1);
-        rHr_ = sHt(0,0);
+        rHz_ = sHt(1,1);
+        delta = sHt(0,1);
+        rHr_ = sHt(1,0);
 
         // Increment the iteration
         iter_++;
@@ -621,8 +589,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHz(0,0);
-        delta = sHz(1,0);
+        rHz_ = sHz(1,0);
+        delta = sHz(0,0);
         //
         beta = rHz_ / rHz_old;
         alpha = rHz_ / (delta - (beta*rHz_ / alpha));

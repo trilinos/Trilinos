@@ -60,15 +60,23 @@ else()
   add_test(NAME "stk_topology_unit_tests_c" COMMAND stk_topology_unit_tests_c)
 endif()
 
+if(TARGET stk_topology_unit_tests_a)
 target_include_directories(stk_topology_unit_tests_a PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
 )
+endif()
+
+if(TARGET stk_topology_unit_tests_b)
 target_include_directories(stk_topology_unit_tests_b PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
 )
+endif()
+
+if(TARGET stk_topology_unit_tests_c)
 target_include_directories(stk_topology_unit_tests_c PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
 )
+endif()

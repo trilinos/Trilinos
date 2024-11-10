@@ -4,6 +4,12 @@
 /* ******************************************************************** */
 #ifndef ML_QR_FIX_H
 #define ML_QR_FIX_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 /*
   This header allows ML to handle cases where an aggregate is not large enough
   to support the given number of nullspace vectors.  Take the following *scalar*

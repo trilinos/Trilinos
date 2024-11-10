@@ -52,26 +52,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 
-
 //BEGIN2hex1sideset
-bool is_positive_permutation(stk::mesh::BulkData & mesh,
-                             stk::mesh::Entity face,
-                             stk::mesh::Entity hex,
-                             unsigned face_ordinal)
-{
-  stk::topology faceTopology = mesh.bucket(face).topology();
-  stk::mesh::EntityVector face_nodes(mesh.num_nodes(face));
-  for (unsigned faceNodeCount=0; faceNodeCount < mesh.num_nodes(face); ++faceNodeCount) {
-    face_nodes[faceNodeCount] = mesh.begin_nodes(face)[faceNodeCount];
-  }
-  stk::EquivalentPermutation permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
-
-  bool is_a_valid_permutation = permutation.is_equivalent;
-  EXPECT_TRUE(is_a_valid_permutation);
-  bool is_positive_permutation = permutation.permutation_number < faceTopology.num_positive_permutations();
-  return is_positive_permutation;
-}
-
 TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
@@ -86,7 +67,6 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
     //                                                   from Hex1 face5
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("ALA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -99,13 +79,17 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
     ASSERT_EQ(expected_num_faces, all_faces.size());
     size_t face_index = 0;
     stk::mesh::Entity face = all_faces[face_index];
-    unsigned expected_connected_elements = 2;
-    ASSERT_EQ(expected_connected_elements, mesh.num_elements(face));
+    stk::topology faceTopology = mesh.bucket(face).topology();
+    ASSERT_EQ(stk::topology::QUAD_4, faceTopology);
 
     EXPECT_TRUE(mesh.bucket(face).member(*mesh.mesh_meta_data().get_part("surface_1")));
 
+    unsigned expected_connected_elements = 2;
+    ASSERT_EQ(expected_connected_elements, mesh.num_elements(face));
+
     const stk::mesh::Entity * connected_elements = mesh.begin_elements(face);
     const stk::mesh::ConnectivityOrdinal * which_side_of_element = mesh.begin_element_ordinals(face);
+    const stk::mesh::Permutation* face_permutations = mesh.begin_element_permutations(face);
 
     {
       int element_count = 0;
@@ -113,8 +97,8 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
       EXPECT_EQ(2u, mesh.identifier(hex_2));
       unsigned expected_face_ordinal = 4;
       EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-      EXPECT_FALSE(is_positive_permutation(
-                     mesh, face, hex_2, expected_face_ordinal));
+      bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+      EXPECT_FALSE(is_positive_permutation);
     }
 
     {
@@ -123,8 +107,8 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
       EXPECT_EQ(1u, mesh.identifier(hex_1));
       unsigned expected_face_ordinal = 5;
       EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-      EXPECT_TRUE(is_positive_permutation(
-                    mesh, face, hex_1, expected_face_ordinal));
+      bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+      EXPECT_TRUE(is_positive_permutation);
     }
 
   }
@@ -158,7 +142,6 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("ALefLRA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -170,6 +153,10 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
     unsigned expected_num_faces = 2;
     ASSERT_EQ(expected_num_faces, all_faces.size());
 
+    stk::topology faceTopology = mesh.bucket(all_faces[0]).topology();
+    ASSERT_EQ(stk::topology::QUAD_4, faceTopology);
+    ASSERT_EQ(faceTopology, mesh.bucket(all_faces[1]).topology());
+
     size_t face_index = 0;
     {
       stk::mesh::Entity face = all_faces[face_index];
@@ -180,6 +167,7 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 
       const stk::mesh::Entity * connected_elements = mesh.begin_elements(face);
       const stk::mesh::ConnectivityOrdinal * which_side_of_element = mesh.begin_element_ordinals(face);
+      const stk::mesh::Permutation* face_permutations = mesh.begin_element_permutations(face);
 
       {
         int element_count = 0;
@@ -187,8 +175,8 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
         EXPECT_EQ(3u, mesh.identifier(shell_3));
         unsigned expected_face_ordinal = 1;
         EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-        EXPECT_FALSE(is_positive_permutation(
-                       mesh, face, shell_3, expected_face_ordinal));
+        bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+        EXPECT_FALSE(is_positive_permutation);
       }
       {
         int element_count = 1;
@@ -196,8 +184,8 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
         EXPECT_EQ(4u, mesh.identifier(shell_4));
         unsigned expected_face_ordinal = 1;
         EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-        EXPECT_FALSE(is_positive_permutation(
-                       mesh, face, shell_4, expected_face_ordinal));
+        bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+        EXPECT_FALSE(is_positive_permutation);
       }
       {
         int element_count = 2;
@@ -205,8 +193,8 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
         EXPECT_EQ(1u, mesh.identifier(hex_1));
         unsigned expected_face_ordinal = 5;
         EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-        EXPECT_TRUE(is_positive_permutation(
-                      mesh, face, hex_1, expected_face_ordinal));
+        bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+        EXPECT_TRUE(is_positive_permutation);
       }
     }
 
@@ -221,6 +209,7 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 
       const stk::mesh::Entity * connected_elements = mesh.begin_elements(face);
       const stk::mesh::ConnectivityOrdinal * which_side_of_element = mesh.begin_element_ordinals(face);
+      const stk::mesh::Permutation* face_permutations = mesh.begin_element_permutations(face);
 
       {
         int element_count = 0;
@@ -228,8 +217,8 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
         EXPECT_EQ(3u, mesh.identifier(shell_3));
         unsigned expected_face_ordinal = 0;
         EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-        EXPECT_FALSE(is_positive_permutation(
-                       mesh, face, shell_3, expected_face_ordinal));
+        bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+        EXPECT_FALSE(is_positive_permutation);
       }
       {
         int element_count = 1;
@@ -237,8 +226,8 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
         EXPECT_EQ(4u, mesh.identifier(shell_4));
         unsigned expected_face_ordinal = 0;
         EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-        EXPECT_FALSE(is_positive_permutation(
-                       mesh, face, shell_4, expected_face_ordinal));
+        bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+        EXPECT_FALSE(is_positive_permutation);
       }
       {
         int element_count = 2;
@@ -246,14 +235,15 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
         EXPECT_EQ(2u, mesh.identifier(hex_2));
         unsigned expected_face_ordinal = 4;
         EXPECT_EQ(expected_face_ordinal, which_side_of_element[element_count]);
-        EXPECT_TRUE(is_positive_permutation(mesh, face, hex_2, expected_face_ordinal));
+        bool is_positive_permutation = faceTopology.is_positive_polarity(face_permutations[element_count]);
+        EXPECT_TRUE(is_positive_permutation);
       }
     }
   }
 }
 //END2hex2shell3sideset
 
-class SideCreationExplanation : public stk::unit_test_util::simple_fields::MeshFixture
+class SideCreationExplanation : public stk::unit_test_util::MeshFixture
 {
 protected:
   void test_face_created_on_elem_side_gets_id_16(stk::mesh::EntityId elemId, int sideOrdinal)

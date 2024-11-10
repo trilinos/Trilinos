@@ -54,11 +54,8 @@ C   --   Uses IS3DIM, LLNSET of /D3NUMS/
 C   --   Uses NCNTR, LABINC, MAXMIN, MAXMAX of /CNTR/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /CNTR/   CINTOK, LINCON, NCNTR, CMIN, CMAX, DELC,
-     &   CINTV(256), NOCMIN, NOCMAX, LABINC, MAXMIN, MAXMAX
-      LOGICAL CINTOK, LINCON, NOCMIN, NOCMAX
+      include 'd3nums.blk'
+      include 'cntr.blk'
 
       REAL VARNP(*)
       INTEGER LENF(0:NELBLK)

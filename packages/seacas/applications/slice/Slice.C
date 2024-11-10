@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,6 +11,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_DecompositionUtils.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
@@ -77,7 +78,7 @@ namespace {
     }
   }
 
-  Ioss::PropertyManager set_properties(SystemInterface &interFace)
+  Ioss::PropertyManager set_properties(const SystemInterface &interFace)
   {
     Ioss::PropertyManager properties;
     if (interFace.netcdf4_) {
@@ -159,7 +160,7 @@ namespace {
     for (const auto &block : blocks) {
       auto field =
           Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(1);
-      block->field_add(field);
+      block->field_add(std::move(field));
     }
   }
 
@@ -188,11 +189,11 @@ namespace {
       auto field =
           Ioss::Field(decomp_variable_name, Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MAP)
               .set_index(1);
-      block->field_add(field);
+      block->field_add(std::move(field));
       if (add_chain_info) {
         auto ch_field =
             Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(2);
-        block->field_add(ch_field);
+        block->field_add(std::move(ch_field));
       }
     }
   }
@@ -387,12 +388,11 @@ int main(int argc, char *argv[])
   dbi->set_surface_split_type(Ioss::SPLIT_BY_DONT_SPLIT);
   dbi->set_field_separator(0);
 
-  // NOTE: 'region' owns 'db' pointer at this time...
-  Ioss::Region region(dbi, "region_1");
-
-  region.output_summary(std::cerr, true);
-
   try {
+    // NOTE: 'region' owns 'db' pointer at this time...
+    Ioss::Region region(dbi, "region_1");
+    region.output_summary(std::cerr, true);
+
     if (dbi->int_byte_size_api() == 4) {
       progress("4-byte slice");
       slice(region, nem_file, interFace, 1);
@@ -408,6 +408,12 @@ int main(int argc, char *argv[])
   }
 
 #ifdef SEACAS_HAVE_MPI
+  MPI_Comm parentcomm;
+  MPI_Comm_get_parent(&parentcomm);
+  if (parentcomm != MPI_COMM_NULL) {
+    int istatus = EXIT_SUCCESS;
+    MPI_Send(&istatus, 1, MPI_INT, 0, 0, parentcomm);
+  }
   MPI_Finalize();
 #endif
   fmt::print(stderr, "\nHigh-Water Memory Use: {} bytes\n",
@@ -906,6 +912,8 @@ namespace {
                           size_t proc_size)
   {
     progress(__func__);
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
     std::vector<double> glob_coord_x;
     std::vector<double> glob_coord_y;
     std::vector<double> glob_coord_z;
@@ -941,8 +949,8 @@ namespace {
           count = node_count - beg + 1;
         }
 
-        ex_get_partial_coord(exoid, beg, count, glob_coord_x.data(), glob_coord_y.data(),
-                             glob_coord_z.data());
+        ex_get_partial_coord(exoid, beg, count, Data(glob_coord_x), Data(glob_coord_y),
+                             Data(glob_coord_z));
         progress("\tpartial_coord: " + std::to_string(beg) + " " + std::to_string(count));
 
         for (size_t i = 0; i < count; i++) {
@@ -962,8 +970,12 @@ namespace {
     }
     else {
       gnb->get_field_data("mesh_model_coordinates_x", glob_coord_x);
-      gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
-      gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      if (spatial_dimension > 1) {
+        gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
+      }
+      if (spatial_dimension > 2) {
+        gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      }
       progress("\tRead global mesh_model_coordinates");
 
       for (size_t i = 0; i < node_count; i++) {
@@ -987,8 +999,12 @@ namespace {
     for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
       Ioss::NodeBlock *nb = proc_region[p]->get_node_blocks()[0];
       nb->put_field_data("mesh_model_coordinates_x", coordinates_x[p]);
-      nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
-      nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      if (spatial_dimension > 1) {
+        nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
+      }
+      if (spatial_dimension > 2) {
+        nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      }
       proc_progress(p, processor_count);
     }
     progress("\tOutput processor coordinate vectors");
@@ -1022,7 +1038,9 @@ namespace {
     }
     progress("\tReserve processor coordinate vectors");
 
-    for (size_t comp = 0; comp < 3; comp++) {
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
+    for (size_t comp = 0; comp < spatial_dimension; comp++) {
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         coordinates[p].resize(0);
       }
@@ -1039,13 +1057,13 @@ namespace {
 
           switch (comp) {
           case 0:
-            ex_get_partial_coord(exoid, beg, count, glob_coord.data(), nullptr, nullptr);
+            ex_get_partial_coord(exoid, beg, count, Data(glob_coord), nullptr, nullptr);
             break;
           case 1:
-            ex_get_partial_coord(exoid, beg, count, nullptr, glob_coord.data(), nullptr);
+            ex_get_partial_coord(exoid, beg, count, nullptr, Data(glob_coord), nullptr);
             break;
           case 2:
-            ex_get_partial_coord(exoid, beg, count, nullptr, nullptr, glob_coord.data());
+            ex_get_partial_coord(exoid, beg, count, nullptr, nullptr, Data(glob_coord));
             break;
           }
           progress("\tpartial_coord: " + std::to_string(beg) + " " + std::to_string(count));
@@ -1133,7 +1151,7 @@ namespace {
             count = element_count - beg + 1;
           }
 
-          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
+          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, Data(glob_conn), nullptr,
                               nullptr);
           progress(fmt::format("\tpartial_conn-- start: {}\tcount: {}", fmt::group_digits(beg),
                                fmt::group_digits(count)));
@@ -1270,7 +1288,7 @@ namespace {
             count = element_count - beg + 1;
           }
 
-          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
+          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, Data(glob_conn), nullptr,
                               nullptr);
           progress(fmt::format("\tpartial_conn-- start: {}\tcount: {}", fmt::group_digits(beg),
                                fmt::group_digits(count)));
@@ -1286,9 +1304,10 @@ namespace {
         offset += element_count;
       }
     }
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
     for (size_t p = 0; p < proc_count; p++) {
-      Ioss::NodeBlock *nb =
-          new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count[p], 3);
+      auto *nb = new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1",
+                                     on_proc_count[p], spatial_dimension);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
         fmt::print(stderr, "\tProcessor {} has {} nodes.\n", fmt::group_digits(p),
@@ -1367,25 +1386,39 @@ namespace {
 
     Ioss::PropertyManager properties = set_properties(interFace);
 
-    double           start = seacas_timer();
-    std::vector<int> elem_to_proc;
-    decompose_elements(region, interFace, elem_to_proc, dummy);
-    double end = seacas_timer();
-    fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
-    progress("exit decompose_elements");
-
     Ioss::chain_t<INT> element_chains;
+    std::vector<float> weights;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
       progress("Ioss::generate_element_chains");
-      line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count());
-      progress("line_decomp_modify");
+
+      if (interFace.decomposition_method() == "rcb" || interFace.decomposition_method() == "rib" ||
+          interFace.decomposition_method() == "hsfc") {
+        weights = Ioss::DecompUtils::line_decomp_weights(
+            element_chains, region.get_property("element_count").get_int());
+        progress("generate_element_weights");
+      }
+    }
+
+    if (weights.empty()) {
+      weights.resize(region.get_property("element_count").get_int(), 1);
+    }
+
+    double start        = seacas_timer();
+    auto   elem_to_proc = decompose_elements(region, interFace, weights, dummy);
+    double end          = seacas_timer();
+    fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
+    progress("exit decompose_elements");
+
+    if (interFace.lineDecomp_) {
+      // Make sure all elements on a chain are on the same processor rank...
+      Ioss::DecompUtils::line_decomp_modify(element_chains, elem_to_proc,
+                                            interFace.processor_count());
     }
 
     if (debug_level & 32) {
-      output_decomposition_statistics(elem_to_proc, interFace.processor_count(),
-                                      elem_to_proc.size());
+      Ioss::DecompUtils::output_decomposition_statistics(elem_to_proc, interFace.processor_count());
     }
 
     if (!create_split_files) {
@@ -1408,7 +1441,7 @@ namespace {
       Ioss::MeshCopyOptions options{};
       options.ints_64_bit       = sizeof(INT) == 64;
       options.delete_timesteps  = true;
-      options.data_storage_type = 2;
+      options.data_storage_type = 1;
       options.verbose           = true;
 
       // Copy mesh portion of input region to the output region

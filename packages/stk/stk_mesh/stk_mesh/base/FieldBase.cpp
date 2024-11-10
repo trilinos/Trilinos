@@ -35,7 +35,6 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <vector>                       // for vector, etc
-#include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/MetaData.hpp"  // for FieldRestriction
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
@@ -114,17 +113,8 @@ std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& t
 
 std::ostream & operator<<(std::ostream & s, const FieldBase & field)
 {
-  if (field.mesh_meta_data().is_using_simple_fields()) {
-    s << "Field<" << field.data_traits().name << ">";
-  }
-  else {
-    s << "Field<" << field.data_traits().name;
-    for (unsigned i = 0; i < stk::mesh::legacy::field_array_rank(field); ++i) {
-      s << "," << stk::mesh::legacy::dimension_tags(field)[i]->name();
-    }
-    s << ">";
-  }
-  s << "[\"" << field.name() << "\", #states: " << field.number_of_states() << "]";
+  s << "Field<" << field.data_traits().name << ">[\"" << field.name() << "\", #states: "
+    << field.number_of_states() << "]";
   return s ;
 }
 
@@ -160,19 +150,18 @@ void FieldBase::set_initial_value(const void* new_initial_value, unsigned num_sc
   data_traits().copy(init_val, new_initial_value, num_scalars);
 }
 
-void FieldBase::insert_restriction(
-  const char     * arg_method ,
-  const Part     & arg_part ,
-  const unsigned   arg_num_scalars_per_entity ,
-  const unsigned   arg_first_dimension ,
-  const void*      arg_init_value )
+void FieldBase::insert_restriction(const char     * arg_method,
+                                   const Part     & arg_part,
+                                   const unsigned   arg_num_scalars_per_entity,
+                                   const unsigned   arg_first_dimension,
+                                   const void*      arg_init_value)
 {
   FieldRestriction tmp( arg_part );
 
   tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
   tmp.set_dimension(arg_first_dimension);
 
-  if (arg_init_value != NULL) {
+  if (arg_init_value != nullptr) {
     //insert_restriction can be called multiple times for the same field, giving
     //the field different lengths on different mesh-parts.
     //We will only store one initial-value array, we need to store the one with
@@ -192,7 +181,7 @@ void FieldBase::insert_restriction(
     size_t nbytes = sizeof_scalar * num_scalars;
 
     size_t old_nbytes = 0;
-    if (get_initial_value() != NULL) {
+    if (get_initial_value() != nullptr) {
       old_nbytes = get_initial_value_num_bytes();
     }   
     if (nbytes > old_nbytes) {
@@ -279,19 +268,18 @@ void FieldBase::insert_restriction(
   }
 }
 
-void FieldBase::insert_restriction(
-  const char     * arg_method ,
-  const Selector & arg_selector ,
-  const unsigned   arg_num_scalars_per_entity ,
-  const unsigned   arg_first_dimension ,
-  const void*      arg_init_value )
+void FieldBase::insert_restriction(const char     * arg_method,
+                                   const Selector & arg_selector,
+                                   const unsigned   arg_num_scalars_per_entity,
+                                   const unsigned   arg_first_dimension,
+                                   const void*      arg_init_value)
 {
   FieldRestriction tmp( arg_selector );
 
   tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
   tmp.set_dimension(arg_first_dimension);
 
-  if (arg_init_value != NULL) {
+  if (arg_init_value != nullptr) {
     //insert_restriction can be called multiple times for the same field, giving
     //the field different lengths on different mesh-parts.
     //We will only store one initial-value array, we need to store the one with
@@ -311,7 +299,7 @@ void FieldBase::insert_restriction(
     size_t nbytes = sizeof_scalar * num_scalars;
 
     size_t old_nbytes = 0;
-    if (get_initial_value() != NULL) {
+    if (get_initial_value() != nullptr) {
       old_nbytes = get_initial_value_num_bytes();
     }   
     if (nbytes > old_nbytes) {
@@ -450,7 +438,7 @@ void FieldBase::verify_and_clean_restrictions(const Part& superset, const Part& 
 
 void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
 {
-  if (m_mesh == NULL || bulk == NULL) {
+  if (m_mesh == nullptr || bulk == nullptr) {
     m_mesh = bulk;
   }
   else {
@@ -461,44 +449,6 @@ void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
 bool FieldBase::defined_on(const stk::mesh::Part& part) const
 {
   return (length(part) > 0);
-}
-
-STK_DEPRECATED_MSG("FieldBase::field_array_rank() is no longer supported since it represents the number of "
-                   "extra Field template parameters, which are being removed.")
-unsigned
-FieldBase::field_array_rank() const
-{
-  return legacy_field_array_rank();
-}
-
-unsigned
-FieldBase::legacy_field_array_rank() const
-{
-  if (m_meta_data->is_using_simple_fields()) {
-    STK_ThrowErrorMsg("FieldBase::field_array_rank() is no longer supported since it represents" << std::endl
-                      << "the number of extra Field template parameters, which are being removed.");
-  }
-
-  return m_field_rank;
-}
-
-STK_DEPRECATED_MSG("FieldBase::dimension_tags() is no longer supported since it holds the "
-                   "extra Field template parameters, which are being removed.")
-const shards::ArrayDimTag * const *
-FieldBase::dimension_tags() const
-{
-  return legacy_dimension_tags();
-}
-
-const shards::ArrayDimTag * const *
-FieldBase::legacy_dimension_tags() const
-{
-  if (m_meta_data->is_using_simple_fields()) {
-    STK_ThrowErrorMsg("FieldBase::dimension_tags() is no longer supported since it holds the" << std::endl
-                      << "extra Field template parameters, which are being removed.");
-  }
-
-  return m_dim_tags;
 }
 
 unsigned FieldBase::length(const stk::mesh::Part& part) const
@@ -547,23 +497,41 @@ unsigned FieldBase::max_extent(unsigned dimension) const
   }
 }
 
-void FieldBase::rotate_multistate_data()
+void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
 {
-  const unsigned numStates = number_of_states();
+  const int numStates = number_of_states();
   if (numStates > 1 && StateNew == state()) {
-    NgpFieldBase* ngpField = get_ngp_field();
-    if (ngpField != nullptr) {
-      ngpField->rotate_multistate_data();
+    bool allStatesHaveNgpFields = true;
+    for(int s = 0; s < numStates; ++s) {
+      if (field_state(static_cast<FieldState>(s))->get_ngp_field() == nullptr) {
+        allStatesHaveNgpFields = false;
+      }
     }
-    for (unsigned s = 1; s < numStates; ++s) {
+
+    for (int s = 1; s < numStates; ++s) {
       FieldBase* sField = field_state(static_cast<FieldState>(s));
       m_field_meta_data.swap(sField->m_field_meta_data);
 
       std::swap(m_numSyncsToDevice, sField->m_numSyncsToDevice);
       std::swap(m_numSyncsToHost, sField->m_numSyncsToHost);
-
       std::swap(m_modifiedOnHost, sField->m_modifiedOnHost);
       std::swap(m_modifiedOnDevice, sField->m_modifiedOnDevice);
+    }
+
+    for(int s = 0; s < numStates; ++s) {
+      NgpFieldBase* ngpField = field_state(static_cast<FieldState>(s))->get_ngp_field();
+      if (ngpField != nullptr) {
+        ngpField->update_bucket_pointer_view();
+        ngpField->fence();
+      }
+    }
+
+    if (rotateNgpFieldViews && allStatesHaveNgpFields) {
+      for (int s = 1; s < numStates; ++s) {
+        NgpFieldBase* ngpField_sminus1 = field_state(static_cast<FieldState>(s-1))->get_ngp_field();
+        NgpFieldBase* ngpField_s = field_state(static_cast<FieldState>(s))->get_ngp_field();
+        ngpField_s->swap_field_views(ngpField_sminus1);
+      }
     }
   }
 }

@@ -435,8 +435,8 @@ void cdqerr_(f_integer *nreq, f_integer *vstat, f_integer *nrem, f_integer *nret
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -538,8 +538,8 @@ void cqid_(f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid)
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -585,8 +585,8 @@ void cqd_(f_integer *vstat, f_integer *hscopy, f_integer *disp, f_integer *bcolo
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -622,8 +622,8 @@ void clf_(f_integer *n, f_integer *funccl, f_integer *funcid, f_integer *vstat, 
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -659,8 +659,8 @@ void clpr_(f_integer *n, char *profid, f_integer *profid_size, f_integer *vstat,
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -713,8 +713,8 @@ void cqsp_(f_integer *vstat, f_integer *nvip, f_integer *vip, f_integer *nvrp, f
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -749,8 +749,8 @@ void clesc_(f_integer *n, f_integer *escid, f_integer *vstat, f_integer *supprt)
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -796,8 +796,8 @@ void cqp_(f_integer *vstat, f_integer *vip, f_integer *vrfmt, f_integer *vrexp, 
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -834,8 +834,8 @@ void cqcl_(f_integer *vstat, f_integer *clip1, f_integer *clipr, f_integer *scli
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1259,8 +1259,8 @@ void cgtxx1_(f_real *x, f_real *y, char *string, f_integer *vstat, f_integer *vc
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1307,8 +1307,8 @@ void cqprl_(f_integer *vstat, f_integer *maxpl, f_integer *maxdpl, f_integer *ma
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1348,8 +1348,8 @@ void cqln_(f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *max
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1387,8 +1387,8 @@ void cqlnt_(f_integer *nreq, f_integer *first, f_integer *vstat, f_integer *ntot
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1432,8 +1432,8 @@ void cqchh1_(char *font, f_integer *txp, f_integer *nreq, f_integer *first, f_in
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1481,8 +1481,8 @@ void cqfl_(f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *max
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1522,8 +1522,8 @@ void cqc_(f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nin
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1563,8 +1563,8 @@ void cqlna_(f_integer *vstat, f_integer *lnbi, f_integer *lntyp, f_integer *lwmo
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1615,8 +1615,8 @@ void cqtxa_(f_integer *vstat, f_integer *txbi, f_integer *fonti, f_integer *font
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1654,8 +1654,8 @@ void cqcte_(f_integer *nreq, f_integer *first, f_integer *vstat, f_integer *ntot
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1688,8 +1688,8 @@ void cili_(f_integer *iclass, f_integer *idev)
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};
@@ -1729,8 +1729,8 @@ void crqlc_(f_integer *idev, f_real *timeout, f_integer *vstat, f_integer *rstat
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   if (dev_found != -1) {
     anything *temp_surface[] = {devices[dev_found].statelist[surf_found]};

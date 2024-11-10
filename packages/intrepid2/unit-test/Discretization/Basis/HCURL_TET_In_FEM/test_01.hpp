@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file test_01.cpp
@@ -63,45 +30,27 @@
 #include "Teuchos_RCP.hpp"
 
 #include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
 namespace Test {
 
+using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  //! Create an execution space instance.
+  const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-  if (verbose)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs,       false);
+  //! Setup test output stream.
+  Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+    verbose, "HCURL_TET_In_FEM", {
+  });
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
-  using DeviceSpaceType = typename DeviceType::execution_space;   
-  typedef typename
-      Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-  
-  *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-
-  *outStream
-  << "===============================================================================\n"
-  << "|                                                                             |\n"
-  << "|                      Unit Test HCURL_TET_In_FEM                             |\n"
-  << "|                                                                             |\n"
-  << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-  << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
-  << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-  << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
-  << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
-  << "|                      Mauro Perego  (mperego@sandia.gov).                    |\n"
-  << "|                                                                             |\n"
-  << "===============================================================================\n";
 
   typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
   typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
@@ -144,7 +93,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     tetBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
-    tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+    tetBasis.getValues(space, basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
@@ -191,7 +140,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = std::min(3, maxOrder);
     TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-    
+
 
     const ordinal_type cardinality = tetBasis.getCardinality();
     DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality , dim);
@@ -201,7 +150,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     RealSpaceTools<DeviceType>::clone(dofCoords, dofCoords_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
-    tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+    tetBasis.getValues(space, basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
@@ -301,7 +250,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
-    tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+    tetBasis.getValues(space, basisAtLattice, lattice, OPERATOR_VALUE);
 
     auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
     Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
@@ -380,14 +329,14 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
     const ordinal_type cardinality = tetBasis.getCardinality();
-    
+
     DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
     RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(curlBasisAtLattice, cardinality , np_lattice, dim);
-    tetBasis.getValues(curlBasisAtLattice, lattice, OPERATOR_CURL);
+    tetBasis.getValues(space, curlBasisAtLattice, lattice, OPERATOR_CURL);
 
     auto h_curlBasisAtLattice = Kokkos::create_mirror_view(curlBasisAtLattice);
     Kokkos::deep_copy(h_curlBasisAtLattice, curlBasisAtLattice);
@@ -449,23 +398,23 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-  
+
   *outStream
   << "\n"
   << "===============================================================================\n"
   << "| TEST 5: Function Space is Correct                                           |\n"
   << "===============================================================================\n";
-  
+
   try {
     const ordinal_type order = std::min(3, maxOrder);
     TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
-    
+
     const EFunctionSpace fs = tetBasis.getFunctionSpace();
-    
+
     if (fs != FUNCTION_SPACE_HCURL)
     {
       *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
-      
+
       // Output the multi-index of the value where the error is:
       *outStream << " Expected a function space of FUNCTION_SPACE_HCURL (enum value " << FUNCTION_SPACE_HCURL << "),";
       *outStream << " but got " << fs << "\n";

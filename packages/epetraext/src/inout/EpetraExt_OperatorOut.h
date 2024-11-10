@@ -40,6 +40,12 @@
 //@HEADER
 #ifndef EPETRAEXT_OPERATOROUT_H
 #define EPETRAEXT_OPERATOROUT_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_Operator;
 class Epetra_MultiVector;

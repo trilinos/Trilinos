@@ -17,8 +17,7 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 #include <percept/element/intrepid/BasisTable.hpp>
 
 #include <percept/xfer/TransferHelper.hpp>
@@ -72,6 +71,8 @@ LinInterp<FROM,TO>::filter_to_nearest (
   const MeshA     &FromElem,
   MeshB           &ToPoints) {
 
+  using DynRankView = Kokkos::DynRankView<double, Kokkos::HostSpace>;
+
   typename MeshB::Adaptor adaptor;
   if (adaptor.filter_to_nearest(RangeToDomain, FromElem, ToPoints))
     {
@@ -109,18 +110,18 @@ LinInterp<FROM,TO>::filter_to_nearest (
       compute_nodal_coords(*tocoordinates, theNode, &coord[0]);
     }
 
-    Intrepid::FieldContainer<double> inputPhysicalPoints(1,nDim);
+    DynRankView inputPhysicalPoints("LI:inputPhysicalPoints",1,1,nDim);
 
     double rz_coord[2];
     switch(ToPoints.transferType_) {
     case THREED_TO_THREED:
     case TWOD_TO_TWOD:
-      inputPhysicalPoints.setValues(&coord[0], nDim);
+      std::copy(&coord[0],&coord[0]+nDim, inputPhysicalPoints.data());
       break;
     case TWOD_AXI_TO_THREED:
       rz_coord[0] = sqrt(coord[0]*coord[0]+coord[1]*coord[1]);
       rz_coord[1] = coord[2];
-      inputPhysicalPoints.setValues(rz_coord, nDim);
+      std::copy(rz_coord,rz_coord+nDim, inputPhysicalPoints.data());
       break;
     default:
       std::exit(EXIT_FAILURE);
@@ -140,7 +141,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
       stk::mesh::Entity const* elem_node_rels = fromBulkData.begin_nodes(theElem);
       const int num_nodes = fromBulkData.num_nodes(theElem);
 
-      Intrepid::FieldContainer<double> cellWorkset(1, num_nodes, nDim);
+      DynRankView cellWorkset("LI:cellWorkset", 1, num_nodes, nDim);
 
       for ( int ni = 0; ni < num_nodes; ++ni ) {
         stk::mesh::Entity node = elem_node_rels[ni];
@@ -153,16 +154,15 @@ LinInterp<FROM,TO>::filter_to_nearest (
 
       std::vector<double> isoParCoords(nDim);
 
-      Intrepid::FieldContainer<double> outputParametricPoints(1,nDim);
+      DynRankView outputParametricPoints("LI:outputParametricPoints",1,1,nDim);
       shards::CellTopology topo(bucket_cell_topo_data);
-      unsigned cellOrd = 0;  // FIXME
 
       double dist = 0.0;
 
       if (topo.getKey()==shards::Particle::key) {
         dist = 0.0;
         for ( unsigned j = 0; j < nDim; ++j ) {
-          dist += std::pow(cellWorkset(0,0,j) - inputPhysicalPoints(0,j), 2);
+          dist += std::pow(cellWorkset(0,0,j) - inputPhysicalPoints(0,0,j), 2);
         }
         dist = std::sqrt(dist);
       }
@@ -170,13 +170,18 @@ LinInterp<FROM,TO>::filter_to_nearest (
         // do nothing
       }
       else {
-        Intrepid::CellTools<double>::mapToReferenceFrame(outputParametricPoints,
+        /*std::cout << outputParametricPoints.rank() << " "
+                  << inputPhysicalPoints.rank() << ""
+                  << std::endl;
+        std::cout << outputParametricPoints.size() << " "
+                  << inputPhysicalPoints.size() << " "
+                  << std::endl;*/
+        Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(outputParametricPoints,
                                                          inputPhysicalPoints,
                                                          cellWorkset,
-                                                         topo,
-                                                         cellOrd);
+                                                         topo);
         
-        dist = parametricDistanceToEntity(&outputParametricPoints(0,0), topo);
+        dist = parametricDistanceToEntity(outputParametricPoints.data(), topo);
       }
 
       if ( dist < (1.0 + parametric_tolerance) && dist < best_dist ) {
@@ -184,7 +189,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
         best_dist = dist;
 
 	for ( unsigned j = 0; j < nDim; ++j ) {
-	  isoParCoords[j] = outputParametricPoints(0,j);
+	  isoParCoords[j] = outputParametricPoints(0,0,j);
 	}
 
         ToPoints.TransferInfo_[thePt] = isoParCoords;
@@ -318,6 +323,8 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
   stk::mesh::Entity theNode,
   const std::vector<double> &isoParCoords)
 {
+  using DynRankView = Kokkos::DynRankView<double, Kokkos::HostSpace>;
+
   const unsigned nDim = FromElem.fromMetaData_.spatial_dimension();
   const unsigned from_field_size = FromElem.fromFields_[0]->max_size();
 
@@ -330,7 +337,7 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
   stk::mesh::Entity const* elem_node_rels = fromBulkData.begin_nodes(theElem);
   const int num_nodes = fromBulkData.num_nodes(theElem);
 
-  Intrepid::FieldContainer<double> Coeff(num_nodes, from_field_size);
+  DynRankView Coeff("LI:Coeff", num_nodes, from_field_size);
 
   // now load the elemental values for future interpolation; fill in connected nodes
   for ( int ni = 0; ni < num_nodes; ++ni ) {
@@ -342,11 +349,11 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
     }
   }
 
-  Intrepid::FieldContainer<double> inputParametricPoints(1, nDim);
+  DynRankView inputParametricPoints("LI:inputParametricPoints", 1, nDim);
 
-  inputParametricPoints.setValues(&isoParCoords[0], nDim);
+  std::copy(&isoParCoords[0],&isoParCoords[0]+nDim, inputParametricPoints.data());
 
-  Intrepid::FieldContainer<double> basisVals(num_nodes, 1);
+  DynRankView basisVals("LI:basisVals", num_nodes, 1);
 
   if (topo.getKey()==shards::Particle::key) {
     basisVals(0,0) = 1.0;
@@ -356,10 +363,9 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
     basisVals(1,0) = 0.5;    
   }
   else {
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double> > > HGRAD_Basis =
-      BasisTable::getBasis(topo);
+    auto HGRAD_Basis = BasisTable::getInstance()->getBasis(topo);
 
-    HGRAD_Basis->getValues(basisVals, inputParametricPoints, Intrepid::OPERATOR_VALUE);
+    HGRAD_Basis->getValues(basisVals, inputParametricPoints, Intrepid2::OPERATOR_VALUE);
   }
 
   // TODO: save off these basis values for re-use
@@ -383,11 +389,11 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
   break;
   case TWOD_AXI_TO_THREED:
   {
-    Intrepid::FieldContainer<double> from_field_values(from_field_size);
+    DynRankView from_field_values("LI:from_field_values", from_field_size);
     for ( unsigned fi = 0; fi<from_field_size; fi++) {
       from_field_values(fi) = 0;
       for (int ni = 0; ni < num_nodes; ni++) {
-	from_field_values(fi) += Coeff(ni,fi) * basisVals(ni, 0);
+	      from_field_values(fi) += Coeff(ni,fi) * basisVals(ni, 0);
       }
     }
     

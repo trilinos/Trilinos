@@ -92,3 +92,9 @@ extern MPI_Comm row_comm,col_comm;
 
 
 
+
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif

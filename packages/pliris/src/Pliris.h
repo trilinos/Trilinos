@@ -44,6 +44,12 @@
 #ifndef _PLIRIS_H_
 #define _PLIRIS_H_
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 
 class Epetra_Comm;
 class Epetra_BlockMap;

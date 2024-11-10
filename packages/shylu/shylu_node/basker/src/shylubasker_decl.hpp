@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_DECL_HPP
 #define SHYLUBASKER_DECL_HPP
 
@@ -1151,8 +1160,6 @@ namespace BaskerNS
     void printMTX(std::string fname, BASKER_MATRIX &M);
     void printMTX(std::string fname, BASKER_MATRIX &M, BASKER_BOOL  off);
     void readMTX(std::string fname, BASKER_MATRIX &M);
-    int printRHS();
-    int printSOL();
     void printTree();
 
     BASKER_INLINE
@@ -1485,13 +1492,6 @@ namespace BaskerNS
 
     //end NDE
 
-
-    //RHS and solutions (These are not used anymore)
-    ENTRY_2DARRAY rhs;
-    ENTRY_2DARRAY sol;
-    Int nrhs;
-
-    
     BASKER_TREE   part_tree;
     BASKER_TREE   tree;
     BASKER_SYMBOLIC_TREE stree;

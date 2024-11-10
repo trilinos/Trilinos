@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_BLOCKUTILITY_H
 #define EPETRAEXT_BLOCKUTILITY_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <vector>
 
 #include <Epetra_ConfigDefs.h>

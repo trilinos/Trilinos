@@ -2,7 +2,7 @@
 // FlexLexer.h -- define interfaces for lexical analyzer classes generated
 // by flex
 
-// Copyright (c) 1993 The Regents of the University of California.
+// Copyright (c) 1993, 2023 The Regents of the University of California.
 // All rights reserved.
 //
 // This code is derived from software contributed to Berkeley by
@@ -51,7 +51,7 @@
 #include "aprepro_parser.h"
 
 extern "C++" {
-
+// NOLINTBEGIN
 struct yy_buffer_state;
 typedef int yy_state_type;
 
@@ -194,6 +194,7 @@ protected:
   int yy_more_offset;
   int yy_prev_more_offset;
 };
+// NOLINTEND
 }
 
 #endif // yyFlexLexer || ! yyFlexLexerOnce

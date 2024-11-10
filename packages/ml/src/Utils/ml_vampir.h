@@ -5,6 +5,12 @@
 #ifndef __MLVAMPIREH__
 #define __MLVAMPIREH__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include <stdio.h>
 #include <stdlib.h>

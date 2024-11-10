@@ -215,7 +215,7 @@ TEST(StkIo, write_stk_mesh_to_file)
 }
 //EndDocTest1
 
-class StkIoResultsOutput : public stk::unit_test_util::simple_fields::MeshFixture
+class StkIoResultsOutput : public stk::unit_test_util::MeshFixture
 {
 protected:
     void setup_mesh(const std::string & meshSpec,
@@ -256,7 +256,6 @@ TEST_F(StkIoResultsOutput, close_output_mesh_makes_it_invalid) {
     setup_mesh(meshSpec, stk::mesh::BulkData::NO_AUTO_AURA);
 
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
 
     std::string fileName1 = "output1.e";
@@ -284,7 +283,6 @@ TEST_F(StkIoResultsOutput, write_nodal_face_variable_multiple_procs)
 
     const std::string fileName = "nodal_field_as_face_variable.e";
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
     stkIo.use_nodeset_for_sideset_nodes_fields(outputFileIndex, true);

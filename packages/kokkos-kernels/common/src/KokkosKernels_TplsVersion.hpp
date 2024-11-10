@@ -28,6 +28,10 @@
 #include "cusparse.h"
 #endif
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+#include "cusolver_common.h"
+#endif
+
 namespace KokkosKernels {
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
@@ -46,8 +50,17 @@ inline std::string cusparse_version_string() {
   // Print version
   std::stringstream ss;
 
-  ss << CUSPARSE_VER_MAJOR << "." << CUSPARSE_VER_MINOR << "."
-     << CUSPARSE_VER_PATCH << "." << CUSPARSE_VER_BUILD;
+  ss << CUSPARSE_VER_MAJOR << "." << CUSPARSE_VER_MINOR << "." << CUSPARSE_VER_PATCH << "." << CUSPARSE_VER_BUILD;
+
+  return ss.str();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+inline std::string cusolver_version_string() {
+  std::stringstream ss;
+
+  ss << CUSOLVER_VER_MAJOR << "." << CUSOLVER_VER_MINOR << "." << CUSOLVER_VER_PATCH << "." << CUSOLVER_VER_BUILD;
 
   return ss.str();
 }

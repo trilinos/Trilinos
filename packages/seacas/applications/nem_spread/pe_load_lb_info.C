@@ -1,11 +1,12 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#include "exodusII.h" // for ex_inquire, ex_opts, etc
+#include "el_check_monot.h" // for check_monot
+#include "exodusII.h"       // for ex_inquire, ex_opts, etc
 #include "fmt/ostream.h"
 #include "globals.h"     // for ELEM_COMM_MAP, etc
 #include "nem_spread.h"  // for NemSpread, etc
@@ -14,6 +15,8 @@
 #include "rf_io_const.h" // for Debug_Flag, Exo_LB_File
 #include "rf_util.h"     // for print_line
 #include "sort_utils.h"  // for gds_qsort
+#include "vector_data.h"
+#include <array>
 #include <cassert>
 #include <cstddef> // for size_t
 #include <cstdio>  // for stderr, etc
@@ -88,7 +91,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
   int mode   = EX_READ | int64api;
   int iio_ws = 0; // Don't interfere with exodus files; this is the nemesis file.
   if ((lb_exoid = ex_open(Exo_LB_File.c_str(), mode, &cpu_ws, &iio_ws, &version)) == -1) {
-    fmt::print(stderr, "[{}] ERROR: Couldn\'t open lb file, {}\n", __func__, Exo_LB_File);
+    fmt::print(stderr, "[{}] ERROR: Could not open lb file, {}\n", __func__, Exo_LB_File);
     exit(1);
   }
 
@@ -149,7 +152,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
   } /* End "for (int iproc=0; iproc <Proc_Info[2]; iproc++)" */
 
   /* Set up each processor for the communication map parameters */
-  read_cmap_params(lb_exoid,globals.E_Comm_Map, globals.N_Comm_Map, &cmap_max_size);
+  read_cmap_params(lb_exoid, globals.E_Comm_Map, globals.N_Comm_Map, &cmap_max_size);
 
   /*
    * loop through the processors, one at a time, to read
@@ -189,8 +192,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
       globals.N_Comm_Map[iproc].proc_ids.resize(globals.N_Comm_Map[iproc].node_cnt);
 
       if (ex_get_node_cmap(lb_exoid, globals.N_Comm_Map[iproc].map_id,
-                           globals.N_Comm_Map[iproc].node_ids.data(),
-                           globals.N_Comm_Map[iproc].proc_ids.data(), iproc) < 0) {
+                           Data(globals.N_Comm_Map[iproc].node_ids),
+                           Data(globals.N_Comm_Map[iproc].proc_ids), iproc) < 0) {
         /*
          * If there are disconnected mesh pieces, then it is
          * possible that there is no communication between the
@@ -208,9 +211,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
       globals.E_Comm_Map[iproc].proc_ids.resize(globals.E_Comm_Map[iproc].elem_cnt);
 
       if (ex_get_elem_cmap(lb_exoid, globals.E_Comm_Map[iproc].map_id,
-                           globals.E_Comm_Map[iproc].elem_ids.data(),
-                           globals.E_Comm_Map[iproc].side_ids.data(),
-                           globals.E_Comm_Map[iproc].proc_ids.data(), iproc) < 0) {
+                           Data(globals.E_Comm_Map[iproc].elem_ids),
+                           Data(globals.E_Comm_Map[iproc].side_ids),
+                           Data(globals.E_Comm_Map[iproc].proc_ids), iproc) < 0) {
         fmt::print(stderr, "[{}] ERROR. Failed to get elemental comm map for Proc {}!\n", __func__,
                    iproc);
         exit(1);
@@ -227,12 +230,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
      * Sort the local element numbers in ascending global element numbers.
      * This means that globals.GElems will be monotonic.
      */
-    gds_qsort(globals.GElems[iproc].data(), globals.Num_Internal_Elems[iproc]);
-    gds_qsort(globals.Elem_Map[iproc].data(), globals.Num_Internal_Elems[iproc]);
+    gds_qsort(Data(globals.GElems[iproc]), globals.Num_Internal_Elems[iproc]);
+    gds_qsort(Data(globals.Elem_Map[iproc]), globals.Num_Internal_Elems[iproc]);
 
     /* Check that globals.GNodes is monotonic, from i = 0 to Num_Internal_Nodes */
 #ifdef DEBUG
-    assert(check_monot(globals.GNodes[iproc], globals.Num_Internal_Nodes[iproc]));
+    assert(check_monot(&globals.GNodes[iproc], globals.Num_Internal_Nodes[iproc]));
 
     /*
      * Check that globals.GNodes is monotonic, from i = Num_Internal_Nodes to
@@ -582,8 +585,7 @@ in mesh file",
 /*****************************************************************************/
 
 template <typename T, typename INT>
-void NemSpread<T, INT>::read_cmap_params(int lb_exoid, 
-					 std::vector<ELEM_COMM_MAP<INT>> &E_Comm_Map,
+void NemSpread<T, INT>::read_cmap_params(int lb_exoid, std::vector<ELEM_COMM_MAP<INT>> &E_Comm_Map,
                                          std::vector<NODE_COMM_MAP<INT>> &N_Comm_Map,
                                          INT                             *cmap_max_size)
 {
@@ -595,8 +597,8 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid,
     std::array<INT, 1> elem_cm_cnts{0};
 
     /* Read the communication map IDs for processor "iproc" */
-    if (ex_get_cmap_params(lb_exoid, node_cm_ids.data(), node_cm_cnts.data(), elem_cm_ids.data(),
-                           elem_cm_cnts.data(), iproc) < 0) {
+    if (ex_get_cmap_params(lb_exoid, Data(node_cm_ids), Data(node_cm_cnts), Data(elem_cm_ids),
+                           Data(elem_cm_cnts), iproc) < 0) {
       fmt::print(stderr, "[{}] ERROR, unable to read communication map params\n", __func__);
       exit(1);
     }

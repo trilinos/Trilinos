@@ -13,6 +13,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MeshSurface.hpp>
 #include <Akri_Parser.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
@@ -257,7 +258,7 @@ parse_facets(const Parser::Node & ic_node, const stk::diag::Timer &parent_timer)
   return surface;
 }
 
-MeshSurface *
+Surface *
 parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & meta)
 {
   std::string surface_name;
@@ -279,8 +280,11 @@ parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & met
   const stk::mesh::Field<double>* coords = reinterpret_cast<const stk::mesh::Field<double>*>(&auxMeta.get_current_coordinates().field());
   STK_ThrowRequire(nullptr != coords);
 
-  const stk::mesh::Selector surface_selector = stk::mesh::Selector(io_part);
-  return new MeshSurface(meta, *coords, surface_selector, sign);
+  const stk::mesh::Selector surfaceSelector = stk::mesh::Selector(io_part);
+
+  if (meta.spatial_dimension() == 2)
+    return new MeshSurface<Facet2d>(meta, *coords, surfaceSelector, sign);
+  return new MeshSurface<Facet3d>(meta, *coords, surfaceSelector, sign);
 }
 
 LevelSet_String_Function *

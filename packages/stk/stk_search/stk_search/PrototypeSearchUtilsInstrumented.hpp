@@ -52,8 +52,8 @@
 #include "stk_search/BoundingBox.hpp"                    // for add_to_box, etc
 #include "stk_search/Box.hpp"                            // for Box
 #include "stk_search/CommonSearchUtil.hpp"
-#include "stk_search/KDTree.hpp"
-#include "stk_search/KDTree_BoundingBox.hpp"
+#include "stk_search/kdtree/KDTree.hpp"
+#include "stk_search/kdtree/KDTree_BoundingBox.hpp"
 #include "stk_util/parallel/CommSparse.hpp"              // for CommSparse
 #include "stk_util/parallel/ParallelComm.hpp"            // for CommBuffer, etc
 namespace stk { class CommBufferV; }
@@ -901,11 +901,11 @@ void GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBox
   //  Do a global communication to communicate all processor boxA bounding boxes
   //  to all processors in the group
   //
-  stk::search::AllGatherHelper(boxA_proc, boxA_proc_box_array, mpiComm);
+  stk::search::all_gather_helper(boxA_proc, boxA_proc_box_array, mpiComm);
   for(int iproc = 0; iproc < pSize; ++iproc) {
     boxA_proc_box_array[iproc].set_object_number(iproc);
   }
-  stk::search::AllGatherHelper(boxB_proc, boxB_proc_box_array, mpiComm);
+  stk::search::all_gather_helper(boxB_proc, boxB_proc_box_array, mpiComm);
   for(int iproc = 0; iproc < pSize; ++iproc) {
     boxB_proc_box_array[iproc].set_object_number(iproc);
   }

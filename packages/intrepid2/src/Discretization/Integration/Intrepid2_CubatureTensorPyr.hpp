@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_CubatureTensorPyr.hpp
@@ -62,6 +29,10 @@ namespace Intrepid2 {
   class CubatureTensorPyr
     : public CubatureTensor<DeviceType,pointValueType,weightValueType> {
   public:
+      using TensorPointDataType      = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::TensorPointDataType;
+      using TensorWeightDataType      = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::TensorWeightDataType;
+      using PointViewTypeAllocatable = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::PointViewTypeAllocatable;
+      using WeightViewTypeAllocatable = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::WeightViewTypeAllocatable;
 
     template<typename cubPointViewType,
              typename cubWeightViewType>
@@ -101,7 +72,7 @@ namespace Intrepid2 {
     virtual
     void
     getCubature( PointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
+                 weightViewType cubWeights ) const override {
       getCubatureImpl( cubPoints,
                        cubWeights );
     }
@@ -124,8 +95,65 @@ namespace Intrepid2 {
                        const CubatureLineType2 line2 ) 
       : CubatureTensor<DeviceType,pointValueType,weightValueType>(line0, line1, line2) {}
     
+      
+    /** \brief Returns a points container appropriate for passing to getCubature().
+
+        \return cubPoints  - Data structure sized for the cubature points.
+    */
+    virtual TensorPointDataType allocateCubaturePoints() const override
+    {
+      std::vector< PointViewTypeAllocatable > cubaturePointComponents(1);
+      
+      int numCubatures = this->getNumCubatures();
+      int numPoints = 1;
+      for (ordinal_type i=0;i<numCubatures;++i)
+      {
+        numPoints *= this->getCubatureComponent(i).getNumPoints();
+      }
+      
+      const int dim = 3;
+      cubaturePointComponents[0] = PointViewTypeAllocatable("cubature points", numPoints, dim);
+      
+      return TensorPointDataType(cubaturePointComponents);
+    }
+    
+    /** \brief Returns a weight container appropriate for passing to getCubature().
+
+        \return cubWeights  - Data structure sized for the cubature weights.
+    */
+    virtual TensorWeightDataType allocateCubatureWeights() const override
+    {
+      using WeightDataType = Data<weightValueType,DeviceType>;
+      
+      std::vector< WeightDataType > cubatureWeightComponents(1);
+      int numPoints = 1;
+      int numCubatures = this->getNumCubatures();
+      for (ordinal_type i=0;i<numCubatures;++i)
+      {
+        numPoints *= this->getCubatureComponent(i).getNumPoints();
+      }
+      
+      cubatureWeightComponents[0] = WeightDataType(WeightViewTypeAllocatable("cubature weights", numPoints));
+      
+      return TensorWeightDataType(cubatureWeightComponents);
+    }
+
+   /** \brief Returns tensor cubature points and weights.  For non-tensor cubatures, the tensor structures are trivial, thin wrappers around the data returned by getCubature().  The provided containers should be pre-allocated through calls to allocateCubaturePoints() and allocateCubatureWeights().
+
+       \param cubPoints       [out]   - TensorPoints structure containing the cubature points.
+       \param cubWeights      [out]  - TensorData structure containing cubature weights.
+   */
+   virtual
+   void
+   getCubature( const TensorPointDataType & tensorCubPoints,
+                const TensorWeightDataType & tensorCubWeights) const override {
+     // tensorCubPoints/Weights should have trivial tensor structure
+     auto points  = tensorCubPoints.getTensorComponent(0);
+        auto weights = tensorCubWeights.getTensorComponent(0).getUnderlyingView();
+        this->getCubature(points,weights);
+   }
   };
-} 
+}
 
 #include "Intrepid2_CubatureTensorPyrDef.hpp"
 

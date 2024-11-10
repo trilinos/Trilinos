@@ -8,6 +8,8 @@
 
 #include <Akri_LevelSet.hpp>
 
+#include <Akri_AdaptiveElementContour.hpp>
+#include <Akri_AllReduce.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_Compute_Surface_Distance.hpp>
@@ -31,6 +33,7 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_FastIterativeMethod.hpp>
@@ -38,6 +41,9 @@
 #include <Akri_Surface_Manager.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_PatchInterpolator.hpp>
+#include <Akri_SemiLagrangian.hpp>
+#include <Akri_String_Function_Expression.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 
 namespace krino {
 
@@ -139,8 +145,8 @@ void LevelSet::setup(void)
 {
   register_fields();
 
-  facets.reset(new Faceted_Surface("current_facets"));
-  facets_old.reset(new Faceted_Surface("old_facets"));
+  facets = FacetedSurfaceBase::build(my_meta.spatial_dimension());
+  facets_old = FacetedSurfaceBase::build(my_meta.spatial_dimension());
 
   // initializes CDFEM_Support
   if (!meta().is_commit())
@@ -280,9 +286,11 @@ void
 LevelSet::write_facets(void)
 {
   /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::facets_exoii(void)"); /* %TRACE% */
-  Faceted_Surface & f = *facets;
   const std::string fileBaseName = "facets_" + name();
-  krino::write_facets(spatial_dimension, f, fileBaseName, my_facetFileIndex++, mesh().parallel());
+  if (2 == mesh().mesh_meta_data().spatial_dimension())
+    krino::write_facets(facets->get_facets_2d(), fileBaseName, my_facetFileIndex++, mesh().parallel());
+  else
+    krino::write_facets(facets->get_facets_3d(), fileBaseName, my_facetFileIndex++, mesh().parallel());
 }
 
 //-----------------------------------------------------------------------------------
@@ -342,37 +350,41 @@ LevelSet::set_surface_distance(std::vector<stk::mesh::Part *> surfaces, const do
 }
 
 //-----------------------------------------------------------------------------------
-void
-LevelSet::advance_semilagrangian(const double deltaTime)
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::advance_semilagrangian(const double deltaTime)"); /* %TRACE% */
 
-  if(trackIsoSurface)
+void
+LevelSet::advance_semilagrangian(const double timeN, const double timeNp1)
+{
+  STK_ThrowRequireMsg(myInterfaceVelocity.size() == spatial_dimension, "Did not find interface velocity expression.  Was it provided?");
+
+  stk::mesh::field_copy(my_old_distance_field, my_distance_field); // 0th order predictor needed for preserving sign with narrow_band
+  facets->swap( *facets_old ); // store existing facets in facets_old
+
+  const stk::mesh::Selector activeFieldSelector = aux_meta().active_not_ghost_selector() & stk::mesh::selectField(get_distance_field());
+  const BoundingBox paddedNodeBBox = compute_padded_node_bounding_box_for_semilagrangian(mesh(), activeFieldSelector, timeN, timeNp1, get_coordinates_field(), myInterfaceVelocity, *facets_old);
+  const double avgEdgeLength = compute_average_edge_length();
+
+  facets_old->prepare_to_compute(paddedNodeBBox, my_narrow_band_size);
+
+  if (mySemiLagrangianAlg == NON_ADAPTIVE_SINGLE_STEP)
   {
-    redistance();
+    calc_single_step_nonadaptive_semilagrangian_nodal_distance_and_build_facets(mesh(), activeFieldSelector, timeN, timeNp1, get_coordinates_field(), get_distance_field(), myInterfaceVelocity, my_narrow_band_size, avgEdgeLength, *facets_old, *facets);
+  }
+  else if (mySemiLagrangianAlg == ADAPTIVE_PREDICTOR_CORRECTOR)
+  {
+    std::unique_ptr<FacetedSurfaceBase> facetsPred = FacetedSurfaceBase::build(my_meta.spatial_dimension());
+    predict_semilagrangian_nodal_distance_and_build_facets(mesh(), activeFieldSelector, timeN, timeNp1, get_coordinates_field(), get_distance_field(), myInterfaceVelocity, my_narrow_band_size, avgEdgeLength, *facets_old, *facetsPred);
+
+    facetsPred->prepare_to_compute(paddedNodeBBox, my_narrow_band_size);
+    correct_semilagrangian_nodal_distance_and_build_facets(mesh(), activeFieldSelector, timeN, timeNp1, get_coordinates_field(), get_distance_field(), myInterfaceVelocity, my_narrow_band_size, avgEdgeLength, *facets_old, *facetsPred, *facets);
   }
   else
   {
-    stk::mesh::Selector selector(my_meta.universal_part());
+    STK_ThrowRequireMsg(false, "Unrecognized Semi-Lagrangian algorithm " << mySemiLagrangianAlg);
+  }
 
-    // store existing facets in facets_old
-    facets->swap( *facets_old );
-
-    // get non-local facets such that we have copies of all old facets
-    // within the range of this proc's nodes
-    prepare_to_compute_distance( deltaTime, selector );
-
-    // compute nodal distances with semi-lagrangian step
-    stk::mesh::field_copy(my_old_distance_field, my_distance_field);
-    compute_distance_semilagrangian( deltaTime, selector );
-
-    // build local facet list
-    build_facets_locally(my_meta.universal_part());
-
-    // debugging
-    if (krinolog.shouldPrint(LOG_FACETS))
-    {
-      write_facets();
-    }
+  if (krinolog.shouldPrint(LOG_FACETS))
+  {
+    write_facets();
   }
 }
 
@@ -434,6 +446,36 @@ LevelSet::initialize(const double time)
   if (my_ic_scale != 1.0) scale_distance(my_ic_scale);
 
   stk::mesh::field_copy(get_distance_field(), get_old_distance_field());
+}
+
+
+bool LevelSet::can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces() const
+{
+  if (!my_compute_surface_distance_parts.empty() ||
+      compute_time_of_arrival() ||
+      my_perform_initial_redistance ||
+      my_ic_offset != 0.0 ||
+      my_ic_scale != 1.0 ||
+      my_IC_alg->numberCalculators() > 0)
+    return false;
+  return true;
+}
+
+void LevelSet::build_initial_facets(const double time)
+{
+  const bool buildAdaptiveFacets = (mySemiLagrangianAlg == ADAPTIVE_PREDICTOR_CORRECTOR) &&
+    can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces();
+
+  Composite_Surface & initSurfaces = my_IC_alg->get_surfaces(); // Note that it is assumed that this fn is called right after initialize and therefore initSurfaces.prepare_to_compute has already been called.
+
+  const stk::mesh::Selector activeFieldSelector = aux_meta().active_not_ghost_selector() & stk::mesh::selectField(get_distance_field());
+
+  const double avgEdgeLength = compute_average_edge_length();
+
+  if (buildAdaptiveFacets)
+    build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_initial_surfaces(mesh(), activeFieldSelector, time, get_coordinates_field(), get_distance_field(), avgEdgeLength, initSurfaces, *facets);
+  else
+    build_nonadaptive_facets(mesh(), activeFieldSelector, get_coordinates_field(), get_distance_field(), avgEdgeLength, *facets);
 }
 
 //-----------------------------------------------------------------------------------
@@ -600,10 +642,8 @@ void LevelSet::locally_conserved_redistance()
       }
     }  // end bucket loop
 
-    const double localSumCorrectionSquared = sumCorrectionSquared;
-    stk::all_reduce_sum(mesh().parallel(), &localSumCorrectionSquared, &sumCorrectionSquared, 1);
-    const size_t localCountCorrection = countCorrection;
-    stk::all_reduce_sum(mesh().parallel(), &localCountCorrection, &countCorrection, 1);
+    all_reduce_sum(mesh().parallel(), sumCorrectionSquared);
+    all_reduce_sum(mesh().parallel(), countCorrection);
 
     const double correctionNorm = std::sqrt(sumCorrectionSquared/countCorrection/avgElemSize);
     if(krinolog.shouldPrint(LOG_DEBUG))
@@ -754,13 +794,32 @@ void LevelSet::redistance_using_existing_facets(const stk::mesh::Selector & volu
 
   // get non-local facets such that we have copies of all "old" facets
   // within the range of this proc's nodes
-  prepare_to_compute_distance( 0., volumeSelector );
+  prepare_to_compute_distance_to_stationary_facets( volumeSelector );
 
   // compute nodal distances with semi-lagrangian step
-  compute_distance_semilagrangian( 0., volumeSelector );
+  compute_signed_distance_at_selected_nodes( volumeSelector );
 
   // swap so that the facets that were formed remain in the vector facets
   facets->swap( *facets_old );
+}
+
+void LevelSet::redistance_nodes_using_existing_facets(const std::vector<stk::mesh::Entity> & nodesToRedistance)
+{
+  const FieldRef coordsField = get_coordinates_field();
+  const FieldRef distField = get_distance_field();
+
+  const BoundingBox nodeBbox = krino::compute_nodal_bbox( mesh(), coordsField, nodesToRedistance );
+
+  const double narrowBandSize = 0.;
+  facets->prepare_to_compute(nodeBbox, narrowBandSize);
+
+  for ( auto && node : nodesToRedistance )
+  {
+    double & d = get_scalar_field(mesh(), distField, node);
+    const stk::math::Vector3d coords = get_vector_field(mesh(), coordsField, node, spatial_dimension);
+
+    d = facets->point_signed_distance(coords);
+  }
 }
 
 void LevelSet::redistance() { redistance(my_meta.universal_part()); }
@@ -792,19 +851,22 @@ LevelSet::redistance(const stk::mesh::Selector & volumeSelector)
   redistance_using_existing_facets(volumeSelector);
 }
 
-void
-LevelSet::interface_conforming_redistance()
+static std::vector<stk::mesh::Entity> get_owned_and_shared_interface_and_child_element_nodes(const stk::mesh::BulkData & mesh,
+    const AuxMetaData & auxMeta,
+    const CDFEM_Support & cdfemSupport,
+    const stk::mesh::Selector interfaceSelector)
 {
-  krinolog << "Redistancing the level set field..." << stk::diag::dendl;
+  std::vector<stk::mesh::Entity> initialNodes;
+  const stk::mesh::Selector ownedOrSharedInterfaceSelector = interfaceSelector & auxMeta.active_part() & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part());
+  stk::mesh::get_selected_entities( ownedOrSharedInterfaceSelector, mesh.buckets(stk::topology::NODE_RANK), initialNodes, false );
 
-  sync_all_fields_to_host();
-
-  const auto & phaseSupport = Phase_Support::get(meta());
-  const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(my_identifier);
-  const stk::mesh::Selector negativeBlockSelector = phaseSupport.get_negative_levelset_block_selector(my_identifier);
-  build_interface_conforming_facets(interfaceSelector, negativeBlockSelector);
-
-  redistance_using_existing_facets(my_meta.universal_part());
+  stk::mesh::Selector ownedChildSelector = cdfemSupport.get_child_part() & mesh.mesh_meta_data().locally_owned_part();
+  for (auto * bucketPtr :  mesh.get_buckets(stk::topology::ELEMENT_RANK, ownedChildSelector))
+    for (auto elem : *bucketPtr)
+      for (auto node : StkMeshEntities{mesh.begin_nodes(elem), mesh.end_nodes(elem)})
+        initialNodes.push_back(node);
+  stk::util::sort_and_unique(initialNodes, stk::mesh::EntityLess(mesh));
+  return initialNodes;
 }
 
 static bool determine_polarity_for_negative_side_of_interface(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
@@ -822,6 +884,11 @@ static bool determine_polarity_for_negative_side_of_interface(const stk::mesh::B
   return false;
 }
 
+static std::array<stk::math::Vector3d,2> get_line_side_vector(const stk::mesh::BulkData & mesh, const FieldRef vecField, const std::array<stk::mesh::Entity,2> lineNodes)
+{
+  return {{ get_vector_field(mesh, vecField, lineNodes[0], 2), get_vector_field(mesh, vecField, lineNodes[1], 2) }};
+}
+
 static std::array<stk::mesh::Entity,3> get_oriented_triangle_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
 {
   const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
@@ -832,13 +899,11 @@ static std::array<stk::mesh::Entity,3> get_oriented_triangle_side_nodes(const st
   return {{sideNodes[0], sideNodes[2], sideNodes[1]}};
 }
 
-static void append_facets_from_triangle_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, Faceted_Surface & facets)
+static void append_facet_from_triangle_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<Facet3d> & facets)
 {
   const std::array<stk::mesh::Entity,3> orientedSideNodes = get_oriented_triangle_side_nodes(mesh, negativeSideElementSelector, side);
-
-  const std::array<stk::math::Vector3d,3> sideNodeCoords{{stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[0]), 3), stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[1]), 3), stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[2]), 3)}};
-  std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( sideNodeCoords[0], sideNodeCoords[1], sideNodeCoords[2] );
-  facets.add( std::move(facet) );
+  const std::array<stk::math::Vector3d,3> sideNodeCoords = get_triangle_vector(mesh, coords, orientedSideNodes);
+  facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], sideNodeCoords[2] );
 }
 
 static std::array<stk::mesh::Entity,2> get_oriented_line_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
@@ -851,35 +916,220 @@ static std::array<stk::mesh::Entity,2> get_oriented_line_side_nodes(const stk::m
   return {{sideNodes[1], sideNodes[0]}};
 }
 
-static void append_facets_from_line_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, Faceted_Surface & facets)
+static void append_facet_from_line_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<Facet2d> & facets)
 {
   const std::array<stk::mesh::Entity,2> orientedSideNodes = get_oriented_line_side_nodes(mesh, negativeSideElementSelector, side);
-
-  const std::array<stk::math::Vector3d,2> sideNodeCoords{{stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[0]), 2), stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[1]), 2)}};
-  std::unique_ptr<Facet> facet = std::make_unique<Facet2d>(sideNodeCoords[0], sideNodeCoords[1]);
-  facets.add( std::move(facet) );
+  const std::array<stk::math::Vector3d,2> sideNodeCoords = get_line_side_vector(mesh, coords, orientedSideNodes);
+  facets.emplace_back(sideNodeCoords[0], sideNodeCoords[1]);
 }
 
-void LevelSet::append_facets_from_side(const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
+static void append_facet_with_velocity_from_triangle_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef interfaceVelocity, const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<FacetWithVelocity3d> & facets)
 {
-  if (mesh().bucket(side).topology() == stk::topology::TRIANGLE_3)
-    append_facets_from_triangle_side(mesh(), get_coordinates_field(), sideSelector, negativeSideElementSelector, side, *facets);
-  else if (mesh().bucket(side).topology() == stk::topology::LINE_2)
-    append_facets_from_line_side(mesh(), get_coordinates_field(), sideSelector, negativeSideElementSelector, side, *facets);
+  const std::array<stk::mesh::Entity,3> orientedSideNodes = get_oriented_triangle_side_nodes(mesh, negativeSideElementSelector, side);
+  const std::array<stk::math::Vector3d,3> sideNodeCoords = get_triangle_vector(mesh, coords, orientedSideNodes);
+  const std::array<stk::math::Vector3d,3> sideNodeVelocity = get_triangle_vector(mesh, interfaceVelocity, orientedSideNodes);
+  facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], sideNodeCoords[2], sideNodeVelocity[0], sideNodeVelocity[1], sideNodeVelocity[2] );
+}
+
+static void append_facet_with_velocity_from_line_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef interfaceVelocity, const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<FacetWithVelocity2d> & facets)
+{
+  const std::array<stk::mesh::Entity,2> orientedSideNodes = get_oriented_line_side_nodes(mesh, negativeSideElementSelector, side);
+  const std::array<stk::math::Vector3d,2> sideNodeCoords = get_line_side_vector(mesh, coords, orientedSideNodes);
+  const std::array<stk::math::Vector3d,2> sideNodeVelocity = get_line_side_vector(mesh, interfaceVelocity, orientedSideNodes);
+  facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], sideNodeVelocity[0], sideNodeVelocity[1] );
+}
+
+static void append_owned_facets_from_triangle_sides(const stk::mesh::BulkData & mesh,
+    const FieldRef cooordsField,
+    const stk::mesh::Selector & sideSelector,
+    const stk::mesh::Selector & negativeSideElementSelector,
+    std::vector<Facet3d> & facets)
+{
+  for ( auto & bucket : mesh.get_buckets( mesh.mesh_meta_data().side_rank(), sideSelector & mesh.mesh_meta_data().locally_owned_part()) )
+  {
+    STK_ThrowRequire(bucket->topology() == stk::topology::TRIANGLE_3);
+    for (auto & side : *bucket)
+      append_facet_from_triangle_side(mesh, cooordsField, sideSelector, negativeSideElementSelector, side, facets);
+  }
+}
+
+static void append_owned_facets_from_line_sides(const stk::mesh::BulkData & mesh,
+    const FieldRef cooordsField,
+    const stk::mesh::Selector & sideSelector,
+    const stk::mesh::Selector & negativeSideElementSelector,
+    std::vector<Facet2d> & facets)
+{
+  for ( auto & bucket : mesh.get_buckets( mesh.mesh_meta_data().side_rank(), sideSelector & mesh.mesh_meta_data().locally_owned_part()) )
+  {
+    STK_ThrowRequire(bucket->topology() == stk::topology::LINE_2);
+    for (auto & side : *bucket)
+      append_facet_from_line_side(mesh, cooordsField, sideSelector, negativeSideElementSelector, side, facets);
+  }
+}
+
+static void append_owned_facets_with_velocity_from_triangle_sides(const stk::mesh::BulkData & mesh,
+    const FieldRef cooordsField,
+    const FieldRef interfaceVelocity,
+    const stk::mesh::Selector & sideSelector,
+    const stk::mesh::Selector & negativeSideElementSelector,
+    std::vector<FacetWithVelocity3d> & facets)
+{
+  for ( auto & bucket : mesh.get_buckets( mesh.mesh_meta_data().side_rank(), sideSelector & mesh.mesh_meta_data().locally_owned_part()) )
+  {
+    STK_ThrowRequire(bucket->topology() == stk::topology::TRIANGLE_3);
+    for (auto & side : *bucket)
+      append_facet_with_velocity_from_triangle_side(mesh, cooordsField, interfaceVelocity, sideSelector, negativeSideElementSelector, side, facets);
+  }
+}
+
+static void append_owned_facets_with_velocity_from_line_sides(const stk::mesh::BulkData & mesh,
+    const FieldRef cooordsField,
+    const FieldRef interfaceVelocity,
+    const stk::mesh::Selector & sideSelector,
+    const stk::mesh::Selector & negativeSideElementSelector,
+    std::vector<FacetWithVelocity2d> & facets)
+{
+  for ( auto & bucket : mesh.get_buckets( mesh.mesh_meta_data().side_rank(), sideSelector & mesh.mesh_meta_data().locally_owned_part()) )
+  {
+    STK_ThrowRequire(bucket->topology() == stk::topology::LINE_2);
+    for (auto & side : *bucket)
+      append_facet_with_velocity_from_line_side(mesh, cooordsField, interfaceVelocity, sideSelector, negativeSideElementSelector, side, facets);
+  }
+}
+
+static void build_interface_conforming_facets(const stk::mesh::BulkData & mesh,
+    const Phase_Support & phaseSupport,
+    const stk::mesh::Part & activePart,
+    const FieldRef coordsField,
+    const Surface_Identifier lsIdentifier,
+    FacetedSurfaceBase & facets)
+{
+  const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(lsIdentifier);
+  const stk::mesh::Selector negativeSideBlockSelector = phaseSupport.get_negative_levelset_block_selector(lsIdentifier);
+
+  const stk::mesh::Selector sideSelector = interfaceSelector & activePart;
+  const stk::mesh::Selector ownedSideSelector = sideSelector & mesh.mesh_meta_data().locally_owned_part();
+
+  facets.clear();
+  if (3 == mesh.mesh_meta_data().spatial_dimension())
+    append_owned_facets_from_triangle_sides(mesh, coordsField, sideSelector, negativeSideBlockSelector, facets.as_derived_type<Facet3d>().get_facets());
+  else
+    append_owned_facets_from_line_sides(mesh, coordsField, sideSelector, negativeSideBlockSelector, facets.as_derived_type<Facet2d>().get_facets());
+}
+
+static void build_interface_conforming_facets_with_interface_velocity(const stk::mesh::BulkData & mesh,
+    const Phase_Support & phaseSupport,
+    const stk::mesh::Part & activePart,
+    const FieldRef coordsField,
+    const FieldRef interfaceVelocity,
+    const Surface_Identifier lsIdentifier,
+    FacetedSurfaceBase & facets)
+{
+  const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(lsIdentifier);
+  const stk::mesh::Selector negativeSideBlockSelector = phaseSupport.get_negative_levelset_block_selector(lsIdentifier);
+
+  const stk::mesh::Selector sideSelector = interfaceSelector & activePart;
+  const stk::mesh::Selector ownedSideSelector = sideSelector & mesh.mesh_meta_data().locally_owned_part();
+
+  facets.clear();
+  if (3 == mesh.mesh_meta_data().spatial_dimension())
+    append_owned_facets_with_velocity_from_triangle_sides(mesh, coordsField, interfaceVelocity, sideSelector, negativeSideBlockSelector, facets.as_derived_type<FacetWithVelocity3d>().get_facets());
+  else
+    append_owned_facets_with_velocity_from_line_sides(mesh, coordsField, interfaceVelocity, sideSelector, negativeSideBlockSelector, facets.as_derived_type<FacetWithVelocity2d>().get_facets());
 }
 
 void
-LevelSet::build_interface_conforming_facets(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideBlockSelector)
+LevelSet::interface_conforming_redistance()
 {
-  const stk::mesh::Selector sideSelector = interfaceSelector & aux_meta().active_part();
-  const stk::mesh::Selector ownedSideSelector = sideSelector & meta().locally_owned_part();
+  if (FAST_MARCHING == my_redistance_method)
+    krinolog << "Redistancing the level set field using CDFEM fast marching method..." << stk::diag::dendl;
+  else
+    krinolog << "Redistancing the level set field using CDFEM method..." << stk::diag::dendl;
 
-  std::vector< stk::mesh::Entity> sides;
-  stk::mesh::get_selected_entities( ownedSideSelector, mesh().buckets( meta().side_rank() ), sides );
+  sync_all_fields_to_host();
 
-  facets->clear();
-  for (auto && side : sides)
-    append_facets_from_side(sideSelector, negativeSideBlockSelector, side);
+  const auto & phaseSupport = Phase_Support::get(meta());
+  build_interface_conforming_facets(mesh(), phaseSupport, aux_meta().active_part(), get_coordinates_field(), my_identifier, *facets);
+
+  if (FAST_MARCHING == my_redistance_method)
+    fast_marching_interface_conforming_redistance_using_existing_facets();
+  else
+    redistance_using_existing_facets(my_meta.universal_part());
+}
+
+void
+LevelSet::fast_marching_interface_conforming_redistance_using_existing_facets()
+{
+  const auto & phaseSupport = Phase_Support::get(meta());
+  const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(my_identifier);
+  const CDFEM_Support & cdfemSupport = CDFEM_Support::get(meta());
+  const std::vector<stk::mesh::Entity> initialNodes = get_owned_and_shared_interface_and_child_element_nodes(mesh(), aux_meta(), cdfemSupport, interfaceSelector);
+
+  redistance_nodes_using_existing_facets(initialNodes);
+
+  const stk::mesh::Selector activeVolumeSelector = aux_meta().active_part();
+
+  std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> get_interface_speed;
+  Fast_Marching fm(mesh(),
+        activeVolumeSelector,
+        get_coordinates_field(),
+        get_distance_field(),
+        get_interface_speed,
+        my_redistance_timer);
+  fm.redistance(initialNodes);
+}
+
+template <typename FACET>
+void extend_velocity_to_selected_nodes(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & nodeSelector,
+    const FieldRef coordsField,
+    const FieldRef extendedVelocity,
+    const Faceted_Surface<FACET> & interfaceFacets)
+{
+  for ( auto && bucketPtr : mesh.get_buckets( stk::topology::NODE_RANK, nodeSelector) )
+  {
+    const size_t length = bucketPtr->size();
+    const double *coordsData = field_data<double>(coordsField, *bucketPtr);
+    double *extVelData = field_data<double>(extendedVelocity, *bucketPtr);
+
+    for (size_t i = 0; i < length; ++i)
+    {
+      const stk::math::Vector3d nodeCoords(coordsData+i*FACET::DIM, FACET::DIM);
+      const auto * nearest = interfaceFacets.get_closest_facet(nodeCoords);
+      const stk::math::Vector3d nearestVel = nearest->velocity_at_closest_point(nodeCoords);
+      for (int d=0; d<FACET::DIM; ++d)
+        extVelData[i*FACET::DIM+d] = nearestVel[d];
+    }
+  }
+}
+
+void LevelSet::extend_interface_velocity_using_closest_point_projection(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const FieldRef interfaceVelocity, const FieldRef extendedVelocity, const Surface_Identifier lsIdentifier)
+{
+  krinolog << "Extending velocity for " << Surface_Manager::get(mesh.mesh_meta_data()).get_name(lsIdentifier) << " using closest point projection..." << stk::diag::dendl;
+  coordsField.field().sync_to_host();
+  interfaceVelocity.field().sync_to_host();
+  extendedVelocity.field().sync_to_host();
+
+  const int nDim = mesh.mesh_meta_data().spatial_dimension();
+  std::unique_ptr<FacetedSurfaceBase> interfaceFacets = FacetedSurfaceBase::build_with_velocity(nDim);
+  const auto & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
+  const auto & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+  build_interface_conforming_facets_with_interface_velocity(mesh, phaseSupport, auxMeta.active_part(), coordsField, interfaceVelocity, lsIdentifier, *interfaceFacets);
+
+  const stk::mesh::Selector nodeSelector = auxMeta.active_not_ghost_selector() & stk::mesh::selectField(extendedVelocity);
+
+  BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, nodeSelector, coordsField);
+  interfaceFacets->prepare_to_compute(nodeBBox, 0.);
+
+  if (3 == nDim)
+    extend_velocity_to_selected_nodes(mesh, nodeSelector, coordsField, extendedVelocity, interfaceFacets->as_derived_type<FacetWithVelocity3d>());
+  else
+    extend_velocity_to_selected_nodes(mesh, nodeSelector, coordsField, extendedVelocity, interfaceFacets->as_derived_type<FacetWithVelocity2d>());
+}
+
+void LevelSet::set_interface_velocity( const std::vector<std::string> & interfaceVelocity )
+{
+  initialize_expression_vector(interfaceVelocity, myInterfaceVelocity);
 }
 
 double
@@ -913,13 +1163,19 @@ LevelSet::get_time_of_arrival_speed(stk::mesh::Entity elem, ParallelErrorMessage
 }
 
 void
-LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival)
+LevelSet::fast_methods_redistance(const stk::mesh::Selector & volumeSelector, const bool compute_time_of_arrival)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::fast_marching_redistance(const stk::mesh::Selector & selector)"); /* %TRACE% */
 
   // Unlike redistance() this method provides an approximate (not exact) distance to the isosurface.
   // On the other hand, this method provide solve the Eikonal equation on the mesh.  This is slightly
   // different than a pure distance function because it provides the distance through domain.  It can't see
   // through walls like the redistance() method does.
+
+  std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> get_interface_speed;
+  if (compute_time_of_arrival)
+    get_interface_speed = [&](ParallelErrorMessage& err, stk::mesh::Entity elem) { return get_time_of_arrival_speed(elem, err); };
+
+  const stk::mesh::Selector activeVolumeSelector = aux_meta().active_part() & volumeSelector;
 
   if (my_redistance_method == FAST_MARCHING)
   {
@@ -928,25 +1184,25 @@ LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bo
     else
       krinolog << "Redistancing the level set field using a fast marching method..." << stk::diag::dendl;
 
-    Fast_Marching fm(*this, selector, my_redistance_timer);
+    Fast_Marching fm(mesh(),
+        activeVolumeSelector,
+        get_coordinates_field(),
+        get_distance_field(),
+        get_interface_speed,
+        my_redistance_timer);
     fm.redistance();
+    stk::mesh::field_copy(get_distance_field(), get_old_distance_field());
   }
   else
   {
     STK_ThrowRequire(my_redistance_method == FAST_ITERATIVE);
-    std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> get_interface_speed;
     if (compute_time_of_arrival)
-    {
       krinolog << "Initializing the level set field to be the time-of-arrival using a fast iterative method..." << stk::diag::dendl;
-      get_interface_speed = [&](ParallelErrorMessage& err, stk::mesh::Entity elem) { return get_time_of_arrival_speed(elem, err); };
-    }
     else
-    {
       krinolog << "Redistancing the level set field using a fast iterative method..." << stk::diag::dendl;
-    }
 
     FastIterativeMethod fim(mesh(),
-        selector,
+        activeVolumeSelector,
         get_coordinates_field(),
         get_distance_field(),
         get_interface_speed,
@@ -1133,153 +1389,49 @@ LevelSet::compute_continuous_gradient() const
 //-----------------------------------------------------------------------------------
 
 void
-LevelSet::compute_nodal_bbox( const stk::mesh::Selector & selector,
-    BoundingBox & node_bbox,
-    const stk::math::Vector3d & displacement ) const
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::compute_nodal_bbox( BoundingBox & node_bboxes, const double & deltaTime ) const"); /* %TRACE% */
+LevelSet::prepare_to_compute_distance_to_stationary_facets( const stk::mesh::Selector & selector )
+{
+  const stk::mesh::Selector activeFieldSelector = aux_meta().active_not_ghost_selector() & selector & stk::mesh::selectField(get_distance_field());
+  const BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh(), activeFieldSelector, get_coordinates_field());
 
-  // find the local nodal bounding box
-
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef dField = get_distance_field();
-
-  const stk::mesh::Selector active_field_selector = aux_meta().active_not_ghost_selector() & selector & stk::mesh::selectField(dField);
-
-  node_bbox = krino::compute_nodal_bbox(mesh(), active_field_selector, xField);
-  node_bbox.shift(-displacement);
+  facets_old->prepare_to_compute(nodeBBox, my_narrow_band_size);
 }
 
 //-----------------------------------------------------------------------------------
 
 void
-LevelSet::prepare_to_compute_distance( const double & deltaTime, const stk::mesh::Selector & selector )
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::get_nonlocal_facets( const double & deltaTime )"); /* %TRACE% */
-
-  // Get all of the facets that are within our processor's bounding box
-  // To do this,  see if any local facets lie in the nodal bounding box
-  // of another proc. if so, send them a copy of those facets
-
-  // First, find the bounding box for each proc that contains all of the
-  // nodes on that proc plus the narrow_band size
-
-  BoundingBox node_bbox;
-  const stk::math::Vector3d displacement = deltaTime * get_extension_velocity();
-  compute_nodal_bbox( selector, node_bbox, displacement );
-
-  facets_old->prepare_to_compute(node_bbox, my_narrow_band_size);
-}
-
-//-----------------------------------------------------------------------------------
-
-void
-LevelSet::compute_distance_semilagrangian( const double & deltaTime, const stk::mesh::Selector & selector )
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::compute_distance_semilagrangian( const double & deltaTime ) const"); /* %TRACE% */
-
+LevelSet::compute_signed_distance_at_selected_nodes( const stk::mesh::Selector & selector )
+{
   const double h_avg = compute_average_edge_length();
 
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef dField = get_distance_field();
-  const stk::math::Vector3d extv = get_extension_velocity();
+  const FieldRef coordsField = get_coordinates_field();
+  const FieldRef distField = get_distance_field();
 
-  const stk::mesh::Selector active_field_selector = aux_meta().active_not_ghost_selector() & selector & stk::mesh::selectField(dField);
+  const stk::mesh::Selector active_field_selector = aux_meta().active_not_ghost_selector() & selector & stk::mesh::selectField(distField);
   stk::mesh::BucketVector const& buckets = mesh().get_buckets(stk::topology::NODE_RANK, active_field_selector);
 
-  for ( auto && bucket : buckets )
+  // If this is too large, then sharp edges can propagate incorrect signs
+  // (even through walls, etc).
+  // If this is too small, then a phase can't disappear because the sign
+  // preservation will prevent it even if the subelement contouring process
+  // neglects it.  So this should be slightly larger than the tolerance in
+  // compute_subelement_decomposition.
+  const double signChangeTol = 5.e-4*h_avg;
+
+  for ( auto && bucketPtr : buckets )
   {
-    const stk::mesh::Bucket & b = *bucket;
+    const double * coordsData = field_data<double>( coordsField , *bucketPtr);
+    double * distData = field_data<double>( distField , *bucketPtr);
 
-    const size_t length = b.size();
-
-    double *d = field_data<double>( dField , b);
-    double *x = field_data<double>( xField , b);
-
-    // Handle special case of ( deltaTime == 0. ) so that we
-    // can handle situation where velocity is not defined at all
-    // nodes where distance is defined.  (This is currently a requirement
-    // for regular semilagrangian advancement).
-    if ( deltaTime == 0. )
+    for (size_t i = 0; i < bucketPtr->size(); ++i)
     {
-      for (size_t i = 0; i < length; ++i)
-      {
-        stk::math::Vector3d x_node(stk::math::Vector3d::ZERO);
-        for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
-        {
-          int index = i*spatial_dimension+dim;
-          x_node[dim] = x[index];
-        }
+      const stk::math::Vector3d nodeCoords(coordsData+i*spatial_dimension, spatial_dimension);
 
-        int previous_sign = LevelSet::sign(d[i]);
-        // If this is too large, then sharp edges can propagate incorrect signs
-        // (even through walls, etc).
-        // If this is too small, then a phase can't disappear because the sign
-        // preservation will prevent it even if the subelement contouring process
-        // neglects it.  So this should be slightly larger than the tolerance in
-        // compute_subelement_decomposition.
-        bool enforce_sign = (std::abs(d[i]) > 5.e-4*h_avg);
+      const int previousSign = LevelSet::sign(distData[i]);
+      const bool doEnforceSign = (std::abs(distData[i]) > signChangeTol);
 
-        d[i] = distance( x_node, previous_sign, enforce_sign );
-      }
+      distData[i] = distance( nodeCoords, previousSign, doEnforceSign );
     }
-    else
-    {
-      for (size_t i = 0; i < length; ++i)
-      {
-        stk::math::Vector3d x_bw(stk::math::Vector3d::ZERO);
-        for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
-        {
-          int index = i*spatial_dimension+dim;
-          x_bw[dim] = x[index] - extv[dim] * deltaTime;
-        }
-
-        int previous_sign = LevelSet::sign(d[i]);
-
-        d[i] = distance( x_bw, previous_sign, false );
-      }
-    }
-  }  // end bucket loop
-}
-
-//-----------------------------------------------------------------------------------
-
-void
-LevelSet::compute_distance( stk::mesh::Entity n,
-			    const double & deltaTime ) const
-{ /* %TRACE% */  /* %TRACE% */
-
-  // use the facet cell array to compute the distance to a node n
-
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef dField = get_distance_field();
-  const stk::math::Vector3d extv = get_extension_velocity();
-
-  double *x = field_data<double>( xField , n);
-  double *d = field_data<double>( dField , n);
-
-  // Handle special case of ( deltaTime == 0. ) so that we
-  // can handle situation where velocity is not defined at all
-  // nodes where distance is defined.  (This is currently a requirement
-  // for regular semilagrangian advancement).
-  if ( deltaTime == 0. )
-  {
-    stk::math::Vector3d x_node(stk::math::Vector3d::ZERO);
-    for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
-    {
-      x_node[dim] = x[dim];
-    }
-
-    int previous_sign = LevelSet::sign(*d);
-    *d = distance( x_node, previous_sign, true );
-  }
-  else
-  {
-    stk::math::Vector3d x_bw(stk::math::Vector3d::ZERO);
-    for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
-    {
-      x_bw[dim] = x[dim] - extv[dim] * deltaTime;
-    }
-
-    int previous_sign = LevelSet::sign(*d);
-    *d = distance( x_bw, previous_sign, false );
   }
 }
 
@@ -1485,10 +1637,7 @@ LevelSet::remove_wall_features() const
     }
   }
 
-  int global_small_feature_removed = false;
-  stk::all_reduce_sum(mesh().parallel(), &small_feature_removed, &global_small_feature_removed, 1);
-
-  if (global_small_feature_removed)
+  if (stk::is_true_on_any_proc(mesh().parallel(), small_feature_removed))
   {
     stk::mesh::communicate_field_data(mesh(), {&dField.field()});
     return true;
@@ -1584,7 +1733,6 @@ LevelSet::elem_on_interface(stk::mesh::Entity e) const
 
   double *d = field_data<double>(isoField, nodes[0]);
   double first_value = *d - my_threshold;
-  bool inside_narrow_band = fabs(first_value) < 0.5*my_narrow_band_size;
 
   for (unsigned i = 1; i < nnodes; ++i )
     {
@@ -1593,7 +1741,6 @@ LevelSet::elem_on_interface(stk::mesh::Entity e) const
       double value = *d - my_threshold;
 
       have_crossing |= sign_change(value, first_value);
-      inside_narrow_band |= (fabs(value) < 0.5*my_narrow_band_size);
     }
 
   // It is the user's job to make sure that the narrow band is sufficiently
@@ -1625,48 +1772,13 @@ LevelSet::compute_levelset_sizes( double & area, double & negVol, double & posVo
   for (auto && elem : objs)
     accumulate_levelset_integrals_on_element(mesh(), elem, area, negVol, posVol, h_avg, xField, isovar, isoval);
 
-  // communicate global sums
-  const int vec_length = 3;
-  std::vector <double> local_sum( vec_length );
-  std::vector <double> global_sum( vec_length );
-  local_sum[0] = area;
-  local_sum[1] = negVol;
-  local_sum[2] = posVol;
-
-  stk::all_reduce_sum(mesh().parallel(), &local_sum[0], &global_sum[0], vec_length);
-
-  area = global_sum[0];
-  negVol = global_sum[1];
-  posVol = global_sum[2];
-
+  all_reduce_sum(mesh().parallel(), area, negVol, posVol);
 }
 //--------------------------------------------------------------------------------
 void
 LevelSet::compute_sizes( double & area, double & negVol, double & posVol, const double isoval ) const
 {
   compute_levelset_sizes(area, negVol, posVol, get_isovar_field(), isoval);
-}
-
-template<typename... Args>
-void all_reduce_sum(stk::ParallelMachine comm, Args&&... args)
-{
-  typedef typename std::common_type<Args...>::type T;
-  const std::array<T, sizeof...(Args)> local = {{ args... }};
-  std::array<T, sizeof...(Args)> global;
-  stk::all_reduce_sum(comm, local.data(), global.data(), local.size());
-  const T * data = global.data();
-  ((std::forward<Args>(args) = *(data++)), ...);
-}
-
-template<typename... Args>
-void all_reduce_max(stk::ParallelMachine comm, Args&&... args)
-{
-  typedef typename std::common_type<Args...>::type T;
-  const std::array<T, sizeof...(Args)> local = {{ args... }};
-  std::array<T, sizeof...(Args)> global;
-  stk::all_reduce_max(comm, local.data(), global.data(), local.size());
-  const T * data = global.data();
-  ((std::forward<Args>(args) = *(data++)), ...);
 }
 
 static double get_gradient_magnitude_at_ip(const sierra::ArrayContainer<double,DIM,NINT> & gradDist, const int ip)
@@ -1768,7 +1880,6 @@ LevelSet::gradient_magnitude_error(void)
   const FieldRef isoField = get_isovar_field();
   xField.field().sync_to_host();
   isoField.field().sync_to_host();
-  //const Vector3d extv = get_extension_velocity();
 
   stk::mesh::Selector active_field_selector = stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
   std::vector< stk::mesh::Entity> objs;
@@ -1834,7 +1945,7 @@ LevelSet::build_facets_locally(const stk::mesh::Selector & selector)
 }
 
 void
-LevelSet::build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets)
+LevelSet::build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, FacetedSurfaceBase & facets)
 {
   facets.clear();
 
@@ -1884,7 +1995,6 @@ LevelSet::LevelSet(stk::mesh::MetaData & in_meta,
       my_redistance_method(CLOSEST_POINT),
       epsilon(1.0e-16),
       trackIsoSurface(false),
-      my_facetFileIndex(1),
       my_needs_reinitialize_every_step(false)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::LevelSet(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
   my_coordinates_field = my_aux_meta.get_current_coordinates();
@@ -1931,49 +2041,12 @@ LevelSet::gather_nodal_field(
 //--------------------------------------------------------------------------------
 std::string
 print_sizes(const LevelSet & ls)
-{ /* %TRACE[ON]% */ Trace trace__("krino::print_sizes(const LevelSet & levelSet)"); /* %TRACE% */
-
-  //
-  // find sizes of facets stored in vector of facet descriptions
-  //
-
-  const auto & ls_surfaces = ls.get_facets().get_facets();
-  unsigned local_facet_num = ls_surfaces.size();
-  unsigned global_facet_num = 0;
-  stk::all_reduce_sum(ls.mesh().parallel(), &local_facet_num , &global_facet_num, 1);
-
-  // iterate local facets and calc area
-
-  double local_facets_totalArea = 0.0; // total surface area of interface from facets
-  double local_facets_maxArea = -1.0; // area of largest facet on interface
-  double local_facets_minArea = std::numeric_limits<double>::max();  // area of smallest facet on interface
-
-  // loop over facets
-  for ( auto&& surface : ls_surfaces )
-  {
-    double area = surface->facet_area();
-    local_facets_totalArea += area;
-
-    local_facets_maxArea = std::min(area, local_facets_maxArea);
-    local_facets_minArea = std::max(area, local_facets_maxArea);
-  }
-
-  double global_facets_totalArea = 0.0;
-  double global_facets_maxArea = 0.0;
-  double global_facets_minArea = 0.0;
-
-  stk::all_reduce_min(ls.mesh().parallel(), &local_facets_minArea, &global_facets_minArea, 1);
-  stk::all_reduce_max(ls.mesh().parallel(), &local_facets_maxArea, &global_facets_maxArea, 1);
-  stk::all_reduce_sum(ls.mesh().parallel(), &local_facets_totalArea, &global_facets_totalArea, 1);
-
+{
   std::ostringstream out;
 
-  // facet info
-  out << "P" << ls.mesh().parallel_rank() << ": facets for level set '" << ls.name() << "' " << std::endl ;
-  out << "\t " << "Global sizes: { " << global_facet_num << " facets on }" << std::endl;
-  out << "\t " << "Local sizes: { " << local_facet_num << " facets on }" << std::endl;
-  out << "\t Global areas: { Min = " << global_facets_minArea << ", Max = " << global_facets_maxArea
-  << ", Total = " << global_facets_totalArea << " }" << std::endl;
+  out << "P" << ls.mesh().parallel_rank() << ": facets for level set '" << ls.name() << "' " << std::endl;
+  out << ls.get_facets().print_sizes() << std::endl;
+
   return out.str();
 }
 //--------------------------------------------------------------------------------

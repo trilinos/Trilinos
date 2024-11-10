@@ -9,6 +9,9 @@ TRIBITS_PACKAGE(Amesos)
 #
 # B) Set up package-specific options
 #
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 ADVANCED_SET(Amesos_Allow_SuperLUDist_Without_ParMETIS OFF
   CACHE BOOL "Allow Amesos to use the SuperLUDist TPL without the enable of the ParMETIS TPL")
 if (NOT Amesos_Allow_SuperLUDist_Without_ParMETIS)
@@ -30,6 +33,15 @@ IF(NOT TPL_ENABLE_MPI)
    SET(${PACKAGE_NAME}_ENABLE_MUMPS OFF)
 
 ENDIF()
+ENDIF()
+
+# if using CSC, must be parallel and needs Pardiso_MKL
+IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
+  IF (NOT TPL_ENABLE_MPI)
+    MESSAGE(WARNING "*****Amesos_ENABLE_CSS_MKL requires MPI. Turning off CSS_MKL. *****")
+    SET(${PACKAGE_NAME}_ENABLE_CSS_MKL OFF)
+    SET(HAVE_AMESOS_CSS_MKL OFF)
+  ENDIF()
 ENDIF()
 
 # if using parallel MUMPS, must also link in scalapack and BLACS

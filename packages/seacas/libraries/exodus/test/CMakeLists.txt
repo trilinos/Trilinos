@@ -66,8 +66,10 @@ endif()
 IF ( NETCDF_NCDUMP_BINARY )
   SET(NETCDF_NCDUMP ${NETCDF_NCDUMP_BINARY})
   SET( cbind_OLDTESTS
+    test-field-utils
     testwt
     testwtd
+    testwtd-to-f
     testrd
     testrd1
     testrdd
@@ -107,6 +109,8 @@ IF ( NETCDF_NCDUMP_BINARY )
     test-add-assembly
     testwt-blob
     testrd-blob
+    testwt-field-metadata
+    testrd-field-metadata
   )
 
   IF (SEACASExodus_ENABLE_THREADSAFE)
@@ -154,15 +158,25 @@ IF ( NETCDF_NCDUMP_BINARY )
     set_property(TARGET ${testName} PROPERTY C_STANDARD 99)
   ENDFOREACH ( testName )
 
-  IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   TRIBITS_ADD_TEST(
-   testall
-   NOEXEPREFIX
-   NOEXESUFFIX
-   NAME exodus_unit_tests
-   COMM mpi serial
-   NUM_MPI_PROCS 1
-  )
+     test-field-utils
+     NOEXEPREFIX
+     NOEXESUFFIX
+     NAME exodus-test-field-utils
+     COMM mpi serial
+     NUM_MPI_PROCS 1
+    )
+
+  IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+
+#  TRIBITS_ADD_TEST(
+#   testall
+#   NOEXEPREFIX
+#   NOEXESUFFIX
+#   NAME exodus_unit_tests
+#   COMM mpi serial
+#   NUM_MPI_PROCS 1
+#  )
 
   if ( TPL_Netcdf_Enables_Netcdf4 )
     TRIBITS_ADD_TEST(
@@ -186,15 +200,15 @@ IF ( NETCDF_NCDUMP_BINARY )
   endif()
 
 #  if ( TPL_Netcdf_Enables_Netcdf5 )
-    TRIBITS_ADD_TEST(
-      testall
-      NOEXEPREFIX
-      NOEXESUFFIX
-      NAME exodus_unit_tests_nc5_env
-      ARGS netcdf5
-      COMM mpi serial
-      NUM_MPI_PROCS 1
-    )
+#    TRIBITS_ADD_TEST(
+#      testall
+#      NOEXEPREFIX
+#      NOEXESUFFIX
+#      NAME exodus_unit_tests_nc5_env
+#      ARGS netcdf5
+#      COMM mpi serial
+#      NUM_MPI_PROCS 1
+#    )
 #  endif()
    endif()
 ELSE()

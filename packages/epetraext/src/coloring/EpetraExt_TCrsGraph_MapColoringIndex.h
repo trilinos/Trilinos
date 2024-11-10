@@ -42,6 +42,12 @@
 #ifndef EpetraExt_TCRSGRAPH_MAPCOLORINGINDEX_H
 #define EpetraExt_TCRSGRAPH_MAPCOLORINGINDEX_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 #include <Epetra_GIDTypeVector.h>
 #include <Epetra_MapColoring.h>

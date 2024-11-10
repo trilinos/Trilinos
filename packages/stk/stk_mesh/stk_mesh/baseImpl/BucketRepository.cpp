@@ -39,6 +39,7 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
@@ -199,7 +200,7 @@ void BucketRepository::fill_key_ptr(const OrdinalVector& parts, PartOrdinal** ke
 
   const size_t keyLen = 2 + part_count;
 
-  *keyPtr = &keyTmpBuffer[0];
+  *keyPtr = keyTmpBuffer;
   *keyEnd = *keyPtr+keyLen;
 
   if (keyLen >= maxKeyTmpBufferSize) {
@@ -297,8 +298,6 @@ void BucketRepository::internal_modification_end()
             STK_ThrowAssert(buckets[j] != nullptr);
             Bucket &bucket = *buckets[j];
 
-            // Update the hop-saving connectivity data on this bucket.
-            //
             for(EntityRank to_rank = stk::topology::NODE_RANK; to_rank < stk::topology::NUM_RANKS; ++to_rank)
             {
                 if (from_rank == to_rank) {
@@ -311,18 +310,18 @@ void BucketRepository::internal_modification_end()
                         bucket.m_fixed_node_connectivity.end_modification(&bucket.m_mesh);
                         break;
                     case stk::topology::EDGE_RANK:
-                        bucket.m_dynamic_edge_connectivity.end_modification(&bucket.m_mesh);
+                        bucket.m_dynamic_edge_connectivity.compress_connectivity();
                         break;
                     case stk::topology::FACE_RANK:
-                        bucket.m_dynamic_face_connectivity.end_modification(&bucket.m_mesh);
+                        bucket.m_dynamic_face_connectivity.compress_connectivity();
                         break;
                     case stk::topology::ELEMENT_RANK:
-                        bucket.m_dynamic_element_connectivity.end_modification(&bucket.m_mesh);
+                        bucket.m_dynamic_element_connectivity.compress_connectivity();
                         break;
                     case stk::topology::INVALID_RANK:
                         break;
                     default:
-                        bucket.m_dynamic_other_connectivity.end_modification(&bucket.m_mesh);
+                        bucket.m_dynamic_other_connectivity.compress_connectivity();
                         break;
                 }
             }

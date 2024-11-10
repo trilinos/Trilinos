@@ -1,6 +1,6 @@
 #pragma once
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,10 +13,13 @@
 namespace Ioss {
   struct IOSS_EXPORT MeshCopyOptions
   {
-    std::vector<double> selected_times{};
-    double              minimum_time{0.0};
-    double              maximum_time{0.0};
-    double              delay{0.0};
+    std::vector<double>      selected_times{};
+    std::vector<std::string> omitted_sets{};
+    double                   minimum_time{0.0};
+    double                   maximum_time{0.0};
+    double                   delay{0.0};
+    double                   time_scale{1.0};
+    double                   time_offset{0.0};
 
     double rel_tolerance{};
     double abs_tolerance{};
@@ -34,6 +37,7 @@ namespace Ioss {
     bool reverse{false};          // Used for testing CGNS
     bool add_proc_id{false};      // CGNS: Add proc_id field.
     bool boundary_sideset{false}; // Output a sideset of the boundary faces of the model
+    bool omitted_blocks{false};
 
     // only used by Catalyst calls to `copy_database`; if false the
     // copy process skips the defining of the mesh geometry and the

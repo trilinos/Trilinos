@@ -54,6 +54,8 @@
       virtual StringStringMap fixSurfaceAndEdgeSetNamesMap()
       {
         StringStringMap str_map;
+        str_map["wedge6"] = "tet4";
+        str_map["pyramid5"] = "tet4";
         str_map["hex8"] = "tet4";
         str_map["quad4"] = "tri3";
         return str_map;

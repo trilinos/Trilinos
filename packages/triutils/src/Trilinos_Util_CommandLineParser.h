@@ -42,6 +42,12 @@
 #ifndef _TRILINOS_UTIL_CLP_
 #define _TRILINOS_UTIL_CLP_
 
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+
 #include <iostream>
 #include <string>
 #include <map>

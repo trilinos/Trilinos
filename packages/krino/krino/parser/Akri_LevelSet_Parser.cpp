@@ -77,14 +77,14 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         ls.set_distance_name(distance_name);
       }
 
-      std::vector<double> extension_velocity;
-      if (ls_node.get_if_present("extension_velocity", extension_velocity))
+      std::vector<std::string> interfaceVelocity;
+      if (ls_node.get_if_present("interface_velocity", interfaceVelocity))
       {
-        if (extension_velocity.size() != ls.spatial_dimension)
+        if (interfaceVelocity.size() != ls.spatial_dimension)
         {
-          stk::RuntimeDoomedAdHoc() << "Expecting " << ls.spatial_dimension << " real values for extension_velocity for level set " << ls_name << ".\n";
+          stk::RuntimeDoomedAdHoc() << "Expecting " << ls.spatial_dimension << " string expressions for interface_velocity for level set " << ls_name << ".\n";
         }
-        ls.set_extension_velocity(stk::math::Vector3d(extension_velocity.data(), extension_velocity.size()));
+        ls.set_interface_velocity(interfaceVelocity);
       }
 
       double narrow_band_multiplier = 0.0;
@@ -118,6 +118,21 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
           stk::RuntimeWarningAdHoc() << "Unrecognized redistance method:  " << redistance_method_name << std::endl;
 
         ls.set_redistance_method(redistance_method);
+      }
+
+      std::string semilagrangianMethodName;
+      if (ls_node.get_if_present("semilagrangian_algorithm", semilagrangianMethodName))
+      {
+        std::transform(semilagrangianMethodName.begin(), semilagrangianMethodName.end(), semilagrangianMethodName.begin(), ::toupper);
+        SemiLagrangianAlgorithm algType = NON_ADAPTIVE_SINGLE_STEP;
+        if (semilagrangianMethodName == "NON_ADAPTIVE_SINGLE_STEP")
+          algType = NON_ADAPTIVE_SINGLE_STEP;
+        else if (semilagrangianMethodName == "ADAPTIVE_PREDICTOR_CORRECTOR")
+          algType = ADAPTIVE_PREDICTOR_CORRECTOR;
+        else
+          stk::RuntimeWarningAdHoc() << "Unrecognized redistance method:  " << redistance_method_name << std::endl;
+
+        ls.set_semilagrangian_algorithm(algType);
       }
 
       bool perform_initial_redistance;

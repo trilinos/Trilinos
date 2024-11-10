@@ -48,7 +48,6 @@
       , m_ntets(ntets), m_tetIds(tetIds)
       , m_elem_id_start(elem_id_start)
     {
-      m_metaData.use_simple_fields();
       m_coordinates_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "coordinates" );
 
       // Define where fields exist on the mesh:

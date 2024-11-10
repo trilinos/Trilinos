@@ -1,28 +1,28 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <generated/Iogn_GeneratedMesh.h>
-
-#include <Ioss_Hex8.h>
-#include <Ioss_Pyramid5.h>
-#include <Ioss_Shell4.h>
-#include <Ioss_Tet4.h>
-#include <Ioss_TriShell3.h>
-#include <Ioss_Utils.h>
-
-#include <algorithm>
+#include "Ioss_Hex8.h"
+#include "Ioss_Pyramid5.h"
+#include "Ioss_Shell4.h"
+#include "Ioss_Tet4.h"
+#include "Ioss_TriShell3.h"
+#include "Ioss_Utils.h"
+#include "generated/Iogn_GeneratedMesh.h"
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
-#include <cstdlib> // for nullptr, exit, etc
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream>
 #include <numeric>
 #include <string>
 #include <tokenize.h> // for tokenize
 #include <vector>     // for vector
+
+#include "Ioss_CodeTypes.h"
+#include "Ioss_EntityType.h"
 
 namespace {
   void output_help(std::ostream &output)
@@ -213,7 +213,7 @@ namespace Iogn {
     offZ = off_z;
   }
 
-  void GeneratedMesh::parse_options(const std::vector<std::string> &groups)
+  void GeneratedMesh::parse_options(const Ioss::NameList &groups)
   {
     for (size_t i = 1; i < groups.size(); i++) {
       auto option = Ioss::tokenize(groups[i], ":");
@@ -1073,7 +1073,7 @@ namespace Iogn {
     /* create global coordinates */
     int64_t count = node_count_proc();
     coord.resize(count * 3);
-    coordinates(&coord[0]);
+    coordinates(Data(coord));
   }
 
   void GeneratedMesh::coordinates(double *coord) const
@@ -1228,7 +1228,7 @@ namespace Iogn {
       int64_t npe = createTets ? 3 : 4;
       connect.resize(element_count_proc(block_number) * npe);
     }
-    raw_connectivity(block_number, &connect[0]);
+    raw_connectivity(block_number, Data(connect));
   }
 
   void GeneratedMesh::connectivity(int64_t block_number, Ioss::IntVector &connect) const
@@ -1241,7 +1241,7 @@ namespace Iogn {
       int64_t npe = createTets ? 3 : 4;
       connect.resize(element_count_proc(block_number) * npe);
     }
-    raw_connectivity(block_number, &connect[0]);
+    raw_connectivity(block_number, Data(connect));
   }
 
   void GeneratedMesh::connectivity(int64_t block_number, int64_t *connect) const
@@ -1557,7 +1557,6 @@ namespace Iogn {
                (cnt == int64_t(3 * element_count_proc(block_number)) && createTets));
       }
     }
-    return;
   }
 
   void GeneratedMesh::nodeset_nodes(int64_t id, Ioss::Int64Vector &nodes) const
@@ -1662,9 +1661,9 @@ namespace Iogn {
     }
   }
 
-  std::vector<std::string> GeneratedMesh::sideset_touching_blocks(int64_t /*set_id*/) const
+  Ioss::NameList GeneratedMesh::sideset_touching_blocks(int64_t /*set_id*/) const
   {
-    std::vector<std::string> result(1, "block_1");
+    Ioss::NameList result(1, "block_1");
     return result;
   }
 

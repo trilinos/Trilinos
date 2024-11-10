@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 
@@ -217,7 +181,7 @@ class ScalarFunctor {
       LO col          = rowView.colidx(colID);
       impl_Scalar val = rowView.value(colID);
 
-      if (!dropFunctor(row, col, rowView.value(colID)) || row == col) {
+      if ((!bndNodes(row) && !dropFunctor(row, col, rowView.value(colID))) || row == col) {
         colsAux(offset + rownnz) = col;
 
         LO valID                = (reuseGraph ? colID : rownnz);
@@ -252,7 +216,7 @@ class ScalarFunctor {
     //        boundaryNodes[row] = true;
     // We do not do it this way now because there is no framework for distinguishing isolated
     // and boundary nodes in the aggregation algorithms
-    bndNodes(row) = (rownnz == 1 && aggregationMayCreateDirichlet);
+    bndNodes(row) |= (rownnz == 1 && aggregationMayCreateDirichlet);
 
     nnz += rownnz;
   }
@@ -463,8 +427,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
   SET_VALID_ENTRY("aggregation: use ml scaling of drop tol");
   {
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-    validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
+    validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("classical", "distance laplacian"))));
   }
 #undef SET_VALID_ENTRY
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
@@ -558,6 +521,9 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   } else if (blkSize == 1 && threshold != zero) {
     // Scalar problem with dropping
 
+    // Detect and record rows that correspond to Dirichlet boundary conditions
+    boundaryNodes = Utilities::DetectDirichletRows_kokkos(*A, dirichletThreshold);
+
     typedef typename Matrix::local_matrix_type local_matrix_type;
     typedef typename LWGraph_kokkos::local_graph_type kokkos_graph_type;
     typedef typename kokkos_graph_type::row_map_type::non_const_type rows_type;
@@ -603,8 +569,6 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       valsAux = vals_type(Kokkos::ViewAllocateWithoutInitializing("FA_aux_vals"), nnzA);
     }
 
-    typename boundary_nodes_type::non_const_type bndNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
-
     LO nnzFA = 0;
     {
       if (algo == "classical") {
@@ -624,8 +588,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           auto ghostedDiagView = ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
           CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
-          CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, aggregationMayCreateDirichlet);
+          CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(boundaryNodes), decltype(dropFunctor)>
+              scalarFunctor(kokkosMatrix, boundaryNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, aggregationMayCreateDirichlet);
 
           Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0, numRows),
                                   scalarFunctor, nnzFA);
@@ -696,8 +660,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
           CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
               dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
-          CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, true);
+          CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(boundaryNodes), decltype(dropFunctor)>
+              scalarFunctor(kokkosMatrix, boundaryNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, true);
 
           Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0, numRows),
                                   scalarFunctor, nnzFA);
@@ -705,8 +669,6 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
     numDropped = nnzA - nnzFA;
-
-    boundaryNodes = bndNodes;
 
     {
       SubFactoryMonitor m2(*this, "CompressRows", currentLevel);

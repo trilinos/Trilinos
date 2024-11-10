@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _FROSCH_EXTRACTSUBMATRICES_DEF_HPP
 #define _FROSCH_EXTRACTSUBMATRICES_DEF_HPP
@@ -123,11 +91,20 @@ namespace FROSch {
                                              RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
                                              RCP<      Matrix<SC,LO,GO,NO> > localSubdomainMatrix)
     {
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(), subdomainMatrix->getRowMap());
+        ExtractLocalSubdomainMatrix_Compute(scatter, globalMatrix, subdomainMatrix, localSubdomainMatrix);
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    void ExtractLocalSubdomainMatrix_Compute(RCP<      Import<LO,GO,NO> >    scatter,
+                                             RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > localSubdomainMatrix)
+    {
         FROSCH_DETAILTIMER_START(extractLocalSubdomainMatrixTime_compute, "ExtractLocalSubdomainMatrix_Compute");
         const SC zero = ScalarTraits<SC>::zero();
         auto subdomainRowMap = subdomainMatrix->getRowMap();
 
-        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),subdomainRowMap);
         subdomainMatrix->setAllToScalar(zero);
         subdomainMatrix->resumeFill();
         subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
@@ -314,10 +291,10 @@ namespace FROSch {
             UN numRowsI = indI.size();
             UN numRowsJ = indJ.size();
 
-            rowptr_type RowptrII ("RowptrII", numRowsI+1);
-            rowptr_type RowptrIJ ("RowptrIJ", numRowsI+1);
-            rowptr_type RowptrJI ("RowptrJI", numRowsJ+1);
-            rowptr_type RowptrJJ ("RowptrJJ", numRowsJ+1);
+            rowptr_type RowptrII (Kokkos::ViewAllocateWithoutInitializing("RowptrII"), numRowsI+1);
+            rowptr_type RowptrIJ (Kokkos::ViewAllocateWithoutInitializing("RowptrIJ"), numRowsI+1);
+            rowptr_type RowptrJI (Kokkos::ViewAllocateWithoutInitializing("RowptrJI"), numRowsJ+1);
+            rowptr_type RowptrJJ (Kokkos::ViewAllocateWithoutInitializing("RowptrJJ"), numRowsJ+1);
 
             // count nnz on each blocks
             Kokkos::deep_copy(RowptrII, 0);
@@ -399,17 +376,17 @@ namespace FROSch {
 #endif
 
             // allocate kII block
-            indices_type IndicesII ("IndicesII", nnzII);
-            values_type  ValuesII  ("ValuesII",  nnzII);
+            indices_type IndicesII (Kokkos::ViewAllocateWithoutInitializing("IndicesII"), nnzII);
+            values_type  ValuesII  (Kokkos::ViewAllocateWithoutInitializing("ValuesII"),  nnzII);
             // allocate kIJ block
-            indices_type IndicesIJ ("IndicesIJ", nnzIJ);
-            values_type  ValuesIJ  ("ValuesIJ",  nnzIJ);
+            indices_type IndicesIJ (Kokkos::ViewAllocateWithoutInitializing("IndicesIJ"), nnzIJ);
+            values_type  ValuesIJ  (Kokkos::ViewAllocateWithoutInitializing("ValuesIJ"),  nnzIJ);
             // allocate kJI block
-            indices_type IndicesJI ("IndicesJI", nnzJI);
-            values_type  ValuesJI  ("ValuesJI",  nnzJI);
+            indices_type IndicesJI (Kokkos::ViewAllocateWithoutInitializing("IndicesJI"), nnzJI);
+            values_type  ValuesJI  (Kokkos::ViewAllocateWithoutInitializing("ValuesJI"),  nnzJI);
             // allocate kJJ block
-            indices_type IndicesJJ ("IndicesJJ", nnzJJ);
-            values_type  ValuesJJ  ("ValuesJJ",  nnzJJ);
+            indices_type IndicesJJ (Kokkos::ViewAllocateWithoutInitializing("IndicesJJ"), nnzJJ);
+            values_type  ValuesJJ  (Kokkos::ViewAllocateWithoutInitializing("ValuesJJ"),  nnzJJ);
 
             // fill in all the blocks
             Kokkos::parallel_for(

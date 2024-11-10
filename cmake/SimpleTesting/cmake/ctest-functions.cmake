@@ -194,6 +194,21 @@ function(generate_build_url3 url_output cdash_site cdash_location project_name b
 endfunction()
 
 
+# generate_build_url4 generates a link to view all builds for a particular PR
+function(generate_build_url4 url_output cdash_site cdash_location project_name pr_num)
+    banner("generate_build_url4() START")
+    message(">>> cdash_site    : ${cdash_site}")
+    message(">>> cdash_location: ${cdash_location}")
+    message(">>> project_name  : ${project_name}")
+    message(">>> pr_num        : ${pr_num}")
+    string(REPLACE " " "%20" url_output_tmp
+        "https://${cdash_site}${cdash_location}index.php?project=${project_name}&display=project&begin=2024-01-01&end=now&filtercount=1&showfilters=1&field1=buildname&compare1=65&value1=PR-${pr_num}"
+    )
+    set(${url_output} ${url_output_tmp} PARENT_SCOPE)
+    banner("generate_build_url4() FINISH")
+endfunction()
+
+
 message("+--------------------------------------+")
 message("| ctest-functions.cmake FINISH         |")
 message("+--------------------------------------+")

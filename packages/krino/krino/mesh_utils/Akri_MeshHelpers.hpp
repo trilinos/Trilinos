@@ -44,13 +44,34 @@ struct StkMeshEntities
     value_type operator[](int i) const { return *(mBegin + i); }
 };
 
+template <typename NodeContainer>
+std::array<stk::math::Vector3d,3> get_triangle_vector(const stk::mesh::BulkData & mesh, const FieldRef vecField, const NodeContainer & triangleNodes)
+{
+  return {{ get_vector_field(mesh, vecField, triangleNodes[0]), get_vector_field(mesh, vecField, triangleNodes[1]), get_vector_field(mesh, vecField, triangleNodes[2]) }};
+}
+
+template <typename NodeContainer>
+std::array<stk::math::Vector3d,3> get_triangle_vector(const stk::mesh::BulkData & mesh, const FieldRef vecField, const NodeContainer & triangleNodes, const int dim)
+{
+  return {{ get_vector_field(mesh, vecField, triangleNodes[0], dim), get_vector_field(mesh, vecField, triangleNodes[1], dim), get_vector_field(mesh, vecField, triangleNodes[2], dim) }};
+}
+
+template <typename NodeContainer>
+std::array<double,3> get_triangle_scalar(const stk::mesh::BulkData & mesh, const FieldRef field, const NodeContainer & triangleNodes)
+{
+  return {{ get_scalar_field(mesh, field, triangleNodes[0]), get_scalar_field(mesh, field, triangleNodes[1]), get_scalar_field(mesh, field, triangleNodes[2]) }};
+}
+
+void populate_stk_local_ids(stk::mesh::BulkData & mesh);
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);
 stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta);
+double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
+double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen);
 bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B);
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank);
-size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::Part & part);
+size_t get_global_num_entities(const stk::mesh::BulkData& mesh, const stk::mesh::Part & part);
 double compute_tri_volume(const std::array<stk::math::Vector2d,3> & elementNodeCoords);
 double compute_tri_volume(const std::array<stk::math::Vector3d,3> & elementNodeCoords);
 double compute_tri_volume(const stk::math::Vector3d * elementNodeCoords);
@@ -72,9 +93,10 @@ bool check_induced_parts(const stk::mesh::BulkData & mesh);
 void attach_sides_to_elements(stk::mesh::BulkData & mesh);
 void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element);
 void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
+std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Entity elem);
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
-void unpack_shared_entities(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & sharedEntities, stk::CommSparse &commSparse);
+std::vector<stk::mesh::Entity> unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, stk::CommSparse &commSparse);
 void activate_selected_entities_touching_active_elements(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Selector & entitySelector, stk::mesh::Part & activePart);
 void activate_all_entities(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void destroy_custom_ghostings(stk::mesh::BulkData & mesh);
@@ -163,6 +185,9 @@ void batch_create_sides(stk::mesh::BulkData & mesh, const std::vector< SideDescr
 void make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh);
 
 void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & entities);
+void communicate_entities_to_owning_proc(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entitiesToSend, std::vector<stk::mesh::Entity> & entitiesReceived);
+void communicate_shared_nodes_to_sharing_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & nodes);
+void communicate_shared_nodes_to_sharing_procs_and_sort_and_unique(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & nodes);
 
 double compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Entity element, const stk::mesh::Field<double> * const coords_field);
 
@@ -207,6 +232,17 @@ void pack_entities_for_owning_proc(const stk::mesh::BulkData & mesh,
     }
   });
 }
+
+size_t get_size_of_vector_indexable_by_entity_offset(const stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank);
+
+template<typename T>
+std::vector<T> create_vector_indexable_by_entity_offset(const stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const T & initialVal)
+{
+  std::vector<T> vec(get_size_of_vector_indexable_by_entity_offset(mesh, entityRank), initialVal);
+  return vec;
+}
+
+void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const std::map<int,int> & partOrdinalMapping, const std::vector<stk::mesh::Entity> & elements);
 
 } // namespace krino
 

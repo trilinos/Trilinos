@@ -54,7 +54,6 @@ TEST(StkMeshHowTo, CreateFacesLayeredShellsHex)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { return; }
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
 
   // Generate a mesh containing 1 hex part and 12 shell parts
   // Shells are layered 2 deep.

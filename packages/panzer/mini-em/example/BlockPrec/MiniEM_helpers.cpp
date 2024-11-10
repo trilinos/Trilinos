@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "MiniEM_helpers.hpp"
 
 namespace mini_em {
@@ -94,14 +104,14 @@ namespace mini_em {
   }
 
 
-  Teuchos::RCP<Teuchos::ParameterList> getSolverParameters(linearAlgebraType linAlgebra,
-                                                           physicsType physics,
-                                                           solverType solver,
-                                                           int dim,
-                                                           Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
-                                                           Teuchos::RCP<Teuchos::FancyOStream> &out,
-                                                           std::string &xml,
-                                                           int basis_order) {
+  Teuchos::RCP<Teuchos::ParameterList>
+  getSolverParameters(linearAlgebraType linAlgebra, physicsType physics,
+                      solverType solver, int dim,
+                      Teuchos::RCP<const Teuchos::MpiComm<int>> &comm,
+                      Teuchos::RCP<Teuchos::FancyOStream> &out,
+                      std::string &xml, int basis_order,
+                      const bool preferTPLs,
+                      const bool truncateMueLuHierarchy) {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
@@ -161,6 +171,10 @@ namespace mini_em {
             if (dim == 2)
               updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
           }
+          if (truncateMueLuHierarchy)
+            updateParams("solverMueLuTruncated.xml", lin_solver_pl, comm, out);
+          if (preferTPLs)
+            updateParams("solverMueLuTPL.xml", lin_solver_pl, comm, out);
           if (basis_order > 1) {
             RCP<Teuchos::ParameterList> lin_solver_pl_lo = lin_solver_pl;
             lin_solver_pl = rcp(new Teuchos::ParameterList("Linear Solver"));
@@ -257,6 +271,7 @@ namespace mini_em {
     Teuchos::ParameterList & physicsBlock_pl = input_params.sublist("Physics Blocks");
     Teuchos::ParameterList & assembly_pl     = input_params.sublist("Assembly");
     Teuchos::ParameterList & aux_ops_pl      = input_params.sublist("Auxiliary Operators");
+    Teuchos::ParameterList & closure_models_pl = input_params.sublist("Closure Models");
 
     auxFieldOrder = "blocked:";
 
@@ -291,10 +306,18 @@ namespace mini_em {
       TEUCHOS_ASSERT_EQUALITY(pCoarsenSchedule.back(), 1);
     }
 
+    bool simplifyFaraday = false;
+    bool constantScalarPermeability = false;
+    if (physics == MAXWELL) {
+      std::string permeability = physicsBlock_pl.sublist("Maxwell Physics").sublist("Maxwell Physics").get<std::string>("Permeability");
+      constantScalarPermeability = closure_models_pl.sublist("electromagnetics").sublist(permeability).isType<double>("Value");
+    }
     if (lin_solver_pl.sublist("Preconditioner Types").isSublist("Teko") &&
         lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library")) {
-      if (lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Maxwell"))
+      if (lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Maxwell")) {
         lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("p coarsen schedule",pCoarsenScheduleStr);
+        simplifyFaraday = lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").get("Simplify Faraday", false);
+      }
       if (lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Darcy"))
         lin_solver_pl.sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Darcy").set("p coarsen schedule",pCoarsenScheduleStr);
     }
@@ -332,31 +355,33 @@ namespace mini_em {
           aux_ops_pl.sublist("Discrete Gradient"+opPostfix) = gradPL;
         }
 
-        // Schur complement
-        auto schurComplementPL = Teuchos::ParameterList();
-        schurComplementPL.set("Type", "Auxiliary SchurComplement");
-        schurComplementPL.set("DOF Name", auxEdgeField);
-        schurComplementPL.set("Basis Type", "HCurl");
-        schurComplementPL.set("Model ID", auxModelID);
-        schurComplementPL.set("Permittivity", "epsilon");
-        schurComplementPL.set("Conductivity", "sigma");
-        schurComplementPL.set("Inverse Permeability", "1/mu");
-        schurComplementPL.set("Basis Order", polynomialOrder);
-        schurComplementPL.set("Integration Order", 2*polynomialOrder);
-        auxPhysicsBlocksPL.sublist("Auxiliary Edge SchurComplement Physics"+opPostfix) = schurComplementPL;
+        if (!simplifyFaraday || (basis_order != 1)) {
+          // Schur complement
+          auto schurComplementPL = Teuchos::ParameterList();
+          schurComplementPL.set("Type", "Auxiliary SchurComplement");
+          schurComplementPL.set("DOF Name", auxEdgeField);
+          schurComplementPL.set("Basis Type", "HCurl");
+          schurComplementPL.set("Model ID", auxModelID);
+          schurComplementPL.set("Permittivity", "epsilon");
+          schurComplementPL.set("Conductivity", "sigma");
+          schurComplementPL.set("Inverse Permeability", "1/mu");
+          schurComplementPL.set("Basis Order", polynomialOrder);
+          schurComplementPL.set("Integration Order", 2*polynomialOrder);
+          auxPhysicsBlocksPL.sublist("Auxiliary Edge SchurComplement Physics" + opPostfix) = schurComplementPL;
 
-        if (solver == MUELU || solver == ML) {
-          // Projected Schur complement
-          auto projectedSchurComplementPL = Teuchos::ParameterList();
-          projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
-          projectedSchurComplementPL.set("DOF Name", auxNodalField);
-          projectedSchurComplementPL.set("Basis Type", "HGrad");
-          projectedSchurComplementPL.set("Model ID", auxModelID);
-          projectedSchurComplementPL.set("Permittivity", "epsilon");
-          projectedSchurComplementPL.set("Conductivity", "sigma");
-          projectedSchurComplementPL.set("Basis Order", polynomialOrder);
-          projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
-          auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
+          if (solver == MUELU || solver == ML) {
+            // Projected Schur complement
+            auto projectedSchurComplementPL = Teuchos::ParameterList();
+            projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
+            projectedSchurComplementPL.set("DOF Name", auxNodalField);
+            projectedSchurComplementPL.set("Basis Type", "HGrad");
+            projectedSchurComplementPL.set("Model ID", auxModelID);
+            projectedSchurComplementPL.set("Permittivity", "epsilon");
+            projectedSchurComplementPL.set("Conductivity", "sigma");
+            projectedSchurComplementPL.set("Basis Order", polynomialOrder);
+            projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
+            auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
+          }
         }
 
       } else if (physics == DARCY) {
@@ -442,17 +467,19 @@ namespace mini_em {
       massEdgePL.set("Integration Order", 2);
       auxPhysicsBlocksPL.sublist("Auxiliary Edge Mass Physics"+opPostfix) = massEdgePL;
 
-      // Edge mass matrix with 1/mu weight
-      auto massEdgeWeightedPL = Teuchos::ParameterList();
-      massEdgeWeightedPL.set("Type", "Auxiliary Mass Matrix");
-      massEdgeWeightedPL.set("DOF Name", auxEdgeField);
-      massEdgeWeightedPL.set("Basis Type", "HCurl");
-      massEdgeWeightedPL.set("Model ID", auxModelID);
-      massEdgeWeightedPL.set("Field Multipliers", "1/mu");
-      massEdgeWeightedPL.set("Basis Order", 1);
-      massEdgeWeightedPL.set("Integration Order", 2);
-      massEdgeWeightedPL.set("Operator Label", "weighted ");
-      auxPhysicsBlocksPL.sublist("Auxiliary Edge Mass Physics weighted"+opPostfix) = massEdgeWeightedPL;
+      if (!constantScalarPermeability) {
+        // Edge mass matrix with 1/mu weight
+        auto massEdgeWeightedPL = Teuchos::ParameterList();
+        massEdgeWeightedPL.set("Type", "Auxiliary Mass Matrix");
+        massEdgeWeightedPL.set("DOF Name", auxEdgeField);
+        massEdgeWeightedPL.set("Basis Type", "HCurl");
+        massEdgeWeightedPL.set("Model ID", auxModelID);
+        massEdgeWeightedPL.set("Field Multipliers", "1/mu");
+        massEdgeWeightedPL.set("Basis Order", 1);
+        massEdgeWeightedPL.set("Integration Order", 2);
+        massEdgeWeightedPL.set("Operator Label", "weighted ");
+        auxPhysicsBlocksPL.sublist("Auxiliary Edge Mass Physics weighted"+opPostfix) = massEdgeWeightedPL;
+      }
 
       // Nodal mass matrix
       auto massNodePL = Teuchos::ParameterList();

@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
 
 #include "Teko_BlockLowerTriInverseOp.hpp"
@@ -5,6 +15,7 @@
 
 #include "Teko_SolveInverseFactory.hpp"
 
+#include "Teko_Utilities.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
@@ -113,7 +124,8 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp Q_E   = Teko::getBlock(1,1,blo);
 
    // discrete curl and its transpose
-   Teko::LinearOp C, Ct;
+   Teko::LinearOp C;
+   Teko::LinearOp Ct;
    if (use_discrete_curl_) {
      C = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Curl"));
      Ct = Teko::explicitTranspose(C);
@@ -123,7 +135,15 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp S_E;
    {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     S_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("SchurComplement AUXILIARY_EDGE"));
+     if (simplifyFaraday_) {
+       // Q_B is a scaled identy matrix
+       // K is the discrete curl
+       // Kt is the weak curl
+       auto inv_Q_B = Teko::getInvDiagonalOp(Q_B, Teko::Diagonal);
+       auto curl_curl = Teko::explicitMultiply(Kt, inv_Q_B, K);
+       S_E = Teko::explicitAdd(Q_E, Teko::scale(-1.0, curl_curl), Teuchos::null);
+     } else
+       S_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("SchurComplement AUXILIARY_EDGE"));
    }
 
    // Check whether we are using Tpetra or Epetra
@@ -142,31 +162,14 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      writeOut("S_E.mm",*S_E);
 
      if (C != Teuchos::null) {
-       Teko::LinearOp K2 = Teko::explicitMultiply(Q_B,C);
+       Teko::LinearOp K2 = Teko::explicitScale(dt, Teko::explicitMultiply(Q_B,C));
        Teko::LinearOp diffK;
 
-       if (useTpetra) {
-         typedef panzer::TpetraNodeType Node;
-         typedef int LocalOrdinal;
-         typedef panzer::GlobalOrdinal GlobalOrdinal;
+       diffK = Teko::explicitAdd(K, Teko::scale(-1.0,K2));
 
-         RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(K2,true);
-         RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
-         RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator(),true);
-         crsOp->scale(dt);
-         diffK = Teko::explicitAdd(K, Teko::scale(-1.0,K2));
-
-         writeOut("DiscreteCurl.mm",*C);
-         writeOut("K2.mm",*K2);
-         writeOut("diff.mm",*diffK);
-
-       } else {
-         diffK = Teko::explicitAdd(K, Teko::scale(-dt,K2));
-
-         writeOut("DiscreteCurl.mm",*C);
-         writeOut("K2.mm",*K2);
-         writeOut("diff.mm",*diffK);
-       }
+       writeOut("DiscreteCurl.mm",*C);
+       writeOut("K2.mm",*K2);
+       writeOut("diff.mm",*diffK);
 
        TEUCHOS_ASSERT(Teko::infNorm(diffK) < 1.0e-8 * Teko::infNorm(K));
      }
@@ -253,19 +256,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
            TEUCHOS_ASSERT(false);
        }
 
-       RCP<const Thyra::DiagonalLinearOpBase<Scalar> > invDiagQ_rho;
-       {
-         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Lumped diagonal Q_rho"));
-         
-         // Get inverse of lumped Q_rho
-         RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(Q_rho->domain());
-         RCP<Thyra::VectorBase<Scalar> > diagonal = Thyra::createMember(Q_rho->range());
-         Thyra::assign(ones.ptr(),1.0);
-         // compute lumped diagonal
-         Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
-         Thyra::reciprocal(*diagonal,diagonal.ptr());
-         invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<Scalar>(diagonal));
-       }
+       RCP<const Thyra::DiagonalLinearOpBase<Scalar> > invDiagQ_rho = Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<Scalar> >(Teko::getInvLumpedMatrix(Q_rho), true);
 
        {
          Teko::InverseLibrary myInvLib = invLib;
@@ -440,7 +431,6 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
                           Q_B_prec_pl.sublist("Prec Types"));
 
    dt = params.get<double>("dt");
-
    if (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra" || S_E_prec_type_ == "MueLuRefMaxwell" || S_E_prec_type_ == "ML") { // RefMaxwell based solve
 
      // S_E solve
@@ -451,9 +441,15 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      Teuchos::ParameterList S_E_prec_pl = pl.sublist("S_E Preconditioner");
 
      // add discrete gradient and edge mass matrix
-     Teko::LinearOp Q_E_aux = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE"));
-     Teko::LinearOp Q_E_aux_weighted = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE"));
-     Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
+     auto Q_E_aux = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE"));
+     Teko::LinearOp Q_E_aux_weighted;
+     try {
+       Q_E_aux_weighted = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE"));
+     } catch (std::runtime_error&) {
+       Q_E_aux_weighted = Q_E_aux;
+     }
+
+     auto T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
      if (S_E_prec_type_ == "ML") {
 #ifdef PANZER_HAVE_EPETRA_STACK
        RCP<const Epetra_CrsMatrix> eT = get_Epetra_CrsMatrix(*T);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,11 +7,11 @@
  */
 #pragma once
 
-#include "io_info_lib_export.h"
+#include <iosfwd> // for ostream
+#include <string> // for string
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
-#include <iosfwd>            // for ostream
-#include <string>            // for string
+#include "io_info_lib_export.h"
 
 /** \brief A special namespace for the io_info demonstration program interFace.
  */
@@ -20,7 +20,6 @@ namespace Info {
   {
   public:
     Interface();
-    ~Interface();
 
     bool parse_options(int argc, char **argv);
 
@@ -33,6 +32,7 @@ namespace Info {
     bool list_groups() const { return listGroups_; }
     bool show_config() const { return showConfig_; }
     bool query_timesteps_only() const { return queryTimeOnly_; }
+    bool field_details() const { return fieldDetails_; }
 
     int         surface_split_scheme() const { return surfaceSplitScheme_; }
     char        field_suffix_separator() const { return fieldSuffixSeparator_; }
@@ -67,6 +67,7 @@ namespace Info {
     bool showConfig_{false};
     bool summary_{false};
     bool queryTimeOnly_{false};
+    bool fieldDetails_{false};
 
     char fieldSuffixSeparator_{'_'};
 

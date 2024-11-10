@@ -213,7 +213,7 @@ public:
                            for (unsigned i = 0; i < bucketIds.size(); ++i) {
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
-                               stk::mesh::NgpMesh::MeshIndex index{&bucket, static_cast<unsigned>(j)};
+                               stk::mesh::NgpMesh::MeshIndex index{bucket.bucket_id(), static_cast<unsigned>(j)};
                                ngpField(index, component) = value;
                              }
                            }

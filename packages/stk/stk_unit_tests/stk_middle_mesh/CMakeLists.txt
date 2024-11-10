@@ -17,14 +17,16 @@ if(HAVE_STK_Trilinos)
 else()
   add_executable(stk_middle_mesh_utest ${SOURCES})
   target_link_libraries(stk_middle_mesh_utest stk_middle_mesh)
-  target_link_libraries(stk_coupling_utest stk_unit_test_utils)
-  target_link_libraries(stk_coupling_utest stk_util_parallel)
-  target_link_libraries(stk_coupling_utest stk_unit_main)
+  target_link_libraries(stk_middle_mesh_utest stk_unit_test_utils)
+  target_link_libraries(stk_middle_mesh_utest stk_util_parallel)
+  target_link_libraries(stk_middle_mesh_utest stk_unit_main)
 
   add_test(NAME "stk_middle_mesh_utest" COMMAND stk_middle_mesh_utest)
 endif()
 
-target_include_directories(stk_middle_mesh_utest PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+if(TARGET stk_middle_mesh_utest)
+  target_include_directories(stk_middle_mesh_utest PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()

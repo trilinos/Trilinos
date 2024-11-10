@@ -76,11 +76,9 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   ///\cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
-  virtual void apply(
-      const Kokkos::View<const ScalarType *, Kokkos::Device<EXSP, MEMSP>> &X,
-      const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y,
-      const char transM[] = "N", ScalarType alpha = karith::one(),
-      ScalarType beta = karith::zero()) const {
+  virtual void apply(const Kokkos::View<const ScalarType *, Kokkos::Device<EXSP, MEMSP>> &X,
+                     const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y, const char transM[] = "N",
+                     ScalarType alpha = karith::one(), ScalarType beta = karith::zero()) const {
     KokkosSparse::spmv(transM, alpha, _A, X, beta, Y);
   }
   //@}

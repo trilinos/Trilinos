@@ -39,7 +39,8 @@
 #include <stk_io/InputFile.hpp>         // for InputFile, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <string>                       // for string
 #include <vector>                       // for vector
@@ -68,7 +69,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
     //+ The value of the field at each node is 0.0 at time 0.0,
     //+ 10.0 at time 10.0, and 20.0 at time 20.0
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:1x1x1|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -84,20 +84,12 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
     //+ The name of the field on the database will be "temp"
     stkIo.add_field(fh, temperature, "temp");
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(),
-                            stk::topology::NODE_RANK, nodes);
-
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (size_t i=0; i < 3; i++) {
       double time = i * 10.0;
 
-      for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldData =
-            stk::mesh::field_data(temperature, nodes[inode]);
-        *fieldData = time;
-      }
+      stk::mesh::field_fill(time, temperature);
 
       stkIo.begin_output_step(fh, time);
       stkIo.write_defined_output_fields(fh);
@@ -128,7 +120,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
     //+
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t idx = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
@@ -137,9 +128,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
     stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(), nullptr);
 
     stkIo.populate_bulk_data();
-
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
 
     // The name of the field on the database is "temp"
     stkIo.add_input_field(stk::io::MeshField(temperature, "temp",
@@ -167,10 +155,12 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
       // ============================================================
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 'expected'
-      for(size_t i=0; i<nodes.size(); i++) {
-        double *fieldData = stk::mesh::field_data(temperature, nodes[i]);
+      stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
+        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+        double *fieldData = stk::mesh::field_data(temperature, node);
         EXPECT_DOUBLE_EQ(expected, *fieldData);
-      }
+      });
+
       time += delta_time;
       expected += exp_inc;
       if (expected >= 20.0 || expected <= 0.0) {

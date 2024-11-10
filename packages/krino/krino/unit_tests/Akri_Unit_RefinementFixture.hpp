@@ -7,6 +7,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/diag/Timer.hpp>
+#include <Akri_AllReduce.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Quality.hpp>
@@ -18,14 +19,14 @@
 
 namespace krino {
 
-inline void set_refinement_marker_field(FieldRef elementMarkerField, const int value)
+inline void set_refinement_marker_field(FieldRef elementMarkerField, const Refinement::RefinementMarker value)
 {
-  stk::mesh::field_fill(value, elementMarkerField, stk::mesh::selectField(elementMarkerField));
+  stk::mesh::field_fill(static_cast<int>(value), elementMarkerField, stk::mesh::selectField(elementMarkerField));
 }
 
 inline void clear_refinement_marker_field(FieldRef elementMarkerField)
 {
-  set_refinement_marker_field(elementMarkerField, Refinement::NOTHING);
+  set_refinement_marker_field(elementMarkerField, Refinement::RefinementMarker::NOTHING);
 }
 
 
@@ -34,7 +35,7 @@ class RefinementFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
 {
 public:
   RefinementFixture()
-  : myRefinement(mMesh.mesh_meta_data(), &this->get_aux_meta().active_part())
+  : myRefinement(mMesh.mesh_meta_data(), &this->get_aux_meta().active_part(), sierra::Diag::sierraTimer())
   {
     stk::mesh::MetaData & meta = mMesh.mesh_meta_data();
     stk::mesh::FieldBase & elemMarkerField = meta.declare_field<int>(stk::topology::ELEMENT_RANK, myElementMarkerFieldName, 1);
@@ -43,6 +44,7 @@ public:
     myElemField = FieldRef(elemField);
     stk::mesh::put_field_on_mesh(elemMarkerField, meta.universal_part(), 1, 1, nullptr);
     stk::mesh::put_field_on_mesh(elemField, meta.universal_part(), 1, 1, nullptr);
+    mMesh.set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
   }
 
   using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
@@ -55,7 +57,7 @@ public:
     for (auto && elem : elements)
     {
       int * elemMarker = field_data<int>(myElementMarkerField, elem);
-      *elemMarker = Refinement::REFINE;
+      *elemMarker = static_cast<int>(Refinement::RefinementMarker::REFINE);
     }
   }
   void mark_elements_for_unrefinement(const std::vector<stk::mesh::Entity> & elements)
@@ -63,17 +65,17 @@ public:
     for (auto && elem : elements)
     {
       int * elemMarker = field_data<int>(myElementMarkerField, elem);
-      *elemMarker = Refinement::COARSEN;
+      *elemMarker = static_cast<int>(Refinement::RefinementMarker::COARSEN);
     }
   }
   void mark_nonparent_elements()
   {
     for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part() ) )
     {
-      const int markerValue = myRefinement.is_parent(*bucket) ? Refinement::NOTHING : Refinement::REFINE;
+      const auto markerValue = myRefinement.is_parent(*bucket) ? Refinement::RefinementMarker::NOTHING : Refinement::RefinementMarker::REFINE;
       auto * elemMarker = field_data<int>(myElementMarkerField, *bucket);
       for (size_t i=0; i<bucket->size(); ++i)
-        elemMarker[i] = markerValue;
+        elemMarker[i] = static_cast<int>(markerValue);
     }
   }
 
@@ -101,7 +103,9 @@ public:
     myTimer.start();
     myRefinement.do_uniform_refinement(numIterationsOfUMR);
     myTimer.stop();
-    std::cout << "After " << numIterationsOfUMR << " levels of uniform refinement, there are " << get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK) << " elements, time = " << myTimer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
+    const size_t numElems = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "After " << numIterationsOfUMR << " levels of uniform refinement, there are " << numElems << " elements, time = " << myTimer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
   }
 
   void refine_marked_elements(const std::string fileName = "")
@@ -167,7 +171,7 @@ public:
         auto doMarkAndFieldVal = tag_element_spans_z_equal_0_and_compute_element_field((*bucket)[iElem], flip);
         auto doMark = std::get<0>(doMarkAndFieldVal);
         auto centroidValue = std::get<1>(doMarkAndFieldVal);
-        if (doMark) elemMarker[iElem] = Refinement::REFINE;
+        if (doMark) elemMarker[iElem] = static_cast<int>(Refinement::RefinementMarker::REFINE);
 
         if (centroidValue <= 0 ) elemField[iElem] = -1;
         else elemField[iElem] = 1;
@@ -208,7 +212,7 @@ public:
       for ( size_t iElem=0; iElem<bucket->size(); ++iElem )
       {
         if (element_spans_x_equal_0((*bucket)[iElem]))
-          elemMarker[iElem] = Refinement::REFINE;
+          elemMarker[iElem] = static_cast<int>(Refinement::RefinementMarker::REFINE);
       }
     }
   }
@@ -253,7 +257,7 @@ public:
         const double rand_val = rand_dist(rand_gen);
         if(rand_val < refine_prob)
         {
-          elemMarker[iElem] = Refinement::REFINE;
+          elemMarker[iElem] = static_cast<int>(Refinement::RefinementMarker::REFINE);
         }
       }
     }
@@ -266,10 +270,10 @@ public:
         const double rand_val = rand_dist(rand_gen);
         if(rand_val < unrefine_prob)
         {
-          elemMarker[iElem] = Refinement::COARSEN;
+          elemMarker[iElem] = static_cast<int>(Refinement::RefinementMarker::COARSEN);
           for(auto && child : myRefinement.get_children((*bucket)[iElem]))
           {
-            *field_data<int>(myElementMarkerField, child) = Refinement::COARSEN;
+            *field_data<int>(myElementMarkerField, child) = static_cast<int>(Refinement::RefinementMarker::COARSEN);
           }
         }
       }
@@ -333,17 +337,18 @@ public:
 
   void mark_all_elements_for_unrefinement()
   {
-    set_refinement_marker_field(myElementMarkerField, Refinement::COARSEN);
+    set_refinement_marker_field(myElementMarkerField, Refinement::RefinementMarker::COARSEN);
   }
 
   void mark_all_elements_for_refinement()
   {
-    set_refinement_marker_field(myElementMarkerField, Refinement::REFINE);
+    set_refinement_marker_field(myElementMarkerField, Refinement::RefinementMarker::REFINE);
   }
 
   void test_refinement_of_transition_element_leads_to_refinement_of_parent(const int indexOfCenterElement)
   {
     const stk::mesh::Entity centerElem = mMesh.get_entity(stk::topology::ELEMENT_RANK, mBuilder.get_assigned_element_global_ids()[indexOfCenterElement]);
+    std::vector<stk::mesh::Entity> transitionElements;
 
     const unsigned numEdges = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK) - 1;
     for (int iCaseId=0; iCaseId<(1<<numEdges); ++iCaseId)
@@ -355,19 +360,27 @@ public:
 
       refine_elements_with_given_indices(edgeElementsToRefine);
 
-      std::vector<stk::mesh::Entity> transitionElements = get_children(centerElem);
-      const unsigned numTransitionElements = transitionElements.size();
+      unsigned numTransitionElements = 0;
+      if (mMesh.is_valid(centerElem))
+        numTransitionElements = get_num_children(centerElem);
+      all_reduce_max(mMesh.parallel(), numTransitionElements);
 
       unrefine_mesh();
 
       for (unsigned iTransitionElement=0; iTransitionElement<numTransitionElements; ++iTransitionElement)
       {
         refine_elements_with_given_indices(edgeElementsToRefine);
-        transitionElements = get_children(centerElem);
+        std::vector<stk::mesh::Entity> elementsToRefine;
+        if (mMesh.is_valid(centerElem))
+        {
+          transitionElements = get_children(centerElem);
 
-        ASSERT_EQ(numTransitionElements, transitionElements.size()) << "Number of transition elements changed from " << numTransitionElements << " to " << transitionElements.size() << std::endl;
+          ASSERT_EQ(numTransitionElements, transitionElements.size()) << "Number of transition elements changed from " << numTransitionElements << " to " << transitionElements.size() << std::endl;
 
-        refine_elements_with_given_ids({mMesh.identifier(transitionElements[iTransitionElement])});
+          elementsToRefine.push_back(transitionElements[iTransitionElement]);
+        }
+
+        refine_elements(elementsToRefine);
         if (mMesh.is_valid(centerElem) && mMesh.bucket(centerElem).owned())
         {
           const unsigned numChildrenAfterRefinementOfTransition = (get_children(centerElem)).size();

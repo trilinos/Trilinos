@@ -70,14 +70,16 @@ def parse_args():
     required.add_argument('--source-repo-url',
                           dest="source_repo_url",
                           action='store',
+                          default="UNKNOWN",
                           help='Repo with the new changes',
-                          required=True)
+                          required=False)
 
     required.add_argument('--target-repo-url',
                           dest="target_repo_url",
                           action='store',
+                          default="UNKNOWN",
                           help='Repo to merge into',
-                          required=True)
+                          required=False)
 
     required.add_argument('--target-branch-name',
                           dest="target_branch_name",
@@ -88,8 +90,9 @@ def parse_args():
     required.add_argument('--pullrequest-build-name',
                           dest="pullrequest_build_name",
                           action='store',
+                          default="UNKNOWN",
                           help='The Jenkins job base name',
-                          required=True)
+                          required=False)
 
     required.add_argument('--genconfig-build-name',
                           dest="genconfig_build_name",
@@ -106,8 +109,9 @@ def parse_args():
     required.add_argument('--jenkins-job-number',
                           dest="jenkins_job_number",
                           action='store',
+                          default="UNKNOWN",
                           help='The Jenkins build number',
-                          required=True)
+                          required=False)
 
     optional.add_argument('--dashboard-build-name',
                           dest="dashboard_build_name",
@@ -288,6 +292,7 @@ def parse_args():
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
     print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
     print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
+    print("| - [O] use_explicit_cachefile       : {use_explicit_cachefile}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 

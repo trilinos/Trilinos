@@ -68,9 +68,7 @@ TEST( UnitTestRootTopology, newPartsWithTopologyAfterCommit )
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;
   MetaData uncommitted_metadata(spatial_dimension);
-  uncommitted_metadata.use_simple_fields();
   MetaData committed_metadata(spatial_dimension);
-  committed_metadata.use_simple_fields();
 
   committed_metadata.commit();
 
@@ -90,7 +88,6 @@ TEST(UnitTestMetaData, superElemTopoDeclarePartWithTopology)
 {
     const int spatial_dimension = 3;
     MetaData meta(spatial_dimension);
-    meta.use_simple_fields();
     unsigned numNodes = 11;
     stk::topology superTopo = stk::create_superelement_topology(numNodes);
     Part& part = meta.declare_part_with_topology("super-part", superTopo);
@@ -104,11 +101,8 @@ TEST( UnitTestMetaData, testMetaData )
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;
   MetaData metadata_committed(spatial_dimension);
-  metadata_committed.use_simple_fields();
   MetaData metadata_not_committed(spatial_dimension);
-  metadata_not_committed.use_simple_fields();
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
 
   stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   Part &pa = metadata.declare_part( std::string("a") , node_rank );
@@ -145,7 +139,6 @@ TEST( UnitTestMetaData, rankHigherThanDefined )
   const int spatial_dimension = 3;
   const std::vector<std::string> & rank_names = stk::mesh::entity_rank_names();
   MetaData metadata(spatial_dimension, rank_names);
-  metadata.use_simple_fields();
 
   const std::string& i_name2 =  metadata.entity_rank_name( stk::topology::EDGE_RANK );
 
@@ -164,7 +157,6 @@ TEST( UnitTestMetaData, testEntityKeyMapping )
   static const size_t spatial_dimension = 3;
 
   stk::mesh::MetaData meta ( spatial_dimension );
-  meta.use_simple_fields();
   stk::mesh::Part & part = meta.declare_part("another part");
   stk::mesh::Part & hex_part = meta.declare_part_with_topology("elem_part", stk::topology::HEX_8);
 
@@ -228,10 +220,8 @@ TEST( UnitTestMetaData, noEntityTypes )
 }
 TEST( UnitTestMetaData, declare_part_with_rank )
 {
-  //MetaData constructor fails because there are no entity types:
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
   metadata.declare_part("foo");
   ASSERT_NO_THROW(metadata.declare_part("foo",stk::topology::EDGE_RANK));
   ASSERT_NO_THROW(metadata.declare_part("foo",stk::topology::EDGE_RANK));
@@ -249,7 +239,6 @@ TEST( UnitTestMetaData, declare_attribute_no_delete )
   const int * singleton = NULL;
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  metadata.use_simple_fields();
   Part &pa = metadata.declare_part( std::string("a") , stk::topology::NODE_RANK );
   metadata.declare_attribute_no_delete( pa, singleton);
   metadata.commit();
@@ -260,7 +249,6 @@ TEST(UnitTestMetaData, set_mesh_bulk_data )
   const int spatial_dimension = 3;
   MeshBuilder builder(MPI_COMM_WORLD);
   std::shared_ptr<MetaData> meta = builder.set_spatial_dimension(spatial_dimension).create_meta_data();
-  meta->use_simple_fields();
 
   std::shared_ptr<BulkData> bulk1 = builder.create(meta);
   ASSERT_THROW(builder.create(meta), std::logic_error);
@@ -273,7 +261,7 @@ TEST(UnitTestMetaData, set_mesh_bulk_data )
   ASSERT_TRUE(&meta->mesh_bulk_data() == bulk2.get());
 }
 
-class TestHexMeta : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
+class TestHexMeta : public stk::mesh::fixtures::TestHexFixture {};
 
 TEST_F(TestHexMeta, superset_of_shared_part)
 {
@@ -283,13 +271,13 @@ TEST_F(TestHexMeta, superset_of_shared_part)
     {
         stk::mesh::MetaData &meta = get_meta();
 
-        stk::mesh::Part & mysupername = meta.declare_part("my_superset_part_shared");
-        meta.declare_part_subset(mysupername, meta.globally_shared_part());
-        mysupername.entity_membership_is_parallel_consistent(false);
+        stk::mesh::Part & mySuperPart = meta.declare_part("my_superset_part_shared");
+        meta.declare_part_subset(mySuperPart, meta.globally_shared_part());
+        mySuperPart.entity_membership_is_parallel_consistent(false);
 
-        stk::mesh::Part & mysupernamelocal = meta.declare_part("my_superset_part_local");
-        meta.declare_part_subset(mysupernamelocal, meta.locally_owned_part());
-        mysupernamelocal.entity_membership_is_parallel_consistent(false);
+        stk::mesh::Part & mySuperPartLocal = meta.declare_part("my_superset_part_local");
+        meta.declare_part_subset(mySuperPartLocal, meta.locally_owned_part());
+        mySuperPartLocal.entity_membership_is_parallel_consistent(false);
 
         stk::mesh::Part & userpart = meta.declare_part("userpartsubsettest");
         stk::mesh::Part & usersuper = meta.declare_part("usersuperset");
@@ -303,28 +291,27 @@ TEST_F(TestHexMeta, superset_of_shared_part)
         if (expect_supersets_to_work_with_shared_part) {
 
             std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk shared part=" <<
-                    stk::mesh::count_selected_entities(meta.globally_shared_part(),
-                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.globally_shared_part())
+                                                       << std::endl;
             std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk shared part=" <<
-                    stk::mesh::count_selected_entities(mysupername,
-                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, mySuperPart)
+                                                       << std::endl;
             std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk local part=" <<
-                    stk::mesh::count_selected_entities(meta.locally_owned_part(),
-                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.locally_owned_part())
+                                                        << std::endl;
             std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk local part=" <<
-                    stk::mesh::count_selected_entities(mysupernamelocal,
-                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, mySuperPartLocal)
+                                                        << std::endl;
 
             EXPECT_EQ(
-                    stk::mesh::count_selected_entities(meta.globally_shared_part(),
-                                                       mesh.buckets(stk::topology::NODE_RANK)),
-                                                       stk::mesh::count_selected_entities(mysupername,
-                                                                                          mesh.buckets(stk::topology::NODE_RANK)));
+                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.globally_shared_part())
+                    ,
+                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, mySuperPart));
         }
 
         EXPECT_EQ(stk::mesh::count_selected_entities(meta.locally_owned_part(),
                                                      mesh.buckets(stk::topology::NODE_RANK)),
-                  stk::mesh::count_selected_entities(mysupernamelocal,
+                  stk::mesh::count_selected_entities(mySuperPartLocal,
                                                      mesh.buckets(stk::topology::NODE_RANK)));
 
         mesh.modification_begin();
@@ -368,7 +355,6 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
   stk::mesh::MeshBuilder builder(comm);
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -410,6 +396,21 @@ TEST(UnitTestMetaData, ConsistentParallelDebugCheck)
   EXPECT_NO_THROW(bulk.modification_begin());
 }
 
+#define STK_EXPECT_THROW_MSG(runit, myProc, msgProc, goldMsg) \
+{ \
+  bool threw = false; \
+  try { \
+    runit; \
+  } \
+  catch(std::exception& e) { \
+    threw = true; \
+    if (myProc == msgProc) { \
+      EXPECT_TRUE(std::string(e.what()).find(goldMsg) != std::string::npos)<<"failed to find '"<<goldMsg<<"' in exception string '"<<e.what()<<"'"; \
+    } \
+  } \
+  EXPECT_TRUE(threw); \
+}
+
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameLength)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
@@ -426,13 +427,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameLength)
     meta.declare_part("really_long_part_1", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part name (really_long_part_1) does not match Part name (part_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part name (really_long_part_1) does not match Part name (part_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameText)
@@ -451,13 +446,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameText)
     meta.declare_part("part_2", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part name (part_2) does not match Part name (part_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part name (part_2) does not match Part name (part_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
@@ -476,13 +465,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
     meta.declare_part("part_1", stk::topology::ELEM_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 rank (ELEMENT_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 rank (ELEMENT_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
@@ -501,13 +484,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
     meta.declare_part_with_topology("part_1", stk::topology::TET_4);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 topology (TETRAHEDRON_4) does not match Part part_1 topology (HEXAHEDRON_8) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 topology (TETRAHEDRON_4) does not match Part part_1 topology (HEXAHEDRON_8) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
@@ -529,13 +506,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
     meta.declare_part_subset(part_1, part_2);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 subset ordinals (41 ) does not match Part part_1 subset ordinals () on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 subset ordinals (46 ) does not match Part part_1 subset ordinals () on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFew)
@@ -555,13 +526,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFe
     meta.declare_part("part_2", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Have extra Part (part_2) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Have extra Part (part_2) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooMany)
@@ -581,13 +546,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooMa
     meta.declare_part("part_1", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Received extra Part (part_2) from root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Received extra Part (part_2) from root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameLength)
@@ -606,13 +565,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameLength)
     meta.declare_field<double>(stk::topology::NODE_RANK, "really_long_field_1");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field name (really_long_field_1) does not match Field name (field_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field name (really_long_field_1) does not match Field name (field_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameText)
@@ -631,13 +584,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameText)
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_2");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field name (field_2) does not match Field name (field_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field name (field_2) does not match Field name (field_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
@@ -656,13 +603,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
     meta.declare_field<double>(stk::topology::ELEM_RANK, "field_1");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field field_1 rank (ELEMENT_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 rank (ELEMENT_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
@@ -681,14 +622,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_1", 2);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n"
-                            "[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooFew)
@@ -708,13 +642,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooF
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_2");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Have extra Field (field_2) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Have extra Field (field_2) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooMany)
@@ -734,13 +662,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooM
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_1");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Received extra Field (field_2) from root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Received extra Field (field_2) from root processor\n");
 }
 
 }

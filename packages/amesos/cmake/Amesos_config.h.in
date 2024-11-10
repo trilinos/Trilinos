@@ -6,6 +6,9 @@
 /* Using pre July 2005 Superlu */
 #cmakedefine AMESOS_SUPERLU_PRE_JULY2005
 
+/* Define if want to build amesos-cssmkl */
+#cmakedefine HAVE_AMESOS_CSS_MKL
+
 /* Define if want to build amesos-dscpack */
 #cmakedefine HAVE_AMESOS_DSCPACK
 
@@ -96,3 +99,6 @@
 
 /* Define to 1 if SuperLU's *gssvx and *gsisx routines need a GlobalLU_t argument. */
 #cmakedefine HAVE_AMESOS_SUPERLU5_API
+
+#cmakedefine Amesos_SHOW_DEPRECATED_WARNINGS
+

@@ -48,143 +48,47 @@ namespace mesh {
 template <typename Mesh, typename AlgorithmPerEntity>
 struct ThreadFunctor
 {
-  ThreadFunctor(const typename Mesh::BucketType *b, const AlgorithmPerEntity &f) :
-    bucket(b),
-    functor(f)
-  {}
-
-  void operator()(const int& i) const
-  {
-    static_assert(std::is_same<typename std::remove_cv<Mesh>::type, stk::mesh::HostMesh>::value,
-        "Mesh is not of stk::mesh::HostMesh type");
-    functor(typename stk::mesh::FastMeshIndex{bucket->bucket_id(), static_cast<unsigned>(i)});
-  }
-
-  const typename Mesh::BucketType *bucket;
-  const AlgorithmPerEntity &functor;
-};
-
-template <typename AlgorithmPerEntity>
-struct ThreadFunctor<stk::mesh::DeviceMesh, AlgorithmPerEntity> {
-  using Mesh = stk::mesh::DeviceMesh;
-
   KOKKOS_FUNCTION
-  ThreadFunctor(const typename Mesh::BucketType *b, const AlgorithmPerEntity &f) :
-    bucket(b),
+  ThreadFunctor(const typename Mesh::BucketType *b, const AlgorithmPerEntity &f)
+  : bucket(b),
     functor(f)
   {}
 
   KOKKOS_FUNCTION
   void operator()(const int& i) const
   {
-    functor(typename stk::mesh::FastMeshIndex{bucket->bucket_id(), static_cast<unsigned>(i)});
+    functor(stk::mesh::FastMeshIndex{bucket->bucket_id(), static_cast<unsigned>(i)});
   }
 
   const typename Mesh::BucketType *bucket;
   const AlgorithmPerEntity &functor;
 };
 
-template <typename AlgorithmPerEntity>
-struct ThreadFunctor<const stk::mesh::DeviceMesh, AlgorithmPerEntity> {
-  using Mesh = stk::mesh::DeviceMesh;
-
-  KOKKOS_FUNCTION
-  ThreadFunctor(const typename Mesh::BucketType *b, const AlgorithmPerEntity &f) :
-    bucket(b),
-    functor(f)
-  {}
-
-  KOKKOS_FUNCTION
-  void operator()(const int& i) const
-  {
-    functor(typename stk::mesh::FastMeshIndex{bucket->bucket_id(), static_cast<unsigned>(i)});
-  }
-
-  const typename Mesh::BucketType *bucket;
-  const AlgorithmPerEntity &functor;
-};
-
-template <typename Mesh, typename AlgorithmPerEntity>
+template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
 struct TeamFunctor
 {
-  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<EXEC_SPACE>::member_type;
 
-  TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
-    mesh(m),
+  KOKKOS_FUNCTION
+  TeamFunctor(const Mesh& m, const stk::mesh::EntityRank r, const stk::NgpVector<unsigned>& b, const AlgorithmPerEntity& f)
+  : mesh(m),
     rank(r),
     bucketIds(b),
     functor(f)
   {
   }
  
-  void operator()(const TeamHandleType& team) const
-  {
-    const int bucketIndex = bucketIds.get<typename Mesh::MeshExecSpace>(team.league_rank());
-    const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
-    unsigned numElements = bucket.size();
-    static_assert(std::is_same<typename std::remove_cv<Mesh>::type, stk::mesh::HostMesh>::value,
-        "Mesh is not of stk::mesh::HostMesh type");
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), ThreadFunctor<Mesh, AlgorithmPerEntity>(&bucket, functor));
-  }
-
-  const Mesh mesh;
-  const stk::mesh::EntityRank rank;
-  stk::NgpVector<unsigned> bucketIds;
-  const AlgorithmPerEntity functor;
-};
-
-template <typename AlgorithmPerEntity>
-struct TeamFunctor<stk::mesh::DeviceMesh, AlgorithmPerEntity> {
-  using Mesh = stk::mesh::DeviceMesh;
-  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
-
-  KOKKOS_FUNCTION
-  TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
-    mesh(m),
-    rank(r),
-    bucketIds(b),
-    functor(f)
-  {}
-
   KOKKOS_FUNCTION
   void operator()(const TeamHandleType& team) const
   {
-    const int bucketIndex = bucketIds.get<typename Mesh::MeshExecSpace>(team.league_rank());
+    const int bucketIndex = bucketIds.get<EXEC_SPACE>(team.league_rank());
     const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
-    unsigned numElements = bucket.size();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), ThreadFunctor<Mesh, AlgorithmPerEntity>(&bucket, functor));
+    unsigned numEntities = bucket.size();
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numEntities), ThreadFunctor<Mesh, AlgorithmPerEntity>(&bucket, functor));
   }
 
-  const Mesh mesh;
-  const stk::mesh::EntityRank rank;
-  stk::NgpVector<unsigned> bucketIds;
-  const AlgorithmPerEntity functor;
-};
-
-template <typename AlgorithmPerEntity>
-struct TeamFunctor<const stk::mesh::DeviceMesh, AlgorithmPerEntity> {
-  using Mesh = stk::mesh::DeviceMesh;
-  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
-
-  KOKKOS_FUNCTION
-  TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
-    mesh(m),
-    rank(r),
-    bucketIds(b),
-    functor(f)
-  {}
-
-  KOKKOS_FUNCTION
-  void operator()(const TeamHandleType& team) const
-  {
-    const int bucketIndex = bucketIds.get<typename Mesh::MeshExecSpace>(team.league_rank());
-    const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
-    unsigned numElements = bucket.size();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), ThreadFunctor<Mesh, AlgorithmPerEntity>(&bucket, functor));
-  }
-
-  const Mesh mesh;
-  const stk::mesh::EntityRank rank;
+  Mesh mesh;
+  stk::mesh::EntityRank rank;
   stk::NgpVector<unsigned> bucketIds;
   const AlgorithmPerEntity functor;
 };
@@ -192,10 +96,41 @@ struct TeamFunctor<const stk::mesh::DeviceMesh, AlgorithmPerEntity> {
 template <typename Mesh, typename AlgorithmPerEntity>
 void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
 {
+  Kokkos::Profiling::pushRegion("for_each_entity_run with selector");
+
   stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
   unsigned numBuckets = bucketIds.size();
-  Kokkos::parallel_for(stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
-                       TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
+
+  using EXEC_SPACE = typename Mesh::MeshExecSpace;
+  TeamFunctor<Mesh, AlgorithmPerEntity, EXEC_SPACE> teamFunctor(mesh, rank, bucketIds, functor);
+  Kokkos::parallel_for(stk::ngp::TeamPolicy<EXEC_SPACE>(numBuckets, Kokkos::AUTO), teamFunctor);
+
+  Kokkos::Profiling::popRegion();
+}
+
+template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+{
+  Kokkos::Profiling::pushRegion("for_each_entity_run with selector and EXEC_SPACE");
+
+  stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
+  unsigned numBuckets = bucketIds.size();
+
+  using TeamHandleType = typename stk::ngp::TeamPolicy<EXEC_SPACE>::member_type;
+  Kokkos::parallel_for(stk::ngp::TeamPolicy<EXEC_SPACE>(execSpace, numBuckets, Kokkos::AUTO),
+    KOKKOS_LAMBDA(const TeamHandleType& team){
+      const int bucketIndex = bucketIds.get<EXEC_SPACE>(team.league_rank());
+      const typename Mesh::BucketType& bucket = mesh.get_bucket(rank, bucketIndex);
+      const unsigned numEntities = bucket.size(); 
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numEntities),
+        [&](const int& idx) {
+          functor(stk::mesh::FastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(idx)});
+        }
+      );
+    }     
+  );
+
+  Kokkos::Profiling::popRegion();
 }
 
 }

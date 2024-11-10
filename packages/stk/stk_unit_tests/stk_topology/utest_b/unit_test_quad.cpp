@@ -114,6 +114,7 @@ void check_quad_4_on_device()
 
   stk::topology t = stk::topology::QUAD_4;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_4>::num_nodes;
+  EXPECT_EQ(4u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -238,6 +239,7 @@ void check_quad_6_on_device()
 
   stk::topology t = stk::topology::QUAD_6;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_6>::num_nodes;
+  EXPECT_EQ(6u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -273,7 +275,7 @@ void check_quad_6_on_device()
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-#ifdef STK_BUILT_IN_SIERRA
+#if KOKKOS_VERSION < 40200
     printf("Reminder: we still need to enable permutation for QUAD_6\n");
 #else
     Kokkos::printf("Reminder: we still need to enable permutation for QUAD_6\n");
@@ -366,6 +368,7 @@ void check_quad_8_on_device()
 
   stk::topology t = stk::topology::QUAD_8;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_8>::num_nodes;
+  EXPECT_EQ(8u, numNodes);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
@@ -486,6 +489,7 @@ void check_quad_9_on_device()
 
   stk::topology t = stk::topology::QUAD_9;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_9>::num_nodes;
+  EXPECT_EQ(9u, numNodes);
  
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {

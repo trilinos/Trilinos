@@ -50,7 +50,6 @@ cmake \
 -DKokkos_ENABLE_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
--DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=OFF \
 -DCMAKE_CXX_STANDARD:STRING=17 \
@@ -70,7 +69,10 @@ cmake \
 -DHAVE_PARMETIS_VERSION_4_0_3=ON \
 -DTPL_ENABLE_ParMETIS:BOOL=ON \
 -DTPL_ENABLE_Pnetcdf:BOOL=ON \
+-DNetCDF_LIBRARIES="-lnetcdf -lpnetcdf -lhdf5_hl -lhdf5 -ldl" \
 -DTPL_ENABLE_HDF5:BOOL=ON \
+-DHDF5_LIBRARIES="-lhdf5" \
+-DTPL_HDF5_LIBRARIES="-lhdf5" \
 -DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
 ${trilinos_src_dir}/
 

@@ -1,47 +1,14 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 
-/** \file   TransformedVectorDataTests.cpp
+/** \file   TransformedBasisValuesTests.cpp
     \brief  Tests against TransformedBasisValues.
     \author Created by Nate Roberts
 */
@@ -374,6 +341,195 @@ namespace
     testFloatingEquality4(transformedGradValues, transformedGradientData, relTol, absTol, out, success);
   }
 
+  // testVectorWeightedTransformation tests against a (C,P,D) transformation of a gradient field.
+  template<int spaceDim>
+  void testWeightedVectorTransformation(const int &polyOrder, const int &meshWidth, Teuchos::FancyOStream &out, bool &success)
+  {
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    using PointScalar = double;
+    
+    const double relTol = 1e-12;
+    const double absTol = 1e-12;
+    
+    auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
+    
+    auto lineBasis = Intrepid2::getLineBasis< Intrepid2::NodalBasisFamily<DeviceType> >(fs, polyOrder);
+    
+    int numFields_1D = lineBasis->getCardinality();
+    
+    int numFields = 1;
+    int numHypercubes = 1;
+    for (int d=0; d<spaceDim; d++)
+    {
+      numHypercubes *= meshWidth;
+      numFields     *= numFields_1D;
+    }
+    int numCells = numHypercubes;
+      
+    shards::CellTopology lineTopo = shards::getCellTopologyData< shards::Line<> >();
+    shards::CellTopology cellTopo;
+    if      (spaceDim == 1) cellTopo = shards::getCellTopologyData< shards::Line<>          >();
+    else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
+    else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
+    
+    auto lineCubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(lineTopo,polyOrder*2);
+    int numPoints_1D = lineCubature->getNumPoints();
+    ScalarView<PointScalar,DeviceType> lineCubaturePoints("line cubature points",numPoints_1D,1);
+    ScalarView<double,DeviceType> lineCubatureWeights("line cubature weights", numPoints_1D);
+    
+    lineCubature->getCubature(lineCubaturePoints, lineCubatureWeights);
+    
+    // Allocate some intermediate containers
+    ScalarView<Scalar,DeviceType> lineBasisValues    ("line basis values",      numFields_1D, numPoints_1D   );
+    ScalarView<Scalar,DeviceType> lineBasisGradValues("line basis grad values", numFields_1D, numPoints_1D, 1);
+    
+    // for now, we use 1D values to build up the 2D or 3D gradients
+    // eventually, TensorBasis should offer a getValues() variant that returns tensor basis data
+    lineBasis->getValues(lineBasisValues,     lineCubaturePoints, Intrepid2::OPERATOR_VALUE );
+    lineBasis->getValues(lineBasisGradValues, lineCubaturePoints, Intrepid2::OPERATOR_GRAD  );
+    
+    // drop the trivial space dimension in line gradient values:
+    Kokkos::resize(lineBasisGradValues, numFields_1D, numPoints_1D);
+      
+    Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim> vectorComponents;
+    
+    for (int d=0; d<spaceDim; d++)
+    {
+      Kokkos::Array<Data<Scalar,DeviceType>, spaceDim> gradComponent_d;
+      for (int d2=0; d2<spaceDim; d2++)
+      {
+        if (d2 == d) gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisGradValues);
+        else         gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisValues);
+      }
+      vectorComponents[d] = TensorData<Scalar,DeviceType>(gradComponent_d);
+    }
+    VectorData<Scalar,DeviceType> gradientVectorData(vectorComponents, false); // false: not axis-aligned
+    BasisValues<Scalar, DeviceType> gradientValues(gradientVectorData);
+    
+    CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
+    
+    // goal here is to do a vector-weighted Poisson; i.e. (f a_u \cdot grad u, a_v \cdot grad v) on each cell
+    
+    int pointsPerCell = 1;
+    for (int d=0; d<spaceDim; d++)
+    {
+      pointsPerCell *= numPoints_1D;
+    }
+    
+    auto jacobian = cellNodes.allocateJacobianData(pointsPerCell);
+    auto jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
+    auto jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
+    cellNodes.setJacobian(                   jacobian, pointsPerCell);
+    CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
+    CellTools<DeviceType>::setJacobianInv(jacobianInv, jacobian);
+    
+    auto auView = getView<Scalar,DeviceType>("a_u", spaceDim);
+    auto auViewHost = Kokkos::create_mirror(auView);
+    double weight = 1.0;
+    for (int d=0; d<spaceDim; d++)
+    {
+      auViewHost(d) = weight;
+      weight /= 2.0;
+    }
+    Kokkos::deep_copy(auView, auViewHost);
+    
+    auto avView = getView<Scalar,DeviceType>("a_v", spaceDim);
+    auto avViewHost = Kokkos::create_mirror(avView);
+    weight = 0.5;
+    for (int d=0; d<spaceDim; d++)
+    {
+      avViewHost(d) = weight;
+      weight *= 2.0;
+    }
+    Kokkos::deep_copy(avView, avViewHost);
+    
+    Data<Scalar,DeviceType> au_data(auView, Kokkos::Array<int,3>{numCells,pointsPerCell,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
+    Data<Scalar,DeviceType> av_data(avView, Kokkos::Array<int,3>{numCells,pointsPerCell,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
+    
+    auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, au_data, true);
+    auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, av_data, true);
+    
+    uTransform.storeMatVec(jacobianInv, au_data, true); // true: transpose jacobianInv when multiplying
+    vTransform.storeMatVec(jacobianInv, av_data, true); // true: transpose jacobianInv when multiplying
+    
+    Intrepid2::TransformedBasisValues<double, DeviceType> utransformedBasisGradients(uTransform, gradientValues);
+    Intrepid2::TransformedBasisValues<double, DeviceType> vtransformedBasisGradients(vTransform, gradientValues);
+    
+    int numPoints = 1;
+    for (int d=0; d<spaceDim; d++)
+    {
+      numPoints *= numPoints_1D;
+    }
+    
+    // now, compute transformed values in the classic, expanded way
+    ScalarView<Scalar,DeviceType> expanded_uTransformedGradValues("transformed a_u dot grad values", numCells, numFields, numPoints);
+    ScalarView<Scalar,DeviceType> expanded_vTransformedGradValues("transformed a_v dot grad values", numCells, numFields, numPoints);
+    
+    auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
+    
+    // Allocate some intermediate containers
+    ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
+    ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
+
+    ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", numCells, numFields, numPoints, spaceDim);
+    ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", numCells, numFields, numPoints, spaceDim);
+    
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
+    TEST_EQUALITY( numPoints, cubature->getNumPoints());
+    ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
+    ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
+    
+    cubature->getCubature(cubaturePoints, cubatureWeights);
+    
+    basis->getValues(basisValues,     cubaturePoints, Intrepid2::OPERATOR_VALUE );
+    basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
+    
+    const int numNodesPerCell = cellNodes.numNodesPerCell();
+    ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
+    
+    using ExecutionSpace = typename DeviceType::execution_space;
+    auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
+    Kokkos::parallel_for("fill expanded cell nodes", policy,
+    KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
+    {
+      for (int d=0; d<spaceDim; d++)
+      {
+        expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
+      }
+    });
+    
+    ScalarView<Scalar,DeviceType> expandedJacobian("jacobian", numCells, numPoints, spaceDim, spaceDim);
+    ScalarView<Scalar,DeviceType> expandedJacobianInverse("jacobian inverse", numCells, numPoints, spaceDim, spaceDim);
+    
+    using CellTools = Intrepid2::CellTools<DeviceType>;
+    using ExecutionSpace = typename DeviceType::execution_space;
+    using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<DeviceType>;
+    
+    CellTools::setJacobian(expandedJacobian, cubaturePoints, expandedCellNodes, cellTopo);
+    CellTools::setJacobianInv(expandedJacobianInverse, expandedJacobian);
+    
+    FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, expandedJacobianInverse, basisGradValues);
+    
+    auto policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCells,numFields,numPoints});
+    Kokkos::parallel_for("compute expanded_{u,v}TransformedGradValues", policy3,
+    KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+    {
+      Scalar u_result = 0;
+      Scalar v_result = 0;
+      for (int d=0; d<spaceDim; d++)
+      {
+        u_result += auView(d) * transformedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+        v_result += avView(d) * transformedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+      }
+      expanded_uTransformedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal) = u_result;
+      expanded_vTransformedGradValues(cellOrdinal,fieldOrdinal,pointOrdinal) = v_result;
+    });
+    
+    testFloatingEquality3(expanded_uTransformedGradValues, utransformedBasisGradients, relTol, absTol, out, success);
+    testFloatingEquality3(expanded_vTransformedGradValues, vtransformedBasisGradients, relTol, absTol, out, success);
+  }
+
   TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Vector_Identity_Matrix )
   {
     const bool vectorValues      = true;
@@ -469,4 +625,36 @@ namespace
    const int meshWidth = 3;
    testVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedWeightedVector_1D_p1 )
+  {
+    const int spaceDim = 1;
+    const int polyOrder = 1;
+    const int meshWidth = 10;
+    testWeightedVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
+  }
+   
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedWeightedVector_1D_p2 )
+  {
+   const int spaceDim = 1;
+   const int polyOrder = 2;
+   const int meshWidth = 10;
+   testWeightedVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedWeightedVector_2D_p1 )
+  {
+   const int spaceDim = 2;
+   const int polyOrder = 1;
+   const int meshWidth = 3;
+   testWeightedVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedWeightedVector_2D_p2 )
+  {
+   const int spaceDim = 2;
+   const int polyOrder = 2;
+   const int meshWidth = 3;
+   testWeightedVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
+  }
 } // anonymous namespace

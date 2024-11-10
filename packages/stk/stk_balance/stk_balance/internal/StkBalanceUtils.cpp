@@ -116,7 +116,7 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSet
                                    sidesetSide, sideNodes);
       const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
                                                                    sideNodes.data(), sideNodes.size());
-      addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
+      addBoxForNodes(stkMeshBulkData, sideNodes.size(), sideNodes.data(), coord, eps,
           stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
   }
@@ -175,7 +175,11 @@ SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMesh
 
   stk::balance::internal::SearchElemPairs searchResults;
 
-  stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::KDTREE, stkMeshBulkData.parallel(), searchResults);
+  bool enforceSearchResultSymmetry = true;
+  bool autoSwapDomainAndRange = true;
+  bool sortSearchResults = true;
+  stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::KDTREE, stkMeshBulkData.parallel(), searchResults,
+                            enforceSearchResultSymmetry, autoSwapDomainAndRange, sortSearchResults);
 
   stk::balance::internal::SearchElemPairs::iterator iter = std::unique(searchResults.begin(), searchResults.end());
   searchResults.resize(iter - searchResults.begin());

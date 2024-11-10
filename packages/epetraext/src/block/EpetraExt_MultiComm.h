@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_MULTICOMM_H
 #define EPETRAEXT_MULTICOMM_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include "Epetra_Comm.h" 
 
@@ -104,6 +110,3 @@ class MultiComm: public virtual Epetra_Comm {
 } //namespace EpetraExt
 
 #endif /* EPETRAEXT_MULTICOMM_H */
-
-
-

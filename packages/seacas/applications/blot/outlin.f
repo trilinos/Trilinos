@@ -41,15 +41,10 @@ C   --   Uses DVIEW of /LAYOUT/
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4)
 
       include 'dbnums.blk'
-      COMMON /MSHOPC/ MSHDEF(4), MSHNUM(4)
-      CHARACTER*8 MSHDEF, MSHNUM
-      COMMON /VIEWS/  MULTIM,
-     &   XISSYM, YISSYM, XAXSYM, YAXSYM, LFTSYM, BOTSYM
-      LOGICAL MULTIM, XISSYM, YISSYM, LFTSYM, BOTSYM
-      COMMON /LAYOUD/ DVIEW(KTOP,4), WVIEW(KTOP,4)
-
-      COMMON /LEGOPT/ DOQA(2), DOLEG(2), DOAXIS(2), DOBOX
-      LOGICAL DOQA, DOLEG, DOAXIS, DOBOX
+      include 'mshopt.blk'
+      include 'views.blk'
+      include 'layoud.blk'
+      include 'legopt.blk'
 
       INTEGER BLKCOL(0:NELBLK)
 

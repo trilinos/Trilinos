@@ -1,4 +1,4 @@
-// Copyright(C) 2020, 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2020, 2021, 2022, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,7 +8,7 @@
 
 #include "ioss_export.h"
 
-#include <Ioss_CodeTypes.h>
+#include "Ioss_CodeTypes.h"
 #include <cstdlib>
 #include <vector>
 
@@ -16,11 +16,7 @@ namespace Ioss {
   struct IOSS_EXPORT DataPool
   {
     // Data space shared by most field input/output routines...
-    std::vector<char>    data{};
-    std::vector<int>     data_int{};
-    std::vector<int64_t> data_int64{};
-    std::vector<double>  data_double{};
-    std::vector<Complex> data_complex{};
+    std::vector<char> data{};
 #ifdef SEACAS_HAVE_KOKKOS
     Kokkos::View<char *>    data_view_char{};
     Kokkos::View<int *>     data_view_int{};

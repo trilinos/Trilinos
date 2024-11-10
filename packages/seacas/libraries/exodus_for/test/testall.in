@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright(C) 1999-2022 National Technology & Engineering Solutions
+# Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -111,7 +111,7 @@ ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 # test_nem - nemesis routines
 echo "test_nem ..."
 ${PREFIX} ${BINDIR}/f_test_nem${SUFFIX} | ${DIFF} -w - ${SRCDIR}/test_nem.dmp | tee test_nem.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[1}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[1]}))
 echo "end test_nem, status = $ret_status" >> test.output
 
 # test partial read/write.  Uses 'test.exo' from testwt.

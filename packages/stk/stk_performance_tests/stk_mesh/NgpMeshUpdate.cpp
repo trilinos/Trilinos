@@ -44,11 +44,11 @@
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/timer.hpp>
 
-class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpMeshChangeElementPartMembership : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpMeshChangeElementPartMembership()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       newPartName("block2")
   { }
 
@@ -97,11 +97,11 @@ private:
   unsigned numElements;
 };
 
-class NgpMeshCreateEntity : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpMeshCreateEntity : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpMeshCreateEntity()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       numElements(1000000)
   { }
 
@@ -127,11 +127,11 @@ private:
   int numElements;
 };
 
-class NgpMeshGhosting : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpMeshGhosting : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpMeshGhosting()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       ghostingName("testGhosting")
   { }
 
@@ -246,7 +246,7 @@ TEST_F( NgpMeshCreateEntity, Timing )
   if (get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  #ifdef STK_ENABLE_GPU
   const int NUM_ITERS = 100;
   #else
   const int NUM_ITERS = 5000;
@@ -272,7 +272,7 @@ TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
-  std::string perfCheck = stk::unit_test_util::simple_fields::get_option("-perf_check", "PERF_CHECK");
+  std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
 #ifdef NDEBUG
   const int NUM_INNER_ITERS = (perfCheck=="NO_PERF_CHECK" ? 1 : 100);
 #else

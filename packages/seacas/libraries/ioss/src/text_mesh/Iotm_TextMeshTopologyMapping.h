@@ -8,8 +8,8 @@
 
 #include "iotm_export.h"
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_EntityType.h> // for EntityType
+#include "Ioss_CodeTypes.h"
+#include "Ioss_EntityType.h" // for EntityType
 
 #include <cstddef> // for size_t
 #include <cstdint> // for int64_t

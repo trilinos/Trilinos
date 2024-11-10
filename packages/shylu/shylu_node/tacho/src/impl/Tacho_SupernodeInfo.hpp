@@ -1,25 +1,28 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_SUPERNODE_INFO_HPP__
 #define __TACHO_SUPERNODE_INFO_HPP__
 
 #include "Tacho_Util.hpp"
+#if defined(KOKKOS_ENABLE_CUDA)
+ #include <cusparse_v2.h>
+#elif defined(KOKKOS_ENABLE_HIP)
+ #if __has_include(<rocm-core/rocm_version.h>)
+  #include <rocm-core/rocm_version.h>
+ #else
+  #include <rocm_version.h>
+ #endif
+ #include <rocsparse/rocsparse.h>
+ #define ROCM_VERSION ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
+#endif
 
 /// \file Tacho_SupernodeInfo.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -94,11 +97,11 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using ordinal_type_array = Kokkos::View<ordinal_type *, device_type>;
   using size_type_array = Kokkos::View<size_type *, device_type>;
   using value_type_array = Kokkos::View<value_type *, device_type>;
+  using int_type_array = Kokkos::View<int*, Kokkos::LayoutLeft, device_type>;
 
   using ordinal_pair_type = Kokkos::pair<ordinal_type, ordinal_type>;
   using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
-
   using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
   struct Supernode {
@@ -117,6 +120,26 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     value_type *l_buf, *u_buf;
 
     bool do_not_apply_pivots;
+
+    // for using SpMV
+    size_t nnzU;
+    int* rowptrU;
+    int* colindU;
+    value_type* nzvalsU;
+
+    size_t nnzL;
+    int* rowptrL;
+    int* colindL;
+    value_type* nzvalsL;
+
+    bool spmv_explicit_transpose;
+#if defined(KOKKOS_ENABLE_CUDA)
+    cusparseSpMatDescr_t U_cusparse;
+    cusparseSpMatDescr_t L_cusparse;
+#elif defined(KOKKOS_ENABLE_HIP)
+    rocsparse_spmat_descr descrU;
+    rocsparse_spmat_descr descrL;
+#endif
 
     KOKKOS_INLINE_FUNCTION
     Supernode()

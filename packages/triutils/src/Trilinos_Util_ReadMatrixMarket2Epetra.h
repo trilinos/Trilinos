@@ -78,3 +78,9 @@ int Trilinos_Util_ReadMatrixMarket2Epetra64(
     Epetra_Vector *&xexact ) ;
 
 #endif
+
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif

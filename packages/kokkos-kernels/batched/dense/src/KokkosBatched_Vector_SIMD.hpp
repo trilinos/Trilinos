@@ -63,8 +63,7 @@ class Vector<SIMD<T>, l> {
     for (int i = 0; i < vector_length; ++i) _data[i] = val;
   }
   template <typename ArgValueType>
-  KOKKOS_INLINE_FUNCTION Vector(
-      const Vector<SIMD<ArgValueType>, vector_length> &b) {
+  KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = b[i];
   }
@@ -140,8 +139,7 @@ class Vector<SIMD<float>, 2> {
   }
 
   template <typename ArgValueType>
-  KOKKOS_INLINE_FUNCTION Vector(
-      const Vector<SIMD<ArgValueType>, vector_length> &b) {
+  KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     _data.x = b[0];
     _data.y = b[1];
   }
@@ -183,9 +181,7 @@ class Vector<SIMD<float>, 2> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 
 template <>
@@ -232,8 +228,7 @@ class Vector<SIMD<double>, 2> {
   }
 
   template <typename ArgValueType>
-  KOKKOS_INLINE_FUNCTION Vector(
-      const Vector<SIMD<ArgValueType>, vector_length> &b) {
+  KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     _data.x = b[0];
     _data.y = b[1];
   }
@@ -275,9 +270,7 @@ class Vector<SIMD<double>, 2> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 
 template <>
@@ -334,8 +327,7 @@ class Vector<SIMD<float>, 4> {
   }
 
   template <typename ArgValueType>
-  KOKKOS_INLINE_FUNCTION Vector(
-      const Vector<SIMD<ArgValueType>, vector_length> &b) {
+  KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     _data.x = b[0];
     _data.y = b[1];
     _data.z = b[2];
@@ -389,9 +381,7 @@ class Vector<SIMD<float>, 4> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 
 template <>
@@ -448,8 +438,7 @@ class Vector<SIMD<double>, 4> {
   }
 
   template <typename ArgValueType>
-  KOKKOS_INLINE_FUNCTION Vector(
-      const Vector<SIMD<ArgValueType>, vector_length> &b) {
+  KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     _data.x = b[0];
     _data.y = b[1];
     _data.z = b[2];
@@ -503,9 +492,7 @@ class Vector<SIMD<double>, 4> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 
 }  // namespace KokkosBatched
@@ -513,6 +500,11 @@ class Vector<SIMD<double>, 4> {
 
 #if defined(__KOKKOSBATCHED_ENABLE_AVX__)
 #if defined(__AVX__) || defined(__AVX2__)
+
+#if CUDA_VERSION < 12022
+#undef _Float16
+#endif
+
 #include <immintrin.h>
 
 namespace KokkosBatched {
@@ -575,13 +567,9 @@ class Vector<SIMD<double>, 4> {
 
   inline void storeAligned(value_type *p) const { _mm256_store_pd(p, _data); }
 
-  inline void storeUnaligned(value_type *p) const {
-    _mm256_storeu_pd(p, _data);
-  }
+  inline void storeUnaligned(value_type *p) const { _mm256_storeu_pd(p, _data); }
 
-  inline value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  inline value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 
 template <>
@@ -652,22 +640,19 @@ class Vector<SIMD<Kokkos::complex<double> >, 2> {
     return *this;
   }
 
-  inline void storeAligned(value_type *p) const {
-    _mm256_store_pd((mag_type *)p, _data);
-  }
+  inline void storeAligned(value_type *p) const { _mm256_store_pd((mag_type *)p, _data); }
 
-  inline void storeUnaligned(value_type *p) const {
-    _mm256_storeu_pd((mag_type *)p, _data);
-  }
+  inline void storeUnaligned(value_type *p) const { _mm256_storeu_pd((mag_type *)p, _data); }
 
-  inline value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  inline value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 }  // namespace KokkosBatched
 #endif /* #if defined(__AVX__) || defined(__AVX2__) */
 
 #if defined(__AVX512F__)
+#if CUDA_VERSION < 12022
+#undef _Float16
+#endif
 #include <immintrin.h>
 
 namespace KokkosBatched {
@@ -729,13 +714,9 @@ class Vector<SIMD<double>, 8> {
 
   inline void storeAligned(value_type *p) const { _mm512_store_pd(p, _data); }
 
-  inline void storeUnaligned(value_type *p) const {
-    _mm512_storeu_pd(p, _data);
-  }
+  inline void storeUnaligned(value_type *p) const { _mm512_storeu_pd(p, _data); }
 
-  inline value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  inline value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 
 template <>
@@ -759,13 +740,11 @@ class Vector<SIMD<Kokkos::complex<double> >, 4> {
  public:
   inline Vector() { _data = _mm512_setzero_pd(); }
   inline Vector(const value_type &val) {
-    _data = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55,
-                                        _mm256_set1_pd(val.real()));
+    _data = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55, _mm256_set1_pd(val.real()));
     KOKKOSKERNELS_GNU_COMPILER_FENCE
   }
   inline Vector(const mag_type &val) {
-    _data = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55,
-                                        _mm256_set1_pd(val));
+    _data = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55, _mm256_set1_pd(val));
     KOKKOSKERNELS_GNU_COMPILER_FENCE
   }
   inline Vector(const type &b) { _data = b._data; }
@@ -802,17 +781,11 @@ class Vector<SIMD<Kokkos::complex<double> >, 4> {
     return *this;
   }
 
-  inline void storeAligned(value_type *p) const {
-    _mm512_store_pd((mag_type *)p, _data);
-  }
+  inline void storeAligned(value_type *p) const { _mm512_store_pd((mag_type *)p, _data); }
 
-  inline void storeUnaligned(value_type *p) const {
-    _mm512_storeu_pd((mag_type *)p, _data);
-  }
+  inline void storeUnaligned(value_type *p) const { _mm512_storeu_pd((mag_type *)p, _data); }
 
-  inline value_type &operator[](const int &i) const {
-    return reinterpret_cast<value_type *>(&_data)[i];
-  }
+  inline value_type &operator[](const int &i) const { return reinterpret_cast<value_type *>(&_data)[i]; }
 };
 }  // namespace KokkosBatched
 

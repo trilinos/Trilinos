@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_COMPUTEROWANDCOLUMNONENORMS_DEF_HPP
@@ -50,6 +18,7 @@
 /// Tpetra_computeRowAndColumnOneNorms_decl.hpp in this directory.
 
 #include "Tpetra_Details_copyConvert.hpp"
+#include "Tpetra_Details_EquilibrationInfo.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Map.hpp"
@@ -310,6 +279,7 @@ public:
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
   using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
   using device_type = typename crs_matrix_type::device_type;
+  using policy_type = Kokkos::TeamPolicy<typename device_type::execution_space, LO>;
 
   ComputeLocalRowScaledColumnNorms (const Kokkos::View<mag_type*, device_type>& rowScaledColNorms,
                                     const Kokkos::View<const mag_type*, device_type>& rowNorms,
@@ -319,18 +289,19 @@ public:
     A_lcl_ (A.getLocalMatrixDevice ())
   {}
 
-  KOKKOS_INLINE_FUNCTION void operator () (const LO lclRow) const {
+  KOKKOS_INLINE_FUNCTION void operator () (const typename policy_type::member_type &team) const {
     using KAT = Kokkos::ArithTraits<val_type>;
 
+    const LO lclRow = team.league_rank();
     const auto curRow = A_lcl_.rowConst (lclRow);
     const mag_type rowNorm = rowNorms_[lclRow];
     const LO numEnt = curRow.length;
-    for (LO k = 0; k < numEnt; ++k) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k) {
       const mag_type matrixAbsVal = KAT::abs (curRow.value(k));
       const LO lclCol = curRow.colidx(k);
 
       Kokkos::atomic_add (&rowScaledColNorms_[lclCol], matrixAbsVal / rowNorm);
-    }
+    });
   }
 
   static void
@@ -338,15 +309,13 @@ public:
        const Kokkos::View<const mag_type*, device_type>& rowNorms,
        const crs_matrix_type& A)
   {
-    using execution_space = typename device_type::execution_space;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
     using functor_type = ComputeLocalRowScaledColumnNorms<SC, LO, GO, NT>;
 
     functor_type functor (rowScaledColNorms, rowNorms, A);
     const LO lclNumRows =
       static_cast<LO> (A.getRowMap ()->getLocalNumElements ());
     Kokkos::parallel_for ("computeLocalRowScaledColumnNorms",
-                          range_type (0, lclNumRows), functor);
+                          policy_type (lclNumRows, Kokkos::AUTO), functor);
   }
 
 private:
@@ -409,6 +378,7 @@ public:
   using local_matrix_device_type =
     typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_device_type;
   using local_map_type = typename ::Tpetra::Map<LO, GO, NT>::local_map_type;
+  using policy_type = Kokkos::TeamPolicy<typename local_matrix_device_type::execution_space, LO>;
 
   ComputeLocalRowOneNorms (const equib_info_type& equib,   // in/out
                            const local_matrix_device_type& A_lcl, // in
@@ -441,12 +411,13 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void
-  operator () (const LO lclRow, value_type& dst) const
+  operator () (const typename policy_type::member_type& team, value_type& dst) const
   {
     using KAT = Kokkos::ArithTraits<val_type>;
     using mag_type = typename KAT::mag_type;
     using KAM = Kokkos::ArithTraits<mag_type>;
 
+    const LO lclRow = team.league_rank();
     const GO gblRow = rowMap_.getGlobalElement (lclRow);
     // OK if invalid(); then we simply won't find the diagonal entry.
     const GO lclDiagColInd = colMap_.getLocalElement (gblRow);
@@ -456,33 +427,37 @@ public:
 
     mag_type rowNorm {0.0};
     val_type diagVal {0.0};
+    value_type dstThread {0};
 
-    for (LO k = 0; k < numEnt; ++k) {
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k, mag_type &normContrib, val_type& diagContrib, value_type& dstContrib) {
       const val_type matrixVal = curRow.value (k);
       if (KAT::isInf (matrixVal)) {
-        dst |= 1;
+        dstContrib |= 1;
       }
       if (KAT::isNan (matrixVal)) {
-        dst |= 2;
+        dstContrib |= 2;
       }
       const mag_type matrixAbsVal = KAT::abs (matrixVal);
-      rowNorm += matrixAbsVal;
+      normContrib += matrixAbsVal;
       const LO lclCol = curRow.colidx (k);
       if (lclCol == lclDiagColInd) {
-        diagVal = curRow.value (k); // assume no repeats
+        diagContrib = curRow.value (k); // assume no repeats
       }
-    } // for each entry in row
+    }, Kokkos::Sum<mag_type>(rowNorm), Kokkos::Sum<val_type>(diagVal), Kokkos::BOr<value_type>(dstThread)); // for each entry in row
 
     // This is a local result.  If the matrix has an overlapping
     // row Map, then the global result might differ.
-    if (diagVal == KAT::zero ()) {
-      dst |= 4;
-    }
-    if (rowNorm == KAM::zero ()) {
-      dst |= 8;
-    }
-    equib_.rowDiagonalEntries[lclRow] = diagVal;
-    equib_.rowNorms[lclRow] = rowNorm;
+    Kokkos::single(Kokkos::PerTeam(team), [&](){
+      dst |= dstThread;
+      if (diagVal == KAT::zero ()) {
+        dst |= 4;
+      }
+      if (rowNorm == KAM::zero ()) {
+        dst |= 8;
+      }
+      equib_.rowDiagonalEntries[lclRow] = diagVal;
+      equib_.rowNorms[lclRow] = rowNorm;
+    });
   }
 
 private:
@@ -501,6 +476,7 @@ public:
   using equib_info_type = EquilibrationInfo<val_type, typename NT::device_type>;
   using local_matrix_device_type = typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_device_type;
   using local_map_type = typename ::Tpetra::Map<LO, GO, NT>::local_map_type;
+  using policy_type = Kokkos::TeamPolicy<typename local_matrix_device_type::execution_space, LO>;
 
 public:
   ComputeLocalRowAndColumnOneNorms (const equib_info_type& equib,   // in/out
@@ -534,12 +510,13 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void
-  operator () (const LO lclRow, value_type& dst) const
+  operator () (const typename policy_type::member_type& team, value_type& dst) const
   {
     using KAT = Kokkos::ArithTraits<val_type>;
     using mag_type = typename KAT::mag_type;
     using KAM = Kokkos::ArithTraits<mag_type>;
 
+    const LO lclRow = team.league_rank();
     const GO gblRow = rowMap_.getGlobalElement (lclRow);
     // OK if invalid(); then we simply won't find the diagonal entry.
     const GO lclDiagColInd = colMap_.getLocalElement (gblRow);
@@ -549,46 +526,50 @@ public:
 
     mag_type rowNorm {0.0};
     val_type diagVal {0.0};
+    value_type dstThread {0};
 
-    for (LO k = 0; k < numEnt; ++k) {
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k, mag_type &normContrib, val_type& diagContrib, value_type& dstContrib) {
       const val_type matrixVal = curRow.value (k);
       if (KAT::isInf (matrixVal)) {
-        dst |= 1;
+        dstContrib |= 1;
       }
       if (KAT::isNan (matrixVal)) {
-        dst |= 2;
+        dstContrib |= 2;
       }
       const mag_type matrixAbsVal = KAT::abs (matrixVal);
-      rowNorm += matrixAbsVal;
+      normContrib += matrixAbsVal;
       const LO lclCol = curRow.colidx (k);
       if (lclCol == lclDiagColInd) {
-        diagVal = curRow.value (k); // assume no repeats
+        diagContrib = curRow.value (k); // assume no repeats
       }
       if (! equib_.assumeSymmetric) {
         Kokkos::atomic_add (&(equib_.colNorms[lclCol]), matrixAbsVal);
       }
-    } // for each entry in row
+    }, Kokkos::Sum<mag_type>(rowNorm), Kokkos::Sum<val_type>(diagVal), Kokkos::BOr<value_type>(dstThread)); // for each entry in row
 
     // This is a local result.  If the matrix has an overlapping
     // row Map, then the global result might differ.
-    if (diagVal == KAT::zero ()) {
-      dst |= 4;
-    }
-    if (rowNorm == KAM::zero ()) {
-      dst |= 8;
-    }
-    // NOTE (mfh 24 May 2018) We could actually compute local
-    // rowScaledColNorms in situ at this point, if ! assumeSymmetric
-    // and row Map is the same as range Map (so that the local row
-    // norms are the same as the global row norms).
-    equib_.rowDiagonalEntries[lclRow] = diagVal;
-    equib_.rowNorms[lclRow] = rowNorm;
-    if (! equib_.assumeSymmetric &&
-        lclDiagColInd != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-      // Don't need an atomic update here, since this lclDiagColInd is
-      // a one-to-one function of lclRow.
-      equib_.colDiagonalEntries[lclDiagColInd] += diagVal;
-    }
+    Kokkos::single(Kokkos::PerTeam(team), [&](){
+      dst |= dstThread;
+      if (diagVal == KAT::zero ()) {
+        dst |= 4;
+      }
+      if (rowNorm == KAM::zero ()) {
+        dst |= 8;
+      }
+      // NOTE (mfh 24 May 2018) We could actually compute local
+      // rowScaledColNorms in situ at this point, if ! assumeSymmetric
+      // and row Map is the same as range Map (so that the local row
+      // norms are the same as the global row norms).
+      equib_.rowDiagonalEntries[lclRow] = diagVal;
+      equib_.rowNorms[lclRow] = rowNorm;
+      if (! equib_.assumeSymmetric &&
+          lclDiagColInd != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+        // Don't need an atomic update here, since this lclDiagColInd is
+        // a one-to-one function of lclRow.
+        equib_.colDiagonalEntries[lclDiagColInd] += diagVal;
+      }
+    });
   }
 
 private:
@@ -605,7 +586,7 @@ EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type, typename NT::devic
 computeLocalRowOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
 {
   using execution_space = typename NT::device_type::execution_space;
-  using range_type = Kokkos::RangePolicy<execution_space, LO>;
+  using policy_type = Kokkos::TeamPolicy<execution_space, LO>;
   using functor_type = ComputeLocalRowOneNorms<SC, LO, GO, NT>;
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
   using device_type = typename NT::device_type;
@@ -621,7 +602,7 @@ computeLocalRowOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
                         A.getColMap ()->getLocalMap ());
   int result = 0;
   Kokkos::parallel_reduce ("computeLocalRowOneNorms",
-                           range_type (0, lclNumRows), functor,
+                           policy_type (lclNumRows, Kokkos::AUTO), functor,
                            result);
   equib.foundInf = (result & 1) != 0;
   equib.foundNan = (result & 2) != 0;
@@ -638,7 +619,7 @@ computeLocalRowAndColumnOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, 
                                             const bool assumeSymmetric)
 {
   using execution_space = typename NT::device_type::execution_space;
-  using range_type = Kokkos::RangePolicy<execution_space, LO>;
+  using policy_type = Kokkos::TeamPolicy<execution_space, LO>;
   using functor_type = ComputeLocalRowAndColumnOneNorms<SC, LO, GO, NT>;
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
   using device_type = typename NT::device_type;
@@ -653,7 +634,7 @@ computeLocalRowAndColumnOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, 
                         A.getColMap ()->getLocalMap ());
   int result = 0;
   Kokkos::parallel_reduce ("computeLocalRowAndColumnOneNorms",
-                           range_type (0, lclNumRows), functor,
+                           policy_type (lclNumRows, Kokkos::AUTO), functor,
                            result);
   equib.foundInf = (result & 1) != 0;
   equib.foundNan = (result & 2) != 0;
@@ -805,7 +786,7 @@ bool findZero (const OneDViewType& x)
   using functor_type = FindZero<view_type, size_type>;
 
   Kokkos::RangePolicy<execution_space, size_type> range (0, x.extent (0));
-  range.set (Kokkos::ChunkSize (500)); // adjust as needed
+  range.set_chunk_size (500); // adjust as needed
 
   int foundZero = 0;
   Kokkos::parallel_reduce ("findZero", range, functor_type (x), foundZero);

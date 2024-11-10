@@ -54,9 +54,6 @@ class DeviceVariableMap;
 class NgpNode
 {
 public:
-  enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
-  enum { MAXIMUM_FUNCTION_NAME_LENGTH = 32 };
-
   KOKKOS_FUNCTION
   NgpNode()
   : m_opcode(OPCODE_UNDEFINED),
@@ -567,6 +564,13 @@ public:
       STK_NGP_ThrowErrorMsg("Incorrect number of arguments for cos_ramp or cosine_ramp function");
       break;
     }
+    case FunctionType::LINEAR_RAMP : {
+      if (argumentCount == 3) {
+        return linear_ramp3(arguments[0], arguments[1], arguments[2]);
+      }
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for linear_ramp function");
+      break;
+    }
     case FunctionType::HAVERSINE_PULSE : {
       if (argumentCount == 3) {
         return haversine_pulse(arguments[0], arguments[1], arguments[2]);
@@ -623,30 +627,6 @@ public:
       STK_NGP_ThrowErrorMsg("Incorrect number of arguments for gamma_pdf function");
       break;
     }
-    case FunctionType::RAND : {
-      if (argumentCount == 0) {
-        return real_rand();
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for rand function");
-      break;
-    }
-    case FunctionType::SRAND : {
-      if (argumentCount == 1) {
-        return real_srand(arguments[0]);
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for srand function");
-      break;
-    }
-    case FunctionType::RANDOM : {
-      if (argumentCount == 0) {
-        return random0();
-      }
-      else if (argumentCount == 1) {
-        return random1(arguments[0]);
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for random function");
-      break;
-    }
     case FunctionType::TS_RANDOM : {
       if (argumentCount == 4) {
         return time_space_random(arguments[0], arguments[1], arguments[2], arguments[3]);
@@ -662,13 +642,6 @@ public:
       STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ts_normal function");
       break;
     }
-    case FunctionType::TIME : {
-      if (argumentCount == 0) {
-        return current_time();
-      }
-      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for time function");
-      break;
-    }
     case FunctionType::UNDEFINED : {
       STK_NGP_ThrowErrorMsg("Undefined function type");
       break;
@@ -677,7 +650,7 @@ public:
       break;
     }
     }
-  
+
     return 0.0;
   }
 };

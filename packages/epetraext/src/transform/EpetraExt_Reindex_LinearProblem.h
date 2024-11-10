@@ -42,6 +42,12 @@
 #ifndef EpetraExt_LINEARPROBLEM_REINDEX_H
 #define EpetraExt_LINEARPROBLEM_REINDEX_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 
 class Epetra_Map;
@@ -96,4 +102,3 @@ class LinearProblem_Reindex : public ViewTransform<Epetra_LinearProblem>
 } //namespace EpetraExt
 
 #endif //EpetraExt_LINEARPROBLEM_REINDEX_H
-

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,7 +16,7 @@
 
  One of the ultimate goals is to make per-timestep output of results
  data faster since do not need the mesh definition bulk data
- (coordinates, connectivty, ...) for each step
+ (coordinates, connectivity, ...) for each step
 
  EXPERIMENTAL -- DO NOT USE THIS CAPABILITY/CONCEPT FOR PRODUCTION WORK
  *****************************************************************************/

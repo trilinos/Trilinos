@@ -37,24 +37,21 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for string
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
-#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator!, Selector
 #include "stk_mesh/base/Types.hpp"      // for BucketVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-class ParallelHowTo : public stk::unit_test_util::simple_fields::MeshFixture {};
+class ParallelHowTo : public stk::unit_test_util::MeshFixture {};
 
 //BEGINCommuniateFieldData
 TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
@@ -67,28 +64,30 @@ TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
 
   stk::io::fill_mesh("generated:8x8x8", get_bulk());
 
-  const stk::mesh::BucketVector& notOwnedBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK, !get_meta().locally_owned_part());
-
-  for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
-    for(stk::mesh::Entity node : *bucket)
+  stk::mesh::Selector notOwned = !get_meta().locally_owned_part();
+  stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
+    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
       *stk::mesh::field_data(field, node) = -1.2345;
+    });
 
   stk::mesh::communicate_field_data(get_bulk(), {&field});
 
-  for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
-    for(stk::mesh::Entity node : *bucket)
+  stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
+    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
       EXPECT_EQ(initialValue, *stk::mesh::field_data(field, node));
+    });
 }
 //ENDCommuniateFieldData
 
 //BEGINSum
-void expect_field_has_value(const stk::mesh::BucketVector& buckets,
-                            const stk::mesh::Field<double> &field,
-                            double value)
+void expect_nodal_field_has_value(const stk::mesh::Selector& selector,
+                                  const stk::mesh::Field<double> &field,
+                                  const double value)
 {
-  for(const stk::mesh::Bucket *bucket : buckets)
-    for(stk::mesh::Entity node : *bucket)
+  stk::mesh::for_each_entity_run(field.get_mesh(), stk::topology::NODE_RANK, selector,
+    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
       EXPECT_EQ(value, *stk::mesh::field_data(field, node));
+    });
 }
 
 TEST_F(ParallelHowTo, computeParallelSum)
@@ -101,14 +100,12 @@ TEST_F(ParallelHowTo, computeParallelSum)
 
   stk::io::fill_mesh("generated:8x8x8", get_bulk());
 
-  const stk::mesh::BucketVector& shared = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
-  const stk::mesh::BucketVector& notShared = get_bulk().get_buckets(stk::topology::NODE_RANK, !get_meta().globally_shared_part());
-  expect_field_has_value(shared, field, initialValue);
-  expect_field_has_value(notShared, field, initialValue);
+  expect_nodal_field_has_value(get_meta().globally_shared_part(), field, initialValue);
+  expect_nodal_field_has_value(!get_meta().globally_shared_part(), field, initialValue);
 
   stk::mesh::parallel_sum(get_bulk(), {&field});
 
-  expect_field_has_value(shared, field, 2*initialValue);
-  expect_field_has_value(notShared, field, initialValue);
+  expect_nodal_field_has_value(get_meta().globally_shared_part(), field, 2*initialValue);
+  expect_nodal_field_has_value(!get_meta().globally_shared_part(), field, initialValue);
 }
 //ENDSum

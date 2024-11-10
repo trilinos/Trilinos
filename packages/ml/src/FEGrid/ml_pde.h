@@ -13,6 +13,12 @@
 #ifndef _MLPDE__
 #define _MLPDE__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "mli_solver.h"
 
@@ -31,4 +37,3 @@ extern int ML_PDE_GenMat(MLI_Solver*,int);
 #endif
 
 #endif
-

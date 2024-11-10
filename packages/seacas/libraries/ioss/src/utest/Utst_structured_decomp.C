@@ -1,23 +1,24 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
-#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
-#define DOCTEST_CONFIG_NO_MULTITHREADING
-#include <doctest.h>
-
-#include <Ioss_ZoneConnectivity.h>
-#include <cgns/Iocgns_StructuredZoneData.h>
-#include <cgns/Iocgns_Utils.h>
-#include <exception>
-#include <fmt/ostream.h>
+#include "Ioss_ZoneConnectivity.h"
+#include "cgns/Iocgns_StructuredZoneData.h"
+#include "cgns/Iocgns_Utils.h"
+#include <assert.h>
+#include <catch2/catch_test_macros.hpp>
 #include <map>
 #include <numeric>
+#include <set>
+#include <stddef.h>
+#include <stdint.h>
+#include <string>
 #include <vector>
+
+#include "Ioss_CodeTypes.h"
+#include "Ioss_Utils.h"
 
 namespace {
   int64_t generate_guid(size_t id, int rank, int proc_count)
@@ -83,22 +84,22 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
                       [](double a, Iocgns::StructuredZoneData *b) { return a + b->work(); });
 
   double avg_work = total_work / (double)proc_count;
-  DOCTEST_SUBCASE("split_zones")
+  SECTION("split_zones")
   {
     Iocgns::Utils::pre_split(zones, avg_work, load_balance_tolerance, 0, proc_count, verbose);
 
     double max_work = avg_work * load_balance_tolerance * max_toler;
     for (const auto zone : zones) {
       if (zone->is_active()) {
-        DOCTEST_CHECK_LE(zone->work(), max_work);
+        CHECK(zone->work() <= max_work);
       }
     }
 
     for (size_t i = 0; i < zones.size(); i++) {
-      DOCTEST_CHECK_EQ(zones[i]->m_zone, int(i) + 1);
+      CHECK(zones[i]->m_zone == int(i) + 1);
     }
 
-    DOCTEST_SUBCASE("assign_to_procs")
+    SECTION("assign_to_procs")
     {
       std::vector<size_t> work_vector(proc_count);
       Iocgns::Utils::assign_zones_to_procs(zones, work_vector, verbose);
@@ -118,15 +119,15 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
       // Each active zone must be on a processor
       for (const auto zone : zones) {
         if (zone->is_active()) {
-          DOCTEST_CHECK_GE(zone->m_proc, 0);
+          CHECK(zone->m_proc >= 0);
         }
       }
 
       // Work must be min_work <= work <= max_work
       double min_work = avg_work / load_balance_tolerance * min_toler;
       for (auto work : work_vector) {
-        DOCTEST_CHECK_GE(work, min_work);
-        DOCTEST_CHECK_LE(work, max_work * max_toler);
+        CHECK(work >= min_work);
+        CHECK(work <= max_work * max_toler);
       }
 
       // A processor cannot have more than one zone with the same adam zone
@@ -134,7 +135,7 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
       for (const auto zone : zones) {
         if (zone->is_active()) {
           auto success = proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, zone->m_proc));
-          DOCTEST_CHECK(success.second);
+          CHECK(success.second);
         }
       }
 
@@ -146,14 +147,14 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
         if (zone->is_active()) {
           for (const auto &zgc : zone->m_zoneConnectivity) {
             if (zgc.is_active()) {
-              DOCTEST_CHECK_NE(zgc.m_ownerZone, zgc.m_donorZone);
-              DOCTEST_CHECK_NE(zgc.m_ownerGUID, zgc.m_donorGUID);
+              CHECK(zgc.m_ownerZone != zgc.m_donorZone);
+              CHECK(zgc.m_ownerGUID != zgc.m_donorGUID);
             }
           }
         }
       }
 
-      // In Iocgns::Utils::common_write_meta_data, there is code to make
+      // In Iocgns::Utils::common_write_metadata, there is code to make
       // sure that the zgc.m_connectionName  is unique for all zgc instances on
       // a zone / processor pair (if !parallel_io which is file-per-processor)
       // The uniquification appends a letter from 'A' to 'Z' to the name
@@ -169,7 +170,7 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
             }
           }
           for (const auto &kk : zgc_map) {
-            DOCTEST_CHECK_LT(kk.second, 26 * 26 + 26 + 1);
+            CHECK(kk.second < 26 * 26 + 26 + 1);
           }
         }
       } //
@@ -189,13 +190,13 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
       }
       // Iterate `is_symm` and make sure there is an even number for all entries.
       for (const auto &item : is_symm) {
-        DOCTEST_CHECK_EQ(item.second % 2, 0);
+        CHECK(item.second % 2 == 0);
       }
     }
   }
 }
 
-DOCTEST_TEST_CASE("single block")
+TEST_CASE("single block")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(1, "4x4x1"));
@@ -207,7 +208,7 @@ DOCTEST_TEST_CASE("single block")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("single block line")
+TEST_CASE("single block line")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x1"));
@@ -220,7 +221,7 @@ DOCTEST_TEST_CASE("single block line")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("single block ij-line")
+TEST_CASE("single block ij-line")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x40"));
@@ -233,7 +234,7 @@ DOCTEST_TEST_CASE("single block ij-line")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("single block jk-line")
+TEST_CASE("single block jk-line")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x40"));
@@ -246,7 +247,7 @@ DOCTEST_TEST_CASE("single block jk-line")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("single block ik-line")
+TEST_CASE("single block ik-line")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x40"));
@@ -259,7 +260,7 @@ DOCTEST_TEST_CASE("single block ik-line")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("cube_2blocks")
+TEST_CASE("cube_2blocks")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -275,15 +276,24 @@ DOCTEST_TEST_CASE("cube_2blocks")
 
   for (size_t proc_count = 2; proc_count < 8; proc_count += 2) {
     std::string name = "cube_2blocks_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
-    {
-      check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1);
-    }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("bump")
+TEST_CASE("2blocks_example")
+{
+  int                                       zone = 1;
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "8x4x1"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "8x8x1"));
+  double load_balance_tolerance = 1.1;
+
+  check_split_assign(zones, load_balance_tolerance, 4, 0.9, 1.1);
+  cleanup(zones);
+}
+
+TEST_CASE("bump")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -304,14 +314,11 @@ DOCTEST_TEST_CASE("bump")
       Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   double load_balance_tolerance = 1.2;
 
-  DOCTEST_SUBCASE("bump_ProcCount_2")
-  {
-    check_split_assign(zones, load_balance_tolerance, 2, 0.8, 1.2);
-  }
+  SECTION("bump_ProcCount_2") { check_split_assign(zones, load_balance_tolerance, 2, 0.8, 1.2); }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("bump_loose")
+TEST_CASE("bump_loose")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -332,14 +339,14 @@ DOCTEST_TEST_CASE("bump_loose")
       Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   double load_balance_tolerance = 1.4;
 
-  DOCTEST_SUBCASE("bump_loose_ProcCount_2")
+  SECTION("bump_loose_ProcCount_2")
   {
     check_split_assign(zones, load_balance_tolerance, 2, 0.8, 1.2);
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("farmer plenum")
+TEST_CASE("farmer plenum")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   int                                       zone = 1;
@@ -375,15 +382,12 @@ DOCTEST_TEST_CASE("farmer plenum")
 
   for (size_t proc_count = 2; proc_count < 20; proc_count++) {
     std::string name = "Plenum_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
-    {
-      check_split_assign(zones, load_balance_tolerance, proc_count, 0.75);
-    }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.75); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("grv-nose")
+TEST_CASE("grv-nose")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   int                                       zone = 1;
@@ -490,7 +494,7 @@ DOCTEST_TEST_CASE("grv-nose")
 
   for (size_t proc_count = 3; proc_count <= 384; proc_count *= 2) {
     std::string name = "GRV-Nose_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
+    SECTION(name)
     {
       double load_balance_tolerance = 1.2;
       check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.2);
@@ -499,7 +503,7 @@ DOCTEST_TEST_CASE("grv-nose")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("grv")
+TEST_CASE("grv")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -521,7 +525,7 @@ DOCTEST_TEST_CASE("grv")
 
   for (size_t proc_count = 2; proc_count < 16; proc_count++) {
     std::string name = "GRV_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
+    SECTION(name)
     {
       double load_balance_tolerance = 1.3;
       check_split_assign(zones, load_balance_tolerance, proc_count, .7, 1.1);
@@ -530,7 +534,7 @@ DOCTEST_TEST_CASE("grv")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("grv-large")
+TEST_CASE("grv-large")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -552,7 +556,7 @@ DOCTEST_TEST_CASE("grv-large")
 
   for (size_t proc_count = 2; proc_count < 8192; proc_count *= 2) {
     std::string name = "GRV-LARGE_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
+    SECTION(name)
     {
       double load_balance_tolerance = 1.3;
       check_split_assign(zones, load_balance_tolerance, proc_count, .7);
@@ -561,7 +565,7 @@ DOCTEST_TEST_CASE("grv-large")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("grv-large-ordinal")
+TEST_CASE("grv-large-ordinal")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -597,7 +601,7 @@ DOCTEST_TEST_CASE("grv-large-ordinal")
 
   for (size_t proc_count = 2; proc_count < 8192; proc_count *= 2) {
     std::string name = "GRV-LARGE_ORDINAL_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
+    SECTION(name)
     {
       double load_balance_tolerance = 1.3;
       check_split_assign(zones, load_balance_tolerance, proc_count, .7);
@@ -606,7 +610,7 @@ DOCTEST_TEST_CASE("grv-large-ordinal")
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("mk21")
+TEST_CASE("mk21")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -655,12 +659,12 @@ DOCTEST_TEST_CASE("mk21")
 
   for (size_t proc_count = 2; proc_count < 17; proc_count++) {
     std::string name = "MK21_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("mk21-large")
+TEST_CASE("mk21-large")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -742,15 +746,12 @@ DOCTEST_TEST_CASE("mk21-large")
 
   for (size_t proc_count = 2; proc_count < 257; proc_count *= 2) {
     std::string name = "MK21_Large_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
-    {
-      check_split_assign(zones, load_balance_tolerance, proc_count, .8, 1.2);
-    }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, .8, 1.2); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("farmer_h1_nozzle")
+TEST_CASE("farmer_h1_nozzle")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -778,12 +779,12 @@ DOCTEST_TEST_CASE("farmer_h1_nozzle")
 
   for (size_t proc_count = 3; proc_count <= 384; proc_count *= 2) {
     std::string name = "NOZ_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("farmer_h1_mk21")
+TEST_CASE("farmer_h1_mk21")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -1042,15 +1043,12 @@ DOCTEST_TEST_CASE("farmer_h1_mk21")
 
   for (size_t proc_count = 3; proc_count <= 384; proc_count *= 2) {
     std::string name = "H1_MK21_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
-    {
-      check_split_assign(zones, load_balance_tolerance, proc_count, 0.75, 1.1);
-    }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.75, 1.1); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("bc-257x129x2")
+TEST_CASE("bc-257x129x2")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -1063,15 +1061,12 @@ DOCTEST_TEST_CASE("bc-257x129x2")
 
   for (size_t proc_count = 4; proc_count <= 84; proc_count += 4) {
     std::string name = "BC_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
-    {
-      check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1);
-    }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("carnes-mesh")
+TEST_CASE("carnes-mesh")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -1084,12 +1079,12 @@ DOCTEST_TEST_CASE("carnes-mesh")
 
   for (size_t proc_count = 2; proc_count <= 64; proc_count *= 2) {
     std::string name = "Carnes_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("carnes-blunt-wedge")
+TEST_CASE("carnes-blunt-wedge")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -1102,12 +1097,12 @@ DOCTEST_TEST_CASE("carnes-blunt-wedge")
 
   for (size_t proc_count = 2; proc_count <= 64; proc_count *= 2) {
     std::string name = "Carnes_BW_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("64GiElem")
+TEST_CASE("64GiElem")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -1118,12 +1113,12 @@ DOCTEST_TEST_CASE("64GiElem")
 
   for (size_t proc_count = 2; proc_count <= 1 << 15; proc_count *= 2) {
     std::string name = "64GiElem_PC_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("LotsOfZones")
+TEST_CASE("LotsOfZones")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -1135,15 +1130,12 @@ DOCTEST_TEST_CASE("LotsOfZones")
 
   for (size_t proc_count = 2; proc_count <= 1024; proc_count *= 4) {
     std::string name = "Lots_PC_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str())
-    {
-      check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1);
-    }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1); }
   }
   cleanup(zones);
 }
 
-DOCTEST_TEST_CASE("half_sphere")
+TEST_CASE("half_sphere")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -1156,6 +1148,6 @@ DOCTEST_TEST_CASE("half_sphere")
   double load_balance_tolerance = 1.4;
 
   std::string name = "half_sphere_8";
-  DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, 8, 0.9, 1.1); }
+  SECTION(name) { check_split_assign(zones, load_balance_tolerance, 8, 0.9, 1.1); }
   cleanup(zones);
 }

@@ -146,7 +146,6 @@ class DataExchangeUnknownPatternNonBlocking
     void yield();
 
     MPI_Comm m_comm;
-    int m_myrank = -1;
     int m_tagHint;
     MPITag m_tag;
 

@@ -51,11 +51,10 @@ namespace impl {
 
 void print_node_count(stk::mesh::BulkData& bulk, const std::string str)
 {
-  stk::mesh::EntityVector nodes;
-  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
+  const unsigned nodeCount = stk::mesh::count_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part());
 
   std::cout << str << std::endl;
-  std::cout << "p:" << bulk.parallel_rank() << " node vec size: " << nodes.size() << std::endl;
+  std::cout << "p:" << bulk.parallel_rank() << " num nodes: " << nodeCount << std::endl;
 }
 
 bool are_equal(const stk::mesh::Entity* nodesPtr, const stk::mesh::EntityVector& nodesVec)
@@ -317,12 +316,13 @@ stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const st
       parts.push_back(part);
     }
 
-    selector = stk::mesh::selectUnion(parts);
   }
+  selector = stk::mesh::selectUnion(parts);
 
   if(parts.empty()) {
     selector = meta.universal_part();
   }
+  selector &= (meta.locally_owned_part() | meta.globally_shared_part());
 
   stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, selector, nodes);
 

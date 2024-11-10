@@ -1,22 +1,55 @@
-// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_CopyDatabase.h>
-#include <Ioss_DataPool.h>
-#include <Ioss_FaceGenerator.h>
-#include <Ioss_MeshCopyOptions.h>
-#include <Ioss_SubSystem.h>
-
+#include "Ioss_CopyDatabase.h"
+#include "Ioss_DataPool.h"
+#include "Ioss_FaceGenerator.h"
+#include "Ioss_MeshCopyOptions.h"
+#include <array>
+#include <assert.h>
+#include <cmath>
+#include <cstdlib>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <iostream>
 #include <limits>
-
-// For Sleep...
-#include <chrono>
+#include <stdint.h>
+#include <string>
 #include <thread>
+#include <vector>
+
+#include "Ioss_Assembly.h"
+#include "Ioss_Blob.h"
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EdgeBlock.h"
+#include "Ioss_EdgeSet.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementSet.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_FaceBlock.h"
+#include "Ioss_FaceSet.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_MeshType.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_State.h"
+#include "Ioss_StructuredBlock.h"
+#include "Ioss_Utils.h"
+#include "robin_hash.h"
 
 // For copy_database...
 namespace {
@@ -384,7 +417,7 @@ namespace {
       // Get vector of all boundary faces which will be output as the skin...
       const auto &faces = face_generator.faces("ALL");
       for (const auto &face : faces) {
-        if (face.elementCount_ == 1) {
+        if (face.element_count() == 1) {
           boundary.push_back(face);
         }
       }
@@ -449,8 +482,8 @@ namespace {
       // really matter.
       const auto &blocks    = region.get_element_blocks();
       const auto *topo      = blocks[0]->topology();
-      auto        elem_topo = topo->name();
-      auto        face_topo = topo->boundary_type(0)->name();
+      const auto &elem_topo = topo->name();
+      const auto &face_topo = topo->boundary_type(0)->name();
 
       auto *ss = new Ioss::SideSet(output_region.get_database(), "boundary");
       output_region.add(ss);
@@ -703,7 +736,9 @@ namespace {
                      int istep, const Ioss::MeshCopyOptions &options, int rank)
   {
     double time  = region.get_state_time(istep);
-    int    ostep = output_region.add_state(time);
+    double otime = time * options.time_scale + options.time_offset;
+    int    ostep = output_region.add_state(otime);
+
     show_step(istep, time, options, rank);
 
     output_region.begin_state(ostep);
@@ -804,14 +839,27 @@ namespace {
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DebugOut(), "{}, ", name);
       }
-      size_t num_nodes = inb->entity_count();
-      size_t degree    = inb->get_property("component_degree").get_int();
       if (options.output_summary && rank == 0) {
+        size_t degree = inb->get_property("component_degree").get_int();
         fmt::print(Ioss::DebugOut(), " Number of Coordinates per Node = {:14}\n",
                    fmt::group_digits(degree));
+        size_t num_nodes = inb->entity_count();
         fmt::print(Ioss::DebugOut(), " Number of Nodes                = {:14}\n",
                    fmt::group_digits(num_nodes));
       }
+
+      if (options.omitted_blocks) {
+        size_t isize = inb->get_field("node_connectivity_status").get_size();
+        pool.data.resize(isize);
+        inb->get_field_data("node_connectivity_status", pool.data.data(), isize);
+
+        // Count number of "active" nodes
+        size_t active =
+            std::count_if(pool.data.begin(), pool.data.end(), [](auto &val) { return val >= 2; });
+        fmt::print(Ioss::DebugOut(), " Number of Active Nodes         = {:14}\n",
+                   fmt::group_digits(active));
+      }
+
       auto *nb = new Ioss::NodeBlock(*inb);
       output_region.add(nb);
 
@@ -846,7 +894,7 @@ namespace {
     for (const auto &entity : entities) {
       const std::string &name = entity->name();
 
-      // Find the corresponding output block...
+      // Find the corresponding output entity (may not exist if omitted)
       Ioss::GroupingEntity *output = output_region.get_entity(name, entity->type());
       if (output != nullptr) {
         transfer_field_data(entity, output, pool, role, options);
@@ -861,6 +909,9 @@ namespace {
     if (!blocks.empty()) {
       size_t total_entities = 0;
       for (const auto &iblock : blocks) {
+        if (Ioss::Utils::block_is_omitted(iblock)) {
+          continue;
+        }
         const std::string &name = iblock->name();
         if (options.debug && rank == 0) {
           fmt::print(Ioss::DebugOut(), "{}, ", name);
@@ -895,8 +946,11 @@ namespace {
         // testing to verify that we handle zone reordering
         // correctly.
         for (int i = static_cast<int>(blocks.size()) - 1; i >= 0; i--) {
-          const auto        &iblock = blocks[i];
-          const std::string &name   = iblock->name();
+          const auto &iblock = blocks[i];
+          if (Ioss::Utils::block_is_omitted(iblock)) {
+            continue;
+          }
+          const std::string &name = iblock->name();
           if (options.debug && rank == 0) {
             fmt::print(Ioss::DebugOut(), "{}, ", name);
           }
@@ -918,6 +972,9 @@ namespace {
       }
       else {
         for (const auto &iblock : blocks) {
+          if (Ioss::Utils::block_is_omitted(iblock)) {
+            continue;
+          }
           const std::string &name = iblock->name();
           if (options.debug && rank == 0) {
             fmt::print(Ioss::DebugOut(), "{}, ", name);
@@ -977,27 +1034,36 @@ namespace {
   {
     const auto &fss = region.get_sidesets();
     for (const auto &ss : fss) {
-      const std::string &name = ss->name();
-      if (options.debug && rank == 0) {
-        fmt::print(Ioss::DebugOut(), "{}, ", name);
-      }
-      auto *surf = new Ioss::SideSet(*ss);
-      output_region.add(surf);
+      const std::string &name    = ss->name();
+      auto               lc_name = Ioss::Utils::lowercase(name);
+      if (std::find(options.omitted_sets.begin(), options.omitted_sets.end(), lc_name) ==
+          options.omitted_sets.end()) {
+        if (options.debug && rank == 0) {
+          fmt::print(Ioss::DebugOut(), "{}, ", name);
+        }
+        auto *surf = new Ioss::SideSet(*ss);
+        output_region.add(surf);
 
-      // Fix up the optional 'owner_block' in copied SideBlocks...
-      const auto &fbs = ss->get_side_blocks();
-      for (const auto &ifb : fbs) {
-        if (ifb->parent_block() != nullptr) {
-          auto  fb_name = ifb->parent_block()->name();
-          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(
-              output_region.get_entity(fb_name, Ioss::ELEMENTBLOCK));
-          if (parent == nullptr) {
-            parent = dynamic_cast<Ioss::EntityBlock *>(
-                output_region.get_entity(fb_name, Ioss::STRUCTUREDBLOCK));
+        // Fix up the optional 'owner_block' in copied SideBlocks...
+        const auto &fbs = ss->get_side_blocks();
+        for (const auto &ifb : fbs) {
+          if (ifb->parent_block() != nullptr) {
+            const auto &fb_name = ifb->parent_block()->name();
+            auto       *parent  = dynamic_cast<Ioss::EntityBlock *>(
+                output_region.get_entity(fb_name, Ioss::ELEMENTBLOCK));
+            if (parent == nullptr) {
+              parent = dynamic_cast<Ioss::EntityBlock *>(
+                  output_region.get_entity(fb_name, Ioss::STRUCTUREDBLOCK));
+            }
+
+            auto *ofb = surf->get_side_block(ifb->name());
+            ofb->set_parent_block(parent);
           }
-
-          auto *ofb = surf->get_side_block(ifb->name());
-          ofb->set_parent_block(parent);
+        }
+      }
+      else {
+        if (options.debug && rank == 0) {
+          fmt::print(Ioss::DebugOut(), "{}(omitted), ", name);
         }
       }
     }
@@ -1018,16 +1084,24 @@ namespace {
     if (!sets.empty()) {
       size_t total_entities = 0;
       for (const auto &set : sets) {
-        const std::string &name = set->name();
-        if (options.debug && rank == 0) {
-          fmt::print(Ioss::DebugOut(), "{}, ", name);
+        const std::string &name    = set->name();
+        auto               lc_name = Ioss::Utils::lowercase(name);
+        if (std::find(options.omitted_sets.begin(), options.omitted_sets.end(), lc_name) ==
+            options.omitted_sets.end()) {
+          if (options.debug && rank == 0) {
+            fmt::print(Ioss::DebugOut(), "{}, ", name);
+          }
+          size_t count = set->entity_count();
+          total_entities += count;
+          auto *o_set = new T(*set);
+          output_region.add(o_set);
         }
-        size_t count = set->entity_count();
-        total_entities += count;
-        auto *o_set = new T(*set);
-        output_region.add(o_set);
+        else {
+          if (options.debug && rank == 0) {
+            fmt::print(Ioss::DebugOut(), "{}(omitted), ", name);
+          }
+        }
       }
-
       if (options.output_summary && rank == 0) {
         fmt::print(Ioss::DebugOut(), " Number of {:20s} = {:14}",
                    (*sets.begin())->type_string() + "s", fmt::group_digits(sets.size()));
@@ -1099,7 +1173,7 @@ namespace {
       if (field_name != "ids" && !oge->field_exists(field_name) &&
           Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
-        oge->field_add(field);
+        oge->field_add(std::move(field));
       }
     }
   }
@@ -1146,8 +1220,6 @@ namespace {
 
     size_t isize = ige->get_field(field_name).get_size();
     assert(isize == oge->get_field(field_name).get_size());
-
-    int basic_type = ige->get_field(field_name).get_type();
 
     if (field_name == "mesh_model_coordinates_x") {
       return;
@@ -1200,29 +1272,14 @@ namespace {
     else {
     }
 
+#ifdef SEACAS_HAVE_KOKKOS
+    int basic_type = ige->get_field(field_name).get_type();
+#endif
+
     assert(pool.data.size() >= isize);
 
     switch (options.data_storage_type) {
     case 1: ige->get_field_data(field_name, pool.data.data(), isize); break;
-    case 2:
-      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        ige->get_field_data(field_name, pool.data);
-      }
-      else if (basic_type == Ioss::Field::INT32) {
-        ige->get_field_data(field_name, pool.data_int);
-      }
-      else if (basic_type == Ioss::Field::INT64) {
-        ige->get_field_data(field_name, pool.data_int64);
-      }
-      else if (basic_type == Ioss::Field::REAL) {
-        ige->get_field_data(field_name, pool.data_double);
-      }
-      else if (basic_type == Ioss::Field::COMPLEX) {
-        ige->get_field_data(field_name, pool.data_complex);
-      }
-      else {
-      }
-      break;
 #ifdef SEACAS_HAVE_KOKKOS
     case 3:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
@@ -1298,25 +1355,6 @@ namespace {
 
     switch (options.data_storage_type) {
     case 1: oge->put_field_data(field_name, pool.data.data(), isize); break;
-    case 2:
-      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        oge->put_field_data(field_name, pool.data);
-      }
-      else if (basic_type == Ioss::Field::INT32) {
-        oge->put_field_data(field_name, pool.data_int);
-      }
-      else if (basic_type == Ioss::Field::INT64) {
-        oge->put_field_data(field_name, pool.data_int64);
-      }
-      else if (basic_type == Ioss::Field::REAL) {
-        oge->put_field_data(field_name, pool.data_double);
-      }
-      else if (basic_type == Ioss::Field::COMPLEX) {
-        oge->put_field_data(field_name, pool.data_complex);
-      }
-      else {
-      }
-      break;
 #ifdef SEACAS_HAVE_KOKKOS
     case 3:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
@@ -1391,7 +1429,7 @@ namespace {
   {
     out.add_information_records(in.get_information_records());
 
-    const std::vector<std::string> &qa = in.get_qa_records();
+    const Ioss::NameList &qa = in.get_qa_records();
     for (size_t i = 0; i < qa.size(); i += 4) {
       out.add_qa_record(qa[i + 0], qa[i + 1], qa[i + 2], qa[i + 3]);
     }
@@ -1435,8 +1473,7 @@ namespace {
         std::vector<INT> ids;
         ns->get_field_data("ids_raw", ids);
         owned = 0;
-        for (size_t n = 0; n < ids.size(); n++) {
-          INT id = ids[n];
+        for (auto id : ids) {
           if (my_data[id - 1] == my_processor) {
             ++owned;
           }

@@ -26,9 +26,9 @@
  *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex__id_lkup, etc
+#include "exodusII_int.h" // for EX_FATAL, exi_id_lkup, etc
 
-int ex__put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
+int exi_put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
                           const char *name)
 {
   /* Internal function to handle renaming of an existing assembly.
@@ -39,7 +39,7 @@ int ex__put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entit
   char errmsg[MAX_ERR_LENGTH];
   if (nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(entity_id), &entlst_id) == NC_NOERR) {
     int status;
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -49,15 +49,15 @@ int ex__put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entit
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store assembly name %s in file id %d",
                name, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+      if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
       }
       EX_FUNC_LEAVE(EX_FATAL);
     }
     /* Update the maximum_name_length attribute on the file. */
-    ex__update_max_name_length(exoid, length - 1);
-    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    exi_update_max_name_length(exoid, length - 1);
+    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -90,12 +90,12 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   const char *vobj;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   switch (obj_type) {
-  case EX_ASSEMBLY: return ex__put_assembly_name(exoid, obj_type, entity_id, name);
+  case EX_ASSEMBLY: return exi_put_assembly_name(exoid, obj_type, entity_id, name);
   case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
   case EX_FACE_BLOCK: vobj = VAR_NAME_FA_BLK; break;
   case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
@@ -121,7 +121,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
+  ent_ndx = exi_id_lkup(exoid, obj_type, entity_id);
   if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the entity with `entity_id` */
     if (obj_type == EX_NODE_MAP || obj_type == EX_ELEM_MAP || obj_type == EX_FACE_MAP ||
         obj_type == EX_EDGE_MAP) {
@@ -143,7 +143,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   }
 
   /* write EXODUS entityname */
-  status = ex__put_name(exoid, varid, ent_ndx - 1, name, obj_type, "", __func__);
+  status = exi_put_name(exoid, varid, ent_ndx - 1, name, obj_type, "", __func__);
 
   EX_FUNC_LEAVE(status);
 }

@@ -43,13 +43,7 @@ C   --   GRSNAP - (GRPLIB) Initialize frame snap
 C   --   GRFONT - (GRPLIB) Set font
 C   --   GRCOLT - (GRPLIB) Set color table
 
-      COMMON /GRPCOC/ DEVNAM(2), DEVCOD(2)
-      CHARACTER*3 DEVNAM
-      CHARACTER*8 DEVCOD
-      COMMON /GRPCOM/ ICURDV, ISHARD, DEVOK(2), TALKOK(2),
-     &   NSNAP(2), IFONT(2), SOFTCH(2), AUTOPL(2),
-     &   MAXCOL(2), NUMCOL(0:1,2), MAPALT(2), MAPUSE(2)
-      LOGICAL ISHARD, DEVOK, TALKOK, SOFTCH, AUTOPL
+      include 'grpcom.blk'
 
       CHARACTER*(*) PARTYP
       CHARACTER*(*) ERRMSG

@@ -26,6 +26,7 @@
 #include <fmt/chrono.h>
 #include <fmt/color.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <open_file_limit.h>
 #include <time_stamp.h>
 #include <tokenize.h>
@@ -589,7 +590,7 @@ void Grid::output_nodal_coordinates(const Cell &cell)
   int  exoid = output_region(rank)->get_database()->get_file_pointer();
   auto start = cell.m_localNodeIdOffset + 1;
   auto count = cell.added_node_count(Mode::PROCESSOR, m_equivalenceNodes);
-  ex_put_partial_coord(exoid, start, count, coord_x.data(), coord_y.data(), coord_z.data());
+  ex_put_partial_coord(exoid, start, count, Data(coord_x), Data(coord_y), Data(coord_z));
 
   if (minimize_open_files(Minimize::UNIT)) {
     cell.region()->get_database()->closeDatabase();
@@ -646,7 +647,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
 
       auto id    = osurf->get_property("id").get_int();
       auto start = cell.m_localSurfaceOffset[generated_surface_names[face]];
-      ex_put_partial_set(exoid, EX_SIDE_SET, id, start + 1, count, elements.data(), faces.data());
+      ex_put_partial_set(exoid, EX_SIDE_SET, id, start + 1, count, Data(elements), Data(faces));
     }
   }
 }
@@ -703,7 +704,7 @@ template <typename INT> void Grid::output_surfaces(Cell &cell, INT /*dummy*/)
     auto id    = osurf->get_property("id").get_int();
     auto start = cell.m_localSurfaceOffset[osurf->name()];
     auto count = elements.size();
-    ex_put_partial_set(exoid, EX_SIDE_SET, id, start + 1, count, elements.data(), faces.data());
+    ex_put_partial_set(exoid, EX_SIDE_SET, id, start + 1, count, Data(elements), Data(faces));
   }
 
   if (minimize_open_files(Minimize::UNIT)) {
@@ -732,7 +733,7 @@ void Grid::output_block_connectivity(Cell &cell, const std::vector<INT> &node_ma
         fmt::print(stderr, "Rank: {}, Cell({}, {}), Block {}, id {}, start {}, count {}\n", rank,
                    cell.m_i, cell.m_j, block->name(), id, start, count);
       }
-      ex_put_partial_conn(exoid, EX_ELEM_BLOCK, id, start, count, connect.data(), nullptr, nullptr);
+      ex_put_partial_conn(exoid, EX_ELEM_BLOCK, id, start, count, Data(connect), nullptr, nullptr);
     }
 
     if (debug_level & 2) {
@@ -766,7 +767,7 @@ void Grid::output_nodal_communication_map(Cell &cell, const std::vector<INT> &no
     auto start = cell.m_communicationNodeOffset + 1;
     auto count = cell.m_communicationNodeCount;
 
-    ex_put_partial_node_cmap(exoid, 1, start, count, nodes.data(), procs.data(), rank);
+    ex_put_partial_node_cmap(exoid, 1, start, count, Data(nodes), Data(procs), rank);
 
     if (minimize_open_files(Minimize::OUTPUT)) {
       output_region(rank)->get_database()->closeDatabase();
@@ -796,7 +797,7 @@ template <typename INT> void Grid::output_node_map(const Cell &cell, INT /*dummy
     std::vector<INT> map(count);
     std::iota(map.begin(), map.end(), gid);
     int exoid = output_region(rank)->get_database()->get_file_pointer();
-    ex_put_partial_id_map(exoid, EX_NODE_MAP, start, count, map.data());
+    ex_put_partial_id_map(exoid, EX_NODE_MAP, start, count, Data(map));
   }
   else {
     auto map = generate_node_map(*this, cell, Mode::GLOBAL, INT(0));
@@ -864,7 +865,7 @@ template <typename INT> void Grid::output_element_map(Cell &cell, INT /*dummy*/)
         auto local_offset = cell.m_localElementIdOffset[block->name()];
 
         auto start = output_block_offset + local_offset + 1;
-        ex_put_partial_id_map(exoid, EX_ELEM_MAP, start, element_count, map.data());
+        ex_put_partial_id_map(exoid, EX_ELEM_MAP, start, element_count, Data(map));
 
         if (debug_level & 8) {
           fmt::print("Rank {}: Cell({}, {}), Block {}, start {}, element_count {}, gid {}\n", rank,

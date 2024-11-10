@@ -72,6 +72,31 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     CATEGORIES PERFORMANCE
   )
 
+  # ML Version of the Weak Scaling Test
+  IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND {PACKAGE_NAME}_HAVE_ML)
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME ML_SetupSolve_Performance_1
+      COMM mpi
+      ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --xml=scaling-ml.xml --watchr-problem-name='ML Setup-Solve 1 ranks' --linAlgebra=Epetra"
+      NUM_MPI_PROCS 1
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+      )
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME ML_SetupSolve_Performance_4
+      COMM mpi
+      ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --xml=scaling-ml.xml --watchr-problem-name='ML Setup-Solve 4 ranks' --linAlgebra=Epetra"
+      NUM_MPI_PROCS 4
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+      )
+
+  ENDIF()
+
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
     SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat zeroAggTest.xml blkDiag3x3And6x6.mat  coords2.mm aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml
     CATEGORIES BASIC PERFORMANCE
@@ -585,14 +610,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND Tpetra_INST_SERIAL)
-  TRIBITS_ADD_EXECUTABLE(
-    SpMVPerformance
-    SOURCES SpMVPerformance.cpp
-    COMM mpi
-    CATEGORIES PERFORMANCE
-    )
+TRIBITS_ADD_EXECUTABLE(
+  SpMVPerformance
+  SOURCES SpMVPerformance.cpp
+  COMM mpi
+  CATEGORIES PERFORMANCE
+)
 
+IF(Tpetra_INST_SERIAL)
   TRIBITS_ADD_TEST(
     SpMVPerformance
     NAME_POSTFIX "Tpetra"
@@ -614,7 +639,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND Tpetra_INST_SERIAL)
     RUN_SERIAL
     CATEGORIES PERFORMANCE
   )
+ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
   TRIBITS_ADD_TEST(
     SpMVPerformance
     NAME_POSTFIX "Epetra"
@@ -691,11 +718,95 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      MatvecKernelDriver
-      SOURCES MatvecKernelDriver.cpp
-      COMM serial mpi
-    )
+  ENDIF()
+ENDIF()
+
+
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
+  Tpetra_INST_SERIAL
+  Tpetra_INST_CUDA
+  Tpetra_INST_HIP
+)
+
+IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
+
+  TRIBITS_ADD_EXECUTABLE(
+    MatvecKernelDriver
+    SOURCES MatvecKernelDriver.cpp
+    COMM serial mpi
+    CATEGORIES BASIC PERFORMANCE
+  )
+
+  IF (Tpetra_INST_SERIAL)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "150 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_Serial
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
+
+  ENDIF()
+
+  IF (Tpetra_INST_CUDA)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "600 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_CUDA
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
+
+  ENDIF()
+
+  IF (Tpetra_INST_HIP)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "600 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_HIP
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
 
   ENDIF()
 ENDIF()

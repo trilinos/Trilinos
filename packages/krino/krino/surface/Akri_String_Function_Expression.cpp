@@ -33,11 +33,22 @@ void String_Function_Expression::resolve(stk::expreval::VariableMap::iterator & 
   std::string name = (*varIt).first;
 
   if (!(name).compare("x"))
+  {
     (*varIt).second->bind(myQueryCoords[0]);
+  }
   else if (!(name).compare("y"))
+  {
     (*varIt).second->bind(myQueryCoords[1]);
+  }
   else if (!(name).compare("z"))
+  {
     (*varIt).second->bind(myQueryCoords[2]);
+  }
+  else if (!(name).compare("t"))
+  {
+    (*varIt).second->bind(myTime);
+    myDoesUseTime = true;
+  }
   else
   {
     std::ostringstream msg;
@@ -47,10 +58,28 @@ void String_Function_Expression::resolve(stk::expreval::VariableMap::iterator & 
 }
 
 double
-String_Function_Expression::evaluate(const stk::math::Vector3d &coord) const
+String_Function_Expression::evaluate(const double time, const stk::math::Vector3d &coord) const
 {
+  myTime = time;
   myQueryCoords = coord;
   return myEvaluator.evaluate();
+}
+
+double
+String_Function_Expression::evaluate(const stk::math::Vector3d &coord) const
+{
+  if (myDoesUseTime)
+    throw std::runtime_error("String_Function_Expression is using time, but it is not provided in query.");
+  myQueryCoords = coord;
+  return myEvaluator.evaluate();
+}
+
+void initialize_expression_vector(const std::vector<std::string> & stringVec, std::vector<String_Function_Expression> & exprVec)
+{
+  exprVec.clear();
+  exprVec.reserve(stringVec.size());
+  for (auto & component : stringVec)
+    exprVec.emplace_back(component);
 }
 
 }

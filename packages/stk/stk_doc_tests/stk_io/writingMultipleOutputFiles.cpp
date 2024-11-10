@@ -59,7 +59,6 @@ TEST(StkMeshIoBrokerHowTo, writingMultipleOutputFiles)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     setupMeshAndFieldsForTest(stkIo, displacementFieldName, velocityFieldName);
     stk::mesh::MetaData &meta_data = stkIo.meta_data();
 

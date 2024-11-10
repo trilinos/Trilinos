@@ -19,6 +19,12 @@
 #ifndef ML_VALIDATEPARAMETERS_H
 #define ML_VALIDATEPARAMETERS_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_include.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)

@@ -8,7 +8,7 @@ tag: 2.8.00     date: 02/05/2019  master: a6e05e06    develop: 6a790321
 tag: 2.9.00     date: 06/24/2019  master: 4ee5f3c6    develop: 094da30c
 tag: 3.0.00     date: 01/31/2020  master: d86db111    release-candidate-3.0: cf24ab90
 tag: 3.1.00     date: 04/14/2020  master: f199f45d    develop: 8d063eae
-tag: 3.1.01     date: 05/04/2020  master: 43773523    release: 6fce7502 
+tag: 3.1.01     date: 05/04/2020  master: 43773523    release: 6fce7502
 tag: 3.2.00     date: 08/19/2020  master: 07a60bcc    release: ea3f2b77
 tag: 3.3.00     date: 12/16/2020  master: 42defc56    release: e5279e55
 tag: 3.3.01     date: 01/18/2021  master: f64b1c57    release: 4e1cc00b
@@ -24,3 +24,7 @@ tag: 4.0.01     date: 04/26/2023  master: b9c1bab7    release: 8809e41c
 tag: 4.1.00     date: 06/20/2023  master: 1331baf1    release: 14ad220a
 tag: 4.2.00     date: 11/09/2023  master: 25a31f88    release: 912d3778
 tag: 4.2.01     date: 01/30/2024  master: f429f6ec    release: bcf9854b
+tag: 4.3.00     date: 04/03/2024  master: afd65f03    release: ebbf4b78
+tag: 4.3.01     date: 05/07/2024  master: 1b0a15f5    release: 58785c1b
+tag: 4.4.00     date: 08/08/2024  master: d1a91b8a    release: 1145f529
+tag: 4.4.01     date: 09/12/2024  master: 0608a337    release: 6b340287

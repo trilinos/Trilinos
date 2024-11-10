@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
@@ -54,7 +21,7 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
 
   namespace Impl {
-    
+
     // output (N,P,D)
     // input  (P,D) - assumes that it has a set of points to amortize the function call cost for jacobi polynomial.
     template<EOperator opType>
@@ -86,11 +53,11 @@ namespace Intrepid2 {
         }
         break;
       }
-      case OPERATOR_GRAD: 
+      case OPERATOR_GRAD:
       case OPERATOR_D1: {
         for (ordinal_type p=0;p<card;++p) {
           auto polyd = Kokkos::subview( output, p, Kokkos::ALL(), 0 );
-          Polylib::Serial::JacobiPolynomialDerivative(np, pts, polyd, p, alpha, beta);      
+          Polylib::Serial::JacobiPolynomialDerivative(np, pts, polyd, p, alpha, beta);
         }
         break;
       }
@@ -109,7 +76,7 @@ namespace Intrepid2 {
           const ordinal_type pend = output.extent(0);
           const ordinal_type iend = output.extent(1);
           const ordinal_type jend = output.extent(2);
-          
+
           for (ordinal_type p=0;p<pend;++p)
             for (ordinal_type i=0;i<iend;++i)
               for (ordinal_type j=0;j<jend;++j)
@@ -121,12 +88,12 @@ namespace Intrepid2 {
 
           for (ordinal_type p=opDn;p<card;++p) {
             double scaleFactor = 1.0;
-            for (ordinal_type i=1;i<=opDn;++i) 
+            for (ordinal_type i=1;i<=opDn;++i)
               scaleFactor *= 0.5*(p + alpha + beta + i);
-            
-            const auto poly = Kokkos::subview( output, p, Kokkos::ALL(), 0 );        
+
+            const auto poly = Kokkos::subview( output, p, Kokkos::ALL(), 0 );
             Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p-opDn, alpha+opDn, beta+opDn);
-            for (ordinal_type i=0;i<np;++i) 
+            for (ordinal_type i=0;i<np;++i)
               poly(i) = scaleFactor*poly(i);
           }
         }
@@ -138,15 +105,16 @@ namespace Intrepid2 {
       }
       }
     }
-    
+
     // -------------------------------------------------------------------------------------
-    
+
     template<typename DT, ordinal_type numPtsPerEval,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
-    void 
+    void
     Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues( const typename DT::execution_space& space,
+                     Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const ordinal_type order,
                const double alpha,
@@ -160,19 +128,19 @@ namespace Intrepid2 {
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
       const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-      
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
+
       switch (operatorType) {
       case OPERATOR_VALUE: {
         typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints,
                                                   order, alpha, beta) );
         break;
       }
       case OPERATOR_GRAD:
       case OPERATOR_D1: {
         typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints,
                                                   order, alpha, beta) );
         break;
       }
@@ -186,7 +154,7 @@ namespace Intrepid2 {
       case OPERATOR_D9:
       case OPERATOR_D10: {
         typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_Dn,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints,
                                                   order, alpha, beta,
                                                   getOperatorOrder(operatorType)) );
         break;
@@ -210,19 +178,19 @@ namespace Intrepid2 {
 
   template<typename DT, typename OT, typename PT>
   Basis_HGRAD_LINE_Cn_FEM_JACOBI<DT,OT,PT>::
-  Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order, 
-                                  const double alpha, 
+  Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order,
+                                  const double alpha,
                                   const double beta ) {
-    this->basisCardinality_  = order+1;
-    this->basisDegree_       = order;    
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
-    this->basisType_         = BASIS_FEM_HIERARCHICAL;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    this->basisCardinality_     = order+1;
+    this->basisDegree_          = order;
+    this->basisCellTopologyKey_ = shards::Line<>::key;
+    this->basisType_            = BASIS_FEM_HIERARCHICAL;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
-    // jacobi 
-    this->alpha_ = alpha;    
-    this->beta_  = beta;    
+    // jacobi
+    this->alpha_ = alpha;
+    this->beta_  = beta;
 
     // initialize tags
     {
@@ -231,20 +199,20 @@ namespace Intrepid2 {
       const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-      
+
       ordinal_type tags[Parameters::MaxOrder+1][4];
       const ordinal_type card = this->basisCardinality_;
       for (ordinal_type i=0;i<card;++i) {
         tags[i][0] = 1;     // these are all "internal" i.e. "volume" DoFs
         tags[i][1] = 0;     // there is only one line
-        tags[i][2] = i;     // local DoF id 
-        tags[i][3] = card;  // total number of DoFs 
+        tags[i][2] = i;     // local DoF id
+        tags[i][3] = card;  // total number of DoFs
       }
-     
+
       OrdinalTypeArray1DHost tagView(&tags[0][0], card*4);
- 
+
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      // tags are constructed on host 
+      // tags are constructed on host
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
                               tagView,

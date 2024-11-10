@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "PanzerAdaptersSTK_config.hpp"
@@ -184,12 +152,9 @@ Teuchos::RCP<const Teuchos::ParameterList> Quad8ToQuad4MeshFactory::getValidPara
    if(defaultParams == Teuchos::null) {
       defaultParams = rcp(new Teuchos::ParameterList);
 
-      Teuchos::setStringToIntegralParameter<int>(
-        "Offset mesh GIDs above 32-bit int limit",
-        "OFF",
+      defaultParams->set<std::string>("Offset mesh GIDs above 32-bit int limit", "OFF",
         "If 64-bit GIDs are supported, the mesh element and node global indices will start at a value greater than 32-bit limit.",
-        Teuchos::tuple<std::string>("OFF", "ON"),
-        defaultParams.get());
+        rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("OFF", "ON"))));
 
       // default to false for backward compatibility
       defaultParams->set<bool>("Create Edge Blocks",false,"Create edge blocks in the mesh");
@@ -240,9 +205,9 @@ void Quad8ToQuad4MeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach
 
   if(createEdgeBlocks_) {
     const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
-    std::vector<std::string> element_block_names;
-    quad8Mesh_->getElementBlockNames(element_block_names);
-    for (const auto& block_name : element_block_names)
+    std::vector<std::string> element_block_names2;
+    quad8Mesh_->getElementBlockNames(element_block_names2);
+    for (const auto& block_name : element_block_names2)
       mesh.addEdgeBlock(block_name,edgeBlockName_,edge_ctd);
   }
 

@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_SPARSECONTAINER_DEF_HPP
 #define IFPACK2_SPARSECONTAINER_DEF_HPP
@@ -90,11 +57,24 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
   // objects.  We do this first to save memory.  (In an RCP
   // assignment, the right-hand side and left-hand side coexist before
   // the left-hand side's reference count gets updated.)
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::initialize");
+  Teuchos::TimeMonitor timeMon (*timer);
 
   //Will create the diagonal blocks and their inverses
   //in extract()
   diagBlocks_.assign(this->numBlocks_, Teuchos::null);
   Inverses_.assign(this->numBlocks_, Teuchos::null);
+
+  // Extract the submatrices.
+  this->extractGraph();
+
+  // Initialize the inverse operator.
+  for(int i = 0; i < this->numBlocks_; i++)
+  {
+    Inverses_[i]->setParameters(List_);
+    Inverses_[i]->initialize ();
+  }
 
   this->IsInitialized_ = true;
   this->IsComputed_ = false;
@@ -104,24 +84,23 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::compute ()
 {
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::compute");
+  Teuchos::TimeMonitor timeMon (*timer);
+
   this->IsComputed_ = false;
   if (!this->isInitialized ()) {
     this->initialize ();
   }
 
-  // Extract the submatrices.
-  this->extract();
+  // Extract the submatrices values
+  this->extractValues();
 
-  // The inverse operator already has a pointer to the submatrix.  Now
-  // that the submatrix is filled in, we can initialize and compute
-  // the inverse operator.
-  for(int i = 0; i < this->numBlocks_; i++)
-  {
-    Inverses_[i]->setParameters(List_);
-    Inverses_[i]->initialize ();
-  }
-  for(int i = 0; i < this->numBlocks_; i++)
+  // Compute the inverse operator.
+  for(int i = 0; i < this->numBlocks_; i++) {
     Inverses_[i]->compute ();
+  }
+
   this->IsComputed_ = true;
 }
 
@@ -183,6 +162,10 @@ apply (ConstHostView X,
   // to convert X and Y to the Tpetra::MultiVector specialization that
   // InverseType wants.  This class' X_ and Y_ internal fields are of
   // the right type for InverseType, so we can use those as targets.
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::apply");
+  Teuchos::TimeMonitor timeMon (*timer);
+
 
   // Tpetra::MultiVector specialization corresponding to InverseType.
   Details::MultiVectorLocalGatherScatter<mv_type, inverse_mv_type> mvgs;
@@ -638,6 +621,288 @@ extract ()
         }
         if(indicesToInsert.size())
           diagBlocks_[i]->insertGlobalValues(blockRow, indicesToInsert(), valuesToInsert());
+      }
+      diagBlocks_[i]->fillComplete ();
+    }
+  }
+}
+
+//==============================================================================
+template<class MatrixType, class InverseType>
+void SparseContainer<MatrixType,InverseType>::
+extractGraph ()
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  //To extract diagonal blocks, need to translate local rows to local columns.
+  //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
+  //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
+  //offset - blockOffsets_[b]: gives the column within block b.
+  //
+  //This provides the block and col within a block in O(1).
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::extractGraph");
+  Teuchos::TimeMonitor timeMon (*timer);
+
+  Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
+  if(this->scalarsPerRow_ > 1)
+  {
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getLocalNumCols(), INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockPointSize = this->blockSizes_[i] * this->scalarsPerRow_;
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(LO j = 0; j < blockSize; j++)
+      {
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      //First, count the number of entries in each row of block i
+      //(to allocate it with StaticProfile)
+      Array<size_t> rowEntryCounts(blockPointSize, 0);
+      //blockRow counts the BlockCrs LIDs that are going into this block
+      //Rows are inserted into the CrsMatrix in sequential order
+      using inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        //get a raw view of the whole block row
+        inds_type indices;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getGraph()->getLocalRowView(inputRow, indices);
+        LO numEntries = (LO) indices.size();
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
+        {
+          for(LO k = 0; k < numEntries; k++)
+          {
+            LO colOffset = colToBlockOffset[indices[k]];
+            if(blockStart <= colOffset && colOffset < blockEnd)
+            {
+              rowEntryCounts[blockRow * this->bcrsBlockSize_ + br] += this->bcrsBlockSize_;
+            }
+          }
+        }
+      }
+      //now that row sizes are known, can allocate the diagonal matrix
+      RCP<InverseMap> tempMap(new InverseMap(blockPointSize, 0, this->localComm_));
+      auto diagGraph = rcp(new InverseGraph(tempMap, rowEntryCounts));
+      //insert the actual entries, one row at a time
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        //get a raw view of the whole block row
+        inds_type indices;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getGraph()->getLocalRowView(inputRow, indices);
+        LO numEntries = (LO) indices.size();
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
+        {
+          indicesToInsert.clear();
+          for(LO k = 0; k < numEntries; k++)
+          {
+            LO colOffset = colToBlockOffset[indices[k]];
+            if(blockStart <= colOffset && colOffset < blockEnd)
+            {
+              LO blockCol = colOffset - blockStart;
+              //bc iterates over the columns in (block) entry k
+              for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
+              {
+                indicesToInsert.push_back(blockCol * this->bcrsBlockSize_ + bc);
+              }
+            }
+          }
+          InverseGlobalOrdinal rowToInsert = blockRow * this->bcrsBlockSize_ + br;
+          if(indicesToInsert.size())
+            diagGraph->insertGlobalIndices(rowToInsert, indicesToInsert());
+        }
+      }
+      diagGraph->fillComplete();
+
+      // create matrix block
+      diagBlocks_[i] = rcp(new InverseCrs(diagGraph));
+      Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
+    }
+  }
+  else
+  {
+    //get the mapping from point-indexed matrix columns to offsets in blockRows_
+    //(this includes regular CrsMatrix columns, in which case scalarsPerRow_ == 1)
+    Array<LO> colToBlockOffset(this->inputMatrix_->getLocalNumCols() * this->bcrsBlockSize_, INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(LO j = 0; j < blockSize; j++)
+      {
+        //translateRowToCol will return the corresponding split column
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      Teuchos::Array<size_t> rowEntryCounts(blockSize, 0);
+      for(LO j = 0; j < blockSize; j++)
+      {
+        rowEntryCounts[j] = this->getInputRowView(this->blockRows_[blockStart + j]).size();
+      }
+      RCP<InverseMap> tempMap(new InverseMap(blockSize, 0, this->localComm_));
+      auto diagGraph = rcp(new InverseGraph(tempMap, rowEntryCounts));
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        indicesToInsert.clear();
+        //get a view of the split row
+        LO inputSplitRow = this->blockRows_[blockStart + blockRow];
+        auto rowView = this->getInputRowView(inputSplitRow);
+        for(size_t k = 0; k < rowView.size(); k++)
+        {
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            LO blockCol = colOffset - blockStart;
+            indicesToInsert.push_back(blockCol);
+          }
+        }
+        if(indicesToInsert.size())
+          diagGraph->insertGlobalIndices(blockRow, indicesToInsert());
+      }
+      diagGraph->fillComplete();
+
+      // create matrix block
+      diagBlocks_[i] = rcp(new InverseCrs(diagGraph));
+      Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
+    }
+  }
+}
+
+//==============================================================================
+template<class MatrixType, class InverseType>
+void SparseContainer<MatrixType,InverseType>::
+extractValues ()
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  //To extract diagonal blocks, need to translate local rows to local columns.
+  //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
+  //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
+  //offset - blockOffsets_[b]: gives the column within block b.
+  //
+  //This provides the block and col within a block in O(1).
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::extractValues");
+  Teuchos::TimeMonitor timeMon (*timer);
+
+  Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
+  Teuchos::Array<InverseScalar> valuesToInsert;
+  if(this->scalarsPerRow_ > 1)
+  {
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getLocalNumCols(), INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(LO j = 0; j < blockSize; j++)
+      {
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      using inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+      using vals_type = typename block_crs_matrix_type::values_host_view_type;
+      //insert the actual entries, one row at a time
+      diagBlocks_[i]->resumeFill();
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        //get a raw view of the whole block row
+        inds_type indices;
+        vals_type values;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values);
+        LO numEntries = (LO) indices.size();
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
+        {
+          indicesToInsert.clear();
+          valuesToInsert.clear();
+          for(LO k = 0; k < numEntries; k++)
+          {
+            LO colOffset = colToBlockOffset[indices[k]];
+            if(blockStart <= colOffset && colOffset < blockEnd)
+            {
+              LO blockCol = colOffset - blockStart;
+              //bc iterates over the columns in (block) entry k
+              for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
+              {
+                indicesToInsert.push_back(blockCol * this->bcrsBlockSize_ + bc);
+                valuesToInsert.push_back(values[k * this->bcrsBlockSize_ * this->bcrsBlockSize_ + bc * this->bcrsBlockSize_ + br]);
+              }
+            }
+          }
+          InverseGlobalOrdinal rowToInsert = blockRow * this->bcrsBlockSize_ + br;
+          if(indicesToInsert.size())
+            diagBlocks_[i]->replaceGlobalValues(rowToInsert, indicesToInsert(), valuesToInsert());
+        }
+      }
+      diagBlocks_[i]->fillComplete();
+    }
+  }
+  else
+  {
+    //get the mapping from point-indexed matrix columns to offsets in blockRows_
+    //(this includes regular CrsMatrix columns, in which case scalarsPerRow_ == 1)
+    Array<LO> colToBlockOffset(this->inputMatrix_->getLocalNumCols() * this->bcrsBlockSize_, INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(LO j = 0; j < blockSize; j++)
+      {
+        //translateRowToCol will return the corresponding split column
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      diagBlocks_[i]->resumeFill();
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
+      {
+        valuesToInsert.clear();
+        indicesToInsert.clear();
+        //get a view of the split row
+        LO inputSplitRow = this->blockRows_[blockStart + blockRow];
+        auto rowView = this->getInputRowView(inputSplitRow);
+        for(size_t k = 0; k < rowView.size(); k++)
+        {
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            LO blockCol = colOffset - blockStart;
+            indicesToInsert.push_back(blockCol);
+            valuesToInsert.push_back(rowView.val(k));
+          }
+        }
+        if(indicesToInsert.size())
+          diagBlocks_[i]->replaceGlobalValues(blockRow, indicesToInsert, valuesToInsert);
       }
       diagBlocks_[i]->fillComplete ();
     }

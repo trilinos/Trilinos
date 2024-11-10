@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,12 +6,13 @@
 
 #pragma once
 
-#include "ioss_export.h"
-
-#include <Ioss_GroupingEntity.h> // for GroupingEntity
-#include <Ioss_Property.h>       // for Property
+#include "Ioss_GroupingEntity.h" // for GroupingEntity
+#include "Ioss_Property.h"       // for Property
 #include <cstddef>               // for size_t
 #include <string>                // for string
+
+#include "ioss_export.h"
+
 namespace Ioss {
   class DatabaseIO;
 } // namespace Ioss
@@ -36,14 +37,11 @@ namespace Ioss {
   class IOSS_EXPORT EntitySet : public GroupingEntity
   {
   public:
-    EntitySet &operator=(const EntitySet &)                                     = delete;
-    Property   get_implicit_property(const std::string &my_name) const override = 0;
+    EntitySet              &operator=(const EntitySet &) = delete;
+    IOSS_NODISCARD Property get_implicit_property(const std::string &my_name) const override = 0;
 
   protected:
     EntitySet(DatabaseIO *io_database, const std::string &my_name, size_t entity_cnt);
     EntitySet(const EntitySet &) = default;
-    ~EntitySet() override        = default;
-
-    void count_attributes() const;
   };
 } // namespace Ioss

@@ -29,6 +29,12 @@
 #ifndef AMESOS_CONFIGDEFS
 #define AMESOS_CONFIGDEFS
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #ifdef PACKAGE
 #undef PACKAGE
 #endif
@@ -102,4 +108,4 @@
   return(amesos_err);  }
 
 
-#endif 
+#endif

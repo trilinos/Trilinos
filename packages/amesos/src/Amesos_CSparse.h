@@ -28,6 +28,12 @@
 
 #ifndef AMESOS_CSPARSE_H
 #define AMESOS_CSPARSE_H
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
 #ifdef HAVE_AMESOS_CSPARSE
 
 #include "Amesos_ConfigDefs.h"

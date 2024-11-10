@@ -43,6 +43,12 @@
 #ifndef EUCLID_MPI_INTERFACE_DH
 #define EUCLID_MPI_INTERFACE_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #define DEFAULT_DROP_TOL 0.01
 
 #include "euclid_common.h"

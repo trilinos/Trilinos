@@ -13,6 +13,12 @@
 #ifndef __MLAMGGENP__
 #define __MLAMGGENP__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_amg.h"
 #include "ml_operator.h"
@@ -56,4 +62,3 @@ extern int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows,
 #endif
 
 #endif
-

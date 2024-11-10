@@ -44,6 +44,12 @@
 #ifndef EUCLID_CONF_DH
 #define EUCLID_CONF_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #define MAX_MPI_TASKS 50000
 
 /* for use in printTriples functions */

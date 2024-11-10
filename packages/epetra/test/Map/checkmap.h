@@ -48,3 +48,9 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
 	     int * MyGlobalElements, int IndexBase, Epetra_Comm & Comm,
           bool DistributedGlobal);
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

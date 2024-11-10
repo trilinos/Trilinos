@@ -44,6 +44,12 @@
 #ifndef IFPACK_PARTITIONER_H
 #define IFPACK_PARTITIONER_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Teuchos_ParameterList.hpp"
 class Epetra_Comm;

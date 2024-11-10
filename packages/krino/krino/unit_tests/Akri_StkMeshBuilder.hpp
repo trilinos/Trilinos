@@ -43,6 +43,7 @@ public:
         const std::vector<unsigned> &elementBlockIDs,
         const std::vector<int> &specifiedElementProcOwners);
 
+    std::vector<int> get_processor_distribution_for_num_elements(const unsigned numElements) const;
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mOwnedElems; }
     stk::mesh::Entity get_assigned_node_for_index(const size_t nodeIndex) const { return mMesh.get_entity(stk::topology::NODE_RANK, mAssignedGlobalNodeIdsforAllNodes[nodeIndex]); }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mAssignedGlobalNodeIdsforAllNodes; }
@@ -59,6 +60,7 @@ public:
     Phase_Support & get_phase_support() { return mPhaseSupport; }
     const Phase_Support & get_phase_support() const { return mPhaseSupport; }
 
+    void create_sideset_part(const unsigned sidesetId);
     void create_sideset_parts(const std::vector<unsigned> &sidesetIds);
     void create_sideset_parts(const std::vector<SideIdAndNodeOfSides> &sideIdsAndNodeOfSides);
     void add_sides_to_sidesets(const std::vector<SideIdAndNodeOfSides> &sideIdsAndNodeOfSides);
@@ -66,7 +68,9 @@ public:
     stk::mesh::Entity get_side_with_nodes(const std::vector<stk::mesh::Entity> &nodesOfSide) const;
     void create_block_parts(const std::vector<unsigned> &elementBlockIDs);
     stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const;
+    const stk::mesh::FieldBase & get_coordinates_field() const;
     const stk::mesh::PartVector & get_block_parts() const { return mBlockParts; }
+    const stk::mesh::Part & get_sideset_part(const unsigned sidesetId);
     void write_mesh(const std::string & fileName);
 
 private:

@@ -1,4 +1,11 @@
-// $Id$
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
 
 #include "pamgen_code_types.h"
 
@@ -13,5 +20,3 @@ extern const Real a_little_positive;
 extern const Real a_little_negative;
 
 } // end element_dictionary.C:namespace PAMGEN_NEVADA {
-
-

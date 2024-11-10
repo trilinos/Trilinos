@@ -21,6 +21,7 @@ public:
   static RefinementSupport & get(stk::mesh::MetaData & meta);
   static RefinementSupport & get(const stk::mesh::MetaData & meta);
   static bool use_nonconformal_adaptivity(stk::mesh::MetaData & meta) { RefinementSupport & refinementSupport = get(meta); return refinementSupport.get_interface_maximum_refinement_level() > 0; }
+  static stk::mesh::Selector do_not_refine_or_unrefine_selector(const stk::mesh::MetaData & meta);
 
   void set_initial_refinement_levels(int levels) { my_initial_refinement_levels = levels; }
   int get_initial_refinement_levels() const { return my_initial_refinement_levels; }

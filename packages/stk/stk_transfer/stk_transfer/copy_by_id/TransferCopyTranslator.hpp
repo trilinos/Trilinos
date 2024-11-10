@@ -37,6 +37,7 @@
 
 #include <stk_util/stk_config.h>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
+#include <functional>                       // for std::function
 
 namespace stk {
 namespace transfer {

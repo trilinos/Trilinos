@@ -44,6 +44,14 @@
 #ifndef EPETRA_FECRSMATRIX_H
 #define EPETRA_FECRSMATRIX_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CombineMode.h>

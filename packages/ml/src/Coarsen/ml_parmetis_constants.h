@@ -6,6 +6,12 @@
 #ifndef ML_PARMETIS_CONSTANTS_H
 #define ML_PARMETIS_CONSTANTS_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*
    This header defines types used in ML's (Par)METIS interfaces and must be included whenever (Par)METIS data types are used.  This is necessary
    because (Par)METIS does not maintain backwards compatibility between major versions.

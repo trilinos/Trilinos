@@ -43,6 +43,12 @@
 #ifndef THREADED_BLAS_DH
 #define THREADED_BLAS_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /* notes: 1. for mpi MatVec, see "Mat_dhMatvec()" in Mat_dh.h
           2. MPI calls use MPI_COMM_WORLD for the communicator,
              where applicable.

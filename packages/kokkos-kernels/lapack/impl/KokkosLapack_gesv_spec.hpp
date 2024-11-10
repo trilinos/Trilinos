@@ -28,7 +28,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AVT, class BVT>
+template <class ExecutionSpace, class AVT, class BVT, class IPIVV>
 struct gesv_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -42,17 +42,17 @@ struct gesv_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GESV_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE,        \
-                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  template <>                                                             \
-  struct gesv_eti_spec_avail<                                             \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {          \
-    enum : bool { value = true };                                         \
+#define KOKKOSLAPACK_GESV_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+  template <>                                                                                       \
+  struct gesv_eti_spec_avail<                                                                       \
+      EXEC_SPACE_TYPE,                                                                              \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
+      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                      \
+    enum : bool { value = true };                                                                   \
   };
 
 // Include the actual specialization declarations
@@ -65,24 +65,24 @@ namespace Impl {
 // Unification layer
 /// \brief Implementation of KokkosLapack::gesv.
 
-template <class AMatrix, class BXMV, class IPIVV,
-          bool tpl_spec_avail = gesv_tpl_spec_avail<AMatrix, BXMV>::value,
-          bool eti_spec_avail = gesv_eti_spec_avail<AMatrix, BXMV>::value>
+template <class ExecutionSpace, class AMatrix, class BXMV, class IPIVV,
+          bool tpl_spec_avail = gesv_tpl_spec_avail<ExecutionSpace, AMatrix, BXMV, IPIVV>::value,
+          bool eti_spec_avail = gesv_eti_spec_avail<ExecutionSpace, AMatrix, BXMV, IPIVV>::value>
 struct GESV {
-  static void gesv(const AMatrix &A, const BXMV &B, const IPIVV &IPIV);
+  static void gesv(const ExecutionSpace &space, const AMatrix &A, const BXMV &B, const IPIVV &IPIV);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of gesv for multi vectors.
 // Unification layer
-template <class AMatrix, class BXMV, class IPIVV>
-struct GESV<AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void gesv(const AMatrix & /* A */, const BXMV & /* B */,
+template <class ExecutionSpace, class AMatrix, class BXMV, class IPIVV>
+struct GESV<ExecutionSpace, AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void gesv(const ExecutionSpace & /* space */, const AMatrix & /* A */, const BXMV & /* B */,
                    const IPIVV & /* IPIV */) {
     // NOTE: Might add the implementation of KokkosLapack::gesv later
     throw std::runtime_error(
         "No fallback implementation of GESV (general LU factorization & solve) "
-        "exists. Enable LAPACK and/or MAGMA TPL.");
+        "exists. Enable LAPACK, CUSOLVER, ROCSOLVER or MAGMA TPL.");
   }
 };
 
@@ -97,34 +97,26 @@ struct GESV<AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GESV_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE,        \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  extern template struct GESV<                                           \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
-      Kokkos::View<int *, LAYOUT_TYPE,                                   \
-                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,     \
-                                  Kokkos::HostSpace>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
+#define KOKKOSLAPACK_GESV_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)           \
+  extern template struct GESV<                                                                               \
+      EXEC_SPACE_TYPE,                                                                                       \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
+      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
       false, true>;
 
-#define KOKKOSLAPACK_GESV_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE,        \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  template struct GESV<                                                  \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
-      Kokkos::View<int *, LAYOUT_TYPE,                                   \
-                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,     \
-                                  Kokkos::HostSpace>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
+#define KOKKOSLAPACK_GESV_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)           \
+  template struct GESV<                                                                                      \
+      EXEC_SPACE_TYPE,                                                                                       \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
+      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
       false, true>;
 
 #include <KokkosLapack_gesv_tpl_spec_decl.hpp>

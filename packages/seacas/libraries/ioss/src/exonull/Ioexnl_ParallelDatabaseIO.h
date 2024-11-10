@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,25 +7,26 @@
 // -*- Mode: c++ -*-
 #pragma once
 
-#include "ioexnl_export.h"
-
 #include <exodusII.h>
+
+#include "ioexnl_export.h"
 #if defined PARALLEL_AWARE_EXODUS
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>                  // for DatabaseUsage
-#include <Ioss_Map.h>                      // for Map
-#include <Ioss_State.h>                    // for State
-#include <exonull/Ioexnl_BaseDatabaseIO.h> // for DatabaseIO
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DBUsage.h"                  // for DatabaseUsage
+#include "Ioss_Map.h"                      // for Map
+#include "Ioss_State.h"                    // for State
+#include "exonull/Ioexnl_BaseDatabaseIO.h" // for DatabaseIO
 #include <functional>                      // for less
 #include <map>                             // for map, map<>::value_compare
 #include <memory>
-#include <set>                             // for set
-#include <stddef.h>                        // for size_t
-#include <stdint.h>                        // for int64_t
-#include <string>                          // for string, operator<
-#include <time.h>                          // for nullptr, time_t
-#include <utility>                         // for pair
-#include <vector>                          // for vector
+#include <set>      // for set
+#include <stddef.h> // for size_t
+#include <stdint.h> // for int64_t
+#include <string>   // for string, operator<
+#include <time.h>   // for nullptr, time_t
+#include <utility>  // for pair
+#include <vector>   // for vector
+
 namespace Ioexnl {
   class DecompositionDataBase;
 }
@@ -67,19 +68,16 @@ namespace Ioexnl {
     ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
                        Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                        const Ioss::PropertyManager &properties);
-    ParallelDatabaseIO(const ParallelDatabaseIO &from)            = delete;
-    ParallelDatabaseIO &operator=(const ParallelDatabaseIO &from) = delete;
-    ~ParallelDatabaseIO();
 
-    int  get_file_pointer() const override; // Open file and set exodusFilePtr.
-    bool needs_shared_node_information() const override { return true; }
+    IOSS_NODISCARD int  get_file_pointer() const override; // Open file and set exodusFilePtr.
+    IOSS_NODISCARD bool needs_shared_node_information() const override { return true; }
 
   private:
     void compute_node_status() const;
 
-    void release_memory__() override;
+    void release_memory_nl() override;
 
-    void get_step_times__() override {}
+    void get_step_times_nl() override {}
 
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
                             bool overwrite, bool abort_if_error) const override;
@@ -135,7 +133,7 @@ namespace Ioexnl {
     void output_node_map() const;
 
     // Metadata-related functions.
-    void read_meta_data__() override;
+    void read_meta_data_nl() override;
 
     int64_t read_transient_field(const Ioexnl::VariableNameMap &variables, const Ioss::Field &field,
                                  const Ioss::GroupingEntity *ge, void *data) const;
@@ -179,10 +177,11 @@ namespace Ioexnl {
     void check_valid_values() const;
 
     // ID Mapping functions.
-    const Ioss::Map &get_map(ex_entity_type type) const;
-    const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,
-                             int64_t file_count, ex_entity_type entity_type,
-                             ex_inquiry inquiry_type) const;
+    IOSS_NODISCARD const Ioss::Map &get_map(ex_entity_type type) const;
+    IOSS_NODISCARD const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount,
+                                            int64_t file_offset, int64_t file_count,
+                                            ex_entity_type entity_type,
+                                            ex_inquiry     inquiry_type) const;
 
     // Internal data handling
     int64_t handle_node_ids(void *ids, int64_t num_to_get, size_t offset, size_t count) const;

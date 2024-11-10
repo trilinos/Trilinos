@@ -22,7 +22,7 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 
-//#include "KokkosKernels_TestUtils.hpp"
+// #include "KokkosKernels_TestUtils.hpp"
 
 using namespace KokkosBatched;
 
@@ -36,8 +36,7 @@ struct ParamTag {
   typedef D diag;
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedSerialTrsv {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
@@ -45,8 +44,7 @@ struct Functor_TestBatchedSerialTrsv {
   ScalarType _alpha;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedSerialTrsv(const ScalarType alpha, const ViewType &a,
-                                const ViewType &b)
+  Functor_TestBatchedSerialTrsv(const ScalarType alpha, const ViewType &a, const ViewType &b)
       : _a(a), _b(b), _alpha(alpha) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -54,9 +52,8 @@ struct Functor_TestBatchedSerialTrsv {
     auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
 
-    SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans,
-               typename ParamTagType::diag, AlgoTagType>::invoke(_alpha, aa,
-                                                                 bb);
+    SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
+               AlgoTagType>::invoke(_alpha, aa, bb);
   }
 
   inline void run() {
@@ -71,8 +68,7 @@ struct Functor_TestBatchedSerialTrsv {
   }
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsv(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
@@ -80,11 +76,10 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
   /// randomized input testing views
   ScalarType alpha(1.5);
 
-  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize),
-      b0("b0", N, BlkSize, 1), b1("b1", N, BlkSize, 1);
+  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize), b0("b0", N, BlkSize, 1),
+      b1("b1", N, BlkSize, 1);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a0, random, value_type(1.0));
   Kokkos::fill_random(b0, random, value_type(1.0));
 
@@ -95,12 +90,9 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
   Kokkos::deep_copy(a1, a0);
   Kokkos::deep_copy(b1, b0);
 
-  Functor_TestBatchedSerialTrsv<DeviceType, ViewType, ScalarType, ParamTagType,
-                                Algo::Trsv::Unblocked>(alpha, a0, b0)
+  Functor_TestBatchedSerialTrsv<DeviceType, ViewType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(alpha, a0, b0)
       .run();
-  Functor_TestBatchedSerialTrsv<DeviceType, ViewType, ScalarType, ParamTagType,
-                                AlgoTagType>(alpha, a1, b1)
-      .run();
+  Functor_TestBatchedSerialTrsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(alpha, a1, b1).run();
 
   Kokkos::fence();
 
@@ -120,16 +112,14 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
 
   /// check b0 and b1 are correct
   const value_type one(1);
-  const bool is_unit_diag =
-      std::is_same<typename ParamTagType::diag, Diag::Unit>::value;
+  const bool is_unit_diag = std::is_same<typename ParamTagType::diag, Diag::Unit>::value;
   for (int k = 0; k < N; ++k) {
     if (std::is_same<typename ParamTagType::trans, Trans::NoTranspose>::value) {
       if (std::is_same<typename ParamTagType::uplo, Uplo::Lower>::value) {
         for (int i = 0; i < BlkSize; ++i) {
           value_type tmp(0);
           for (int j = 0; j <= i; ++j) {
-            const value_type aval =
-                (i == j && is_unit_diag ? one : a0_host(k, i, j));
+            const value_type aval = (i == j && is_unit_diag ? one : a0_host(k, i, j));
             const value_type bval = b0_host(k, j, 0);
             tmp += aval * bval;
           }
@@ -138,20 +128,17 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
         for (int i = 0; i < BlkSize; ++i) {
           value_type tmp(0);
           for (int j = 0; j <= i; ++j) {
-            const value_type aval =
-                (i == j && is_unit_diag ? one : a0_host(k, i, j));
+            const value_type aval = (i == j && is_unit_diag ? one : a0_host(k, i, j));
             const value_type bval = b1_host(k, j, 0);
             tmp += aval * bval;
           }
           EXPECT_NEAR(ats::abs(tmp), ats::abs(alpha), eps);
         }
-      } else if (std::is_same<typename ParamTagType::uplo,
-                              Uplo::Upper>::value) {
+      } else if (std::is_same<typename ParamTagType::uplo, Uplo::Upper>::value) {
         for (int i = 0; i < BlkSize; ++i) {
           value_type tmp(0);
           for (int j = i; j < BlkSize; ++j) {
-            const value_type aval =
-                (i == j && is_unit_diag ? one : a0_host(k, i, j));
+            const value_type aval = (i == j && is_unit_diag ? one : a0_host(k, i, j));
             const value_type bval = b0_host(k, j, 0);
             tmp += aval * bval;
           }
@@ -160,8 +147,7 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
         for (int i = 0; i < BlkSize; ++i) {
           value_type tmp(0);
           for (int j = i; j < BlkSize; ++j) {
-            const value_type aval =
-                (i == j && is_unit_diag ? one : a0_host(k, i, j));
+            const value_type aval = (i == j && is_unit_diag ? one : a0_host(k, i, j));
             const value_type bval = b1_host(k, j, 0);
             tmp += aval * bval;
           }
@@ -183,15 +169,12 @@ void impl_test_batched_trsv(const int N, const int BlkSize) {
 }  // namespace Trsv
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ValueType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 int test_batched_trsv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                       ParamTagType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
+    Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d, Uplo %d, Trans %d, Diag
       // %d\n",
@@ -200,17 +183,14 @@ int test_batched_trsv() {
       //        std::is_same<typename ParamTagType::trans,
       //        Trans::NoTranspose>::value, std::is_same<typename
       //        ParamTagType::diag, Diag::Unit>::value);
-      Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                         ParamTagType, AlgoTagType>(1, i);
+      Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                       ParamTagType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
+    Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutRight,  Blksize %d, Uplo %d, Trans %d, Diag
       // %d\n",
@@ -219,8 +199,7 @@ int test_batched_trsv() {
       //        std::is_same<typename ParamTagType::trans,
       //        Trans::NoTranspose>::value, std::is_same<typename
       //        ParamTagType::diag, Diag::Unit>::value);
-      Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType,
-                                         ParamTagType, AlgoTagType>(1, i);
+      Test::Trsv::impl_test_batched_trsv<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1, i);
     }
   }
 #endif

@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __MatrixMarket_Tpetra_hpp
@@ -210,9 +178,10 @@ namespace Tpetra {
                           global_ordinal_type,
                           node_type> vector_type;
 
-      typedef Teuchos::Comm<int> comm_type;
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
+      //! Type of the MPI communicator.
+      using trcp_tcomm_t = Teuchos::RCP<const Teuchos::Comm<int>>;
 
     private:
       /// \typedef size_type
@@ -233,7 +202,7 @@ namespace Tpetra {
       ///
       /// \return Range map to be used for constructing a CrsMatrix.
       static Teuchos::RCP<const map_type>
-      makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
+      makeRangeMap (const trcp_tcomm_t& pComm,
                     const global_ordinal_type numRows)
       {
         // Return a conventional, uniformly partitioned, contiguous map.
@@ -271,7 +240,7 @@ namespace Tpetra {
       /// \return If pRowMap is null, a new row map, otherwise pRowMap.
       static Teuchos::RCP<const map_type>
       makeRowMap (const Teuchos::RCP<const map_type>& pRowMap,
-                  const Teuchos::RCP<const comm_type>& pComm,
+                  const trcp_tcomm_t& pComm,
                   const global_ordinal_type numRows)
       {
         // If the caller didn't provide a map, return a conventional,
@@ -425,7 +394,7 @@ namespace Tpetra {
          using std::endl;
 
          const bool extraDebug = false;
-         RCP<const comm_type> pComm = pRowMap->getComm ();
+         trcp_tcomm_t pComm = pRowMap->getComm ();
          const int numProcs = pComm->getSize ();
          const int myRank = pComm->getRank ();
          const int rootRank = 0;
@@ -1113,7 +1082,7 @@ namespace Tpetra {
       readCoordDims (std::istream& in,
                      size_t& lineNumber,
                      const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                     const Teuchos::RCP<const comm_type>& pComm,
+                     const trcp_tcomm_t& pComm,
                      const bool tolerant = false,
                      const bool /* debug */ = false)
       {
@@ -1648,33 +1617,13 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                           const trcp_tcomm_t& comm,
                            const bool callFillComplete=true,
                            const bool tolerant=false,
                            const bool debug=false)
       {
-        using Teuchos::broadcast;
-        using Teuchos::outArg;
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
 
-        // Only open the file on Process 0.  Test carefully to make
-        // sure that the file opened successfully (and broadcast that
-        // result to all processes to prevent a hang on exception
-        // throw), since it's a common mistake to misspell a filename.
-        std::ifstream in;
-        int opened = 0;
-        if (comm->getRank () == 0) {
-          try {
-            in.open (filename.c_str ());
-            opened = in.is_open();
-          }
-          catch (...) {
-            opened = 0;
-          }
-        }
-        broadcast<int, int> (*comm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (opened == 0, std::runtime_error, "readSparseGraphFile: "
-           "Failed to open file \"" << filename << "\" on Process 0.");
         return readSparseGraph (in, comm,
                                 callFillComplete,
                                 tolerant, debug);
@@ -1720,31 +1669,8 @@ namespace Tpetra {
                            const bool tolerant=false,
                            const bool debug=false)
       {
-        using Teuchos::broadcast;
-        using Teuchos::outArg;
+        std::ifstream in = Reader::openInFileOnRankZero(pComm, filename, true);
 
-        // Only open the file on Process 0.  Test carefully to make
-        // sure that the file opened successfully (and broadcast that
-        // result to all processes to prevent a hang on exception
-        // throw), since it's a common mistake to misspell a filename.
-        std::ifstream in;
-        int opened = 0;
-        if (pComm->getRank () == 0) {
-          try {
-            in.open (filename.c_str ());
-            opened = in.is_open();
-          }
-          catch (...) {
-            opened = 0;
-          }
-        }
-        broadcast<int, int> (*pComm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (opened == 0, std::runtime_error, "readSparseGraphFile: "
-           "Failed to open file \"" << filename << "\" on Process 0.");
-        if (pComm->getRank () == 0) { // only open the input file on Process 0
-          in.open (filename.c_str ());
-        }
         return readSparseGraph (in, pComm,
                                 constructorParams,
                                 fillCompleteParams, tolerant, debug);
@@ -1801,40 +1727,18 @@ namespace Tpetra {
                            const bool tolerant=false,
                            const bool debug=false)
       {
-        using Teuchos::broadcast;
-        using Teuchos::Comm;
-        using Teuchos::outArg;
-        using Teuchos::RCP;
-
         TEUCHOS_TEST_FOR_EXCEPTION
           (rowMap.is_null (), std::invalid_argument,
            "Input rowMap must be nonnull.");
-        RCP<const Comm<int> > comm = rowMap->getComm ();
+        trcp_tcomm_t comm = rowMap->getComm ();
         if (comm.is_null ()) {
           // If the input communicator is null on some process, then
           // that process does not participate in the collective.
           return Teuchos::null;
         }
 
-        // Only open the file on Process 0.  Test carefully to make
-        // sure that the file opened successfully (and broadcast that
-        // result to all processes to prevent a hang on exception
-        // throw), since it's a common mistake to misspell a filename.
-        std::ifstream in;
-        int opened = 0;
-        if (comm->getRank () == 0) {
-          try {
-            in.open (filename.c_str ());
-            opened = in.is_open();
-          }
-          catch (...) {
-            opened = 0;
-          }
-        }
-        broadcast<int, int> (*comm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (opened == 0, std::runtime_error, "readSparseGraphFile: "
-           "Failed to open file \"" << filename << "\" on Process 0.");
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+
         return readSparseGraph (in, rowMap, colMap, domainMap, rangeMap,
                                 callFillComplete, tolerant, debug);
       }
@@ -2021,25 +1925,14 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const trcp_tcomm_t& comm,
                       const bool callFillComplete=true,
                       const bool tolerant=false,
                       const bool debug=false)
       {
-        const int myRank = pComm->getRank ();
-        std::ifstream in;
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
 
-        // Only open the file on Rank 0.
-        if (myRank == 0) {
-          in.open (filename.c_str ());
-        }
-        // FIXME (mfh 16 Jun 2015) Do a broadcast to make sure that
-        // opening the file succeeded, before continuing.  That will
-        // avoid hangs if the read doesn't work.  On the other hand,
-        // readSparse could do that too, by checking the status of the
-        // std::ostream.
-
-        return readSparse (in, pComm, callFillComplete, tolerant, debug);
+        return readSparse (in, comm, callFillComplete, tolerant, debug);
         // We can rely on the destructor of the input stream to close
         // the file on scope exit, even if readSparse() throws an
         // exception.
@@ -2076,17 +1969,15 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const trcp_tcomm_t& comm,
                       const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
                       const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
                       const bool tolerant=false,
                       const bool debug=false)
       {
-        std::ifstream in;
-        if (pComm->getRank () == 0) { // only open on Process 0
-          in.open (filename.c_str ());
-        }
-        return readSparse (in, pComm, constructorParams,
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+
+        return readSparse (in, comm, constructorParams,
                            fillCompleteParams, tolerant, debug);
       }
 
@@ -2138,38 +2029,14 @@ namespace Tpetra {
                       const bool tolerant=false,
                       const bool debug=false)
       {
-        using Teuchos::broadcast;
-        using Teuchos::Comm;
-        using Teuchos::outArg;
-        using Teuchos::RCP;
-
         TEUCHOS_TEST_FOR_EXCEPTION(
           rowMap.is_null (), std::invalid_argument,
           "Row Map must be nonnull.");
 
-        RCP<const Comm<int> > comm = rowMap->getComm ();
-        const int myRank = comm->getRank ();
+        trcp_tcomm_t comm = rowMap->getComm ();
 
-        // Only open the file on Process 0.  Test carefully to make
-        // sure that the file opened successfully (and broadcast that
-        // result to all processes to prevent a hang on exception
-        // throw), since it's a common mistake to misspell a filename.
-        std::ifstream in;
-        int opened = 0;
-        if (myRank == 0) {
-          try {
-            in.open (filename.c_str ());
-            opened = in.is_open();
-          }
-          catch (...) {
-            opened = 0;
-          }
-        }
-        broadcast<int, int> (*comm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          opened == 0, std::runtime_error,
-          "readSparseFile: Failed to open file \"" << filename << "\" on "
-          "Process 0.");
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+
         return readSparse (in, rowMap, colMap, domainMap, rangeMap,
                            callFillComplete, tolerant, debug);
       }
@@ -3940,35 +3807,54 @@ namespace Tpetra {
       /// \param debug [in] If true, read in binary mode.
       static Teuchos::RCP<multivector_type>
       readDenseFile (const std::string& filename,
-                     const Teuchos::RCP<const comm_type>& comm,
+                     const trcp_tcomm_t& comm,
                      Teuchos::RCP<const map_type>& map,
                      const bool tolerant=false,
                      const bool debug=false,
                      const bool binary=false)
       {
-        using Teuchos::broadcast;
-        using Teuchos::outArg;
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true, binary ? std::ios::binary : std::ios::in);
 
-        std::ifstream in;
-        int opened = 0;
-        if (comm->getRank() == 0) {
-          try {
-            if (!binary)
-              in.open (filename.c_str ());
-            else
-              in.open (filename.c_str (), std::ios::binary);
-            opened = in.is_open();
-          }
-          catch (...) {
-            opened = 0;
-          }
-        }
-        broadcast<int, int> (*comm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          opened == 0, std::runtime_error,
-          "readDenseFile: Failed to open file \"" << filename << "\" on "
-          "Process 0.");
         return readDense (in, comm, map, tolerant, debug, binary);
+      }
+
+      /**
+       * @brief Open an input file stream safely on rank zero.
+       *
+       * Only open the file on rank zero process. Test carefully to make
+       * sure that the file opened successfully and broadcast that
+       * result to all processes to prevent a hang on exception
+       * throw.
+       *
+       * @note On processes that are not the rank zero process, the stream is left uninitialized.
+       */
+      static std::ifstream openInFileOnRankZero(
+        const trcp_tcomm_t& comm,
+        const std::string& filename, const bool safe = true,
+        std::ios_base::openmode mode = std::ios_base::in
+      ){
+        // Input stream.
+        std::ifstream in;
+
+        // Placeholder for broadcasting in-stream state.
+        int all_should_stop = false;
+
+        // Try to open the in-stream on root rank.
+        if (comm->getRank() == 0) {
+            in.open(filename, mode);
+            all_should_stop = !in && safe;
+        }
+
+        // Broadcast state and possibly throw.
+        if(comm) Teuchos::broadcast(*comm, 0, &all_should_stop);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          all_should_stop,
+          std::runtime_error,
+          "Could not open input file '" + filename + "' on root rank 0."
+        );
+
+        return in;
       }
 
 
@@ -4003,30 +3889,13 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<vector_type>
       readVectorFile (const std::string& filename,
-                      const Teuchos::RCP<const comm_type>& comm,
+                      const trcp_tcomm_t& comm,
                       Teuchos::RCP<const map_type>& map,
                       const bool tolerant=false,
                       const bool debug=false)
       {
-        using Teuchos::broadcast;
-        using Teuchos::outArg;
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
 
-        std::ifstream in;
-        int opened = 0;
-        if (comm->getRank() == 0) {
-          try {
-            in.open (filename.c_str ());
-            opened = in.is_open();
-          }
-          catch (...) {
-            opened = 0;
-          }
-        }
-        broadcast<int, int> (*comm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          opened == 0, std::runtime_error,
-          "readVectorFile: Failed to open file \"" << filename << "\" on "
-          "Process 0.");
         return readVector (in, comm, map, tolerant, debug);
       }
 
@@ -4101,7 +3970,7 @@ namespace Tpetra {
       
       static Teuchos::RCP<multivector_type>
       readDense (std::istream& in,
-                 const Teuchos::RCP<const comm_type>& comm,
+                 const trcp_tcomm_t& comm,
                  Teuchos::RCP<const map_type>& map,
                  const bool tolerant=false,
                  const bool debug=false,
@@ -4116,7 +3985,7 @@ namespace Tpetra {
       //! Read Vector from the given Matrix Market input stream.
       static Teuchos::RCP<vector_type>
       readVector (std::istream& in,
-                  const Teuchos::RCP<const comm_type>& comm,
+                  const trcp_tcomm_t& comm,
                   Teuchos::RCP<const map_type>& map,
                   const bool tolerant=false,
                   const bool debug=false)
@@ -4150,30 +4019,13 @@ namespace Tpetra {
       /// \param debug [in] If true, read in binary mode.
       static Teuchos::RCP<const map_type>
       readMapFile (const std::string& filename,
-                   const Teuchos::RCP<const comm_type>& comm,
+                   const trcp_tcomm_t& comm,
                    const bool tolerant=false,
                    const bool debug=false,
                    const bool binary=false)
       {
-        using Teuchos::inOutArg;
-        using Teuchos::broadcast;
-        std::ifstream in;
+        std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true, binary ? std::ios::binary : std::ios::in);
 
-        int success = 1;
-        if (comm->getRank () == 0) { // Only open the file on Proc 0.
-          if (binary)
-            in.open (filename.c_str (), std::ios::binary);
-          else
-            in.open (filename.c_str ()); // Destructor closes safely
-          if (! in) {
-            success = 0;
-          }
-        }
-        broadcast<int, int> (*comm, 0, inOutArg (success));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          success == 0, std::runtime_error,
-          "Tpetra::MatrixMarket::Reader::readMapFile: "
-          "Failed to read file \"" << filename << "\" on Process 0.");
         return readMap (in, comm, tolerant, debug, binary);
       }
 
@@ -4185,7 +4037,7 @@ namespace Tpetra {
                                      global_ordinal_type,
                                      node_type> >
       readDenseImpl (std::istream& in,
-                     const Teuchos::RCP<const comm_type>& comm,
+                     const trcp_tcomm_t& comm,
                      Teuchos::RCP<const map_type>& map,
                      const Teuchos::RCP<Teuchos::FancyOStream>& err,
                      const bool tolerant=false,
@@ -4767,7 +4619,7 @@ namespace Tpetra {
                                      global_ordinal_type,
                                      node_type> >
       readVectorImpl (std::istream& in,
-                      const Teuchos::RCP<const comm_type>& comm,
+                      const trcp_tcomm_t& comm,
                       Teuchos::RCP<const map_type>& map,
                       const Teuchos::RCP<Teuchos::FancyOStream>& err,
                       const bool tolerant=false,
@@ -5296,7 +5148,7 @@ namespace Tpetra {
       /// \param debug [in] If true, read in binary mode.
       static Teuchos::RCP<const map_type>
       readMap (std::istream& in,
-               const Teuchos::RCP<const comm_type>& comm,
+               const trcp_tcomm_t& comm,
                const bool tolerant=false,
                const bool debug=false,
                const bool binary=false)
@@ -5335,7 +5187,7 @@ namespace Tpetra {
       /// \param debug [in] If true, read in binary mode.
       static Teuchos::RCP<const map_type>
       readMap (std::istream& in,
-               const Teuchos::RCP<const comm_type>& comm,
+               const trcp_tcomm_t& comm,
                const Teuchos::RCP<Teuchos::FancyOStream>& err,
                const bool tolerant=false,
                const bool debug=false,
@@ -6076,6 +5928,9 @@ namespace Tpetra {
       typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>            operator_type;
       typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>         mv_type;
 
+      //! Type of the MPI communicator.
+      using trcp_tcomm_t = Teuchos::RCP<const Teuchos::Comm<int>>;
+
       /// \brief Print the sparse matrix in Matrix Market format, with
       ///   comments.
       ///
@@ -6114,17 +5969,14 @@ namespace Tpetra {
                        const std::string& matrixDescription,
                        const bool debug=false)
       {
-        Teuchos::RCP<const Teuchos::Comm<int> > comm = matrix.getComm ();
+        trcp_tcomm_t comm = matrix.getComm ();
         TEUCHOS_TEST_FOR_EXCEPTION
           (comm.is_null (), std::invalid_argument,
           "The input matrix's communicator (Teuchos::Comm object) is null.");
         const int myRank = comm->getRank ();
-        std::ofstream out;
 
-        // Only open the file on Rank 0.
-        if (myRank == 0) {
-          out.open (filename.c_str ());
-        }
+        auto out = Writer::openOutFileOnRankZero(comm, filename, myRank, true);
+
         writeSparse (out, matrix, matrixName, matrixDescription, debug);
         // We can rely on the destructor of the output stream to close
         // the file on scope exit, even if writeSparse() throws an
@@ -6240,7 +6092,7 @@ namespace Tpetra {
         Teuchos::SetScientific<ST> sci (out);
 
         // Get the matrix's communicator.
-        RCP<const Comm<int> > comm = matrix.getComm ();
+        trcp_tcomm_t comm = matrix.getComm ();
         TEUCHOS_TEST_FOR_EXCEPTION(
           comm.is_null (), std::invalid_argument,
           "The input matrix's communicator (Teuchos::Comm object) is null.");
@@ -6812,12 +6664,9 @@ namespace Tpetra {
           return;
         }
         const int myRank = comm->getRank ();
-        std::ofstream out;
 
-        // Only open the file on Process 0.
-        if (myRank == 0) {
-          out.open (filename.c_str ());
-        }
+        auto out = Writer::openOutFileOnRankZero(comm, filename, myRank, true);
+
         writeSparseGraph (out, graph, graphName, graphDescription, debug);
         // We can rely on the destructor of the output stream to close
         // the file on scope exit, even if writeSparseGraph() throws
@@ -6946,14 +6795,10 @@ namespace Tpetra {
                       const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
                       const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        const int myRank = X.getMap ().is_null () ? 0 :
-          (X.getMap ()->getComm ().is_null () ? 0 :
-           X.getMap ()->getComm ()->getRank ());
-        std::ofstream out;
+        trcp_tcomm_t comm = Writer::getComm(X.getMap());
+        const int myRank = Writer::getRank(comm);
 
-        if (myRank == 0) { // Only open the file on Process 0.
-          out.open (filename.c_str());
-        }
+        auto out = Writer::openOutFileOnRankZero(comm, filename, myRank, true);
 
         writeDense (out, X, matrixName, matrixDescription, err, dbg);
         // We can rely on the destructor of the output stream to close
@@ -7054,12 +6899,10 @@ namespace Tpetra {
         using Teuchos::outArg;
         using Teuchos::REDUCE_MAX;
         using Teuchos::reduceAll;
-        using Teuchos::RCP;
         using std::endl;
 
-        RCP<const Comm<int> > comm = X.getMap ().is_null () ?
-          Teuchos::null : X.getMap ()->getComm ();
-        const int myRank = comm.is_null () ? 0 : comm->getRank ();
+        trcp_tcomm_t comm = Writer::getComm(X.getMap());
+        const int myRank = Writer::getRank(comm);
 
         // If the caller provides a nonnull debug output stream, we
         // print debugging output to it.  This is a local thing; we
@@ -7092,6 +6935,39 @@ namespace Tpetra {
       }
 
     private:
+      /**
+       * @brief Open a file only on rank zero, possibly throwing if the stream is invalid.
+       *
+       * @note On processes that are not the rank zero process, the stream is left uninitialized.
+       */
+      static std::ofstream openOutFileOnRankZero(
+        const trcp_tcomm_t& comm,
+        const std::string& filename, const int rank, const bool safe = true,
+        const std::ios_base::openmode mode = std::ios_base::out
+      ){
+        // Placeholder for the output stream.
+        std::ofstream out;
+
+        // State that will make all ranks throw if the root rank wasn't able to open the stream (using @c int for broadcasting).
+        int all_should_stop = 0;
+
+        // Try to open the file and update the state.
+        if(rank == 0) {
+          out.open(filename, mode);
+          all_should_stop = !out && safe;
+        }
+
+        // Broadcast the stream state and throw from all ranks if needed.
+        if(comm) Teuchos::broadcast(*comm, 0, &all_should_stop);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          all_should_stop,
+          std::runtime_error,
+          "Could not open output file '" + filename + "' on root rank 0."
+        );
+
+        return out;
+      }
 
       /// \brief Print the MultiVector's Matrix Market header.
       ///
@@ -7135,9 +7011,8 @@ namespace Tpetra {
         typedef Teuchos::ScalarTraits<scalar_type> STS;
         const char prefix[] = "Tpetra::MatrixMarket::writeDenseHeader: ";
 
-        RCP<const Comm<int> > comm = X.getMap ().is_null () ?
-          Teuchos::null : X.getMap ()->getComm ();
-        const int myRank = comm.is_null () ? 0 : comm->getRank ();
+        trcp_tcomm_t comm = Writer::getComm(X.getMap());
+        const int myRank = Writer::getRank(comm);
         int lclErr = 0; // whether this MPI process has seen an error
         int gblErr = 0; // whether we know if some MPI process has seen an error
 
@@ -8376,10 +8251,9 @@ namespace Tpetra {
                     const map_type& map)
       {
         const int myRank = map.getComm ()->getRank ();
-        std::ofstream out;
-        if (myRank == 0) { // Only open the file on Proc 0.
-          out.open (filename.c_str());
-        }
+
+        auto out = Writer::openOutFileOnRankZero(map.getComm(), filename, myRank, true);
+
         writeMap (out, map);
         // We can rely on the destructor of the output stream to close
         // the file on scope exit, even if writeDense() throws an
@@ -8694,7 +8568,7 @@ namespace Tpetra {
 
         const map_type&                domainMap = *(A.getDomainMap());
         RCP<const map_type>            rangeMap = A.getRangeMap();
-        RCP<const Teuchos::Comm<int> > comm = rangeMap->getComm();
+        trcp_tcomm_t                   comm = rangeMap->getComm();
         const int                      myRank = comm->getRank();
         const size_t                   numProcs = comm->getSize();
 
@@ -8951,7 +8825,7 @@ namespace Tpetra {
         using Teuchos::RCP;
         
         // Sanity Checks
-        Teuchos::RCP<const Teuchos::Comm<int> > comm = matrix.getComm ();
+        trcp_tcomm_t comm = matrix.getComm ();
         TEUCHOS_TEST_FOR_EXCEPTION
           (comm.is_null (), std::invalid_argument,
            "The input matrix's communicator (Teuchos::Comm object) is null.");
@@ -9039,6 +8913,19 @@ namespace Tpetra {
         }// end outer loop
          
       }// end writeSparsePerRank
+
+      //! Return @p obj MPI communicator or @ref Teuchos::null.
+      template <typename T>
+      static inline trcp_tcomm_t getComm(const Teuchos::RCP<T>& obj)
+      {
+        return obj.is_null() ? Teuchos::null : obj->getComm();
+      }
+
+      //! Return MPI rank or 0.
+      static inline int getRank(const trcp_tcomm_t& comm)
+      {
+        return comm.is_null() ? 0 : comm->getRank();
+      }
 
     }; // class Writer
 

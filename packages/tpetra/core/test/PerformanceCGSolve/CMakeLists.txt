@@ -13,132 +13,50 @@ IF (Tpetra_INST_DOUBLE)
                             CATEGORIES BASIC PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
-      Performance-CGSolve
-      NAME Performance_StrongScaling_CGSolve
-      ARGS "--size=200"
-      COMM mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
 
-    TRIBITS_ADD_TEST(
-      Performance-CGSolve
-      NAME Performance_StrongScaling_CGSolve
-      ARGS "--size=200"
-      COMM mpi
-      NUM_MPI_PROCS 4
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
 
-    TRIBITS_ADD_TEST(
-      Performance-CGSolve
-      NAME Performance_StrongScaling_CGSolve
-      ARGS "--size=200"
-      COMM mpi
-      NUM_MPI_PROCS 9
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
 
-    TRIBITS_ADD_TEST(
+      TRIBITS_ADD_TEST(
+        Performance-CGSolve
+        NAME Performance_StrongScaling_CGSolve
+        ARGS "--size=200"
+        COMM mpi
+        NUM_MPI_PROCS ${NP}
+        STANDARD_PASS_OUTPUT
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
 
-      Performance-CGSolve
-      NAME Performance_StrongScaling_CGSolve
-      ARGS "--size=200"
-      COMM mpi
-      NUM_MPI_PROCS 16
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
-
-    TRIBITS_ADD_TEST(
-      Performance-CGSolve
-      NAME Performance_StrongScaling_CGSolve
-      ARGS "--size=200"
-      COMM mpi
-      NUM_MPI_PROCS 25
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
 
     IF (Tpetra_ENABLE_CUDA)
-        MESSAGE(STATUS "Tpetra: Performance-CGSolve CUDA_LAUNCH_BLOCKING test ENABLED")
+      MESSAGE(STATUS "Tpetra: Performance-CGSolve CUDA_LAUNCH_BLOCKING test ENABLED")
+      set(COUNTER 1)
+      set(MAX_COUNT 11)
+
+      WHILE(COUNTER LESS MAX_COUNT)
+        math(EXPR NP "${COUNTER} * ${COUNTER}")
 
         TRIBITS_ADD_TEST(
           Performance-CGSolve
           NAME Performance_StrongScaling_CGSolve_CUDA_LAUNCH_BLOCKING
           ARGS "--size=200"
           COMM mpi
-          NUM_MPI_PROCS 1
+          NUM_MPI_PROCS ${NP}
           ENVIRONMENT CUDA_LAUNCH_BLOCKING=1
           STANDARD_PASS_OUTPUT
           RUN_SERIAL
           CATEGORIES PERFORMANCE
         )
 
-        TRIBITS_ADD_TEST(
-          Performance-CGSolve
-          NAME Performance_StrongScaling_CGSolve_CUDA_LAUNCH_BLOCKING
-          ARGS "--size=200"
-          COMM mpi
-          NUM_MPI_PROCS 4
-          ENVIRONMENT CUDA_LAUNCH_BLOCKING=1
-          STANDARD_PASS_OUTPUT
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
+        math(EXPR COUNTER "${COUNTER} + 1")
+      ENDWHILE()
 
-        TRIBITS_ADD_TEST(
-          Performance-CGSolve
-          NAME Performance_StrongScaling_CGSolve_CUDA_LAUNCH_BLOCKING
-          ARGS "--size=200"
-          COMM mpi
-          NUM_MPI_PROCS 9
-          ENVIRONMENT CUDA_LAUNCH_BLOCKING=1
-          STANDARD_PASS_OUTPUT
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
-
-        TRIBITS_ADD_TEST(
-          Performance-CGSolve
-          NAME Performance_StrongScaling_CGSolve_CUDA_LAUNCH_BLOCKING
-          ARGS "--size=200"
-          COMM mpi
-          NUM_MPI_PROCS 16
-          ENVIRONMENT CUDA_LAUNCH_BLOCKING=1
-          STANDARD_PASS_OUTPUT
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
-
-        TRIBITS_ADD_TEST(
-          Performance-CGSolve
-          NAME Performance_StrongScaling_CGSolve_CUDA_LAUNCH_BLOCKING
-          ARGS "--size=200"
-          COMM mpi
-          NUM_MPI_PROCS 25
-          ENVIRONMENT CUDA_LAUNCH_BLOCKING=1
-          STANDARD_PASS_OUTPUT
-          RUN_SERIAL
-          CATEGORIES PERFORMANCE
-        )
     ENDIF()
 
 ENDIF()
-
-#TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlForTpetraPerfCgSolve
-#  SOURCE_DIR ${Tpetra_SOURCE_DIR}/test/
-#  SOURCE_FILES Tpetra_PerformanceTests.xml
-#  EXEDEPS Performance-CGSolve
-#)
-
-

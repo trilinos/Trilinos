@@ -41,6 +41,12 @@
 #ifndef _AMESOS_BASESOLVER_H_
 #define _AMESOS_BASESOLVER_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 const int StructurallySingularMatrixError = -21;
 const int NumericallySingularMatrixError = -22;
 

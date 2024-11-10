@@ -4,6 +4,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Epetra
+  ${PACKAGE_NAME}_ENABLE_Zoltan2Core
   )
 
 #
@@ -56,23 +57,6 @@ IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "
     string(CONCAT TEST_ARGS "--linAlgebra=Epetra" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
 
     TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterEpetra"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-      )
-    TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterEpetra"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-      )
-
-    TRIBITS_ADD_TEST(
       CreateOperator
       NAME "CreateOperatorEpetra"
       ARGS ${TEST_ARGS}
@@ -89,29 +73,50 @@ IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "
       COMM mpi
       )
 
-    string(CONCAT TEST_ARGS "--linAlgebra=Epetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
+    IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
 
-    # This test only runs on the dashboard, not at checkin.
-    TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterEpetraHeavy"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-      CATEGORIES CONTINUOUS
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterEpetra"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+      )
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterEpetra"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
       )
 
-    # This test only runs on the dashboard, not at checkin.
-    TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterEpetraHeavy"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-      CATEGORIES CONTINUOUS
+      string(CONCAT TEST_ARGS "--linAlgebra=Epetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterEpetraHeavy"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        CATEGORIES CONTINUOUS
       )
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterEpetraHeavy"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        CATEGORIES CONTINUOUS
+      )
+
+    ENDIF()
 
   ENDIF()
 
@@ -120,23 +125,6 @@ IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "
     string(CONCAT TEST_ARGS "--linAlgebra=Tpetra" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
 
     TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterTpetra"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-      )
-    TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterTpetra"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-      )
-
-    TRIBITS_ADD_TEST(
       CreateOperator
       NAME "CreateOperatorTpetra"
       ARGS ${TEST_ARGS}
@@ -153,29 +141,50 @@ IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "
       COMM mpi
       )
 
-    string(CONCAT TEST_ARGS "--linAlgebra=Tpetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
+    IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
 
-    # This test only runs on the dashboard, not at checkin.
-    TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterTpetraHeavy"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-      CATEGORIES CONTINUOUS
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetra"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+      )
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetra"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
       )
 
-    # This test only runs on the dashboard, not at checkin.
-    TRIBITS_ADD_TEST(
-      ParameterListInterpreter
-      NAME "ParameterListInterpreterTpetraHeavy"
-      ARGS ${TEST_ARGS}
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-      CATEGORIES CONTINUOUS
+      string(CONCAT TEST_ARGS "--linAlgebra=Tpetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetraHeavy"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        CATEGORIES CONTINUOUS
       )
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetraHeavy"
+        ARGS ${TEST_ARGS}
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        CATEGORIES CONTINUOUS
+      )
+
+    ENDIF()
 
   ENDIF()
 

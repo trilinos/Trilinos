@@ -45,6 +45,12 @@
 #ifndef _EPETRA_MSRMATRIX_H_
 #define _EPETRA_MSRMATRIX_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_RowMatrix.h"

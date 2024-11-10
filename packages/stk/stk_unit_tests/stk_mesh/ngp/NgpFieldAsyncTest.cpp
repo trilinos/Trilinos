@@ -64,7 +64,7 @@
 #define TEST_ONLY_ON_CUDA(testname) testname
 #endif
 
-class NgpAsyncDeepCopyFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpAsyncDeepCopyFixture : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpAsyncDeepCopyFixture()
@@ -99,23 +99,23 @@ public:
 
   void setup_multi_block_mesh_with_field_per_block()
   {
-    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(m_numBlocks);
+    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
+    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
 
     setup_field_per_block();
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
   void setup_multi_block_mesh_with_fields_on_all_blocks()
   {
-    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(m_numBlocks);
+    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
+    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
 
     setup_fields_on_all_blocks();
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
@@ -296,6 +296,7 @@ public:
                                    {
                                      auto entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, elem);
 
+                                     STK_NGP_ThrowRequire(numComponents == ngpField.get_num_components_per_entity(elem));
                                      for(unsigned i = 0; i < numComponents; i++) {
                                        int expected = ngpMesh.identifier(entity) * multiplier + i;
                                        int fieldValue = ngpField(elem, i);
@@ -365,29 +366,29 @@ public:
   }
 
   template<typename FieldType>
-  void test_partial_copy_to_host_result(FieldType field, stk::mesh::Selector& selector)
+  void test_partial_copy_to_host_result(FieldType field, const stk::mesh::Selector& selector)
   {
     stk::mesh::EntityVector elems;
-    stk::mesh::get_selected_entities(selector, get_bulk().buckets(stk::topology::ELEM_RANK), elems);
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, selector, elems);
 
     check_result_on_host_expect_multiplied_data(field, elems, m_multiplier);
 
     stk::mesh::Selector otherSelector = stk::mesh::Selector(*field) - selector;
 
     stk::mesh::EntityVector notSelectedElems;
-    stk::mesh::get_selected_entities(otherSelector, get_bulk().buckets(stk::topology::ELEM_RANK), notSelectedElems);
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, otherSelector, notSelectedElems);
 
     check_result_on_host_expect_init_data(field, notSelectedElems);
   }
 
-  void set_element_field_data(stk::mesh::Field<int>& stkIntField, stk::mesh::Selector selector, unsigned multiplier)
+  void set_element_field_data(stk::mesh::Field<int>& stkIntField, const stk::mesh::Selector& selector, unsigned multiplier)
   {
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(selector, get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, selector, elements);
 
     for(stk::mesh::Entity elem : elements) {
       int* data = reinterpret_cast<int*>(stk::mesh::field_data(stkIntField, elem));
-      unsigned numComponents = stk::mesh::field_scalars_per_entity(stkIntField, elem);
+      const unsigned numComponents = stk::mesh::field_scalars_per_entity(stkIntField, elem);
       for(unsigned j = 0; j < numComponents; j++) {
         data[j] = get_bulk().identifier(elem) * multiplier + j;
       }
@@ -487,9 +488,9 @@ private:
   const std::string m_launchBlockingEnvVar = "CUDA_LAUNCH_BLOCKING";
 };
 
-TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToDevice)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToDevice)
 {
-  if (get_parallel_size() != 1) GTEST_SKIP();
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
   unsigned numBlocks = 2;
   unsigned numStreams = 2;
@@ -510,7 +511,7 @@ TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToDevice)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToHostFenceAll)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToHostFenceAll)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -534,7 +535,7 @@ TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToHostFenceAll)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToHostFenceEach)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToHostFenceEach)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -558,7 +559,7 @@ TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSyncToHostFenceEach)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSync)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSync)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -583,7 +584,7 @@ TEST_F(NgpAsyncDeepCopyFixture, TwoStreamsAsyncSync)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncUsingSameStreams)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncUsingSameStreams)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -608,7 +609,7 @@ TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncUsingSameStreams)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToDeviceThenMeshMod)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToDeviceThenMeshMod)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -637,7 +638,7 @@ TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToDeviceThenMeshMod)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncCopyFollowedBySyncCopy)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncCopyFollowedBySyncCopy)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -663,7 +664,7 @@ TEST_F(NgpAsyncDeepCopyFixture, AsyncCopyFollowedBySyncCopy)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncCopyFollowedByGetUpdatedNgpField)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncCopyFollowedByGetUpdatedNgpField)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -690,7 +691,7 @@ TEST_F(NgpAsyncDeepCopyFixture, AsyncCopyFollowedByGetUpdatedNgpField)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToHostFollowedByMeshMod)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToHostFollowedByMeshMod)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -719,7 +720,7 @@ TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToHostFollowedByMeshMod)
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToHostFollowedByDataModOnHostThenGetUpdatedNgpField)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToHostFollowedByDataModOnHostThenGetUpdatedNgpField)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -755,7 +756,7 @@ TEST_F(NgpAsyncDeepCopyFixture, AsyncSyncToHostFollowedByDataModOnHostThenGetUpd
   }
 }
 
-TEST_F(NgpAsyncDeepCopyFixture, AsyncGetUpdatedNgpField)
+NGP_TEST_F(NgpAsyncDeepCopyFixture, AsyncGetUpdatedNgpField)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 

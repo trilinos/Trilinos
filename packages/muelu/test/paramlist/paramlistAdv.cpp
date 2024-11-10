@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -54,8 +63,8 @@ class MyFactory : public ParameterListAcceptorAdvImpl {
   RCP<const ParameterList> GetValidParameterListSimple() const {
     RCP<ParameterList> validParamList = Teuchos::rcp(new ParameterList());  // output list
 
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
-    validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
+    typedef Teuchos::StringValidator validator_type;
+    validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"))));
 
     AddILUTParameters(*validParamList);
     AddILUKParameters(*validParamList);

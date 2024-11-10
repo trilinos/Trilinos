@@ -7,10 +7,10 @@
  */
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for ex__compress_variable, etc
+#include "exodusII_int.h" // for exi_compress_variable, etc
 
 /*! \cond INTERNAL */
-static int ex__prepare_result_var(int exoid, int num_vars, char *type_name, char *dim_name,
+static int exi_prepare_result_var(int exoid, int num_vars, char *type_name, char *dim_name,
                                   char *variable_name)
 {
   int status;
@@ -127,7 +127,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
   int  status;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -165,7 +165,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
   }
 
   /* put file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -173,7 +173,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
 
   /* define dimensions and variables */
   if (obj_type == EX_GLOBAL) {
-    if (ex__prepare_result_var(exoid, num_vars, "global", DIM_NUM_GLO_VAR, VAR_NAME_GLO_VAR) !=
+    if (exi_prepare_result_var(exoid, num_vars, "global", DIM_NUM_GLO_VAR, VAR_NAME_GLO_VAR) !=
         EX_NOERR) {
       goto error_ret;
     }
@@ -193,7 +193,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
       ex_err_fn(exoid, __func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
-    ex__compress_variable(exoid, varid, 2);
+    exi_compress_variable(exoid, varid, 2);
   }
 
   /* netCDF variables in which to store the EXODUS obj_type variable values will
@@ -202,68 +202,68 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
    * (the info that is stored in the obj_type variable truth table)
    */
   else if (obj_type == EX_ELEM_BLOCK) {
-    if (ex__prepare_result_var(exoid, num_vars, "element", DIM_NUM_ELE_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "element", DIM_NUM_ELE_RED_VAR,
                                VAR_NAME_ELE_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_NODE_SET) {
-    if (ex__prepare_result_var(exoid, num_vars, "nodeset", DIM_NUM_NSET_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "nodeset", DIM_NUM_NSET_RED_VAR,
                                VAR_NAME_NSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_SIDE_SET) {
-    if (ex__prepare_result_var(exoid, num_vars, "sideset", DIM_NUM_SSET_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "sideset", DIM_NUM_SSET_RED_VAR,
                                VAR_NAME_SSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_ASSEMBLY) {
-    if (ex__prepare_result_var(exoid, num_vars, "assembly", DIM_NUM_ASSEMBLY_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "assembly", DIM_NUM_ASSEMBLY_RED_VAR,
                                VAR_NAME_ASSEMBLY_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_BLOB) {
-    if (ex__prepare_result_var(exoid, num_vars, "blob", DIM_NUM_BLOB_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "blob", DIM_NUM_BLOB_RED_VAR,
                                VAR_NAME_BLOB_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_EDGE_BLOCK) {
-    if (ex__prepare_result_var(exoid, num_vars, "edge", DIM_NUM_EDG_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "edge", DIM_NUM_EDG_RED_VAR,
                                VAR_NAME_EDG_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_FACE_BLOCK) {
-    if (ex__prepare_result_var(exoid, num_vars, "face", DIM_NUM_FAC_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "face", DIM_NUM_FAC_RED_VAR,
                                VAR_NAME_FAC_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_EDGE_SET) {
-    if (ex__prepare_result_var(exoid, num_vars, "edgeset", DIM_NUM_ESET_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "edgeset", DIM_NUM_ESET_RED_VAR,
                                VAR_NAME_ESET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_FACE_SET) {
-    if (ex__prepare_result_var(exoid, num_vars, "faceset", DIM_NUM_FSET_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "faceset", DIM_NUM_FSET_RED_VAR,
                                VAR_NAME_FSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_ELEM_SET) {
-    if (ex__prepare_result_var(exoid, num_vars, "elementset", DIM_NUM_ELSET_RED_VAR,
+    if (exi_prepare_result_var(exoid, num_vars, "elementset", DIM_NUM_ELSET_RED_VAR,
                                VAR_NAME_ELSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -273,6 +273,6 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

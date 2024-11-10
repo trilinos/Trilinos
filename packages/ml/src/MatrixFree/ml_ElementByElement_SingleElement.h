@@ -5,6 +5,12 @@
 #ifndef ML_ELEMENT_BY_ELEMENT_SINGLE_ELEMENT_H
 #define ML_ELEMENT_BY_ELEMENT_SINGLE_ELEMENT_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_include.h"
 #ifdef HAVE_ML_EPETRA
 #ifdef HAVE_MPI

@@ -1,4 +1,0 @@
-TrilinosCouplings is a meta-package, in the sense that its purpose is to resolve
-compile-time circular dependencies.  Thus, each source file belongs
-to another Trilinos package, and is governed by that particular package's
-copyright agreement.

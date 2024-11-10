@@ -239,33 +239,33 @@ struct Options
 inline Options getOptionsForTest(const std::string &defaultMesh)
 {
     Options local;
-    const std::string generatedMeshSpec = stk::unit_test_util::simple_fields::get_option("-i", defaultMesh);
+    const std::string generatedMeshSpec = stk::unit_test_util::get_option("-i", defaultMesh);
     local.setMeshFileName(generatedMeshSpec);
 
-    std::string manualRun = stk::unit_test_util::simple_fields::get_option("-manual", "no");
+    std::string manualRun = stk::unit_test_util::get_option("-manual", "no");
     if(manualRun != "no")
     {
         local.setOverRideTest(true);
     }
 
-    std::string debugZoltanLevel = stk::unit_test_util::simple_fields::get_option("-zdl", "0");
+    std::string debugZoltanLevel = stk::unit_test_util::get_option("-zdl", "0");
     local.setZoltanDebugLevel(debugZoltanLevel);
 
-    std::string debugZoltan = stk::unit_test_util::simple_fields::get_option("-z", "no");
+    std::string debugZoltan = stk::unit_test_util::get_option("-z", "no");
     if(debugZoltan != "no")
     {
         local.setDebugZoltan(true);
     }
 
     {
-        std::string targetProcs = stk::unit_test_util::simple_fields::get_option("-t", "0");
+        std::string targetProcs = stk::unit_test_util::get_option("-t", "0");
         int numTargetProcs = 0;
         std::istringstream is(targetProcs);
         is >> numTargetProcs;
         local.setNumTargetProcs(numTargetProcs);
     }
 
-    const std::string outputFilename = stk::unit_test_util::simple_fields::get_option("-o", "subdomain.exo");
+    const std::string outputFilename = stk::unit_test_util::get_option("-o", "subdomain.exo");
     local.setOutputFilename(outputFilename);
 
     {
@@ -273,34 +273,34 @@ inline Options getOptionsForTest(const std::string &defaultMesh)
         local.setNumSubdomains(numsub);
     }
 
-    std::string parmetisMethod = stk::unit_test_util::simple_fields::get_option("-m", "PartKway");
+    std::string parmetisMethod = stk::unit_test_util::get_option("-m", "PartKway");
     local.setPartmetisMethod(parmetisMethod);
 
-    std::string parmetisOutputLevel = stk::unit_test_util::simple_fields::get_option("-o", "0");
+    std::string parmetisOutputLevel = stk::unit_test_util::get_option("-o", "0");
     local.setPartmetisOutputLevel(parmetisOutputLevel);
 
-    std::string parmetisIter = stk::unit_test_util::simple_fields::get_option("-iter", "100");
+    std::string parmetisIter = stk::unit_test_util::get_option("-iter", "100");
     local.setParmetisIter(parmetisIter);
 
-    std::string parmetisCheckGraph = stk::unit_test_util::simple_fields::get_option("-check", "1");
+    std::string parmetisCheckGraph = stk::unit_test_util::get_option("-check", "1");
     local.setParmetisCheckGraph(parmetisCheckGraph);
 
-    std::string largestDegreeFirst = stk::unit_test_util::simple_fields::get_option("-v", "L");
+    std::string largestDegreeFirst = stk::unit_test_util::get_option("-v", "L");
     local.setLargestDegreeFirst(largestDegreeFirst);
 
-    std::string deleteFile = stk::unit_test_util::simple_fields::get_option("-d", "yes");
+    std::string deleteFile = stk::unit_test_util::get_option("-d", "yes");
     if(deleteFile != "yes")
     {
         local.setDeleteFiles(false);
     }
 
     {
-        double faceSearchTolerance = stk::unit_test_util::simple_fields::get_command_line_option("-tolFace", 0.1);
+        double faceSearchTolerance = stk::unit_test_util::get_command_line_option("-tolFace", 0.1);
         local.setToleranceForFaceSearch(faceSearchTolerance);
     }
 
     {
-        double particleSearchTolerance = stk::unit_test_util::simple_fields::get_command_line_option("-tolPart", 1.0);
+        double particleSearchTolerance = stk::unit_test_util::get_command_line_option("-tolPart", 1.0);
         local.setToleranceForParticleSearch(particleSearchTolerance);
     }
 

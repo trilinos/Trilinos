@@ -256,8 +256,10 @@ void impl::Heartbeat::process_output_pre_write(int step, double time)
         if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
             m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
         }
+	if (currentState != Ioss::STATE_TRANSIENT) {
+	    m_region->begin_mode(Ioss::STATE_TRANSIENT);
+	}
 
-        m_region->begin_mode(Ioss::STATE_TRANSIENT);
         m_currentStep = m_region->add_state(time);
         m_region->begin_state(m_currentStep);
     }
@@ -274,7 +276,6 @@ void impl::Heartbeat::process_output_post_write(int step, double time)
 {
     if (m_processor == 0) {
         m_region->end_state(m_currentStep);
-        m_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 }
 

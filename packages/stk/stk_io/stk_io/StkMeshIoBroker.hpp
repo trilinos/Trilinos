@@ -45,7 +45,6 @@
 #include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
 #include <stk_io/MeshField.hpp>             // for MeshField, MeshField::CLO...
 #include <stk_io/OutputFile.hpp>            // for OutputFile
-#include <stk_mesh/base/BulkData.hpp>       // for BulkData
 #include <stk_mesh/base/Selector.hpp>       // for Selector
 #include <stk_util/parallel/Parallel.hpp>   // for ParallelMachine
 #include <stk_util/util/ParameterList.hpp>  // for Parameter, Type
@@ -160,7 +159,6 @@ namespace stk {
 
       void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
-      void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
       void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
       void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
@@ -327,7 +325,7 @@ namespace stk {
       //
       // NOTE: this function internally calls the two methods
       // 'populate_mesh()' and 'populate_field_data()', declared
-      // below, and does NOT do the delayed field-data allocation
+      // below, and does the delayed field-data allocation
       // optimization.
       void populate_bulk_data();
 
@@ -338,8 +336,8 @@ namespace stk {
       // 'populate_field_data()' method declared below.
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
-      virtual void populate_mesh(bool delay_field_data_allocation = true);
-      bool populate_mesh_elements_and_nodes(bool delay_field_data_allocation);
+      virtual void populate_mesh(bool delayFieldDataAllocation = true);
+      bool populate_mesh_elements_and_nodes(bool delayFieldDataAllocation);
       void populate_mesh_entitysets(bool i_started_modification_cycle);
 
       // Read/generate the field-data for the mesh, including
@@ -423,21 +421,9 @@ namespace stk {
       void add_input_field(size_t mesh_index, const stk::io::MeshField &mesh_field);
 
       // Create an exodus mesh database with the specified
-      // filename. This function creates the exodus metadata which
-      // is the number and type of element blocks, nodesets, and
-      // sidesets; and then outputs the mesh bulk data such as the
-      // node coordinates, id maps, element connectivity.  When the
-      // function returns, the non-transient portion of the mesh will
-      // have been defined.
-      //
-      // A stk part will have a corresponding exodus entity (element
-      // block, nodeset, sideset) defined if the "is_io_part()" function
-      // returns true.  By default, all parts read from the mesh
-      // database in the create_input_mesh() function will return true
-      // as will all stk parts on which the function
-      // stk::io::put_io_part_attribute() was called.  The function
-      // stk::io::remove_io_part_attribute(part) can be called to omit a
-      // part from being output.
+      // filename. See STK IO documentation tests for demonstrations of
+      // the proper sequence of calls needed to write an exodus database
+      // with transient field-data, etc.
       //
       // \param[in] filename The full pathname to the file which will be
       // created and the mesh data written to. If the file already
@@ -472,6 +458,10 @@ namespace stk {
       // Free up memory by removing resouces associated with output files that will no longer be used by the run
       void close_output_mesh(size_t output_file_index);
 
+      // write_output_mesh writes the non-transient portion
+      // of the mesh, including the number and type of element blocks,
+      // nodesets, and sidesets, and then outputs the mesh bulk data such as the
+      // node coordinates, id maps, element connectivity.
       void write_output_mesh(size_t output_file_index);
 
       void add_field(size_t output_file_index, stk::mesh::FieldBase &field);
@@ -615,7 +605,7 @@ namespace stk {
       void process_heartbeat_output_write(size_t index, int step, double time);
       void process_heartbeat_output_post_write(size_t index, int step, double time);
 
-      void use_simple_fields() { m_useSimpleFields = true; }
+      void use_simple_fields();
 
       bool is_meta_data_null() const;
       bool is_bulk_data_null() const;
@@ -659,6 +649,12 @@ namespace stk {
                                                         bool flag);
       void use_part_id_for_output(size_t output_file_index, bool flag);
       bool use_part_id_for_output(size_t output_file_index) const;
+
+      void set_throw_on_missing_input_fields(bool flag);
+      bool get_throw_on_missing_input_fields() const;
+
+      void set_enable_all_face_sides_shell_topo(bool flag);
+      bool get_enable_all_face_sides_shell_topo() const;
 
       void set_option_to_not_collapse_sequenced_fields();
       int get_num_time_steps() const;
@@ -719,6 +715,8 @@ namespace stk {
       void validate_output_file_index(size_t output_file_index) const;
       void validate_heartbeat_file_index(size_t heartbeat_file_index) const;
       
+      void check_for_missing_input_fields(std::vector<stk::io::MeshField> *missingFields);
+
       void copy_property_manager(const Ioss::PropertyManager &properties);
 
       Ioss::Property property_get(const std::string &property_name) const;
@@ -773,7 +771,8 @@ namespace stk {
       bool m_autoLoadDistributionFactorPerNodeSet;
       bool m_enableEdgeIO;
       bool m_cacheEntityListForTransientSteps;
-      bool m_useSimpleFields;
+      bool m_throwOnMissingInputFields{false};
+      bool m_enableAllFaceSidesShellTopo;
     };
 
     inline std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_output_ioss_region(size_t output_file_index) const {
@@ -855,11 +854,6 @@ namespace stk {
     inline void StkMeshIoBroker::set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->has_adaptivity(hasAdaptivity);
-    }
-
-    inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
     }
 
     inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {

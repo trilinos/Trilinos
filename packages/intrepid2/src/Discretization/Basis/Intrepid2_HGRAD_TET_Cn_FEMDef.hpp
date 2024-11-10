@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HGRAD_TET_Cn_FEMDef.hpp
@@ -57,44 +24,36 @@ namespace Intrepid2 {
 // -------------------------------------------------------------------------------------
 namespace Impl {
 
-template<EOperator opType>
+template<EOperator OpType>
 template<typename OutputViewType,
-typename inputViewType,
-typename workViewType,
-typename vinvViewType>
+typename InputViewType,
+typename WorkViewType,
+typename VinvViewType>
 KOKKOS_INLINE_FUNCTION
 void
-Basis_HGRAD_TET_Cn_FEM::Serial<opType>::
+Basis_HGRAD_TET_Cn_FEM::Serial<OpType>::
 getValues(       OutputViewType output,
-    const inputViewType  input,
-    workViewType   work,
-    const vinvViewType   vinv ) {
+    const InputViewType  input,
+    WorkViewType         work,
+    const VinvViewType   vinv,
+    const ordinal_type   order ) {
 
   constexpr ordinal_type spaceDim = 3;
   const ordinal_type
   card = vinv.extent(0),
   npts = input.extent(0);
 
-  // compute order
-  ordinal_type order = 0;
-  for (ordinal_type p=0;p<=Parameters::MaxOrder;++p) {
-    if (card == Intrepid2::getPnCardinality<spaceDim>(p)) {
-      order = p;
-      break;
-    }
-  }
-
-  typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
-  auto vcprop = Kokkos::common_view_alloc_prop(work);
+  typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
+  auto vcprop = Kokkos::common_view_alloc_prop(input);
   auto ptr = work.data();
 
-  switch (opType) {
+  switch (OpType) {
   case OPERATOR_VALUE: {
-    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
-    viewType dummyView;
+    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
+    ViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, dummyView, order);
+    Serial<OpType>::getValues(phis, input, dummyView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
@@ -106,11 +65,11 @@ getValues(       OutputViewType output,
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
-    ptr += card*npts*spaceDim*get_dimension_scalar(work);
-    const viewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
+    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
+    ptr += card*npts*spaceDim*get_dimension_scalar(input);
+    const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, workView, order);
+    Serial<OpType>::getValues(phis, input, workView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
@@ -130,12 +89,12 @@ getValues(       OutputViewType output,
   case OPERATOR_D8:
   case OPERATOR_D9:
   case OPERATOR_D10: {
-    const ordinal_type dkcard = getDkCardinality<opType,spaceDim>(); //(orDn + 1);
-    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
-    viewType dummyView;
+    const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
+    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
+    ViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, dummyView, order);
+    Serial<OpType>::getValues(phis, input, dummyView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
@@ -164,6 +123,7 @@ getValues(
           Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+    const ordinal_type order,
     const EOperator operatorType) {
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
@@ -189,7 +149,7 @@ getValues(
     workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
-    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
   case OPERATOR_GRAD:
@@ -197,23 +157,16 @@ getValues(
     workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D1,numPtsPerEval> FunctorType;
-    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
   case OPERATOR_D2: {
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D2,numPtsPerEval> FunctorType;
     workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.extent(2), inputPoints.extent(0));
-    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
-  /*  case OPERATOR_D3: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType
-            OPERATOR_D3,numPtsPerEval> FunctorType;
-        workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0), outputValues.extent(2));
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
-        break;
-      }*/
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
         ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented" );
@@ -229,12 +182,12 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     const EPointType   pointType ) {
   constexpr ordinal_type spaceDim = 3;
 
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
-  this->basisDegree_       = order; // small n
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  this->basisType_         = BASIS_FEM_LAGRANGIAN;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
+  this->basisDegree_          = order; // small n
+  this->basisCellTopologyKey_ = shards::Tetrahedron<4>::key;
+  this->basisType_            = BASIS_FEM_LAGRANGIAN;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HGRAD;
   pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
   const ordinal_type card = this->basisCardinality_;
@@ -246,7 +199,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
   // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
   INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
-  
+
   // Basis-dependent initializations
   constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
   constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
@@ -254,25 +207,26 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
   // construct lattice
 
-  const ordinal_type numEdges = this->basisCellTopology_.getEdgeCount();
-  const ordinal_type numFaces = this->basisCellTopology_.getFaceCount();
+  shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+  const ordinal_type numEdges = cellTopo.getEdgeCount();
+  const ordinal_type numFaces = cellTopo.getFaceCount();
 
-  shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
-  shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+  shards::CellTopology edgeTopo(shards::getCellTopologyData<shards::Line<2> >() );
+  shards::CellTopology faceTopo(shards::getCellTopologyData<shards::Triangle<3> >() );
 
-  const int numVertexes = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const int numVertexes = PointTools::getLatticeSize( cellTopo ,
       1 ,
       0 );
 
-  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTopo ,
       order ,
       1 );
 
-  const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+  const int numPtsPerFace = PointTools::getLatticeSize( faceTopo ,
       order ,
       1 );
 
-  const int numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const int numPtsPerCell = PointTools::getLatticeSize( cellTopo ,
       order ,
       1 );
 
@@ -285,17 +239,17 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
 
   PointTools::getLattice( vertexes,
-      this->basisCellTopology_ ,
+      cellTopo ,
       1, 0,
       this->pointType_ );
 
   PointTools::getLattice( linePts,
-      edgeTop,
+      edgeTopo,
       order, offset,
       this->pointType_ );
 
   PointTools::getLattice( triPts,
-      faceTop,
+      faceTopo,
       order, offset,
       this->pointType_ );
 
@@ -320,7 +274,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
         linePts ,
         1 ,
         i ,
-        this->basisCellTopology_ );
+        cellTopo );
 
 
     // loop over points (rows of V2)
@@ -348,7 +302,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
           triPts ,
           2 ,
           i ,
-          this->basisCellTopology_ );
+          cellTopo );
       for (ordinal_type j=0;j<numPtsPerFace;j++) {
 
         const ordinal_type i_card = numVertexes+numEdges*numPtsPerEdge+numPtsPerFace*i+j;
@@ -371,7 +325,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     cellPoints( "Hcurl::Tet::In::cellPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( cellPoints ,
-        this->basisCellTopology_ ,
+        cellTopo ,
         order,
         1 ,
         this->pointType_ );
@@ -403,7 +357,11 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   work("Hgrad::Tet::Cn::work", lwork),
   ipiv("Hgrad::Tet::Cn::ipiv", card);
 
-  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
+  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                     vmat,
+                                                                                                                     dofCoords,
+                                                                                                                     order,
+                                                                                                                     OPERATOR_VALUE);
 
   ordinal_type info = 0;
   Teuchos::LAPACK<ordinal_type,scalarType> lapack;
@@ -459,5 +417,65 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
         posDfOrd);
   }
 }
+
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_TET_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perTeamSpaceSize = 0;
+    perThreadSpaceSize = getWorkSizePerPoint(operatorType)*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_TET_Cn_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+      
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      const int numPoints = inputPoints.extent(0);
+      using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+      using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      constexpr ordinal_type spaceDim = 3;
+      auto sizePerPoint = (operatorType==OPERATOR_VALUE) ? 
+                          this->vinv_.extent(0)*get_dimension_scalar(inputPoints) : 
+                          (2*spaceDim+1)*this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
+      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_TET_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, this->vinv_, this->basisDegree_);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_TET_Cn_FEM::Serial<OPERATOR_GRAD>::getValues( output, input, work, this->vinv_, this->basisDegree_);
+          });
+          break;
+        default: {          
+          INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): getValues not implemented for this operator");
+          }
+    }
+  }
+
 } // namespace Intrepid2
 #endif

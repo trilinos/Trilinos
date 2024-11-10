@@ -1,27 +1,22 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#include "Ioss_CodeTypes.h"
+#include <cstdlib> // for exit, EXIT_SUCCESS, getenv
+#include <cstring>
+#include <fmt/core.h>
+#include <iostream> // for operator<<, basic_ostream, etc
+#include <stdio.h>
+#include <string> // for char_traits, string
+
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"
-#include "fmt/ostream.h"
 #include "info_interface.h"
 
-#include <cstddef>  // for nullptr
-#include <cstdlib>  // for exit, EXIT_SUCCESS, getenv
-#include <iostream> // for operator<<, basic_ostream, etc
-#include <string>   // for char_traits, string
-
-namespace {
-} // namespace
-
 Info::Interface::Interface() { enroll_options(); }
-
-Info::Interface::~Interface() = default;
 
 void Info::Interface::enroll_options()
 {
@@ -81,6 +76,9 @@ void Info::Interface::enroll_options()
                   "recognized.\n"
                   "\t\tPrimarily used for testing",
                   nullptr);
+
+  options_.enroll("detailed_field_info", Ioss::GetLongOption::NoValue,
+                  "Output very detailed information about each field", nullptr);
 
   options_.enroll("use_generic_names", Ioss::GetLongOption::NoValue,
                   "Use generic names (type_id) instead of names in database", nullptr);
@@ -204,6 +202,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   summary_         = options_.retrieve("summary") != nullptr;
   showConfig_      = options_.retrieve("configuration") != nullptr;
   queryTimeOnly_   = options_.retrieve("query_timesteps_only") != nullptr;
+  fieldDetails_    = options_.retrieve("detailed_field_info") != nullptr;
 
   filetype_  = options_.get_option_value("db_type", filetype_);
   filetype_  = options_.get_option_value("in_type", filetype_);

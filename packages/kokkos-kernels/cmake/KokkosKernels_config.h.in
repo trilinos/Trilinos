@@ -29,7 +29,6 @@
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
-#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARK
@@ -53,6 +52,7 @@
 /* Whether to build kernels for execution space Kokkos::HIP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_HIP
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HIPSPACE
+#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HIPMANAGEDSPACE
 /* Whether to build kernels for execution space Kokkos::Experimental::SYCL */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SYCL
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSPACE
@@ -114,10 +114,12 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_LAPACK
 /* MKL library */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL
-/* CUSPARSE */
-#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 /* CUBLAS */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+/* CUSPARSE */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+/* CUSOLVER */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
 /* MAGMA */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_MAGMA
 /* SuperLU */
@@ -138,6 +140,8 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 /* ROCSPARSE */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+/* ROCSOLVER */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 

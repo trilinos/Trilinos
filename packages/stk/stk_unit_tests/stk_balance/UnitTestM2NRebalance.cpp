@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "MeshFixtureM2NRebalance.hpp"
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <vector>
 
 namespace {
@@ -46,9 +46,9 @@ public:
     stk::balance::M2NBalanceSettings balanceSettings(get_output_file_name(), numFinalProcs);
     balanceSettings.setDecompMethod("rcb");
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::m2n::m2nRebalance(m_ioBroker, balanceSettings);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
 
     stk::mesh::Part * block1 = m_ioBroker.meta_data().get_part("block_1");
     ASSERT_NE(block1, nullptr);

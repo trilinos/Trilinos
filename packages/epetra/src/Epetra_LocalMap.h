@@ -44,6 +44,14 @@
 #ifndef EPETRA_LOCALMAP_H
 #define EPETRA_LOCALMAP_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 //! Epetra_LocalMap: A class for replicating vectors and matrices across multiple processors.
 
 /*! Small matrix and vector objects are often replicated on distributed memory

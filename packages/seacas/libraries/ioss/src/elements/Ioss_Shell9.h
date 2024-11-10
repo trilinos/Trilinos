@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,10 +8,8 @@
 
 #include "ioss_export.h"
 
-#include <Ioss_CodeTypes.h>       // for IntVector
-#include <Ioss_ElementTopology.h> // for ElementTopology
-
-// STL Includes
+#include "Ioss_CodeTypes.h"       // for IntVector
+#include "Ioss_ElementTopology.h" // for ElementTopology
 
 namespace Ioss {
   class IOSS_EXPORT Shell9 : public Ioss::ElementTopology
@@ -21,33 +19,31 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    ~Shell9() override     = default;
-    Shell9(const Shell9 &) = delete;
 
-    ElementShape shape() const override { return ElementShape::QUAD; }
-    int          spatial_dimension() const override;
-    int          parametric_dimension() const override;
-    bool         is_element() const override { return true; }
-    bool         is_shell() const override { return true; }
-    int          order() const override;
+    IOSS_NODISCARD ElementShape shape() const override { return ElementShape::QUAD; }
+    IOSS_NODISCARD int          spatial_dimension() const override;
+    IOSS_NODISCARD int          parametric_dimension() const override;
+    IOSS_NODISCARD bool         is_element() const override { return true; }
+    IOSS_NODISCARD bool         is_shell() const override { return true; }
+    IOSS_NODISCARD int          order() const override;
 
-    int number_corner_nodes() const override;
-    int number_nodes() const override;
-    int number_edges() const override;
-    int number_faces() const override;
+    IOSS_NODISCARD int number_corner_nodes() const override;
+    IOSS_NODISCARD int number_nodes() const override;
+    IOSS_NODISCARD int number_edges() const override;
+    IOSS_NODISCARD int number_faces() const override;
 
-    int number_nodes_edge(int edge = 0) const override;
-    int number_nodes_face(int face = 0) const override;
-    int number_edges_face(int face = 0) const override;
+    IOSS_NODISCARD int number_nodes_edge(int edge = 0) const override;
+    IOSS_NODISCARD int number_nodes_face(int face = 0) const override;
+    IOSS_NODISCARD int number_edges_face(int face = 0) const override;
 
-    Ioss::IntVector edge_connectivity(int edge_number) const override;
-    Ioss::IntVector face_connectivity(int face_number) const override;
-    Ioss::IntVector element_connectivity() const override;
+    IOSS_NODISCARD Ioss::IntVector edge_connectivity(int edge_number) const override;
+    IOSS_NODISCARD Ioss::IntVector face_connectivity(int face_number) const override;
+    IOSS_NODISCARD Ioss::IntVector element_connectivity() const override;
 
-    Ioss::IntVector face_edge_connectivity(int face_number) const override;
+    IOSS_NODISCARD Ioss::IntVector face_edge_connectivity(int face_number) const override;
 
-    Ioss::ElementTopology *face_type(int face_number = 0) const override;
-    Ioss::ElementTopology *edge_type(int edge_number = 0) const override;
+    IOSS_NODISCARD Ioss::ElementTopology *face_type(int face_number = 0) const override;
+    IOSS_NODISCARD Ioss::ElementTopology *edge_type(int edge_number = 0) const override;
 
   protected:
     Shell9();

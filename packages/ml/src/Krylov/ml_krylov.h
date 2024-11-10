@@ -12,6 +12,12 @@
 
 #ifndef __MLKRYLOVDATA_
 #define __MLKRYLOVDATA_
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 #define ML_CG 0
 #define ML_GMRES 1
 
@@ -104,5 +110,3 @@ extern int ML_DiagScale_Wrapper(void *, int, double *, int, double*);
 #endif
 
 #endif
-
-

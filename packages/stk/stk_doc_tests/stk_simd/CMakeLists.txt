@@ -26,7 +26,9 @@ else()
   target_link_libraries(stk_simd_doc_test stk_unit_main)
 endif()
 
-target_include_directories(stk_simd_doc_test PRIVATE
-  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_simd>
-  $<INSTALL_INTERFACE:include>
-)
+if(TARGET stk_simd_doc_test)
+  target_include_directories(stk_simd_doc_test PRIVATE
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_simd>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()

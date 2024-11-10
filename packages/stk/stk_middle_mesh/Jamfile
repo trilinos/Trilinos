@@ -47,10 +47,12 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_middle_mesh-root-inc)
   : usage-requirements
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_middle_mesh-root-inc)
   : build-dir $(stk_middle_mesh-builddir)
   ;
@@ -78,8 +80,8 @@ local installed-developer-files =
 local xml-files =
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -188,7 +190,7 @@ lib stk_middle_mesh
         [ glob $(stk_middle_mesh-root)/stk_middle_mesh/predicates/*.cpp ]
         [ glob $(stk_middle_mesh-root)/stk_middle_mesh_utils/*.cpp ]
     ]
-    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
     /sierra/stk_search//stk_search
     /mpi//mpi
@@ -213,8 +215,8 @@ lib stk_middle_mesh_test_util
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh/util/*.cpp ]
-        /tpl/gtest//gtest
-        /tpl/gtest//gmock  
+        /tpl/googletest//gtest
+        /tpl/googletest//gmock  
     ]
     stk_middle_mesh
   :

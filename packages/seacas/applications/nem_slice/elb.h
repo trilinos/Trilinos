@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,12 +8,13 @@
 #pragma once
 
 #include "elb_elem.h"
+#include "vector_data.h"
 #include <cstdio>
 #include <exodusII.h>
 #include <string>
 #include <vector>
 
-#define ELB_VERSION "4.19"
+#define ELB_VERSION "5.04 (2024/08/19)"
 #define UTIL_NAME   "nem_slice"
 #define ELB_FALSE   0
 #define ELB_TRUE    1
@@ -112,14 +113,14 @@ struct Problem_Description
   int    skip_checks{-1};     /* put in to skip some error checks for some meshes  */
   int    face_adj{-1};        /* true if using face definition of adjacencies      */
   int    partial_adj{0};      /* true if allowing partial (3/4) of nodes to */
-                              /* determine adjancencies */
+                              /* determine adjacencies */
   int   global_mech{-1};      /* true if looking for mechanisms in original mesh   */
   int   local_mech{-1};       /* true if looking for mechanisms in subdivided mesh */
   int   find_cnt_domains{-1}; /* true if finding number of connected domains in a graph */
   int   mech_add_procs{-1};   /* adds processors in cases of mechanisms       */
   int   dsd_add_procs{-1};    /* adds processors in cases of disconnected subdomains */
   int   no_sph{-1};
-  int   fix_columns{0};       /* detect, fix vertical column partitioning */
+  int   fix_columns{0}; /* detect, fix vertical column partitioning */
   char *groups{nullptr};
   std::vector<int> group_no{};
   int              num_groups{-1};
@@ -141,7 +142,7 @@ struct Solver_Description
 
 /* Structure used to store information about the weighting scheme, if
  * any, that is to be used. */
-template <typename INT> struct Weight_Description
+struct Weight_Description
 {
   int type{-1};   /* See weight type below for possible types */
   int ow_read{0}; /* 1 if element block settings overwrite exodus file read */
@@ -156,16 +157,16 @@ template <typename INT> struct Weight_Description
   int nvals{0};
 
   /* vectors to hold element block weights */
-  std::vector<INT> elemblk{};     /* Id of element block */
-  std::vector<INT> elemblk_wgt{}; /* Weight of that element block */
+  std::vector<int> elemblk{};     /* Id of element block */
+  std::vector<int> elemblk_wgt{}; /* Weight of that element block */
 
   /* vector to indicate if weight value has already been overwritten */
-  std::vector<INT> ow{};
+  std::vector<int> ow{};
 
   std::vector<int>   vertices{};
   std::vector<float> edges{};
 
-  Weight_Description<INT>() = default;
+  Weight_Description() = default;
 };
 
 /* Structure used to store information about the FEM mesh */
@@ -210,50 +211,44 @@ template <typename INT> struct Graph_Description
   std::vector<INT>              adj{};
   std::vector<INT>              start{};
   std::vector<std::vector<INT>> sur_elem;
-  Graph_Description<INT>() = default;
+  Graph_Description() = default;
 };
 
 /* Various constants */
-#define NODAL     0
-#define ELEMENTAL 1
+enum DecompType { NODAL, ELEMENTAL };
 
 #define UTIL_NAME "nem_slice"
 
 /* Load balance types */
-#define MULTIKL     0
-#define SPECTRAL    1
-#define INERTIAL    2
-#define LINEAR      3
-#define RANDOM      4
-#define SCATTERED   5
-#define INFILE      6
-#define KL_REFINE   7
-#define NO_REFINE   8
-#define NUM_SECTS   9
-#define CNCT_DOM    10
-#define OUTFILE     11
-#define ZPINCH      12
-#define BRICK       13
-#define ZOLTAN_RCB  14
-#define ZOLTAN_RIB  15
-#define ZOLTAN_HSFC 16
-#define IGNORE_Z    17
+enum Balance {
+  MULTIKL,
+  SPECTRAL,
+  INERTIAL,
+  LINEAR,
+  RANDOM,
+  SCATTERED,
+  INFILE,
+  KL_REFINE,
+  NO_REFINE,
+  NUM_SECTS,
+  CNCT_DOM,
+  OUTFILE,
+  ZPINCH,
+  BRICK,
+  ZOLTAN_RCB,
+  ZOLTAN_RIB,
+  ZOLTAN_HSFC,
+  IGNORE_Z
+};
 
 /* Machine types */
-#define MESH      0
-#define HCUBE     1
-#define HYPERCUBE 2
-#define CLUSTER   3
+enum MachineType { MESH, HCUBE, HYPERCUBE, CLUSTER };
 
 /* Solver options */
-#define TOLER   0
-#define USE_RQI 1
-#define VMAX    2
+enum SolverOptions { TOLER, USE_RQI, VMAX };
 
 /* ISSUES options */
-
-#define LOCAL_ISSUES  0
-#define GLOBAL_ISSUES 1
+enum Issues { LOCAL_ISSUES, GLOBAL_ISSUES };
 
 /* Weighting options */
 /*
@@ -264,10 +259,4 @@ template <typename INT> struct Graph_Description
  * currently used in the type, but are needed since they appear
  * on the command line.
  */
-#define NO_WEIGHT 0
-#define READ_EXO  1
-#define EL_BLK    2
-#define VAR_INDX  3
-#define EDGE_WGT  4
-#define TIME_INDX 5
-#define VAR_NAME  6
+enum WeightingOptions { NO_WEIGHT, READ_EXO, EL_BLK, VAR_INDX, EDGE_WGT, TIME_INDX, VAR_NAME };

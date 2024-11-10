@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,6 +6,7 @@
 
 #include <tokenize.h>
 
+#include "Ioss_CodeTypes.h"       // for HAVE_MPI
 #include "Ioss_CommSet.h"         // for CommSet
 #include "Ioss_DBUsage.h"         // for DatabaseUsage, etc
 #include "Ioss_DatabaseIO.h"      // for DatabaseIO
@@ -13,6 +14,7 @@
 #include "Ioss_EdgeSet.h"         // for EdgeSet
 #include "Ioss_ElementBlock.h"    // for ElementBlock
 #include "Ioss_ElementSet.h"      // for ElementSet
+#include "Ioss_ElementTopology.h" // for NameList
 #include "Ioss_EntityType.h"      // for EntityType::ELEMENTBLOCK
 #include "Ioss_FaceBlock.h"       // for FaceBlock
 #include "Ioss_FaceSet.h"         // for FaceSet
@@ -20,13 +22,11 @@
 #include "Ioss_Map.h"             // for Map, MapContainer
 #include "Ioss_NodeBlock.h"       // for NodeBlock
 #include "Ioss_NodeSet.h"         // for NodeSet
+#include "Ioss_ParallelUtils.h"   // for ParallelUtils, etc
 #include "Ioss_Property.h"        // for Property
+#include "Ioss_SerializeIO.h"     // for SerializeIO
 #include "Ioss_SideBlock.h"       // for SideBlock
-#include <Ioss_CodeTypes.h>       // for HAVE_MPI
-#include <Ioss_ElementTopology.h> // for NameList
-#include <Ioss_ParallelUtils.h>   // for ParallelUtils, etc
-#include <Ioss_SerializeIO.h>     // for SerializeIO
-#include <Ioss_Utils.h>           // for Utils, IOSS_ERROR, etc
+#include "Ioss_Utils.h"           // for Utils, IOSS_ERROR, etc
 #include <exodusII.h>
 
 #include "adios/Ioad_Constants.h"
@@ -35,7 +35,7 @@
 
 #include <climits>
 
-#include <adios/Ioad_DatabaseIO.h>
+#include "adios/Ioad_DatabaseIO.h"
 
 namespace Ioss {
   class PropertyManager;
@@ -60,14 +60,12 @@ namespace Ioad {
   // Used to force `rank` initialization before creating `adios_wrapper`.
   int DatabaseIO::RankInit()
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
     number_proc = Ioss::SerializeIO::getSize();
     return Ioss::SerializeIO::getRank();
   }
 
-  DatabaseIO::~DatabaseIO() {}
-
-  bool DatabaseIO::begin__(Ioss::State state)
+  bool DatabaseIO::begin_nl(Ioss::State state)
   {
     // initialization
     Ioss::Region *this_region = get_region();
@@ -259,7 +257,7 @@ namespace Ioad {
     }
   }
 
-  bool DatabaseIO::end__(Ioss::State state)
+  bool DatabaseIO::end_nl(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -294,7 +292,7 @@ namespace Ioad {
     return true;
   }
 
-  bool DatabaseIO::begin_state__(int state, double time)
+  bool DatabaseIO::begin_state_nl(int state, double time)
   {
     Ioss::Region *this_region = get_region();
     if (!is_input()) {
@@ -321,7 +319,7 @@ namespace Ioad {
   }
 
   // common
-  bool DatabaseIO::end_state__(int state, double time)
+  bool DatabaseIO::end_state_nl(int state, double time)
   {
     Ioss::Region *this_region = get_region();
 
@@ -412,7 +410,7 @@ namespace Ioad {
   template <typename T>
   void DatabaseIO::define_entity_internal(const T &entity_blocks, Ioss::Field::RoleType *role)
   {
-    using cv_removed_value_type = typename std::remove_pointer<typename T::value_type>::type;
+    using cv_removed_value_type = typename std::remove_pointer_t<typename T::value_type>;
     for (auto &entity_block : entity_blocks) {
       std::string entity_type = entity_block->type_string();
       std::string entity_name = entity_block->name();
@@ -1191,7 +1189,7 @@ namespace Ioad {
   {
     // Check "time" attribute and global variable.
     timeScaleFactor = adios_wrapper.GetAttribute<double>(Time_scale_factor, true, 1.0);
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
     Ioss::Region     *this_region = get_region();
     if (globals_map.find(Time_meta) != globals_map.end()) {
       // Load time steps
@@ -1210,10 +1208,10 @@ namespace Ioad {
           // errmsg << "ERROR: Streaming is not yet supported for reading.\n";
           // IOSS_ERROR(errmsg);
         }
-        adios_wrapper.GetSync(time_var, tsteps.data());
+        adios_wrapper.GetSync(time_var, Data(tsteps));
         for (size_t step = 0; step < time_var.Steps(); step++) {
           // if (tsteps[i] <= last_time) { TODO: Check last time step before writing everything
-          this_region->add_state__(tsteps[step] * timeScaleFactor);
+          this_region->add_state_nl(tsteps[step] * timeScaleFactor);
         }
       }
       else {
@@ -1226,7 +1224,7 @@ namespace Ioad {
     add_entity_properties(this_region, properties_map, region_name);
   }
 
-  void DatabaseIO::read_meta_data__()
+  void DatabaseIO::read_meta_data_nl()
   {
     check_processor_info();
     Ioss::Region *region = get_region();
@@ -1337,8 +1335,8 @@ namespace Ioad {
         int64_t     id       = std::stoll(variable_pair.first);
         char        tag      = variable_pair.second.begin()->first[0];
         std::string var_name = variable_pair.second.begin()->second.first;
-        adios_wrapper.GetSync(var_name, coord.data());
-        Ioss::CoordinateFrame coordinate_frame(id, tag, coord.data());
+        adios_wrapper.GetSync(var_name, Data(coord));
+        Ioss::CoordinateFrame coordinate_frame(id, tag, Data(coord));
         region->add(coordinate_frame);
       }
     }
@@ -1435,7 +1433,7 @@ namespace Ioad {
           field.get_name() == "mesh_model_coordinates_z") {
         Ioss::Field         coord_field = nb->get_field("mesh_model_coordinates");
         std::vector<double> coord(num_to_get * spatialDimension);
-        get_field_internal_t(nb, coord_field, coord.data(), data_size * spatialDimension);
+        get_field_internal_t(nb, coord_field, Data(coord), data_size * spatialDimension);
 
         // Cast 'data' to correct size -- double
         double *rdata  = static_cast<double *>(data);
@@ -1602,8 +1600,8 @@ namespace Ioad {
     }
   }
 
-  void DatabaseIO::compute_block_membership__(Ioss::SideBlock          *efblock,
-                                              std::vector<std::string> &block_membership) const
+  void DatabaseIO::compute_block_membership_nl(Ioss::SideBlock          *efblock,
+                                               std::vector<std::string> &block_membership) const
   {
     const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));

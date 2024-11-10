@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_STATS_HPP
 #define SHYLUBASKER_STATS_HPP
 
@@ -139,8 +148,8 @@ namespace BaskerNS
 
     for(Int l = 0; l < tree.nblks; l++)
       {
-        MATRIX &myL = LL[l][0];
-        stats.Lnnz += LL[l][0].nnz;
+        MATRIX &myL = LL(l)(0);
+        stats.Lnnz += LL(l)(0).nnz;
       }//over all Ls
 
     return stats.Lnnz;
@@ -157,10 +166,10 @@ namespace BaskerNS
 
     for(Int l = 0; l < tree.nblks; l++)
       {
-        for(Int r=0; r<LU[l].size(); r++)
+        for(Int r=0; r<LU(l).size(); r++)
           {
-            Int k = LU[l][r].ncol;
-            stats.Unnz += LU[l][r].col_ptr[k];
+            Int k = LU(l)(r).ncol;
+            stats.Unnz += LU(l)(r).col_ptr[k];
             //know problem with .nnz 9too much... need to fix
           }
       }

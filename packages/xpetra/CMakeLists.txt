@@ -60,6 +60,7 @@ ENDIF()
 
 # If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
+  MESSAGE(WARNING "Epetra support in Xpetra is deprecated")
 
   # Set default value of whether Xpetra should allow for 32 bit Epetra data structures or not.
   IF(Trilinos_NO_32BIT_GLOBAL_INDICES)
@@ -192,7 +193,6 @@ ENDIF()
 #
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(sup)
 
 IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc
     AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/doc/CMakeLists.txt)

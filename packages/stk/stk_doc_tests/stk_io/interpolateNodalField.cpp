@@ -46,6 +46,8 @@
 #include "stk_io/MeshField.hpp"         // for MeshField, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldBLAS.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"
 namespace {
@@ -66,7 +68,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateNodalField)
     //+ The value of the field at each node is 0.0 at time 0.0,
     //+ 1.0 at time 1.0, and 2.0 at time 2.0
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -82,20 +83,12 @@ TEST(StkMeshIoBrokerHowTo, interpolateNodalField)
     //+ The name of the field on the database will be "temp"
     stkIo.add_field(fh, temperature, "temp");
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(),
-                            stk::topology::NODE_RANK, nodes);
-
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (size_t i=0; i < 3; i++) {
       double time = i;
 
-      for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldData =
-            stk::mesh::field_data(temperature, nodes[inode]);
-        *fieldData = time;
-      }
+      stk::mesh::field_fill(time, temperature);
 
       stkIo.begin_output_step(fh, time);
       stkIo.write_defined_output_fields(fh);
@@ -113,7 +106,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateNodalField)
     //+ of 0.1 (0.0, 0.1, 0.2, 0.3, ..., 2.0) and verify that
     //+ the field contains the correct interpolated value.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
@@ -122,9 +114,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateNodalField)
     stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(), nullptr);
 
     stkIo.populate_bulk_data();
-
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
 
     //+ Specify that the field data are to be linear interpolated.
     stkIo.add_input_field(stk::io::MeshField(temperature, "temp",
@@ -145,10 +134,11 @@ TEST(StkMeshIoBrokerHowTo, interpolateNodalField)
       // ============================================================
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 'time'
-      for(size_t j=0; j<nodes.size(); j++) {
-        double *fieldData = stk::mesh::field_data(temperature, nodes[j]);
-        EXPECT_DOUBLE_EQ(time, *fieldData);
-      }
+      stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
+        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+          double *fieldData = stk::mesh::field_data(temperature, node);
+          EXPECT_DOUBLE_EQ(time, *fieldData);
+        });
     }
     //-END
   }

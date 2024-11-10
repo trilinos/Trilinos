@@ -44,6 +44,14 @@
 #ifndef EPETRA_CRSMATRIX_H
 #define EPETRA_CRSMATRIX_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"

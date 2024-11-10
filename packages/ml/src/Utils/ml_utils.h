@@ -13,6 +13,12 @@
 #ifndef __MLUTILH__
 #define __MLUTILH__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #ifndef __cplusplus
 #if defined(ICL) || defined(_MSC_VER)
 #include <time.h>
@@ -247,4 +253,3 @@ std::cout << "--- Leaving:
 #endif
 
 #endif
-

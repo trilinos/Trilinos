@@ -45,6 +45,12 @@
 #ifndef _AZTEC2PETRA_H_
 #define _AZTEC2PETRA_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #ifndef __cplusplus
 #define __cplusplus
 #endif

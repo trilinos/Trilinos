@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_NFACTOR_BLK_INC_HPP
 #define SHYLUBASKER_NFACTOR_BLK_INC_HPP
 
@@ -1546,7 +1555,7 @@ namespace BaskerNS
    BASKER_BOOL A_option
    )
   {
-    BASKER_MATRIX &L     = LL(blkcol)(blkrow);
+    BASKER_MATRIX &L     =  LL(blkcol)(blkrow);
     BASKER_MATRIX &B     = ALM(blkcol)(blkrow);
 
     INT_1DARRAY   ws     = LL(X_col)(X_row).iws;
@@ -1708,7 +1717,7 @@ namespace BaskerNS
    BASKER_BOOL A_option
    )
   {
-    BASKER_MATRIX &L     = LL(blkcol)(blkrow);
+    BASKER_MATRIX &L     =  LL(blkcol)(blkrow);
     BASKER_MATRIX &B     = ALM(blkcol)(blkrow);
 
     INT_1DARRAY   ws     = LL(X_col)(X_row).iws;
@@ -1837,7 +1846,7 @@ namespace BaskerNS
 	   nnz, kid, X_col, X_row);
     printf("kid %d Ending nnz: %d \n",kid, nnz);
     #endif
-    LL[X_col][X_row].p_size = nnz;
+    LL(X_col)(X_row).p_size = nnz;
     #endif
 
      return 0;
@@ -1860,7 +1869,7 @@ namespace BaskerNS
    BASKER_BOOL A_option
    )
   {
-    BASKER_MATRIX &L     = LL(blkcol)(blkrow);
+    BASKER_MATRIX &L     =  LL(blkcol)(blkrow);
     BASKER_MATRIX &B     = ALM(blkcol)(blkrow);
 
     INT_1DARRAY   ws     = LL(X_col)(X_row).iws;
@@ -2037,7 +2046,7 @@ namespace BaskerNS
 	   nnz, kid, X_col, X_row);
     printf("kid %d Ending nnz: %d \n",kid, nnz);
     #endif
-    LL[X_col][X_row].p_size = nnz;
+    LL(X_col)(X_row).p_size = nnz;
     #endif
 
      return 0;
@@ -2167,18 +2176,18 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_nfactor_blk_old(Int kid)
   {
-    Int b = S[0][kid]; //Which blk from schedule
-    BASKER_MATRIX &L   = LL[b][0];
-    BASKER_MATRIX &U   = LU[b][LU_size[b]-1];
+    Int b = S(0)(kid); //Which blk from schedule
+    BASKER_MATRIX &L   = LL(b)(0);
+    BASKER_MATRIX &U   = LU(b)(LU_size[b]-1);
     #ifdef BASKER_2DL
     printf("Accessing blk: %d \n", b);
-    INT_1DARRAY   ws   = LL[b][0].iws;
-    ENTRY_1DARRAY X    = LL[b][0].ews;
-    Int        ws_size = LL[b][0].iws_size;
+    INT_1DARRAY   ws   = LL(b)(0).iws;
+    ENTRY_1DARRAY X    = LL(b)(0).ews;
+    Int        ws_size = LL(b)(0).iws_size;
     #else  //else if BASKER_2DL
-    INT_1DARRAY   ws   = thread_array[kid].iws;
-    ENTRY_1DARRAY X    = thread_array[kid].ews;
-    Int       ws_size  = thread_array[kid].iws_size;
+    INT_1DARRAY   ws   = thread_array(kid).iws;
+    ENTRY_1DARRAY X    = thread_array(kid).ews;
+    Int       ws_size  = thread_array(kid).iws_size;
     #endif
    
     Int          bcol  = L.scol;  //begining col
@@ -2567,15 +2576,15 @@ namespace BaskerNS
   {
 
     //Setup variables
-    const Int      b   = S[lvl][kid];
-    const Int     wsb  = S[0][kid];
-    BASKER_MATRIX  &L  = LL[b][0];
+    const Int      b   = S(lvl)(kid);
+    const Int     wsb  = S(0)(kid);
+    BASKER_MATRIX  &L  = LL(b)(0);
     #ifdef BASKER_2DL
-    INT_1DARRAY    ws  = LL[wsb][l].iws;
-    Int        ws_size = LL[wsb][l].iws_size;
+    INT_1DARRAY    ws  = LL(wsb)(l).iws;
+    Int        ws_size = LL(wsb)(l).iws_size;
     #else
-    INT_1DARRAY    ws  = thread_array[kid].iws;
-    Int        ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY    ws  = thread_array(kid).iws;
+    Int        ws_size = thread_array(kid).iws_size;
     #endif
 
     const Int brow    = L.srow;
@@ -2720,8 +2729,8 @@ namespace BaskerNS
    BASKER_BOOL A_option
      )
   {
-    BASKER_MATRIX &L            = LL(blkcol)(blkrow);
-    BASKER_MATRIX &B            = ALM(blkcol)(blkrow);
+    BASKER_MATRIX &L    =  LL(blkcol)(blkrow);
+    BASKER_MATRIX &B    = ALM(blkcol)(blkrow);
 
 
     /*
@@ -2747,11 +2756,10 @@ namespace BaskerNS
     
 
 
-    INT_1DARRAY   ws            = LL(X_col)(X_row).iws;
-    ENTRY_1DARRAY X             = LL(X_col)(X_row).ews;
-    Int         ws_size         = LL(X_col)(X_row).iws_size;
-    
-    Int    nnz            = LL(X_col)(X_row).p_size;
+    INT_1DARRAY   ws    = LL(X_col)(X_row).iws;
+    ENTRY_1DARRAY X     = LL(X_col)(X_row).ews;
+    Int  ws_size        = LL(X_col)(X_row).iws_size;
+    Int  nnz            = LL(X_col)(X_row).p_size;
  
 
    
@@ -2960,7 +2968,7 @@ namespace BaskerNS
    Int x_size, Int x_offset,
    BASKER_BOOL A_option)
   {
-    BASKER_MATRIX &L            = LL(blkcol)(blkrow);
+    BASKER_MATRIX &L            =  LL(blkcol)(blkrow);
     BASKER_MATRIX &B            = ALM(blkcol)(blkrow);
 
     INT_1DARRAY   ws            = LL(X_col)(X_row).iws;
@@ -3306,7 +3314,7 @@ namespace BaskerNS
    const BASKER_BOOL A_option
    )
   {
-    BASKER_MATRIX &L     = LL(blkcol)(blkrow);
+    BASKER_MATRIX &L     =  LL(blkcol)(blkrow);
     BASKER_MATRIX &B     = ALM(blkcol)(blkrow);
 
     INT_1DARRAY   ws     = LL(X_col)(X_row).iws;

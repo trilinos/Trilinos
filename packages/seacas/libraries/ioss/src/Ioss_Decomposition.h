@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,18 +9,18 @@
 
 #include "ioss_export.h"
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Map.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_PropertyManager.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_Map.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
 #include <algorithm>
 #include <cassert>
 #include <map>
 #include <string>
 #include <vector>
 
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_Utils.h>
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Utils.h"
 
 #if !defined(NO_PARMETIS_SUPPORT)
 #include <parmetis.h>
@@ -31,7 +31,7 @@
 #include <zoltan_cpp.h>
 #endif
 
-#define DC_USE_HOPSCOTCH
+#define DC_USE_VECTOR
 #if defined DC_USE_HOPSCOTCH
 #include <hopscotch_map.h>
 #elif defined DC_USE_ROBIN
@@ -39,20 +39,20 @@
 #endif
 
 namespace Ioss {
-  IOSS_EXPORT const std::vector<std::string> &valid_decomp_methods();
+  IOSS_EXPORT const Ioss::NameList &valid_decomp_methods();
 
   class IOSS_EXPORT BlockDecompositionData
   {
   public:
     BlockDecompositionData() = default;
 
-    const std::string &name() const { return name_; }
-    int                zone() const { return zone_; }
-    int                section() const { return section_; }
-    int64_t            id() const { return id_; }
-    size_t             file_count() const { return fileCount; }
-    size_t             ioss_count() const { return iossCount; }
-    size_t             global_count() const { return globalCount; }
+    IOSS_NODISCARD const std::string &name() const { return name_; }
+    IOSS_NODISCARD int                zone() const { return zone_; }
+    IOSS_NODISCARD int                section() const { return section_; }
+    IOSS_NODISCARD int64_t            id() const { return id_; }
+    IOSS_NODISCARD size_t             file_count() const { return fileCount; }
+    IOSS_NODISCARD size_t             ioss_count() const { return iossCount; }
+    IOSS_NODISCARD size_t             global_count() const { return globalCount; }
 
     std::string name_{};
     int         zone_{0};
@@ -102,14 +102,17 @@ namespace Ioss {
       }
     }
 
-    const std::string &name() const { return name_; }
-    const std::string &ss_name() const { return ss_name_.empty() ? name_ : ss_name_; }
-    int64_t            id() const { return id_; }
-    int                zone() const { return zone_; }
-    int                section() const { return section_; }
-    size_t             file_count() const { return fileCount; }
-    size_t             ioss_count() const { return entitylist_map.size(); }
-    size_t             df_count() const { return distributionFactorCount; }
+    IOSS_NODISCARD const std::string &name() const { return name_; }
+    IOSS_NODISCARD const std::string &ss_name() const
+    {
+      return ss_name_.empty() ? name_ : ss_name_;
+    }
+    IOSS_NODISCARD int64_t id() const { return id_; }
+    IOSS_NODISCARD int     zone() const { return zone_; }
+    IOSS_NODISCARD int     section() const { return section_; }
+    IOSS_NODISCARD size_t  file_count() const { return fileCount; }
+    IOSS_NODISCARD size_t  ioss_count() const { return entitylist_map.size(); }
+    IOSS_NODISCARD size_t  df_count() const { return distributionFactorCount; }
 
     // contains global entity-list positions for all entities in this set on this processor.
     std::vector<size_t> entitylist_map;
@@ -133,32 +136,45 @@ namespace Ioss {
     bool distributionFactorConstant{false}; // T if all distribution factors the same value.
   };
 
-  IOSS_EXPORT size_t
-  get_all_block_ioss_element_size(const std::vector<BlockDecompositionData> &blocks);
+  class IOSS_EXPORT ElementBlockBatchOffset
+  {
+  public:
+    explicit ElementBlockBatchOffset(const std::vector<BlockDecompositionData> &data) : m_data(data)
+    {
+    }
 
-  IOSS_EXPORT size_t
-  get_all_block_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks,
-                                 const std::vector<int>                    &block_component_count);
+    ElementBlockBatchOffset()                                = delete;
+    ElementBlockBatchOffset(const ElementBlockBatchOffset &) = delete;
+    ElementBlockBatchOffset(ElementBlockBatchOffset &&)      = delete;
 
-  IOSS_EXPORT std::vector<size_t>
-              get_all_block_ioss_offset(const std::vector<BlockDecompositionData> &blocks,
-                                        const std::vector<int>                    &block_component_count);
+    IOSS_NODISCARD size_t get_ioss_element_size(const std::vector<int64_t> &blockSubsetIndex) const;
 
-  IOSS_EXPORT std::vector<size_t>
-              get_all_block_import_offset(const std::vector<BlockDecompositionData> &blocks,
-                                          const std::vector<int>                    &block_component_count);
+    IOSS_NODISCARD std::vector<size_t>
+                   get_ioss_offset(const std::vector<int64_t> &blockSubsetIndex,
+                                   const std::vector<int>     &blockComponentCount) const;
 
-  IOSS_EXPORT std::vector<int> get_all_block_connectivity_ioss_component_count(
-      const std::vector<BlockDecompositionData> &blocks);
+    IOSS_NODISCARD std::vector<size_t>
+                   get_import_offset(const std::vector<int64_t> &blockSubsetIndex,
+                                     const std::vector<int>     &blockComponentCount) const;
 
-  IOSS_EXPORT size_t
-  get_all_block_connectivity_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks);
+    IOSS_NODISCARD size_t
+    get_connectivity_ioss_offset_size(const std::vector<int64_t> &blockSubsetIndex) const;
 
-  IOSS_EXPORT std::vector<size_t>
-  get_all_block_connectivity_ioss_offset(const std::vector<BlockDecompositionData> &blocks);
+    IOSS_NODISCARD std::vector<int>
+    get_connectivity_ioss_component_count(const std::vector<int64_t> &blockSubsetIndex) const;
 
-  IOSS_EXPORT std::vector<size_t>
-  get_all_block_connectivity_import_offset(const std::vector<BlockDecompositionData> &blocks);
+  private:
+    const std::vector<BlockDecompositionData> &m_data;
+
+    IOSS_NODISCARD size_t get_ioss_offset_size(const std::vector<int64_t> &blockSubsetIndex,
+                                               const std::vector<int> &blockComponentCount) const;
+
+    IOSS_NODISCARD std::vector<size_t>
+                   get_connectivity_ioss_offset(const std::vector<int64_t> &blockSubsetIndex) const;
+
+    IOSS_NODISCARD std::vector<size_t>
+    get_connectivity_import_offset(const std::vector<int64_t> &blockSubsetIndex) const;
+  };
 
   template <typename INT> class Decomposition
   {
@@ -169,16 +185,19 @@ namespace Ioss {
     Decomposition &operator=(Decomposition const &) = default;
     Decomposition &operator=(Decomposition &&)      = default;
 
-    size_t global_node_count() const { return m_globalNodeCount; }
-    size_t global_elem_count() const { return m_globalElementCount; }
-    size_t ioss_node_count() const { return nodeGTL.size(); }
-    size_t ioss_elem_count() const { return localElementMap.size() + importElementMap.size(); }
-    size_t file_node_count() const { return m_nodeCount; }
-    size_t file_elem_count() const { return m_elementCount; }
-    size_t file_node_offset() const { return m_nodeOffset; }
-    size_t file_elem_offset() const { return m_elementOffset; }
+    IOSS_NODISCARD size_t global_node_count() const { return m_globalNodeCount; }
+    IOSS_NODISCARD size_t global_elem_count() const { return m_globalElementCount; }
+    IOSS_NODISCARD size_t ioss_node_count() const { return nodeGTL.size(); }
+    IOSS_NODISCARD size_t ioss_elem_count() const
+    {
+      return localElementMap.size() + importElementMap.size();
+    }
+    IOSS_NODISCARD size_t file_node_count() const { return m_nodeCount; }
+    IOSS_NODISCARD size_t file_elem_count() const { return m_elementCount; }
+    IOSS_NODISCARD size_t file_node_offset() const { return m_nodeOffset; }
+    IOSS_NODISCARD size_t file_elem_offset() const { return m_elementOffset; }
 
-    bool needs_centroids() const
+    IOSS_NODISCARD bool needs_centroids() const
     {
       return (m_method == "RCB" || m_method == "RIB" || m_method == "HSFC" ||
               m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" || m_method == "METIS_SFC");
@@ -187,20 +206,28 @@ namespace Ioss {
     void generate_entity_distributions(size_t global_node_count, size_t global_element_count);
 
     // T/F if node with global index node owned by this processors ioss-decomp.
-    bool i_own_node(size_t global_index) const
+    IOSS_NODISCARD bool i_own_node(size_t global_index) const
     {
       // global_index is 1-based index into global list of nodes [1..global_node_count]
       return std::binary_search(nodeGTL.begin(), nodeGTL.end(), global_index);
     }
 
     // T/F if element with global index elem owned by this processors ioss-decomp.
-    bool i_own_elem(size_t global_index) const
+    IOSS_NODISCARD bool i_own_elem(size_t global_index) const
     {
       // global_index is 1-based index into global list of elements [1..global_element_count]
+#if defined(DC_USE_VECTOR)
+      return std::binary_search(
+          elemGTL.begin(), elemGTL.end(), std::pair<INT, INT>{global_index, 0},
+          [](const std::pair<INT, INT> &lhs, const std::pair<INT, INT> &val) -> bool {
+            return lhs.first < val.first;
+          });
+#else
       return elemGTL.find(global_index) != elemGTL.end();
+#endif
     }
 
-    size_t node_global_to_local(size_t global_index) const
+    IOSS_NODISCARD size_t node_global_to_local(size_t global_index) const
     {
       // global_index is 1-based index into global list of nodes [1..global_node_count]
       // return value is 1-based index into local list of nodes on this
@@ -213,13 +240,21 @@ namespace Ioss {
       return std::distance(nodeGTL.begin(), I) + 1; // Convert to 1-based index.
     }
 
-    size_t elem_global_to_local(size_t global_index) const
+    IOSS_NODISCARD size_t elem_global_to_local(size_t global_index) const
     {
       // global_index is 1-based index into global list of elements [1..global_node_count]
       // return value is 1-based index into local list of elements on this
       // processor (ioss-decomposition)
+#if defined(DC_USE_VECTOR)
+      auto I = lower_bound(
+          elemGTL.begin(), elemGTL.end(), global_index,
+          [](const std::pair<INT, INT> &lhs, INT val) -> bool { return lhs.first < val; });
+      assert(I != elemGTL.end() && I->first == (INT)global_index);
+#else
       auto I = elemGTL.find(global_index);
+#endif
       assert(I != elemGTL.end());
+      assert(I->first == (INT)global_index);
       return I->second;
     }
 
@@ -242,6 +277,7 @@ namespace Ioss {
     void simple_decompose();
     void simple_node_decompose();
     void guided_decompose();
+    void line_decompose();
 
     void calculate_element_centroids(const std::vector<double> &x, const std::vector<double> &y,
                                      const std::vector<double> &z);
@@ -529,17 +565,19 @@ namespace Ioss {
     }
 
     template <typename T, typename U>
-    std::vector<size_t> do_communicate_all_block_data(
+    IOSS_NODISCARD std::vector<size_t> do_communicate_entity_data(
         T *file_data, U *ioss_data, const std::vector<BlockDecompositionData> &blocks,
-        const std::vector<size_t> &file_offset, const std::vector<int> &block_component_count) const
+        const std::vector<int64_t> &blockSubsetIndex, const std::vector<size_t> &fileOffset,
+        const std::vector<int> &blockComponentCount) const
     {
       size_t export_size = 0;
       size_t import_size = 0;
 
-      for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
-        const Ioss::BlockDecompositionData &blk = blocks[blk_seq];
+      for (size_t bsi = 0; bsi < blockSubsetIndex.size(); bsi++) {
+        int64_t                             blk_seq = blockSubsetIndex[bsi];
+        const Ioss::BlockDecompositionData &blk     = blocks[blk_seq];
 
-        size_t comp_count = block_component_count[blk_seq];
+        size_t comp_count = blockComponentCount[bsi];
         export_size += blk.exportMap.size() * comp_count;
         import_size += blk.importMap.size() * comp_count;
       }
@@ -551,10 +589,11 @@ namespace Ioss {
       int                 nProc = util_.parallel_size();
 
       for (int proc = 0; proc < nProc; proc++) {
-        for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+        for (size_t bsi = 0; bsi < blockSubsetIndex.size(); bsi++) {
+          int64_t                             blk_seq        = blockSubsetIndex[bsi];
           const Ioss::BlockDecompositionData &blk            = blocks[blk_seq];
-          size_t                              comp_count     = block_component_count[blk_seq];
-          size_t                              fileDataOffset = file_offset[blk_seq];
+          size_t                              comp_count     = blockComponentCount[bsi];
+          size_t                              fileDataOffset = fileOffset[bsi];
 
           for (int n = 0; n < blk.exportCount[proc]; n++) {
             int exportIndex = blk.exportIndex[proc] + n;
@@ -573,9 +612,10 @@ namespace Ioss {
       std::vector<int64_t> import_count(nProc, 0);
       std::vector<int64_t> import_disp(nProc, 0);
 
-      for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+      for (size_t bsi = 0; bsi < blockSubsetIndex.size(); bsi++) {
+        int64_t                             blk_seq    = blockSubsetIndex[bsi];
         const Ioss::BlockDecompositionData &blk        = blocks[blk_seq];
-        size_t                              comp_count = block_component_count[blk_seq];
+        size_t                              comp_count = blockComponentCount[bsi];
 
         int proc = 0;
         for (int i : blk.exportCount) {
@@ -599,59 +639,62 @@ namespace Ioss {
                          m_comm);
       show_progress("\tCommunication 1 finished");
 
-      std::vector<size_t> ioss_offset =
-          Ioss::get_all_block_ioss_offset(blocks, block_component_count);
-      std::vector<size_t> import_offset =
-          Ioss::get_all_block_import_offset(blocks, block_component_count);
+      Ioss::ElementBlockBatchOffset batchOffset(blocks);
+      std::vector<size_t>           iossOffset =
+          batchOffset.get_ioss_offset(blockSubsetIndex, blockComponentCount);
+      std::vector<size_t> importOffset =
+          batchOffset.get_import_offset(blockSubsetIndex, blockComponentCount);
 
       // Map local and imported data to ioss_data.
-      for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+      for (size_t bsi = 0; bsi < blockSubsetIndex.size(); bsi++) {
+        int64_t                             blk_seq    = blockSubsetIndex[bsi];
         const Ioss::BlockDecompositionData &block      = blocks[blk_seq];
-        size_t                              comp_count = block_component_count[blk_seq];
+        size_t                              comp_count = blockComponentCount[bsi];
 
         for (size_t i = 0; i < block.localMap.size(); i++) {
           for (size_t j = 0; j < comp_count; j++) {
-            unsigned fileIndex = file_offset[blk_seq] + block.localMap[i] * comp_count + j;
-            unsigned iossIndex =
-                ioss_offset[blk_seq] + (i + block.localIossOffset) * comp_count + j;
+            size_t fileIndex     = fileOffset[bsi] + block.localMap[i] * comp_count + j;
+            size_t iossIndex     = iossOffset[bsi] + (i + block.localIossOffset) * comp_count + j;
             ioss_data[iossIndex] = file_data[fileIndex];
           }
         }
 
         for (size_t i = 0; i < block.importMap.size(); i++) {
           for (size_t j = 0; j < comp_count; j++) {
-            unsigned importIndex = import_offset[blk_seq] + i * comp_count + j;
+            size_t importIndex = importOffset[bsi] + i * comp_count + j;
 
-            size_t   dataOffset = ioss_offset[blk_seq];
-            unsigned iossIndex  = dataOffset + block.importMap[i] * comp_count + j;
+            size_t dataOffset = iossOffset[bsi];
+            size_t iossIndex  = dataOffset + block.importMap[i] * comp_count + j;
 
             ioss_data[iossIndex] = imports[importIndex];
           }
         }
       }
 
-      return ioss_offset;
+      return iossOffset;
     }
 
     template <typename T, typename U>
-    std::vector<size_t> communicate_all_block_data(
+    IOSS_NODISCARD std::vector<size_t> communicate_entity_data(
         T *file_data, U *ioss_data, const std::vector<BlockDecompositionData> &blocks,
-        const std::vector<size_t> &file_offset, const std::vector<int> &block_component_count) const
+        const std::vector<int64_t> &blockSubsetIndex, const std::vector<size_t> &fileOffset,
+        const std::vector<int> &blockComponentCount) const
     {
       show_progress(__func__);
       if (m_method == "LINEAR") {
         // For "LINEAR" decomposition method, the `file_data` is the
         // same as `ioss_data` Transfer all local data from file_data
         // to ioss_data...
-        auto size = file_offset[blocks.size()];
+        auto size = fileOffset[blockSubsetIndex.size()];
         std::copy(file_data, file_data + size, ioss_data);
 
-        return Ioss::get_all_block_ioss_offset(blocks, block_component_count);
+        Ioss::ElementBlockBatchOffset batchOffset(blocks);
+        return batchOffset.get_ioss_offset(blockSubsetIndex, blockComponentCount);
         ;
       }
 
-      auto retval = do_communicate_all_block_data(file_data, ioss_data, blocks, file_offset,
-                                                  block_component_count);
+      auto retval = do_communicate_entity_data(file_data, ioss_data, blocks, blockSubsetIndex,
+                                               fileOffset, blockComponentCount);
 
       return retval;
     }
@@ -759,11 +802,13 @@ namespace Ioss {
     size_t m_importPreLocalNodeIndex{0};
 
     bool m_retainFreeNodes{true};
+    bool m_lineDecomp{false};
     bool m_showProgress{false};
     bool m_showHWM{false};
 
-    std::vector<INT>    m_elementToProc; // Used by "MAP" scheme...
+    std::vector<int>    m_elementToProc; // Used by "MAP" scheme...
     std::vector<double> m_centroids;
+    std::vector<float>  m_weights;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes
 
@@ -851,6 +896,8 @@ namespace Ioss {
     tsl::hopscotch_pg_map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
 #elif defined DC_USE_ROBIN
     tsl::robin_pg_map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#elif defined DC_USE_VECTOR
+    std::vector<std::pair<INT, INT>> elemGTL; // Convert from global index to local index (1-based)
 #else
     // This is the original method that was used in IOSS prior to using hopscotch or robin map.
     std::map<INT, INT> elemGTL; // Convert from global index to local index (1-based)

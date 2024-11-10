@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/DestroyRelations.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/SkinBoundary.hpp> 
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/environment/memory_util.hpp>
@@ -77,7 +77,6 @@ public:
     m_statusField(statusField),
     m_animationFileName(animationFileName)
   {
-    m_stkIo.use_simple_fields();
     initialize_status_field();
     create_output_mesh();
   }
@@ -133,7 +132,7 @@ private:
 
 void declare_animation_field(stk::mesh::MetaData &metaData, std::string &animationFile)
 {
-  animationFile = stk::unit_test_util::simple_fields::get_option("-animationFile", "");
+  animationFile = stk::unit_test_util::get_option("-animationFile", "");
 
   if("" != animationFile)
   {
@@ -389,11 +388,11 @@ void get_perforated_mesh_ids(const stk::mesh::BulkData &bulkData, const stk::mes
   print_delete_info(bulkData, meshInfo);
 }
 
-class ElementGraphPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class ElementGraphPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
   ElementGraphPerformance(stk::mesh::BulkData &bulk, const std::string &fileSpec)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       bulkData(bulk),
       meshSpec(fileSpec)
   {
@@ -509,13 +508,7 @@ public:
 
     for(stk::mesh::Entity elem : elems)
     {
-      unsigned numSides = bulkData.num_sides(elem);
-      const stk::mesh::Entity* sides = bulkData.begin(elem, meta.side_rank());
-      const stk::mesh::ConnectivityOrdinal* side_ords = bulkData.begin_ordinals(elem, meta.side_rank());
-      for(unsigned i=0; i<numSides; ++i)
-      {
-        bulkData.destroy_relation(elem, sides[i], side_ords[i]);
-      }
+      stk::mesh::destroy_relations(bulkData, elem, meta.side_rank());
     }
 
     stk::mesh::EntityVector sides;
@@ -564,7 +557,7 @@ protected:
   std::string animationFile;
 };
 
-class ElementGraphPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class ElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_element_graph_perf_test()
@@ -577,11 +570,11 @@ protected:
   }
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+    return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
   }
 };
 
-class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_element_graph_perf_test()
@@ -597,7 +590,7 @@ protected:
   }
   std::string get_mesh_spec()
   {
-    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+    return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
   }
 
   std::string animationFile = "";
@@ -624,7 +617,7 @@ TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp)
   print_memory(MPI_COMM_WORLD, "Before mesh creation");
   allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
   declare_animation_field(get_meta(), animationFile);
-  stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+  stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
   run_element_graph_perf_test();
 }
@@ -634,7 +627,7 @@ TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp_no_aura
   print_memory(MPI_COMM_WORLD, "Before mesh creation");
   allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_animation_field(get_meta(), animationFile);
-  stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+  stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
   run_element_graph_perf_test();
 }

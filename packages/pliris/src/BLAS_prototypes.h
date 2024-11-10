@@ -142,3 +142,9 @@ double ddot(int n, double *dx, int incx, double *dy, int incy);
 	dcomplex zdotu(int n, dcomplex *sx, int incx, dcomplex *sy, int incy);
 #endif
 
+
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif

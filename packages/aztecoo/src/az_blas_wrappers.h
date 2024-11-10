@@ -44,6 +44,12 @@
 #ifndef _AZ_BLAS_WRAPPERS_H_
 #define _AZ_BLAS_WRAPPERS_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "az_f77func.h"
 
 #if defined(CRAY_T3X)

@@ -41,19 +41,16 @@ struct gemv_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS2_GEMV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template <>                                                                  \
-  struct gemv_eti_spec_avail<                                                  \
-      EXEC_SPACE,                                                              \
-      Kokkos::View<const SCALAR**, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const SCALAR*, LAYOUT,                                      \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
-    enum : bool { value = true };                                              \
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                           \
+  template <>                                                                                            \
+  struct gemv_eti_spec_avail<EXEC_SPACE,                                                                 \
+                             Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+                             Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,  \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,        \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                  \
+    enum : bool { value = true };                                                                        \
   };
 
 // Include the actual specialization declarations
@@ -68,47 +65,32 @@ namespace Impl {
 //
 
 // Implementation of KokkosBlas::gemv.
-template <
-    class ExecutionSpace, class AViewType, class XViewType, class YViewType,
-    bool tpl_spec_avail = gemv_tpl_spec_avail<ExecutionSpace, AViewType,
-                                              XViewType, YViewType>::value,
-    bool eti_spec_avail = gemv_eti_spec_avail<ExecutionSpace, AViewType,
-                                              XViewType, YViewType>::value>
+template <class ExecutionSpace, class AViewType, class XViewType, class YViewType,
+          bool tpl_spec_avail = gemv_tpl_spec_avail<ExecutionSpace, AViewType, XViewType, YViewType>::value,
+          bool eti_spec_avail = gemv_eti_spec_avail<ExecutionSpace, AViewType, XViewType, YViewType>::value>
 struct GEMV {
-  static void gemv(const ExecutionSpace& space, const char trans[],
-                   typename AViewType::const_value_type& alpha,
-                   const AViewType& A, const XViewType& x,
-                   typename YViewType::const_value_type& beta,
+  static void gemv(const ExecutionSpace& space, const char trans[], typename AViewType::const_value_type& alpha,
+                   const AViewType& A, const XViewType& x, typename YViewType::const_value_type& beta,
                    const YViewType& y)
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   {
-    static_assert(Kokkos::is_view<AViewType>::value,
-                  "AViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<XViewType>::value,
-                  "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<YViewType>::value,
-                  "YViewType must be a Kokkos::View.");
-    static_assert(static_cast<int>(AViewType::rank) == 2,
-                  "AViewType must have rank 2.");
-    static_assert(static_cast<int>(XViewType::rank) == 1,
-                  "XViewType must have rank 1.");
-    static_assert(static_cast<int>(YViewType::rank) == 1,
-                  "YViewType must have rank 1.");
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::gemv[ETI]"
-                                      : "KokkosBlas::gemv[noETI]");
+    static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
+    static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
+    static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
+    static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::gemv[ETI]"
+                                                                     : "KokkosBlas::gemv[noETI]");
     typedef typename AViewType::size_type size_type;
     const size_type numRows = A.extent(0);
     const size_type numCols = A.extent(1);
 
     // Prefer int as the index type, but use a larger type if needed.
-    if (numRows < static_cast<size_type>(INT_MAX) &&
-        numCols < static_cast<size_type>(INT_MAX)) {
-      generalGemvImpl<AViewType, XViewType, YViewType, int>(space, trans, alpha,
-                                                            A, x, beta, y);
+    if (numRows < static_cast<size_type>(INT_MAX) && numCols < static_cast<size_type>(INT_MAX)) {
+      generalGemvImpl<ExecutionSpace, AViewType, XViewType, YViewType, int>(space, trans, alpha, A, x, beta, y);
     } else {
-      generalGemvImpl<AViewType, XViewType, YViewType, int64_t>(
-          space, trans, alpha, A, x, beta, y);
+      generalGemvImpl<ExecutionSpace, AViewType, XViewType, YViewType, int64_t>(space, trans, alpha, A, x, beta, y);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -129,30 +111,24 @@ struct GEMV {
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS2_GEMV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  extern template struct GEMV<                                                \
-      EXEC_SPACE,                                                             \
-      Kokkos::View<const SCALAR**, LAYOUT,                                    \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
+  extern template struct GEMV<                                                                                        \
+      EXEC_SPACE,                                                                                                     \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
-#define KOKKOSBLAS2_GEMV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template struct GEMV<                                                       \
-      EXEC_SPACE,                                                             \
-      Kokkos::View<const SCALAR**, LAYOUT,                                    \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const SCALAR*, LAYOUT,                                     \
-                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
+  template struct GEMV<                                                                                               \
+      EXEC_SPACE,                                                                                                     \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
 #include <KokkosBlas2_gemv_tpl_spec_decl.hpp>

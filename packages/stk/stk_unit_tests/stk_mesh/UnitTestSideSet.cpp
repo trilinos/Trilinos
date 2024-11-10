@@ -5,6 +5,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/SidesetUpdater.hpp>
+#include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -14,7 +15,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
+#include "TestElemElemGraphUtils.hpp"
 
 namespace {
 using stk::unit_test_util::build_mesh;
@@ -188,7 +189,44 @@ void create_two_elem_block_mesh_with_spanning_sidesets(const std::string& filena
 }
 }
 
-class TestSideSet : public stk::unit_test_util::simple_fields::MeshFixture
+TEST(SkinBoundary, check_interior_shared_shell_side)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                      .set_spatial_dimension(3)
+                                                      .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
+                                                      .create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& boundaryPart = meta.declare_part("boundaryPart", meta.side_rank());
+  std::string meshDesc = "1,10098,TET_4, 1,2,3,4, block_1\n"
+                         "0,320234,SHELL_TRI_3, 1,3,4, block_2|sideset:name=surface_1; data=10098,3";
+
+  std::vector<double> coords = {0,0,0,  0,1,0,  1,0,0, 1,1,1};
+
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::mesh::Entity sharedSide = bulkPtr->get_entity(meta.side_rank(), 100983);
+  ASSERT_TRUE(bulkPtr->is_valid(sharedSide));
+  ASSERT_TRUE(bulkPtr->bucket(sharedSide).shared());
+
+  int owner = bulkPtr->parallel_owner_rank(sharedSide);
+  int otherProc = 1 - owner;
+  stk::mesh::EntityProcVec entitiesToChange;
+  if (owner == bulkPtr->parallel_rank()) {
+    entitiesToChange = {stk::mesh::EntityProc(sharedSide, otherProc)};
+  }
+  bulkPtr->change_entity_owner(entitiesToChange);
+
+  stk::mesh::create_interior_block_boundary_sides(*bulkPtr, meta.universal_part(), {&boundaryPart});
+
+  sharedSide = bulkPtr->get_entity(meta.side_rank(), 100983);
+  EXPECT_TRUE(bulkPtr->bucket(sharedSide).member(boundaryPart));
+
+  EXPECT_TRUE(stk::mesh::check_interior_block_boundary_sides(*bulkPtr, meta.universal_part(), boundaryPart));
+}
+
+class TestSideSet : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_2_block_mesh()
@@ -237,7 +275,7 @@ TEST_F(TestSideSet, createSideSetsSpanningMultipleBlocks)
     stk::mesh::create_bulkdata_sidesets(get_bulk());
 
     EXPECT_EQ(2u, get_bulk().get_number_of_sidesets());
-    stk::unit_test_util::simple_fields::delete_mesh(filename);
+    stk::unit_test_util::delete_mesh(filename);
   }
 }
 
@@ -366,7 +404,7 @@ void create_sideset_observer(stk::mesh::BulkData& bulk, stk::mesh::Selector acti
 }
 }
 
-class SideSetModification : public stk::unit_test_util::simple_fields::MeshFixture
+class SideSetModification : public stk::unit_test_util::MeshFixture
 {
 protected:
   stk::mesh::Entity create_hex_solo_side(const stk::mesh::PartVector& parts)
@@ -1101,7 +1139,132 @@ TEST_F(SideSetModification, nonEmptyInternalSideset_AfterRemoveOneConnectedEleme
   EXPECT_EQ(2u, get_bulk().num_elements(side));
 }
 
-class InternalSideSet : public stk::unit_test_util::simple_fields::MeshFixture
+TEST(CreateAndWrite, DISABLED_textmesh_shell_quad_4_EdgeSides)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+//shell-quad-4 mesh:
+//       6
+// 3*----*----*9
+//  | E2 | E4 |
+//  |    |    |
+// 2*---5*----*8
+//  | E1 | E3 |
+//  |    |    |
+// 1*----*----*7
+//       4
+//
+  const std::string meshDesc =
+       "0,1,SHELL_QUAD_4, 1,4,5,2, block_1\n\
+        0,2,SHELL_QUAD_4, 2,5,6,3, block_1\n\
+        0,3,SHELL_QUAD_4, 4,7,8,5, block_1\n\
+        0,4,SHELL_QUAD_4, 5,8,9,6, block_1|sideset:name=surface_1; data=1,3,3,3, 3,4,4,4, 4,5,2,5, 2,6,1,6";
+
+  std::vector<double> coords = {0,0,0,  0,1,0,  0,2,0,
+                                1,0,0,  1,1,0,  1,2,0,
+                                2,0,0,  2,1,0,  2,2,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::io::write_mesh("shellq4_edge_sides.g", *bulk);
+}
+
+TEST(CreateAndWrite, DISABLED_textmesh_shell_quad_4_FullExteriorSkin)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  const std::string meshDesc =
+       "0,1,SHELL_QUAD_4, 1,4,5,2, block_1\n\
+        0,2,SHELL_QUAD_4, 2,5,6,3, block_1\n\
+        0,3,SHELL_QUAD_4, 4,7,8,5, block_1\n\
+        0,4,SHELL_QUAD_4, 5,8,9,6, block_1|sideset:name=surface_1; data=1,1,2,1,3,1,4,1, 1,2,2,2,3,2,4,2, 1,3,3,3, 3,4,4,4, 4,5,2,5, 2,6,1,6";
+
+  std::vector<double> coords = {0,0,0,  0,1,0,  0,2,0,
+                                1,0,0,  1,1,0,  1,2,0,
+                                2,0,0,  2,1,0,  2,2,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::io::write_mesh("shellq4_full_exterior_skin.g", *bulk);
+}
+
+TEST(CreateAndWrite, DISABLED_textmesh_shell_quad_8_EdgeSides)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+//shell-quad-8 mesh:
+//       6         12
+// 3*----*----*9----*----*15
+//  |         |          |
+//  |         |          |
+// 2*         *8         *14
+//  |         |          |
+//  |         |          |
+// 1*----*----*7----*----*13
+//       4         10
+//
+  const std::string meshDesc =
+       "0,1,SHELL_QUAD_8, 1,7,9,3,4,8,6,2, block_1\n\
+        0,2,SHELL_QUAD_8, 7,13,15,9,10,14,12,8, block_2|sideset:name=surface_1; data=1,1,1,3,2,3,2,6";
+//Note: this sideset spec creates a face-side (elem 1, side 1), and 3 edge-sides.
+//stk-io can't currently read the resulting exodus mesh file if the face-side is present. (Because
+//the surface-df field gets conflicting sides (restrictions)).
+
+  std::vector<double> coords = {
+     /*1*/0,0,0,  /*2*/0,1,0,  /*3*/0,2,0,
+     /*4*/1,0,0,  /*6*/1,2,0,
+     /*7*/2,0,0,  /*8*/2,1,0,  /*9*/2,2,0,
+     /*10*/3,0,0,  /*12*/3,2,0,
+     /*13*/4,0,0,  /*14*/4,1,0,  /*15*/4,2,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::io::write_mesh("shellq8_2blk_face_edge_sides.g", *bulk);
+}
+
+TEST(CreateAndWrite, DISABLED_textmesh_shell_tri_3_EdgeSides)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+//shell-tri-3 mesh:
+//       4
+//  2*---*---*6
+//   |E1/|E3/|
+//   | / | / |
+//   |/E2|/E4|
+//  1*---*---*5
+//       3
+//
+  const std::string meshDesc =
+       "0,1,SHELL_TRI_3, 1,4,2, block_1\n\
+        0,2,SHELL_TRI_3, 1,3,4, block_1\n\
+        0,3,SHELL_TRI_3, 3,6,4, block_1\n\
+        0,4,SHELL_TRI_3, 3,5,6, block_1|sideset:name=surface_1; data=2,3,4,3, 4,4, 3,4,1,4, 1,5";
+
+  std::vector<double> coords = {0,0,0,  0,1,0,
+                                1,0,0,  1,1,0,
+                                2,0,0,  2,1,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::io::write_mesh("shellt3_edge_sides.g", *bulk);
+}
+
+TEST(CreateAndWrite, DISABLED_textmesh_shell_tri_3_FullExteriorSkin)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  const std::string meshDesc =
+       "0,1,SHELL_TRI_3, 1,4,2, block_1\n\
+        0,2,SHELL_TRI_3, 1,3,4, block_1\n\
+        0,3,SHELL_TRI_3, 3,6,4, block_1\n\
+        0,4,SHELL_TRI_3, 3,5,6, block_1|sideset:name=surface_1; data=1,1,2,1,3,1,4,1, 1,2,2,2,3,2,4,2, 2,3,4,3, 4,4, 3,4,1,4, 1,5";
+
+  std::vector<double> coords = {0,0,0,  0,1,0,
+                                1,0,0,  1,1,0,
+                                2,0,0,  2,1,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::io::write_mesh("shellt3_full_exterior_skin.g", *bulk);
+}
+
+class InternalSideSet : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_internal_sideset_test()
@@ -1120,8 +1283,8 @@ protected:
     stk::mesh::Part& sidesetPart = get_meta().declare_part(sidesetName, stk::topology::FACE_RANK);
     get_meta().set_part_id(sidesetPart, 100u);
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     create_sideset(get_bulk(), sidesetName, "block_1");
 
     std::vector<stk::mesh::SideSet*> sidesets = get_bulk().get_sidesets();
@@ -1197,7 +1360,7 @@ TEST_F(InternalSideSet, maintainSingleSidedAfterParallelCreationOnProcessorBound
   }
 }
 
-class ParallelCoincidence : public stk::unit_test_util::simple_fields::MeshFixture
+class ParallelCoincidence : public stk::unit_test_util::MeshFixture
 {
 public:
   struct ParallelCoincidenceEntry
@@ -1230,8 +1393,8 @@ protected:
         0,0,1,  1,0,1,   1,1,1,   0,1,1,
         0,0,2,  1,0,2,   1,1,2,   0,1,2};
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void setup_non_coincident_mesh()
@@ -1245,8 +1408,8 @@ protected:
         0,0,1,  1,0,1,   1,1,1,   0,1,1,
         0,0,2,  1,0,2,   1,1,2,   0,1,2};
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void test_parallel_coincidence(const std::vector<ParallelCoincidenceEntry>& expectedValues)
@@ -1306,6 +1469,104 @@ TEST_F(ParallelCoincidence, checkParallelNonCoincidenceWithElemElemGraph)
   }
 }
 
+TEST(DeclareElementSide, baseScenario_sidesBetweenTwoTriangles)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                    .set_spatial_dimension(2).create();
+  stk::mesh::Part& mySidePart = bulk->mesh_meta_data().declare_part("mySidePart");
+  std::string meshDesc =
+      "0,1,TRI_3_2D,1,2,3,block_1\n"
+      "0,2,TRI_3_2D,2,4,3,block_1\n"
+      "|dimension:2";
+
+  std::vector<double> coords = {0,0,  0,1,  1,0,  1,1};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  const stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  EXPECT_EQ(0u, stk::mesh::count_entities(*bulk, meta.side_rank(), meta.universal_part()));
+
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  stk::mesh::Entity elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+
+  stk::mesh::PartVector parts = {&mySidePart};
+  stk::mesh::Entity side11, side22;
+  {
+    bulk->modification_begin();
+    side11 = bulk->declare_element_side(elem1, 1, parts);
+    side22 = bulk->declare_element_side(elem2, 2, parts);
+    bulk->modification_end();
+  }
+
+  EXPECT_EQ(1u, stk::mesh::count_entities(*bulk, meta.side_rank(), meta.universal_part()));
+}
+
+TEST(DeclareElementSide, destroyElemAndReconnectElem_sidesBetweenTwoTriangles)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                    .set_spatial_dimension(2).create();
+  stk::mesh::Part& mySidePart = bulk->mesh_meta_data().declare_part("mySidePart");
+  std::string meshDesc =
+      "0,1,TRI_3_2D,1,2,3,block_1\n"
+      "0,2,TRI_3_2D,2,4,3,block_1\n"
+      "0,3,TRI_3_2D,1,3,5,block_1\n"
+      "0,4,TRI_3_2D,2,6,4,block_1\n"
+      "|dimension:2";
+
+  std::vector<double> coords = {0,0,  0,1,  1,0,  1,1,  -0.5,0.5, 1.5,0.5};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  const stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  EXPECT_EQ(0u, stk::mesh::count_entities(*bulk, meta.side_rank(), meta.universal_part()));
+
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  stk::mesh::Entity elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+
+  stk::mesh::PartVector parts = {&mySidePart};
+  stk::mesh::Entity side11, side22, side42;
+  {
+    bulk->modification_begin();
+    side11 = bulk->declare_element_side(elem1, 1, parts);
+    side22 = bulk->declare_element_side(elem2, 2, parts);
+    bulk->modification_end();
+  }
+
+  EXPECT_EQ(1u, stk::mesh::count_entities(*bulk, meta.side_rank(), meta.universal_part()));
+
+  //now we simulate a "collapse-edge" scenario from the NGS team:
+  //element 2 is between elements 1 and 4. We delete element 2 and
+  //reconnect element 4 (disconnect node 4 and connect to node 3) so
+  //that elements 1 and 4 should now share a "graph edge" in stk-mesh's
+  //elem-elem-graph.
+  stk::mesh::Entity elem4 = bulk->get_entity(stk::topology::ELEM_RANK, 4);
+  {
+    bulk->modification_begin();
+    EXPECT_TRUE(bulk->destroy_entity(elem2));
+    stk::mesh::Entity node4 = bulk->get_entity(stk::topology::NODE_RANK, 4);
+    EXPECT_TRUE(bulk->destroy_relation(elem4, node4, 2));
+    stk::mesh::Entity node3 = bulk->get_entity(stk::topology::NODE_RANK, 3);
+    bulk->declare_relation(elem4, node3, 2);
+    bulk->modification_end();
+  }
+
+  {
+    bulk->modification_begin();
+    side11 = bulk->declare_element_side(elem1, 1, parts);
+    side42 = bulk->declare_element_side(elem4, 2, parts);
+    bulk->modification_end();
+  }
+
+  //if the elem-elem-graph correctly knows that elements 1 and 4 share a
+  //graph edge, then there should still be just 1 side between them.
+  stk::unit_test::verify_graph_edge_between_elems(*bulk, elem1, elem4);
+  EXPECT_EQ(1u, stk::mesh::count_entities(*bulk, meta.side_rank(), meta.universal_part()));
+}
+
 TEST(Skinning, createSidesForBlock)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
@@ -1331,3 +1592,179 @@ TEST(Skinning, createSidesForBlock)
   EXPECT_EQ(10u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, surface1));
 }
 
+TEST(Skinning, createSidesForShellQuad4Block)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+//shell-quad-4 mesh:
+//       6
+// 3*----*----*9
+//  | E2 | E4 |
+//  |    |    |
+// 2*---5*----*8
+//  | E1 | E3 |
+//  |    |    |
+// 1*----*----*7
+//       4
+//
+  stk::mesh::Part& skinPart = bulk->mesh_meta_data().declare_part("mySkin");
+  const std::string meshDesc =
+       "0,1,SHELL_QUAD_4, 1,4,5,2, block_1\n\
+        0,2,SHELL_QUAD_4, 2,5,6,3, block_1\n\
+        0,3,SHELL_QUAD_4, 4,7,8,5, block_1\n\
+        0,4,SHELL_QUAD_4, 5,8,9,6, block_1|sideset:name=surface_1; data=1,3,3,3, 3,4,4,4, 4,5,2,5, 2,6,1,6";
+
+  std::vector<double> coords = {0,0,0,  0,1,0,  0,2,0,
+                                1,0,0,  1,1,0,  1,2,0,
+                                2,0,0,  2,1,0,  2,2,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::mesh::create_exposed_block_boundary_sides(*bulk, bulk->mesh_meta_data().universal_part(), stk::mesh::PartVector{&skinPart});
+  EXPECT_EQ(8u, stk::mesh::count_entities(*bulk, stk::topology::FACE_RANK, skinPart));
+}
+
+TEST(Skinning, createSidesForShellQuad8Block)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+//shell-quad-8 mesh:
+//       6         12
+// 3*----*----*9----*----*15
+//  |         |          |
+//  |         |          |
+// 2*         *8         *14
+//  |         |          |
+//  |         |          |
+// 1*----*----*7----*----*13
+//       4         10
+//
+  stk::mesh::Part& skinPart = bulk->mesh_meta_data().declare_part("mySkin");
+  const std::string meshDesc =
+       "0,1,SHELL_QUAD_8, 1,7,9,3,4,8,6,2, block_1\n\
+        0,2,SHELL_QUAD_8, 7,13,15,9,10,14,12,8, block_2|sideset:name=surface_1; data=1,1,1,3,2,3,2,6";
+
+  std::vector<double> coords = {
+     /*1*/0,0,0,  /*2*/0,1,0,  /*3*/0,2,0,
+     /*4*/1,0,0,  /*6*/1,2,0,
+     /*7*/2,0,0,  /*8*/2,1,0,  /*9*/2,2,0,
+     /*10*/3,0,0,  /*12*/3,2,0,
+     /*13*/4,0,0,  /*14*/4,1,0,  /*15*/4,2,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::mesh::create_exposed_block_boundary_sides(*bulk, bulk->mesh_meta_data().universal_part(), stk::mesh::PartVector{&skinPart});
+  EXPECT_EQ(4u, stk::mesh::count_entities(*bulk, stk::topology::FACE_RANK, skinPart));
+}
+
+TEST(Skinning, createAllSidesForBlock)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                            .set_spatial_dimension(3)
+                                                            .create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
+  stk::mesh::Part& surface1 = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
+  stk::io::put_io_part_attribute(block2);
+  stk::io::put_io_part_attribute(surface1);
+  meta.set_part_id(block2, 2);
+  meta.set_part_id(surface1, 1);
+
+  stk::io::fill_mesh("generated:2x2x2", bulk);
+
+  copy_elems_from_block_to_block(bulk, {1, 2}, "block_1", "block_2");
+
+  stk::mesh::create_all_block_boundary_sides(bulk, meta.universal_part(), stk::mesh::PartVector{&surface1});
+  EXPECT_EQ(28u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, surface1));
+}
+
+TEST(Skinning, createAllSidesForBlock_separatePartForInteriorSides)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                            .set_spatial_dimension(3)
+                                                            .create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
+  stk::mesh::Part& surface1 = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
+  stk::mesh::Part& interiorSkin = meta.declare_part_with_topology("interiorSkin", stk::topology::QUAD_4);
+  stk::io::put_io_part_attribute(block2);
+  stk::io::put_io_part_attribute(surface1);
+  stk::io::put_io_part_attribute(interiorSkin);
+  meta.set_part_id(block2, 2);
+  meta.set_part_id(surface1, 1);
+  meta.set_part_id(interiorSkin, 2);
+
+  stk::io::fill_mesh("generated:2x2x2", bulk);
+
+  copy_elems_from_block_to_block(bulk, {1, 2}, "block_1", "block_2");
+
+  stk::mesh::PartVector interiorSkinParts = {&interiorSkin};
+  stk::mesh::create_all_block_boundary_sides(bulk, meta.universal_part(), stk::mesh::PartVector{&surface1}, &interiorSkinParts);
+  EXPECT_EQ(24u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, surface1));
+  EXPECT_EQ(4u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, interiorSkin));
+}
+
+TEST(CreateAndConvert, read_write_shell_4_all_face_sides)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+
+  const std::string meshDesc =
+      "0,1,SHELL_QUAD_4, 1,2,3,4, block_1 \
+       |sideset:name=surface_1; data=1,1, 1,2, 1,3, 1,4, 1,5, 1,6; split=topology";
+
+  std::vector<double> coords = {0,0,0, 1,0,0, 1,1,0, 0,1,0};
+  auto fullDesc = stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords);
+  stk::io::StkMeshIoBroker ioBroker;
+  ioBroker.set_enable_all_face_sides_shell_topo(true);
+  stk::io::fill_mesh("textmesh:" + fullDesc, *bulk, ioBroker);
+
+  stk::mesh::EntityVector entities;
+  stk::mesh::get_entities(*bulk, stk::topology::ELEM_RANK, entities);
+
+  for (auto entity : entities) {
+    EXPECT_EQ(4u, bulk->num_nodes(entity)) << bulk->entity_key(entity);
+    EXPECT_EQ(0u, bulk->num_edges(entity)) << bulk->entity_key(entity);
+    EXPECT_EQ(6u, bulk->num_faces(entity)) << bulk->entity_key(entity);
+    EXPECT_EQ(6u, bulk->num_sides(entity)) << bulk->entity_key(entity);
+  }
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().locally_owned_part(), bulk->buckets(stk::topology::EDGE_RANK)));
+  EXPECT_EQ(6u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().locally_owned_part(), bulk->buckets(stk::topology::FACE_RANK)));
+
+  std::string fileName("shell_quad4_all_face_sides_test.g");
+  stk::io::write_mesh(fileName, ioBroker);
+
+  std::shared_ptr<stk::mesh::BulkData> newBulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  stk::io::StkMeshIoBroker newIoBroker;
+  newIoBroker.set_bulk_data(*newBulk);
+  size_t index = newIoBroker.add_mesh_database(fileName, stk::io::READ_MESH);
+  newIoBroker.set_active_mesh(index);
+  newIoBroker.set_enable_all_face_sides_shell_topo(true);
+  newIoBroker.create_input_mesh();
+  newIoBroker.populate_bulk_data();
+
+  ASSERT_EQ(newIoBroker.bulk_data_ptr().get(), newBulk.get());
+
+  stk::mesh::get_entities(*newBulk, stk::topology::ELEM_RANK, entities);
+  for (auto entity : entities) {
+    EXPECT_EQ(4u, newBulk->num_nodes(entity)) << newBulk->entity_key(entity);
+    EXPECT_EQ(0u, newBulk->num_edges(entity)) << newBulk->entity_key(entity);
+    EXPECT_EQ(6u, newBulk->num_faces(entity)) << newBulk->entity_key(entity);
+    EXPECT_EQ(6u, newBulk->num_sides(entity)) << newBulk->entity_key(entity);
+  }
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(newBulk->mesh_meta_data().locally_owned_part(), newBulk->buckets(stk::topology::EDGE_RANK)));
+  EXPECT_EQ(6u, stk::mesh::count_selected_entities(newBulk->mesh_meta_data().locally_owned_part(), newBulk->buckets(stk::topology::FACE_RANK)));
+
+  unlink(fileName.c_str());
+}

@@ -42,7 +42,8 @@ project votd
     $(sierra-warnings)
     <include>$(stk_performance_tests-root)
     <include>$(stk_performance_tests-root)/..
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <define>STK_HIDE_DEPRECATED_CODE
   : usage-requirements
     <include>$(stk_performance_tests-root)
@@ -67,8 +68,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -123,6 +124,7 @@ local xml-files =
 exe stk_performance_tests
   :
     [ glob $(stk_performance_tests-root)/stk_balance/*.cpp ]
+    [ glob $(stk_performance_tests-root)/stk_io/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_mesh/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_mesh/entity_sorting/*.cpp ]
     [ glob $(stk_performance_tests-root)/general/*.cpp ]
@@ -134,6 +136,7 @@ exe stk_performance_tests
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_middle_mesh//stk_middle_mesh
     /sierra/stk_coupling//stk_coupling
+    /sierra/stk_search//stk_search
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_diag
     /sierra/stk_tools//stk_mesh_tools_lib

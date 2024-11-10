@@ -44,6 +44,12 @@
 #ifndef __CLEANCODE__
 #define __CLEANCODE__
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

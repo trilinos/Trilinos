@@ -287,8 +287,7 @@ void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const Inte
         cdfemSnapField.field().rotate_multistate_data();
 
       interfaceGeometry.set_do_update_geometry_when_mesh_changes(true);
-      krino::NodeToCapturedDomainsMap nodesToCapturedDomains;
-      interfaceGeometry.prepare_to_intersect_elements(mesh, nodesToCapturedDomains);
+      interfaceGeometry.prepare_to_intersect_elements(mesh);
       interfaceGeometry.set_do_update_geometry_when_mesh_changes(false);
 
       undo_previous_snaps_without_interpolation(mesh, cdfemSupport.get_coords_field(), cdfemSnapField);
@@ -633,11 +632,13 @@ CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coord
   {
     markerFunction = [&mesh, &refinementSupport, &interfaceGeometry](int num_refinements)
     {
+      constexpr bool isDefaultCoarsen = true;
       mark_elements_that_intersect_interval(mesh,
           refinementSupport.get_non_interface_conforming_refinement(),
           interfaceGeometry,
-          refinementSupport,
-          num_refinements);
+          refinementSupport.get_refinement_interval(),
+          refinementSupport.get_interface_minimum_refinement_level(),
+          isDefaultCoarsen);
     };
   }
   else
@@ -1033,46 +1034,6 @@ static void fill_nodes_of_elements_with_subelements_or_changed_phase(const stk::
   }
 }
 
-static
-void pack_shared_nodes_for_sharing_procs(const stk::mesh::BulkData & mesh,
-    const std::set<stk::mesh::Entity> & nodes,
-    stk::CommSparse &commSparse)
-{
-  std::vector<int> nodeSharedProcs;
-  stk::pack_and_communicate(commSparse,[&]()
-  {
-    for (auto node : nodes)
-    {
-      if (mesh.bucket(node).shared())
-      {
-        mesh.comm_shared_procs(node, nodeSharedProcs);
-        for (int procId : nodeSharedProcs)
-          commSparse.send_buffer(procId).pack(mesh.identifier(node));
-      }
-    }
-  });
-}
-
-static
-void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
-    std::set<stk::mesh::Entity> & nodes,
-    stk::CommSparse &commSparse)
-{
-  stk::unpack_communications(commSparse, [&](int procId)
-  {
-    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
-
-    while ( buffer.remaining() )
-    {
-      stk::mesh::EntityId nodeId;
-      commSparse.recv_buffer(procId).unpack(nodeId);
-      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
-      STK_ThrowRequire(mesh.is_valid(node));
-      nodes.insert(node);
-    }
-  });
-}
-
 static std::set<stk::mesh::Entity> get_nodes_of_elements_with_subelements_or_have_changed_phase(const stk::mesh::BulkData & mesh,
     const Phase_Support & phaseSupport,
     const std::vector<std::unique_ptr<Mesh_Element>> & meshElements)
@@ -1080,9 +1041,7 @@ static std::set<stk::mesh::Entity> get_nodes_of_elements_with_subelements_or_hav
   std::set<stk::mesh::Entity> nodesOfElements;
   fill_nodes_of_elements_with_subelements_or_changed_phase(mesh, phaseSupport, meshElements, nodesOfElements);
 
-  stk::CommSparse commSparse(mesh.parallel());
-  pack_shared_nodes_for_sharing_procs(mesh, nodesOfElements, commSparse);
-  unpack_shared_nodes(mesh, nodesOfElements, commSparse);
+  communicate_shared_nodes_to_sharing_procs(mesh, nodesOfElements);
 
   return nodesOfElements;
 }
@@ -1426,7 +1385,7 @@ static void find_nearest_matching_prolong_facet(const stk::mesh::BulkData & mesh
     const std::vector<unsigned> & requiredFields,
     const SubElementNode & targetNode,
     const ProlongationFacet *& nearestProlongFacet,
-    FacetDistanceQuery & nearestFacetQuery,
+    FacetDistanceQuery<Facet> & nearestFacetQuery,
     bool & haveMissingRemoteProlongFacets)
 {
   const stk::math::Vector3d & targetCoordinates = targetNode.coordinates();
@@ -1450,7 +1409,7 @@ static void find_nearest_matching_prolong_facet(const stk::mesh::BulkData & mesh
 
         for (auto && prolong_facet : nearest_prolong_facets)
         {
-          FacetDistanceQuery facet_query(*prolong_facet->get_facet(), targetCoordinates);
+          FacetDistanceQuery<Facet> facet_query(*prolong_facet->get_facet(), targetCoordinates);
           if (nearestFacetQuery.empty() || facet_query.distance_squared() < nearestFacetQuery.distance_squared())
           {
             nearestProlongFacet = prolong_facet;
@@ -1523,10 +1482,8 @@ CDMesh::find_prolongation_node(const SubElementNode & targetNode) const
 
   const std::vector<unsigned> requiredFields = targetNode.prolongation_node_fields(*this);
 
-  STK_ThrowRequire(need_facets_for_prolongation());
-
   const ProlongationFacet * nearestProlongFacet = nullptr;
-  FacetDistanceQuery nearestFacetQuery;
+  FacetDistanceQuery<Facet> nearestFacetQuery;
 
   find_nearest_matching_prolong_facet(stk_bulk(), my_phase_prolong_tree_map, requiredFields, targetNode, nearestProlongFacet, nearestFacetQuery, my_missing_remote_prolong_facets);
 
@@ -1923,7 +1880,8 @@ CDMesh::snap_nearby_intersections_to_nodes(const InterfaceGeometry & interfaceGe
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::snap_nearby_intersections_to_nodes(void)"); /* %TRACE% */
   stk::diag::TimeBlock timer__(my_timer_snap);
 
-  snap_to_node(stk_bulk(), interfaceGeometry, get_snapper(), domainsAtNodes);
+  const stk::mesh::Selector parentElementSelector = get_cdfem_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
+  snap_to_node(stk_bulk(), parentElementSelector, interfaceGeometry, get_snapper(), domainsAtNodes);
   for (auto && entry : domainsAtNodes)
   {
     const SubElementNode * node = get_mesh_node(stk_bulk().identifier(entry.first));

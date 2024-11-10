@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 //
 //  StructuredAssembly.hpp
 //  Trilinos
@@ -94,10 +102,10 @@ namespace {
 }
 
 //! General assembly for two arbitrary bases and ops that takes advantage of the new structured integration support, including support for sum factorization.
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2>  // spaceDim and spaceDim2 should agree in value (differ in type)
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &worksetSize,
-                                                                   const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
-                                                                   const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                   const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight1,
+                                                                   const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight2,
                                                                    double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
   using namespace Intrepid2;
@@ -143,7 +151,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   
   BasisValues<Scalar,DeviceType> basis2Values = basis2->allocateBasisValues(tensorCubaturePoints, op2);
   basis2->getValues(basis2Values, tensorCubaturePoints, op2);
-      
+  
   int cellOffset = 0;
   
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
@@ -161,18 +169,19 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   auto transformedBasis2ValuesTemp = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
   auto integralData = IntegrationTools::allocateIntegralData(transformedBasis1ValuesTemp, cellMeasures, transformedBasis2ValuesTemp);
   
-  const int numPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
+  const int numJacobianDataPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
+  const int numPoints             = jacobian.extent_int(1); // number of logical points
   
   // TODO: make the below determination accurate for diagonal/block-diagonal cases… (right now, will overcount)
-  const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
-  const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
-  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
+  const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numJacobianDataPoints, numVertices);
+  const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numJacobianDataPoints);
+  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numJacobianDataPoints);
   
   transformIntegrateFlopCount = 0;
   jacobianCellMeasureFlopCount  = numCells * flopsPerJacobianPerCell;    // jacobian itself
   jacobianCellMeasureFlopCount += numCells * flopsPerJacobianInvPerCell; // inverse
   jacobianCellMeasureFlopCount += numCells * flopsPerJacobianDetPerCell; // determinant
-  jacobianCellMeasureFlopCount += numCells * numPoints; // cell measure: (C,P) gets weighted with cubature weights of shape (P)
+  jacobianCellMeasureFlopCount += numCells * numJacobianDataPoints; // cell measure: (C,P) gets weighted with cubature weights of shape (P)
   
   auto refData = geometry.getJacobianRefData(tensorCubaturePoints);
   
@@ -209,6 +218,49 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
     auto transformedBasis1Values = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
     auto transformedBasis2Values = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
     
+    if (vectorWeight1 != Teuchos::null)
+    {
+      ScalarView<Scalar,DeviceType> auView("a_u", spaceDim);
+      auto auViewHost = Kokkos::create_mirror(auView);
+      for (int d=0; d<spaceDim; d++)
+      {
+        auViewHost(d) = (*vectorWeight1)[d];
+      }
+      Kokkos::deep_copy(auView, auViewHost);
+      
+      Kokkos::Array<int,3> extents {numCellsInWorkset,numPoints,spaceDim};
+      Kokkos::Array<DataVariationType,3> variationTypes {CONSTANT, CONSTANT, GENERAL};
+      
+      Data<Scalar,DeviceType> au_data(auView, extents, variationTypes);
+      auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis1Values.transform(), au_data, true);
+      uTransform.storeMatVec(transformedBasis1Values.transform(), au_data, true); // true: transpose basis transform when multiplying
+      transformedBasis1Values = Intrepid2::TransformedBasisValues<double, DeviceType>(uTransform, basis1Values);
+      
+      // TODO: modify transformIntegrateFlopCount to include an estimate for above mat-vecs (but note that these will not be a dominant cost, especially at high order).
+    }
+    
+    if (vectorWeight2 != Teuchos::null)
+    {
+      ScalarView<Scalar,DeviceType> avView("a_v", spaceDim);
+      auto avViewHost = Kokkos::create_mirror(avView);
+      
+      for (int d=0; d<spaceDim; d++)
+      {
+        avViewHost(d) = (*vectorWeight2)[d];
+      }
+      Kokkos::deep_copy(avView, avViewHost);
+      
+      Kokkos::Array<int,3> extents {numCellsInWorkset,numPoints,spaceDim};
+      Kokkos::Array<DataVariationType,3> variationTypes {CONSTANT, CONSTANT, GENERAL};
+      
+      Data<Scalar,DeviceType> av_data(avView, extents, variationTypes);
+      auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis2Values.transform(), av_data, true);
+      vTransform.storeMatVec(transformedBasis2Values.transform(), av_data, true); // true: transpose basis transform when multiplying
+      transformedBasis2Values = Intrepid2::TransformedBasisValues<double, DeviceType>(vTransform, basis2Values);
+      
+      // TODO: modify transformIntegrateFlopCount to include an estimate for above mat-vecs (but note that these will not be a dominant cost, especially at high order).
+    }
+    
     geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
     ExecutionSpace().fence();
     jacobianAndCellMeasureTimer->stop();
@@ -235,6 +287,22 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
     cellOffset += worksetSize;
   }
   return cellStiffness;
+
+}
+
+//! General assembly for two arbitrary bases and ops that takes advantage of the new structured integration support, including support for sum factorization.
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &worksetSize,
+                                                                   const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
+                                                                   const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                   double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+{
+  Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > nullVectorWeight = Teuchos::null;
+  
+  return performStructuredAssembly<Scalar,BasisFamily,PointScalar,spaceDim,DeviceType>(geometry, worksetSize,
+                                                                                       polyOrder1, fs1, op1, nullVectorWeight,
+                                                                                       polyOrder2, fs2, op2, nullVectorWeight,
+                                                                                       transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
 }
 
 #endif /* StructuredAssembly_h */

@@ -13,6 +13,12 @@
 #ifndef _MLMATFORMATS_
 #define _MLMATFORMATS_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 
 /* ******************************************************************** */
 /* Structure used for ML_MSR_getrows and ML_CSR_getrows                 */
@@ -160,4 +166,3 @@ extern int  ML_Matrix_DCSR_Matvec(ML_Operator *,int,double*,int,double*);
 #endif
 #endif
 #endif
-

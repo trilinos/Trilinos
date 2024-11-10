@@ -58,7 +58,7 @@
     {
     public:
 
-      /// integrand tells what fields Intrepid should compute, etc.
+      /// integrand tells what fields Intrepid2 should compute, etc.
       /// Note: this function is intended to be used to wrap a Function using CompositeFunction and thus its domain and codomain
       /// are the same as the wrapped function's codomain
       LN_NormOp(Function& integrand) : Function("LN_NormOp",integrand.getCodomainDimensions(), integrand.getCodomainDimensions()) {}
@@ -66,7 +66,7 @@
       void operator()(MDArray& integrand_values, MDArray& output_values, double time_value_optional=0.0)
       {
         VERIFY_OP(integrand_values.size(), ==, output_values.size(), "LN_NormOp::operator() bad sizes");
-        for (int i = 0; i < integrand_values.size(); i++)
+        for (size_t i = 0; i < integrand_values.size(); i++)
           {
             output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
           }
@@ -99,7 +99,7 @@
       {
         //VERIFY_OP(coords.size(), ==, output_values.size(), "MaxOfNodeValues::operator() bad sizes");
         if (maxVal.size()==0) maxVal.resize(m_integrand.getCodomainDimensions()[0]);
-        MDArray out(maxVal.size());
+        MDArray out("out",maxVal.size());
         m_integrand(coords, out);
 
         for (unsigned i = 0; i < maxVal.size(); i++)
@@ -154,7 +154,7 @@
         VERIFY_OP_ON(m_selector, !=, 0, "logic error 2");
         delete m_selector;
         m_selector = new stk::mesh::Selector;
-        for (int i = 0; i < partNames.dimension(0); i++)
+        for (size_t i = 0; i < partNames.extent_int(0); i++)
           {
             stk::mesh::Part * part = bulkData.mesh_meta_data().get_part(partNames(i));
             if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));

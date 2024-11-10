@@ -27,9 +27,7 @@ int get_other_proc(MPI_Comm comm)
   return stk::parallel_machine_size(comm) - stk::parallel_machine_rank(comm) - 1;
 }
 
-// void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto)
-
-class CoincidentElements: public stk::unit_test_util::simple_fields::MeshTestFixture
+class CoincidentElements: public stk::unit_test_util::MeshTestFixture
 {
 protected:
   void make_coincident_element_mesh(unsigned numElemsToCreate, const stk::mesh::EntityIdVector &nodes, stk::mesh::Part &part)
@@ -58,8 +56,11 @@ protected:
   }
   void make_nodes_shared(const stk::mesh::EntityIdVector &nodes)
   {
-    for(const stk::mesh::EntityId nodeId : nodes)
-      get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, nodeId), get_other_proc(get_comm()));
+    if (get_bulk().parallel_size() > 1) {
+      for(const stk::mesh::EntityId nodeId : nodes) {
+        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, nodeId), get_other_proc(get_comm()));
+      }
+    }
   }
 private:
   bool is_element_created_on_this_proc(int elementIndex)

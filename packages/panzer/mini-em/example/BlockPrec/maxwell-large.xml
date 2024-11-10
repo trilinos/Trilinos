@@ -56,7 +56,6 @@
 
    <ParameterList name="Assembly">
      <Parameter name="Field Order"           type="string" value="blocked: B_face E_edge"/>
-     <Parameter name="Workset Size" type="int" value="2000"/>
    </ParameterList>
 
   <ParameterList name="Physics Blocks">
@@ -72,17 +71,6 @@
         <Parameter name="Conductivity"         type="string" value="sigma"/>
         <Parameter name="Permeability"         type="string" value="mu"/>
         <Parameter name="Current"              type="string" value="J"/>
-      </ParameterList>
-    </ParameterList>
-    <!-- Auxiliary operators for the solve -->
-    <ParameterList name="Auxiliary Physics Block">
-      <!-- Weak gradient used by augmentation preconditioner -->
-      <ParameterList name="Auxiliary Gradient Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Weak Gradient"/>
-        <Parameter name="Vector Name"       type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Scalar Name"       type="string" value="AUXILIARY_NODE"/>
-        <Parameter name="Basis Order"       type="int"    value="1"/>
-        <Parameter name="Integration Order" type="int"    value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

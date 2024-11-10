@@ -5,7 +5,8 @@
 // See packages/seacas/LICENSE for details
 
 #include "ED_SystemInterface.h" // for SystemInterface, etc
-#include "edge_block.h"         // for Edge_Block
+#include "assembly.h"
+#include "edge_block.h" // for Edge_Block
 #include "exoII_read.h"
 #include "exo_block.h"  // for Exo_Block
 #include "exodusII.h"   // for ex_init_params, ex_opts, etc
@@ -33,7 +34,9 @@ namespace {
 
 template <typename INT> ExoII_Read<INT>::ExoII_Read() = default;
 
-template <typename INT> ExoII_Read<INT>::ExoII_Read(const std::string &fname) : file_name(fname) {}
+template <typename INT> ExoII_Read<INT>::ExoII_Read(std::string fname) : file_name(std::move(fname))
+{
+}
 
 template <typename INT> ExoII_Read<INT>::~ExoII_Read()
 {
@@ -54,6 +57,7 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
     delete[] times;
     delete[] edge_blocks;
     delete[] face_blocks;
+    delete[] assemblies;
 
     if (results) {
       for (unsigned i = 0; i < nodal_vars.size(); ++i) {
@@ -187,6 +191,37 @@ Exo_Block<INT> *ExoII_Read<INT>::Get_Element_Block_by_Name(const std::string &na
 }
 
 template <typename INT>
+Assembly<INT> *ExoII_Read<INT>::Get_Assembly_by_Index(size_t block_index) const
+{
+  SMART_ASSERT(Check_State());
+  SMART_ASSERT(block_index < num_assemblies);
+  return &assemblies[block_index];
+}
+
+template <typename INT>
+Assembly<INT> *ExoII_Read<INT>::Get_Assembly_by_Name(const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i = 0; i < num_assemblies; i++) {
+    if (assemblies[i].Name() == name) {
+      return &assemblies[i];
+    }
+  }
+  return nullptr;
+}
+
+template <typename INT> Assembly<INT> *ExoII_Read<INT>::Get_Assembly_by_Id(size_t set_id) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i = 0; i < num_assemblies; i++) {
+    if (assemblies[i].Id() == set_id) {
+      return &assemblies[i];
+    }
+  }
+  return nullptr;
+}
+
+template <typename INT>
 Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, size_t block_index) const
 {
   SMART_ASSERT(Check_State());
@@ -197,6 +232,7 @@ Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, size_t block_inde
   case EX_SIDE_SET: SMART_ASSERT(block_index < num_side_sets); return &ssets[block_index];
   case EX_EDGE_BLOCK: SMART_ASSERT(block_index < num_edge_blocks); return &edge_blocks[block_index];
   case EX_FACE_BLOCK: SMART_ASSERT(block_index < num_face_blocks); return &face_blocks[block_index];
+  case EX_ASSEMBLY: SMART_ASSERT(block_index < num_assemblies); return &assemblies[block_index];
   default: return nullptr;
   }
 }
@@ -237,6 +273,13 @@ template <typename INT> Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Id(EXOTYPE ty
     for (size_t i = 0; i < num_face_blocks; i++) {
       if (face_blocks[i].Id() == id) {
         return &face_blocks[i];
+      }
+    }
+    break;
+  case EX_ASSEMBLY:
+    for (size_t i = 0; i < num_assemblies; i++) {
+      if (assemblies[i].Id() == id) {
+        return &assemblies[i];
       }
     }
     break;
@@ -282,6 +325,13 @@ Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Name(EXOTYPE type, const std::string 
     for (size_t i = 0; i < num_face_blocks; i++) {
       if (face_blocks[i].Name() == name) {
         return &face_blocks[i];
+      }
+    }
+    break;
+  case EX_ASSEMBLY:
+    for (size_t i = 0; i < num_assemblies; i++) {
+      if (assemblies[i].Name() == name) {
+        return &assemblies[i];
       }
     }
     break;
@@ -613,8 +663,8 @@ template <typename INT>
 const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion,
                                                  int var_index) const // Interpolated results.
 {
-  static double *st_results  = nullptr;
-  static double *st_results2 = nullptr;
+  static std::vector<double> st_results;
+  static std::vector<double> st_results2;
 
   SMART_ASSERT(Check_State());
   SMART_ASSERT(t1 > 0 && t1 <= num_times);
@@ -625,22 +675,22 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
     return nullptr;
   }
 
-  if (st_results == nullptr) {
-    st_results = new double[num_nodes];
+  if (st_results.empty()) {
+    st_results.resize(num_nodes);
   }
 
-  int err = ex_get_var(file_id, t1, EX_NODAL, var_index + 1, 0, num_nodes, st_results);
+  int err = ex_get_var(file_id, t1, EX_NODAL, var_index + 1, 0, num_nodes, st_results.data());
   if (err < 0) {
     Error("ExoII_Read::Get_Nodal_Results(): Failed to get "
           "nodal variable values!  Aborting...\n");
   }
 
   if (t1 != t2) {
-    if (st_results2 == nullptr) {
-      st_results2 = new double[num_nodes];
+    if (st_results2.empty()) {
+      st_results2.resize(num_nodes);
     }
 
-    err = ex_get_var(file_id, t2, EX_NODAL, var_index + 1, 0, num_nodes, st_results2);
+    err = ex_get_var(file_id, t2, EX_NODAL, var_index + 1, 0, num_nodes, st_results2.data());
     if (err < 0) {
       Error("ExoII_Read::Load_Nodal_Results(): Failed to get "
             "nodal variable values!  Aborting...\n");
@@ -651,7 +701,7 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
       st_results[i] = (1.0 - proportion) * st_results[i] + proportion * st_results2[i];
     }
   }
-  return st_results;
+  return st_results.data();
 }
 
 template <typename INT> void ExoII_Read<INT>::Free_Nodal_Results()
@@ -963,6 +1013,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   num_side_sets   = info.num_side_sets;
   num_edge_blocks = info.num_edge_blk;
   num_face_blocks = info.num_face_blk;
+  num_assemblies  = info.num_assembly;
   title           = info.title;
 
   if (err > 0 && !interFace.quiet_flag) {
@@ -1005,10 +1056,36 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   coord_names.clear();
   for (int i = 0; i < dimension; ++i) {
-    coord_names.push_back(coords[i]);
+    coord_names.emplace_back(coords[i]);
   }
   free_name_array(coords, 3);
 
+  // Assembly Data...
+  delete[] assemblies;
+  assemblies = nullptr;
+  if (num_assemblies > 0) {
+    assemblies = new Assembly<INT>[num_assemblies];
+    SMART_ASSERT(assemblies != nullptr);
+    std::vector<INT> ids(num_assemblies);
+
+    err = ex_get_ids(file_id, EX_ASSEMBLY, Data(ids));
+
+    if (err < 0) {
+      Error("Failed to get assembly ids!  Aborting...\n");
+    }
+
+    for (size_t b = 0; b < num_assemblies; ++b) {
+      if (ids[b] <= EX_INVALID_ID) {
+        fmt::print(stderr,
+                   "EXODIFF  WARNING:  Assembly Id "
+                   "for assembly index {} is {} which is negative. This was returned by call to "
+                   "ex_get_ids().\n",
+                   b, ids[b]);
+      }
+
+      assemblies[b].initialize(file_id, ids[b]);
+    }
+  }
   //                 Element Block Data...
 
   delete[] eblocks;
@@ -1018,7 +1095,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     SMART_ASSERT(eblocks != nullptr);
     std::vector<INT> ids(num_elmt_blocks);
 
-    err = ex_get_ids(file_id, EX_ELEM_BLOCK, ids.data());
+    err = ex_get_ids(file_id, EX_ELEM_BLOCK, Data(ids));
 
     if (err < 0) {
       Error("Failed to get element block ids!  Aborting...\n");
@@ -1067,7 +1144,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     SMART_ASSERT(nsets != nullptr);
     std::vector<INT> ids(num_node_sets);
 
-    err = ex_get_ids(file_id, EX_NODE_SET, ids.data());
+    err = ex_get_ids(file_id, EX_NODE_SET, Data(ids));
 
     if (err < 0) {
       Error("Failed to get nodeset ids!  Aborting...\n");
@@ -1093,7 +1170,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     SMART_ASSERT(ssets != nullptr);
     std::vector<INT> ids(num_side_sets);
 
-    err = ex_get_ids(file_id, EX_SIDE_SET, ids.data());
+    err = ex_get_ids(file_id, EX_SIDE_SET, Data(ids));
 
     if (err < 0) {
       Error("Failed to get sideset ids!  Aborting...\n");
@@ -1119,7 +1196,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     SMART_ASSERT(edge_blocks != nullptr);
     std::vector<INT> ids(num_edge_blocks);
 
-    err = ex_get_ids(file_id, EX_EDGE_BLOCK, ids.data());
+    err = ex_get_ids(file_id, EX_EDGE_BLOCK, Data(ids));
 
     if (err < 0) {
       Error("Failed to get edgeblock ids!  Aborting...\n");
@@ -1145,7 +1222,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     SMART_ASSERT(face_blocks != nullptr);
     std::vector<INT> ids(num_face_blocks);
 
-    err = ex_get_ids(file_id, EX_FACE_BLOCK, ids.data());
+    err = ex_get_ids(file_id, EX_FACE_BLOCK, Data(ids));
 
     if (err < 0) {
       Error("Failed to get faceblock ids!  Aborting...\n");

@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_BLAS_TEAM_HPP__
 #define __TACHO_BLAS_TEAM_HPP__
@@ -31,19 +23,19 @@ template <typename T> struct BlasTeam {
   struct Impl {
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void set(MemberType &member, int m, const T alpha,
-                                           /* */ T *__restrict__ a, int as0) {
+                                           /* */ T *KOKKOS_RESTRICT a, int as0) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { a[i * as0] = alpha; });
     }
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void scale(MemberType &member, int m, const T alpha,
-                                             /* */ T *__restrict__ a, int as0) {
+                                             /* */ T *KOKKOS_RESTRICT a, int as0) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { a[i * as0] *= alpha; });
     }
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void set(MemberType &member, int m, int n, const T alpha,
-                                           /* */ T *__restrict__ a, int as0, int as1) {
+                                           /* */ T *KOKKOS_RESTRICT a, int as0, int as1) {
       if (as0 == 1 || as0 < as1)
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m),
@@ -58,7 +50,7 @@ template <typename T> struct BlasTeam {
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void scale(MemberType &member, int m, int n, const T alpha,
-                                             /* */ T *__restrict__ a, int as0, int as1) {
+                                             /* */ T *KOKKOS_RESTRICT a, int as0, int as1) {
       if (as0 == 1 || as0 < as1)
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m),
@@ -73,7 +65,7 @@ template <typename T> struct BlasTeam {
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void set_upper(MemberType &member, int m, int n, int offset, const T alpha,
-                                                 /* */ T *__restrict__ a, int as0, int as1) {
+                                                 /* */ T *KOKKOS_RESTRICT a, int as0, int as1) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1 - offset),
                              [&](const int &i) { a[i * as0 + j * as1] = alpha; });
@@ -82,7 +74,7 @@ template <typename T> struct BlasTeam {
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void scale_upper(MemberType &member, int m, int n, int offset, const T alpha,
-                                                   /* */ T *__restrict__ a, int as0, int as1) {
+                                                   /* */ T *KOKKOS_RESTRICT a, int as0, int as1) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1 - offset),
                              [&](const int &i) { a[i * as0 + j * as1] *= alpha; });
@@ -91,7 +83,7 @@ template <typename T> struct BlasTeam {
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void set_lower(MemberType &member, int m, int n, int offset, const T alpha,
-                                                 /* */ T *__restrict__ a, int as0, int as1) {
+                                                 /* */ T *KOKKOS_RESTRICT a, int as0, int as1) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
         const int jj = j + offset;
         Kokkos::parallel_for(
@@ -104,7 +96,7 @@ template <typename T> struct BlasTeam {
 
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void scale_lower(MemberType &member, int m, int n, int offset, const T alpha,
-                                                   /* */ T *__restrict__ a, int as0, int as1) {
+                                                   /* */ T *KOKKOS_RESTRICT a, int as0, int as1) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
         const int jj = j + offset;
         Kokkos::parallel_for(
@@ -117,9 +109,9 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjType, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void gemv(MemberType &member, const ConjType &cj, const int m, const int n,
-                                            const T alpha, const T *__restrict__ A, const int as0, const int as1,
-                                            const T *__restrict__ x, const int xs0, const T beta,
-                                            /* */ T *__restrict__ y, const int ys0) {
+                                            const T alpha, const T *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                            const T *KOKKOS_RESTRICT x, const int xs0, const T beta,
+                                            /* */ T *KOKKOS_RESTRICT y, const int ys0) {
       const T one(1), zero(0);
 
       if (beta == zero)
@@ -154,18 +146,18 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjType, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void trsv_upper(MemberType &member, const ConjType &cjA, const char diag, const int m,
-                                                  const T *__restrict__ A, const int as0, const int as1,
-                                                  /* */ T *__restrict__ b, const int bs0) {
+                                                  const T *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                                  /* */ T *KOKKOS_RESTRICT b, const int bs0) {
       if (m <= 0)
         return;
 
       const bool use_unit_diag = diag == 'U' || diag == 'u';
-      T *__restrict__ b0 = b;
+      T *KOKKOS_RESTRICT b0 = b;
       for (int p = (m - 1); p >= 0; --p) {
         const int iend = p;
 
-        const T *__restrict__ a01 = A + p * as1;
-        /**/ T *__restrict__ beta1 = b + p * bs0;
+        const T *KOKKOS_RESTRICT a01 = A + p * as1;
+        /**/ T *KOKKOS_RESTRICT beta1 = b + p * bs0;
 
         /// make sure the previous iteration update is done
         member.team_barrier();
@@ -185,19 +177,19 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjType, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void trsv_lower(MemberType &member, const ConjType &cjA, const char diag, const int m,
-                                                  const T *__restrict__ A, const int as0, const int as1,
-                                                  /* */ T *__restrict__ b, const int bs0) {
+                                                  const T *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                                  /* */ T *KOKKOS_RESTRICT b, const int bs0) {
       if (m <= 0)
         return;
 
       const bool use_unit_diag = diag == 'U' || diag == 'u';
-      // T *__restrict__ b0 = b;
+      // T *KOKKOS_RESTRICT b0 = b;
       for (int p = 0; p < m; ++p) {
         const int iend = m - p - 1;
 
-        const T *__restrict__ a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
+        const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
 
-        T *__restrict__ beta1 = b + p * bs0, *__restrict__ b2 = iend ? beta1 + bs0 : NULL;
+        T *KOKKOS_RESTRICT beta1 = b + p * bs0, *KOKKOS_RESTRICT b2 = iend ? beta1 + bs0 : NULL;
 
         /// make sure that the previous iteration update is done
         member.team_barrier();
@@ -217,10 +209,10 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjTypeA, typename ConjTypeB, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void gemm(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB, const int m,
-                                            const int n, const int k, const T alpha, const T *__restrict__ A,
-                                            const int as0, const int as1, const T *__restrict__ B, const int bs0,
+                                            const int n, const int k, const T alpha, const T *KOKKOS_RESTRICT A,
+                                            const int as0, const int as1, const T *KOKKOS_RESTRICT B, const int bs0,
                                             const int bs1, const T beta,
-                                            /* */ T *__restrict__ C, const int cs0, const int cs1) {
+                                            /* */ T *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
       const T one(1), zero(0);
 
       if (beta == zero)
@@ -236,7 +228,7 @@ template <typename T> struct BlasTeam {
         {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
             Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [&](const int &i) {
-              const T *__restrict__ pA = A + i * as0, *__restrict__ pB = B + j * bs1;
+              const T *KOKKOS_RESTRICT pA = A + i * as0, *KOKKOS_RESTRICT pB = B + j * bs1;
               T c(0);
               for (int p = 0; p < k; ++p)
                 c += cjA(pA[p * as1]) * cjB(pB[p * bs0]);
@@ -250,9 +242,9 @@ template <typename T> struct BlasTeam {
     template <typename ConjTypeA, typename ConjTypeB, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void gemm_upper(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
                                                   const int m, const int n, const int k, const T alpha,
-                                                  const T *__restrict__ A, const int as0, const int as1,
-                                                  const T *__restrict__ B, const int bs0, const int bs1, const T beta,
-                                                  /* */ T *__restrict__ C, const int cs0, const int cs1) {
+                                                  const T *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                                  const T *KOKKOS_RESTRICT B, const int bs0, const int bs1, const T beta,
+                                                  /* */ T *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
       const T one(1), zero(0);
 
       if (beta == zero)
@@ -268,7 +260,7 @@ template <typename T> struct BlasTeam {
         {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
             Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
-              const T *__restrict__ pA = A + i * as0, *__restrict__ pB = B + j * bs1;
+              const T *KOKKOS_RESTRICT pA = A + i * as0, *KOKKOS_RESTRICT pB = B + j * bs1;
               T c(0);
               for (int p = 0; p < k; ++p)
                 c += cjA(pA[p * as1]) * cjB(pB[p * bs0]);
@@ -281,9 +273,9 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjTypeA, typename ConjTypeB, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void herk_upper(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
-                                                  const int n, const int k, const T alpha, const T *__restrict__ A,
+                                                  const int n, const int k, const T alpha, const T *KOKKOS_RESTRICT A,
                                                   const int as0, const int as1, const T beta,
-                                                  /* */ T *__restrict__ C, const int cs0, const int cs1) {
+                                                  /* */ T *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
       const T one(1), zero(0);
 
       if (beta == zero)
@@ -298,9 +290,9 @@ template <typename T> struct BlasTeam {
         member.team_barrier();
         {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
-            const T *__restrict__ pA = A + j * as0;
+            const T *KOKKOS_RESTRICT pA = A + j * as0;
             Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
-              const T *__restrict__ pB = A + i * as0;
+              const T *KOKKOS_RESTRICT pB = A + i * as0;
               T c(0);
               for (int p = 0; p < k; ++p)
                 c += cjA(pA[p * as1]) * cjB(pB[p * as1]);
@@ -313,9 +305,9 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjTypeA, typename ConjTypeB, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void herk_lower(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
-                                                  const int n, const int k, const T alpha, const T *__restrict__ A,
+                                                  const int n, const int k, const T alpha, const T *KOKKOS_RESTRICT A,
                                                   const int as0, const int as1, const T beta,
-                                                  /* */ T *__restrict__ C, const int cs0, const int cs1) {
+                                                  /* */ T *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
       const T one(1), zero(0);
 
       if (beta == zero)
@@ -332,7 +324,7 @@ template <typename T> struct BlasTeam {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
             Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n - j), [&](const int &i) {
               const int ii = i + j;
-              const T *__restrict__ pA = A + j * as0, *__restrict__ pB = A + ii * as0;
+              const T *KOKKOS_RESTRICT pA = A + j * as0, *KOKKOS_RESTRICT pB = A + ii * as0;
               T c(0);
               for (int p = 0; p < k; ++p)
                 c += cjA(pA[p * as1]) * cjB(pB[p * as1]);
@@ -345,9 +337,9 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjType, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void trsm_left_lower(MemberType &member, const ConjType &cjA, const char diag,
-                                                       const int m, const int n, const T alpha, const T *__restrict__ A,
+                                                       const int m, const int n, const T alpha, const T *KOKKOS_RESTRICT A,
                                                        const int as0, const int as1,
-                                                       /* */ T *__restrict__ B, const int bs0, const int bs1) {
+                                                       /* */ T *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
       const T one(1), zero(0);
 
       if (alpha == zero)
@@ -362,9 +354,9 @@ template <typename T> struct BlasTeam {
         for (int p = 0; p < m; ++p) {
           const int iend = m - p - 1, jend = n;
 
-          const T *__restrict__ a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
+          const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
 
-          T *__restrict__ b1t = B + p * bs0, *__restrict__ B2 = iend ? B + (p + 1) * bs0 : NULL;
+          T *KOKKOS_RESTRICT b1t = B + p * bs0, *KOKKOS_RESTRICT B2 = iend ? B + (p + 1) * bs0 : NULL;
 
           member.team_barrier();
           if (!use_unit_diag) {
@@ -383,9 +375,9 @@ template <typename T> struct BlasTeam {
 
     template <typename ConjType, typename MemberType>
     static KOKKOS_INLINE_FUNCTION void trsm_left_upper(MemberType &member, const ConjType &cjA, const char diag,
-                                                       const int m, const int n, const T alpha, const T *__restrict__ A,
+                                                       const int m, const int n, const T alpha, const T *KOKKOS_RESTRICT A,
                                                        const int as0, const int as1,
-                                                       /* */ T *__restrict__ B, const int bs0, const int bs1) {
+                                                       /* */ T *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
       const T one(1.0), zero(0.0);
 
       // note that parallel range is different ( m*n vs m-1*n);
@@ -398,12 +390,12 @@ template <typename T> struct BlasTeam {
           return;
 
         const bool use_unit_diag = diag == 'U' || diag == 'u';
-        T *__restrict__ B0 = B;
+        T *KOKKOS_RESTRICT B0 = B;
         for (int p = (m - 1); p >= 0; --p) {
           const int iend = p, jend = n;
 
-          const T *__restrict__ a01 = A + p * as1;
-          /**/ T *__restrict__ b1t = B + p * bs0;
+          const T *KOKKOS_RESTRICT a01 = A + p * as1;
+          /**/ T *KOKKOS_RESTRICT b1t = B + p * bs0;
 
           member.team_barrier();
           if (!use_unit_diag) {
@@ -423,9 +415,9 @@ template <typename T> struct BlasTeam {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void gemv(MemberType &member, const char trans, const int m, const int n, const T alpha,
-                                          const T *__restrict__ a, const int lda, const T *__restrict__ x, const int xs,
+                                          const T *KOKKOS_RESTRICT a, const int lda, const T *KOKKOS_RESTRICT x, const int xs,
                                           const T beta,
-                                          /* */ T *__restrict__ y, const int ys) {
+                                          /* */ T *KOKKOS_RESTRICT y, const int ys) {
     switch (trans) {
     case 'N':
     case 'n': {
@@ -452,8 +444,8 @@ template <typename T> struct BlasTeam {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void trsv(MemberType &member, const char uplo, const char trans, const char diag,
-                                          const int m, const T *__restrict__ a, const int lda,
-                                          /* */ T *__restrict__ b, const int bs) {
+                                          const int m, const T *KOKKOS_RESTRICT a, const int lda,
+                                          /* */ T *KOKKOS_RESTRICT b, const int bs) {
     if (uplo == 'U' || uplo == 'u') {
       switch (trans) {
       case 'N':
@@ -505,9 +497,9 @@ template <typename T> struct BlasTeam {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void gemm(MemberType &member, const char transa, const char transb, const int m,
-                                          const int n, const int k, const T alpha, const T *__restrict__ a, int lda,
-                                          const T *__restrict__ b, int ldb, const T beta,
-                                          /* */ T *__restrict__ c, int ldc) {
+                                          const int n, const int k, const T alpha, const T *KOKKOS_RESTRICT a, int lda,
+                                          const T *KOKKOS_RESTRICT b, int ldb, const T beta,
+                                          /* */ T *KOKKOS_RESTRICT c, int ldc) {
 
     if (transa == 'N' || transa == 'n') {
       const NoConjugate cjA;
@@ -588,9 +580,9 @@ template <typename T> struct BlasTeam {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void gemm_upper(MemberType &member, const char transa, const char transb, const int m,
-                                                const int n, const int k, const T alpha, const T *__restrict__ a,
-                                                int lda, const T *__restrict__ b, int ldb, const T beta,
-                                                /* */ T *__restrict__ c, int ldc) {
+                                                const int n, const int k, const T alpha, const T *KOKKOS_RESTRICT a,
+                                                int lda, const T *KOKKOS_RESTRICT b, int ldb, const T beta,
+                                                /* */ T *KOKKOS_RESTRICT c, int ldc) {
 
     if (transa == 'N' || transa == 'n') {
       const NoConjugate cjA;
@@ -671,9 +663,9 @@ template <typename T> struct BlasTeam {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void herk(MemberType &member, const char uplo, const char trans, const int n,
-                                          const int k, const T alpha, const T *__restrict__ a, const int lda,
+                                          const int k, const T alpha, const T *KOKKOS_RESTRICT a, const int lda,
                                           const T beta,
-                                          /* */ T *__restrict__ c, const int ldc) {
+                                          /* */ T *KOKKOS_RESTRICT c, const int ldc) {
     if (uplo == 'U' || uplo == 'u')
       switch (trans) {
       case 'N':
@@ -719,8 +711,8 @@ template <typename T> struct BlasTeam {
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void trsm(MemberType &member, const char side, const char uplo, const char trans,
                                           const char diag, const int m, const int n, const T alpha,
-                                          const T *__restrict__ a, const int lda,
-                                          /* */ T *__restrict__ b, const int ldb) {
+                                          const T *KOKKOS_RESTRICT a, const int lda,
+                                          /* */ T *KOKKOS_RESTRICT b, const int ldb) {
     ///
     /// side left
     ///

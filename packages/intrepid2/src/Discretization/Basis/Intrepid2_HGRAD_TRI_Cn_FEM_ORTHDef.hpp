@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HGRAD_TRI_Cn_FEM_ORTHDef.hpp
@@ -231,69 +198,8 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,n>::ge
     const inputViewType  /* input */,
     workViewType   /* work */,
     const ordinal_type   /* order */ ) {
-#if 0   //#ifdef HAVE_INTREPID2_SACADO
-
-constexpr ordinal_type spaceDim = 2;
-constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
-
-typedef typename OutputViewType::value_type value_type;
-typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
-
-const ordinal_type
-npts = input.extent(0),
-card = output.extent(0);
-
-// use stack buffer
-fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
-outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
-
-typedef typename inputViewType::memory_space memory_space;
-typedef typename Kokkos::View<fad_type***, memory_space> outViewType;
-typedef typename Kokkos::View<fad_type**, memory_space> inViewType;
-auto vcprop = Kokkos::common_view_alloc_prop(input);
-
-inViewType in(Kokkos::view_wrap((value_type*)&inBuf[0][0], vcprop), npts, spaceDim);
-outViewType out(Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, n);
-
-for (ordinal_type i=0;i<npts;++i)
-  for (ordinal_type j=0;j<spaceDim;++j) {
-    in(i,j) = input(i,j);
-    in(i,j).diff(j,spaceDim);
-  }
-
-typedef typename Kokkos::DynRankView<fad_type, memory_space> outViewType_;
-outViewType_ workView;
-if (n==2) {
-  //char outBuf[bufSize*sizeof(typename inViewType::value_type)];
-  fad_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1];
-  auto vcprop = Kokkos::common_view_alloc_prop(in);
-  workView = outViewType_( Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, spaceDim+1);
-}
-OrthPolynomialTri<outViewType,inViewType,outViewType_,hasDeriv,n-1>::generate(out, in, workView, order);
-
-for (ordinal_type i=0;i<card;++i)
-  for (ordinal_type j=0;j<npts;++j) {
-    for (ordinal_type i_dx = 0; i_dx <= n; ++i_dx) {
-      ordinal_type i_dy =  n-i_dx;
-      ordinal_type i_Dn = i_dy;
-      if(i_dx > 0) {
-        //n=2:  (f_x)_x, (f_y)_x
-        //n=3:  (f_xx)_x, (f_xy)_x, (f_yy)_x
-        ordinal_type i_Dnm1 = i_dy;
-        output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
-      }
-      else {
-        //n=2:  (f_y)_y, (f_z)_y
-        //n=3:  (f_yy)_y
-        ordinal_type i_Dnm1 = i_dy-1;
-        output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
-      }
-    }
-  }
-#else
 INTREPID2_TEST_FOR_ABORT( true,
     ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::OrthPolynomialTri) Computing of second and higher-order derivatives is not currently supported");
-#endif
 }
 
 
@@ -335,7 +241,9 @@ typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties>
 void
 Basis_HGRAD_TRI_Cn_FEM_ORTH::
-getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+getValues(
+    const typename DT::execution_space& space,
+          Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const ordinal_type order,
     const EOperator operatorType ) {
@@ -347,7 +255,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
   const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
   const ordinal_type cardinality = outputValues.extent(0);
@@ -365,7 +273,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;
@@ -392,12 +300,12 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH<DT,OT,PT>::
 Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
 
   constexpr ordinal_type spaceDim = 2;
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order);
-  this->basisDegree_       = order;
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_HIERARCHICAL;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order);
+  this->basisDegree_          = order;
+  this->basisCellTopologyKey_ = shards::Triangle<3>::key;
+  this->basisType_            = BASIS_FEM_HIERARCHICAL;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
   // initialize tags
   {

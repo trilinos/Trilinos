@@ -4,15 +4,13 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementSet.h>
-#include <Ioss_Property.h>
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementSet.h"
+#include "Ioss_Property.h"
 #include <cstddef>
-#include <string>
 #include <vector>
 
 #include "Ioss_EntitySet.h"
-#include "Ioss_GroupingEntity.h"
 
 namespace Ioss {
   class Field;
@@ -55,4 +53,4 @@ Ioss::Property Ioss::ElementSet::get_implicit_property(const std::string &my_nam
   return Ioss::EntitySet::get_implicit_property(my_name);
 }
 
-void Ioss::ElementSet::block_membership(std::vector<std::string> & /*block_members*/) {}
+void Ioss::ElementSet::block_membership(Ioss::NameList & /*block_members*/) {}

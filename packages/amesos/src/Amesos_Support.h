@@ -1,6 +1,12 @@
 #ifndef AMESOS_SUPPORT_H
 #define AMESOS_SUPPORT_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"

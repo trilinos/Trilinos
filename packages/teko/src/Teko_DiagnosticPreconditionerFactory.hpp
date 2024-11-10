@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #ifndef __Teko_DiagnosticPreconditionerFactory_hpp__
 #define __Teko_DiagnosticPreconditionerFactory_hpp__
@@ -65,6 +28,8 @@ namespace Teko {
   \code
        <Parameter name="Type" type="string" value="Diagnostic Inverse"/>
        <Parameter name="Inverse Factory" type="string" value="<Some Inverse Factory>"/>
+       <!-- Optional, use if Inverse Factory is an iterative solver, e.g. -->
+       <Parameter name="Preconditioner Factory" type="string" value="<Some Other Inverse Factory>"/>
        <Parameter name="Descriptive Label" type="string" value="<Some Label>"/>
        <Parameter name="Print Residual" type="bool" value="false"/>
   \endcode
@@ -81,6 +46,19 @@ class DiagnosticPreconditionerFactory : public virtual Teko::PreconditionerFacto
    * \param[in] label      Label to give to factory and operator
    */
   DiagnosticPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory>& invFactory,
+                                  const std::string& label,
+                                  const Teuchos::RCP<std::ostream>& os = Teuchos::null,
+                                  bool printResidual                   = false);
+
+  /** Construct a preconditioner factory that prints diagnostics about
+   * a particualar inverse operator.
+   *
+   * \param[in] invFactory  Factory and operator to use diagnostics
+   * \param[in] precFactory Preconditioner for invFactory, if applicable
+   * \param[in] label       Label to give to factory and operator
+   */
+  DiagnosticPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory>& invFactory,
+                                  const Teuchos::RCP<Teko::InverseFactory>& precFactory,
                                   const std::string& label,
                                   const Teuchos::RCP<std::ostream>& os = Teuchos::null,
                                   bool printResidual                   = false);
@@ -148,22 +126,26 @@ class DiagnosticPreconditionerFactory : public virtual Teko::PreconditionerFacto
   //@}
 
   int numInitialBuilds() const { return buildTimer_->numCalls(); }
-  double totalInitialBuildTime() const { return buildTimer_->totalElapsedTime(); }
+  double totalInitialBuildTime() const;
 
   int numRebuilds() const { return rebuildTimer_->numCalls(); }
-  double totalRebuildTime() const { return rebuildTimer_->totalElapsedTime(); }
+  double totalRebuildTime() const;
 
  private:
   void initTimers(const std::string& label);
 
   Teuchos::RCP<std::ostream> outputStream_;
   Teuchos::RCP<Teko::InverseFactory> invFactory_;
+  Teuchos::RCP<Teko::InverseFactory> precFactory_;
   std::string diagString_;
   bool printResidual_;
 
   mutable Teuchos::RCP<Teuchos::Time>
       buildTimer_;  // only first pass construction time (no rebuild)
-  mutable Teuchos::RCP<Teuchos::Time> rebuildTimer_;  // rebuild-construction timer (no build)
+  mutable Teuchos::RCP<Teuchos::Time>
+      precBuildTimer_;  // only first pass construction time (no rebuild)
+  mutable Teuchos::RCP<Teuchos::Time> rebuildTimer_;      // rebuild-construction timer (no build)
+  mutable Teuchos::RCP<Teuchos::Time> precRebuildTimer_;  // rebuild-construction timer (no build)
 };
 
 }  // end namespace Teko

@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_BLOCKDIAGMATRIX_H
 #define EPETRAEXT_BLOCKDIAGMATRIX_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
 #include "Epetra_DistObject.h"

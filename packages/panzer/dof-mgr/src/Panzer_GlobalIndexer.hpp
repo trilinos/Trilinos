@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __Panzer_GlobalIndexer_hpp__
@@ -58,7 +26,7 @@ class ConnManager;
 
 class GlobalIndexer {
 public:
-   //! Pure virtual destructor: prevents warnings with inline empty implementation 
+   //! Pure virtual destructor: prevents warnings with inline empty implementation
   virtual ~GlobalIndexer() {}
 
    /** Get communicator associated with this global indexer.
@@ -92,19 +60,19 @@ public:
    /** \brief Reverse lookup of the field string from
      *        a field number.
      *
-     * \param[in] num Field number. Assumed to be 
+     * \param[in] num Field number. Assumed to be
      *                a valid field number.  Computed
      *                from <code>getFieldNum</code>.
      *
-     * \returns Field name. 
+     * \returns Field name.
      */
    virtual const std::string & getFieldString(int num) const = 0;
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const = 0;
 
@@ -129,7 +97,7 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                               int subcellDim,int subcellId) const = 0;
 
@@ -184,9 +152,9 @@ public:
     */
    virtual void
    getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const = 0;
-  
+
    /// @name Epetra related functions. NOTE: for use with Epetra only! Will be deprecated when we drop epetra support!
-   ///@{ 
+   ///@{
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
@@ -260,7 +228,7 @@ public:
 
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
-     * 
+     *
      * @param cellIds [in] The list of cells we require LIDs for
      * @param lids [in/out] View to fill with LIDs. extent(1) MUST be sized correctly if num_dofs is not provided.
      * @param num_dofs [in] (optional) Number of DOFs in the current element block.
@@ -276,7 +244,7 @@ public:
      */
    template <typename ArrayT>
    void getElementLIDs(PHX::View<const int*> cellIds, ArrayT lids, const int num_dofs = 0) const
-   { 
+   {
      CopyCellLIDsFunctor<ArrayT> functor;
      functor.cellIds = cellIds;
      functor.global_lids = localIDs_k_;
@@ -287,8 +255,8 @@ public:
        functor.num_dofs = lids.extent(1);
 
 #ifdef PANZER_DEBUG
-     TEUCHOS_ASSERT(functor.local_lids.extent(1) >= num_dofs);
-     TEUCHOS_ASSERT(functor.global_lids.extent(1) >= num_dofs);
+     TEUCHOS_ASSERT(static_cast<int>(functor.local_lids.extent(1)) >= num_dofs);
+     TEUCHOS_ASSERT(static_cast<int>(functor.global_lids.extent(1)) >= num_dofs);
 #endif
 
      Kokkos::parallel_for(cellIds.extent(0),functor);
@@ -318,47 +286,47 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<num_dofs;i++) 
+       for(int i=0;i<num_dofs;i++)
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
-     
+
    };
 
 protected:
 
-   /** This method is used by derived classes to the construct the local IDs from 
+   /** This method is used by derived classes to the construct the local IDs from
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
    void buildLocalIds()
-   { 
+   {
      // this method is implmented as two steps to ensure
      // that setLocalIds works, it would be better to simply
      // call:
-     //   buildLocalIdsFromOwnedElements(localIDs_); 
+     //   buildLocalIdsFromOwnedElements(localIDs_);
 
-     std::vector<std::vector<panzer::LocalOrdinal> > localIDs; 
-     buildLocalIdsFromOwnedElements(localIDs); 
+     std::vector<std::vector<panzer::LocalOrdinal> > localIDs;
+     buildLocalIdsFromOwnedElements(localIDs);
      setLocalIds(localIDs);
    }
 
-   /** This method is used by derived classes to the construct the local IDs from 
+   /** This method is used by derived classes to the construct the local IDs from
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   void buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > & localIDs) const ; 
+   void buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > & localIDs) const ;
 
    /** This method provides some capability to set the local IDs externally without
      * using the default buildLocalIds. The point is that we want to keep "getElementLIDs"
      * access exteremly fast.
      */
    void setLocalIds(const std::vector<std::vector<panzer::LocalOrdinal> > & localIDs)
-   {  
+   {
      // determine the maximium second dimension of the local IDs
      std::size_t max = 0;
      for(std::size_t i=0;i<localIDs.size();i++)
        max = localIDs[i].size() > max ? localIDs[i].size() : max;
 
      // allocate for the kokkos size
-     Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
+     Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> localIDs_k
        = Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
      auto localIDs_h = Kokkos::create_mirror_view(localIDs_k);
      for(std::size_t i=0;i<localIDs.size();i++) {
@@ -390,7 +358,7 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > &
 {
   std::vector<panzer::GlobalOrdinal> ownedAndGhosted;
   this->getOwnedAndGhostedIndices(ownedAndGhosted);
-   
+
   // build global to local hash map (temporary and used only once)
   std::unordered_map<panzer::GlobalOrdinal,panzer::LocalOrdinal> hashMap;
   for(std::size_t i=0;i<ownedAndGhosted.size();i++)
@@ -398,7 +366,7 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > &
 
   std::vector<std::string> elementBlocks;
   this->getElementBlockIds(elementBlocks);
- 
+
   // compute total number of elements
   std::size_t numElmts = 0;
   for(std::size_t eb=0;eb<elementBlocks.size();eb++)
@@ -414,11 +382,11 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > &
       this->getElementGIDs(elmts[e],gids,elementBlocks[eb]);
       std::vector<panzer::LocalOrdinal> & lids = localIDs[elmts[e]];
       lids.resize(gids.size());
- 
+
       for(std::size_t g=0;g<gids.size();g++)
         lids[g] = hashMap[gids[g]];
     }
-  } 
+  }
 }
 
 }

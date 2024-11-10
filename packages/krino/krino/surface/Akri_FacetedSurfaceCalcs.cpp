@@ -53,7 +53,8 @@ std::vector<BoundingBox> fill_processor_bounding_boxes(const BoundingBox & local
   return procPaddedQueryBboxes;
 }
 
-static double compute_point_distance_squared(const stk::math::Vector3d &x, const FacetVec & nearestFacets)
+template<class FACET>
+static double compute_point_distance_squared(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
 {
   double minSqrDist = std::numeric_limits<double>::max();
   for ( auto&& facet : nearestFacets )
@@ -65,8 +66,27 @@ static double compute_point_distance_squared(const stk::math::Vector3d &x, const
   return minSqrDist;
 }
 
-double
-point_distance_given_nearest_facets(const stk::math::Vector3d &x, const FacetVec & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance)
+template<class FACET>
+stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
+{
+  double minSqrDist = std::numeric_limits<double>::max();
+  stk::math::Vector3d closestPt;
+  stk::math::Vector3d facetClosestPt;
+  for ( auto&& facet : nearestFacets )
+  {
+    facet->closest_point(x, facetClosestPt);
+    const double sqrDist = (x-facetClosestPt).length_squared();
+    if (sqrDist < minSqrDist)
+    {
+      minSqrDist = sqrDist;
+      closestPt = facetClosestPt;
+    }
+  }
+  return closestPt;
+}
+
+template <class FACET>
+double point_distance_given_nearest_facets(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance)
 {
   if (nearestFacets.empty())
   {
@@ -98,82 +118,31 @@ point_distance_given_nearest_facets(const stk::math::Vector3d &x, const FacetVec
   return dist;
 }
 
-double
-compute_point_to_facets_distance_by_average_normal(const stk::math::Vector3d &x, const FacetVec & facets)
+template<class FACET>
+std::vector<FacetDistanceQuery<FACET>> build_distance_queries(const stk::math::Vector3d &x, const std::vector<const FACET*> & facets)
 {
-
-  // If the closest_point weights are all larger than this value, then the closest point
-  // is considered to be on the face of the closest facet rather than on the edges of the facet, and
-  // therefore only the closest facet is considered in the distance calculation.  Otherwise, all of the
-  // facets are considered to compute an average normal in order to compute the distance.
-  const double edge_tol = 1.e-6;
-
-  std::vector<FacetDistanceQuery> facet_queries;
-  facet_queries.reserve(facets.size());
+  std::vector<FacetDistanceQuery<FACET>> facetDistQueries;
+  facetDistQueries.reserve(facets.size());
   for ( auto&& facet : facets )
   {
     if (facet->degenerate()) continue; // Skip zero-sized facets
-    facet_queries.emplace_back(*facet, x);
+    facetDistQueries.emplace_back(*facet, x);
   }
-
-  STK_ThrowRequireMsg(!facet_queries.empty(), "All facets are degenerate in compute_point_to_facets_distance_by_average_normal.");
-
-  unsigned nearest = 0;
-  for ( unsigned index=0; index<facet_queries.size(); ++index )
-  {
-    if ( facet_queries[index].distance_squared() < facet_queries[nearest].distance_squared() )
-    {
-      nearest = index;
-    }
-  }
-
-  if ( facet_queries[nearest].distance_squared() == 0. )
-  {
-    return 0.0;
-  }
-
-  const stk::math::Vector3d closest_pt_wts = facet_queries[nearest].closest_point_weights();
-  const int dim = dynamic_cast<krino::Facet3d *>(facets[nearest]) ? 3 : 2;
-
-  bool closest_point_on_edge = false;
-  for (int d=0; d<dim; ++d)
-  {
-    if (closest_pt_wts[d] < edge_tol)
-    {
-      closest_point_on_edge = true;
-      break;
-    }
-  }
-
-  if (!closest_point_on_edge)
-  {
-    return facet_queries[nearest].signed_distance(x);
-  }
-
-  const double min_sqr_dist = facet_queries[nearest].distance_squared();
-  const stk::math::Vector3d pseudo_normal = compute_pseudo_normal(dim, facet_queries, nearest);
-
-  if (pseudo_normal.length_squared() == 0.0)
-  {
-    krinolog << "Warning:  Cannot determine the average facet normal for computing the level set distance at point " << x
-        << ".  This can happen when faceted facet include coincident facets with opposite normals.  Arbitrarily setting the distance to be positive." << stk::diag::dendl;
-    return std::sqrt(min_sqr_dist);
-  }
-  else
-  {
-    if (Dot(pseudo_normal, x-facet_queries[nearest].closest_point()) > 0)
-    {
-      return std::sqrt(min_sqr_dist);
-    }
-    else
-    {
-      return -std::sqrt(min_sqr_dist);
-    }
-  }
+  return facetDistQueries;
 }
 
-stk::math::Vector3d
-compute_pseudo_normal(const unsigned dim, const std::vector<FacetDistanceQuery> & facet_queries, const unsigned nearest)
+template<class FACET>
+unsigned find_index_of_closest_facet(const std::vector<FacetDistanceQuery<FACET>> & facetDistQueries)
+{
+  unsigned closest = 0;
+  for ( unsigned index=0; index<facetDistQueries.size(); ++index )
+    if ( facetDistQueries[index].distance_squared() < facetDistQueries[closest].distance_squared() )
+      closest = index;
+  return closest;
+}
+
+template<class FACET>
+stk::math::Vector3d compute_pseudo_normal(const std::vector<FacetDistanceQuery<FACET>> & facet_queries, const unsigned nearest)
 {
   const double tol = 1.e-6;
   stk::math::Vector3d pseudo_normal = stk::math::Vector3d::ZERO;
@@ -189,11 +158,11 @@ compute_pseudo_normal(const unsigned dim, const std::vector<FacetDistanceQuery> 
     if (dist2_from_nearest < tol*tol*nearest_size2)
     {
       ++close_count;
-      const Facet & facet = query.facet();
+      const FACET & facet = query.facet();
 
       average_normal += facet.facet_normal();
 
-      if (3 == dim)
+      if constexpr (3 == FACET::DIM)
       {
         const stk::math::Vector3d closest_pt_wts = query.closest_point_weights();
         const int closest_node = (closest_pt_wts[0] > closest_pt_wts[1]) ? ((closest_pt_wts[0] > closest_pt_wts[2]) ? 0 : 2) : ((closest_pt_wts[1] > closest_pt_wts[2]) ? 1 : 2);
@@ -211,7 +180,67 @@ compute_pseudo_normal(const unsigned dim, const std::vector<FacetDistanceQuery> 
   }
   STK_ThrowRequireMsg(close_count>0,"Issue with tolerance in compute_pseudo_normal.  No facet found within tolerance of closest point.");
 
-  return (3 == dim && close_count > 2) ? pseudo_normal : average_normal;
+  return (3 == FACET::DIM && close_count > 2) ? pseudo_normal : average_normal;
+}
+
+template<class FACET>
+double compute_point_to_facets_distance_by_average_normal(const stk::math::Vector3d &x, const std::vector<const FACET*> & facets)
+{
+
+  // If the closest_point weights are all larger than this value, then the closest point
+  // is considered to be on the face of the closest facet rather than on the edges of the facet, and
+  // therefore only the closest facet is considered in the distance calculation.  Otherwise, all of the
+  // facets are considered to compute an average normal in order to compute the distance.
+  const double edge_tol = 1.e-6;
+
+  const std::vector<FacetDistanceQuery<FACET>> facetDistQueries = build_distance_queries(x, facets);
+  STK_ThrowRequireMsg(!facetDistQueries.empty(), "All facets are degenerate in compute_point_to_facets_distance_by_average_normal.");
+
+  const unsigned nearest = find_index_of_closest_facet(facetDistQueries);
+
+  if ( facetDistQueries[nearest].distance_squared() == 0. )
+  {
+    return 0.0;
+  }
+
+  const stk::math::Vector3d closest_pt_wts = facetDistQueries[nearest].closest_point_weights();
+  const int dim = FACET::DIM;
+
+  bool closest_point_on_edge = false;
+  for (int d=0; d<dim; ++d)
+  {
+    if (closest_pt_wts[d] < edge_tol)
+    {
+      closest_point_on_edge = true;
+      break;
+    }
+  }
+
+  if (!closest_point_on_edge)
+  {
+    return facetDistQueries[nearest].signed_distance(x);
+  }
+
+  const double min_sqr_dist = facetDistQueries[nearest].distance_squared();
+  const stk::math::Vector3d pseudo_normal = compute_pseudo_normal(facetDistQueries, nearest);
+
+  if (pseudo_normal.length_squared() == 0.0)
+  {
+    krinolog << "Warning:  Cannot determine the average facet normal for computing the level set distance at point " << x
+        << ".  This can happen when faceted facet include coincident facets with opposite normals.  Arbitrarily setting the distance to be positive." << stk::diag::dendl;
+    return std::sqrt(min_sqr_dist);
+  }
+  else
+  {
+    if (Dot(pseudo_normal, x-facetDistQueries[nearest].closest_point()) > 0)
+    {
+      return std::sqrt(min_sqr_dist);
+    }
+    else
+    {
+      return -std::sqrt(min_sqr_dist);
+    }
+  }
 }
 
 bool is_projection_of_point_inside_enlarged_triangle(const stk::math::Vector3d & triPt0, const stk::math::Vector3d & triPt1, const stk::math::Vector3d & triPt2, const stk::math::Vector3d& p)
@@ -233,16 +262,18 @@ bool is_projection_of_point_inside_enlarged_segment(const stk::math::Vector3d & 
   return Facet2d::Calc::is_projection_of_point_inside_segment(p0, p1, p);
 }
 
-bool is_projection_of_point_inside_enlarged_facet(const Facet & facet, const stk::math::Vector3d& p)
+bool is_projection_of_point_inside_enlarged_facet(const Facet3d & facet, const stk::math::Vector3d& p)
 {
-  const int dim = (dynamic_cast<const krino::Facet3d *>(&facet)) ? 3 : 2;
+  return is_projection_of_point_inside_enlarged_triangle(facet.facet_vertex(0), facet.facet_vertex(1), facet.facet_vertex(2), p);
+}
 
-  if (3 == dim)
-    return is_projection_of_point_inside_enlarged_triangle(facet.facet_vertex(0), facet.facet_vertex(1), facet.facet_vertex(2), p);
+bool is_projection_of_point_inside_enlarged_facet(const Facet2d & facet, const stk::math::Vector3d& p)
+{
   return is_projection_of_point_inside_enlarged_segment(facet.facet_vertex(0), facet.facet_vertex(1), p);
 }
 
-std::pair<int, double> compute_facet_edge_intersection(const Facet & facet,
+template<class FACET>
+std::pair<int, double> compute_facet_edge_intersection(const FACET & facet,
   const stk::math::Vector3d& edgePt0,
   const stk::math::Vector3d& edgePt1)
 {
@@ -259,26 +290,16 @@ std::pair<int, double> compute_facet_edge_intersection(const Facet & facet,
   return {0, -1.};
 }
 
-std::pair<int, double> compute_intersection_between_and_surface_facets_and_edge(const std::vector<Facet*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1)
+template<class FACET>
+double compute_intersection_between_surface_facets_and_edge(const std::vector<const FACET*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1)
 {
   if (candidates.empty())
-    return {0, -1.};
-
-  const double dist0 = compute_point_to_facets_distance_by_average_normal(edgePt0, candidates);
-  const double dist1 = compute_point_to_facets_distance_by_average_normal(edgePt1, candidates);
-
-  if (!sign_change(dist0, dist1))
-    return {0, -1.};
-
-  if (0. == dist0)
-    return {-1, 0.};
-  if (0. == dist1)
-    return {1, 1.};
+    return -1.;
 
   bool haveCrossing = false;
   double intersectionLoc = -1.;
 
-  for (const Facet * surfFacet : candidates)
+  for (const FACET * surfFacet : candidates)
   {
     const auto [facetCrossingSign, facetIntersectionLoc] = compute_facet_edge_intersection(*surfFacet, edgePt0, edgePt1);
     if (facetCrossingSign != 0)
@@ -289,23 +310,47 @@ std::pair<int, double> compute_intersection_between_and_surface_facets_and_edge(
     }
   }
 
-  if (haveCrossing)
-    return {sign(dist1), intersectionLoc};
-
-  // Sign change, but no crossing. This could be because there is a small gap in the facets, or there could be
-  // an unterminated surface far away.  Decide based on magnitude of the distance at the linear crossing location.
-
-  const double linearCrossingLoc = dist0 / (dist0 - dist1);
-
-  const stk::math::Vector3d linearCrossingPt = (1.-linearCrossingLoc) * edgePt0 + linearCrossingLoc * edgePt1;
-  const double minSqrDist = compute_point_distance_squared(linearCrossingPt, candidates);
-  const double edgeSqrLen = (edgePt1 - edgePt0).length_squared();
-
-  constexpr double sqrTol = 1.e-4; // Large tol here is fine, right?
-  if (minSqrDist < sqrTol*edgeSqrLen)
-    return {sign(dist1), linearCrossingLoc};
-
-  return {0, -1.};
+  return intersectionLoc;
 }
+
+template<class FACET>
+stk::math::Vector3d compute_pseudo_normal(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
+{
+  const std::vector<FacetDistanceQuery<FACET>> facetDistQueries = build_distance_queries(x, nearestFacets);
+  STK_ThrowRequireMsg(!facetDistQueries.empty(), "All facets are degenerate in compute_pseudo_normal.");
+
+  const unsigned nearest = find_index_of_closest_facet(facetDistQueries);
+
+  return compute_pseudo_normal(facetDistQueries, nearest);
+}
+
+// Explicit template instantiation
+
+template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
+template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
+template double point_distance_given_nearest_facets<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
+template double point_distance_given_nearest_facets<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
+template double compute_point_to_facets_distance_by_average_normal<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & facets);
+template double compute_point_to_facets_distance_by_average_normal<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & facets);
+template stk::math::Vector3d compute_pseudo_normal<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
+template stk::math::Vector3d compute_pseudo_normal<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
+template std::pair<int, double> compute_facet_edge_intersection<Facet2d>(const Facet2d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
+template std::pair<int, double> compute_facet_edge_intersection<Facet3d>(const Facet3d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
+template double compute_intersection_between_surface_facets_and_edge<Facet2d>(const std::vector<const Facet2d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
+template double compute_intersection_between_surface_facets_and_edge<Facet3d>(const std::vector<const Facet3d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
+
+template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
+template double point_distance_given_nearest_facets<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
+template double compute_point_to_facets_distance_by_average_normal<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & facets);
+template stk::math::Vector3d compute_pseudo_normal<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
+template std::pair<int, double> compute_facet_edge_intersection<FacetWithVelocity2d>(const FacetWithVelocity2d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
+template double compute_intersection_between_surface_facets_and_edge<FacetWithVelocity2d>(const std::vector<const FacetWithVelocity2d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
+
+template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
+template double point_distance_given_nearest_facets<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
+template double compute_point_to_facets_distance_by_average_normal<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & facets);
+template stk::math::Vector3d compute_pseudo_normal<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
+template std::pair<int, double> compute_facet_edge_intersection<FacetWithVelocity3d>(const FacetWithVelocity3d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
+template double compute_intersection_between_surface_facets_and_edge<FacetWithVelocity3d>(const std::vector<const FacetWithVelocity3d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
 
 }

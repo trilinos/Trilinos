@@ -61,6 +61,12 @@
 
 #define __AZTECDEFSH__
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #ifndef TRILINOS_NO_CONFIG_H
 
 /*

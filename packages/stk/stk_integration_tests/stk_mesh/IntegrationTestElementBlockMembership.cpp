@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <init/Ionit_Initializer.h>     // for Initializer
+#include <Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
 #include "mpi.h"                        // for MPI_COMM_WORLD
@@ -29,7 +29,7 @@ namespace
 typedef std::map<std::string, unsigned> TestCaseData;
 typedef TestCaseData::value_type TestCaseDatum;
 
-class LoadMesh: public stk::unit_test_util::simple_fields::MeshTestFixture
+class LoadMesh: public stk::unit_test_util::MeshTestFixture
 {
 public:
   virtual ~LoadMesh() {}
@@ -44,7 +44,7 @@ protected:
     if(get_bulk().parallel_rank() == 0) std::cout << "Reading " << meshSpec << std::endl;
 #endif
 
-    stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(meshSpec, get_bulk(), "cyclic");
+    stk::unit_test_util::read_from_serial_file_and_decompose(meshSpec, get_bulk(), "cyclic");
   }
 
   stk::mesh::EntityVector get_all_elements()

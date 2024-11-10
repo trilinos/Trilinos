@@ -8,6 +8,36 @@
 
 namespace krino {
 
+struct RegularBeam
+{
+    RegularBeam() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::BEAM_2;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        {-0.500,  0.000,  0.000 },
+        { 0.500,  0.000,  0.000 },
+    }};
+
+    std::array<unsigned,2> BeamConn{{0, 1}};
+    std::vector<std::array<unsigned, 2>> allElementConn{BeamConn};
+};
+
+struct UMRRegularBeam
+{
+    UMRRegularBeam() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::BEAM_2;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        {-0.500,  0.000,  0.000 },
+        { 0.000,  0.000,  0.000 },
+        { 0.500,  0.000,  0.000 },
+    }};
+
+    std::array<unsigned,2> Beam1Conn{{0, 1}};
+    std::array<unsigned,2> Beam2Conn{{1, 2}};
+    std::vector<std::array<unsigned, 2>> allElementConn{Beam1Conn, Beam2Conn};
+};
+
 struct RegularTri
 {
     RegularTri() = default;
@@ -155,6 +185,32 @@ struct QuadSplit4Tri
     std::array<unsigned,3> Tri4Conn{{3, 0, 4}};
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn };
 };
+
+struct QuadSplit4TriAndQuadSplit2Tri
+{
+    QuadSplit4TriAndQuadSplit2Tri() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { -0.500,  -0.500 },
+        { 0.500,  -0.500 },
+        { 0.500,  0.500 },
+        { -0.500,  0.500 },
+        { 0,  0 },
+        { 1., 0.5 },
+        { 1., 1. },
+        { 0.5, 1. }
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 4}};
+    std::array<unsigned,3> Tri2Conn{{1, 2, 4}};
+    std::array<unsigned,3> Tri3Conn{{2, 3, 4}};
+    std::array<unsigned,3> Tri4Conn{{3, 0, 4}};
+    std::array<unsigned,3> Tri5Conn{{2, 5, 6}};
+    std::array<unsigned,3> Tri6Conn{{2, 6, 7}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn };
+};
+
 
 struct FourDisconnectedTris
 {
@@ -426,6 +482,112 @@ struct PatchOfRegularTrisAroundNode
     std::array<unsigned,3> Tri5Conn{{0, 5, 6}};
     std::array<unsigned,3> Tri6Conn{{0, 6, 1}};
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn};
+};
+
+struct RegularQuad
+{
+    RegularQuad() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::QUADRILATERAL_4_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0, 0.0 },
+        { 1.0, 0.0 },
+        { 1.0, 1.0 },
+        { 0.0, 1.0 },
+    }};
+
+    std::array<unsigned,4> QuadConn{{0, 1, 2, 3}};
+    std::vector<std::array<unsigned, 4>> allElementConn{QuadConn};
+};
+
+struct UMRRegularQuad
+{
+    UMRRegularQuad() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::QUADRILATERAL_4_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0, 0.0 },
+        { 1.0, 0.0 },
+        { 1.0, 1.0 },
+        { 0.0, 1.0 },
+        { 0.5, 0.0 },
+        { 1.0, 0.5 },
+        { 0.5, 1.0 },
+        { 0.0, 0.5 },
+        { 0.5, 0.5 }
+    }};
+
+    std::array<unsigned,4> Quad1Conn{{0, 4, 8, 7}};
+    std::array<unsigned,4> Quad2Conn{{1, 5, 8, 4}};
+    std::array<unsigned,4> Quad3Conn{{2, 6, 8, 5}};
+    std::array<unsigned,4> Quad4Conn{{3, 7, 8, 6}};
+    std::vector<std::array<unsigned, 4>> allElementConn{Quad1Conn, Quad2Conn, Quad3Conn, Quad4Conn};
+};
+
+struct RegularHex
+{
+    RegularHex() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::HEXAHEDRON_8;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0, 0.0, 0.0 },
+        { 1.0, 0.0, 0.0 },
+        { 1.0, 1.0, 0.0 },
+        { 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 1.0 },
+        { 1.0, 0.0, 1.0 },
+        { 1.0, 1.0, 1.0 },
+        { 0.0, 1.0, 1.0 },
+    }};
+
+    std::array<unsigned,8> HexConn{{0, 1, 2, 3, 4, 5, 6, 7}};
+    std::vector<std::array<unsigned, 8>> allElementConn{HexConn};
+};
+
+struct UMRRegularHex
+{
+    UMRRegularHex() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::HEXAHEDRON_8;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0, 0.0, 0.0 },
+        { 1.0, 0.0, 0.0 },
+        { 1.0, 1.0, 0.0 },
+        { 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 1.0 },
+        { 1.0, 0.0, 1.0 },
+        { 1.0, 1.0, 1.0 },
+        { 0.0, 1.0, 1.0 },
+        { 0.5, 0.0, 0.0 },
+        { 1.0, 0.5, 0.0 },
+        { 0.5, 1.0, 0.0 },
+        { 0.0, 0.5, 0.0 },
+        { 0.0, 0.0, 0.5 },
+        { 1.0, 0.0, 0.5 },
+        { 1.0, 1.0, 0.5 },
+        { 0.0, 1.0, 0.5 },
+        { 0.5, 0.0, 1.0 },
+        { 1.0, 0.5, 1.0 },
+        { 0.5, 1.0, 1.0 },
+        { 0.0, 0.5, 1.0 },
+        { 0.5, 0.5, 0.5 },
+        { 0.5, 0.5, 0.0 },
+        { 0.5, 0.5, 1.0 },
+        { 0.0, 0.5, 0.5 },
+        { 1.0, 0.5, 0.5 },
+        { 0.5, 0.0, 0.5 },
+        { 0.5, 1.0, 0.5 },
+    }};
+
+    std::array<unsigned,8> Hex1Conn{{0,8,21,11,12,25,20,23}};
+    std::array<unsigned,8> Hex2Conn{{1,9,21,8,13,24,20,25}};
+    std::array<unsigned,8> Hex3Conn{{2,10,21,9,14,26,20,24}};
+    std::array<unsigned,8> Hex4Conn{{3,11,21,10,15,23,20,26}};
+    std::array<unsigned,8> Hex5Conn{{12,25,20,23,4,16,22,19}};
+    std::array<unsigned,8> Hex6Conn{{13,24,20,25,5,17,22,16}};
+    std::array<unsigned,8> Hex7Conn{{14,26,20,24,6,18,22,17}};
+    std::array<unsigned,8> Hex8Conn{{15,23,20,26,7,19,22,18}};
+    std::vector<std::array<unsigned, 8>> allElementConn{Hex1Conn, Hex2Conn, Hex3Conn, Hex4Conn, Hex5Conn, Hex6Conn, Hex7Conn, Hex8Conn};
 };
 
 }

@@ -264,7 +264,7 @@ void expect_equal_entity_counts(stk::mesh::BulkData& oldBulk, stk::mesh::BulkDat
   EXPECT_EQ(oldCount, newCount);
 }
 
-class MeshClone : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshClone : public stk::unit_test_util::MeshFixture
 {
 public:
   MeshClone()
@@ -368,7 +368,6 @@ TEST_F(MeshClone, copyOnlyMeta)
   initialize_mesh_with_parts_and_fields();
 
   stk::mesh::MetaData newMeta;
-  newMeta.use_simple_fields();
   stk::tools::copy_meta_with_io_attributes(get_meta(), newMeta);
 
   expect_equal_meta_datas(get_meta(), newMeta);
@@ -450,7 +449,6 @@ TEST_F(MeshClone, copyMeshWithOrphanNodesOnOwnedSide)
 TEST(MetaDataSize, sizeChanges_needToUpdateCopyMesh)
 {
   stk::mesh::MetaData meta;
-  meta.use_simple_fields();
   EXPECT_GE(632u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
 }
 #endif

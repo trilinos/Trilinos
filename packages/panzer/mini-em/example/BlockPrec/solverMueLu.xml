@@ -36,6 +36,7 @@
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
           <Parameter name="Use discrete curl" type="bool" value="true"/>
+          <Parameter name="Simplify Faraday" type="bool" value="false"/>
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="Belos"/>
@@ -156,6 +157,8 @@
                 <Parameter name="refmaxwell: subsolves on subcommunicators" type="bool" value="true"/>
                 <Parameter name="refmaxwell: subsolves striding" type="int" value="1"/>
 
+                <Parameter name="fuse prolongation and update" type="bool" value="true"/>
+
                 <!-- <Parameter name="rap: triple product" type="bool" value="true"/> -->
                 <!-- <Parameter name="transpose: use implicit" type="bool" value="true"/> -->
 
@@ -174,6 +177,7 @@
                   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="20.0"/>
                   <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                   <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
+                  <Parameter name="chebyshev: use native spmv" type="bool" value="false"/>
                 </ParameterList>
 
                 <!-- <Parameter name="smoother: pre type" type="string" value="RELAXATION"/> -->
@@ -200,6 +204,8 @@
                   <Parameter name="number of equations" type="int" value="3"/>
                   <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
 
+                  <Parameter name="fuse prolongation and update" type="bool" value="true"/>
+
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
@@ -218,6 +224,7 @@
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
                     <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                     <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
+                    <Parameter name="chebyshev: use native spmv" type="bool" value="false"/>
                   </ParameterList>
 
                   <!-- <Parameter name="smoother: pre type" type="string" value="RELAXATION"/> -->
@@ -257,6 +264,8 @@
                   <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
 
+                  <Parameter name="fuse prolongation and update" type="bool" value="true"/>
+
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
@@ -275,6 +284,7 @@
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="7.0"/>
                     <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                     <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
+                    <Parameter name="chebyshev: use native spmv" type="bool" value="false"/>
                   </ParameterList>
 
                   <!-- <Parameter name="smoother: pre type" type="string" value="RELAXATION"/> -->

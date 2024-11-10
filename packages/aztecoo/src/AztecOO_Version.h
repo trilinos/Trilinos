@@ -42,6 +42,12 @@
 #ifndef AZTECOO_VERSION_H
 #define AZTECOO_VERSION_H
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "AztecOO.h"
 #include "Trilinos_version.h"
 

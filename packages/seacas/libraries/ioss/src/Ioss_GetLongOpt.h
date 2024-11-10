@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,10 +9,11 @@
 
 #pragma once
 
-#include "ioss_export.h"
-
 #include <cstdlib>
 #include <iostream>
+#include <string>
+
+#include "ioss_export.h"
 
 namespace Ioss {
   /** \brief A database of program command line and environment variable options and methods for
@@ -40,8 +41,8 @@ namespace Ioss {
       Cell() = default;
     };
 
-    Cell       *table{nullptr};        // option table
-    const char *ustring{nullptr};      // usage message
+    Cell       *table{nullptr}; // option table
+    const char *ustring{"[valid options and arguments]"};
     char       *pname{nullptr};        // program basename
     Cell       *last{nullptr};         // last entry in option table
     char        optmarker;             // option marker
@@ -74,8 +75,7 @@ namespace Ioss {
      */
     void usage(const char *str) { ustring = str; }
 
-    template <class INT,
-              typename std::enable_if<std::is_integral<INT>::value, INT>::type * = nullptr>
+    template <class INT, typename std::enable_if_t<std::is_integral_v<INT>, INT> * = nullptr>
     INT get_option_value(const char *option_txt, INT default_value)
     {
       INT         value = default_value;
@@ -86,8 +86,7 @@ namespace Ioss {
       return value;
     }
 
-    template <class DBL,
-              typename std::enable_if<std::is_floating_point<DBL>::value, DBL>::type * = nullptr>
+    template <class DBL, typename std::enable_if_t<std::is_floating_point_v<DBL>, DBL> * = nullptr>
     DBL get_option_value(const char *option_txt, DBL default_value)
     {
       DBL         value = default_value;

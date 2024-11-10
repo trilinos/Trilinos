@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <gtest/gtest.h>
 #include <stk_util/parallel/Parallel.hpp>
@@ -92,15 +92,15 @@ TEST(MiddleMeshQualityImprover, IncrementalBoundarySnapperAnnulusRotation)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-  const int NUM_RUNS  = 300;
+  const int NUM_RUNS  = 3;
   const int NUM_ITERS = 1;
 
   stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
     std::cout << "run = " << run << std::endl;
-    auto mesh1 = make_annulus_mesh(10, 10, 0.5, 1.5, 0);
-    auto mesh2 = make_annulus_mesh(13, 13, 0.5, 1.5, pi/32);
+    auto mesh1 = make_annulus_mesh(35, 35, 0.5, 1.5, 0);
+    auto mesh2 = make_annulus_mesh(71, 71, 0.5, 1.5, pi/32);
 
     batchTimer.start_batch_timer();
     auto bsnapper = stk::middle_mesh::mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, comm);
@@ -121,8 +121,8 @@ TEST(MiddleMeshQualityImprover, IncrementalBoundarySnapperLargeElemCount)
   batchTimer.initialize_batch_timer();
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
 
-    stk::middle_mesh::mesh::impl::MeshSpec spec{100, 100, 0, 1, 0, 1};
-    stk::middle_mesh::mesh::impl::MeshSpec spec2{10, 10, 0, 1, 0, 1};
+    stk::middle_mesh::mesh::impl::MeshSpec spec{300, 300, 0, 1, 0, 1};
+    stk::middle_mesh::mesh::impl::MeshSpec spec2{30, 30, 0, 1, 0, 1};
     auto func = [&](stk::middle_mesh::utils::Point const& pt) { return pt; };
 
     auto mesh1 = create_mesh(spec, func);

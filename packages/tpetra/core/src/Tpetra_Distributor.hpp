@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DISTRIBUTOR_HPP
@@ -53,6 +23,7 @@
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 #include <memory>
 #include <sstream>
 #include <type_traits>
@@ -456,6 +427,13 @@ namespace Tpetra {
                      const ImpView &imports,
                      const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    doPostsAndWaitsKokkos (const ExpView &exports,
+                           const ExpPacketsView &numExportPacketsPerLID,
+                           const ImpView &imports,
+                           const ImpPacketsView &numImportPacketsPerLID);
+
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
     /// Call this overload when you have the same number of Packets
@@ -510,6 +488,13 @@ namespace Tpetra {
              const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
              const ImpView &imports,
              const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+    
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    doPostsKokkos (const ExpView &exports,
+             const ExpPacketsView &numExportPacketsPerLID,
+             const ImpView &imports,
+             const ImpPacketsView &numImportPacketsPerLID);
 
     /// \brief Execute the reverse communication plan.
     ///
@@ -531,7 +516,14 @@ namespace Tpetra {
                             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                             const ImpView &imports,
                             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
-
+    
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    doReversePostsAndWaitsKokkos (const ExpView &exports,
+                                  const ExpPacketsView &numExportPacketsPerLID,
+                                  const ImpView &imports,
+                                  const ImpPacketsView &numImportPacketsPerLID);
+    
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the three-argument
@@ -552,7 +544,14 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                     const ImpView &imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
-
+    
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    doReversePostsKokkos (const ExpView &exports,
+                          const ExpPacketsView &numExportPacketsPerLID,
+                          const ImpView &imports,
+                          const ImpPacketsView &numImportPacketsPerLID);
+    
     //@}
     //! @name Implementation of Teuchos::Describable
     //@{
@@ -670,6 +669,16 @@ namespace Tpetra {
     actor_.doPostsAndWaits(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
 
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  Distributor::
+  doPostsAndWaitsKokkos (const ExpView &exports,
+                         const ExpPacketsView &numExportPacketsPerLID,
+                         const ImpView &imports,
+                         const ImpPacketsView &numImportPacketsPerLID)
+  {
+    actor_.doPostsAndWaitsKokkos(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  }
 
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
@@ -690,6 +699,17 @@ namespace Tpetra {
            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     actor_.doPosts(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  }
+  
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  Distributor::
+  doPostsKokkos (const ExpView &exports,
+                 const ExpPacketsView &numExportPacketsPerLID,
+                 const ImpView &imports,
+                 const ImpPacketsView &numImportPacketsPerLID)
+  {
+    actor_.doPostsKokkos(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
 
   template <class ExpView, class ImpView>
@@ -713,6 +733,19 @@ namespace Tpetra {
   {
     doReversePosts (exports, numExportPacketsPerLID, imports,
                     numImportPacketsPerLID);
+    doReverseWaits ();
+  }
+  
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  Distributor::
+  doReversePostsAndWaitsKokkos (const ExpView& exports,
+                                const ExpPacketsView &numExportPacketsPerLID,
+                                const ImpView& imports,
+                                const ImpPacketsView &numImportPacketsPerLID)
+  {
+    doReversePostsKokkos (exports, numExportPacketsPerLID, imports,
+                          numImportPacketsPerLID);
     doReverseWaits ();
   }
 
@@ -753,7 +786,27 @@ namespace Tpetra {
     reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
                                   imports, numImportPacketsPerLID);
   }
-
+  
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  Distributor::
+  doReversePostsKokkos (const ExpView &exports,
+                  const ExpPacketsView &numExportPacketsPerLID,
+                  const ImpView &imports,
+                  const ImpPacketsView &numImportPacketsPerLID)
+  {
+    // FIXME (mfh 29 Mar 2012) WHY?
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
+      "Tpetra::Distributor::doReversePosts(3 args): Can only do "
+      "reverse communication when original data are blocked by process.");
+    if (reverseDistributor_.is_null ()) {
+      createReverseDistributor ();
+    }
+    reverseDistributor_->doPostsKokkos (exports, numExportPacketsPerLID,
+                                        imports, numImportPacketsPerLID);
+  }
+    
   template <class OrdinalType>
   void Distributor::
   computeSends(const Teuchos::ArrayView<const OrdinalType>& importGIDs,

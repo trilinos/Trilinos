@@ -26,3 +26,9 @@
 #include "MLAPI_BaseLinearCombination.h"
 #include "MLAPI_LinearCombinations.h"
 #include "MLAPI_Defaults.h"
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif

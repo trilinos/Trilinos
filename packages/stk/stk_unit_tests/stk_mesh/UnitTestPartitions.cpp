@@ -48,6 +48,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository, etc
+#include "stk_mesh/baseImpl/GlobalIdEntitySorter.hpp"  // for BucketRepository, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"  // for SelectorFixture
 
@@ -63,7 +64,7 @@ struct ReverseSorter : public stk::mesh::EntitySorterBase
   }
 };
 
-using stk::mesh::fixtures::simple_fields::SelectorFixture;
+using stk::mesh::fixtures::SelectorFixture;
 
 
 // Borrow a lot from UnitTestSelector.  Bulk up the SelectorFixture to have parts

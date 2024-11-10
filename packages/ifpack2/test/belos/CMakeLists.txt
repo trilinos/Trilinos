@@ -43,13 +43,14 @@ ENDIF()
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   DEST_FILES
   test_database_schwarz.xml
-  test_ILUT_calore1_mm.xml 
-  test_Jacobi_calore1_mm.xml 
-  test_Jacobi_calore1_mm_constGraph.xml 
+  test_ILUT_calore1_mm.xml
+  test_Jacobi_calore1_mm.xml
+  test_Jacobi_calore1_mm_constGraph.xml
+  test_BlockRelaxationAmesos2_calore1_mm.xml
   test_BlockRelaxationZoltan2_calore1_mm.xml
   test_GS_calore1_mm.xml
   test_MTGS_calore1_mm.xml
-  test_RILUK_calore1_mm.xml 
+  test_RILUK_calore1_mm.xml
   test_Cheby_calore1_mm.xml
   test_Cheby_calore1_nospectralradius_mm.xml
   test_FILU_calore1_mm.xml
@@ -58,37 +59,42 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_FIC_calore1_mm_sptrsv.xml
   test_FILDL_calore1_mm.xml
   test_FILDL_calore1_mm_sptrsv.xml
-  test_Jacobi_nos1_hb.xml 
-  test_2_Jacobi_nos1_hb.xml 
-  test_Jacobi_gcrodr_nos1_hb.xml 
+  test_Jacobi_nos1_hb.xml
+  test_2_Jacobi_nos1_hb.xml
+  test_Jacobi_gcrodr_nos1_hb.xml
   nos1.rsa
   test_Jacobi_bcsstk14_hb.xml
   test_Jacobi_minres_bcsstk14_hb.xml
   test_Jacobi_pseudoblockcg_bcsstk14_hb.xml
   bcsstk14.hb
-  test_2_ILUT_nos1_hb.xml 
+  test_2_ILUT_nos1_hb.xml
   test_2_RILUK_nos1_hb.xml
+  test_RBILUK_nos1_hb_block.xml
   test_2_RILUK_HTS_nos1_hb.xml
   test_2_RILUK_2streams_nos1_hb.xml
   test_2_RILUK_4streams_nos1_hb.xml
-  test_4_ILUT_nos1_hb.xml 
+  test_2_RILUK_2streams_rcm_nos1_hb.xml
+  test_2_RILUK_4streams_rcm_nos1_hb.xml
+  test_4_ILUT_nos1_hb.xml
   test_4_RILUK_nos1_hb.xml
   test_4_RILUK_HTS_nos1_hb.xml
   test_4_RILUK_2streams_nos1_hb.xml
   test_4_RILUK_4streams_nos1_hb.xml
-  test_SGS_calore1_mm.xml 
+  test_4_RILUK_2streams_rcm_nos1_hb.xml
+  test_4_RILUK_4streams_rcm_nos1_hb.xml
+  test_SGS_calore1_mm.xml
   test_MTSGS_calore1_mm.xml
-  calore1.mtx 
+  calore1.mtx
   calore1_rhs.mtx
   test_pseudoblockcg_small_sym_mm.xml
   test_minres_small_sym_mm.xml
-  test_Jacobi_small_sym_mm.xml 
-  small_sym.mtx 
+  test_Jacobi_small_sym_mm.xml
+  small_sym.mtx
   test_gmres_small_sym_mm.xml
   test_Diagonal_tfqmr_calore1_mm.xml
   test_Diagonal_bicgstab_calore1_mm.xml
   test_Diagonal_gcrodr_calore1_mm.xml
-  test_GS_tfqmr_small_sym_mm.xml 
+  test_GS_tfqmr_small_sym_mm.xml
   test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml
   test_FILU_tfqmr_small_sym_mm.xml
@@ -101,9 +107,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_FILDL_tfqmr_small_sym_mm_sptrsv.xml
   test_FILDL_tfqmr_small_sym_mm_schwarz.xml
   test_ILUT_tfqmr_calore1_mm.xml
-  5w.mtx 
+  5w.mtx
   5w.vec
-  6w.mtx 
+  6w.mtx
   6w.vec
   5w_bel_tif_ILUT.xml
   5w_bel_tif_FILU.xml
@@ -117,13 +123,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   5w_bel_tif_FILDL.xml
   5w_bel_tif_FILDL_sptrsv.xml
   5w_bel_tif_FILDL_schwarz.xml
-  5w_missing_diag.mtx 
+  5w_missing_diag.mtx
   5w_missing_diag_ILUT.xml
-  5w_bel_tif_RILUK_0.xml 
+  5w_bel_tif_RILUK_0.xml
   5w_bel_tif_RILUK_1.xml
   test_RILUK_tfqmr_small_sym_mm.xml
-  test_bordered_DIAG_small.xml 
-  test_minres_bordered_DIAG_small.xml 
+  test_bordered_DIAG_small.xml
+  test_minres_bordered_DIAG_small.xml
   test_FILU_small_sym_sing.xml
   test_FILU_small_sym_sing_sptrsv.xml
   test_FIC_small_sym_sing.xml
@@ -166,7 +172,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
-ENDIF() 
+ENDIF()
 
 IF (Tpetra_ENABLE_quadmath)
 TRIBITS_ADD_TEST(
@@ -294,10 +300,10 @@ TRIBITS_ADD_TEST(
 #  NAME Jacobi_bcsstk14_hb_belos
 #  ARGS "--xml_file=test_Jacobi_bcsstk14_hb.xml"
 #  COMM serial mpi
-#  NUM_MPI_PROCS 1 
+#  NUM_MPI_PROCS 1
 #  STANDARD_PASS_OUTPUT
 #)
-  
+
 TRIBITS_ADD_TEST(
   tif_belos
   NAME Jacobi_bcsstk14_minres_hb_belos
@@ -345,6 +351,15 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
+  NAME RBILUK_hb_belos_block_serial
+  ARGS "--xml_file=test_RBILUK_nos1_hb_block.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
   NAME RILUK_hb_belos
   ARGS "--xml_file=test_4_RILUK_nos1_hb.xml"
   COMM serial mpi
@@ -366,43 +381,76 @@ ENDIF()
 
 
 
-IF(Kokkos_ENABLE_CUDA)
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME RILUK_2streams_hb_belos
-    ARGS "--xml_file=test_2_RILUK_2streams_nos1_hb.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-  )
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_2streams_hb_belos
+  ARGS "--xml_file=test_2_RILUK_2streams_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
 
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME RILUK_4streams_hb_belos
-    ARGS "--xml_file=test_2_RILUK_4streams_nos1_hb.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-  )
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_4streams_hb_belos
+  ARGS "--xml_file=test_2_RILUK_4streams_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
 
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME RILUK_2streams_hb_belos
-    ARGS "--xml_file=test_4_RILUK_2streams_nos1_hb.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 4
-    STANDARD_PASS_OUTPUT
-  )
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_2streams_hb_belos
+  ARGS "--xml_file=test_4_RILUK_2streams_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
 
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME RILUK_4streams_hb_belos
-    ARGS "--xml_file=test_4_RILUK_4streams_nos1_hb.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 4
-    STANDARD_PASS_OUTPUT
-  )
-ENDIF()
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_4streams_hb_belos
+  ARGS "--xml_file=test_4_RILUK_4streams_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_2streams_rcm_hb_belos
+  ARGS "--xml_file=test_2_RILUK_2streams_rcm_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_4streams_rcm_hb_belos
+  ARGS "--xml_file=test_2_RILUK_4streams_rcm_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_2streams_rcm_hb_belos
+  ARGS "--xml_file=test_4_RILUK_2streams_rcm_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME RILUK_4streams_rcm_hb_belos
+  ARGS "--xml_file=test_4_RILUK_4streams_rcm_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
 ENDIF()
 
 
@@ -569,14 +617,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILU_5w_schwarz
-    ARGS "--xml_file=5w_bel_tif_FILU_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILU_5w_schwarz
+      ARGS "--xml_file=5w_bel_tif_FILU_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FIC_5w
@@ -593,14 +643,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FIC_5w_schwarz
-    ARGS "--xml_file=5w_bel_tif_FIC_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FIC_5w_schwarz
+      ARGS "--xml_file=5w_bel_tif_FIC_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FILDL_5w
@@ -617,14 +669,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILDL_5w_schwarz
-    ARGS "--xml_file=5w_bel_tif_FILDL_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILDL_5w_schwarz
+      ARGS "--xml_file=5w_bel_tif_FILDL_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   #small_sym
   TRIBITS_ADD_TEST(
     tif_belos
@@ -642,14 +696,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILU_small_sym_schwarz
-    ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILU_small_sym_schwarz
+      ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FIC_small_sym
@@ -666,14 +722,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FIC_small_sym_schwarz
-    ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FIC_small_sym_schwarz
+      ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FILDL_small_sym
@@ -690,14 +748,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILDL_small_sym_schwarz
-    ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILDL_small_sym_schwarz
+      ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   #small_sym_sing
   TRIBITS_ADD_TEST(
     tif_belos
@@ -946,6 +1006,17 @@ TRIBITS_ADD_TEST(
   tif_belos
   NAME BlockRelaxation_Zoltan2_belos
   ARGS "--xml_file=test_BlockRelaxationZoltan2_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Amesos2)
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME BlockRelaxation_Amesos2_belos
+  ARGS "--xml_file=test_BlockRelaxationAmesos2_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT

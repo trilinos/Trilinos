@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_POINTTOBLOCKDIAGPERMUTE_H
 #define EPETRAEXT_POINTTOBLOCKDIAGPERMUTE_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"

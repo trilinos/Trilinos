@@ -34,6 +34,7 @@
 
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <gtest/gtest.h>
@@ -64,9 +65,9 @@ using stk::mesh::EntityId;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Ghosting;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
-using stk::mesh::fixtures::simple_fields::HexFixture;
-using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
+using stk::mesh::fixtures::HexFixture;
+using stk::mesh::fixtures::RingFixture;
 using stk::unit_test_util::build_mesh;
 
 namespace {
@@ -372,7 +373,8 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   edge = mesh.declare_element_side(elem, local_side_id, sides_parts);
 
   stk::topology elem_top = mesh.bucket(elem).topology();
-  stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+  stk::mesh::Permutation perm1 = stk::mesh::find_permutation(mesh,
+      elem_top, nodes.data(), elem_top.side_topology(local_side_id), side_nodes.data(), local_side_id);
   ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
 
   // Set up duplicate relations from edge to nodes

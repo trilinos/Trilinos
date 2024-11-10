@@ -25,6 +25,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for change_entity_owner, etc
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>  // for parallel_info
+#include <stk_mesh/baseImpl/elementGraph/ProcessKilledElements.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 
 namespace stk { namespace mesh { class Part; } }
@@ -65,7 +66,7 @@ void expect_elem_connected_to_remote_elem_id_via_side(const stk::mesh::BulkData&
   ASSERT_TRUE(foundRemotelyConnectedId) << "elem " << elemId << " expected remote elem " << connectedId;
 }
 
-class ElemGraphChangeOwner : public stk::unit_test_util::simple_fields::MeshTestFixture
+class ElemGraphChangeOwner : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   void expect_initial_graph_correct()
@@ -499,7 +500,6 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(stk::ParallelMachine comm,
   builder.set_entity_rank_names(entityRankNames);
   builder.set_aura_option(auraOption);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -610,7 +610,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
     stk::io::fill_mesh("generated:1x1x4", bulkData);
 
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     std::vector<size_t> counts;
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);

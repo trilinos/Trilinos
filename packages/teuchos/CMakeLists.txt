@@ -350,6 +350,13 @@ ENDIF() # ${PACKAGE_NAME}_ENABLE_COMPLEX
 #
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_MODIFY_DEFAULTS_DURING_VALIDATION
+  HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION
+  "Modify default parameters during validation."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEBUG_RCP_NODE_TRACING
   HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
   "At compile time, enable debug-mode RCP node tracing which can't be turned off."
@@ -426,9 +433,7 @@ IF(TPL_ENABLE_Valgrind)
   ENDIF()
 ENDIF()
 
-# Enabling Kokkos profiling hooks in Teuchos timers requires that the
-# Kokkos package be enabled
-
+#Option Teuchos_KOKKOS_PROFILING
 IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
   SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ON)
 ELSE()
@@ -441,9 +446,28 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
   "Wrap every Teuchos timer with a Kokkos profiling region."
   "${${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT}")
 IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  # Enabling Kokkos profiling hooks in Teuchos timers requires that the
+  # Kokkos package be enabled
+  IF(NOT(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos))
+    MESSAGE(FATAL_ERROR "Setting Teuchos_KOKKOS_PROFILING=ON requires that the Kokkos package is enabled.")
+  ENDIF()
   MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
 ENDIF()
 
+#Option Teuchos_TIMER_KOKKOS_FENCE
+SET(Teuchos_TIMER_KOKKOS_FENCE_DEFAULT OFF)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Teuchos_TIMER_KOKKOS_FENCE
+  HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+  "Call Kokkos::fence() whenever a Teuchos timer starts or stops."
+  "${Teuchos_TIMER_KOKKOS_FENCE_DEFAULT}")
+IF (Teuchos_TIMER_KOKKOS_FENCE)
+  # Enabling Kokkos::fence() in Teuchos timers requires that the Kokkos package be enabled
+  IF(NOT(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos))
+    MESSAGE(FATAL_ERROR "Setting Teuchos_TIMER_KOKKOS_FENCE=ON requires that the Kokkos package is enabled.")
+  ENDIF()
+  MESSAGE(STATUS "Will call Kokkos::fence() when a Teuchos timer starts or stops.")
+ENDIF()
 
 #
 # D) Process the subpackages for Teuchos

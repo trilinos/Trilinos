@@ -44,6 +44,12 @@
 #ifndef EPETRAEXT_DISTARRAY_H
 #define EPETRAEXT_DISTARRAY_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include "EpetraExt_Exception.h"
 #include "Epetra_Map.h"

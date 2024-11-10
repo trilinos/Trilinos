@@ -10,6 +10,8 @@ TRIBITS_PACKAGE(Pliris)
 # B) Set up package-specific options
 #
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ZCPLX
   ZCPLX
   "Enable double precision complex functionality."

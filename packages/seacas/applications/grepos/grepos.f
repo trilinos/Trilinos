@@ -863,7 +863,7 @@ C     can only map nodeset variables if the nodesets are the same...
             do i=0,numnps0-1
                if (ia(kinpss+i) .eq.0) then
                   if (IA(KNNNS0+i) .ne. IA(KNNNS+i1)) then
-                     write (*,900) 'Nodeset', ia(kidns0+i)
+                     write (*,900) 'Nodeset', ia(kidns0+i), 'nodeset'
                   end if
                   i1 = i1 + 1
                end if
@@ -946,15 +946,18 @@ C     ... Fix up the truth table if the sideset count changes...
 
             call muntt(numess0, numess, nvarss,
      $           ia(kssvok0), ia(kssvok), ia(kiesss))
+         endif
 
 C ... check that the sidesets that are retained contain the same number
 C     of faces that the original sidesets contain.  At the current time,
 C     can only map sideset variables if the sidesets are the same...
+         if (delel .and. nvarss .gt. 0) then
             i1 = 0
             do i=0,numess0-1
                if (ia(kiesss+i) .eq.0) then
                   if (IA(KNESS0+i) .ne. IA(KNESS+i1)) then
-                     write (*,900) 'Sideset', ia(kidss0+i)
+                     write (*,900) 'Sideset', ia(kidss0+i), 'sideset'
+                     stop 'Cannot Map Sideset Variables'
                   end if
                   i1 = i1 + 1
                end if
@@ -1283,18 +1286,12 @@ C     number element blocks, and truth table.
      &     14X,'GG   GG  RR  RR   EE       PP       OO   OO       SS'/
      &     14X,' GGGGG   RR   RR  EEEEEEE  PP        OOOOO   SSSSSS ')
  900  FORMAT(/,'WARNING: ',A,i5,' is a different size in the output',
-     $     /,9x,'database than in the input database.  If there are',
-     $     /,9x,'variables on this sideset, they will be transferred',
+     $     /,9x,'database than in the input database. The ',
+     $     /,9x,'variables on this ',A,' will be transferred',
      $     /,9x,'incorrectly. Contact gdsjaar@sandia.gov',
      $     /,9x,'if you need this capability.')
       END
 
-      SUBROUTINE INIMAP(LEN, MAP)
-      INTEGER MAP(*)
-      DO 10 I=1, LEN
-        MAP(I) = I
- 10   CONTINUE
-      END
       subroutine exgqaw(ndb, qarec, ierr)
       include 'gp_params.blk'
       character*(mxstln) qarec(4, *)

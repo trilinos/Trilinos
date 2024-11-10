@@ -70,7 +70,7 @@ struct EntityIdAddRemovePart {
   std::string removePart;
 };
 
-class NgpDebugFieldSyncFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpDebugFieldSyncFixture : public stk::unit_test_util::MeshFixture
 {
 public:
   template <typename T>
@@ -394,6 +394,7 @@ public:
     const int component = 0;
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    ngpField.sync_to_device();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
@@ -412,6 +413,7 @@ public:
   {
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    ngpField.sync_to_device();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
@@ -598,14 +600,13 @@ public:
                            for (unsigned i = 0; i < bucketIds.size(); ++i) {
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
-                               stk::mesh::NgpMesh::MeshIndex meshIndex{&bucket, static_cast<unsigned>(j)};
                                stk::mesh::FastMeshIndex fastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(j)};
                                const unsigned numComponents = ngpField.get_num_components_per_entity(fastMeshIndex);
                                for (unsigned component = 0; component < numComponents; ++component) {
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
-                                 access_for_memory_checking_tool(&ngpField(meshIndex, component));
+                                 access_for_memory_checking_tool(&ngpField(fastMeshIndex, component));
 #else
-                                 access_for_memory_checking_tool(&ngpField(meshIndex, component, __FILE__, __LINE__));
+                                 access_for_memory_checking_tool(&ngpField(fastMeshIndex, component, __FILE__, __LINE__));
 #endif
                                }
                              }

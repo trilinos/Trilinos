@@ -157,3 +157,5 @@
 
 /* Turn on Teko smoothers, this is a circular dependency use at your own risk */
 #cmakedefine HAVE_ML_TekoSmoothers
+
+#cmakedefine ML_SHOW_DEPRECATED_WARNINGS

@@ -43,6 +43,12 @@
 #ifndef IFPACK_SILU_H
 #define IFPACK_SILU_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 
 #ifdef HAVE_IFPACK_SUPERLU

@@ -1,44 +1,10 @@
 // @HEADER
+// *****************************************************************************
+//           Amesos2: Templated Direct Sparse Solver Package
 //
-// ***********************************************************************
-//
-//           Amesos2: Templated Direct Sparse Solver Package 
-//                  Copyright 2011 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2011 NTESS and the Amesos2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 
@@ -291,6 +257,7 @@ namespace Amesos2 {
 
     RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
+    // Fill-in reordering: 0 = minimum degree, 2 = METIS 4.0.1 (default), 3 = METIS 5.1, 4 = AMD,
     if( parameterList->isParameter("IPARM(2)") )
     {
       RCP<const ParameterEntryValidator> fillin_validator = valid_params->getEntry("IPARM(2)").validator();
@@ -298,6 +265,7 @@ namespace Amesos2 {
       iparm_[1] = getIntegralValue<int>(*parameterList, "IPARM(2)");
     }
 
+    // Iterative-direct algorithm
     if( parameterList->isParameter("IPARM(4)") )
     {
       RCP<const ParameterEntryValidator> prec_validator = valid_params->getEntry("IPARM(4)").validator();
@@ -305,13 +273,15 @@ namespace Amesos2 {
       iparm_[3] = getIntegralValue<int>(*parameterList, "IPARM(4)");
     }
    
+    // Max numbers of iterative refinement steps
     if( parameterList->isParameter("IPARM(8)") )
     {
       RCP<const ParameterEntryValidator> refine_validator = valid_params->getEntry("IPARM(8)").validator();
       parameterList->getEntry("IPARM(8)").setValidator(refine_validator);
       iparm_[7] = getIntegralValue<int>(*parameterList, "IPARM(8)");
     }
-   
+
+    // Perturb the pivot elements
     if( parameterList->isParameter("IPARM(10)") )
     {
       RCP<const ParameterEntryValidator> pivot_perturb_validator = valid_params->getEntry("IPARM(10)").validator();
@@ -323,6 +293,7 @@ namespace Amesos2 {
     // Then solver specific options can override this.
     iparm_[11] = this->control_.useTranspose_ ? 2 : 0;
     
+    // Normal solve (0), or a transpose solve (1)
     if( parameterList->isParameter("IPARM(12)") )
     {
       RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("IPARM(12)").validator();
@@ -330,6 +301,15 @@ namespace Amesos2 {
       iparm_[11] = getIntegralValue<int>(*parameterList, "IPARM(12)");
     }
 
+    // (Non-)symmetric matchings : detault 1 for nonsymmetric and 0 for symmetric matrix (default is nonsymmetric)
+    if( parameterList->isParameter("IPARM(13)") )
+    {
+      RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("IPARM(13)").validator();
+      parameterList->getEntry("IPARM(13)").setValidator(trans_validator);
+      iparm_[12] = getIntegralValue<int>(*parameterList, "IPARM(13)");
+    }
+
+    // Output: Number of nonzeros in the factor LU
     if( parameterList->isParameter("IPARM(18)") )
     {
       RCP<const ParameterEntryValidator> report_validator = valid_params->getEntry("IPARM(18)").validator();
@@ -337,6 +317,7 @@ namespace Amesos2 {
       iparm_[17] = getIntegralValue<int>(*parameterList, "IPARM(18)");
     }
    
+    // Scheduling method for the parallel numerical factorization
     if( parameterList->isParameter("IPARM(24)") )
     {
       RCP<const ParameterEntryValidator> par_fact_validator = valid_params->getEntry("IPARM(24)").validator();
@@ -344,6 +325,7 @@ namespace Amesos2 {
       iparm_[23] = getIntegralValue<int>(*parameterList, "IPARM(24)");
     }
   
+    // Parallelization scheme for the forward and backward solv
     if( parameterList->isParameter("IPARM(25)") )
     {
       RCP<const ParameterEntryValidator> par_fbsolve_validator = valid_params->getEntry("IPARM(25)").validator();
@@ -351,6 +333,7 @@ namespace Amesos2 {
       iparm_[24] = getIntegralValue<int>(*parameterList, "IPARM(25)");
     } 
 
+    // Graph compression scheme for METIS.
     if( parameterList->isParameter("IPARM(60)") )
     {
       RCP<const ParameterEntryValidator> ooc_validator = valid_params->getEntry("IPARM(60)").validator();
@@ -433,7 +416,14 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
                                       "Transposed"),
                                       tuple<int>(0, 1, 2),
                                       pl.getRawPtr());
-    
+ 
+    setStringToIntegralParameter<int>("IPARM(13)", toString(iparm_temp[12]),
+                                      "Use weighted matching",
+                                      tuple<string>("0", "1"),
+                                      tuple<string>("No matching", "Use matching"),
+                                      tuple<int>(0, 1),
+                                      pl.getRawPtr());
+
     setStringToIntegralParameter<int>("IPARM(24)", toString(iparm_temp[23]),
                                       "Parallel factorization control",
                                       tuple<string>("0", "1"),
@@ -467,7 +457,7 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
     Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes accept_int( false );
     accept_int.allowInt( true );
 
-    pl->set("IPARM(8)" , as<int>(iparm_temp[8]) , "Iterative refinement step",
+    pl->set("IPARM(8)" , as<int>(iparm_temp[7]) , "Iterative refinement step",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IPARM(10)", as<int>(iparm_temp[9]) , "Pivoting perturbation",
@@ -503,12 +493,12 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
   }
 
-  int_t nnz_ret = 0;
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
+    int_t nnz_ret = 0;
     Util::get_crs_helper_kokkos_view<
       MatrixAdapter<Matrix>,
       host_value_type_array, host_ordinal_type_array, host_size_type_array>::do_get(

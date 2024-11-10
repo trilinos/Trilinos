@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <Teuchos_ConfigDefs.hpp>
@@ -148,6 +116,7 @@ int main(int argc,char * argv[])
      bool use_shared_mem_for_ad = true;
      bool check_order_for_shared_mem = true;
      bool stacked_timer_output = true;
+     bool time_monitor_output = false;
 
      Teuchos::CommandLineProcessor clp;
      clp.throwExceptions(false);
@@ -165,7 +134,8 @@ int main(int argc,char * argv[])
      clp.setOption("workset-size",&workset_size);
      clp.setOption("use-shared-mem-for-ad","no-use-shared-mem-for-ad",&use_shared_mem_for_ad);
      clp.setOption("check-order","no-check-order",&check_order_for_shared_mem);
-     clp.setOption("stacked-timer-output","time-monitor-output",&stacked_timer_output);
+     clp.setOption("stacked-timer-output","no-stacked-timer-output",&stacked_timer_output);
+     clp.setOption("time-monitor-output","no-time-monitor-output",&time_monitor_output);
 
      // parse commandline argument
      Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -531,7 +501,7 @@ int main(int argc,char * argv[])
        options.num_histogram = 5;
        stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
      }
-     else {
+     if (time_monitor_output) {
        Teuchos::TimeMonitor::summarize(out,false,true,false,Teuchos::Union);
      }
 
@@ -616,7 +586,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   belosList.set( "Maximum Iterations", 3000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", 1e-9 );         // Relative convergence tolerance requested
-  belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
+  // belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
+  belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails );
   belosList.set( "Output Frequency", 1 );
   belosList.set( "Output Style", 1 );
 

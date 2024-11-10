@@ -41,6 +41,12 @@
 #ifndef AMESOS_MC64_H
 #define AMESOS_MC64_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #if defined(HAVE_AMESOS_MC64)
 #include "Amesos_Scaling.h"

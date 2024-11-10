@@ -52,6 +52,12 @@
 #ifndef IO_DH
 #define IO_DH
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "euclid_common.h"
 
 #ifdef __cplusplus

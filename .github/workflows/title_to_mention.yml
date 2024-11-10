@@ -18,16 +18,23 @@ jobs:
 
     steps:
     - name: Mention MueLu
-      uses: peter-evans/create-or-update-comment@v2
+      uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
       if: (contains(github.event.action, 'labeled') && contains(github.event.label.name, 'MueLu')) || (contains(github.event.action, 'opened') && contains(github.event.issue.title, 'MueLu'))  
       with:
         issue-number: ${{ github.event.issue.number }}  
         body: |
           Automatic mention of the @trilinos/muelu team
     - name: Mention Ifpack2
-      uses: peter-evans/create-or-update-comment@v2
+      uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
       if: (contains(github.event.action, 'labeled') && contains(github.event.label.name, 'Ifpack2')) || (contains(github.event.action, 'opened') && contains(github.event.issue.title, 'Ifpack2'))
       with:
         issue-number: ${{ github.event.issue.number }}  
         body: |
           Automatic mention of the @trilinos/ifpack2 team
+    - name: Mention ROL
+      uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
+      if: (contains(github.event.action, 'labeled') && contains(github.event.label.name, 'ROL')) || (contains(github.event.action, 'opened') && contains(github.event.issue.title, 'ROL'))
+      with:
+        issue-number: ${{ github.event.issue.number }}
+        body: |
+          Automatic mention of @aj463

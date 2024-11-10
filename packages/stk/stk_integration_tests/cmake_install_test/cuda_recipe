@@ -1,7 +1,7 @@
 #! /bin/bash
 
-#this may be user-specific or system-specific:
-sierra_code=/scratch/$USER/code_v
+#this is user-specific...
+sierra_code=/fgs/$USER/code
 
 #depending on the system, you may need sierra-devel or sierra-devel/nvidia
 module purge
@@ -12,9 +12,9 @@ module load sierra-devel/nvidia
 export mpicxx_path=`type -p mpicxx`
 export MPI_ROOT=$(dirname ${mpicxx_path})
 export LLNL_USE_OMPI_VARS=y
-export OMPI_CXX=/scratch/william/stk-cmake-testing/Trilinos/packages/kokkos/bin/nvcc_wrapper
+export OMPI_CXX=/fgs/$USER/stk-cmake-testing/Trilinos/packages/kokkos/bin/nvcc_wrapper
 
 cd ${sierra_code}
 
-CUDA=ON CLEAR_CACHE=OFF ./stk/stk_integration_tests/cmake_install_test/build_stk_using_cmake
+CUDA=ON CLEAR_CACHE=ON ./stk/stk_integration_tests/cmake_install_test/build_stk_using_cmake
 

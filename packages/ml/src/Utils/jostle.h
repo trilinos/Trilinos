@@ -1,5 +1,11 @@
 #ifndef __MLJOSTLEH__
 #define __MLJOSTLEH__
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 extern	void	jostle_env(char*);
 
 extern	void	jostle_wrkspc_input(int*,char*);

@@ -1,0 +1,36 @@
+name: spack
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - master
+      - develop
+  workflow_dispatch:
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gcc10-openmpi416:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
+    steps:
+      - name: Clone Trilinos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+      - name: Spack build
+        shell: bash -l {0}
+        run: |
+          spack develop --no-clone --path $GITHUB_WORKSPACE trilinos@develop
+          spack add trilinos@develop
+          spack concretize -f
+          spack install --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos -j16

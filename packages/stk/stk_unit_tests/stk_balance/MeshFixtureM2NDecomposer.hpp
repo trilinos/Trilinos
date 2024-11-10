@@ -40,11 +40,11 @@
 #include <stk_balance/m2n/M2NDecomposer.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <vector>
 #include <unistd.h>
 
-class MeshFixtureM2NDecomposer : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshFixtureM2NDecomposer : public stk::unit_test_util::MeshFixture
 {
 protected:
   MeshFixtureM2NDecomposer()
@@ -95,9 +95,9 @@ protected:
     }
 
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     const stk::mesh::EntityProcVec & decomp = m_decomposer->get_partition();
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
 
     bool isNested = true;
     for (const stk::mesh::EntityProc & entityProc : decomp) {

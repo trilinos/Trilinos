@@ -40,8 +40,7 @@ struct blas3_gemm_params : public perf_test::CommonInputParams {
       } else if (std::string(argv[i]).find("--benchmark") == 0) {
         continue;  // ignore benchmark arguments
       } else {
-        std::cerr << "Unrecognized command line argument #" << i << ": "
-                  << argv[i] << std::endl;
+        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
         print_options();
         exit(1);
       }
@@ -53,18 +52,13 @@ struct blas3_gemm_params : public perf_test::CommonInputParams {
     std::cerr << "Options\n" << std::endl;
     std::cerr << perf_test::list_common_options();
 
-    std::cerr << "\t[Optional] --m      :: Rows in A (default 1000)"
-              << std::endl;
-    std::cerr
-        << "\t[Optional] --n      :: Columns in A / Rows in B (default 1000)"
-        << std::endl;
-    std::cerr << "\t[Optional] --k      :: Columns in B (default 1000)"
-              << std::endl;
+    std::cerr << "\t[Optional] --m      :: Rows in A (default 1000)" << std::endl;
+    std::cerr << "\t[Optional] --n      :: Columns in A / Rows in B (default 1000)" << std::endl;
+    std::cerr << "\t[Optional] --k      :: Columns in B (default 1000)" << std::endl;
   }
 };
 
-template <typename ExecSpace, typename Scalar, typename ALayout,
-          typename BLayout>
+template <typename ExecSpace, typename Scalar, typename ALayout, typename BLayout>
 static void KokkosBlas3_GEMM(benchmark::State& state) {
   const auto m = state.range(0);
   const auto n = state.range(1);
@@ -72,12 +66,9 @@ static void KokkosBlas3_GEMM(benchmark::State& state) {
 
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
-  Kokkos::View<Scalar**, ALayout, Device> A(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
-  Kokkos::View<Scalar**, BLayout, Device> B(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"), n, k);
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> C(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C"), m, k);
+  Kokkos::View<Scalar**, ALayout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+  Kokkos::View<Scalar**, BLayout, Device> B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"), n, k);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> C(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C"), m, k);
   Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(B, pool, 10.0);
@@ -97,12 +88,10 @@ static void KokkosBlas3_GEMM(benchmark::State& state) {
     state.SetIterationTime(time);
   }
 
-  state.counters[ExecSpace::name()] = 1;
-  state.counters["Avg GEMM time (s):"] =
-      benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
+  state.counters[ExecSpace::name()]    = 1;
+  state.counters["Avg GEMM time (s):"] = benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
   size_t flopsPerRun                   = (size_t)2 * m * n * k;
-  state.counters["Avg GEMM (FLOP/s):"] = benchmark::Counter(
-      flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
+  state.counters["Avg GEMM (FLOP/s):"] = benchmark::Counter(flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
   if constexpr (std::is_same_v<ALayout, Kokkos::LayoutLeft>) {
     state.counters["Memory Layout in A: LayoutLeft"] = 1;
   } else {
@@ -125,28 +114,32 @@ void run(const blas3_gemm_params& params) {
   const auto arg_names = std::vector<std::string>{"m", "n", "k"};
   const auto args      = std::vector<int64_t>{params.m, params.n, params.k};
 
-  KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LL, LL>, arg_names, args,
-      params.repeat);
-  KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LL, LR>, arg_names, args,
-      params.repeat);
-  KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LR, LL>, arg_names, args,
-      params.repeat);
-  KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LR, LR>, arg_names, args,
-      params.repeat);
+  KokkosKernelsBenchmark::register_benchmark(name, KokkosBlas3_GEMM<ExecSpace, Scalar, LL, LL>, arg_names, args,
+                                             params.repeat);
+  KokkosKernelsBenchmark::register_benchmark(name, KokkosBlas3_GEMM<ExecSpace, Scalar, LL, LR>, arg_names, args,
+                                             params.repeat);
+  KokkosKernelsBenchmark::register_benchmark(name, KokkosBlas3_GEMM<ExecSpace, Scalar, LR, LL>, arg_names, args,
+                                             params.repeat);
+  KokkosKernelsBenchmark::register_benchmark(name, KokkosBlas3_GEMM<ExecSpace, Scalar, LR, LR>, arg_names, args,
+                                             params.repeat);
 }
 
 int main(int argc, char** argv) {
   const auto params     = blas3_gemm_params::get_params(argc, argv);
   const int num_threads = params.use_openmp;
-  const int device_id   = params.use_cuda - 1;
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  // the common parameter parser takes the requested device ID and
+  // adds 1 to it (e.g. --cuda 0 -> params.use_cuda = 1)
+  // this is presumably so that 0 can be a sentinel value,
+  // even though device ID 0 is valid
+  // here, we use CUDA, SYCL, or HIP, whichever is set first, to
+  // choose which device Kokkos should initialize on
+  // or -1, for no such selection
+  const int device_id = params.use_cuda
+                            ? params.use_cuda - 1
+                            : (params.use_sycl ? params.use_sycl - 1 : (params.use_hip ? params.use_hip - 1 : -1));
+
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
@@ -197,8 +190,7 @@ int main(int argc, char** argv) {
   }
 
   // use serial if no backend is specified
-  if (!params.use_cuda and !params.use_hip and !params.use_openmp and
-      !params.use_sycl and !params.use_threads) {
+  if (!params.use_cuda and !params.use_hip and !params.use_openmp and !params.use_sycl and !params.use_threads) {
 #if defined(KOKKOS_ENABLE_SERIAL)
     run<Kokkos::Serial>(params);
 #else

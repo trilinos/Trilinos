@@ -13,6 +13,12 @@
 #ifndef __MLMEM__
 #define __MLMEM__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "ml_common.h"
@@ -88,4 +94,3 @@ extern int ML_MaxMemorySize();
 #endif
 
 #endif
-

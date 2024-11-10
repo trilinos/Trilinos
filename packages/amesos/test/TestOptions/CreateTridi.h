@@ -43,3 +43,9 @@
 int CreateTridi(Epetra_CrsMatrix& A) ;
 
 int CreateTridiPlus(Epetra_CrsMatrix& A) ;
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif

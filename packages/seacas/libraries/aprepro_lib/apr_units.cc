@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,7 +28,7 @@ namespace {
 
   void define_var(const char *name, double val, const char *label)
   {
-    aprepro->add_variable(name, val, true);
+    aprepro->add_variable(name, val, true, true);
     if (echo) {
       *(aprepro->infoStream) << comment() << " 1 " << std::left << std::setw(10) << name
                              << "\t= " << std::setw(14) << std::setprecision(7) << val << "  "
@@ -37,6 +37,7 @@ namespace {
   }
 
   void load_conversion(var_init *base, svar_init *label);
+  void load_constants(var_init *base);
   constexpr double LBF_TO_N = 4.4482216152605;
   constexpr double PI = 3.141592653589793238462643;
 
@@ -315,14 +316,18 @@ unit_systems systems[] =
     if (systems[i].name != nullptr) {
       // Found a match
       for (int j = 0; systems[i].label[j].vname != nullptr; j++) {
-        aprepro->add_variable(systems[i].label[j].vname, systems[i].label[j].value, true);
+        aprepro->add_variable(systems[i].label[j].vname, systems[i].label[j].value, true, true);
       }
 
       for (int j = 0; systems[i].base[j].vname != nullptr; j++) {
-        aprepro->add_variable(systems[i].base[j].vname, systems[i].base[j].value, true);
+        aprepro->add_variable(systems[i].base[j].vname, systems[i].base[j].value, true, true);
       }
 
+      symrec *var = aprepro->getsym("_UNITS_SYSTEM");
+      var->value.svar = type;
+
       load_conversion(systems[i].base, systems[i].label);
+      load_constants(systems[i].base);
       return (" ");
     }
 
@@ -331,36 +336,134 @@ unit_systems systems[] =
   }
 
 namespace {
-void load_conversion(var_init *base, svar_init *label)
-{
-  const char *tout = label[ 0].value;
-  const char *lout = label[ 1].value;
-  const char *aout = label[ 2].value;
-  const char *mout = label[ 3].value;
-  const char *fout = label[ 4].value;
-  const char *vout = label[ 5].value;
-  const char *Vout = label[ 6].value;
-  const char *dout = label[ 7].value;
-  const char *eout = label[ 8].value;
-  const char *Pout = label[ 9].value;
-  const char *pout = label[10].value;
-  const char *Tout = label[11].value;
-  const char *Aout = label[12].value;
+  void load_constants(var_init *base)
+  {
+    double Ohm     = 1;
+    double Hz      = 1;
+    double A  = 1;
+    double C  = 1;
+    double F   = 1;
+    double V    = 1;
+    double T   = 1;
+    double mol    = 1;
+    double S = 1;
+    double GeV     = 1;
 
-  double m    = base[0].value;
-  double sec  = base[1].value;
-  double kg   = base[2].value;
-  double degK = base[3].value;
-  double rad  = base[4].value;
+    double m      = base[0].value;
+    double sec    = base[1].value;
+    double kg     = base[2].value;
+    double degK   = base[3].value;
 
-  double foot = m * 0.3048;
-  double inch = foot / 12.0;
+    double N = kg * m / (sec * sec);
+    double J = N * m;
+    double W = J / sec;
 
-  std::string title_prefix = "\n";
-  for(size_t i = 0; i < 3; i++) {
-    title_prefix += comment();
-}
-  title_prefix += " ";
+    double sec2   = sec * sec;
+    double degK4  = degK * degK * degK * degK;
+    double m2     = m * m;
+    double m3     = m * m * m;
+    double C2     = C * C;
+    double A2     = A * A;
+
+    if (echo != 0) {
+      std::string title_prefix = "\n";
+      for (size_t i = 0; i < 3; i++) {
+	title_prefix += comment();
+      }
+      title_prefix += " ";
+      *(aprepro->infoStream)
+	<< title_prefix
+	<< "Physical Constants (https://en.wikipedia.org/wiki/List_of_physical_constants)"
+	<< '\n';
+    }
+    define_var("Avogadro_constant",                 6.02214076E23 / mol,               "# 6.02214076E23 / mol");
+    define_var("Bohr_magneton",                     9.2740100783E-24 * J / T,          "# 9.2740100783E-24 J/T");
+    define_var("Bohr_radius",                       5.29177210903E-11 * m,             "# 5.29177210903E-11 m");
+    define_var("Boltzmann_constant",                1.380649E-23 * J / degK,           "# 1.380649E-23 J/degK");
+    define_var("Coulomb_constant",                  8.9875517923E9 * N * m2 / C2,      "# 8.9875517923E9 N m^2 C^-2");
+    define_var("Faraday_constant",                  96485.3321233100184 * C / mol,     "# 96485.3321233100184 C/mol");
+    define_var("Fermi_coupling_constant",           1.166378710E-5 / (GeV * GeV),      "# 1.166378710E-5 GeV^-2");
+    define_var("Hartree_energy",                    4.3597447222071E-18 * J,           "# 4.3597447222071E-18 J");
+    define_var("Josephson_constant",                483597.8484E9 * Hz / V,            "# 483597.8484E9 Hz/V");
+    define_var("Newtonian_constant_of_gravitation", 6.67430E-11 * m3 / kg / sec2,      "# 6.67430E-11 m^3/kg s^-2");
+    define_var("Gravitational_constant",            6.67430E-11 * m3 / kg / sec2,      "# 6.67430E-11 m^3/kg s^-2");
+    define_var("Planck_constant",                   6.62607015E-34 * J / Hz,           "# 6.62607015E-34 J/Hz");
+    define_var("Rydberg_constant",                  10973731.568160 / m,               "# 10973731.568160 m");
+    define_var("Rydberg_unit_of_energy",            2.1798723611035E-18 * J,           "# 2.1798723611035E-18 J");
+    define_var("Stefan_Boltzmann_constant",         5.670374419E-8 * W / m2 / degK4,   "# 5.670374419E-8 W m^-2 degK^-4");
+    define_var("Thomson_cross_section",             6.6524587321E-29 * m2,             "# 6.6524587321E-29 m^2");
+    define_var("W_to_Z_mass_ratio",                 0.88153,                           "");
+    define_var("Wien_entropy_displacement_law_constant",    3.002916077E-3 * m * degK, "# 3.002916077E-3 m degK");
+    define_var("Wien_frequency_displacement_law_constant",  5.878925757E10 * Hz / degK,"# 5.878925757E10 Hz/degK");
+    define_var("Wien_wavelength_displacement_law_constant", 2.897771955E-3 * m * degK, "# 2.897771955E-3 m degK");
+    define_var("atomic_mass_constant",              1.66053906660E-27 * kg,            "# 1.66053906660E-27 kg");
+    define_var("atomic_mass_of_carbon_12",          1.99264687992E-26 * kg,            "# 1.99264687992E-26 kg");
+    define_var("characteristic_impedance_of_vacuum", 376.730313668 * Ohm,              "# 376.730313668 Ohm");
+    define_var("classical_electron_radius",         2.8179403262E-15 * m,              "# 2.8179403262E-15 m");
+    define_var("conductance_quantum",               7.748091729E-5 * S,                "# 7.748091729E-5 S");
+    define_var("cosmological_constant",             1.089E-52 / m2,                    "# 1.089E-52 m^-2");
+    define_var("electron_g_factor",                 -2.00231930436256,                 "");
+    define_var("electron_mass",                     9.1093837015E-31 * kg,             "# 9.1093837015E-31 kg");
+    define_var("elementary_charge",                 1.602176634E-19 * C,               "# 1.602176634E-19 C");
+    define_var("fine_structure_constant",           7.2973525693E-3,                   "");
+    define_var("first_radiation_constant",          3.741771852E-16 * W * m2,          "# 3.741771852E-16 W m^2");
+    define_var("hyperfine_transition_frequency_of_133Cs",   9192631770 * Hz,           "# 9192631770 Hz");
+    define_var("inverse_conductance_quantum",       12906.40372 * Ohm,                 "# 12906.40372 Ohm");
+    define_var("inverse_fine_structure_constant",   137.035999084,                     "");
+    define_var("magnetic_flux_quantum",             2.067833848E-15 * V * sec,         "# 2.067833848E-15 V s");
+    define_var("molar_Planck_constant",             3.9903127128934314E-10 * J * sec / mol, "# 3.9903127128934314E-10 J s / mol");
+    define_var("molar_gas_constant",                8.31446261815324 * J / mol / degK, "# 8.31446261815324 J/mol/degK");
+    define_var("molar_mass_constant",               0.99999999965E-3 * kg / mol,       "# 0.99999999965E-3 kg/mol");
+    define_var("molar_mass_of_carbon_12",           11.9999999958E-3 * kg / mol,       "# 11.9999999958E-3 kg/mol");
+    define_var("muon_g_factor",                     -2.0023318418,                     "");
+    define_var("muon_mass",                         1.883531627E-28 * kg,              "# 1.883531627E-28 kg");
+    define_var("neutron_mass",                      1.67492749804E-27 * kg,            "# 1.67492749804E-27 kg");
+    define_var("nuclear_magneton",                  5.0507837461E-27 * J / T,          "# 5.0507837461E-27  J/T");
+    define_var("proton_g_factor",                   5.5856946893,                      "");
+    define_var("proton_mass",                       1.67262192369E-27 * kg,            "# 1.67262192369E-27 kg");
+    define_var("proton_to_electron_mass_ratio",     1836.15267343,                     "");
+    define_var("quantum_of_circulation",            3.6369475516E-4 * m2 / sec,        "# 3.6369475516E-4 m^2/s");
+    define_var("reduced_Planck_constant",           1.054571817E-34 * J * sec,         "# 1.054571817E-34 J s");
+    define_var("sec_radiation_constant",            1.438776877E-2 * m * degK,         "# 1.438776877E-2 m degK");
+    define_var("speed_of_light_in_vacuum",          299792458 * m / sec,               "# 299792458 m/s");
+    define_var("tau_mass",                          3.16754E-27 * kg,                  "# 3.16754E-27 kg");
+    define_var("top_quark_mass",                    3.0784E-25 * kg,                   "# 3.0784E-25 kg");
+    define_var("vacuum_electric_permittivity",      8.8541878128E-12 * F / m,          "# 8.8541878128E-12 F/m");
+    define_var("vacuum_magnetic_permeability",      1.25663706212E-6 * N / A2,         "# 1.25663706212E-6 N A^-2");
+    define_var("von_Klitzing_constant",             25812.80745 * Ohm,                 "# 25812.80745 Ohm");
+    define_var("weak_mixing_angle",                 0.22290,                           "");
+  }
+
+  void load_conversion(var_init *base, svar_init *label)
+  {
+    const char *tout = label[ 0].value;
+    const char *lout = label[ 1].value;
+    const char *aout = label[ 2].value;
+    const char *mout = label[ 3].value;
+    const char *fout = label[ 4].value;
+    const char *vout = label[ 5].value;
+    const char *Vout = label[ 6].value;
+    const char *dout = label[ 7].value;
+    const char *eout = label[ 8].value;
+    const char *Pout = label[ 9].value;
+    const char *pout = label[10].value;
+    const char *Tout = label[11].value;
+    const char *Aout = label[12].value;
+
+    double m    = base[0].value;
+    double sec  = base[1].value;
+    double kg   = base[2].value;
+    double degK = base[3].value;
+    double rad  = base[4].value;
+
+    double foot = m * 0.3048;
+    double inch = foot / 12.0;
+
+    std::string title_prefix = "\n";
+    for(size_t i = 0; i < 3; i++) {
+      title_prefix += comment();
+    }
+    title_prefix += " ";
 
   if (echo != 0) {
     *(aprepro->infoStream)

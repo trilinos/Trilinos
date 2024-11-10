@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
-//                    Nate Roberts  (nvrober@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 
@@ -117,6 +83,7 @@ void testStructuredIntegration(int meshWidth, int polyOrder, int worksetSize,
   EFunctionSpace fs;
   EOperator op1, op2;
   int numOps = 0; // can be 1 or 2
+  Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight1, vectorWeight2;
   switch (formulation)
   {
     case Poisson:
@@ -147,12 +114,32 @@ void testStructuredIntegration(int meshWidth, int polyOrder, int worksetSize,
       op1 = EOperator::OPERATOR_VALUE;
       fs = EFunctionSpace::FUNCTION_SPACE_HDIV;
       break;
+    case VectorWeightedPoisson:
+      numOps = 1;
+      op1 = EOperator::OPERATOR_GRAD;
+      fs = EFunctionSpace::FUNCTION_SPACE_HGRAD;
+      vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+      vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+      double weight = 1.0;
+      for (int d=0; d<spaceDim; d++)
+      {
+        (*vectorWeight1)[d] = weight;
+        weight /= 2.0;
+      }
+      
+      weight = 0.5;
+      for (int d=0; d<spaceDim; d++)
+      {
+        (*vectorWeight2)[d] = weight;
+        weight *= 2.0;
+      }
+      break;
   }
     
   double flopCountIntegration = 0, flopCountJacobian = 0;
   auto generalIntegrals = performStructuredAssembly<Scalar,BasisFamily>(geometry, worksetSize,
-                                                                        polyOrder, fs, op1,
-                                                                        polyOrder, fs, op1,
+                                                                        polyOrder, fs, op1, vectorWeight1,
+                                                                        polyOrder, fs, op1, vectorWeight2,
                                                                         flopCountIntegration, flopCountJacobian);
   if (numOps == 2)
   {
@@ -170,7 +157,7 @@ void testStructuredIntegration(int meshWidth, int polyOrder, int worksetSize,
     });
   }
   
-  auto specificIntegrals = performStructuredQuadrature<Scalar, BasisFamily>(formulation, geometry, polyOrder, worksetSize, flopCountIntegration, flopCountJacobian);
+  auto specificIntegrals = performStructuredQuadrature<Scalar, BasisFamily>(formulation, geometry, polyOrder, worksetSize, flopCountIntegration, flopCountJacobian, vectorWeight1, vectorWeight2);
     
   out << "Comparing new general standard assembly implementation to previous formulation-specific integration path…\n";
   testFloatingEquality3(generalIntegrals, specificIntegrals, relTol, absTol, out, success, "general integral", "specific formulation integral");
@@ -200,5 +187,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(StructuredIntegration, GeneralStructuredIntegr
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, PoissonFormulation, D1, P1)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, PoissonFormulation, D2, P3)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, PoissonFormulation, D3, P3)
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, VectorWeightedPoissonFormulation, D1, P1)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, VectorWeightedPoissonFormulation, D2, P3)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, VectorWeightedPoissonFormulation, D3, P3)
 
 } // anonymous namespace

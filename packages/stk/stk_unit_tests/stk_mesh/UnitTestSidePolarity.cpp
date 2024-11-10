@@ -19,11 +19,8 @@
 #include <stk_mesh/base/PolarityUtil.hpp>
 
 #include "stk_mesh/base/ExodusTranslator.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
-#include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
 
-class TestTextMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class TestTextMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   TestTextMesh()
@@ -65,7 +62,7 @@ TEST_F(TestQuad4, createNodeOrderingAndTestPolarity)
   if (get_bulk().parallel_size() == 1)
   {
     inititalize_2D_mesh();
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2};
@@ -90,7 +87,7 @@ TEST_F(TestQuad9, createNodeOrderingAndTestPolarity)
   if (get_bulk().parallel_size() == 1)
   {
     inititalize_2D_mesh();
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 5};
@@ -115,7 +112,7 @@ TEST_F(TestTri3, createNodeOrderingAndTestPolarity)
   if (get_bulk().parallel_size() == 1)
   {
     inititalize_2D_mesh();
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2};
@@ -140,7 +137,7 @@ TEST_F(TestTri6, createNodeOrderingAndTestPolarity)
   if (get_bulk().parallel_size() == 1)
   {
     inititalize_2D_mesh();
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 4};
@@ -164,7 +161,7 @@ TEST_F(TestHex8, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 6, 5};
@@ -188,7 +185,7 @@ TEST_F(TestHex20, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,HEX_20,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 6, 5, 9, 14, 17, 13};
@@ -212,7 +209,7 @@ TEST_F(TestPyramid5, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,PYRAMID_5,1,2,3,4,5";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 5};
@@ -248,7 +245,7 @@ TEST_F(TestPyramid13, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,PYRAMID_13,1,2,3,4,5,6,7,8,9,10,11,12,13";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 5, 6, 11, 10};
@@ -284,7 +281,7 @@ TEST_F(TestTet4, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,TET_4,1,2,3,4";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 4};
@@ -308,7 +305,7 @@ TEST_F(TestTet10, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,TET_10,1,2,3,4,5,6,7,8,9,10";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 4, 5, 9, 8};
@@ -332,7 +329,7 @@ TEST_F(TestWedge6, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,WEDGE_6,1,2,3,4,5,6";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 5, 4};
@@ -368,7 +365,7 @@ TEST_F(TestWedge15, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,WEDGE_15,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 5, 4, 7, 11, 13, 10};
@@ -405,7 +402,7 @@ TEST_F(TestShellLine2, createNodeOrderingAndTestPolarity)
   if (get_bulk().parallel_size() == 1)
   {
     inititalize_2D_mesh();
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2};
@@ -430,7 +427,7 @@ TEST_F(TestShellLine3, createNodeOrderingAndTestPolarity)
   if (get_bulk().parallel_size() == 1)
   {
     inititalize_2D_mesh();
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 3};
@@ -454,7 +451,7 @@ TEST_F(TestShellTri3, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,SHELL_TRI_3,1,2,3";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 3};
@@ -490,7 +487,7 @@ TEST_F(TestShellTri6, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,SHELL_TRI_6,1,2,3,4,5,6";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 3, 4, 5, 6};
@@ -526,7 +523,7 @@ TEST_F(TestShellQuad4, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,3,4";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2};
@@ -562,7 +559,7 @@ TEST_F(TestShellQuad8, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,SHELL_QUAD_8,1,2,3,4,5,6,7,8";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 3};
@@ -598,7 +595,7 @@ TEST_F(TestShellQuad9, createNodeOrderingAndTestPolarity)
   std::string meshDesc = "0,1,SHELL_QUAD_9,1,2,3,4,5,6,7,8,9";
   if (get_bulk().parallel_size() == 1)
   {
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     {
       stk::mesh::EntityIdVector nodeIds = {1, 2, 3};

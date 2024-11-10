@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,18 +6,18 @@
 
 #pragma once
 
-#include "iogn_export.h"
-
-#include "Ioss_State.h" // for State
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>    // for DatabaseUsage
-#include <Ioss_DatabaseIO.h> // for DatabaseIO
-#include <Ioss_IOFactory.h>  // for IOFactory
-#include <Ioss_Map.h>        // for Map
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DBUsage.h"    // for DatabaseUsage
+#include "Ioss_DatabaseIO.h" // for DatabaseIO
+#include "Ioss_IOFactory.h"  // for IOFactory
+#include "Ioss_Map.h"        // for Map
 #include <cstddef>           // for size_t
 #include <cstdint>           // for int64_t
 #include <string>            // for string
 #include <vector>            // for vector
+
+#include "Ioss_State.h" // for State
+#include "iogn_export.h"
 
 namespace Iogn {
   class GeneratedMesh;
@@ -43,6 +43,9 @@ namespace Ioss {
 
 namespace Ioss {
   class EntityBlock;
+  class Assembly;
+  class Blob;
+  class Map;
 } // namespace Ioss
 
 /** \brief A namespace for the generated database format.
@@ -77,9 +80,6 @@ namespace Iogn {
     */
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
-    DatabaseIO(const DatabaseIO &from)            = delete;
-    DatabaseIO &operator=(const DatabaseIO &from) = delete;
-
     ~DatabaseIO() override;
 
     std::string get_format() const override { return "Generated"; }
@@ -96,17 +96,17 @@ namespace Iogn {
 
     void setGeneratedMesh(Iogn::GeneratedMesh *generatedMesh) { m_generatedMesh = generatedMesh; }
 
-    const std::vector<std::string> &get_sideset_names() const { return m_sideset_names; }
+    const Ioss::NameList &get_sideset_names() const { return m_sideset_names; }
 
   private:
-    void read_meta_data__() override;
+    void read_meta_data_nl() override;
 
-    bool begin__(Ioss::State state) override;
-    bool end__(Ioss::State state) override;
+    bool begin_nl(Ioss::State state) override;
+    bool end_nl(Ioss::State state) override;
 
-    bool begin_state__(int state, double time) override;
+    bool begin_state_nl(int state, double time) override;
 
-    void        get_step_times__() override;
+    void        get_step_times_nl() override;
     void        get_nodeblocks();
     void        get_elemblocks();
     void        get_nodesets();
@@ -159,8 +159,8 @@ namespace Iogn {
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
-    GeneratedMesh           *m_generatedMesh{nullptr};
-    std::vector<std::string> m_sideset_names{};
+    GeneratedMesh *m_generatedMesh{nullptr};
+    Ioss::NameList m_sideset_names{};
 
     double currentTime{0.0};
     int    spatialDimension{3};

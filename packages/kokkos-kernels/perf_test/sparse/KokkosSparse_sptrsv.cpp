@@ -38,18 +38,17 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include "KokkosSparse_IOUtils.hpp"
 
-//#define INTERNAL_CUSPARSE
+// #define INTERNAL_CUSPARSE
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) && \
-    (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
+#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) && (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-//#define PRINTVIEWSSPTRSVPERF
-//#define PRINT_HLEVEL_FREQ_PLOT
-//#define PRINT_LEVEL_LIST
+// #define PRINTVIEWSSPTRSVPERF
+// #define PRINT_HLEVEL_FREQ_PLOT
+// #define PRINT_LEVEL_LIST
 
 enum {
   DEFAULT,
@@ -77,8 +76,7 @@ void print_view1d(const ViewType /*dv*/) {}
 #endif
 
 template <class RowMapType, class EntriesType>
-void check_entries_sorted(const RowMapType drow_map,
-                          const EntriesType dentries) {
+void check_entries_sorted(const RowMapType drow_map, const EntriesType dentries) {
   auto row_map = Kokkos::create_mirror_view(drow_map);
   Kokkos::deep_copy(row_map, drow_map);
   auto entries = Kokkos::create_mirror_view(dentries);
@@ -97,26 +95,22 @@ void check_entries_sorted(const RowMapType drow_map,
   }
 }
 
-int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
-                     const std::string &ufilename, const int team_size,
-                     const int vector_length, const int /*idx_offset*/,
-                     const int loop, const int chain_threshold = 0,
-                     const float /*dense_row_percent*/ = -1.0) {
+int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename, const std::string &ufilename,
+                     const int team_size, const int vector_length, const int /*idx_offset*/, const int loop,
+                     const int chain_threshold = 0, const float /*dense_row_percent*/ = -1.0) {
   typedef default_scalar scalar_t;
   typedef default_lno_t lno_t;
   typedef default_size_type size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef typename execution_space::memory_space memory_space;
 
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, execution_space, void,
-                                  size_type>
-      crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, execution_space, void, size_type> crsmat_t;
   typedef typename crsmat_t::StaticCrsGraphType graph_t;
 
   typedef Kokkos::View<scalar_t *, memory_space> ValuesType;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, execution_space, memory_space,
+                                                           memory_space>
       KernelHandle;
 
   const scalar_t ZERO = scalar_t(0);
@@ -130,11 +124,9 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
   // LOWERTRI
   std::cout << "\n\n" << std::endl;
   if (!lfilename.empty()) {
-    std::cout << "Lower Tri Begin: Read matrix filename " << lfilename
-              << std::endl;
-    crsmat_t triMtx = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
-        lfilename.c_str());                // in_matrix
-    graph_t graph         = triMtx.graph;  // in_graph
+    std::cout << "Lower Tri Begin: Read matrix filename " << lfilename << std::endl;
+    crsmat_t triMtx       = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(lfilename.c_str());  // in_matrix
+    graph_t graph         = triMtx.graph;                                                              // in_graph
     const size_type nrows = graph.numRows();
 
     // Create the rhs and lhs_known solution
@@ -155,12 +147,9 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     auto entries = graph.entries;
     auto values  = triMtx.values;
 
-    std::cout << "Lower Perf: row_map.extent(0) = " << row_map.extent(0)
-              << std::endl;
-    std::cout << "Lower Perf: entries.extent(0) = " << entries.extent(0)
-              << std::endl;
-    std::cout << "Lower Perf: values.extent(0) = " << values.extent(0)
-              << std::endl;
+    std::cout << "Lower Perf: row_map.extent(0) = " << row_map.extent(0) << std::endl;
+    std::cout << "Lower Perf: entries.extent(0) = " << entries.extent(0) << std::endl;
+    std::cout << "Lower Perf: values.extent(0) = " << values.extent(0) << std::endl;
 
     std::cout << "Lower Perf: lhs.extent(0) = " << lhs.extent(0) << std::endl;
     std::cout << "Lower Perf: rhs.extent(0) = " << rhs.extent(0) << std::endl;
@@ -180,8 +169,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     cusparseStatus_t status;
     cusparseHandle_t handle = 0;
     status                  = cusparseCreate(&handle);
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "handle create status error name " << (status) << std::endl;
+    if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "handle create status error name " << (status) << std::endl;
     cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
     cusparseMatDescr_t descr = 0;
     csrsv2Info_t info        = 0;
@@ -197,9 +185,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     // - matrix L is lower triangular
     //   (L may not have all diagonal elements.)
     status = cusparseCreateMatDescr(&descr);
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "matdescr create status error name " << (status)
-                << std::endl;
+    if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "matdescr create status error name " << (status) << std::endl;
     // cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ONE);
     cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatFillMode(descr, CUSPARSE_FILL_MODE_LOWER);
@@ -210,14 +196,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     // step 2: create a empty info structure
     // std::cout << "  cusparse: create csrsv2info" << std::endl;
     status = cusparseCreateCsrsv2Info(&info);
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "csrsv2info create status error name " << (status)
-                << std::endl;
+    if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "csrsv2info create status error name " << (status) << std::endl;
 
     // step 3: query how much memory used in csrsv2, and allocate the buffer
     int nnz = triMtx.nnz();
-    cusparseDcsrsv2_bufferSize(handle, trans, nrows, nnz, descr, values.data(),
-                               row_map.data(), entries.data(), info,
+    cusparseDcsrsv2_bufferSize(handle, trans, nrows, nnz, descr, values.data(), row_map.data(), entries.data(), info,
                                &pBufferSize);
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
     cudaMalloc((void **)&pBuffer, pBufferSize);
@@ -232,13 +215,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
       std::cout << "Create handle (lower)" << std::endl;
       switch (test) {
         case LVLSCHED_RP:
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows, is_lower_tri);
           kh.get_sptrsv_handle()->print_algorithm();
           break;
         case LVLSCHED_TP1:
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
           std::cout << "TP1 set team_size = " << team_size << std::endl;
           if (team_size != -1) kh.get_sptrsv_handle()->set_team_size(team_size);
           kh.get_sptrsv_handle()->print_algorithm();
@@ -247,12 +228,10 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
           printf("TP1 with CHAIN\n");
           printf("chain_threshold %d\n", chain_threshold);
           printf("team_size %d\n", team_size);
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
           kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
           if (team_size != -1) kh.get_sptrsv_handle()->set_team_size(team_size);
-          if (vector_length != -1)
-            kh.get_sptrsv_handle()->set_vector_size(vector_length);
+          if (vector_length != -1) kh.get_sptrsv_handle()->set_vector_size(vector_length);
           kh.get_sptrsv_handle()->print_algorithm();
           break;
           /*
@@ -266,8 +245,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
           */
         case CUSPARSE_K:
           printf("CUSPARSE WRAPPER\n");
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
           kh.get_sptrsv_handle()->print_algorithm();
           break;
         case CUSPARSE:
@@ -277,12 +255,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
           // vector_length);
           break;
 #else
-          std::cout << "CUSPARSE not enabled: Fall through to defaults"
-                    << std::endl;
+          std::cout << "CUSPARSE not enabled: Fall through to defaults" << std::endl;
+          [[fallthrough]];
 #endif
         default:
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
           if (team_size != -1) kh.get_sptrsv_handle()->set_team_size(team_size);
           kh.get_sptrsv_handle()->print_algorithm();
       }
@@ -316,13 +293,10 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         // (double*)dvalues, (int *)drow_map, (int *)dentries, info, policy,
         // pBuffer);
         timer.reset();
-        status = cusparseDcsrsv2_analysis(
-            handle, trans, nrows, triMtx.nnz(), descr, values.data(),
-            row_map.data(), entries.data(), info, policy, pBuffer);
-        std::cout << "LTRI Cusparse Symbolic Time: " << timer.seconds()
-                  << std::endl;
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "analysis status error name " << (status) << std::endl;
+        status = cusparseDcsrsv2_analysis(handle, trans, nrows, triMtx.nnz(), descr, values.data(), row_map.data(),
+                                          entries.data(), info, policy, pBuffer);
+        std::cout << "LTRI Cusparse Symbolic Time: " << timer.seconds() << std::endl;
+        if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "analysis status error name " << (status) << std::endl;
         // L has unit diagonal, so no structural zero is reported.
 
         // std::cout << "  cusparse path: analysis" << std::endl;
@@ -337,15 +311,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         // descr, (double*)dvalues, (int *)drow_map, (int *)dentries, info,
         // (double*)drhs, (double*)dlhs, policy, pBuffer);
         timer.reset();
-        status = cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(),
-                                       &alpha, descr, values.data(),
-                                       row_map.data(), entries.data(), info,
-                                       rhs.data(), lhs.data(), policy, pBuffer);
+        status = cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(), &alpha, descr, values.data(), row_map.data(),
+                                       entries.data(), info, rhs.data(), lhs.data(), policy, pBuffer);
         Kokkos::fence();
-        std::cout << "LTRI Cusparse Solve Time: " << timer.seconds()
-                  << std::endl;
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "solve status error name " << (status) << std::endl;
+        std::cout << "LTRI Cusparse Solve Time: " << timer.seconds() << std::endl;
+        if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "solve status error name " << (status) << std::endl;
         // L has unit diagonal, so no numerical zero is reported.
         status = cusparseXcsrsv2_zeroPivot(handle, info, &numerical_zero);
         if (CUSPARSE_STATUS_ZERO_PIVOT == status) {
@@ -359,18 +329,14 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         scalar_t sum = 0.0;
         Kokkos::parallel_reduce(
             Kokkos::RangePolicy<execution_space>(0, lhs.extent(0)),
-            KOKKOS_LAMBDA(const lno_t i, scalar_t &tsum) {
-              tsum += (known_lhs(i) - lhs(i)) * (known_lhs(i) - lhs(i));
-            },
+            KOKKOS_LAMBDA(const lno_t i, scalar_t &tsum) { tsum += (known_lhs(i) - lhs(i)) * (known_lhs(i) - lhs(i)); },
             sum);
 
         scalar_t norm_ssd = sqrt(sum / lhs.extent(0));
-        std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd
-                  << std::endl;
+        std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd << std::endl;
 
         if (norm_ssd > 1e-8) {
-          std::cout << "Lower Tri Solve FAILURE: norm_ssd = " << norm_ssd
-                    << std::endl;
+          std::cout << "Lower Tri Solve FAILURE: norm_ssd = " << norm_ssd << std::endl;
           return 1;
         } else {
           std::cout << "\nLower Tri Solve Init Test: SUCCESS!\n" << std::endl;
@@ -423,25 +389,20 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
                 sum);
 
             scalar_t norm_ssd = sqrt(sum / lhs.extent(0));
-            std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd
-                      << std::endl;
+            std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd << std::endl;
             if (norm_ssd > 1e-8) {
-              std::cout << "Lower Tri Solve FAILURE: norm_ssd = " << norm_ssd
-                        << std::endl;
+              std::cout << "Lower Tri Solve FAILURE: norm_ssd = " << norm_ssd << std::endl;
               return 1;
             } else {
-              std::cout << "\nLower Tri Solve Init Test: SUCCESS!\n"
-                        << std::endl;
+              std::cout << "\nLower Tri Solve Init Test: SUCCESS!\n" << std::endl;
             }
           }
 #endif
         }
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(INTERNAL_CUSPARSE)
         else {
-          cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(), &alpha,
-                                descr, values.data(), row_map.data(),
-                                entries.data(), info, rhs.data(), lhs.data(),
-                                policy, pBuffer);
+          cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(), &alpha, descr, values.data(), row_map.data(),
+                                entries.data(), info, rhs.data(), lhs.data(), policy, pBuffer);
         }
 #endif
 
@@ -459,10 +420,9 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
 // Output for level frequency plot
 #ifdef PRINT_HLEVEL_FREQ_PLOT
       if (test != CUSPARSE) {
-        auto hnpl    = kh.get_sptrsv_handle()->get_host_nodes_per_level();
-        auto nlevels = kh.get_sptrsv_handle()->get_num_levels();
-        std::string algmstring =
-            kh.get_sptrsv_handle()->return_algorithm_string();
+        auto hnpl              = kh.get_sptrsv_handle()->get_host_nodes_per_level();
+        auto nlevels           = kh.get_sptrsv_handle()->get_num_levels();
+        std::string algmstring = kh.get_sptrsv_handle()->return_algorithm_string();
         std::cout << algmstring << std::endl;
         // Create filename
         std::string filename = "lower_nodes_per_level_" + algmstring + ".txt";
@@ -485,8 +445,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         std::cout << filename << std::endl;
         outfile.open(filename);
         if (outfile.is_open()) {
-          for (size_t i = 0; i < hngpl.extent(0); ++i)
-            outfile << hngpl(i) << std::endl;
+          for (size_t i = 0; i < hngpl.extent(0); ++i) outfile << hngpl(i) << std::endl;
           outfile.close();
         } else {
           std::cout << "OUTFILE DID NOT OPEN!!!" << std::endl;
@@ -502,19 +461,16 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
 
         auto nlevels = kh.get_sptrsv_handle()->get_num_levels();
 
-        std::string algmstring =
-            kh.get_sptrsv_handle()->return_algorithm_string();
+        std::string algmstring = kh.get_sptrsv_handle()->return_algorithm_string();
         std::cout << algmstring << std::endl;
         // Create filename
         std::string filename = "lower_level_list_" + algmstring + ".txt";
         std::cout << filename << std::endl;
-        std::cout << "  nlevels = " << nlevels
-                  << "  nodes = " << hlevel_list.extent(0) << std::endl;
+        std::cout << "  nlevels = " << nlevels << "  nodes = " << hlevel_list.extent(0) << std::endl;
         std::ofstream outfile;
         outfile.open(filename);
         if (outfile.is_open()) {
-          for (size_t i = 0; i < hlevel_list.extent(0); ++i)
-            outfile << hlevel_list(i) << std::endl;
+          for (size_t i = 0; i < hlevel_list.extent(0); ++i) outfile << hlevel_list(i) << std::endl;
           outfile.close();
         } else {
           std::cout << "OUTFILE DID NOT OPEN!!!" << std::endl;
@@ -538,11 +494,9 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
   std::cout << "\n\n" << std::endl;
   // UPPERTRI
   if (!ufilename.empty()) {
-    std::cout << "Upper Tri Begin: Read matrix filename " << ufilename
-              << std::endl;
-    crsmat_t triMtx = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
-        ufilename.c_str());                // in_matrix
-    graph_t graph         = triMtx.graph;  // in_graph
+    std::cout << "Upper Tri Begin: Read matrix filename " << ufilename << std::endl;
+    crsmat_t triMtx       = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(ufilename.c_str());  // in_matrix
+    graph_t graph         = triMtx.graph;                                                              // in_graph
     const size_type nrows = graph.numRows();
 
     // Create the rhs and lhs_known solution
@@ -563,12 +517,9 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     auto entries = graph.entries;
     auto values  = triMtx.values;
 
-    std::cout << "Upper Perf: row_map.extent(0) = " << row_map.extent(0)
-              << std::endl;
-    std::cout << "Upper Perf: entries.extent(0) = " << entries.extent(0)
-              << std::endl;
-    std::cout << "Upper Perf: values.extent(0) = " << values.extent(0)
-              << std::endl;
+    std::cout << "Upper Perf: row_map.extent(0) = " << row_map.extent(0) << std::endl;
+    std::cout << "Upper Perf: entries.extent(0) = " << entries.extent(0) << std::endl;
+    std::cout << "Upper Perf: values.extent(0) = " << values.extent(0) << std::endl;
 
     std::cout << "Upper Perf: lhs.extent(0) = " << lhs.extent(0) << std::endl;
     std::cout << "Upper Perf: rhs.extent(0) = " << rhs.extent(0) << std::endl;
@@ -588,8 +539,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     cusparseStatus_t status;
     cusparseHandle_t handle = 0;
     status                  = cusparseCreate(&handle);
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "handle create status error name " << (status) << std::endl;
+    if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "handle create status error name " << (status) << std::endl;
     cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
     cusparseMatDescr_t descr = 0;
     csrsv2Info_t info        = 0;
@@ -604,9 +554,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     // step 1: create a descriptor which contains
     //   (L may not have all diagonal elements.)
     status = cusparseCreateMatDescr(&descr);
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "matdescr create status error name " << (status)
-                << std::endl;
+    if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "matdescr create status error name " << (status) << std::endl;
     // cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ONE);
     cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatFillMode(descr, CUSPARSE_FILL_MODE_UPPER);
@@ -618,14 +566,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
     // step 2: create a empty info structure
     // std::cout << "  cusparse: create csrsv2info" << std::endl;
     status = cusparseCreateCsrsv2Info(&info);
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "csrsv2info create status error name " << (status)
-                << std::endl;
+    if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "csrsv2info create status error name " << (status) << std::endl;
 
     // step 3: query how much memory used in csrsv2, and allocate the buffer
     int nnz = triMtx.nnz();
-    cusparseDcsrsv2_bufferSize(handle, trans, nrows, nnz, descr, values.data(),
-                               row_map.data(), entries.data(), info,
+    cusparseDcsrsv2_bufferSize(handle, trans, nrows, nnz, descr, values.data(), row_map.data(), entries.data(), info,
                                &pBufferSize);
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
     cudaMalloc((void **)&pBuffer, pBufferSize);
@@ -640,13 +585,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
       std::cout << "Create handle (upper)" << std::endl;
       switch (test) {
         case LVLSCHED_RP:
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows, is_lower_tri);
           kh.get_sptrsv_handle()->print_algorithm();
           break;
         case LVLSCHED_TP1:
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
           std::cout << "TP1 set team_size = " << team_size << std::endl;
           if (team_size != -1) kh.get_sptrsv_handle()->set_team_size(team_size);
           kh.get_sptrsv_handle()->print_algorithm();
@@ -655,12 +598,10 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
           printf("TP1 with CHAIN\n");
           printf("chain_threshold %d\n", chain_threshold);
           printf("team_size %d\n", team_size);
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
           kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
           if (team_size != -1) kh.get_sptrsv_handle()->set_team_size(team_size);
-          if (vector_length != -1)
-            kh.get_sptrsv_handle()->set_vector_size(vector_length);
+          if (vector_length != -1) kh.get_sptrsv_handle()->set_vector_size(vector_length);
           kh.get_sptrsv_handle()->print_algorithm();
           break;
           /*
@@ -679,12 +620,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
           // vector_length);
           break;
 #else
-          std::cout << "CUSPARSE not enabled: Fall through to defaults"
-                    << std::endl;
+          std::cout << "CUSPARSE not enabled: Fall through to defaults" << std::endl;
+          [[fallthrough]];
 #endif
         default:
-          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                  is_lower_tri);
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
           if (team_size != -1) kh.get_sptrsv_handle()->set_team_size(team_size);
           kh.get_sptrsv_handle()->print_algorithm();
       }
@@ -712,13 +652,10 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         // (double*)dvalues, (int *)drow_map, (int *)dentries, info, policy,
         // pBuffer);
         timer.reset();
-        status = cusparseDcsrsv2_analysis(
-            handle, trans, nrows, triMtx.nnz(), descr, values.data(),
-            row_map.data(), entries.data(), info, policy, pBuffer);
-        std::cout << "UTRI Cusparse Symbolic Time: " << timer.seconds()
-                  << std::endl;
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "analysis status error name " << (status) << std::endl;
+        status = cusparseDcsrsv2_analysis(handle, trans, nrows, triMtx.nnz(), descr, values.data(), row_map.data(),
+                                          entries.data(), info, policy, pBuffer);
+        std::cout << "UTRI Cusparse Symbolic Time: " << timer.seconds() << std::endl;
+        if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "analysis status error name " << (status) << std::endl;
         // L has unit diagonal, so no structural zero is reported.
 
         status = cusparseXcsrsv2_zeroPivot(handle, info, &structural_zero);
@@ -732,15 +669,11 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         // descr, (double*)dvalues, (int *)drow_map, (int *)dentries, info,
         // (double*)drhs, (double*)dlhs, policy, pBuffer);
         timer.reset();
-        status = cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(),
-                                       &alpha, descr, values.data(),
-                                       row_map.data(), entries.data(), info,
-                                       rhs.data(), lhs.data(), policy, pBuffer);
+        status = cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(), &alpha, descr, values.data(), row_map.data(),
+                                       entries.data(), info, rhs.data(), lhs.data(), policy, pBuffer);
         Kokkos::fence();
-        std::cout << "UTRI Cusparse Solve Time: " << timer.seconds()
-                  << std::endl;
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "solve status error name " << (status) << std::endl;
+        std::cout << "UTRI Cusparse Solve Time: " << timer.seconds() << std::endl;
+        if (CUSPARSE_STATUS_SUCCESS != status) std::cout << "solve status error name " << (status) << std::endl;
         // L has unit diagonal, so no numerical zero is reported.
         status = cusparseXcsrsv2_zeroPivot(handle, info, &numerical_zero);
         if (CUSPARSE_STATUS_ZERO_PIVOT == status) {
@@ -754,18 +687,14 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         scalar_t sum = 0.0;
         Kokkos::parallel_reduce(
             Kokkos::RangePolicy<execution_space>(0, lhs.extent(0)),
-            KOKKOS_LAMBDA(const lno_t i, scalar_t &tsum) {
-              tsum += (known_lhs(i) - lhs(i)) * (known_lhs(i) - lhs(i));
-            },
+            KOKKOS_LAMBDA(const lno_t i, scalar_t &tsum) { tsum += (known_lhs(i) - lhs(i)) * (known_lhs(i) - lhs(i)); },
             sum);
 
         scalar_t norm_ssd = sqrt(sum / lhs.extent(0));
-        std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd
-                  << std::endl;
+        std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd << std::endl;
 
         if (norm_ssd > 1e-8) {
-          std::cout << "Upper Tri Solve FAILURE: norm_ssd = " << norm_ssd
-                    << std::endl;
+          std::cout << "Upper Tri Solve FAILURE: norm_ssd = " << norm_ssd << std::endl;
           return 1;
         } else {
           std::cout << "\nUpper Tri Solve Init Test: SUCCESS!\n" << std::endl;
@@ -818,25 +747,20 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
                 sum);
 
             scalar_t norm_ssd = sqrt(sum / lhs.extent(0));
-            std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd
-                      << std::endl;
+            std::cout << "  ssd = " << sum << "  norm_sqrt_ssd = " << norm_ssd << std::endl;
             if (norm_ssd > 1e-8) {
-              std::cout << "Upper Tri Solve FAILURE: norm_ssd = " << norm_ssd
-                        << std::endl;
+              std::cout << "Upper Tri Solve FAILURE: norm_ssd = " << norm_ssd << std::endl;
               return 1;
             } else {
-              std::cout << "\nUpper Tri Solve Init Test: SUCCESS!\n"
-                        << std::endl;
+              std::cout << "\nUpper Tri Solve Init Test: SUCCESS!\n" << std::endl;
             }
           }
 #endif
         }
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(INTERNAL_CUSPARSE)
         else {
-          cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(), &alpha,
-                                descr, values.data(), row_map.data(),
-                                entries.data(), info, rhs.data(), lhs.data(),
-                                policy, pBuffer);
+          cusparseDcsrsv2_solve(handle, trans, nrows, triMtx.nnz(), &alpha, descr, values.data(), row_map.data(),
+                                entries.data(), info, rhs.data(), lhs.data(), policy, pBuffer);
         }
 #endif
 
@@ -854,10 +778,9 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
 // Output for level frequency plot
 #ifdef PRINT_HLEVEL_FREQ_PLOT
       if (test != CUSPARSE) {
-        auto hnpl    = kh.get_sptrsv_handle()->get_host_nodes_per_level();
-        auto nlevels = kh.get_sptrsv_handle()->get_num_levels();
-        std::string algmstring =
-            kh.get_sptrsv_handle()->return_algorithm_string();
+        auto hnpl              = kh.get_sptrsv_handle()->get_host_nodes_per_level();
+        auto nlevels           = kh.get_sptrsv_handle()->get_num_levels();
+        std::string algmstring = kh.get_sptrsv_handle()->return_algorithm_string();
         std::cout << algmstring << std::endl;
         // Create filename
         std::string filename = "upper_nodes_per_level_" + algmstring + ".txt";
@@ -880,8 +803,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
         std::cout << filename << std::endl;
         outfile.open(filename);
         if (outfile.is_open()) {
-          for (size_t i = 0; i < hngpl.extent(0); ++i)
-            outfile << hngpl(i) << std::endl;
+          for (size_t i = 0; i < hngpl.extent(0); ++i) outfile << hngpl(i) << std::endl;
           outfile.close();
         } else {
           std::cout << "OUTFILE DID NOT OPEN!!!" << std::endl;
@@ -897,19 +819,16 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
 
         auto nlevels = kh.get_sptrsv_handle()->get_num_levels();
 
-        std::string algmstring =
-            kh.get_sptrsv_handle()->return_algorithm_string();
+        std::string algmstring = kh.get_sptrsv_handle()->return_algorithm_string();
         std::cout << algmstring << std::endl;
         // Create filename
         std::string filename = "upper_level_list_" + algmstring + ".txt";
         std::cout << filename << std::endl;
-        std::cout << "  nlevels = " << nlevels
-                  << "  nodes = " << hlevel_list.extent(0) << std::endl;
+        std::cout << "  nlevels = " << nlevels << "  nodes = " << hlevel_list.extent(0) << std::endl;
         std::ofstream outfile;
         outfile.open(filename);
         if (outfile.is_open()) {
-          for (size_t i = 0; i < hlevel_list.extent(0); ++i)
-            outfile << hlevel_list(i) << std::endl;
+          for (size_t i = 0; i < hlevel_list.extent(0); ++i) outfile << hlevel_list(i) << std::endl;
           outfile.close();
         } else {
           std::cout << "OUTFILE DID NOT OPEN!!!" << std::endl;
@@ -961,8 +880,7 @@ void print_help_sptrsv() {
   printf(
       "  -dr [V]         : Dense row percent (as float): Only has effect of "
       "lvldensetp1 algorithm.\n");
-  printf(
-      "  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
   //  printf("  --write-lvl-freq: Write output files with number of nodes per
   //  level for each matrix and algorithm.\n"); printf("  -s [N]          :
   //  generate a semi-random banded (band size 0.01xN) NxN matrix\n"); printf("
@@ -1080,9 +998,8 @@ int main(int argc, char **argv) {
 
   Kokkos::initialize(argc, argv);
   {
-    int total_errors =
-        test_sptrsv_perf(tests, lfilename, ufilename, team_size, vector_length,
-                         idx_offset, loop, chain_threshold, dense_row_percent);
+    int total_errors = test_sptrsv_perf(tests, lfilename, ufilename, team_size, vector_length, idx_offset, loop,
+                                        chain_threshold, dense_row_percent);
 
     if (total_errors == 0)
       printf("Kokkos::SPTRSV Test: Passed\n");

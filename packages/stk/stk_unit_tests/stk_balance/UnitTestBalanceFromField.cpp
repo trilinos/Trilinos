@@ -39,7 +39,7 @@
 #include <stk_balance/internal/Balancer.hpp>
 #include <stk_balance/mesh/BalanceMesh.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include "stk_balance/io/BalanceIO.hpp"
 #include <vector>
 #include <string>
@@ -77,12 +77,12 @@ class BalanceFromField : public MeshFixtureRebalance
 {
 public:
   BalanceFromField() {
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     testing::internal::CaptureStderr();
   }
 
   ~BalanceFromField() override {
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
     testing::internal::GetCapturedStderr();
   }
 
@@ -91,7 +91,7 @@ public:
     m_transientTimeSteps = {0.0, 1.0, 2.0};
     m_transientFieldName = "weight_field";
     m_globalVariableName = "global_variable";
-    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
                                                                                              get_input_file_name(),
                                                                                              m_transientFieldName,
                                                                                              stk::topology::ELEM_RANK,

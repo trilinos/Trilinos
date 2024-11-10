@@ -165,3 +165,6 @@
   #endif
 
 #endif
+
+#cmakedefine PyTrilinos_SHOW_DEPRECATED_WARNINGS
+

@@ -13,13 +13,13 @@ permissions:
 jobs:
   assign_one_project:
     permissions:
-      issues: write  # for actions/github-script@v6
+      issues: write  # for actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       repository-projects: write  # for srggrs/assign-one-project-github-action to assign issues and PRs to repo project
     name: Assign to MueLu or Tpetra Project
     runs-on: ubuntu-latest
     steps:
     - name: Add MueLu Label
-      uses: actions/github-script@v6
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       if: contains(github.event.issue.title, 'MueLu')
       with:
         script: |
@@ -30,7 +30,7 @@ jobs:
             labels: ["pkg: MueLu"]
           })
     - name: Add Tpetra Label
-      uses: actions/github-script@v6
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       if: contains(github.event.issue.title, 'Tpetra')
       with:
         script: |
@@ -41,14 +41,14 @@ jobs:
             labels: ["pkg: Tpetra"]
           })          
     - name: Add to MueLu Project
-      uses: srggrs/assign-one-project-github-action@1.3.0
+      uses: srggrs/assign-one-project-github-action@65a8ddab497df42ef268001e67bbf976f8fd39e1 # 1.3.1
       if: contains(github.event.label.name, 'MueLu') || contains(github.event.issue.title, 'MueLu')
       with:
-        project: 'https://github.com/trilinos/Trilinos/projects/5'
+        project: 'https://github.com/orgs/trilinos/projects/8'
         column_name: 'Backlog'
     - name: Add to Tpetra Project
-      uses: srggrs/assign-one-project-github-action@1.3.0    
+      uses: srggrs/assign-one-project-github-action@65a8ddab497df42ef268001e67bbf976f8fd39e1 # 1.3.1
       if: contains(github.event.label.name, 'Tpetra') || contains(github.event.issue.title, 'Tpetra')
       with:
-        project: 'https://github.com/trilinos/Trilinos/projects/2'
+        project: 'https://github.com/orgs/trilinos/projects/9'
         column_name: 'Needs Triage'

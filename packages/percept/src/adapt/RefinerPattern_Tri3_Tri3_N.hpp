@@ -99,7 +99,6 @@
           }
 
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef std::array<int, 3> tri_tuple_type_int;
         static vector<tri_tuple_type> elems(4);
         static vector<tri_tuple_type_local> elems_local(4);
         unsigned num_new_elems=0;

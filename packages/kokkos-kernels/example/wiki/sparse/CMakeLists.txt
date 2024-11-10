@@ -11,6 +11,11 @@ if (KOKKOSKERNELS_ENABLE_EXPERIMENTAL)
 endif()
 
 KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+        wiki_bsrmatrix_2
+        SOURCES KokkosSparse_wiki_bsrmatrix_2.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   wiki_crsmatrix
   SOURCES KokkosSparse_wiki_crsmatrix.cpp
   )

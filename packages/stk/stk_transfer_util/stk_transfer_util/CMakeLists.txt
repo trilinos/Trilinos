@@ -51,16 +51,22 @@ else()
   target_link_libraries(stk_transfer_util PUBLIC stk_search_util)
   target_link_libraries(stk_transfer_util PUBLIC stk_util_env)
 
+  if(STK_BUILT_FOR_SIERRA)
+    find_package(SierraLapack REQUIRED)
+    target_link_libraries(stk_util_util PUBLIC SierraLapack::sierra_blas_lapack)
+  else()
+    find_package(BLAS REQUIRED)
+    target_link_libraries(stk_util_util PUBLIC BLAS::BLAS)
+  endif()
+
   target_include_directories(stk_transfer_util PUBLIC
    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_transfer_util>
    $<INSTALL_INTERFACE:include>
   )
+  INSTALL(TARGETS stk_transfer_util EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer_util)
-    
-if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_transfer_util DESTINATION ${STK_INSTALL_LIBDIR})
-endif()
+
 

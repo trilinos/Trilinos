@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_HYPREIJMATRIX_H_
 #define EPETRAEXT_HYPREIJMATRIX_H_
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 // Trilinos source files
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"

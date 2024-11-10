@@ -37,13 +37,23 @@ inline void print_cublas_version_if_enabled(std::ostream& os) {
 inline void print_cusparse_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << cusparse_version_string()
-     << "\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << cusparse_version_string() << "\n";
 #else
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: no\n";
 #endif
 }
+
+inline void print_cusolver_version_if_enabled(std::ostream& os) {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSOLVER: " << cusolver_version_string() << "\n";
+#else
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSOLVER: no\n";
+#endif
+}
+
 inline void print_enabled_tpls(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
   os << "  "
@@ -96,6 +106,7 @@ inline void print_enabled_tpls(std::ostream& os) {
 #endif
   print_cublas_version_if_enabled(os);
   print_cusparse_version_if_enabled(os);
+  print_cusolver_version_if_enabled(os);
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: yes\n";
@@ -109,6 +120,13 @@ inline void print_enabled_tpls(std::ostream& os) {
 #else
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE: no\n";
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER: yes\n";
+#else
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCOLVER: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
   os << "KOKKOSKERNELS_ENABLE_TPL_METIS: yes\n";
@@ -136,9 +154,8 @@ inline void print_version(std::ostream& os) {
   // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
   // are not available in Kernels
   os << "  "
-     << "KokkosKernels Version: " << KOKKOSKERNELS_VERSION_MAJOR << "."
-     << KOKKOSKERNELS_VERSION_MINOR << "." << KOKKOSKERNELS_VERSION_PATCH
-     << '\n';
+     << "KokkosKernels Version: " << KOKKOSKERNELS_VERSION_MAJOR << "." << KOKKOSKERNELS_VERSION_MINOR << "."
+     << KOKKOSKERNELS_VERSION_PATCH << '\n';
 }
 
 }  // namespace Impl

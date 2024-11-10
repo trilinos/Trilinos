@@ -94,7 +94,7 @@ public:
 protected:
   stk::topology::rank_t fieldRank;
   stk::mesh::Field<double> &scalarField;
-  stk::mesh::Field<double, stk::mesh::Cartesian> &vectorField;
+  stk::mesh::Field<double> &vectorField;
 
 private:
   GeneratedMeshToFileWithTransientFields();
@@ -102,7 +102,8 @@ private:
 
 namespace simple_fields {
 
-class GeneratedMeshToFile
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+GeneratedMeshToFile
 {
 public:
   GeneratedMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::AutomaticAuraOption auraOption);
@@ -123,7 +124,8 @@ private:
   GeneratedMeshToFile();
 };
 
-class GeneratedMeshToFileWithTransientFields : public GeneratedMeshToFile
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+GeneratedMeshToFileWithTransientFields : public GeneratedMeshToFile
 {
 public:
   GeneratedMeshToFileWithTransientFields(stk::ParallelMachine comm,

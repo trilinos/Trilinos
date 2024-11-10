@@ -44,6 +44,14 @@
 #ifndef EPETRA_COMPOBJECT_H
 #define EPETRA_COMPOBJECT_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 //! Epetra_CompObject: Functionality and data that is common to all computational classes.
 
 /*! The Epetra_CompObject is a base class for all Epetra computational objects.  It provides the basic

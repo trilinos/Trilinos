@@ -1,24 +1,35 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_BoundingBox.h>  // for AxisAlignedBoundingBox
-#include <Ioss_DatabaseIO.h>   // for DatabaseIO
-#include <Ioss_Field.h>        // for Field, etc
-#include <Ioss_FieldManager.h> // for FieldManager
-#include <Ioss_Hex8.h>
-#include <Ioss_Property.h> // for Property
-#include <Ioss_Region.h>
-#include <Ioss_SmartAssert.h>
-#include <Ioss_StructuredBlock.h>
-#include <fmt/ostream.h>
-
+#include "Ioss_BoundingBox.h"  // for AxisAlignedBoundingBox
+#include "Ioss_DatabaseIO.h"   // for DatabaseIO
+#include "Ioss_Field.h"        // for Field, etc
+#include "Ioss_FieldManager.h" // for FieldManager
+#include "Ioss_Hex8.h"
+#include "Ioss_Property.h" // for Property
+#include "Ioss_SmartAssert.h"
+#include "Ioss_Sort.h"
+#include "Ioss_StructuredBlock.h"
+#include <cmath>
 #include <cstddef> // for size_t
-#include <numeric>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
+#include <iostream>
+#include <stdlib.h>
 #include <string> // for string
 #include <vector> // for vector
+
+#include "Ioss_CodeTypes.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
+#include "Ioss_ZoneConnectivity.h"
 
 namespace {
   template <typename T> bool vec_equal(const std::vector<T> &lhs, const std::vector<T> &rhs)
@@ -81,7 +92,6 @@ namespace {
 } // namespace
 
 namespace Ioss {
-  class Field;
 
   /** \brief Create a structured block.
    *
@@ -214,8 +224,6 @@ namespace Ioss {
     }
   }
 
-  StructuredBlock::~StructuredBlock() = default;
-
   StructuredBlock *StructuredBlock::clone(DatabaseIO *database) const
   {
     int   index_dim = properties.get("component_degree").get_int();
@@ -274,22 +282,22 @@ namespace Ioss {
   Property StructuredBlock::get_implicit_property(const std::string &my_name) const
   {
     if (my_name == "ni_global") {
-      return Ioss::Property(my_name, m_ijkGlobal[0]);
+      return {my_name, m_ijkGlobal[0]};
     }
     if (my_name == "nj_global") {
-      return Ioss::Property(my_name, m_ijkGlobal[1]);
+      return {my_name, m_ijkGlobal[1]};
     }
     if (my_name == "nk_global") {
-      return Ioss::Property(my_name, m_ijkGlobal[2]);
+      return {my_name, m_ijkGlobal[2]};
     }
     if (my_name == "offset_i") {
-      return Ioss::Property(my_name, m_offset[0]);
+      return {my_name, m_offset[0]};
     }
     if (my_name == "offset_j") {
-      return Ioss::Property(my_name, m_offset[1]);
+      return {my_name, m_offset[1]};
     }
     if (my_name == "offset_k") {
-      return Ioss::Property(my_name, m_offset[2]);
+      return {my_name, m_offset[2]};
     }
     return EntityBlock::get_implicit_property(my_name);
   }
@@ -526,25 +534,38 @@ namespace Ioss {
       same = false;
     }
 
-    // NOTE: this comparison assumes that the elements of this vector will
-    // appear in the same order in two databases that are equivalent.
     if (quiet && this->m_zoneConnectivity != rhs.m_zoneConnectivity) {
       return false;
     }
-    if (!vec_equal(this->m_zoneConnectivity, rhs.m_zoneConnectivity)) {
-      fmt::print(Ioss::OUTPUT(), "StructuredBlock: Zone Connectivity mismatch (size {} vs {})\n",
-                 this->m_zoneConnectivity.size(), rhs.m_zoneConnectivity.size());
-      same = false;
+    {
+      auto lhzc = this->m_zoneConnectivity;
+      auto rhzc = rhs.m_zoneConnectivity;
+      Ioss::sort(lhzc.begin(), lhzc.end(), [](const ZoneConnectivity &l, const ZoneConnectivity &r) {
+					    return l.m_connectionName < r.m_connectionName;});
+      Ioss::sort(rhzc.begin(), rhzc.end(), [](const ZoneConnectivity &l, const ZoneConnectivity &r) {
+					    return l.m_connectionName < r.m_connectionName;});
+      if (!vec_equal(lhzc, rhzc)) {
+	fmt::print(Ioss::OUTPUT(), "StructuredBlock: Zone Connectivity mismatch (size {} vs {})\n",
+		   this->m_zoneConnectivity.size(), rhs.m_zoneConnectivity.size());
+	same = false;
+      }
     }
 
-    // NOTE: this comparison assumes that the elements of this vector will
-    // appear in the same order in two databases that are equivalent.
     if (quiet && this->m_boundaryConditions != rhs.m_boundaryConditions) {
       return false;
     }
-    if (!vec_equal(this->m_boundaryConditions, rhs.m_boundaryConditions)) {
-      fmt::print(Ioss::OUTPUT(), "StructuredBlock: Boundary Conditions mismatch\n");
-      same = false;
+
+    {
+      auto lhbc = this->m_boundaryConditions;
+      auto rhbc = rhs.m_boundaryConditions;
+      Ioss::sort(lhbc.begin(), lhbc.end(), [](const BoundaryCondition &l, const BoundaryCondition &r) {
+					    return l.m_bcName < r.m_bcName;});
+      Ioss::sort(rhbc.begin(), rhbc.end(), [](const BoundaryCondition &l, const BoundaryCondition &r) {
+					    return l.m_bcName < r.m_bcName;});
+      if (!vec_equal(lhbc, rhbc)) {
+	fmt::print(Ioss::OUTPUT(), "StructuredBlock: Boundary Conditions mismatch\n");
+	same = false;
+      }
     }
 
     if (!quiet) {

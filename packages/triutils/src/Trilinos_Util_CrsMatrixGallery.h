@@ -42,6 +42,12 @@
 #ifndef __TRILINOS_UTILS_GALLERY_H
 #define __TRILINOS_UTILS_GALLERY_H
 
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_BlockMap;

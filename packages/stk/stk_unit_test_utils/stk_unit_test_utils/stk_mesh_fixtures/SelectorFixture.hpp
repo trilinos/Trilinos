@@ -99,8 +99,8 @@ public:
   stk::mesh::Entity m_entity4 ;
   stk::mesh::Entity m_entity5 ;
 
-  stk::mesh::Field<double>& m_fieldA;
-  stk::mesh::Field<double>& m_fieldABC;
+  stk::mesh::Field<double>* m_fieldA;
+  stk::mesh::Field<double>* m_fieldABC;
 
   void generate_mesh();
 
@@ -130,7 +130,8 @@ private:
 
 namespace simple_fields {
 
-class SelectorFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+SelectorFixture
 {
 public:
   SelectorFixture();
@@ -167,7 +168,8 @@ private:
   SelectorFixture & operator = ( const SelectorFixture & );
 };
 
-class VariableSelectorFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+VariableSelectorFixture
 {
 public:
   VariableSelectorFixture(int NumParts);

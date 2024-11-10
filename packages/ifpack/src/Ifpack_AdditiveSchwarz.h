@@ -44,6 +44,12 @@
 #ifndef IFPACK_ADDITIVESCHWARZ_H
 #define IFPACK_ADDITIVESCHWARZ_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_ConfigDefs.h"
@@ -858,7 +864,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
 
   IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose()));
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
-  IFPACK_CHK_ERR(Inverse_->Initialize());
+  IFPACK_CHK_GLOBAL_ERR(Inverse_->Initialize());
 
   // Label is for Aztec-like solvers
   Label_ = "Ifpack_AdditiveSchwarz, ";
@@ -889,13 +895,13 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Compute()
 {
   if (IsInitialized() == false)
-    IFPACK_CHK_ERR(Initialize());
+    IFPACK_CHK_GLOBAL_ERR(Initialize());
 
   Time_->ResetStartTime();
   IsComputed_ = false;
   Condest_ = -1.0;
 
-  IFPACK_CHK_ERR(Inverse_->Compute());
+  IFPACK_CHK_GLOBAL_ERR(Inverse_->Compute());
 
   IsComputed_ = true; // need this here for Condest(Ifpack_Cheap)
   ++NumCompute_;

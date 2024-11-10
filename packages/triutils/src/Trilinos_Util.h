@@ -42,6 +42,12 @@
 #ifndef _TRILINOS_UTIL_H_
 #define _TRILINOS_UTIL_H_
 
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+
 #define Trilinos_Util_max(x,y) (( x > y ) ? x : y)     /* max function  */
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
 

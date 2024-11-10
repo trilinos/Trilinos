@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef STOKHOS_TPETRA_UTILITIES_UQ_PCE_HPP
@@ -53,17 +21,15 @@ namespace Stokhos {
 
 
   // Build a CRS graph from a sparse Cijk tensor
-  template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node,
             typename CijkType>
-  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
-                                 Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node > >
   create_cijk_crs_graph(const CijkType& cijk_dev,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                         const size_t matrix_pce_size) {
     using Teuchos::RCP;
     using Teuchos::arrayView;
 
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 
@@ -117,16 +83,15 @@ namespace Stokhos {
   // UQ::PCE scalar type
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
-  template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node,
             typename CijkType>
-  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
-                                 Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_pce_graph(
-    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& graph,
+    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node >& graph,
     const CijkType& cijk,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
-    Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_domain_map,
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_range_map,
+    Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node > >& cijk_graph,
     const size_t matrix_pce_size) {
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
@@ -134,7 +99,6 @@ namespace Stokhos {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 
@@ -163,7 +127,7 @@ namespace Stokhos {
 
     // Build Cijk graph if necessary
     if (cijk_graph == Teuchos::null)
-      cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal,Device>(
+      cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal,Node>(
         cijk,
         flat_domain_map->getComm(),
         matrix_pce_size);
@@ -231,21 +195,17 @@ namespace Stokhos {
   // Create a flattened vector by unrolling the UQ::PCE scalar type.  The
   // returned vector is a view of the original
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< const Tpetra::MultiVector<typename Storage::value_type,
-                                          LocalOrdinal,GlobalOrdinal,
-                                          Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                          LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     const Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
-                              LocalOrdinal,GlobalOrdinal,
-                              Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                          Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
+                              LocalOrdinal,GlobalOrdinal,Node >& vec,
+    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
     typedef typename Storage::value_type BaseScalar;
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
     typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
@@ -253,7 +213,7 @@ namespace Stokhos {
     // non-const method, yet getLocalViewDevice(ReadOnly) returns a const-view
     // (i.e., with a constant scalar type), and there is no way to make a
     // MultiVector out of it!
-    typedef Tpetra::MultiVector<Sacado::UQ::PCE<Storage>, LocalOrdinal,GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > mv_type;
+    typedef Tpetra::MultiVector<Sacado::UQ::PCE<Storage>, LocalOrdinal,GlobalOrdinal, Node > mv_type;
     mv_type& vec_nc = const_cast<mv_type&>(vec);
 
     // Create flattenend view using special reshaping view assignment operator
@@ -268,21 +228,17 @@ namespace Stokhos {
   // Create a flattened vector by unrolling the UQ::PCE scalar type.  The
   // returned vector is a view of the original
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< Tpetra::MultiVector<typename Storage::value_type,
-                                    LocalOrdinal,GlobalOrdinal,
-                                    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                    LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
-                        LocalOrdinal,GlobalOrdinal,
-                        Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                          Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
+                        LocalOrdinal,GlobalOrdinal,Node >& vec,
+    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
     typedef typename Storage::value_type BaseScalar;
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
     typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
@@ -299,17 +255,14 @@ namespace Stokhos {
   // returned vector is a view of the original.  This version creates the
   // map if necessary
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< const Tpetra::MultiVector<typename Storage::value_type,
-                                          LocalOrdinal,GlobalOrdinal,
-                                          Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                          LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     const Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
-                              LocalOrdinal,GlobalOrdinal,
-                              Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
+                              LocalOrdinal,GlobalOrdinal,Node >& vec,
+    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
+    typedef typename Node::device_type Device;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
         Kokkos::dimension_scalar(vec.template getLocalView<Device>(Tpetra::Access::ReadOnly));
@@ -323,17 +276,14 @@ namespace Stokhos {
   // returned vector is a view of the original.  This version creates the
   // map if necessary
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< Tpetra::MultiVector<typename Storage::value_type,
-                                    LocalOrdinal,GlobalOrdinal,
-                                    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                    LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
-                        LocalOrdinal,GlobalOrdinal,
-                        Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
+                        LocalOrdinal,GlobalOrdinal,Node >& vec,
+    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
+    typedef typename Node::device_type Device;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
         Kokkos::dimension_scalar(vec.template getLocalView<Device>(Tpetra::Access::ReadOnly));
@@ -346,17 +296,13 @@ namespace Stokhos {
   // Create a flattened vector by unrolling the UQ::PCE scalar type.  The
   // returned vector is a view of the original
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< const Tpetra::Vector<typename Storage::value_type,
-                                     LocalOrdinal,GlobalOrdinal,
-                                     Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                     LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     const Tpetra::Vector<Sacado::UQ::PCE<Storage>,
-                         LocalOrdinal,GlobalOrdinal,
-                         Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec_const,
-    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                          Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
+                         LocalOrdinal,GlobalOrdinal,Node >& vec_const,
+    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
     const Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,LocalOrdinal,GlobalOrdinal,Node>& mv = vec_const;
     Teuchos::RCP< Tpetra::MultiVector<typename Storage::value_type,LocalOrdinal,GlobalOrdinal,Node> > flat_mv = create_flat_vector_view(mv, flat_map);
     return flat_mv->getVector(0);
@@ -366,17 +312,14 @@ namespace Stokhos {
   // returned vector is a view of the original.  This version creates the
   // map if necessary
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< const Tpetra::Vector<typename Storage::value_type,
-                                     LocalOrdinal,GlobalOrdinal,
-                                     Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                     LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     const Tpetra::Vector<Sacado::UQ::PCE<Storage>,
-                         LocalOrdinal,GlobalOrdinal,
-                         Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
+                         LocalOrdinal,GlobalOrdinal,Node >& vec,
+    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
+    typedef typename Node::device_type Device;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
         Kokkos::dimension_scalar(vec.template getLocalView<Device>(Tpetra::Access::ReadOnly));
@@ -389,17 +332,13 @@ namespace Stokhos {
   // Create a flattened vector by unrolling the UQ::PCE scalar type.  The
   // returned vector is a view of the original
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< Tpetra::Vector<typename Storage::value_type,
-                               LocalOrdinal,GlobalOrdinal,
-                               Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                               LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     Tpetra::Vector<Sacado::UQ::PCE<Storage>,
-                   LocalOrdinal,GlobalOrdinal,
-                   Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                          Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
+                   LocalOrdinal,GlobalOrdinal,Node >& vec,
+    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
     Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,LocalOrdinal,GlobalOrdinal,Node>& mv = vec;
     Teuchos::RCP< Tpetra::MultiVector<typename Storage::value_type,LocalOrdinal,GlobalOrdinal,Node> > flat_mv = create_flat_vector_view(mv, flat_map);
     return flat_mv->getVectorNonConst(0);
@@ -409,17 +348,14 @@ namespace Stokhos {
   // returned vector is a view of the original.  This version creates the
   // map if necessary
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device>
+            typename Node>
   Teuchos::RCP< Tpetra::Vector<typename Storage::value_type,
-                               LocalOrdinal,GlobalOrdinal,
-                               Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                               LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_vector_view(
     Tpetra::Vector<Sacado::UQ::PCE<Storage>,
-                   LocalOrdinal,GlobalOrdinal,
-                   Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& vec,
-    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
-                                    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
+                   LocalOrdinal,GlobalOrdinal,Node >& vec,
+    Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_map) {
+    typedef typename Node::device_type Device;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
         Kokkos::dimension_scalar(vec.template getLocalView<Device>(Tpetra::Access::ReadOnly));
@@ -432,22 +368,20 @@ namespace Stokhos {
   // Create a flattened matrix by unrolling the UQ::PCE scalar type.  The
   // returned matrix is NOT a view of the original (and can't be)
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device, typename CijkType>
+            typename Node, typename CijkType>
   Teuchos::RCP< Tpetra::CrsMatrix<typename Storage::value_type,
-                                  LocalOrdinal,GlobalOrdinal,
-                                  Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
+                                  LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_matrix(
     const Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
-                            LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& mat,
-    const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_graph,
-    const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
+                            LocalOrdinal,GlobalOrdinal,Node >& mat,
+    const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node > >& flat_graph,
+    const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node > >& cijk_graph,
     const CijkType& cijk_dev) {
     using Teuchos::ArrayView;
     using Teuchos::Array;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Sacado::UQ::PCE<Storage> Scalar;
     typedef typename Storage::value_type BaseScalar;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;

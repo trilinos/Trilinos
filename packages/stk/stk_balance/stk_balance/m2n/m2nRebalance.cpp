@@ -39,6 +39,7 @@
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/FillMesh.hpp>
+#include "stk_util/parallel/OutputStreams.hpp"
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/environment/OutputLog.hpp"
@@ -52,18 +53,18 @@ void set_output_streams(MPI_Comm comm, const stk::balance::M2NBalanceSettings & 
   if (stk::parallel_machine_rank(comm) == 0) {
     const std::string & logName = balanceSettings.get_log_filename();
     if (logName == "cout"  || logName == "cerr") {
-      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream(logName);
+      stk::set_outputP0(stk::get_log_ostream(logName));
     }
     else {
       stk::bind_output_streams("log=\"" + logName + "\"");
-      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream("log");
+      stk::set_outputP0(stk::get_log_ostream("log"));
     }
   }
   else {
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    //stk::outputP0() is already a null output stream by default on other MPI ranks.
   }
 
-  Ioss::Utils::set_output_stream(sierra::Env::outputP0());
+  Ioss::Utils::set_output_stream(stk::outputP0());
 }
 
 void print_running_message(const stk::balance::M2NBalanceSettings & balanceSettings, MPI_Comm comm)
@@ -120,10 +121,9 @@ void m2nRebalance(stk::io::StkMeshIoBroker& ioBroker, const stk::balance::M2NBal
 void rebalance_m2n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Comm comm)
 {
   print_running_message(balanceSettings, comm);
-  print_banner(sierra::Env::outputP0());
+  print_banner(stk::outputP0());
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
-  bulk->mesh_meta_data().use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), *bulk);
 

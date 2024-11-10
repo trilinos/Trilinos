@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_FEMULTIVECTOR_DEF_HPP
@@ -61,7 +29,7 @@ FEMultiVector (const Teuchos::RCP<const map_type>& map,
                const bool zeroOut) :
   base_type (importer.is_null () ? map : importer->getTargetMap (),
              numVecs, zeroOut),
-  activeMultiVector_ (Teuchos::rcp (new FEWhichActive (FE_ACTIVE_OWNED_PLUS_SHARED))),
+  activeMultiVector_ (Teuchos::rcp (new FE::WhichActive (FE::ACTIVE_OWNED_PLUS_SHARED))),
   importer_ (importer)
 {
   const char tfecfFuncName[] = "FEMultiVector constructor: ";
@@ -92,7 +60,7 @@ FEMultiVector (const Teuchos::RCP<const map_type>& map,
     inactiveMultiVector_ =
              Teuchos::rcp (new base_type (*this, importer_->getSourceMap(), 0));
   }
-  fillState_ = Teuchos::rcp(new FillState(FillState::closed));
+  fillState_ = Teuchos::rcp(new FE::FillState(FE::FillState::closed));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -102,7 +70,7 @@ beginFill ()
 {
   // The FEMultiVector is in owned+shared mode on construction, so we
   // do not throw in that case.
-  if (*activeMultiVector_ == FE_ACTIVE_OWNED) {
+  if (*activeMultiVector_ == FE::ACTIVE_OWNED) {
     switchActiveMultiVector ();
   }
 }
@@ -114,7 +82,7 @@ endFill ()
 {
   const char tfecfFuncName[] = "endFill: ";
 
-  if (*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+  if (*activeMultiVector_ == FE::ACTIVE_OWNED_PLUS_SHARED) {
     doOwnedPlusSharedToOwned (Tpetra::ADD);
     switchActiveMultiVector ();
   }
@@ -129,11 +97,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginAssembly() {
   const char tfecfFuncName[] = "FEMultiVector::beginAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::closed,
+    *fillState_ != FE::FillState::closed,
     std::runtime_error,
     "Cannot beginAssembly, matrix is not in a closed state"
   );
-  *fillState_ = FillState::open;
+  *fillState_ = FE::FillState::open;
   this->beginFill();
 }
 
@@ -141,11 +109,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
   const char tfecfFuncName[] = "FEMultiVector::endAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open,
+    *fillState_ != FE::FillState::open,
     std::runtime_error,
     "Cannot endAssembly, matrix is not open to fill."
   );
-  *fillState_ = FillState::closed;
+  *fillState_ = FE::FillState::closed;
   this->endFill();
 }
 
@@ -153,22 +121,22 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginModify() {
   const char tfecfFuncName[] = "FEMultiVector::beginModify: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::closed,
+    *fillState_ != FE::FillState::closed,
     std::runtime_error,
     "Cannot beginModify, matrix is not in a closed state"
   );
-  *fillState_ = FillState::modify;
+  *fillState_ = FE::FillState::modify;
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endModify() {
   const char tfecfFuncName[] = "FEMultiVector::endModify: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::modify,
+    *fillState_ != FE::FillState::modify,
     std::runtime_error,
     "Cannot endModify, matrix is not open to modify."
   );
-  *fillState_ = FillState::closed;
+  *fillState_ = FE::FillState::closed;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -196,7 +164,7 @@ FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 doOwnedPlusSharedToOwned (const CombineMode CM)
 {
   if (! importer_.is_null () &&
-      *activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+      *activeMultiVector_ == FE::ACTIVE_OWNED_PLUS_SHARED) {
     inactiveMultiVector_->doExport (*this, *importer_, CM);
   }
 }
@@ -207,7 +175,7 @@ FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 doOwnedToOwnedPlusShared (const CombineMode CM)
 {
   if (! importer_.is_null () &&
-      *activeMultiVector_ == FE_ACTIVE_OWNED) {
+      *activeMultiVector_ == FE::ACTIVE_OWNED) {
     inactiveMultiVector_->doImport (*this, *importer_, CM);
   }
 }
@@ -217,11 +185,11 @@ void
 FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 switchActiveMultiVector ()
 {
-  if (*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-    *activeMultiVector_ = FE_ACTIVE_OWNED;
+  if (*activeMultiVector_ == FE::ACTIVE_OWNED_PLUS_SHARED) {
+    *activeMultiVector_ = FE::ACTIVE_OWNED;
   }
   else {
-    *activeMultiVector_ = FE_ACTIVE_OWNED_PLUS_SHARED;
+    *activeMultiVector_ = FE::ACTIVE_OWNED_PLUS_SHARED;
   }
 
   if (importer_.is_null ()) {

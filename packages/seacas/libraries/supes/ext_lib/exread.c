@@ -64,7 +64,7 @@ C     IOSTAT    INTEGER         I/O Status ( -1 = EOF, 0 = normal )
   }
   else {
     static char internal_prompt[128];
-    char *      p = NULL;
+    char       *p = NULL;
 
     /* Fill line with blanks... */
     int   dlen = InputLength;

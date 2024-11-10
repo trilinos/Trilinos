@@ -12,7 +12,7 @@ C   --   LESSEL - the length of the side sets element list
 C   --   LESSNL - the length of the side sets node list
 C   --   LNPSDF - the length of the side set distribution list
 
-      COMMON /DBNUMQ/ EXODUS, NQAREC, NINFO
+      COMMON /DBNUMQ/ NQAREC, NINFO, EXODUS
       LOGICAL EXODUS
 C   --   EXODUS - true iff EXODUS versus GENESIS database
 C   --   NQAREC - the number of QA records

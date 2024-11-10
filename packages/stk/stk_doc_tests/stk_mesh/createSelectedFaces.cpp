@@ -34,18 +34,17 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_io/FillMesh.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
 #include <vector>                       // for vector
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Types.hpp"      // for PartVector
-namespace stk { namespace mesh { class BulkData; } }
 
 namespace
 {
@@ -55,37 +54,26 @@ TEST(StkMeshHowTo, CreateSelectedFacesHex)
   // ============================================================
   // INITIALIZATION
   MPI_Comm communicator = MPI_COMM_WORLD;
-  if (stk::parallel_machine_size(communicator) != 1) { return; }
-  stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
+  if (stk::parallel_machine_size(communicator) != 1) { GTEST_SKIP(); }
+  std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
 
   // Generate a mesh containing 1 hex part and 6 shell parts
   const std::string generatedFileName = "generated:8x8x8|shell:xyzXYZ";
-  stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-  stkIo.create_input_mesh();
-  stkIo.populate_bulk_data();
-  const stk::mesh::PartVector &all_parts = stkIo.meta_data().get_mesh_parts();
+  stk::io::fill_mesh(generatedFileName, *bulkPtr);
 
   // ============================================================
   //+ EXAMPLE
   //+ Create a selector containing just the shell parts.
-  stk::mesh::Selector shell_subset;
-  for (size_t i=0; i < all_parts.size(); i++) {
-    const stk::mesh::Part *part = all_parts[i];
-    stk::topology topo = part->topology();
-    if (topo == stk::topology::SHELL_QUAD_4) {
-      shell_subset |= *part;
-    }
-  }
+  stk::mesh::Selector shell_subset = bulkPtr->mesh_meta_data().get_topology_root_part(stk::topology::SHELL_QUAD_4);
 
   //+ Create the faces on just the selected shell parts.
-  stk::mesh::create_all_sides(stkIo.bulk_data(), shell_subset);
+  stk::mesh::create_all_sides(*bulkPtr, shell_subset);
 
   // ==================================================
   // VERIFICATION
-  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  stk::mesh::Selector allEntities = bulkPtr->mesh_meta_data().universal_part();
   std::vector<size_t> entityCounts;
-  stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
+  stk::mesh::count_entities(allEntities, *bulkPtr, entityCounts);
   EXPECT_EQ( 896u, entityCounts[stk::topology::ELEMENT_RANK]);
   EXPECT_EQ( 768u, entityCounts[stk::topology::FACE_RANK]);
 

@@ -66,3 +66,9 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 bool ZeroBased=false ) ;
 
 #endif
+
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif

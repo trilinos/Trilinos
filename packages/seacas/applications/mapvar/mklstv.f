@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -30,7 +30,7 @@ C     IE     INTEGER   PARTICLE NUMBER
 C     LIST   INTEGER   LIST OF FOUND PARTICLES
 C     NLIST  INTEGER   NUMBER OF PARTICLES FOUND
 C     NBLKSZ INTEGER   BLOCK SIZE OF IUP AND ILO BLOCKS
-C     NSPC   INTEGER   NUMBER OF SPACIAL COORD. (NUMBER OF DIMENSIONS)
+C     NSPC   INTEGER   NUMBER OF SPATIAL COORD. (NUMBER OF DIMENSIONS)
 
 C-----------------------------------------------------------------------
 

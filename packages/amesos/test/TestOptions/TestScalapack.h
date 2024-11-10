@@ -10,3 +10,9 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 		     double &maxrelresidual,
 		     int &NumTests) ;
 
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif

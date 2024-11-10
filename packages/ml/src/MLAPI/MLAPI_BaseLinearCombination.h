@@ -1,6 +1,12 @@
 #ifndef ML_BASELINEARCOMBINATION_H
 #define ML_BASELINEARCOMBINATION_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*!
 \file MLAPI_BaseLinearCombination.h
 

@@ -65,7 +65,6 @@ TEST(StkMeshHowTo, CreateFacesEdgesHex)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { return; }
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
 
   const std::string generatedFileName = "generated:8x8x8";
   stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -111,7 +110,6 @@ TEST(StkMeshHowTo, CreateEdgesFacesHex)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { return; }
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
 
   const std::string generatedFileName = "generated:8x8x8";
   stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -156,7 +154,6 @@ TEST(StkMeshHowTo, CreateEdgesFacesHexNoConnect)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) != 1) { return; }
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
 
   const std::string generatedFileName = "generated:8x8x8";
   stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -208,7 +205,6 @@ TEST(StkMeshHowTo, UnderstandEdgeAndFaceOrdering)
   // INITIALIZATION
   MPI_Comm communicator = MPI_COMM_WORLD;
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
   const std::string generatedFileName = exodusFileName;
   stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
   stkIo.create_input_mesh();
@@ -364,7 +360,6 @@ void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exod
 
   Ioss::Region* io_region = new Ioss::Region(database);
   stk::io::StkMeshIoBroker meshData;
-  meshData.use_simple_fields();
   std::shared_ptr<Ioss::Region> junk(io_region, [](auto pointerWeWontDelete){});
   meshData.add_mesh_database(junk);
   meshData.create_input_mesh();
@@ -375,6 +370,4 @@ void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exod
 }
 
 }
-
-
 

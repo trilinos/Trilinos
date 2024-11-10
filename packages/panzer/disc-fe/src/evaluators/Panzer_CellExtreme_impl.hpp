@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __Panzer_CellExtreme_impl_hpp__
@@ -118,26 +86,60 @@ void
 CellExtreme<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
-{ 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    
-    for (std::size_t qp = 0; qp < num_qp; ++qp) {
-      ScalarT current= multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field)
-        current *= (*field)(cell,qp);  
+{
+    double mult = this->multiplier;
+    std::size_t num_pt = this->num_qp;
+    bool extreme_max = this->use_max;
+    auto scalar_view = scalar.get_view();
+    auto extreme_view = extreme.get_view();
 
-      // take first quad point value
-      if(qp==0)
-        extreme(cell) = current;
+    // compute field weighted with multipliers
+    PHX::View<ScalarT**> mult_field("Multiplied Field", workset.num_cells, scalar.extent(1));
 
-      // take largest value in the cell
-      if(use_max)
-        extreme(cell) = extreme(cell)<current ? current : extreme(cell);
-      else // use_min
-        extreme(cell) = extreme(cell)>current ? current : extreme(cell);
+    // initialize to scalar value
+    Kokkos::parallel_for("Initialize Muliplier Field", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+      for (std::size_t qp = 0; qp < num_pt; ++qp) {
+        mult_field(cell, qp) = mult * scalar_view(cell, qp);
+      }
+    });
+
+    // multiply by field values
+    for (std::size_t field_num = 0; field_num < field_multipliers.size(); ++field_num)
+    {
+      auto field = field_multipliers[field_num];
+      Kokkos::parallel_for("CellExtreme: Multiply Fields", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+        for (std::size_t qp = 0; qp < num_pt; ++qp) {
+          mult_field(cell, qp) *= field(cell, qp);
+        }
+      });
     }
-  }
+
+    // take extreme over points in each cell
+    if (extreme_max) {
+      Kokkos::parallel_for ("CellExtreme (max)", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+        for (std::size_t qp = 0; qp < num_pt; ++qp) {
+          auto current = mult_field(cell, qp);
+
+          // take first point
+          if (qp == 0)
+            extreme_view(cell) = current;
+          else
+            extreme_view(cell) = extreme_view(cell)<current ? current : extreme_view(cell);
+        }
+      });
+    } else {
+      Kokkos::parallel_for ("CellExtreme (min)", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+        for (std::size_t qp = 0; qp < num_pt; ++qp) {
+          auto current = mult_field(cell, qp);
+        
+          // take first point
+          if (qp == 0)
+            extreme_view(cell) = current;
+          else // use_min
+            extreme_view(cell) = extreme_view(cell)>current ? current : extreme_view(cell);
+        }
+      });
+    }
 }
 
 //**********************************************************************

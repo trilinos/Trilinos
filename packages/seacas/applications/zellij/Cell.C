@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,6 +12,7 @@
 #include <Ioss_SmartAssert.h>
 #include <algorithm>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <string>
 
 //! \file
@@ -20,7 +21,7 @@ extern unsigned int debug_level;
 template <> struct fmt::formatter<Loc> : formatter<std::string>
 {
   // parse is inherited from formatter<std::string>.
-  template <typename FormatContext> auto format(Loc l, FormatContext &ctx)
+  template <typename FormatContext> auto format(Loc l, FormatContext &ctx) const
   {
     std::string name = "unknown";
     switch (l) {
@@ -260,8 +261,7 @@ size_t Cell::processor_boundary_node_count() const
   // Iterate `ranks` and for each rank, "color" the `bnd_nodes` that that rank touches...
   // Skip center.
   size_t b_count = 0;
-  for (int i = 0; i < (int)ranks.size(); i++) {
-    auto the_rank = ranks[i];
+  for (auto the_rank : ranks) {
     if (the_rank == rank(Loc::C)) {
       continue;
     }

@@ -9,10 +9,10 @@
 #include "structs.h"
 
 /* Combine goals of collections of processors for next division. */
-void merge_goals(double *         goal,         /* desired set sizes */
-                 double *         merged_goal,  /* sizes of sets at this partition level */
+void merge_goals(double          *goal,         /* desired set sizes */
+                 double          *merged_goal,  /* sizes of sets at this partition level */
                  struct set_info *set_info,     /* information about all sets */
-                 int *            subsets,      /* set numbers of processors to merge */
+                 int             *subsets,      /* set numbers of processors to merge */
                  int              nsets,        /* number of sets created by this division */
                  int              ndims_tot,    /* total number of dimensions in the hypercube */
                  int              cube_or_mesh, /* 0=> hypercube, d=> d-dimensional mesh */

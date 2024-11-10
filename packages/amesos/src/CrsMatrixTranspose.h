@@ -30,7 +30,13 @@
 
 #ifndef CRSMATRIXTRANSPOSE
 #define CRSMATRIXTRANSPOSE
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Epetra_CrsMatrix.h" 
 int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) ;
 #endif
-

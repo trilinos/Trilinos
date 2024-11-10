@@ -59,12 +59,14 @@ cmake \
 -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
 -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
+-DBUILD_SHARED_LIBS:BOOL=OFF \
 -DTPL_ENABLE_MPI=ON \
 -DTrilinos_ENABLE_Zoltan2:BOOL=ON \
 -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
 -DTrilinos_ENABLE_Pamgen:BOOL=ON \
--DTrilinos_ENABLE_Krino:BOOL=OFF \
+-DTrilinos_ENABLE_Krino:BOOL=ON \
 -DTrilinos_ENABLE_Percept:BOOL=ON \
+-DTrilinos_ENABLE_TrilinosCouplings:BOOL=ON \
 -DTrilinos_ENABLE_Panzer:BOOL=${not_cuda} \
 -DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=${not_cuda} \
 -DPanzer_ENABLE_TESTS:BOOL=${not_cuda} \
@@ -72,23 +74,23 @@ cmake \
 -DTrilinos_ENABLE_TrilinosCouplings:BOOL=${not_cuda} \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
--DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
--DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
+-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
--DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
--DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=ON \
 -DCMAKE_CXX_STANDARD:STRING=17 \
 -DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
+-DTrilinos_ENABLE_STKMiddle_mesh_util:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
 -DTPL_ENABLE_CDT:BOOL=ON \
 -DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
 -DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
 -DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
+-DTrilinos_ENABLE_SEACASNemesis:BOOL=ON \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
 -DTPL_Netcdf_Enables_Netcdf4:BOOL=ON \
 -DTPL_Netcdf_Enables_Pnetcdf:BOOL=ON \
@@ -97,6 +99,8 @@ cmake \
 -DTPL_ENABLE_Pnetcdf:BOOL=ON \
 -DNetCDF_LIBRARIES="-lnetcdf -lpnetcdf -lhdf5_hl -lhdf5 -ldl" \
 -DTPL_ENABLE_HDF5:BOOL=ON \
+-DHDF5_LIBRARIES="-lhdf5" \
+-DTPL_HDF5_LIBRARIES="-lhdf5" \
 -DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
 ${trilinos_src_dir}/
 

@@ -24,21 +24,15 @@
 namespace KokkosSparse {
 namespace Impl {
 
-template <typename size_type, typename ordinal_type, typename ArowptrsT,
-          typename BrowptrsT, typename CrowptrsT, typename AcolindsT,
-          typename BcolindsT, typename CcolindsT, typename AvaluesT,
-          typename BvaluesT, typename CvaluesT, typename AscalarT,
-          typename BscalarT>
+template <typename size_type, typename ordinal_type, typename ArowptrsT, typename BrowptrsT, typename CrowptrsT,
+          typename AcolindsT, typename BcolindsT, typename CcolindsT, typename AvaluesT, typename BvaluesT,
+          typename CvaluesT, typename AscalarT, typename BscalarT>
 struct SortedNumericSumFunctor {
   using CscalarT = typename CvaluesT::non_const_value_type;
 
-  SortedNumericSumFunctor(const ArowptrsT& Arowptrs_,
-                          const BrowptrsT& Browptrs_,
-                          const CrowptrsT& Crowptrs_,
-                          const AcolindsT& Acolinds_,
-                          const BcolindsT& Bcolinds_,
-                          const CcolindsT& Ccolinds_, const AvaluesT& Avalues_,
-                          const BvaluesT& Bvalues_, const CvaluesT& Cvalues_,
+  SortedNumericSumFunctor(const ArowptrsT& Arowptrs_, const BrowptrsT& Browptrs_, const CrowptrsT& Crowptrs_,
+                          const AcolindsT& Acolinds_, const BcolindsT& Bcolinds_, const CcolindsT& Ccolinds_,
+                          const AvaluesT& Avalues_, const BvaluesT& Bvalues_, const CvaluesT& Cvalues_,
                           const AscalarT alpha_, const BscalarT beta_)
       : Arowptrs(Arowptrs_),
         Browptrs(Browptrs_),
@@ -106,20 +100,16 @@ struct SortedNumericSumFunctor {
   const BscalarT beta;
 };
 
-template <typename size_type, typename ordinal_type, typename ArowptrsT,
-          typename BrowptrsT, typename CrowptrsT, typename AcolindsT,
-          typename BcolindsT, typename CcolindsT, typename AvaluesT,
-          typename BvaluesT, typename CvaluesT, typename AscalarT,
-          typename BscalarT>
+template <typename size_type, typename ordinal_type, typename ArowptrsT, typename BrowptrsT, typename CrowptrsT,
+          typename AcolindsT, typename BcolindsT, typename CcolindsT, typename AvaluesT, typename BvaluesT,
+          typename CvaluesT, typename AscalarT, typename BscalarT>
 struct UnsortedNumericSumFunctor {
   using CscalarT = typename CvaluesT::non_const_value_type;
 
-  UnsortedNumericSumFunctor(
-      const ArowptrsT Arowptrs_, const BrowptrsT Browptrs_,
-      const CrowptrsT Crowptrs_, const AcolindsT Acolinds_,
-      const BcolindsT Bcolinds_, CcolindsT Ccolinds_, const AvaluesT Avalues_,
-      const BvaluesT Bvalues_, CvaluesT Cvalues_, const AscalarT alpha_,
-      const BscalarT beta_, const CcolindsT Apos_, const CcolindsT Bpos_)
+  UnsortedNumericSumFunctor(const ArowptrsT Arowptrs_, const BrowptrsT Browptrs_, const CrowptrsT Crowptrs_,
+                            const AcolindsT Acolinds_, const BcolindsT Bcolinds_, CcolindsT Ccolinds_,
+                            const AvaluesT Avalues_, const BvaluesT Bvalues_, CvaluesT Cvalues_, const AscalarT alpha_,
+                            const BscalarT beta_, const CcolindsT Apos_, const CcolindsT Bpos_)
       : Arowptrs(Arowptrs_),
         Browptrs(Browptrs_),
         Crowptrs(Crowptrs_),
@@ -141,8 +131,7 @@ struct UnsortedNumericSumFunctor {
     size_type ArowEnd   = Arowptrs(i + 1);
     size_type BrowStart = Browptrs(i);
     size_type BrowEnd   = Browptrs(i + 1);
-    for (size_type j = CrowStart; j < CrowEnd; j++)
-      Cvalues(j) = Kokkos::ArithTraits<CscalarT>::zero();
+    for (size_type j = CrowStart; j < CrowEnd; j++) Cvalues(j) = Kokkos::ArithTraits<CscalarT>::zero();
     // add in A entries, while setting C colinds
     for (size_type j = ArowStart; j < ArowEnd; j++) {
       Cvalues(CrowStart + Apos(j)) += alpha * Avalues(j);
@@ -169,71 +158,58 @@ struct UnsortedNumericSumFunctor {
   const CcolindsT Bpos;
 };
 
-// Helper macro to check that two types are the same (ignoring const)
-#define SAME_TYPE(A, B)                             \
-  std::is_same<typename std::remove_const<A>::type, \
-               typename std::remove_const<B>::type>::value
+// Two types are the same (ignoring const)
+template <typename T, typename U>
+constexpr bool spadd_numeric_same_type =
+    std::is_same_v<typename std::remove_const_t<T>, typename std::remove_const_t<U>>;
 
-template <typename KernelHandle, typename alno_row_view_t,
-          typename alno_nnz_view_t, typename ascalar_t,
-          typename ascalar_nnz_view_t, typename blno_row_view_t,
-          typename blno_nnz_view_t, typename bscalar_t,
-          typename bscalar_nnz_view_t, typename clno_row_view_t,
-          typename clno_nnz_view_t, typename cscalar_nnz_view_t>
-void spadd_numeric_impl(
-    KernelHandle* kernel_handle, const alno_row_view_t a_rowmap,
-    const alno_nnz_view_t a_entries, const ascalar_nnz_view_t a_values,
-    const ascalar_t alpha, const blno_row_view_t b_rowmap,
-    const blno_nnz_view_t b_entries, const bscalar_nnz_view_t b_values,
-    const bscalar_t beta, const clno_row_view_t c_rowmap,
-    clno_nnz_view_t c_entries, cscalar_nnz_view_t c_values) {
+template <typename execution_space, typename KernelHandle, typename alno_row_view_t, typename alno_nnz_view_t,
+          typename ascalar_t, typename ascalar_nnz_view_t, typename blno_row_view_t, typename blno_nnz_view_t,
+          typename bscalar_t, typename bscalar_nnz_view_t, typename clno_row_view_t, typename clno_nnz_view_t,
+          typename cscalar_nnz_view_t>
+void spadd_numeric_impl(const execution_space& exec, KernelHandle* kernel_handle, const alno_row_view_t a_rowmap,
+                        const alno_nnz_view_t a_entries, const ascalar_nnz_view_t a_values, const ascalar_t alpha,
+                        const blno_row_view_t b_rowmap, const blno_nnz_view_t b_entries,
+                        const bscalar_nnz_view_t b_values, const bscalar_t beta, const clno_row_view_t c_rowmap,
+                        clno_nnz_view_t c_entries, cscalar_nnz_view_t c_values) {
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_type;
-  typedef
-      typename KernelHandle::SPADDHandleType::execution_space execution_space;
   // Check that A/B/C data types match KernelHandle types, and that C data types
   // are nonconst (doesn't matter if A/B types are const)
-  static_assert(SAME_TYPE(ascalar_t, scalar_type),
-                "A scalar type must match handle scalar type");
-  static_assert(SAME_TYPE(bscalar_t, scalar_type),
-                "B scalar type must match handle scalar type");
-  static_assert(SAME_TYPE(typename alno_row_view_t::value_type, size_type),
+  static_assert(spadd_numeric_same_type<ascalar_t, scalar_type>, "A scalar type must match handle scalar type");
+  static_assert(spadd_numeric_same_type<bscalar_t, scalar_type>, "B scalar type must match handle scalar type");
+  static_assert(spadd_numeric_same_type<typename alno_row_view_t::value_type, size_type>,
                 "add_symbolic: A size_type must match KernelHandle size_type "
                 "(const doesn't matter)");
-  static_assert(SAME_TYPE(typename blno_row_view_t::value_type, size_type),
+  static_assert(spadd_numeric_same_type<typename blno_row_view_t::value_type, size_type>,
                 "add_symbolic: B size_type must match KernelHandle size_type "
                 "(const doesn't matter)");
-  static_assert(
-      SAME_TYPE(typename clno_row_view_t::non_const_value_type, size_type),
-      "add_symbolic: C size_type must match KernelHandle size_type)");
-  static_assert(SAME_TYPE(typename alno_nnz_view_t::value_type, ordinal_type),
+  static_assert(spadd_numeric_same_type<typename clno_row_view_t::non_const_value_type, size_type>,
+                "add_symbolic: C size_type must match KernelHandle size_type)");
+  static_assert(spadd_numeric_same_type<typename alno_nnz_view_t::value_type, ordinal_type>,
                 "add_symbolic: A entry type must match KernelHandle entry type "
                 "(aka nnz_lno_t, and const doesn't matter)");
-  static_assert(SAME_TYPE(typename blno_nnz_view_t::value_type, ordinal_type),
+  static_assert(spadd_numeric_same_type<typename blno_nnz_view_t::value_type, ordinal_type>,
                 "add_symbolic: B entry type must match KernelHandle entry type "
                 "(aka nnz_lno_t, and const doesn't matter)");
-  static_assert(SAME_TYPE(typename clno_nnz_view_t::value_type, ordinal_type),
+  static_assert(spadd_numeric_same_type<typename clno_nnz_view_t::value_type, ordinal_type>,
                 "add_symbolic: C entry type must match KernelHandle entry type "
                 "(aka nnz_lno_t)");
-  static_assert(std::is_same<typename clno_nnz_view_t::non_const_value_type,
-                             typename clno_nnz_view_t::value_type>::value,
+  static_assert(std::is_same_v<typename clno_nnz_view_t::non_const_value_type, typename clno_nnz_view_t::value_type>,
                 "add_symbolic: C entry type must not be const");
+  static_assert(spadd_numeric_same_type<typename ascalar_nnz_view_t::value_type, scalar_type>,
+                "add_symbolic: A scalar type must match KernelHandle entry type (aka "
+                "nnz_lno_t, and const doesn't matter)");
+  static_assert(spadd_numeric_same_type<typename bscalar_nnz_view_t::value_type, scalar_type>,
+                "add_symbolic: B scalar type must match KernelHandle entry type (aka "
+                "nnz_lno_t, and const doesn't matter)");
+  static_assert(spadd_numeric_same_type<typename cscalar_nnz_view_t::value_type, scalar_type>,
+                "add_symbolic: C scalar type must match KernelHandle entry type (aka "
+                "nnz_lno_t)");
   static_assert(
-      SAME_TYPE(typename ascalar_nnz_view_t::value_type, scalar_type),
-      "add_symbolic: A scalar type must match KernelHandle entry type (aka "
-      "nnz_lno_t, and const doesn't matter)");
-  static_assert(
-      SAME_TYPE(typename bscalar_nnz_view_t::value_type, scalar_type),
-      "add_symbolic: B scalar type must match KernelHandle entry type (aka "
-      "nnz_lno_t, and const doesn't matter)");
-  static_assert(
-      SAME_TYPE(typename cscalar_nnz_view_t::value_type, scalar_type),
-      "add_symbolic: C scalar type must match KernelHandle entry type (aka "
-      "nnz_lno_t)");
-  static_assert(std::is_same<typename cscalar_nnz_view_t::non_const_value_type,
-                             typename cscalar_nnz_view_t::value_type>::value,
-                "add_symbolic: C scalar type must not be const");
+      std::is_same_v<typename cscalar_nnz_view_t::non_const_value_type, typename cscalar_nnz_view_t::value_type>,
+      "add_symbolic: C scalar type must not be const");
   typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
   auto addHandle = kernel_handle->get_spadd_handle();
   // rowmap length can be 0 or 1 if #rows is 0.
@@ -244,33 +220,24 @@ void spadd_numeric_impl(
   }
   ordinal_type nrows = a_rowmap.extent(0) - 1;
   if (addHandle->is_input_sorted()) {
-    SortedNumericSumFunctor<size_type, ordinal_type, alno_row_view_t,
-                            blno_row_view_t, clno_row_view_t, alno_nnz_view_t,
-                            blno_nnz_view_t, clno_nnz_view_t,
-                            ascalar_nnz_view_t, bscalar_nnz_view_t,
+    SortedNumericSumFunctor<size_type, ordinal_type, alno_row_view_t, blno_row_view_t, clno_row_view_t, alno_nnz_view_t,
+                            blno_nnz_view_t, clno_nnz_view_t, ascalar_nnz_view_t, bscalar_nnz_view_t,
                             cscalar_nnz_view_t, ascalar_t, bscalar_t>
-        sortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries,
-                      c_entries, a_values, b_values, c_values, alpha, beta);
-    Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputSorted",
-                         range_type(0, nrows), sortedNumeric);
+        sortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries, c_entries, a_values, b_values, c_values,
+                      alpha, beta);
+    Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputSorted", range_type(exec, 0, nrows), sortedNumeric);
   } else {
     // use a_pos and b_pos (set in the handle by symbolic) to quickly compute C
     // entries and values
-    UnsortedNumericSumFunctor<size_type, ordinal_type, alno_row_view_t,
-                              blno_row_view_t, clno_row_view_t, alno_nnz_view_t,
-                              blno_nnz_view_t, clno_nnz_view_t,
-                              ascalar_nnz_view_t, bscalar_nnz_view_t,
+    UnsortedNumericSumFunctor<size_type, ordinal_type, alno_row_view_t, blno_row_view_t, clno_row_view_t,
+                              alno_nnz_view_t, blno_nnz_view_t, clno_nnz_view_t, ascalar_nnz_view_t, bscalar_nnz_view_t,
                               cscalar_nnz_view_t, ascalar_t, bscalar_t>
-        unsortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries,
-                        c_entries, a_values, b_values, c_values, alpha, beta,
-                        addHandle->get_a_pos(), addHandle->get_b_pos());
-    Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputNotSorted",
-                         range_type(0, nrows), unsortedNumeric);
+        unsortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries, c_entries, a_values, b_values, c_values,
+                        alpha, beta, addHandle->get_a_pos(), addHandle->get_b_pos());
+    Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputNotSorted", range_type(exec, 0, nrows), unsortedNumeric);
   }
   addHandle->set_call_numeric();
 }
-
-#undef SAME_TYPE
 
 }  // namespace Impl
 }  // namespace KokkosSparse

@@ -43,6 +43,12 @@
 #ifndef MAT_DH_PRIVATE
 #define MAT_DH_PRIVATE
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /* Functions called by Mat_dh, Factor_dh, and possibly others.
    Also, a few handy functions for dealing with permutations,
    etc.

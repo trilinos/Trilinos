@@ -45,16 +45,19 @@ if(HAVE_STK_Trilinos)
     SOURCES ${SOURCES}
   )
 else()
-  find_package(SEACAS REQUIRED)
-  add_library(stk_io ${SOURCES})
-  target_link_libraries(stk_io PUBLIC ${SEACAS_LIBRARIES})
-  target_link_libraries(stk_io PUBLIC stk_mesh_base)
+  if(STK_HAS_SEACAS_IOSS)
+    add_library(stk_io ${SOURCES})
+    target_link_libraries(stk_io PUBLIC ${SEACAS_LIBRARIES})
+    target_link_libraries(stk_io PUBLIC stk_mesh_base)
+  endif()
 endif()
 
-target_include_directories(stk_io PUBLIC
-  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_io>
-  $<INSTALL_INTERFACE:include>
-)
+if(STK_HAS_SEACAS_IOSS)
+  target_include_directories(stk_io PUBLIC
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_io>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()
 
 INSTALL(FILES ${HEADERS} DESTINATION
 ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
@@ -65,5 +68,5 @@ ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
 ADD_SUBDIRECTORY(util)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_io DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_io EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

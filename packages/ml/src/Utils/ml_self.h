@@ -6,6 +6,12 @@
 #ifndef ML_SELF_H
 #define ML_SELF_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_include.h"
 
 #ifndef ML_CPP

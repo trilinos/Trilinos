@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP
@@ -64,7 +44,7 @@ class DynRankView ;
 namespace Impl {
 
 template<class Space, class T, class ... P>
-struct MirrorDRVType;
+struct MirrorDRViewType;
 
 }
 
@@ -113,7 +93,7 @@ create_mirror(
       Kokkos::LayoutStride >::value >::type * = 0);
 
 template<class Space, class T, class ... P>
-typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type
 create_mirror(
   const Space&,
   const Kokkos::DynRankView<T,P...> & src,
@@ -1008,9 +988,16 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::fence();
-  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
-  Kokkos::fence();
+  switch(view.rank()) {
+    case 0: deep_copy(Impl::as_view_of_rank_n<0>(view), value); break;
+    case 1: deep_copy(Impl::as_view_of_rank_n<1>(view), value); break;
+    case 2: deep_copy(Impl::as_view_of_rank_n<2>(view), value); break;
+    case 3: deep_copy(Impl::as_view_of_rank_n<3>(view), value); break;
+    case 4: deep_copy(Impl::as_view_of_rank_n<4>(view), value); break;
+    case 5: deep_copy(Impl::as_view_of_rank_n<5>(view), value); break;
+    case 6: deep_copy(Impl::as_view_of_rank_n<6>(view), value); break;
+    case 7: deep_copy(Impl::as_view_of_rank_n<7>(view), value); break;
+  }
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -1030,9 +1017,16 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::fence();
-  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
-  Kokkos::fence();
+  switch(view.rank()) {
+    case 0: deep_copy(Impl::as_view_of_rank_n<0>(view), value); break;
+    case 1: deep_copy(Impl::as_view_of_rank_n<1>(view), value); break;
+    case 2: deep_copy(Impl::as_view_of_rank_n<2>(view), value); break;
+    case 3: deep_copy(Impl::as_view_of_rank_n<3>(view), value); break;
+    case 4: deep_copy(Impl::as_view_of_rank_n<4>(view), value); break;
+    case 5: deep_copy(Impl::as_view_of_rank_n<5>(view), value); break;
+    case 6: deep_copy(Impl::as_view_of_rank_n<6>(view), value); break;
+    case 7: deep_copy(Impl::as_view_of_rank_n<7>(view), value); break;
+  }
 }
 
 template< class DstType , class SrcType >
@@ -1266,7 +1260,7 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
 }
 
 template<class Space, class T, class ... P>
-typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type
 create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
              , typename std::enable_if<
                  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
@@ -1277,7 +1271,7 @@ create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
   typedef DynRankView<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorDRVType<Space,T,P ...>::view_type(
+  return typename Impl::MirrorDRViewType<Space,T,P ...>::dest_view_type(
     src.label(),Impl::reconstructLayout(layout, src.rank()+1));
 }
 

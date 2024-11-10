@@ -13,6 +13,12 @@
 #ifndef _MLOPERATORAGX_
 #define _MLOPERATORAGX_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* ******************************************************************** */
 /* these include are for (1) memory allocation, (2) communication       */
 /* buffer access, and (3) communication (recv, send)                    */
@@ -88,4 +94,3 @@ extern int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,
 #endif
 
 #endif
-

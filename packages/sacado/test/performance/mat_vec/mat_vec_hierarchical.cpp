@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #define SACADO_VIEW_CUDA_HIERARCHICAL 1
@@ -44,11 +24,16 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const unsigned vector_size = is_hip ? 64 : 1;
+  const unsigned team_size = is_hip ? 128 / vector_size : 1;
+#else
+  const unsigned vector_size = 1;
+  const unsigned team_size = 1;
+#endif
 
   const int m = A.extent(0);
   const int n = A.extent(1);
@@ -104,11 +89,14 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
+  const int FadStride = is_cuda ? 32 : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const int FadStride = is_hip ? 64 : 1;
 #else
-  const bool is_cuda = false;
+  const int FadStride = 1;
 #endif
 
-  const int FadStride = is_cuda ? 32 : 1;
 #if defined(SACADO_ALIGN_SFAD)
   const int N = Sacado::StaticSize<FadType>::value;
   const int Nalign = ((N+FadStride-1)/FadStride)*FadStride;
@@ -187,4 +175,8 @@ INST_FUNC_DEV(Kokkos::Threads)
 
 #ifdef KOKKOS_ENABLE_CUDA
 INST_FUNC_DEV(Kokkos::Cuda)
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+INST_FUNC_DEV(Kokkos::HIP)
 #endif

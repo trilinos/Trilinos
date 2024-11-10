@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HGRAD_HEX_Cn_FEM.hpp
@@ -84,7 +51,8 @@ namespace Intrepid2 {
                typename inputPointValueType,  class ...inputPointProperties,
                typename vinvValueType,        class ...vinvProperties>
       static void
-      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues(  const typename DeviceType::execution_space& space,
+                        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType );
@@ -111,9 +79,9 @@ namespace Intrepid2 {
                        vinvViewType        vinv_,
                        workViewType        work_,
                  const ordinal_type        opDn_ = 0 )
-          : _outputValues(outputValues_), _inputPoints(inputPoints_), 
+          : _outputValues(outputValues_), _inputPoints(inputPoints_),
             _vinv(vinv_), _work(work_), _opDn(opDn_) {}
-        
+
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
           const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.extent(0));
@@ -149,16 +117,16 @@ namespace Intrepid2 {
       };
     };
   }
-  
+
   /** \class  Intrepid2::Basis_HGRAD_HEX_Cn_FEM
-      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Hexahedron cell 
-      
+      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Hexahedron cell
+
       Implements Lagrangian basis of degree n on the reference Hexahedron cell. The basis has
-      cardinality (n+1)^3 and spans a COMPLETE polynomial space. Basis functions are dual 
+      cardinality (n+1)^3 and spans a COMPLETE polynomial space. Basis functions are dual
       to a unisolvent set of degrees-of-freedom (DoF) defined lexicographically on an
       array of input points.
-      
-      \endverbatim      
+
+      \endverbatim
   */
 
   template<typename DeviceType = void,
@@ -167,13 +135,16 @@ namespace Intrepid2 {
   class Basis_HGRAD_HEX_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using typename BasisBase::ExecutionSpace;
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
 
   private:
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
@@ -189,13 +160,14 @@ namespace Intrepid2 {
     Basis_HGRAD_HEX_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
-               const PointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const override {
+    getValues( const ExecutionSpace& space,
+                     OutputViewType  outputValues,
+               const PointViewType   inputPoints,
+               const EOperator       operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
@@ -205,11 +177,29 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HGRAD_HEX_Cn_FEM::
-        getValues<DeviceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->vinv_,
-                                                operatorType );
+        getValues<DeviceType,numPtsPerEval>(space,
+                                            outputValues,
+                                            inputPoints,
+                                            this->vinv_,
+                                            operatorType);
     }
+
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
+                              ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPoints,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
 
 
     virtual
@@ -217,7 +207,7 @@ namespace Intrepid2 {
     getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoords) != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,
@@ -234,7 +224,7 @@ namespace Intrepid2 {
     getDofCoeffs( ScalarViewType dofCoeffs ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoeffs) != 1, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_Cn_FEM::getdofCoeffs) rank = 1 required for dofCoeffs array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
@@ -262,7 +252,7 @@ namespace Intrepid2 {
 
     ordinal_type
     getWorkSizePerPoint(const EOperator operatorType) {
-      return 4*getPnCardinality<1>(this->basisDegree_); 
+      return 4*getPnCardinality<1>(this->basisDegree_);
     }
 
     /** \brief returns the basis associated to a subCell.

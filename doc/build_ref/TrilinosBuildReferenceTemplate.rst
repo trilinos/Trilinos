@@ -189,26 +189,26 @@ To see more documentation for each of these options, run a configure with
 Setting the C++ language standard for Trilinos
 ----------------------------------------------
 
-Trilinos currently supports building with the C++14 language standard as
+Trilinos currently supports building with the C++17 language standard as
 supported by a wide range of C++ compilers.  In addition, the library targets
 imported from the installed ``<Package>Config.cmake`` files (also pulled in
 through ``TrilinosConfig.cmake``) will automatically require downstream CMake
-projects turn on C++14 or later standard support in the compiler options
+projects turn on C++17 or later standard support in the compiler options
 (using the CMake ``INTERFACE_COMPILE_FEATURES`` properties of the Trilinos
-library targets).  Building Trilinos with C++11 or lower C++ language
+library targets).  Building Trilinos with C++14 or lower C++ language
 standards is not supported.
 
 However, to try building Trilinos with a higher C++ language standard (with a
 supporting compiler), set the CMake cache variable ``CMAKE_CXX_STANDARD`` to
-an appropriate value.  For example, to try building Trilinos with C++17 turned
+an appropriate value.  For example, to try building Trilinos with C++20 turned
 on, configure with::
 
-  -D CMAKE_CXX_STANDARD:STRING=17
+  -D CMAKE_CXX_STANDARD:STRING=20
 
 As mentioned above, that will also result in all downstream C++ software built
-CMake to be built with C++17 compiler options turned on as well.
+with CMake to be built with C++20 compiler options turned on as well.
 
-However, Trilinos is currently only rigorously tested with C++14 compiler
+However, Trilinos is currently only rigorously tested with C++17 compiler
 options so trying to build and use with a higher language standard may not
 give satisfactory results.
 

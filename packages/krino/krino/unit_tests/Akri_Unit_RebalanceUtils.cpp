@@ -228,7 +228,6 @@ public:
     load_field(meta->declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights")),
     change_list(*bulk, {})
   {
-    meta->use_simple_fields();
     AuxMetaData::create(*meta);
     double zero_val = 0.;
     stk::mesh::put_field_on_mesh(load_field, meta->universal_part(), &zero_val);
@@ -256,8 +255,8 @@ public:
           auto * coords = field_data<double>(*meta->coordinate_field(), node);
           if(std::fabs(coords[meta->spatial_dimension()-1]-1.) <= 1e-6)
           {
-            int * elemMarker = field_data<int>(refinement.get_marker_field(), elem);
-            *elemMarker = Refinement::REFINE;
+            int * elemMarker = field_data<int>(refinement.get_marker_field_and_sync_to_host(), elem);
+            *elemMarker = static_cast<int>(Refinement::RefinementMarker::REFINE);
           }
         }
       }
@@ -507,7 +506,7 @@ TEST_F(ParallelRebalanceForAdaptivityFixture3D, ParentChildRebalanceRules)
   //Verify leaf elements have their parent element on the same processor and flag for coarsening
   {
     clear_refinement_marker(refinement);
-    FieldRef markerField = refinement.get_marker_field();
+    FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
     auto elem_buckets = 
       bulk->get_buckets(stk::topology::ELEMENT_RANK, meta->locally_owned_part());
     for(auto && bucket : elem_buckets)
@@ -519,7 +518,7 @@ TEST_F(ParallelRebalanceForAdaptivityFixture3D, ParentChildRebalanceRules)
         EXPECT_TRUE(parent != stk::mesh::Entity());
         EXPECT_TRUE(refinement.is_parent(parent));
         int * elemMarker = field_data<int>(markerField, elem);
-        *elemMarker = Refinement::COARSEN;
+        *elemMarker = static_cast<int>(Refinement::RefinementMarker::COARSEN);
       }
     }
     refinement.do_refinement();

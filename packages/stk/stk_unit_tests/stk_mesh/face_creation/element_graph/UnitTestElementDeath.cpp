@@ -10,6 +10,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for process_killed_elements, etc
+#include <stk_mesh/baseImpl/elementGraph/ProcessKilledElements.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
@@ -101,14 +102,14 @@ TEST(ElementDeath, replicate_random_death_test)
     stk::mesh::PartVector boundary_mesh_parts {&faces_part, &death_1_part};
 
     stk::mesh::Part& active = meta.declare_part("active");
-    stk::unit_test_util::simple_fields::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp("2x2x1", bulkData, "cyclic");
+    stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp("2x2x1", bulkData, "cyclic");
 
     stk::mesh::create_faces(bulkData);
 
     std::vector<size_t> mesh_counts;
     stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
     ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     boundary_mesh_parts.push_back(&active);
 
@@ -181,7 +182,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
     stk::mesh::create_faces(bulkData);
 
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     stk::mesh::ElemElemGraph graph(bulkData);
 
@@ -311,7 +312,7 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
     stk::io::fill_mesh("generated:1x1x4", bulkData);
 
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
 

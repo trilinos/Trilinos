@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,6 +13,17 @@
 #include <vector>
 
 #include "aprepro.h"
+
+namespace {
+  bool is_double(const std::string &myString)
+  {
+    std::istringstream iss(myString);
+    double             f;
+    iss >> std::noskipws >> f; // noskipws considers leading whitespace invalid
+    // Check the entire string was consumed and if either failbit or badbit is set
+    return iss.eof() && !iss.fail();
+  }
+} // namespace
 
 int main(int argc, char *argv[])
 {
@@ -42,7 +53,9 @@ int main(int argc, char *argv[])
         value = value.substr(1, value.length() - 2);
         aprepro.add_variable(var, value, true); // Make it immutable
       }
-      else {
+      // See if `value` contains any characters that are invalid for a number...
+
+      else if (is_double(value)) {
         try {
           double dval = std::stod(value);
           aprepro.add_variable(var, dval, true);
@@ -57,6 +70,9 @@ int main(int argc, char *argv[])
             exit_status = EXIT_FAILURE;
           }
         }
+      }
+      else {
+        aprepro.add_variable(var, value, true); // Make it immutable
       }
     }
     else {
@@ -94,13 +110,13 @@ int main(int argc, char *argv[])
     std::fstream infile(input_files[0], std::fstream::in);
     if (!infile.good()) {
       if (!aprepro.ap_options.include_path.empty() && input_files[0][0] != '/') {
-	std::string filename = aprepro.ap_options.include_path + "/" + input_files[0];
-	infile.open(filename, std::fstream::in);
+        std::string filename = aprepro.ap_options.include_path + "/" + input_files[0];
+        infile.open(filename, std::fstream::in);
       }
       if (!infile.good()) {
-	std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
-		  << "                Error Code: " << strerror(errno) << '\n';
-	return EXIT_FAILURE;
+        std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
+                  << "                Error Code: " << strerror(errno) << '\n';
+        return EXIT_FAILURE;
       }
     }
 
@@ -139,21 +155,17 @@ int main(int argc, char *argv[])
       else {
         exit_status = EXIT_FAILURE;
         std::cerr << "There were " << aprepro.get_error_count() << " errors and "
-                  << aprepro.get_warning_count() << " warnings."
-                  << "\n";
+                  << aprepro.get_warning_count() << " warnings." << "\n";
         if (aprepro.ap_options.errors_and_warnings_fatal) {
-          std::cerr << "Errors and warnings are fatal. No output has been written"
-                    << "\n";
+          std::cerr << "Errors and warnings are fatal. No output has been written" << "\n";
         }
         else if (aprepro.ap_options.errors_fatal) {
-          std::cerr << "Errors are fatal. No output has been written."
-                    << "\n";
+          std::cerr << "Errors are fatal. No output has been written." << "\n";
         }
         else {
           std::cerr << "Neither errors nor warnings are fatal. "
                     << "If you see this message, then there is a bug in Aprepro. "
-                    << "No output has been written."
-                    << "\n";
+                    << "No output has been written." << "\n";
         }
       }
     }
@@ -167,6 +179,9 @@ int main(int argc, char *argv[])
   }
   if (aprepro.ap_options.dumpvars_json) {
     aprepro.dumpsym_json();
+  }
+  if (aprepro.get_error_count() > 0) {
+    exit_status = EXIT_FAILURE;
   }
   return exit_status;
 }

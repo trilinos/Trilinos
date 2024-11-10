@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -98,7 +98,7 @@ exoid = ex_open_par ("test.exo",     \co{filename path}
                      &CPU_word_size, \co{CPU word size}
                      &IO_word_size,  \co{IO word size}
                      &version,       \co{ExodusII library version
-                     MPI_COMM_WORLD,
+                     MPI_COMM_WORLD, // CHECK: ALLOW MPI_COMM_WORLD
                      MPI_INFO_NULL);}
 ~~~
  */
@@ -138,7 +138,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   /* set error handling mode to no messages, non-fatal errors */
   ex_opts(exoptval); /* call required to set ncopts first time through */
 
-  ex__check_version(run_version);
+  exi_check_version(run_version);
 
   if ((mode & EX_READ) && (mode & EX_WRITE)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Cannot specify both EX_READ and EX_WRITE");
@@ -152,14 +152,14 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  char *canon_path = ex__canonicalize_filename(path);
+  char *canon_path = exi_canonicalize_filename(path);
 
   /* Verify that this file is not already open for read or write...
      In theory, should be ok for the file to be open multiple times
      for read, but bad things can happen if being read and written
      at the same time...
   */
-  if (ex__check_multiple_open(canon_path, mode, __func__)) {
+  if (exi_check_multiple_open(canon_path, mode, __func__)) {
     free(canon_path);
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -208,7 +208,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
        we have the define that shows it is enabled, then assume other error...
     */
     int type = 0;
-    ex__check_file_type(path, &type);
+    exi_check_file_type(path, &type);
 
     if (type == 0) {
       /* Error message printed at lower level */
@@ -291,9 +291,9 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
     }
 
     snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to open %s for read/write.\n\tEither the file "
-             "does not exist,\n\tor there is a permission or file format "
-             "issue.",
+             "ERROR: failed to open %s of type %d for reading.\n\t\tThe "
+             "file does not exist, or there is a permission or file "
+             "format issue.",
              canon_path);
     ex_err(__func__, errmsg, status);
     free(canon_path);
@@ -302,7 +302,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
 
   /* File opened correctly */
   int type = 0;
-  ex__check_file_type(canon_path, &type);
+  exi_check_file_type(canon_path, &type);
   if (type == 5) {
     is_hdf5 = true;
   }
@@ -313,7 +313,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   if (mode & EX_WRITE) { /* Appending */
     /* turn off automatic filling of netCDF variables */
     if (is_pnetcdf) {
-      if ((status = nc_redef(exoid)) != NC_NOERR) {
+      if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         free(canon_path);
@@ -353,13 +353,13 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
        * add it now. */
       if (stat_dim != NC_NOERR) {
         /* Not found; set to default value of 32+1. */
-        int max_name = ex__default_max_name_length < 32 ? 32 : ex__default_max_name_length;
+        int max_name = exi_default_max_name_length < 32 ? 32 : exi_default_max_name_length;
         nc_def_dim(exoid, DIM_STR_NAME, max_name + 1, &dim_str_name);
       }
     }
 
     if (in_redef) {
-      if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+      if ((status = nc_enddef(exoid)) != NC_NOERR) {
         free(canon_path);
         EX_FUNC_LEAVE(EX_FATAL);
       }
@@ -456,7 +456,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
      not know that file was closed and possibly new file opened for
      this exoid
   */
-  if (ex__find_file_item(exoid) != NULL) {
+  if (exi_find_file_item(exoid) != NULL) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: There is an existing file already using the file "
              "id %d which was also assigned to file %s.\n\tWas "
@@ -470,7 +470,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   }
 
   /* initialize floating point and integer size conversion. */
-  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_hdf5, is_pnetcdf,
+  if (exi_conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_hdf5, is_pnetcdf,
                     mode & EX_WRITE) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to initialize conversion routines in file id %d", exoid);
@@ -487,5 +487,5 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */
-const char exodus_unused_symbol_dummy_ex_open_par;
+extern const char exodus_unused_symbol_dummy_ex_open_par;
 #endif

@@ -72,6 +72,8 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES io_info_main.C
   INSTALLABLE
   )
+
+IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
 TRIBITS_ADD_EXECUTABLE(
   io_modify
   NOEXEPREFIX
@@ -79,6 +81,8 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES io_modify.C modify_interface.C
   INSTALLABLE
   )
+endif()
+
 TRIBITS_ADD_EXECUTABLE(
   sphgen
   NOEXEPREFIX
@@ -278,11 +282,12 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
-IF (NOT TPL_ENABLE_MPI OR TPL_Netcdf_Enables_PNetcdf)
+IF (TPL_Netcdf_Enables_PNetcdf OR NOT TPL_ENABLE_MPI)
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g"
   NAME io_shell_compare_same_database
   NOEXEPREFIX NOEXESUFFIX
+  NUM_MPI_PROCS ${NPROCS}
   COMM mpi serial
  )
 ENDIF()
@@ -301,12 +306,14 @@ TRIBITS_ADD_TEST(
   COMM mpi serial
  )
 
+IF (ENABLE_ExoNull)
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_exonull
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
  )
+ENDIF()
 
 if (TPL_ENABLE_MPI)
   set(EXTERNAL "--compose=external")
@@ -319,12 +326,14 @@ TRIBITS_ADD_TEST(
   COMM mpi serial
  )
 
+IF (ENABLE_ExoNull)
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_exonull_fpp
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
  )
+ENDIF()
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus

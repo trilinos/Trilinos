@@ -1,0 +1,106 @@
+<!-- Prefers TPL -->
+
+<ParameterList name="Linear Solver">
+
+  <ParameterList name="Preconditioner Types">
+    <ParameterList name="Teko">
+      <ParameterList name="Inverse Factory Library">
+        <ParameterList name="Maxwell">
+
+          <ParameterList name="S_E Preconditioner">
+            <ParameterList name="Preconditioner Types">
+              <ParameterList name="MueLuRefMaxwell">
+
+                <ParameterList name="smoother: params">
+                  <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
+                </ParameterList>
+
+                <ParameterList name="refmaxwell: 11list">
+
+                  <Parameter name="coarse: type" type="string" value="tacho"/>
+                  <ParameterList name="coarse: params">
+                    <ParameterList name="Amesos2">
+                      <ParameterList name="Tacho">
+                        <Parameter name="small problem threshold size" type="int" value="100"/>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+
+                  <ParameterList name="smoother: params">
+                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
+                  </ParameterList>
+
+                </ParameterList>
+
+                <ParameterList name="refmaxwell: 22list">
+
+                  <Parameter name="coarse: type" type="string" value="tacho"/>
+                  <ParameterList name="coarse: params">
+                    <ParameterList name="Amesos2">
+                      <ParameterList name="Tacho">
+                        <Parameter name="small problem threshold size" type="int" value="100"/>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+
+                  <ParameterList name="smoother: params">
+                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
+                  </ParameterList>
+
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="Darcy">
+
+          <ParameterList name="S_sigma Preconditioner">
+            <ParameterList name="Preconditioner Types">
+              <ParameterList name="MueLuRefMaxwell">
+
+                <ParameterList name="smoother: params">
+                  <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
+                </ParameterList>
+
+                <ParameterList name="refmaxwell: 11list">
+
+                  <Parameter name="coarse: type" type="string" value="tacho"/>
+                  <ParameterList name="coarse: params">
+                    <ParameterList name="Amesos2">
+                      <ParameterList name="Tacho">
+                        <Parameter name="small problem threshold size" type="int" value="100"/>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+
+                  <ParameterList name="smoother: params">
+                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
+                  </ParameterList>
+
+                </ParameterList>
+
+                <ParameterList name="refmaxwell: 22list">
+
+                  <Parameter name="coarse: type" type="string" value="tacho"/>
+                  <ParameterList name="coarse: params">
+                    <ParameterList name="Amesos2">
+                      <ParameterList name="Tacho">
+                        <Parameter name="small problem threshold size" type="int" value="100"/>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+
+                  <ParameterList name="smoother: params">
+                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
+                  </ParameterList>
+
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

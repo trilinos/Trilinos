@@ -40,6 +40,12 @@
 #ifndef AMESOS_REORDERING_H
 #define AMESOS_REORDERING_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 //! Amesos_Reordering: base class for reordering procedures.
 class Amesos_Reordering
 {

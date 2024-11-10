@@ -36,7 +36,10 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/AuraGhosting.hpp>
 #include <stk_mesh/base/DestroyElements.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -50,6 +53,7 @@
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"
 #include "UnitTestTextMeshFixture.hpp"
+#include "TestElemElemGraphUtils.hpp"
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -104,6 +108,54 @@ void expect_nodes_1_to_8_no_longer_valid_on_p1(const stk::mesh::BulkData& bulk)
   }
 }
 
+TEST(BulkDataTest, cleanupAura_nominal)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2|sideset:Z", bulk);
+
+  bulk.modification_begin();
+  stk::mesh::impl::AuraGhosting auraGhosting;
+  EXPECT_NO_THROW(auraGhosting.remove_aura(bulk));
+  bulk.modification_end();
+}
+
+TEST(BulkDataTest, cleanupAura_deletedFaceOnOtherProc)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2|sideset:Z", bulk);
+
+  bulk.modification_begin();
+  if (bulk.parallel_rank() == 0) {
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+    EXPECT_TRUE(bulk.is_valid(elem2));
+    EXPECT_TRUE(bulk.bucket(elem2).in_aura());
+    ASSERT_EQ(1u, bulk.num_connectivity(elem2, stk::topology::FACE_RANK));
+    stk::mesh::Entity face = bulk.begin(elem2, stk::topology::FACE_RANK)[0];
+    EXPECT_TRUE(bulk.bucket(face).in_aura());
+  }
+
+  if (bulk.parallel_rank() == 1) {
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+    EXPECT_TRUE(bulk.is_valid(elem2));
+    ASSERT_EQ(1u, bulk.num_connectivity(elem2, stk::topology::FACE_RANK));
+    stk::mesh::Entity face = bulk.begin(elem2, stk::topology::FACE_RANK)[0];
+    stk::mesh::ConnectivityOrdinal faceOrd = bulk.begin_ordinals(elem2, stk::topology::FACE_RANK)[0];
+    EXPECT_TRUE(bulk.bucket(face).owned());
+    bulk.destroy_relation(elem2, face, faceOrd);
+    EXPECT_TRUE(bulk.destroy_entity(face));
+  }
+
+  stk::mesh::impl::AuraGhosting auraGhosting;
+  EXPECT_NO_THROW(auraGhosting.remove_aura(bulk));
+  bulk.modification_end();
+}
+
 TEST(BulkDataTest, destroyDependentGhostsConnectedToDeletedShared)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
@@ -149,16 +201,18 @@ stk::mesh::Part& setupDavidNobleTestCaseTkt12837(stk::mesh::BulkData& bulk)
   stk::mesh::EntityId elemId3 = 3; // p2
   stk::mesh::EntityId elemId4 = 4; // p1
 
-  if(bulk.parallel_rank() == 0)
+  if(bulk.parallel_size()==1 || bulk.parallel_rank() == 0)
   {
     stk::mesh::declare_element(bulk, block_1, elemId1, elem1_nodes);
     stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
     stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
-    bulk.add_node_sharing(node1, 1);
-    bulk.add_node_sharing(node1, 2);
-    bulk.add_node_sharing(node2, 1);
+    if (bulk.parallel_size() == 3) {
+      bulk.add_node_sharing(node1, 1);
+      bulk.add_node_sharing(node1, 2);
+      bulk.add_node_sharing(node2, 1);
+    }
   }
-  else if(bulk.parallel_rank() == 1)
+  if(bulk.parallel_size()==1 || bulk.parallel_rank() == 1)
   {
     stk::mesh::declare_element(bulk, block_1, elemId2, elem2_nodes);
     stk::mesh::declare_element(bulk, block_1, elemId4, elem4_nodes);
@@ -166,20 +220,24 @@ stk::mesh::Part& setupDavidNobleTestCaseTkt12837(stk::mesh::BulkData& bulk)
     stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
     stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
     stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
-    bulk.add_node_sharing(node1, 2);
-    bulk.add_node_sharing(node6, 2);
+    if (bulk.parallel_size() == 3) {
+      bulk.add_node_sharing(node1, 2);
+      bulk.add_node_sharing(node6, 2);
 
-    bulk.add_node_sharing(node1, 0);
-    bulk.add_node_sharing(node2, 0);
+      bulk.add_node_sharing(node1, 0);
+      bulk.add_node_sharing(node2, 0);
+    }
   }
-  else
+  if(bulk.parallel_size()==1 || bulk.parallel_rank() == 2)
   {
     stk::mesh::declare_element(bulk, block_1, elemId3, elem3_nodes);
     stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
     stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
-    bulk.add_node_sharing(node1, 0);
-    bulk.add_node_sharing(node1, 1);
-    bulk.add_node_sharing(node6, 1);
+    if (bulk.parallel_size() == 3) {
+      bulk.add_node_sharing(node1, 0);
+      bulk.add_node_sharing(node1, 1);
+      bulk.add_node_sharing(node6, 1);
+    }
   }
 
   bulk.modification_end();
@@ -366,6 +424,65 @@ TEST(BulkDataTest, removeElemPartWithNodeSharedWithOneProcAndAuraToAnotherProc)
     EXPECT_FALSE(isEntityInPart(bulk, stk::topology::NODE_RANK, 6, nonConformalPart));
 
     test_node6_shared_and_aura(bulk);
+  }
+}
+
+TEST(BulkDataTest, disconnectReconnectElem_AddNewSharedSide_checkGraph)
+{
+  const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numProcs != 1 && numProcs != 3) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+
+  setupDavidNobleTestCaseTkt12837(bulk);
+  bulk.initialize_face_adjacent_element_graph();
+
+  stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1);
+  stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2);
+  stk::mesh::Entity elem4 = bulk.get_entity(stk::topology::ELEMENT_RANK, 4);
+  stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+
+  if (bulk.parallel_size()==1 || bulk.parallel_rank() == 1) {
+    stk::unit_test::verify_graph_edge_between_elems(bulk, elem2, elem4);
+  }
+
+{
+std::ostringstream os;
+os<<"P"<<bulk.parallel_rank()<<" beginning mesh-mod"<<std::endl;
+std::cerr<<os.str();
+}
+  bulk.modification_begin();
+
+  if(bulk.parallel_size()==1 || bulk.parallel_rank() == 0)
+  {
+    stk::mesh::ConnectivityOrdinal nodeOrd = 0;
+    bulk.destroy_relation(elem1, node1, nodeOrd);
+    bulk.declare_relation(elem1, node1, nodeOrd);
+    unsigned sideOrd = 0;
+    bulk.declare_element_side<stk::mesh::ConstPartVector>(elem1, sideOrd);
+  }
+
+  if(bulk.parallel_size()==1 || bulk.parallel_rank() == 1)
+  {
+    stk::mesh::ConnectivityOrdinal nodeOrd = 0;
+    bulk.destroy_relation(elem2, node1, nodeOrd);
+    bulk.declare_relation(elem2, node1, nodeOrd);
+    unsigned sideOrd = 0;
+    bulk.declare_element_side<stk::mesh::ConstPartVector>(elem2, sideOrd);
+  }
+
+{
+stk::parallel_machine_barrier(bulk.parallel());
+std::ostringstream os;
+os<<"P"<<bulk.parallel_rank()<<" calling mod-end"<<std::endl;
+std::cerr<<os.str();
+stk::parallel_machine_barrier(bulk.parallel());
+}
+  bulk.modification_end();
+
+  if (bulk.parallel_size()==1 || bulk.parallel_rank() == 1) {
+    stk::unit_test::verify_graph_edge_between_elems(bulk, elem2, elem4);
   }
 }
 
@@ -731,7 +848,7 @@ void test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(stk::mesh::
   }
 }
 
-class Aura2Hex2Proc : public stk::unit_test_util::simple_fields::MeshFixture
+class Aura2Hex2Proc : public stk::unit_test_util::MeshFixture
 {
 public:
   Aura2Hex2Proc()
@@ -759,24 +876,28 @@ TEST_F(Aura2Hex2Proc, disconnectElemFromSharedOwnedNodes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
   test_aura_disconnect_elem_from_shared_owned_nodes(get_bulk());
+  stk::unit_test::verify_no_graph_edges(get_bulk());
 }
 
 TEST_F(Aura2Hex2Proc, partiallyDisconnectElemFromSharedOwnedNodes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
   test_aura_partially_disconnect_elem_from_shared_owned_nodes(get_bulk());
+  stk::unit_test::verify_no_graph_edges(get_bulk());
 }
 
 TEST_F(Aura2Hex2Proc, disconnectElemFromSharedNotOwnedNodes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
   test_aura_disconnect_elem_from_shared_not_owned_nodes(get_bulk());
+  stk::unit_test::verify_no_graph_edges(get_bulk());
 }
 
 TEST_F(Aura2Hex2Proc, partiallyDisconnectElemFromSharedNotOwnedNodes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
   test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(get_bulk());
+  stk::unit_test::verify_no_graph_edges(get_bulk());
 }
 
 void expect_recv_aura(const stk::mesh::BulkData& bulk,
@@ -885,7 +1006,7 @@ TEST(BulkData, aura_moveElem1FromProc0ToProc1_NoUpwardConnectivity)
   }
 }
 
-class BulkDataAura : public stk::unit_test_util::simple_fields::MeshFixture
+class BulkDataAura : public stk::unit_test_util::MeshFixture
 {
 public:
   void verify_no_aura()

@@ -65,8 +65,9 @@ namespace fixtures {
 class WedgeFixture
 {
 public:
-  typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
+  static std::string name() { return "WedgeFixture"; }
+  typedef double        Scalar;
+  typedef Field<Scalar> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -118,7 +119,7 @@ public:
   BulkData&         m_bulk_data;
   PartVector        m_elem_parts;
   PartVector        m_node_parts;
-  CoordFieldType &  m_coord_field;
+  CoordFieldType *  m_coord_field;
   bool owns_mesh = true;
   stk::topology     m_elem_topology = stk::topology::WEDGE_6;
 
@@ -179,7 +180,6 @@ public:
   //}
 
 private:
-
   typedef std::multimap<EntityId, int> NodeToProcsMMap;
 
   NodeToProcsMMap m_nodes_to_procs;
@@ -193,7 +193,8 @@ private:
 
 namespace simple_fields {
 
-class WedgeFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+WedgeFixture
 {
 public:
   static std::string name() { return "WedgeFixture"; }

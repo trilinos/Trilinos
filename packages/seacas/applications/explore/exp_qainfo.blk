@@ -1,5 +1,5 @@
 C     -*- Mode: fortran -*-
-C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -8,8 +8,8 @@ C    See packages/seacas/LICENSE for details
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20230426'
-      QAINFO(3)(:8) = '    4.00'
+      QAINFO(2)(:8) = '20240610'
+      QAINFO(3)(:8) = '    4.03'
 
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -77,3 +77,4 @@ c..Add select nodes sset {id}...
 c..Fix memory overrun in check routines
 c..Call MDFREE()
 c..Refactor element select to allow add
+c..Fix behavior after bad parse warning

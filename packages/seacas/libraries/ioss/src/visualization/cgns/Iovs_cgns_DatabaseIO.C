@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -38,9 +38,9 @@ namespace Iovs_cgns {
 
   DatabaseIO::~DatabaseIO() { this->catCGNSMesh->Delete(); }
 
-  bool DatabaseIO::begin__(Ioss::State /*state*/) { return true; }
+  bool DatabaseIO::begin_nl(Ioss::State /*state*/) { return true; }
 
-  bool DatabaseIO::end__(Ioss::State state)
+  bool DatabaseIO::end_nl(Ioss::State state)
   {
     switch (state) {
     case Ioss::STATE_DEFINE_MODEL: {
@@ -52,7 +52,7 @@ namespace Iovs_cgns {
     return true;
   }
 
-  bool DatabaseIO::begin_state__(int state, double time)
+  bool DatabaseIO::begin_state_nl(int state, double time)
   {
     this->catCGNSMesh->ReleaseMemory();
     if (!isIdOutputCreated) {
@@ -63,7 +63,7 @@ namespace Iovs_cgns {
     return true;
   }
 
-  bool DatabaseIO::end_state__(int /*state*/, double /*time*/)
+  bool DatabaseIO::end_state_nl(int /*state*/, double /*time*/)
   {
     std::vector<int>         error_codes;
     std::vector<std::string> error_messages;
@@ -76,7 +76,7 @@ namespace Iovs_cgns {
     return true;
   }
 
-  void DatabaseIO::read_meta_data__() {}
+  void DatabaseIO::read_meta_data_nl() {}
 
   void DatabaseIO::write_meta_data()
   {
@@ -95,17 +95,17 @@ namespace Iovs_cgns {
       size_t               node_count = sb->get_property("node_count").get_int();
       std::vector<int64_t> ids;
       ids.resize(node_count);
-      sb->get_cell_node_ids(ids.data(), true);
+      sb->get_cell_node_ids(Data(ids), true);
       bool isCellField = false;
       outputId("cell_node_ids", ids, isCellField, sb);
 
       size_t cell_count = sb->get_property("cell_count").get_int();
       ids.resize(cell_count);
-      sb->get_cell_ids(ids.data(), true);
+      sb->get_cell_ids(Data(ids), true);
       isCellField = true;
       outputId("cell_ids", ids, isCellField, sb);
 
-      auto             zone_id = sb->get_property("zone").get_int();
+      auto                 zone_id = sb->get_property("zone").get_int();
       std::vector<int64_t> object_id(cell_count, zone_id);
       outputId("object_id", object_id, isCellField, sb);
     }
@@ -121,7 +121,7 @@ namespace Iovs_cgns {
     zoneData.is_cell_field = isCellField;
     zoneData.size          = ids.size();
     zoneData.data_type     = zoneData.T_INT64;
-    zoneData.data.p_int64  = ids.data();
+    zoneData.data.p_int64  = Data(ids);
 
     this->catCGNSMesh->AddStructuredZoneData(zoneData);
   }
@@ -139,12 +139,12 @@ namespace Iovs_cgns {
   int64_t DatabaseIO::put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    size_t node_count             = sb->get_property("node_count").get_int();
-    size_t num_to_get             = field.verify(data_size);
-    auto   var_type               = field.transformed_storage();
-    auto   ioss_type              = field.get_type();
-    int    comp_count             = var_type->component_count();
-    void  *rdata                  = num_to_get > 0 ? data : nullptr;
+    size_t node_count = sb->get_property("node_count").get_int();
+    size_t num_to_get = field.verify(data_size);
+    auto   var_type   = field.transformed_storage();
+    auto   ioss_type  = field.get_type();
+    int    comp_count = var_type->component_count();
+    void  *rdata      = num_to_get > 0 ? data : nullptr;
 
     bool is_cell_field = true;
     if (node_count == num_to_get) {
@@ -190,7 +190,7 @@ namespace Iovs_cgns {
         }
 
         zoneData.data_name     = ordinate;
-        zoneData.data.p_double = coord.data();
+        zoneData.data.p_double = Data(coord);
         this->catCGNSMesh->AddStructuredZoneData(zoneData);
       };
       // ========================================================================

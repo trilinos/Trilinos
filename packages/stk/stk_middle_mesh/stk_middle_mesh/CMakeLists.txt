@@ -58,10 +58,18 @@ else()
   add_library(stk_middle_mesh ${SOURCES} ${PRED_SOURCES})
   target_link_libraries(stk_middle_mesh PUBLIC stk_util_parallel)
   target_link_libraries(stk_middle_mesh PUBLIC stk_search)
+  find_package(CBLAS REQUIRED)
+  find_package(Lapack REQUIRED)
+  target_link_libraries(stk_middle_mesh PUBLIC lapack)
 endif()
 
 target_include_directories(stk_middle_mesh PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_middle_mesh>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(stk_middle_mesh PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
   $<INSTALL_INTERFACE:include>
 )
 
@@ -81,5 +89,5 @@ INSTALL(FILES ${PRED_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_middle_mesh/predicates)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_middle_mesh DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_middle_mesh EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

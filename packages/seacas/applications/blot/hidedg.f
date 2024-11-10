@@ -46,8 +46,7 @@ C   --   Uses NUMNPF of /D3NUMS/
       character*8 cdebug
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       INTEGER HIDEF(*)
       INTEGER HIDENP(*)

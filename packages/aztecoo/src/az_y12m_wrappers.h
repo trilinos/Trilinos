@@ -44,6 +44,12 @@
 #ifndef _AZ_Y12M_WRAPPERS_H_
 #define _AZ_Y12M_WRAPPERS_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "az_f77func.h"
 
 #   define Y12MBF_F77                 F77_FUNC(y12mbf,Y12MBF)

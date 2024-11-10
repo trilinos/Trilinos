@@ -37,14 +37,16 @@ cmake \
 -DCMAKE_CXX_COMPILER=${OMPI_CXX} \
 -DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DSTK_ENABLE_ALL:BOOL=ON \
--DSTK_ENABLE_STKMiddle_mesh=OFF \
+-DSTK_ENABLE_STKMiddle_mesh=ON \
 -DSTK_ENABLE_MPI:BOOL=ON \
 -DSTK_ENABLE_TESTS:BOOL=ON \
--DSEACAS_DIR=/fgs/william/Trilinos/install_gcc/lib/cmake/SEACAS \
--DShards_DIR=/fgs/william/Trilinos/install_gcc/lib/cmake/Shards \
--DZoltan2Core_DIR=/fgs/william/Trilinos/install_gcc/lib/cmake/Zoltan2Core \
--DKokkos_DIR=/fgs/william/kokkos/install/lib64/cmake/Kokkos \
--DKokkosKernels_DIR=/fgs/william/kokkos-kernels/install/lib64/cmake/KokkosKernels \
+-DTPL_ENABLE_CDT:BOOL=ON \
+-DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
+-DCDT_ROOT="/fgs/william/CDT/install" \
+-DSEACAS_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/SEACAS \
+-DShards_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Shards \
+-DZoltan2Core_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Zoltan2Core \
+-DKokkos_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Kokkos \
 -DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \
 ${stk_src_dir}/
 

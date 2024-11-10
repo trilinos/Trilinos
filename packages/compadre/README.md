@@ -72,3 +72,17 @@ If you are using a particular release of the Compadre Toolkit and would like to 
 ```diff
 ! DOI: 10.11578/dc.20190411.1
 ```
+
+## Copyright and License
+See compadre/COPYRIGHT, compadre/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
+
+
+## Questions? 
+Contact lead developers:
+
+* Compadre team     (GitHub handle: @trilinos/Compadre)
+* Paul Kuberry      (GitHub handle: [kuberry](https://github.com/kuberry) or pakuber@sandia.gov@sandia.gov)
+
+The views and conclusions contained in the software and documentation are those
+of the authors and should not be interpreted as representing official policies,
+either expressed or implied, of NTESS or the U.S. Government.

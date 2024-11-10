@@ -50,3 +50,9 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
          long long IndexBase, Epetra_Comm & Comm,
 	     bool DistributedGlobal, bool IsOneToOne);
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

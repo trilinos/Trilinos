@@ -20,6 +20,7 @@
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ProcessKilledElements.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
@@ -975,7 +976,6 @@ TEST(ElementSide, get_or_create_element_side_with_permutation)
   {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     stk::mesh::Part& new_faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
     stk::mesh::PartVector face_parts {&new_faces_part};
     stk::io::put_io_part_attribute(new_faces_part);
@@ -1109,7 +1109,6 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel)
   {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     stk::mesh::Part& new_faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
     stk::io::put_io_part_attribute(new_faces_part);
     BulkDataElementGraphTester bulkData(meta, comm);
@@ -1174,7 +1173,6 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel_block_membership)
   {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     stk::mesh::Part& new_faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
 
     stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
@@ -1250,16 +1248,15 @@ TEST(ElementGraph, compare_performance_create_faces)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-  int xdim = stk::unit_test_util::simple_fields::get_command_line_option("--xdim", 3);
+  int xdim = stk::unit_test_util::get_command_line_option("--xdim", 3);
   int ydim = xdim;
   int zdim = xdim * stk::parallel_machine_size(comm);
 
-  std::string filename = stk::unit_test_util::simple_fields::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
+  std::string filename = stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
 
   {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
     stk::io::put_io_part_attribute(faces_part);
     BulkDataElementGraphTester bulkData(meta, comm);
@@ -1284,7 +1281,6 @@ TEST(ElementGraph, compare_performance_create_faces)
   {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     bool force_no_induce = true;
     stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4, force_no_induce);
     stk::io::put_io_part_attribute(faces_part);
@@ -1323,7 +1319,6 @@ TEST(ElementGraph, make_items_inactive)
     unsigned spatialDim = 3;
 
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
     stk::mesh::PartVector boundary_mesh_parts { &faces_part };
     stk::io::put_io_part_attribute(faces_part);
@@ -1335,7 +1330,7 @@ TEST(ElementGraph, make_items_inactive)
 
     stk::io::fill_mesh("generated:1x1x4", bulkData);
 
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     ElemElemGraphTester graph(bulkData);
 
@@ -1395,16 +1390,15 @@ TEST(ElementGraph, test_element_death)
   if(stk::parallel_machine_size(comm) <= 2)
   {
     //IO error when this is <4.  Shared face being attached to the wrong element
-    int xdim = stk::unit_test_util::simple_fields::get_command_line_option("--zdim", 4);
+    int xdim = stk::unit_test_util::get_command_line_option("--zdim", 4);
     int ydim = xdim;
     int zdim = xdim; //  * stk::parallel_machine_size(comm);
 
-    std::string filename = stk::unit_test_util::simple_fields::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
+    std::string filename = stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
 
     {
       unsigned spatialDim = 3;
       stk::mesh::MetaData meta(spatialDim);
-      meta.use_simple_fields();
       stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
       stk::mesh::PartVector boundary_mesh_parts { &faces_part };
       stk::io::put_io_part_attribute(faces_part);
@@ -1419,7 +1413,7 @@ TEST(ElementGraph, test_element_death)
 
       stk::mesh::Part& block_1 = *meta.get_part("block_1");
 
-      stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+      stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
       std::ostringstream os;
       os << "Proc id: " << bulkData.parallel_rank() << std::endl;
@@ -1439,7 +1433,7 @@ TEST(ElementGraph, test_element_death)
       for(int i = 0; i < num_time_steps; ++i)
       {
         stk::mesh::EntityVector killedElements = get_killed_elements(bulkData, i, active);
-        stk::unit_test_util::simple_fields::move_killed_elements_out_of_parts(bulkData, killedElements, {&block_1, &active});
+        stk::unit_test_util::move_killed_elements_out_of_parts(bulkData, killedElements, {&block_1, &active});
 
         stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
         stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, elementGraph, active, remoteActiveSelector);
@@ -1490,9 +1484,9 @@ public:
   void load_without_restart()
   {
     initializeObjects();
-    std::string filename = stk::unit_test_util::simple_fields::get_name_of_generated_mesh(1, 1, 2, "|sideset:zZ");
+    std::string filename = stk::unit_test_util::get_name_of_generated_mesh(1, 1, 2, "|sideset:zZ");
     stk::io::fill_mesh(filename, *bulkData);
-    stk::unit_test_util::simple_fields::put_mesh_into_part(*bulkData, *activePart);
+    stk::unit_test_util::put_mesh_into_part(*bulkData, *activePart);
   }
 
   void read_restart_file(const std::string& filename)
@@ -1528,7 +1522,6 @@ public:
     builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
     bulkData = builder.create();
     metaData = &(bulkData->mesh_meta_data());
-    metaData->use_simple_fields();
     stk::io::put_io_part_attribute(metaData->universal_part());
     deathStatusField = &metaData->declare_field<double>(stk::topology::ELEM_RANK,deathStatusFieldName);
     stk::mesh::put_field_on_mesh(*deathStatusField,metaData->universal_part(), nullptr);
@@ -1554,7 +1547,7 @@ public:
     {
       elementsToKill.push_back(element);
     }
-    stk::unit_test_util::simple_fields::move_killed_elements_out_of_parts(*bulkData, elementsToKill, activePartVector);
+    stk::unit_test_util::move_killed_elements_out_of_parts(*bulkData, elementsToKill, activePartVector);
 
     stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
     stk::mesh::impl::populate_selected_value_for_remote_elements(*bulkData, bulkData->get_face_adjacent_element_graph(), *activePart, remoteActiveSelector);
@@ -1731,7 +1724,7 @@ TEST(ElementDeath, test_element_death_with_restart)
       elementDeathTest.kill_element(2);
       elementDeathTest.verify_mesh_after_killing_element_2();
     }
-    stk::unit_test_util::simple_fields::delete_mesh("elemDeathRestartFile.exo");
+    stk::unit_test_util::delete_mesh("elemDeathRestartFile.exo");
   }
 }
 
@@ -4118,7 +4111,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
     test_add_elements_to_pre_existing_graph_and_mesh(bulkData);
     stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
 
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     stk::mesh::EntityVector deactivated_elems;
 
@@ -4227,7 +4220,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
 
     stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
 
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, active);
+    stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
     stk::mesh::EntityVector deactivated_elems;
 
@@ -4697,7 +4690,6 @@ TEST(ElemGraph, test_id_reservation)
     unsigned spatialDim = 3;
 
     stk::mesh::MetaData meta(spatialDim);
-    meta.use_simple_fields();
     BulkDataElementGraphTester bulkData(meta, comm);
     stk::io::fill_mesh("generated:1x1x4", bulkData);
 
@@ -4812,11 +4804,10 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
   if(stk::parallel_machine_size(comm)==2)
   {
     stk::mesh::MetaData meta(3);
-    meta.use_simple_fields();
     stk::mesh::Part &activePart = meta.declare_part("active");
     BulkDataElementGraphTester bulkData(meta, comm);
     stk::io::fill_mesh("generated:1x1x4", bulkData);
-    stk::unit_test_util::simple_fields::put_mesh_into_part(bulkData, activePart);
+    stk::unit_test_util::put_mesh_into_part(bulkData, activePart);
 
     bulkData.modification_begin();
     if(bulkData.parallel_rank() == 0)

@@ -83,6 +83,31 @@ public:
   KOKKOS_FUNCTION value_type get_y_max() const { return m_max_corner[1]; }
   KOKKOS_FUNCTION value_type get_z_max() const { return m_max_corner[2]; }
 
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_x_min() const { return Kokkos::nextafter(static_cast<float>(m_min_corner[0]),
+                                                              Kokkos::Experimental::finite_min_v<float>); }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_y_min() const { return Kokkos::nextafter(static_cast<float>(m_min_corner[1]),
+                                                              Kokkos::Experimental::finite_min_v<float>); }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_z_min() const { return Kokkos::nextafter(static_cast<float>(m_min_corner[2]),  
+                                                              Kokkos::Experimental::finite_min_v<float>);
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_x_max() const { return Kokkos::nextafter(static_cast<float>(m_max_corner[0]),
+                                                              Kokkos::Experimental::finite_max_v<float>); }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_y_max() const { return Kokkos::nextafter(static_cast<float>(m_max_corner[1]),
+                                                              Kokkos::Experimental::finite_max_v<float>); }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_z_max() const { return Kokkos::nextafter(static_cast<float>(m_max_corner[2]),
+                                                              Kokkos::Experimental::finite_max_v<float>); }
+
   KOKKOS_FUNCTION void set_min_corner(point_type const& x_min_corner) { m_min_corner = x_min_corner; }
   KOKKOS_FUNCTION void set_max_corner(point_type const& x_max_corner) { m_max_corner = x_max_corner; }
 
@@ -104,8 +129,6 @@ public:
     set_min_corner(b.min_corner());
     set_max_corner(b.max_corner());
   }
-
-  KOKKOS_DEFAULTED_FUNCTION ~Box() = default;
 
 private:
   point_type m_min_corner;

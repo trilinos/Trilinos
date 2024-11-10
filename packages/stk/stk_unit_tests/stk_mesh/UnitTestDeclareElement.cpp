@@ -54,7 +54,7 @@ TEST( UnitTestDeclareElement , inject_shell )
 
   // Create the fixture, adding a part for the shell
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( pm , 2 , 1 , 1 );
+  stk::mesh::fixtures::HexFixture fixture( pm , 2 , 1 , 1 );
 
   const int p_rank = fixture.m_bulk_data.parallel_rank();
 

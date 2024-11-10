@@ -4,16 +4,16 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_EntityBlock.h>
-#include <Ioss_Field.h>
-#include <Ioss_Property.h>
-#include <Ioss_SideBlock.h>
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_Field.h"
+#include "Ioss_Property.h"
+#include "Ioss_SideBlock.h"
 #include <cassert>
 #include <cstddef>
 #include <fmt/ostream.h>
+#include <iosfwd>
 #include <string>
 #include <tokenize.h>
 #include <vector>
@@ -21,6 +21,7 @@
 #include "Ioss_FieldManager.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
 
 /** \brief Create a side block.
  *
@@ -131,18 +132,18 @@ Ioss::Property Ioss::SideBlock::get_implicit_property(const std::string &my_name
     if (field_exists("distribution_factors")) {
       int64_t nnodes = topology()->number_nodes();
       int64_t nside  = entity_count();
-      return Ioss::Property(my_name, nnodes * nside);
+      return {my_name, nnodes * nside};
     }
-    return Ioss::Property(my_name, 0);
+    return {my_name, 0};
   }
   if (my_name == "parent_topology_type") {
-    return Ioss::Property(my_name, parent_element_topology()->name());
+    return {my_name, parent_element_topology()->name()};
   }
 
   return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
-void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
+void Ioss::SideBlock::block_membership(Ioss::NameList &block_members)
 {
   // Simplest case.  If the surfaces are split by element block, then this will
   // return non-null

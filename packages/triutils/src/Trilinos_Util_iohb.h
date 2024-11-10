@@ -42,6 +42,12 @@
 #ifndef IOHB_H
 #define IOHB_H
 
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+
 #ifndef TRILINOS_NO_CONFIG_H
 
 /*

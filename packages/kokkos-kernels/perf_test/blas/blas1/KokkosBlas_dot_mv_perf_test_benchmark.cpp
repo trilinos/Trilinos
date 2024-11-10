@@ -85,19 +85,15 @@ static void run(benchmark::State& state) {
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment ("
-            << ExecSpace::name() << ")\n";
+  std::cout << "Running BLAS Level 1 DOT perfomrance experiment (" << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
 
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
 
-  Kokkos::View<Scalar*, Device> result(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
+  Kokkos::View<Scalar*, Device> result(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -130,10 +126,8 @@ static void run(benchmark::State& state) {
     printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
     state.SetIterationTime(timer.seconds());
 
-    state.counters["Avg DOT time (s):"] =
-        benchmark::Counter(avg, benchmark::Counter::kDefaults);
-    state.counters["Avg DOT FLOP/s:"] =
-        benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+    state.counters["Avg DOT time (s):"] = benchmark::Counter(avg, benchmark::Counter::kDefaults);
+    state.counters["Avg DOT FLOP/s:"]   = benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
   }
 }
 

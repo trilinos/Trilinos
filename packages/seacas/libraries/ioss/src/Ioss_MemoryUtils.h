@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,9 +13,6 @@ namespace Ioss {
   class IOSS_EXPORT MemoryUtils
   {
   public:
-    MemoryUtils()  = default;
-    ~MemoryUtils() = default;
-
     /** \brief Return amount of memory being used on this processor */
     static size_t get_memory_info();
 

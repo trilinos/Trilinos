@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "tExplicitOps_tpetra.hpp"
 
@@ -463,6 +426,23 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
       Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
   RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop3 = tOp3->getConstTpetraOperator();
 
+  // Create a target linear operator, with a known sparsity pattern (diagonal) for a second time
+  expOp2 = Teko::explicitAdd(H_, H_, expOp2);
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp3b =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop3b = tOp3b->getConstTpetraOperator();
+
+  // check that underlying pointers are the same
+  {
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    TEST_ASSERT(eop3.getRawPtr() == eop3b.getRawPtr(),
+                std::endl
+                    << " tExplicitOps_tpetra::test_add_mod"
+                    << ": Testing matrix addition returns new pointer");
+    if (not(eop3.getRawPtr() == eop3b.getRawPtr()) || verbosity >= 10) os << ss.str();
+  }
+
   // Try to add matricies with sparsity patterns that differ from the target operator
   expOp2 = Teko::explicitAdd(Teko::scale(-4.0, F_), Teko::adjoint(G_), expOp2);
   RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp4 =
@@ -491,6 +471,52 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
                             << "   tExplicitOps_tpetra::test_add_mod"
                             << ": Testing matrix addition");
     if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  // Create a target linear operator, with a known sparsity pattern (diagonal) and aliased args
+  expOp2 = Teko::explicitAdd(H_, H_, expOp2);
+  tOp3   = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
+  eop3   = tOp3->getConstTpetraOperator();
+  auto expOp3 = Teko::explicitAdd(H_, expOp2, expOp2);
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp5 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp3, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop5 = tOp5->getConstTpetraOperator();
+
+  // check that underlying pointers are different
+  // since the sparsity pattern of expOp entering the explicitAdd
+  // does not match the sparsity pattern returned by the explicitAdd
+  // a new tpetra operator will be created
+  {
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    TEST_ASSERT(eop3.getRawPtr() != eop5.getRawPtr(),
+                std::endl
+                    << " tExplicitOps_tpetra::test_add_mod2"
+                    << ": Testing matrix addition returns new pointer");
+    if (not(eop3.getRawPtr() == eop5.getRawPtr()) || verbosity >= 10) os << ss.str();
+  }
+
+  // Create a target linear operator, with a known sparsity pattern (diagonal) and aliased args
+  expOp2 = Teko::explicitAdd(H_, H_, expOp2);
+  tOp3   = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
+  eop3   = tOp3->getConstTpetraOperator();
+  auto expOp4 = Teko::explicitAdd(expOp2, H_, expOp2);
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp6 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp4, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop6 = tOp6->getConstTpetraOperator();
+
+  // check that underlying pointers are different
+  // since the sparsity pattern of expOp entering the explicitAdd
+  // does not match the sparsity pattern returned by the explicitAdd
+  // a new tpetra operator will be created
+  {
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    TEST_ASSERT(eop3.getRawPtr() != eop6.getRawPtr(),
+                std::endl
+                    << " tExplicitOps_tpetra::test_add_mod3"
+                    << ": Testing matrix addition returns new pointer");
+    if (not(eop3.getRawPtr() == eop6.getRawPtr()) || verbosity >= 10) os << ss.str();
   }
 
   return allPassed;

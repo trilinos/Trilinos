@@ -5,6 +5,12 @@
 #ifndef ML_DD_PREC_H
 #define ML_DD_PREC_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_struct.h"
 #include "ml_smoother.h"
@@ -39,5 +45,3 @@ int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
 #endif
 
 #endif /* ifdef ML_DD_PREC_H */
-
-

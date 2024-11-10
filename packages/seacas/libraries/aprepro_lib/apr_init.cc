@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,11 +11,11 @@
      Initialize variables and functions Aprepro
 ***/
 #include "apr_builtin.h"
-#include "apr_symrec.h"
 #include "apr_tokenize.h"
 #include "aprepro.h"      // for symrec, Aprepro, etc
 #include "init_structs.h" // for array_a_init, array_c_init, etc
-#include <string>         // for string
+#include <array>
+#include <string> // for string
 
 namespace SEAMS {
   init arith_0_fncts[] = {
@@ -28,7 +28,7 @@ namespace SEAMS {
       {"acosd", do_acosd, "acosd(x)", "Inverse cosine of x, returns degrees."},
       {"acosh", do_acosh, "acosh(x)", "Inverse hyperbolic cosine of x."},
       {"asin", do_asin, "asin(x)", "Inverse sine of x, returns radians."},
-      {"asind", do_asind, "asin(x)", "Inverse sine of x, returns degrees."},
+      {"asind", do_asind, "asind(x)", "Inverse sine of x, returns degrees."},
       {"asinh", do_asinh, "asinh(x)", "Inverse hyperbolic sine of x."},
       {"atan", do_atan, "atan(x)", "Inverse tangent of x, returns radians."},
       {"atand", do_atand, "atand(x)", "Inverse tangent of x, returns degrees."},
@@ -40,7 +40,7 @@ namespace SEAMS {
       {"cosh", do_cosh, "cosh(x)", "Hyperbolic cosine of x."},
       {"d2r", do_d2r, "d2r(x)", "Degrees to radians."},
       {"erf", do_erf, "erf(x)", "Error Function of x"},
-      {"erf", do_erfc, "erfc(x)", "Complementary Error Function of x"},
+      {"erfc", do_erfc, "erfc(x)", "Complementary Error Function of x"},
       {"exp", do_exp, "exp(x)", "Exponential: e^x"},
       {"expm1", do_expm1, "expm1(x)", "Exponential: Accurate version of e^x - 1.0 for small x"},
       {"floor", do_floor, "floor(x)", "Largest integer not greater than x."},
@@ -317,6 +317,10 @@ namespace SEAMS {
        " The array double values are\n\t\t\tseparated by one or more of the characters in the "
        "string "
        "variable delim."},
+      {"sym_tensor_from_string", do_sym_tensor_from_string, "sym_tensor_from_string(string, delim)",
+       "Create a 3x3 symmetric array from the data in a delimited string."
+       " The six array values are\n\t\t\tseparated by one or more of the characters in the "
+       "string variable delim. Order is xx, yy, zz, xy, yz, xz."},
       {nullptr, nullptr, nullptr, nullptr}};
 
   array_ddd_init array_ddd_fncts[] = {
@@ -338,6 +342,8 @@ namespace SEAMS {
 
   array_a_init array_a_fncts[] = {
       {"transpose", do_transpose, "transpose(array)", "Return the transpose of input array"},
+      {"principal_stress", do_principal, "principal_stress(array)",
+       "Calculate principal stresses of symmetric 3x3 stress tensor (array)."},
       {nullptr, nullptr, nullptr, nullptr}};
 
   // clang-format off
@@ -358,6 +364,7 @@ namespace SEAMS {
   // clang-format on
 
   svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
+                            {"_UNITS_SYSTEM", "none"},
                             {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"
    *     Since it can be changed by user on command line, we

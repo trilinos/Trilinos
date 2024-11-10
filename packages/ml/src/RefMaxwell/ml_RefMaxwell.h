@@ -16,6 +16,12 @@
 #ifndef ML_REFMAXWELL_H
 #define ML_REFMAXWELL_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 // Some compilers think this name is too long...
 #define RefMaxwellPreconditioner ML_RMP
 

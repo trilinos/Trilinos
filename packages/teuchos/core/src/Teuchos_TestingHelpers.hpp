@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_TESTING_HELPERS_HPP
@@ -221,12 +189,14 @@ bool testRelErr(
 
 /** \brief Compare if two array objects are the same or not.
  *
- * This function works with any two array objects are the same size and have
- * the same element value types.  The funtion is templated on the container
- * types and therefore can compare any two objects that have size() and
- * operator[](i) defined.
+ * This function works with any two array-like objects:
+ * <tt>Array1</tt> and <tt>Array2</tt> must have <tt>size()</tt>
+ * and <tt>operator[](i)</tt> methods defined. Their element types
+ * may be different, but it must be possible to compare them with
+ * <tt>==</tt>.
  *
- * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ * \returns Returns <tt>true</tt> if <tt>a1.size() == a2.size()</tt> and
+ *   their elements are equal. Otherwise returns <tt>false</tt>.
  *
  * \ingroup teuchos_testing_grp
  */
@@ -241,17 +211,44 @@ bool compareArrays(
 /** \brief Compare if two array objects are the same or not up to a relative
  * floating point precision.
  *
- * This function works with any two array objects are the same size and have
- * the same element value types.  The funtion is templated on the container
- * types and therefore can compare any two objects that have size() and
- * operator[](i) defined.
+ * This function works with any two array-like objects:
+ * <tt>Array1</tt> and <tt>Array2</tt> must have <tt>size()</tt>
+ * and <tt>operator[](i)</tt> methods defined. Their element
+ * types may be different, as long as <tt>Teuchos::relErr(a1[i], a2[i])</tt>
+ * can be called to determine the relative difference between them.
  *
- * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ * \returns Returns <tt>true</tt> if <tt>a1.size() == a2.size()</tt> and
+ *   <tt>relErr(a1[i], a2[i]) <= tol</tt> for all <tt>0 <= i < a1.size()</tt>.
+ *   Otherwise returns <tt>false</tt>.
  *
  * \ingroup teuchos_testing_grp
  */
 template<class Array1, class Array2, class ScalarMag>
 bool compareFloatingArrays(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
+  Teuchos::FancyOStream &out
+  );
+
+/** \brief Compare if two array objects are the same up to an absolute
+ * tolerance: elements <tt>a1[i]</tt> and <tt>a2[i]</tt> are considered
+ * the same if <tt>|a1[i]-a2[i]| <= tol</tt>.
+ *
+ * This function works with any two array-like objects
+ * with the same element types. <tt>Array1</tt> and <tt>Array2</tt> must have
+ * <tt>size()</tt> and <tt>operator[](i)</tt> methods defined.
+ * <tt>Teuchos::ScalarTraits</tt> must also have a specialization
+ * for the element type.
+ *
+ * \returns Returns <tt>true</tt> if <tt>a1.size() == a2.size()</tt> and
+ *   <tt>|a1[i]-a2[i]| <= tol</tt> for all <tt>0 <= i < a1.size()</tt>.
+ *   Otherwise returns <tt>false</tt>.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template<class Array1, class Array2, class ScalarMag>
+bool compareFloatingArraysAbsolute(
   const Array1 &a1, const std::string &a1_name,
   const Array2 &a2, const std::string &a2_name,
   const ScalarMag &tol,
@@ -654,6 +651,7 @@ bool Teuchos::compareArrays(
   )
 {
   using Teuchos::as;
+
   bool success = true;
 
   out << "Comparing " << a1_name << " == " << a2_name << " ... ";
@@ -694,6 +692,14 @@ bool Teuchos::compareFloatingArrays(
   )
 {
   using Teuchos::as;
+
+  // Determine the element types of Array1 and Array2
+  using Elem1 = std::decay_t<decltype(std::declval<Array1>()[0])>;
+  using Elem2 = std::decay_t<decltype(std::declval<Array2>()[0])>;
+
+  static_assert(std::is_same_v<Elem1, Elem2>,
+      "Teuchos::compareFloatingArrays: element types of Array1 and Array2 must be the same.");
+
   bool success = true;
 
   out << "Comparing " << a1_name << " == " << a2_name << " ... ";
@@ -724,6 +730,53 @@ bool Teuchos::compareFloatingArrays(
 
   return success;
 
+}
+
+template<class Array1, class Array2, class ScalarMag>
+bool Teuchos::compareFloatingArraysAbsolute(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
+  Teuchos::FancyOStream &out
+  )
+{
+  using Teuchos::as;
+  using Teuchos::ScalarTraits;
+
+  // Determine the element types of Array1 and Array2
+  using Elem1 = std::decay_t<decltype(std::declval<Array1>()[0])>;
+  using Elem2 = std::decay_t<decltype(std::declval<Array2>()[0])>;
+
+  static_assert(std::is_same_v<Elem1, Elem2>,
+      "Teuchos::compareFloatingArraysAbsolute: element types of Array1 and Array2 must be the same.");
+
+  bool success = true;
+
+  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+
+  const int n = a1.size();
+
+  // Compare sizes
+  if (as<int>(a2.size()) != n) {
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
+        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
+    return false;
+  }
+
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    const ScalarMag err = ScalarTraits<Elem1>::magnitude( a1[i] - a2[i] );
+    if ( !(err <= tol) ) {
+      out
+        <<"\nError, ||"<<a1_name<<"["<<i<<"] - " << a2_name<<"["<<i<<"]|| = "
+        <<err<<" <= tol = "<<tol<<": failed!\n";
+      success = false;
+    }
+  }
+  if (success) {
+    out << "passed\n";
+  }
+  return success;
 }
 
 

@@ -36,7 +36,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -59,7 +59,7 @@ private:
 
 using BlockWeightsMap = std::map<std::string, double>;
 
-class TestBlockWeights : public stk::unit_test_util::simple_fields::MeshFixture
+class TestBlockWeights : public stk::unit_test_util::MeshFixture
 {
 protected:
   void set_up_1x1x8_mesh_one_block()
@@ -99,11 +99,11 @@ protected:
     const int numProcs = 2;
 
     stk::mesh::EntityProcVec decomp;
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::internal::calculateGeometricOrGraphBasedDecomp(get_bulk(), selectors,
                                                                  get_bulk().parallel(), numProcs,
                                                                  balanceSettings, decomp);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
 
     check_decomposition(decomp, expectedElemsOnEachProc);
   }

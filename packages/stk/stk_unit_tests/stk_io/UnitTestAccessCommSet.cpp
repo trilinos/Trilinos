@@ -53,7 +53,6 @@ TEST(UnitTestAccessCommSet, basicNodeComm)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   stkMeshIoBroker.add_mesh_database("generated:1x1x4", stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
   stkMeshIoBroker.populate_bulk_data();

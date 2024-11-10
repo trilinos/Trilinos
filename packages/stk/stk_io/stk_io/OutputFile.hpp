@@ -47,6 +47,7 @@
 #include <string>                           // for string
 #include <utility>                          // for pair, swap
 #include <vector>                           // for vector
+#include <any>
 #include "mpi.h"                            // for MPI_Comm, ompi_communicat...
 #include "stk_io/FieldAndName.hpp"          // for FieldAndName, UserDataAnd...
 #include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
@@ -212,7 +213,6 @@ public:
     void has_adaptivity(bool hasAdaptivity);
 
     bool is_skin_mesh() const;
-    void is_skin_mesh(bool skinMesh);
 
     void set_enable_edge_io(bool enableEdgeIO);
 

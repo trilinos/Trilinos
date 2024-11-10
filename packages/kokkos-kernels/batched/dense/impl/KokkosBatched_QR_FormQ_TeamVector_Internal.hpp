@@ -33,12 +33,11 @@ namespace KokkosBatched {
 ///
 struct TeamVectorQR_FormQ_Internal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const int m, const int n, const int k,
-      /* */ ValueType *A, const int as0, const int as1,
-      /* */ ValueType *t, const int ts,
-      /* */ ValueType *Q, const int qs0, const int qs1,
-      /* */ ValueType *w, const bool is_Q_zero = false) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
+                                           /* */ ValueType *t, const int ts,
+                                           /* */ ValueType *Q, const int qs0, const int qs1,
+                                           /* */ ValueType *w, const bool is_Q_zero = false) {
     typedef ValueType value_type;
 
     /// Given a matrix A that includes QR factorization
@@ -51,14 +50,12 @@ struct TeamVectorQR_FormQ_Internal {
 
     // set identity
     if (is_Q_zero)
-      KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, value_type(1),
-                                                      Q, qs0 + qs1);
+      KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, value_type(1), Q, qs0 + qs1);
     else
       TeamVectorSetIdentityInternal::invoke(member, m, n, Q, qs0, qs1);
     member.team_barrier();
 
-    return TeamVectorApplyQ_LeftForwardInternal ::invoke(
-        member, m, n, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
+    return TeamVectorApplyQ_LeftForwardInternal ::invoke(member, m, n, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
   }
 };
 

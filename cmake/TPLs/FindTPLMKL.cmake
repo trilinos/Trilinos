@@ -1,58 +1,3 @@
-# @HEADER
-# ************************************************************************
-#
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
-#
-#
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
-# ************************************************************************
-# @HEADER
-
 
 #-----------------------------------------------------------------------------
 #  Intel's Math Kernel Library (MKL)
@@ -70,10 +15,32 @@
 # pseudorandom number generators.  That's why we require a header
 # file, to access the function declarations.
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
-  REQUIRED_HEADERS mkl.h
-  REQUIRED_LIBS_NAMES mkl_rt
-  )
+IF(Kokkos_ENABLE_SYCL)
+  # For OneAPI MKL on GPU, use the CMake target
+  # Temporarily change CMAKE_CXX_COMPILER to icpx to convince MKL to add the DPCPP target
+  # If it sees that CMAKE_CXX_COMPILER is just ".../mpicxx", it won't do this.
+  set(CMAKE_CXX_COMPILER_PREVIOUS "${CMAKE_CXX_COMPILER}")
+  set(CMAKE_CXX_COMPILER "icpx")
+  # Use the BLAS95 and LAPACK95 interfaces (int32_t for dimensions and indices)
+  set(MKL_INTERFACE lp64)
+  find_package(MKL REQUIRED COMPONENTS MKL::MKL MKL::MKL_SYCL)
+  IF (NOT MKL_FOUND)
+    MESSAGE(FATAL_ERROR "MKL (as CMake package) was not found! This is required for SYCL+MKL")
+  ENDIF()
+  set(CMAKE_CXX_COMPILER "${CMAKE_CXX_COMPILER_PREVIOUS}")
+
+  tribits_extpkg_create_imported_all_libs_target_and_config_file( MKL
+    INNER_FIND_PACKAGE_NAME MKL
+    IMPORTED_TARGETS_FOR_ALL_LIBS MKL::MKL MKL::MKL_SYCL
+    )
+ELSE ()
+  # For host MKL, the single library libmkl_rt is sufficient.
+  # This works for older versions of MKL that don't provide MKLConfig.cmake.
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
+    REQUIRED_HEADERS mkl.h
+    REQUIRED_LIBS_NAMES mkl_rt
+    )
+ENDIF()
 
 # In the past, MKL users had to link with a long list of libraries.
 # The choice of libraries enables specific functionality.  Intel
@@ -123,8 +90,4 @@ TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
 # 
 # where the MKLROOT environment variable points to my MKL install
 # directory.
-
-
-
-
 

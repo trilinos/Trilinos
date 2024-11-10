@@ -44,6 +44,14 @@
 #ifndef EPETRA_INTSERIALDENSEMATRIX_H
 #define EPETRA_INTSERIALDENSEMATRIX_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_Object.h"
 
 //! Epetra_IntSerialDenseMatrix: A class for constructing and using general dense integer matrices.

@@ -1,47 +1,17 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 
 # @FUNCTION: tribits_get_package_enable_status()
 #
-# Function that determines if a given external or internal package's enable
-# status (e.g. 'ON' or 'OFF')
+# Function that determines a given external or internal package's enable
+# status (e.g. 'ON' or 'OFF' or any valid CMake bool)
 #
 # Usage::
 #
@@ -51,8 +21,8 @@
 # On return, if non-empty, the variable ``<packageEnableOut>`` will contain
 # the actual value of ``${${PROJECT_NAME}_ENABLE_<packageName>}`` or
 # ``${TPL_ENABLE_<packageName>}`` or will return empty "".  If
-# ``${packageName}_PACKAGE_BUILD_STATUS == "INTERNAL", then only the value of
-# ``${PROJECT_NAME}_ENABLE_<packageName>`` will be considered.
+# ``${packageName}_PACKAGE_BUILD_STATUS == "INTERNAL"``, then only the value
+# of ``${PROJECT_NAME}_ENABLE_<packageName>`` will be considered.
 #
 # On return, if non-empty, the variable ``<packageEnableVarNameOut>`` will be
 # either ``${${PROJECT_NAME}_ENABLE_<packageName>}`` or
@@ -88,6 +58,62 @@ function(tribits_get_package_enable_status  packageName  packageEnableOut
   if (packageEnableVarNameOut)
     set(${packageEnableVarNameOut} ${packageEnableVarName} PARENT_SCOPE)
   endif()
+endfunction()
+
+
+# @FUNCTION: tribits_package_is_enabled_or_unset()
+#
+# Function that determines if a package's enable variable evaluates to true or
+# is unset.
+#
+# Usage::
+#
+#   tribits_package_is_enabled_or_unset((<packageEnableVarName>
+#     <packageIsEnabledOrUnsetOut>)
+#
+# On return, the value of ``<packageIsEnabledOrUnsetOut>`` will set to
+# ``TRUE`` if the variable ``<packageEnableVarName>`` evaluates to true and
+# or is empty "".  Otherwise, ``<packageIsEnabledOrUnsetOut>`` will set
+# to ``FALSE`` on return.
+#
+function(tribits_package_is_enabled_or_unset  packageEnableVarName
+    packageIsEnabledOrUnsetOut
+  )
+  if (${packageEnableVarName} OR ("${${packageEnableVarName}}" STREQUAL ""))
+    set(packageIsEnabledOrUnset TRUE)
+  else()
+    set(packageIsEnabledOrUnset FALSE)
+  endif()
+  set(${packageIsEnabledOrUnsetOut} ${packageIsEnabledOrUnset}
+    PARENT_SCOPE)
+endfunction()
+
+
+# @FUNCTION: tribits_package_is_explicitly_disabled()
+#
+# Function that determines if a package's enable variable is
+# explicitly disabled (i.e. evaluates to false but is not emapty).
+#
+# Usage::
+#
+#   tribits_package_is_explicitly_disabled((<packageEnableVarName>
+#     <packageIsExplicitlyDisabledOut>)
+#
+# On return, the value of ``<packageIsExplicitlyDisabledOut>`` will set to
+# ``TRUE`` if the variable ``<packageEnableVarName>`` evaluates to false and
+# is not empty "".  Otherwise, ``<packageIsExplicitlyDisabledOut>`` will set
+# to ``FALSE`` on return.
+#
+function(tribits_package_is_explicitly_disabled  packageEnableVarName
+    packageIsExplicitlyDisabledOut
+  )
+  if ((NOT ${packageEnableVarName}) AND (NOT "${${packageEnableVarName}}" STREQUAL ""))
+    set(packageIsExplicitlyDisabled TRUE)
+  else()
+    set(packageIsExplicitlyDisabled FALSE)
+  endif()
+  set(${packageIsExplicitlyDisabledOut} ${packageIsExplicitlyDisabled}
+    PARENT_SCOPE)
 endfunction()
 
 

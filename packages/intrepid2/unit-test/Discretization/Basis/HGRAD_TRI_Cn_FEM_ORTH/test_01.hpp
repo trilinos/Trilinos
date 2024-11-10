@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file test_01.hpp
@@ -60,6 +27,7 @@
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 
 #include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
@@ -68,34 +36,16 @@ namespace Test {
 template<typename ValueType, typename DeviceType>
 int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
 
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  //! Create an execution space instance.
+  const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-  if (verbose)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
+  Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+    verbose, "OrthogonalBases", {
+        "1) Tests orthogonality of triangular orthogonal basis"
+  });
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
-  *outStream
-  << "===============================================================================\n"
-  << "|                                                                             |\n"
-  << "|                           Unit Test OrthogonalBases                         |\n"
-  << "|                                                                             |\n"
-  << "|     1) Tests orthogonality of triangular orthogonal basis                   |\n"
-  << "|                                                                             |\n"
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov),                     |\n"
-  << "|                      Denis Ridzal (dridzal@sandia.gov),                     |\n"
-  << "|                      Robert Kirby (robert.c.kirby@ttu.edu),                 |\n"
-  << "|                      Mauro Perego (mperego@sandia.gov),                     |\n"
-  << "|                      Kyungjoo Kim (kyukim@sandia.gov)                       |\n"
-  << "|                                                                             |\n"
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-  << "|                                                                             |\n"
-  << "===============================================================================\n";
 
   typedef Kokkos::DynRankView<ValueType, DeviceType> DynRankView;
 
@@ -138,7 +88,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     // Tabulate the basis functions at the cubature points
     DynRankView ConstructWithLabel(basisAtCubPts, polydim, npts);
 
-    triBasis.getValues(basisAtCubPts, cubPoints, OPERATOR_VALUE);
+    triBasis.getValues(space, basisAtCubPts, cubPoints, OPERATOR_VALUE);
     auto h_basisAtCubPts = Kokkos::create_mirror_view(basisAtCubPts);
     Kokkos::deep_copy(h_basisAtCubPts, basisAtCubPts);
 
@@ -181,7 +131,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
       PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
       DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , dim);
-      triBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D1);
+      triBasis.getValues(space, dBasisAtLattice, lattice, OPERATOR_D1);
 
       auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
       Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);
@@ -334,7 +284,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
       PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
       DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , 3);
-      triBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D2);
+      triBasis.getValues(space, dBasisAtLattice, lattice, OPERATOR_D2);
 
       auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
       Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                   Basker: A Direct Linear Solver package
+//
+// Copyright 2011 NTESS and the Basker contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 /* =================== basker.h =============================================== */
 /* basker.c decribes these methods */
 int basker_basker
@@ -18,7 +27,7 @@ int basker_basker
 	int *lnnz,
 	int *unnz,
 	int *pinv
-) ;	
+) ;
 
 long basker_basker_l
 (
@@ -72,11 +81,10 @@ long basker_basker_l
 
 #ifdef DEBUG  /* DEBUG */
 
-#define PRINT(params) printf params 
+#define PRINT(params) printf params
 
 #else /* DEBUG */
 
 #define PRINT(params)
 
 #endif /* DEBUG */
-

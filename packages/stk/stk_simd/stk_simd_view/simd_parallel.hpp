@@ -65,9 +65,13 @@ struct DeduceFunctorExecutionSpace {
 template <typename Func>
 KOKKOS_INLINE_FUNCTION
 constexpr bool is_gpu() {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
 using execution_space = typename internal::DeduceFunctorExecutionSpace<Func>::execution_space;
+#ifdef KOKKOS_ENABLE_CUDA
   return std::is_same<execution_space, Kokkos::Cuda>::value;
+#elif defined(KOKKOS_ENABLE_HIP)
+  return std::is_same_v<execution_space, Kokkos::HIP>;
+#endif
 #else
   return false;
 #endif
@@ -79,9 +83,7 @@ int get_simd_loop_size(int N) {
   return is_gpu<Func>() ? N : simd_pad<T>(N) / SimdSizeTraits<T>::simd_width;
 }
 
-
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-
+#ifdef STK_ENABLE_GPU
 template <typename T=double, typename Func, typename PolicyTag>
 inline void
 parallel_for(std::string forName, const stk::ngp::RangePolicy<PolicyTag>& range, const Func& func) {

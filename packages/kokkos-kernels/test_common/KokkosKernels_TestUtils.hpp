@@ -27,20 +27,16 @@
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
 // Simplify ETI macros
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 #define KOKKOSKERNELS_TEST_ALL_TYPES
 #endif
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
 #define KOKKOSKERNELS_TEST_LAYOUTLEFT
 #endif
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
 #define KOKKOSKERNELS_TEST_LAYOUTRIGHT
 #endif
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
 #define KOKKOSKERNELS_TEST_LAYOUTSTRIDE
 #endif
 #if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
@@ -52,12 +48,10 @@
 #if defined(KOKKOSKERNELS_INST_INT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
 #define KOKKOSKERNELS_TEST_INT
 #endif
-#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
 #define KOKKOSKERNELS_TEST_COMPLEX_FLOAT
 #endif
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
 #define KOKKOSKERNELS_TEST_COMPLEX_DOUBLE
 #endif
 
@@ -86,13 +80,10 @@ namespace Test {
 // - 'false', then this utility class will use Kokkos::create_mirror()
 template <class ViewType, bool createMirrorView = true>
 struct view_stride_adapter {
-  static_assert(Kokkos::is_view_v<ViewType>,
-                "view_stride_adapter: ViewType must be a Kokkos::View");
-  static_assert(ViewType::rank >= 1 && ViewType::rank <= 2,
-                "view_stride_adapter: ViewType must be rank 1 or rank 2");
+  static_assert(Kokkos::is_view_v<ViewType>, "view_stride_adapter: ViewType must be a Kokkos::View");
+  static_assert(ViewType::rank >= 1 && ViewType::rank <= 2, "view_stride_adapter: ViewType must be rank 1 or rank 2");
 
-  static constexpr bool strided = std::is_same<typename ViewType::array_layout,
-                                               Kokkos::LayoutStride>::value;
+  static constexpr bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value;
   static constexpr int rank     = ViewType::rank;
 
   using DView = ViewType;
@@ -101,40 +92,31 @@ struct view_stride_adapter {
   // But if strided, the base views have one additional dimension, so that
   // d_view/h_view have stride > 1 between consecutive elements.
   using DViewBase = std::conditional_t<
-      strided,
-      Kokkos::View<typename ViewType::data_type*, Kokkos::LayoutRight,
-                   typename ViewType::device_type>,
-      DView>;
+      strided, Kokkos::View<typename ViewType::data_type*, Kokkos::LayoutRight, typename ViewType::device_type>, DView>;
   using HViewBase = typename DViewBase::HostMirror;
 
   view_stride_adapter(const std::string& label, int m, int n = 1) {
     if constexpr (rank == 1) {
       if constexpr (strided) {
         d_base = DViewBase(label, m, 2);
-        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
-                                  : Kokkos::create_mirror(d_base);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base) : Kokkos::create_mirror(d_base);
         d_view = Kokkos::subview(d_base, Kokkos::ALL(), 0);
         h_view = Kokkos::subview(h_base, Kokkos::ALL(), 0);
       } else {
         d_base = DViewBase(label, m);
-        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
-                                  : Kokkos::create_mirror(d_base);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base) : Kokkos::create_mirror(d_base);
         d_view = d_base;
         h_view = h_base;
       }
     } else {
       if constexpr (strided) {
         d_base = DViewBase(label, m, n, 2);
-        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
-                                  : Kokkos::create_mirror(d_base);
-        d_view =
-            Kokkos::subview(d_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
-        h_view =
-            Kokkos::subview(h_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base) : Kokkos::create_mirror(d_base);
+        d_view = Kokkos::subview(d_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
+        h_view = Kokkos::subview(h_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
       } else {
         d_base = DViewBase(label, m, n);
-        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
-                                  : Kokkos::create_mirror(d_base);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base) : Kokkos::create_mirror(d_base);
         d_view = d_base;
         h_view = h_base;
       }
@@ -152,16 +134,14 @@ struct view_stride_adapter {
 };
 
 template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
-                    std::string msg = "") {
+void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol, std::string msg = "") {
   typedef Kokkos::ArithTraits<Scalar1> AT1;
   typedef Kokkos::ArithTraits<Scalar3> AT3;
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
 template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
-                        std::string msg = "") {
+void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol, std::string msg = "") {
   typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
   typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
   const auto ahv1 = Kokkos::ArithTraits<hv1_type>::abs(val1);
@@ -171,10 +151,9 @@ void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
 
 // Special overload for accurate value by value SIMD vectors comparison
 template <class Scalar, int VecLen, class Tolerance>
-void EXPECT_NEAR_KK_REL(
-    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val1,
-    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val2,
-    Tolerance tol, std::string msg = "") {
+void EXPECT_NEAR_KK_REL(const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val1,
+                        const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val2, Tolerance tol,
+                        std::string msg = "") {
   for (int i = 0; i < VecLen; ++i) {
     EXPECT_NEAR_KK_REL(val1[i], val2[i], tol, msg);
   }
@@ -219,9 +198,7 @@ void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
 /// filename where the failure originated \param func The function where the
 /// failure originated \param line The line number where the failure originated
 /// \return a new string containing: "  > from file:func:line\n    > "
-static inline const std::string kk_failure_str(std::string file,
-                                               std::string func,
-                                               const int line) {
+static inline const std::string kk_failure_str(std::string file, std::string func, const int line) {
   std::string failure_msg = "  > from ";
   failure_msg += (file + ":" + func + ":" + std::to_string(line) + "\n    > ");
   return std::string(failure_msg);
@@ -235,8 +212,7 @@ using halfScalarType = Kokkos::Experimental::half_t;
 using bhalfScalarType = Kokkos::Experimental::bhalf_t;
 #endif  // KOKKOS_BHALF_T_IS_FLOAT
 
-template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
-          class ExecutionSpace>
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
 struct SharedVanillaGEMM {
   bool A_t, B_t, A_c, B_c;
   int C_rows, C_cols, A_cols;
@@ -247,52 +223,43 @@ struct SharedVanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride,
-                       typename ViewTypeA::device_type>
-      SubviewTypeA;
-  typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride,
-                       typename ViewTypeB::device_type>
-      SubviewTypeB;
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, typename ViewTypeA::device_type> SubviewTypeA;
+  typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, typename ViewTypeB::device_type> SubviewTypeB;
   typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(
-      const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team)
-      const {
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, C_rows), [&](const int& i) {
-          // Give each kokkos thread a vector of A
-          SubviewTypeA a_vec;
-          if (A_t)
-            a_vec = Kokkos::subview(A, Kokkos::ALL(), i);
-          else
-            a_vec = Kokkos::subview(A, i, Kokkos::ALL());
+  void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, C_rows), [&](const int& i) {
+      // Give each kokkos thread a vector of A
+      SubviewTypeA a_vec;
+      if (A_t)
+        a_vec = Kokkos::subview(A, Kokkos::ALL(), i);
+      else
+        a_vec = Kokkos::subview(A, i, Kokkos::ALL());
 
-          // Have all vector lanes perform the dot product
-          Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(team, C_cols), [&](const int& j) {
-                SubviewTypeB b_vec;
-                if (B_t)
-                  b_vec = Kokkos::subview(B, j, Kokkos::ALL());
-                else
-                  b_vec = Kokkos::subview(B, Kokkos::ALL(), j);
-                ScalarC ab = ScalarC(0);
-                for (int k = 0; k < A_cols; k++) {
-                  auto a = A_c ? APT::conj(a_vec(k)) : a_vec(k);
-                  auto b = B_c ? APT::conj(b_vec(k)) : b_vec(k);
-                  ab += a * b;
-                }
-                C(i, j) = beta * C(i, j) + alpha * ab;
-              });
-        });
+      // Have all vector lanes perform the dot product
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, C_cols), [&](const int& j) {
+        SubviewTypeB b_vec;
+        if (B_t)
+          b_vec = Kokkos::subview(B, j, Kokkos::ALL());
+        else
+          b_vec = Kokkos::subview(B, Kokkos::ALL(), j);
+        ScalarC ab = ScalarC(0);
+        for (int k = 0; k < A_cols; k++) {
+          auto a = A_c ? APT::conj(a_vec(k)) : a_vec(k);
+          auto b = B_c ? APT::conj(b_vec(k)) : b_vec(k);
+          ab += a * b;
+        }
+        C(i, j) = beta * C(i, j) + alpha * ab;
+      });
+    });
   }
 };
 // C(i,:,:) = alpha * (A(i,:,:) * B(i,:,:)) + beta * C(i,:,:)
-template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
-          class ExecutionSpace>
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
 struct Functor_BatchedVanillaGEMM {
   bool A_t, B_t, A_c, B_c, batch_size_last_dim = false;
   ViewTypeA A;
@@ -302,20 +269,15 @@ struct Functor_BatchedVanillaGEMM {
   using ScalarA      = typename ViewTypeA::value_type;
   using ScalarB      = typename ViewTypeB::value_type;
   using ScalarC      = typename ViewTypeC::value_type;
-  using SubviewTypeA = typename Kokkos::View<ScalarA**, Kokkos::LayoutStride,
-                                             typename ViewTypeA::device_type>;
-  using SubviewTypeB = typename Kokkos::View<ScalarB**, Kokkos::LayoutStride,
-                                             typename ViewTypeA::device_type>;
-  using SubviewTypeC = typename Kokkos::View<ScalarC**, Kokkos::LayoutStride,
-                                             typename ViewTypeA::device_type>;
+  using SubviewTypeA = typename Kokkos::View<ScalarA**, Kokkos::LayoutStride, typename ViewTypeA::device_type>;
+  using SubviewTypeB = typename Kokkos::View<ScalarB**, Kokkos::LayoutStride, typename ViewTypeA::device_type>;
+  using SubviewTypeC = typename Kokkos::View<ScalarC**, Kokkos::LayoutStride, typename ViewTypeA::device_type>;
 
   ScalarA alpha;
   ScalarC beta;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(
-      const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team)
-      const {
+  void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
     int i = team.league_rank();
     SubviewTypeA _A;
     SubviewTypeB _B;
@@ -330,41 +292,35 @@ struct Functor_BatchedVanillaGEMM {
       _B = Kokkos::subview(B, i, Kokkos::ALL(), Kokkos::ALL());
       _C = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
     }
-    struct SharedVanillaGEMM<SubviewTypeA, SubviewTypeB, SubviewTypeC,
-                             ExecutionSpace>
-        vgemm;
+    struct SharedVanillaGEMM<SubviewTypeA, SubviewTypeB, SubviewTypeC, ExecutionSpace> vgemm;
     vgemm.A_t    = A_t;
     vgemm.B_t    = B_t;
     vgemm.A_c    = A_c;
     vgemm.B_c    = B_c;
     vgemm.C_rows = batch_size_last_dim ? C.extent(0) : C.extent(1);
     vgemm.C_cols = batch_size_last_dim ? C.extent(1) : C.extent(2);
-    vgemm.A_cols = batch_size_last_dim ? (A_t ? A.extent(0) : A.extent(1))
-                                       : (A_t ? A.extent(1) : A.extent(2));
-    vgemm.A     = _A;
-    vgemm.B     = _B;
-    vgemm.C     = _C;
-    vgemm.alpha = alpha;
-    vgemm.beta  = beta;
+    vgemm.A_cols = batch_size_last_dim ? (A_t ? A.extent(0) : A.extent(1)) : (A_t ? A.extent(1) : A.extent(2));
+    vgemm.A      = _A;
+    vgemm.B      = _B;
+    vgemm.C      = _C;
+    vgemm.alpha  = alpha;
+    vgemm.beta   = beta;
     vgemm(team);
   }
 
   inline void run() {
     Kokkos::parallel_for(
         "Test::VanillaGEMM",
-        Kokkos::TeamPolicy<ExecutionSpace>(
-            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO,
-            KokkosKernels::Impl::kk_get_max_vector_size<ExecutionSpace>()),
+        Kokkos::TeamPolicy<ExecutionSpace>(batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO,
+                                           KokkosKernels::Impl::kk_get_max_vector_size<ExecutionSpace>()),
         *this);
   }
 };
 
 // Compute C := alpha * AB + beta * C
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC>
-void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
-                 const ViewTypeA& A, const ViewTypeB& B,
-                 typename ViewTypeC::non_const_value_type beta,
-                 const ViewTypeC& C) {
+void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha, const ViewTypeA& A, const ViewTypeB& B,
+                 typename ViewTypeC::non_const_value_type beta, const ViewTypeC& C) {
   using value_type = typename ViewTypeC::non_const_value_type;
   using KAT        = Kokkos::ArithTraits<value_type>;
   int m            = A.extent(0);
@@ -381,13 +337,11 @@ void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
   }
 }
 
-template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType,
-          class ViewTypeY>
-KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
-                                        const ViewTypeA& A, const ViewTypeX& x,
+template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType, class ViewTypeY>
+KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha, const ViewTypeA& A, const ViewTypeX& x,
                                         BetaType beta, const ViewTypeY& y) {
-  using ScalarY = typename ViewTypeY::non_const_value_type;
-  using KAT_A   = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
+  using ScalarY         = typename ViewTypeY::non_const_value_type;
+  using KAT_A           = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
   const bool transposed = mode == 'T' || mode == 'C';
   const bool conjugated = mode == 'C';
   const bool has_beta   = beta != Kokkos::ArithTraits<BetaType>::zero();
@@ -411,42 +365,18 @@ class epsilon {
   constexpr static double value = std::numeric_limits<T>::epsilon();
 };
 
-#if KOKKOS_VERSION < 40199
-// explicit epsilon specializations
-#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-template <>
-class epsilon<Kokkos::Experimental::half_t> {
- public:
-  constexpr static double value = 0.0009765625F;
-};
-#endif  // KOKKOS_HALF_T_IS_FLOAT
-
-// explicit epsilon specializations
-#if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
-template <>
-class epsilon<Kokkos::Experimental::bhalf_t> {
- public:
-  constexpr static double value = 0.0078125F;
-};
-#endif  // KOKKOS_HALF_T_IS_FLOAT
-#endif  // KOKKOS_VERSION < 40199
-
 using KokkosKernels::Impl::getRandomBounds;
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device, typename crsMat_t>
+template <typename scalar_t, typename lno_t, typename size_type, typename device, typename crsMat_t>
 crsMat_t symmetrize(crsMat_t A) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  auto host_rowmap =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
-  auto host_entries =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
-  auto host_values =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
-  lno_t numRows = A.numRows();
+  auto host_rowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+  auto host_entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
+  auto host_values  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
+  lno_t numRows     = A.numRows();
   // symmetrize as input_mat + input_mat^T, to still have a diagonally dominant
   // matrix
   typedef std::map<lno_t, scalar_t> Row;
@@ -469,18 +399,15 @@ crsMat_t symmetrize(crsMat_t A) {
     }
   }
   // Count entries
-  Kokkos::View<size_type*, Kokkos::LayoutLeft, Kokkos::HostSpace>
-      new_host_rowmap("Rowmap", numRows + 1);
+  Kokkos::View<size_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_rowmap("Rowmap", numRows + 1);
   size_t accum = 0;
   for (lno_t r = 0; r <= numRows; r++) {
     new_host_rowmap(r) = accum;
     if (r < numRows) accum += symRows[r].size();
   }
   // Allocate new entries/values
-  Kokkos::View<lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_entries(
-      "Entries", accum);
-  Kokkos::View<scalar_t*, Kokkos::LayoutLeft, Kokkos::HostSpace>
-      new_host_values("Values", accum);
+  Kokkos::View<lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_entries("Entries", accum);
+  Kokkos::View<scalar_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_values("Values", accum);
   for (lno_t r = 0; r < numRows; r++) {
     auto rowIt = symRows[r].begin();
     for (size_type i = new_host_rowmap(r); i < new_host_rowmap(r + 1); i++) {
@@ -495,8 +422,7 @@ crsMat_t symmetrize(crsMat_t A) {
   Kokkos::deep_copy(new_rowmap, new_host_rowmap);
   Kokkos::deep_copy(new_entries, new_host_entries);
   Kokkos::deep_copy(new_values, new_host_values);
-  return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap,
-                  new_entries);
+  return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap, new_entries);
 }
 
 // create_random_x_vector and create_random_y_vector can be used together to
@@ -507,8 +433,7 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   auto h_x = Kokkos::create_mirror_view(kok_x);
   for (size_t j = 0; j < h_x.extent(1); ++j) {
     for (size_t i = 0; i < h_x.extent(0); ++i) {
-      scalar_t r = static_cast<scalar_t>(rand()) /
-                   static_cast<scalar_t>(RAND_MAX / max_value);
+      scalar_t r       = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
       h_x.access(i, j) = r;
     }
   }
@@ -563,10 +488,8 @@ std::string value_type_name<Kokkos::complex<double>>() {
 int string_compare_no_case(const char* str1, const char* str2) {
   std::string str1_s(str1);
   std::string str2_s(str2);
-  for (size_t i = 0; i < str1_s.size(); i++)
-    str1_s[i] = std::tolower(str1_s[i]);
-  for (size_t i = 0; i < str2_s.size(); i++)
-    str2_s[i] = std::tolower(str2_s[i]);
+  for (size_t i = 0; i < str1_s.size(); i++) str1_s[i] = std::tolower(str1_s[i]);
+  for (size_t i = 0; i < str2_s.size(); i++) str2_s[i] = std::tolower(str2_s[i]);
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
 
@@ -590,8 +513,7 @@ class RandCooMat {
 
   template <class T>
   T __getter_copy_helper(T src) {
-    T dst(std::string("RandCooMat.") + typeid(T).name() + " copy",
-          src.extent(0));
+    T dst(std::string("RandCooMat.") + typeid(T).name() + " copy", src.extent(0));
     Kokkos::deep_copy(dst, src);
     ExeSpaceType().fence();
     return dst;
@@ -605,15 +527,11 @@ class RandCooMat {
   /// \param n_tuples The number of tuples.
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val,
-             ScalarType max_val) {
-    uint64_t ticks =
-        std::chrono::high_resolution_clock::now().time_since_epoch().count() %
-        UINT32_MAX;
+  RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val, ScalarType max_val) {
+    uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
 
-    info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() +
-                       ", " + typeid(LayoutType).name() + ", " +
-                       typeid(ExeSpaceType).name() + std::to_string(n) +
+    info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
+                       ", " + typeid(ExeSpaceType).name() + std::to_string(n) +
                        "...): rand seed: " + std::to_string(ticks) + "\n");
     Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
 
@@ -642,10 +560,8 @@ class RandCooMat {
 /// \tparam ScalarType
 /// \tparam LayoutType
 /// \tparam Device
-template <class ScalarType, class LayoutType, class Device,
-          typename Ordinal = int64_t,
-          typename Size    = typename Kokkos::ViewTraits<Ordinal*, Device, void,
-                                                      void>::size_type>
+template <class ScalarType, class LayoutType, class Device, typename Ordinal = int64_t,
+          typename Size = default_size_type>
 class RandCsMatrix {
  public:
   using value_type   = ScalarType;
@@ -705,19 +621,14 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__map_d, __map);
-    IdViewTypeD tight_ids(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                             "RandCsMatrix.IdViewTypeD"),
-                          __nnz);
-    Kokkos::deep_copy(
-        tight_ids,
-        Kokkos::subview(__ids, Kokkos::make_pair(0, static_cast<int>(__nnz))));
+    IdViewTypeD tight_ids(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RandCsMatrix.IdViewTypeD"), __nnz);
+    Kokkos::deep_copy(tight_ids, Kokkos::subview(__ids, Kokkos::make_pair(0, static_cast<int>(__nnz))));
     __ids_d = tight_ids;
   }
 
   template <class T>
   T __getter_copy_helper(T src) {
-    T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy",
-          src.extent(0));
+    T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy", src.extent(0));
     Kokkos::deep_copy(dst, src);
     return dst;
   }
@@ -729,27 +640,22 @@ class RandCsMatrix {
   /// \param dim2 The second dimension: columns for Crs or rows for Ccs
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCsMatrix(Ordinal dim1, Ordinal dim2, ScalarType min_val,
-               ScalarType max_val, bool fully_sparse = false) {
+  RandCsMatrix(Ordinal dim1, Ordinal dim2, ScalarType min_val, ScalarType max_val, bool fully_sparse = false) {
     __dim1         = dim1;
     __dim2         = dim2;
     __fully_sparse = fully_sparse;
     __map_d        = MapViewTypeD("RandCsMatrix.ColMapViewType", __dim1 + 1);
     __map          = Kokkos::create_mirror_view(__map_d);
     __ids_d        = IdViewTypeD("RandCsMatrix.RowIdViewType",
-                          dim2 * dim1 + 1);  // over-allocated
+                                 dim2 * dim1 + 1);  // over-allocated
     __ids          = Kokkos::create_mirror_view(__ids_d);
 
-    uint64_t ticks =
-        std::chrono::high_resolution_clock::now().time_since_epoch().count() %
-        UINT32_MAX;
+    uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
 
-    info = std::string(
-        std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " +
-        typeid(LayoutType).name() + ", " + execution_space().name() + ">(" +
-        std::to_string(dim2) + ", " + std::to_string(dim1) +
-        "...): rand seed: " + std::to_string(ticks) +
-        ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
+    info = std::string(std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
+                       ", " + execution_space().name() + ">(" + std::to_string(dim2) + ", " + std::to_string(dim1) +
+                       "...): rand seed: " + std::to_string(ticks) +
+                       ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
     __populate_random_cs_mat(ticks);
 
@@ -765,7 +671,7 @@ class RandCsMatrix {
 
   // O(c), where c is a constant.
   ScalarType operator()(Size idx) { return __vals(idx); }
-  size_t get_nnz() { return size_t(__nnz); }
+  Size get_nnz() { return __nnz; }
   // dimension2: This is either columns for a Crs matrix or rows for a Ccs
   // matrix.
   Ordinal get_dim2() { return __dim2; }
@@ -776,19 +682,17 @@ class RandCsMatrix {
   MapViewTypeD get_map() { return __getter_copy_helper(__map_d); }
 };
 
-/// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) matrix.
+/// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) or Bsr
+/// matrix.
 template <typename Rowptrs, typename Entries, typename Values>
-void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values) {
-  using size_type    = typename Rowptrs::non_const_value_type;
-  using ordinal_type = typename Entries::value_type;
-  auto rowptrsHost =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptrs);
-  auto entriesHost =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
-  auto valuesHost =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), values);
-  ordinal_type numRows =
-      rowptrsHost.extent(0) ? (rowptrsHost.extent(0) - 1) : 0;
+void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const size_t block_size = 1) {
+  using size_type          = typename Rowptrs::non_const_value_type;
+  using ordinal_type       = typename Entries::value_type;
+  auto rowptrsHost         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptrs);
+  auto entriesHost         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
+  auto valuesHost          = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), values);
+  ordinal_type numRows     = rowptrsHost.extent(0) ? (rowptrsHost.extent(0) - 1) : 0;
+  const size_t block_items = block_size * block_size;
   for (ordinal_type i = 0; i < numRows; i++) {
     size_type rowBegin = rowptrsHost(i);
     size_type rowEnd   = rowptrsHost(i + 1);
@@ -796,7 +700,8 @@ void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values) {
       ordinal_type swapRange = rowEnd - j;
       size_type swapOffset   = j + (rand() % swapRange);
       std::swap(entriesHost(j), entriesHost(swapOffset));
-      std::swap(valuesHost(j), valuesHost(swapOffset));
+      std::swap_ranges(valuesHost.data() + j * block_items, valuesHost.data() + (j + 1) * block_items,
+                       valuesHost.data() + swapOffset * block_items);
     }
   }
   Kokkos::deep_copy(entries, entriesHost);

@@ -4,7 +4,7 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON /XYOPT/  DOGRID, LINTYP, ISYTYP, OVERLY, OVERTM
+      COMMON /XYOPT/  LINTYP, ISYTYP, DOGRID, OVERLY, OVERTM
       LOGICAL DOGRID, OVERLY, OVERTM
       COMMON /XYOPC/  LABSID, IAXSCA
       CHARACTER*8 LABSID, IAXSCA

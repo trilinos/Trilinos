@@ -74,7 +74,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 printf "Now building trilinos/stk using make...\n";
-exe "make VERBOSE=1 -j8 >& ${stk_make_log}";
+exe "make VERBOSE=1 -j16 >& ${stk_make_log}";
 if [ $? -ne 0 ] ; then
   echo "!! error in make, check output in ${stk_make_log} !!";
   exit 1;

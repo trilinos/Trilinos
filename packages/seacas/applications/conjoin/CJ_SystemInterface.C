@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -22,8 +22,6 @@ namespace {
 } // namespace
 
 Excn::SystemInterface::SystemInterface() { enroll_options(); }
-
-Excn::SystemInterface::~SystemInterface() = default;
 
 void Excn::SystemInterface::enroll_options()
 {
@@ -155,7 +153,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
         "\nThe following options were specified via the CONJOIN_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, GetLongOption::basename(*argv));
   }
 
   if (options_.retrieve("help") != nullptr) {

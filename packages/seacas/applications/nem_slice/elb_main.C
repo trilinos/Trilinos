@@ -37,7 +37,7 @@ namespace {
   template <typename INT>
   void print_input(Machine_Description * /*machine*/, LB_Description<INT> * /*lb*/,
                    Problem_Description * /*prob*/, Solver_Description * /*solver*/,
-                   Weight_Description<INT> * /*weight*/);
+                   Weight_Description * /*weight*/);
 } // namespace
 
 /*****************************************************************************/
@@ -170,14 +170,14 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   std::string ascii_inp_file;
   std::string nemI_out_file;
 
-  Machine_Description     machine;
-  LB_Description<INT>     lb;
-  Problem_Description     problem;
-  Solver_Description      solver;
-  Weight_Description<INT> weight;
-  Mesh_Description<INT>   mesh;
-  Sphere_Info             sphere;
-  Graph_Description<INT>  graph;
+  Machine_Description    machine;
+  LB_Description<INT>    lb;
+  Problem_Description    problem;
+  Solver_Description     solver;
+  Weight_Description     weight;
+  Mesh_Description<INT>  mesh;
+  Sphere_Info            sphere;
+  Graph_Description<INT> graph;
 
 /*-----------------------------Execution Begins------------------------------*/
 #ifdef USE_ZOLTAN
@@ -266,7 +266,7 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   /* If desired, read in the weighting factors from the ExodusII file */
   if (weight.type & READ_EXO) {
     time1 = get_time();
-    if (!read_exo_weights(&problem, &weight)) {
+    if (!read_exo_weights(&problem, &weight, (INT)0)) {
       fmt::print(stderr, "Error during read of ExodusII weights\n");
       error_report();
       exit(1);
@@ -515,7 +515,7 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
 namespace {
   template <typename INT>
   void print_input(Machine_Description *machine, LB_Description<INT> *lb, Problem_Description *prob,
-                   Solver_Description *solver, Weight_Description<INT> *weight)
+                   Solver_Description *solver, Weight_Description *weight)
   {
     fmt::print("{} version {}\n", UTIL_NAME, ELB_VERSION);
 

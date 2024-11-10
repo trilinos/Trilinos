@@ -43,6 +43,12 @@
 #ifndef IFPACK_CONDEST_H
 #define IFPACK_CONDEST_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_CondestType.h"
 class Ifpack_Preconditioner;

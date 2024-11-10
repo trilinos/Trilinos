@@ -115,7 +115,22 @@ EXAMPLE_PATH           = ../epetra/example \
                          ../epetra/example/GCRODR/GCRODREpetraExFile.cpp \
                          ../epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp \
                          ../epetra/example/RCG/RCGEpetraExFile.cpp \
-                         ../epetra/example/TFQMR/TFQMREpetraExFile.cpp
+                         ../epetra/example/PCPG/PCPGEpetraExFile.cpp \
+                         ../epetra/example/TFQMR/TFQMREpetraExFile.cpp \
+                         ../epetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp \
+                         ../epetra/example/SolverFactory/SolverFactoryEpetraGaleriEx.cpp \
+                         ../tpetra/example \
+                         ../tpetra/example/BlockCG/BlockCGTpetraExFile.cpp \
+                         ../tpetra/example/BlockCG/PseudoBlockCGTpetraExFile.cpp \
+                         ../tpetra/example/BlockGmres/PseudoBlockGmresTpetraExFile.cpp \
+                         ../tpetra/example/BlockGmres/BlockGmresTpetraExFile.cpp \
+                         ../tpetra/example/BlockGmres/BlockGmresTpetraGaleriEx.cpp \
+                         ../tpetra/example/RCG/RCGTpetraExFile.cpp \
+                         ../tpetra/example/PCPG/PCPGTpetraExFile.cpp \
+                         ../tpetra/example/GCRODR/GCRODRTpetraExFile.cpp \
+                         ../tpetra/example/TFQMR/TFQMRTpetraExFile.cpp \ 
+                         ../tpetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp \
+                         ../tpetra/example/SolverFactory/SolverFactoryTpetraGaleriEx.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             =
 INPUT_FILTER           = 

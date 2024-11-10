@@ -16,6 +16,12 @@
 /* ******************************************************************** */
 #ifndef EPETRA_OPERATOR_WITH_MATMAT_H
 #define EPETRA_OPERATOR_WITH_MATMAT_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 #if defined(HAVE_ML_EPETRA)
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"

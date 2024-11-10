@@ -55,3 +55,9 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose);
 
 int BadResidual(bool verbose, double * Residual, int NumVectors);
 int BadResidual1(bool verbose, double * Residual, int NumVectors);
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

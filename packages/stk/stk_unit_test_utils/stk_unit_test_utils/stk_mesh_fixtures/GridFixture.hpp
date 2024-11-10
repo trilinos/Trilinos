@@ -77,7 +77,8 @@ private:
 
 namespace simple_fields {
 
-class GridFixture
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+GridFixture
 {
 public:
   GridFixture(stk::ParallelMachine pm);

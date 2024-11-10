@@ -35,8 +35,7 @@ C   --   Uses IS3DIM of /D3NUMS/
 
       PARAMETER (DXO = .0015, DYO = .0015)
 
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       INTEGER LINSET(3)
       REAL VARNP(*)

@@ -13,7 +13,7 @@
 #include <percept/util/Loops.hpp>
 #include <percept/FieldTypes.hpp>
 
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 #include "STKSearcher.hpp"
 
   namespace percept

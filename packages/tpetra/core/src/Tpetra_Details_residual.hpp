@@ -1,41 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DETAILS_RESIDUAL_HPP
@@ -338,14 +307,18 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        (X_colmap_lcl.data () == B_lcl.data () && X_colmap_lcl.data () != nullptr),
        std::runtime_error, "X, Y and R may not alias one another.");
   }
-      
-  SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
-#ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
-  // This is currently a "reference implementation" waiting until Kokkos Kernels provides
-  // a residual kernel.
-  A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
-  R.update(one,B,negone);
-#else
+
+  const bool fusedResidual = ::Tpetra::Details::Behavior::fusedResidual ();
+  if (!fusedResidual) {
+    SC one = Teuchos::ScalarTraits<SC>::one();
+    SC negone = -one;
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
+    // This is currently a "reference implementation" waiting until Kokkos Kernels provides
+    // a residual kernel.
+    A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
+    R.update(one,B,negone);
+    return;
+  }
 
   if (A_lcl.numRows() == 0) {
     return;
@@ -353,21 +326,6 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 
   int64_t numLocalRows = A_lcl.numRows ();
   int64_t myNnz = A_lcl.nnz();
-
-  //Check for imbalanced rows. If the logic for SPMV to use merge path is triggered,
-  //use it and follow the reference residual code
-  LO maxRowImbalance = 0;
-  if(numLocalRows != 0)
-    maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
-  if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-  {
-    //note: lclOp will be wrapped in shared_ptr
-    auto lclOp = A.getLocalMultiplyOperator();
-    //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
-    lclOp->applyImbalancedRows (X_colmap_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
-    R.update(one,B,negone);
-    return;
-  }
 
   int team_size = -1;
   int vector_length = -1;
@@ -425,7 +383,6 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 
     }
   }
-#endif
 }
 
 
@@ -504,21 +461,6 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
 
   int64_t numLocalRows = A_lcl.numRows ();
   int64_t myNnz = A_lcl.nnz();
-
-  // //Check for imbalanced rows. If the logic for SPMV to use merge path is triggered,
-  // //use it and follow the reference residual code
-  // LO maxRowImbalance = 0;
-  // if(numLocalRows != 0)
-  //   maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
-  // if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-  // {
-  //   //note: lclOp will be wrapped in shared_ptr
-  //   auto lclOp = A.getLocalMultiplyOperator();
-  //   //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
-  //   lclOp->applyImbalancedRows (X_colmap_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
-  //   R.update(one,B,negone);
-  //   return;
-  // }
 
   int team_size = -1;
   int vector_length = -1;

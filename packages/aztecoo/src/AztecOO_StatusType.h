@@ -44,6 +44,13 @@
 
 #ifndef AZTECOO_STATUSTYPE_H
 #define AZTECOO_STATUSTYPE_H
+
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 /*! \file AztecOO_StatusType.h 
     \brief AztecOO StatusType: Used to return convergence status information for AztecOO_StatusTest objects.
  */

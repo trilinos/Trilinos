@@ -70,14 +70,11 @@ inline void set_random_value(std::complex<scalar_t> &v) {
 }
 
 template <typename scalar_t>
-void make_block_entries(
-    const KokkosSparse::CrsMatrix<scalar_t, Ordinal, Kokkos::HostSpace, void,
-                                  int> &mat_b1,
-    int blockSize, std::vector<Ordinal> &mat_rowmap,
-    std::vector<Ordinal> &mat_colidx, std::vector<scalar_t> &mat_val) {
+void make_block_entries(const KokkosSparse::CrsMatrix<scalar_t, Ordinal, Kokkos::HostSpace, void, int> &mat_b1,
+                        int blockSize, std::vector<Ordinal> &mat_rowmap, std::vector<Ordinal> &mat_colidx,
+                        std::vector<scalar_t> &mat_val) {
   Ordinal nRow = blockSize * mat_b1.numRows();
-  size_t nnz = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) *
-               mat_b1.nnz();
+  size_t nnz   = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) * mat_b1.nnz();
 
   mat_val.resize(nnz);
   for (size_t ii = 0; ii < nnz; ++ii) set_random_value(mat_val[ii]);
@@ -98,8 +95,7 @@ void make_block_entries(
       for (Ordinal ijk = jbeg; ijk < jend; ++ijk) {
         const auto col0 = mat_b1.graph.entries(ijk);
         for (Ordinal jb = 0; jb < blockSize; ++jb) {
-          mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
-              col0 * blockSize + jb;
+          mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] = col0 * blockSize + jb;
         }
       }
     }
@@ -107,23 +103,13 @@ void make_block_entries(
 }
 
 template <typename scalar_t>
-int test_bsr_matrix_single_vec(
-    const char fOp[],
-    KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, int>
-        mat_b1,
-    int test, int loop, const scalar_t alpha, const scalar_t beta,
-    const int bMax) {
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, Ordinal,
-                                       Kokkos::DefaultExecutionSpace, void, int>
-          crsMat_type;
+int test_bsr_matrix_single_vec(const char fOp[],
+                               KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, int> mat_b1, int test,
+                               int loop, const scalar_t alpha, const scalar_t beta, const int bMax) {
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int> crsMat_type;
 
-  typedef Kokkos::View<scalar_t *, Kokkos::LayoutLeft,
-                       Kokkos::DefaultExecutionSpace>
-      x_vector_type;
-  typedef Kokkos::View<scalar_t *, Kokkos::LayoutLeft,
-                       Kokkos::DefaultExecutionSpace>
-      y_vector_type;
+  typedef Kokkos::View<scalar_t *, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x_vector_type;
+  typedef Kokkos::View<scalar_t *, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y_vector_type;
 
   srand(17312837);
 
@@ -137,12 +123,10 @@ int test_bsr_matrix_single_vec(
     std::vector<scalar_t> mat_val;
 
     // Create the entries
-    make_block_entries<scalar_t>(mat_b1, blockSize, mat_rowmap, mat_colidx,
-                                 mat_val);
+    make_block_entries<scalar_t>(mat_b1, blockSize, mat_rowmap, mat_colidx, mat_val);
 
     // Create the CrsMatrix for the reference computation
-    crsMat_type Acrs("new_crs_matr", nRow, nCol, mat_val.size(), &mat_val[0],
-                     &mat_rowmap[0], &mat_colidx[0]);
+    crsMat_type Acrs("new_crs_matr", nRow, nCol, mat_val.size(), &mat_val[0], &mat_rowmap[0], &mat_colidx[0]);
 
     x_vector_type xref("new_right_hand_side", nRow);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -159,18 +143,20 @@ int test_bsr_matrix_single_vec(
     y_vector_type ycrs("crs_product_result", nRow);
     auto h_ycrs = Kokkos::create_mirror_view(ycrs);
 
-    KokkosKernels::Experimental::Controls controls;
+    KokkosSparse::SPMVAlgorithm algo = KokkosSparse::SPMV_DEFAULT;
+
     switch (static_cast<details::Implementation>(test)) {
       case Implementation::KokkosKernels: {
-        controls.setParameter("algorithm", "native");
+        algo = KokkosSparse::SPMV_NATIVE;
       } break;
       default: break;
     }
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, crsMat_type, x_vector_type, y_vector_type> handle_crs(algo);
 
     // Do the multiplication for warming up
     for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir) = h_y0(ir);
     Kokkos::deep_copy(ycrs, h_ycrs);
-    KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
+    KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
 
     // Time a series of multiplications with the CrsMatrix
     double time_crs = 0.0;
@@ -178,9 +164,9 @@ int test_bsr_matrix_single_vec(
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir) = h_y0(ir);
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
-      time_crs += timer.seconds();
+      KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
       Kokkos::fence();
+      time_crs += timer.seconds();
     }
 
     // Create the output vector
@@ -188,14 +174,16 @@ int test_bsr_matrix_single_vec(
     auto h_ybsr = Kokkos::create_mirror_view(ybsr);
 
     // Create the BsrMatrix
-    KokkosSparse::Experimental::BsrMatrix<
-        scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int>
-        Absr(Acrs, blockSize);
+    KokkosSparse::Experimental::BsrMatrix<scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int> Absr(Acrs,
+                                                                                                            blockSize);
+
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, decltype(Absr), x_vector_type, y_vector_type> handle_bsr(
+        algo);
 
     // Do the multiplication for warming up
     for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
     Kokkos::deep_copy(ybsr, h_ybsr);
-    KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+    KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
 
     // Time a series of multiplications with the BsrMatrix
     double time_bsr = 0.0;
@@ -203,9 +191,9 @@ int test_bsr_matrix_single_vec(
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
       Kokkos::deep_copy(ybsr, h_ybsr);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
-      time_bsr += timer.seconds();
+      KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
       Kokkos::fence();
+      time_bsr += timer.seconds();
     }
 
     // Check that the numerical result is matching
@@ -214,18 +202,16 @@ int test_bsr_matrix_single_vec(
     double error = 0.0, maxNorm = 0.0;
     for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
       maxNorm = std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir)));
-      error   = std::max(
-          error, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir) - h_ybsr(ir)));
+      error   = std::max(error, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir) - h_ybsr(ir)));
     }
 
-    double tol =
-        (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
+    double tol = (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
     if (error > tol * maxNorm) {
       num_errors += 1;
       std::cout << static_cast<int>(test) << " ";
       std::cout << fOp << ", " << blockSize << " : "
-                << " error " << error << " maxNorm " << maxNorm << " tol "
-                << tol << " tol * maxNorm " << tol * maxNorm << "\n";
+                << " error " << error << " maxNorm " << maxNorm << " tol " << tol << " tol * maxNorm " << tol * maxNorm
+                << "\n";
     }
 
     //-- Print the number of Gflops for both products
@@ -233,18 +219,12 @@ int test_bsr_matrix_single_vec(
       printf("Op, blockSize: AvgGFlop(CrsMatrix) ");
       switch (static_cast<details::Implementation>(test)) {
         default:
-        case Implementation::KokkosKernels:
-          printf(" AvgGFlop(BsrMatrix - KokkosKernels) \n");
-          break;
+        case Implementation::KokkosKernels: printf(" AvgGFlop(BsrMatrix - KokkosKernels) \n"); break;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        case Implementation::Cuda:
-          printf(" AvgGFlop(BsrMatrix - CUSPARSE) \n");
-          break;
+        case Implementation::Cuda: printf(" AvgGFlop(BsrMatrix - CUSPARSE) \n"); break;
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        case Implementation::MKL:
-          printf(" AvgGFlop(BsrMatrix - MKL) \n");
-          break;
+        case Implementation::MKL: printf(" AvgGFlop(BsrMatrix - MKL) \n"); break;
 #endif
       }
     }
@@ -265,20 +245,11 @@ int test_bsr_matrix_single_vec(
 }
 
 template <typename scalar_t>
-int test_bsr_matrix_vec(
-    const char fOp[],
-    KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, int>
-        mat_b1,
-    int nvec, int test, int loop, const scalar_t alpha, const scalar_t beta,
-    const int bMax) {
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, Ordinal,
-                                       Kokkos::DefaultExecutionSpace, void, int>
-          crsMat_type;
+int test_bsr_matrix_vec(const char fOp[], KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, int> mat_b1,
+                        int nvec, int test, int loop, const scalar_t alpha, const scalar_t beta, const int bMax) {
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int> crsMat_type;
 
-  typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-                       Kokkos::DefaultExecutionSpace>
-      block_vector_t;
+  typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> block_vector_t;
 
   srand(17312837);
 
@@ -291,12 +262,10 @@ int test_bsr_matrix_vec(
     std::vector<Ordinal> mat_colidx;
     std::vector<scalar_t> mat_val;
 
-    make_block_entries<scalar_t>(mat_b1, blockSize, mat_rowmap, mat_colidx,
-                                 mat_val);
+    make_block_entries<scalar_t>(mat_b1, blockSize, mat_rowmap, mat_colidx, mat_val);
 
     // Create the CrsMatrix for the reference computation
-    crsMat_type Acrs("new_crs_matr", nRow, nCol, mat_val.size(), &mat_val[0],
-                     &mat_rowmap[0], &mat_colidx[0]);
+    crsMat_type Acrs("new_crs_matr", nRow, nCol, mat_val.size(), &mat_val[0], &mat_rowmap[0], &mat_colidx[0]);
 
     block_vector_t xref("new_right_hand_side", nRow, nvec);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -316,19 +285,22 @@ int test_bsr_matrix_vec(
     block_vector_t ycrs("crs_product_result", nRow, nvec);
     auto h_ycrs = Kokkos::create_mirror_view(ycrs);
 
-    KokkosKernels::Experimental::Controls controls;
+    KokkosSparse::SPMVAlgorithm algo = KokkosSparse::SPMV_DEFAULT;
+
     switch (static_cast<details::Implementation>(test)) {
       case Implementation::KokkosKernels: {
-        controls.setParameter("algorithm", "native");
+        algo = KokkosSparse::SPMV_NATIVE;
       } break;
       default: break;
     }
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, crsMat_type, block_vector_t, block_vector_t> handle_crs(
+        algo);
 
     // Do the multiplication for warming up
     for (Ordinal jc = 0; jc < nvec; ++jc)
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
     Kokkos::deep_copy(ycrs, h_ycrs);
-    KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
+    KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
 
     // Time a series of multiplications with the CrsMatrix format
     double time_crs = 0.0;
@@ -337,15 +309,17 @@ int test_bsr_matrix_vec(
         for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
-      time_crs += timer.seconds();
+      KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
       Kokkos::fence();
+      time_crs += timer.seconds();
     }
 
     // Create the BsrMatrix variable
-    KokkosSparse::Experimental::BsrMatrix<
-        scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int>
-        Absr(Acrs, blockSize);
+    KokkosSparse::Experimental::BsrMatrix<scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int> Absr(Acrs,
+                                                                                                            blockSize);
+
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, decltype(Absr), block_vector_t, block_vector_t> handle_bsr(
+        algo);
 
     block_vector_t ybsr("bsr_product_result", nRow, nvec);
     auto h_ybsr = Kokkos::create_mirror_view(ybsr);
@@ -354,7 +328,7 @@ int test_bsr_matrix_vec(
     for (Ordinal jc = 0; jc < nvec; ++jc)
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
     Kokkos::deep_copy(ybsr, h_ybsr);
-    KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+    KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
 
     // Time a series of multiplications with the BsrMatrix
     double time_bsr = 0.0;
@@ -363,29 +337,25 @@ int test_bsr_matrix_vec(
         for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
       Kokkos::deep_copy(ybsr, h_ybsr);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
-      time_bsr += timer.seconds();
+      KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
       Kokkos::fence();
+      time_bsr += timer.seconds();
     }
 
     // Check that the result is matching
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybsr, ybsr);
-    double tol =
-        (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
+    double tol = (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
     for (int jc = 0; jc < nvec; ++jc) {
       double error = 0.0, maxNorm = 0.0;
       for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
-        maxNorm =
-            std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir, jc)));
-        error = std::max(error, Kokkos::ArithTraits<Scalar>::abs(
-                                    h_ycrs(ir, jc) - h_ybsr(ir, jc)));
+        maxNorm = std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir, jc)));
+        error   = std::max(error, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir, jc) - h_ybsr(ir, jc)));
       }
       if (error > tol * maxNorm) {
         num_errors += 1;
-        std::cout << fOp << ", " << blockSize << " : rhs " << jc << " error "
-                  << error << " maxNorm " << maxNorm << " tol " << tol
-                  << " tol * maxNorm " << tol * maxNorm << "\n";
+        std::cout << fOp << ", " << blockSize << " : rhs " << jc << " error " << error << " maxNorm " << maxNorm
+                  << " tol " << tol << " tol * maxNorm " << tol * maxNorm << "\n";
       }
     }
 
@@ -394,18 +364,12 @@ int test_bsr_matrix_vec(
       printf("Op, blockSize: AvgGFlop(CrsMatrix) ");
       switch (static_cast<details::Implementation>(test)) {
         default:
-        case Implementation::KokkosKernels:
-          printf(" AvgGFlop(BsrMatrix - KokkosKernels) \n");
-          break;
+        case Implementation::KokkosKernels: printf(" AvgGFlop(BsrMatrix - KokkosKernels) \n"); break;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        case Implementation::Cuda:
-          printf(" AvgGFlop(BsrMatrix - CUSPARSE) \n");
-          break;
+        case Implementation::Cuda: printf(" AvgGFlop(BsrMatrix - CUSPARSE) \n"); break;
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        case Implementation::MKL:
-          printf(" AvgGFlop(BsrMatrix - MKL) \n");
-          break;
+        case Implementation::MKL: printf(" AvgGFlop(BsrMatrix - MKL) \n"); break;
 #endif
       }
     }
@@ -481,12 +445,10 @@ int main(int argc, char **argv) {
     if ((strcmp(argv[i], "--tpl") == 0)) {
       i++;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if ((strcmp(argv[i], "cuda") == 0))
-        test = static_cast<int>(details::Implementation::Cuda);
+      if ((strcmp(argv[i], "cuda") == 0)) test = static_cast<int>(details::Implementation::Cuda);
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-      if ((strcmp(argv[i], "mkl") == 0))
-        test = static_cast<int>(details::Implementation::MKL);
+      if ((strcmp(argv[i], "mkl") == 0)) test = static_cast<int>(details::Implementation::MKL);
 #endif
       continue;
     }
@@ -530,8 +492,7 @@ int main(int argc, char **argv) {
     // The mat_structure view is used to generate a matrix using
     // finite difference (FD) or finite element (FE) discretization
     // on a cartesian grid.
-    Kokkos::View<details::Ordinal * [3], Kokkos::HostSpace> mat_structure(
-        "Matrix Structure", 3);
+    Kokkos::View<details::Ordinal *[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 3);
     mat_structure(0, 0) = nx;      // Request 8 grid point in 'x' direction
     mat_structure(0, 1) = 0;       // Add BC to the left
     mat_structure(0, 2) = 0;       // Add BC to the right
@@ -542,22 +503,18 @@ int main(int argc, char **argv) {
     mat_structure(2, 1) = 0;       // Add BC to the bottom
     mat_structure(2, 2) = 0;       // Add BC to the top
 
-    typedef typename KokkosSparse::CrsMatrix<details::Scalar, details::Ordinal,
-                                             Kokkos::HostSpace, void, int>
+    typedef typename KokkosSparse::CrsMatrix<details::Scalar, details::Ordinal, Kokkos::HostSpace, void, int>
         h_crsMat_type;
 
-    h_crsMat_type mat_b1 =
-        Test::generate_structured_matrix3D<h_crsMat_type>("FD", mat_structure);
+    h_crsMat_type mat_b1 = Test::generate_structured_matrix3D<h_crsMat_type>("FD", mat_structure);
 
     int total_errors = 0;
 
     if (nvec == 1)
-      total_errors = details::test_bsr_matrix_single_vec(
-          fOp, mat_b1, test, loop, details::Scalar(3.1), details::Scalar(-2.4),
-          bMax);
+      total_errors = details::test_bsr_matrix_single_vec(fOp, mat_b1, test, loop, details::Scalar(3.1),
+                                                         details::Scalar(-2.4), bMax);
     else
-      total_errors = details::test_bsr_matrix_vec(fOp, mat_b1, nvec, test, loop,
-                                                  details::Scalar(3.1),
+      total_errors = details::test_bsr_matrix_vec(fOp, mat_b1, nvec, test, loop, details::Scalar(3.1),
                                                   details::Scalar(-2.4), bMax);
 
     if (total_errors != 0) {

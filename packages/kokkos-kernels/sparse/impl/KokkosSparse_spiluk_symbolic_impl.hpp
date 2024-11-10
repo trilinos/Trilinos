@@ -26,18 +26,16 @@
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Error.hpp>
 
-//#define SYMBOLIC_OUTPUT_INFO
+// #define SYMBOLIC_OUTPUT_INFO
 
 namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class IlukHandle, class RowMapType, class EntriesType,
-          class LevelType1, class LevelType2, class LevelType3, class size_type>
-void level_sched(IlukHandle& thandle, const RowMapType row_map,
-                 const EntriesType entries, LevelType1& level_list,
-                 LevelType2& level_ptr, LevelType3& level_idx,
-                 size_type& nlevels) {
+template <class IlukHandle, class RowMapType, class EntriesType, class LevelType1, class LevelType2, class LevelType3,
+          class size_type>
+void level_sched(IlukHandle& thandle, const RowMapType row_map, const EntriesType entries, LevelType1& level_list,
+                 LevelType2& level_ptr, LevelType3& level_idx, size_type& nlevels) {
   // Scheduling currently compute on host
 
   using nnz_lno_t = typename IlukHandle::nnz_lno_t;
@@ -92,12 +90,10 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
 }
 
 // SEQLVLSCHD_TP1 algorithm (chunks)
-template <class IlukHandle, class RowMapType, class EntriesType,
-          class LevelType1, class LevelType2, class LevelType3, class size_type>
-void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
-                    const EntriesType entries, LevelType1& level_list,
-                    LevelType2& level_ptr, LevelType3& level_idx,
-                    size_type& nlevels, int nstreams = 1) {
+template <class IlukHandle, class RowMapType, class EntriesType, class LevelType1, class LevelType2, class LevelType3,
+          class size_type>
+void level_sched_tp(IlukHandle& thandle, const RowMapType row_map, const EntriesType entries, LevelType1& level_list,
+                    LevelType2& level_ptr, LevelType3& level_idx, size_type& nlevels, int nstreams = 1) {
   // Scheduling currently compute on host
 
   using nnz_lno_t           = typename IlukHandle::nnz_lno_t;
@@ -150,10 +146,8 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
   size_t avail_byte  = 0;
   if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
     size_t free_byte, total_byte;
-    KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte,
-                                                                total_byte);
-    avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) /
-                                     static_cast<double>(nstreams));
+    KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte, total_byte);
+    avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) / static_cast<double>(nstreams));
   }
 #endif
 
@@ -165,13 +159,10 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
       maxrows = lnrows;
     }
 #ifdef KOKKOS_ENABLE_CUDA
-    size_t required_size =
-        static_cast<size_t>(lnrows) * nrows * sizeof(nnz_lno_t);
+    size_t required_size = static_cast<size_t>(lnrows) * nrows * sizeof(nnz_lno_t);
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
       lnchunks(i)       = required_size / avail_byte + 1;
-      lnrowsperchunk(i) = (lnrows % lnchunks(i) == 0)
-                              ? (lnrows / lnchunks(i))
-                              : (lnrows / lnchunks(i) + 1);
+      lnrowsperchunk(i) = (lnrows % lnchunks(i) == 0) ? (lnrows / lnchunks(i)) : (lnrows / lnchunks(i) + 1);
     } else
 #endif
     {
@@ -191,8 +182,7 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
 
 // Linear Search for the smallest row index
 template <class size_type, class nnz_lno_t, class ViewType>
-size_type search_col_index(nnz_lno_t j, size_type lenl, ViewType h_iL,
-                           ViewType h_llev, ViewType h_iw) {
+size_type search_col_index(nnz_lno_t j, size_type lenl, ViewType h_iL, ViewType h_llev, ViewType h_iw) {
   nnz_lno_t irow = h_iL(j);
   nnz_lno_t ipos = j;
 
@@ -219,19 +209,12 @@ size_type search_col_index(nnz_lno_t j, size_type lenl, ViewType h_iL,
   return ((size_type)irow);
 }
 
-template <class IlukHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class LEntriesType, class URowMapType,
-          class UEntriesType>
-void iluk_symbolic(IlukHandle& thandle,
-                   const typename IlukHandle::const_nnz_lno_t& fill_lev,
-                   const ARowMapType& A_row_map_d,
-                   const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
-                   LEntriesType& L_entries_d, URowMapType& U_row_map_d,
-                   UEntriesType& U_entries_d, int nstreams = 1) {
-  if (thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP ||
-      thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1)
+template <class IlukHandle, class ARowMapType, class AEntriesType, class LRowMapType, class LEntriesType,
+          class URowMapType, class UEntriesType>
+void iluk_symbolic(IlukHandle& thandle, const typename IlukHandle::const_nnz_lno_t& fill_lev,
+                   const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
+                   LEntriesType& L_entries_d, URowMapType& U_row_map_d, UEntriesType& U_entries_d, int nstreams = 1) {
+  if (thandle.get_algorithm() == KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1)
   /*   || thandle.get_algorithm() ==
      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHED_TP2 )*/
   {
@@ -248,29 +231,21 @@ void iluk_symbolic(IlukHandle& thandle,
 
     size_type nrows = thandle.get_nrows();
 
-    auto A_row_map =
-        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_row_map_d);
-    auto A_entries =
-        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_entries_d);
-    auto L_row_map =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), L_row_map_d);
-    auto L_entries =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), L_entries_d);
-    auto U_row_map =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), U_row_map_d);
-    auto U_entries =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), U_entries_d);
+    auto A_row_map = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_row_map_d);
+    auto A_entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_entries_d);
+    auto L_row_map = Kokkos::create_mirror_view(Kokkos::HostSpace(), L_row_map_d);
+    auto L_entries = Kokkos::create_mirror_view(Kokkos::HostSpace(), L_entries_d);
+    auto U_row_map = Kokkos::create_mirror_view(Kokkos::HostSpace(), U_row_map_d);
+    auto U_entries = Kokkos::create_mirror_view(Kokkos::HostSpace(), U_entries_d);
 
     HandleDeviceRowMapType dlevel_list = thandle.get_level_list();
-    auto level_list =
-        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dlevel_list);
+    auto level_list                    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dlevel_list);
 
     HandleDeviceEntriesType dlevel_ptr = thandle.get_level_ptr();
     auto level_ptr                     = thandle.get_host_level_ptr();
 
     HandleDeviceEntriesType dlevel_idx = thandle.get_level_idx();
-    auto level_idx =
-        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dlevel_idx);
+    auto level_idx                     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dlevel_idx);
 
     size_type nlev = 0;
 
@@ -288,8 +263,7 @@ void iluk_symbolic(IlukHandle& thandle,
     // Can only resize managed views Kokkos::resize(L_entries_d,
     // L_entries_d.extent(0)-3); thandle.set_nnzL(L_entries_d.extent(0)+5);
 
-    using HostTmpViewType =
-        Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace>;
+    using HostTmpViewType = Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace>;
 
     HostTmpViewType h_lev("h_lev", thandle.get_nnzU());
     HostTmpViewType h_iw("h_iw", nrows);
@@ -379,7 +353,7 @@ void iluk_symbolic(IlukHandle& thandle,
         std::ostringstream os;
         os << "KokkosSparse::Experimental::spiluk_symbolic: U_entries's extent "
               "must be larger than "
-           << U_entries_d.extent(0);
+           << U_entries_d.extent(0) << ", must be at least " << cntU + lenu + 1;
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
       // U diag entry
@@ -394,29 +368,23 @@ void iluk_symbolic(IlukHandle& thandle,
       U_row_map(i + 1) = cntU;
 
       // Copy L part
-#ifdef KEEP_DIAG
       if (cntL + lenl + 1 > static_cast<size_type>(L_entries_d.extent(0))) {
-#else
-      if (cntL + lenl > static_cast<size_type>(L_entries_d.extent(0))) {
-#endif
         // size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
         // Kokkos::resize(L_entries, newsize);
         // Kokkos::resize(L_entries_d, newsize);
         std::ostringstream os;
         os << "KokkosSparse::Experimental::spiluk_symbolic: L_entries's extent "
               "must be larger than "
-           << L_entries_d.extent(0);
+           << L_entries_d.extent(0) << ", must be at least " << cntL + lenl + 1;
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
       for (size_type k = 0; k < lenl; ++k) {
         L_entries(cntL) = h_iL(k);
         cntL++;
       }
-#ifdef KEEP_DIAG
       // L diag entry
       L_entries(cntL) = i;
       cntL++;
-#endif
       L_row_map(i + 1) = cntL;
     }  // End main loop i
 
@@ -424,22 +392,17 @@ void iluk_symbolic(IlukHandle& thandle,
     thandle.set_nnzU(cntU);
 
     // Sort
-    KokkosSparse::sort_crs_graph<Kokkos::DefaultHostExecutionSpace,
-                                 decltype(L_row_map), decltype(L_entries)>(
+    KokkosSparse::sort_crs_graph<Kokkos::DefaultHostExecutionSpace, decltype(L_row_map), decltype(L_entries)>(
         L_row_map, L_entries);
-    KokkosSparse::sort_crs_graph<Kokkos::DefaultHostExecutionSpace,
-                                 decltype(U_row_map), decltype(U_entries)>(
+    KokkosSparse::sort_crs_graph<Kokkos::DefaultHostExecutionSpace, decltype(U_row_map), decltype(U_entries)>(
         U_row_map, U_entries);
 
     // Level scheduling on L
-    if (thandle.get_algorithm() ==
-        KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-      level_sched_tp(thandle, L_row_map, L_entries, level_list, level_ptr,
-                     level_idx, nlev, nstreams);
+    if (thandle.get_algorithm() == KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+      level_sched_tp(thandle, L_row_map, L_entries, level_list, level_ptr, level_idx, nlev, nstreams);
       thandle.alloc_iw(thandle.get_level_maxrowsperchunk(), nrows);
     } else {
-      level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
-                  level_idx, nlev);
+      level_sched(thandle, L_row_map, L_entries, level_list, level_ptr, level_idx, nlev);
       thandle.alloc_iw(thandle.get_level_maxrows(), nrows);
     }
 
@@ -457,13 +420,10 @@ void iluk_symbolic(IlukHandle& thandle,
     // Output check
 #ifdef SYMBOLIC_OUTPUT_INFO
     std::cout << "  ILU(k) fill_level: " << fill_lev << std::endl;
-    std::cout << "  symbolic complete: " << thandle.is_symbolic_complete()
-              << std::endl;
+    std::cout << "  symbolic complete: " << thandle.is_symbolic_complete() << std::endl;
     std::cout << "  num levels: " << thandle.get_num_levels() << std::endl;
-    std::cout << "  max num rows among levels: " << thandle.get_level_maxrows()
-              << std::endl;
-    std::cout << "  max num rows among chunks among levels: "
-              << thandle.get_level_maxrowsperchunk() << std::endl;
+    std::cout << "  max num rows among levels: " << thandle.get_level_maxrows() << std::endl;
+    std::cout << "  max num rows among chunks among levels: " << thandle.get_level_maxrowsperchunk() << std::endl;
 
     std::cout << "  iluk_symbolic result: " << std::endl;
 

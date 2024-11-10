@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_FunctionSpaceTools.hpp
@@ -595,13 +562,13 @@ namespace Intrepid2 {
         \param  inputVals        [in]  - Input array of reference HGRAD gradients.
 
     */
-    template<typename outputValValueType,       class ...outputValProperties,
-             typename jacobianInverseValueType, class ...jacobianInverseProperties,
-             typename inputValValueType,        class ...inputValProperties>
+    template<typename OutputValViewType,
+             typename JacobianInverseViewType,
+             typename InputValViewType>
     static void 
-    HGRADtransformGRAD(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
-                        const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                        const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
+    HGRADtransformGRAD(       OutputValViewType       outputVals,
+                        const JacobianInverseViewType jacobianInverse,
+                        const InputValViewType        inputVals );
 
     /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -1185,13 +1152,13 @@ namespace Intrepid2 {
         \param  inputDet      [in] - Input array containing determinants of cell Jacobians.
         \param  inputWeights  [in] - Input integration weights.
     */
-    template<typename outputValValueType,   class ...outputValProperties,
-             typename inputDetValueType,    class ...inputDetPropertes,
-             typename inputWeightValueType, class ...inputWeightPropertes>
+    template<typename OutputValViewType,
+             typename InputDetViewType,
+             typename InputWeightViewType>
     static bool 
-    computeCellMeasure(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
-                        const Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet,
-                        const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights );
+    computeCellMeasure(       OutputValViewType   outputVals,
+                        const InputDetViewType    inputDet,
+                        const InputWeightViewType inputWeights );
     
     /** \brief   Returns the weighted integration measures \a <b>outputVals</b> with dimensions
         (C,P) used for the computation of face integrals, based on the provided

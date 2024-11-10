@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HDIV_HEX_In_FEMDef.hpp
@@ -54,19 +21,19 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
-             typename inputViewType,
-             typename workViewType,
-             typename vinvViewType>
+             typename InputViewType,
+             typename WorkViewType,
+             typename VinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HDIV_HEX_In_FEM::Serial<opType>::
+    Basis_HDIV_HEX_In_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
-               const inputViewType  input,
-                     workViewType   work,
-               const vinvViewType   vinvLine,
-               const vinvViewType   vinvBubble) {
+               const InputViewType  input,
+                     WorkViewType   work,
+               const VinvViewType   vinvLine,
+               const VinvViewType   vinvBubble) {
       const ordinal_type cardLine = vinvLine.extent(0);
       const ordinal_type cardBubble = vinvBubble.extent(0);
 
@@ -77,21 +44,21 @@ namespace Intrepid2 {
       const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
       const auto input_z = Kokkos::subview(input, Kokkos::ALL(), range_type(2,3));
 
-      const ordinal_type dim_s = get_dimension_scalar(work);
+      const ordinal_type dim_s = get_dimension_scalar(input);
       auto ptr0 = work.data();
       auto ptr1 = work.data()+cardLine*npts*dim_s;
       auto ptr2 = work.data()+2*cardLine*npts*dim_s;
       auto ptr3 = work.data()+(2*cardLine+cardBubble)*npts*dim_s;      
       
-      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
-      auto vcprop = Kokkos::common_view_alloc_prop(work);
+      typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(input);
 
-      switch (opType) {
+      switch (OpType) {
       case OPERATOR_VALUE: {
-        viewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
-        viewType outputLine(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
-        viewType outputBubble_A(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
-        viewType outputBubble_B(Kokkos::view_wrap(ptr3, vcprop), cardBubble, npts);
+        ViewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+        ViewType outputLine(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
+        ViewType outputBubble_A(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
+        ViewType outputBubble_B(Kokkos::view_wrap(ptr3, vcprop), cardBubble, npts);
         
         // tensor product
         ordinal_type idx = 0;
@@ -171,13 +138,13 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_DIV: {      
-        viewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+        ViewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
         // A line value
-        viewType outputBubble_A(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
+        ViewType outputBubble_A(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
         // B line value
-        viewType outputBubble_B(Kokkos::view_wrap(ptr3, vcprop), cardBubble, npts);
+        ViewType outputBubble_B(Kokkos::view_wrap(ptr3, vcprop), cardBubble, npts);
         // Line grad
-        viewType outputLine(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts, 1);
+        ViewType outputLine(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts, 1);
         
         // tensor product
         ordinal_type idx = 0;
@@ -342,12 +309,13 @@ namespace Intrepid2 {
     lineBasis.getVandermondeInverse(this->vinvLine_);
     bubbleBasis.getVandermondeInverse(this->vinvBubble_);
 
-    this->basisCardinality_  = 3*cardLine*cardBubble*cardBubble;
-    this->basisDegree_       = order;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
-    this->basisType_         = BASIS_FEM_LAGRANGIAN;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HDIV;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = 3*cardLine*cardBubble*cardBubble;
+    this->basisDegree_          = order;
+    this->basisCellTopologyKey_ = shards::Hexahedron<8>::key;
+    this->basisType_            = BASIS_FEM_LAGRANGIAN;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HDIV;
     pointType_ = pointType;
 
     // initialize tags
@@ -476,11 +444,11 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+      dofCoordsHost("dofCoordsHost", this->basisCardinality_, spaceDim);
 
     // dofCoeffs on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+      dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, spaceDim);
 
     Kokkos::DynRankView<typename ScalarViewType::value_type,DT>
       dofCoordsLine("dofCoordsLine", cardLine, 1),
@@ -540,6 +508,64 @@ namespace Intrepid2 {
     this->dofCoeffs_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoeffsHost);
     Kokkos::deep_copy(this->dofCoeffs_, dofCoeffsHost);
   }
-}
+
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HDIV_HEX_In_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perTeamSpaceSize = 0;
+    perThreadSpaceSize = (2*this->vinvLine_.extent(0)+2*this->vinvBubble_.extent(0))*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HDIV_HEX_In_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      const int numPoints = inputPoints.extent(0);
+      using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+      using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      ordinal_type sizePerPoint = (2*this->vinvLine_.extent(0)+2*this->vinvBubble_.extent(0))*get_dimension_scalar(inputPoints);
+      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HDIV_HEX_In_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, this->vinvLine_, this->vinvBubble_ );
+          });
+          break;
+          case OPERATOR_DIV:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HDIV_HEX_In_FEM::Serial<OPERATOR_DIV>::getValues( output, input, work, this->vinvLine_, this->vinvBubble_ );
+          });
+          break;
+        default: {          
+          INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR (Basis_HDIV_HEX_In_FEM): getValues not implemented for this operator");
+          }
+    }
+  }
+
+} // namespace Intrepid2
 
 #endif

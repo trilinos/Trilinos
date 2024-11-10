@@ -13,6 +13,12 @@
 #ifndef _MLSOLVERIFACE_
 #define _MLSOLVERIFACE_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_comm.h"
 #include "ml_aggregate.h"
@@ -134,4 +140,3 @@ extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia,
 #endif
 
 #endif
-

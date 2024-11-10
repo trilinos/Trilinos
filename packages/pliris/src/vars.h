@@ -44,6 +44,12 @@
 #ifndef __VARSH__
 #define __VARSH__
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 #include "defines.h"
 
 int   me;                       /* processor id information */

@@ -16,6 +16,12 @@
 #ifndef ML_GRADDIV_H
 #define ML_GRADDIV_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 // Some compilers think this name is too long...
 #define GradDivPreconditioner GDP
 

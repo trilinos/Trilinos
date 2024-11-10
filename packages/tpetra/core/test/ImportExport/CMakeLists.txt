@@ -103,7 +103,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
   )
 
-IF (${PROJECT_NAME}_ENABLE_Epetra)
+IF (Tpetra_ENABLE_DEPRECATED_CODE AND ${PROJECT_NAME}_ENABLE_Epetra)
   IF(NOT Trilinos_NO_32BIT_GLOBAL_INDICES AND Tpetra_INST_INT_INT)
     # Tpetra bug 5430:
     # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430

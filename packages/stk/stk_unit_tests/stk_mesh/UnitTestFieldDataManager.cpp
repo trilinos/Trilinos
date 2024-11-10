@@ -266,7 +266,6 @@ TYPED_TEST(TestDefaultFieldDataManager, AllocateFieldData)
   auto * localFieldDataManager = fieldDataManager.get();
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
-  meshMetaData.use_simple_fields();
   initializeTestField<FieldDataType>(meshMetaData);
 
   size_t numNodes = 20;
@@ -286,7 +285,6 @@ TYPED_TEST(TestDefaultFieldDataManager, AllocateFieldDataTwoBuckets)
   auto * localFieldDataManager = fieldDataManager.get();
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
-  meshMetaData.use_simple_fields();
   initializeTestField<FieldDataType>(meshMetaData);
 
   const size_t numNodes = 700;
@@ -306,7 +304,6 @@ TYPED_TEST(TestDefaultFieldDataManager, TwoEntitiesTwoBuckets)
   auto * localFieldDataManager = fieldDataManager.get();
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
-  meshMetaData.use_simple_fields();
   createPart(meshMetaData);
   initializeTestField<FieldDataType>(meshMetaData);
 
@@ -328,7 +325,6 @@ TYPED_TEST(TestContiguousFieldDataManager, AllocateFieldData)
   auto * localFieldDataManager = fieldDataManager.get();
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
-  meshMetaData.use_simple_fields();
   initializeTestField<FieldDataType>(meshMetaData);
   size_t numNodes = 20;
   const size_t extraCapacity = localFieldDataManager->get_extra_capacity();
@@ -347,7 +343,6 @@ TYPED_TEST(TestContiguousFieldDataManager, AllocateFieldDataAndReorderBuckets)
   auto * localFieldDataManager = fieldDataManager.get();
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
-  meshMetaData.use_simple_fields();
   initializeTestField<FieldDataType>(meshMetaData);
   size_t numNodes = 10000;
   const size_t extraCapacity = localFieldDataManager->get_extra_capacity();
@@ -373,7 +368,6 @@ TYPED_TEST(TestContiguousFieldDataManager, TwoEntitiesTwoBuckets)
   auto * localFieldDataManager = fieldDataManager.get();
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
-  meshMetaData.use_simple_fields();
   createPart(meshMetaData);
   initializeTestField<FieldDataType>(meshMetaData);
 
@@ -431,7 +425,6 @@ TYPED_TEST(TestContiguousFieldDataManager, nodalFieldNotOnAllNodeBuckets)
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::BulkData& bulkData = *bulkDataPtr;
   stk::mesh::MetaData& meshMetaData = bulkData.mesh_meta_data();
-  meshMetaData.use_simple_fields();
   initialize2Parts2Fields<FieldDataType>(meshMetaData);
 
   bulkData.deactivate_field_updating();
@@ -494,7 +487,6 @@ TYPED_TEST(TestContiguousFieldDataManager, allocate_bucket_field_data)
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, std::move(fieldDataManager));
   stk::mesh::BulkData& bulkData = *bulkDataPtr;
   stk::mesh::MetaData& meshMetaData = bulkData.mesh_meta_data();
-  meshMetaData.use_simple_fields();
   initialize2Parts2Fields<FieldDataType>(meshMetaData);
 
   const stk::mesh::FieldVector &allFields = meshMetaData.get_fields();
@@ -616,7 +608,6 @@ void allocate_bucket_field_data_tableBased(stk::mesh::FieldDataManager & fieldDa
 
   const size_t spatialDim = 3;
   stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  meshMetaData.use_simple_fields();
   initialize2Parts2Fields<T>(meshMetaData);
 
 
@@ -724,7 +715,6 @@ TYPED_TEST(TestContiguousFieldDataManager, add_field_data_for_entity)
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
   const size_t spatialDim = 3;
   stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  meshMetaData.use_simple_fields();
 
   testAddingSingleEntity<FieldDataType>(meshMetaData, fieldDataManager);
 
@@ -797,7 +787,6 @@ TYPED_TEST(TestContiguousFieldDataManager, deallocate_nonempty_bucket)
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
   const size_t spatialDim = 3;
   stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  meshMetaData.use_simple_fields();
 
   testAddingSingleEntity<FieldDataType>(meshMetaData, fieldDataManager);
 
@@ -877,7 +866,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_eraseOneEntry)
   }
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field.size(), numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -891,7 +880,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_fasterEraseOneEntry)
   size_t numItems = field.size();
   size_t numItemsToErase = itemsToErase.size();
 
-  double* field_array = &field[0];
+  double *field_array = field.data();
   size_t field_array_length = field.size();
 
   // Erase
@@ -904,7 +893,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_fasterEraseOneEntry)
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -918,7 +907,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_slowestEraseOneEntry)
   size_t numItems = field.size();
   size_t numItemsToErase = itemsToErase.size();
 
-  double* field_array = &field[0];
+  double *field_array = field.data();
   size_t field_array_length = field.size();
 
   // Erase
@@ -935,7 +924,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_slowestEraseOneEntry)
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -950,9 +939,9 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_memcpyishEraseOneEntry
   size_t numItemsToErase = itemsToErase.size();
 
   std::vector<double> scratchField(numItems,0);
-  double* field_array = &field[0];
+  double *field_array = field.data();
   size_t field_array_length = field.size();
-  double *scratchData = &scratchField[0];
+  double *scratchData = scratchField.data();
 
   // Erase
   double startTime = stk::cpu_time();
@@ -966,7 +955,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_memcpyishEraseOneEntry
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -988,7 +977,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_batchDeletion)
   std::vector<int> itemsThisChunk(numItemsToErase+1, 0);
   std::vector<int> distanceToSlideLeft(numItemsToErase+1,0);
 
-  startingPtr[0] = &field[0];
+  startingPtr[0] = field.data();
   itemsThisChunk[0] = itemsToErase[0];
   distanceToSlideLeft[0] = 0;
 
@@ -1013,7 +1002,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_batchDeletion)
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 

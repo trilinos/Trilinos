@@ -13,6 +13,12 @@
 #ifndef __MLGENP__
 #define __MLGENP__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_operator.h"
 #include "ml_aggregate.h"
@@ -150,4 +156,3 @@ extern int ML_compute_line_info(int LayerId[], int VertLineId[],
 #endif
 
 #endif
-

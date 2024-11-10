@@ -1,45 +1,16 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
 //
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 /** \file
   \brief local L2 projection of a function onto continuous finite element space
@@ -192,8 +163,8 @@ int feProjection(int argc, char *argv[]) {
     // parse command line arguments
     int degree = 2;
     local_ordinal_t nx = 2;
-    local_ordinal_t ny            = nx;
-    local_ordinal_t nz            = (dim == 3) ? nx :1;
+    local_ordinal_t ny = nx;
+    local_ordinal_t nz = (dim == 3) ? nx :1;
     int np   = comm.getSize(); // number of processors
     int px = (dim == 2) ? std::sqrt(np) : std::cbrt(np); while(np%px!=0) --px;
     int py = (dim == 2) ? np/px : std::sqrt(np/px); while(np%py!=0) --py;
@@ -881,7 +852,7 @@ int feProjection(int argc, char *argv[]) {
           }
 
           //evaluate the boundary terms in physical space
-          double nx(sideNormal[0]), ny(sideNormal[1]), nz(sideNormal[2]);
+          double n_x(sideNormal[0]), n_y(sideNormal[1]), n_z(sideNormal[2]);
           Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceSpaceType::execution_space>(0,numBoundarySides),
               KOKKOS_LAMBDA (const int &is) {
             Fun fun(functionSpace);
@@ -898,7 +869,7 @@ int feProjection(int argc, char *argv[]) {
               case Intrepid2::FUNCTION_SPACE_HDIV: {
                 //compute f \dot n
                 double fx(fun(x,y,z,0)), fy(fun(x,y,z,1)), fz(fun(x,y,z,2));
-                physTargetAtSideEvalPoints(is,pt) = (dim == 3) ? nx*fx+ny*fy+nz*fz : nx*fx+ny*fy;
+                physTargetAtSideEvalPoints(is,pt) = (dim == 3) ? n_x*fx+n_y*fy+n_z*fz : n_x*fx+n_y*fy;
               }
               break;
               case Intrepid2::FUNCTION_SPACE_HCURL:
@@ -906,11 +877,11 @@ int feProjection(int argc, char *argv[]) {
                 //compute f \times n
                 double fx(fun(x,y,z,0)), fy(fun(x,y,z,1)), fz(fun(x,y,z,2));
                 if (dim == 3) {
-                  physTargetAtSideEvalPoints(is,pt,0) = fy*nz-fz*ny;
-                  physTargetAtSideEvalPoints(is,pt,1) = fz*nx-fx*nz;
-                  physTargetAtSideEvalPoints(is,pt,2) = fx*ny-fy*nx;
+                  physTargetAtSideEvalPoints(is,pt,0) = fy*n_z-fz*n_y;
+                  physTargetAtSideEvalPoints(is,pt,1) = fz*n_x-fx*n_z;
+                  physTargetAtSideEvalPoints(is,pt,2) = fx*n_y-fy*n_x;
                 } else {
-                  physTargetAtSideEvalPoints(is,pt) = fx*ny-fy*nx;
+                  physTargetAtSideEvalPoints(is,pt) = fx*n_y-fy*n_x;
                 }
               }
               break;

@@ -13,6 +13,12 @@
 #ifndef __ML1LEVEL__
 #define __ML1LEVEL__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* ******************************************************************** */
 /* data structure type definition                                       */
 /* ******************************************************************** */
@@ -59,4 +65,3 @@ struct ML_1Level_Struct
 };
 
 #endif
-

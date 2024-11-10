@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,8 +43,6 @@ SystemInterface::SystemInterface()
   enroll_options();
 }
 
-SystemInterface::~SystemInterface() = default;
-
 void SystemInterface::enroll_options()
 {
   options_.usage("[options] list_of_files_to_join");
@@ -74,7 +72,7 @@ void SystemInterface::enroll_options()
                   "\t\t\t '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'",
                   nullptr);
 
-  options_.enroll("omit_assemblies", GetLongOption::MandatoryValue,
+  options_.enroll("omit_assemblies", GetLongOption::OptionalValue,
                   "If no value, then don't transfer any assemblies to output file.\n"
                   "\t\tIf just p#,p#,... specified, then omit assemblies on specified parts\n"
                   "\t\tIf p#:id1:id2,p#:id2,id4... then omit the assemblies with the specified\n"
@@ -145,8 +143,11 @@ void SystemInterface::enroll_options()
   options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
-                  "\t\tTo only transfer last step, use '-steps LAST'",
-                  "1:");
+                  "\t\tIf the 'beg' or 'end' is < 0, then it is the \"-Nth\" step...\n"
+                  "\t\t-1 is \"first last\" or last, -3 is \"third last\"\n"
+                  "\t\tTo copy just the last 3 steps, do: `-steps -3:-1`\n"
+                  "\t\tEnter LAST for last step",
+                  "1:", nullptr, true);
 
   options_.enroll("gvar", GetLongOption::MandatoryValue,
                   "Comma-separated list of global variables to be joined or ALL or NONE.", nullptr);
@@ -272,7 +273,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         "\nThe following options were specified via the EJOIN_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, GetLongOption::basename(*argv));
   }
 
   outputName_  = options_.get_option_value("output", outputName_);
@@ -320,7 +321,15 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_assemblies");
     if (temp != nullptr) {
-      parse_omissions(temp, &assemblyOmissions_, "assembly", true);
+      if (str_equal("ALL", temp)) {
+        omitAssemblies_ = true;
+      }
+      else {
+        parse_omissions(temp, &assemblyOmissions_, "assembly", true);
+      }
+    }
+    else {
+      omitAssemblies_ = false;
     }
   }
 
@@ -472,15 +481,17 @@ void SystemInterface::parse_step_option(const char *tokens)
   //: The defined formats for the count attribute are:<br>
   //:  <ul>
   //:    <li><missing> -- default -- 1 <= count <= oo  (all steps)</li>
-  //:    <li>"X"                  -- X <= count <= X  (just step X). If X == LAST, last step
-  // only</li>
+  //:    <li>"X"                  -- X <= count <= X  (just step X) LAST for last step.</li>
   //:    <li>"X:Y"                -- X to Y by 1</li>
   //:    <li>"X:"                 -- X to oo by 1</li>
   //:    <li>":Y"                 -- 1 to Y by 1</li>
   //:    <li>"::Z"                -- 1 to oo by Z</li>
-  //:    <li>"LAST"               -- last step only</li>
   //:  </ul>
-  //: The count and step must always be >= 0
+  //: The step must always be > 0
+  //: If the 'from' or 'to' is < 0, then it is the "-Nth" step...
+  //: -1 is "first last" or last
+  //: -4 is "fourth last step"
+  //: To copy just the last 3 steps, do: `-steps -3:-1`
 
   // Break into tokens separated by ":"
 
@@ -496,24 +507,24 @@ void SystemInterface::parse_step_option(const char *tokens)
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        int  k = 0;
 
+        int k = 0;
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
         }
 
         tmp_str[k] = '\0';
         if (strlen(tmp_str) > 0) {
-          val = strtoul(tmp_str, nullptr, 0);
+          val = strtol(tmp_str, nullptr, 0);
         }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
         }
       }
-      stepMin_      = abs(vals[0]);
-      stepMax_      = abs(vals[1]);
-      stepInterval_ = abs(vals[2]);
+      stepMin_      = vals[0];
+      stepMax_      = vals[1];
+      stepInterval_ = abs(vals[2]); // step is always positive...
     }
     else if (str_equal("LAST", tokens)) {
       stepMin_ = stepMax_ = -1;

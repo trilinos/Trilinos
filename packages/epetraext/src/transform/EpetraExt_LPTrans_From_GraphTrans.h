@@ -42,6 +42,12 @@
 #ifndef EpetraExt_LINEARPROBLEM_GRAPHTRANS_H
 #define EpetraExt_LINEARPROBLEM_GRAPHTRANS_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 
 class Epetra_LinearProblem;
@@ -121,4 +127,3 @@ class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
 } //namespace EpetraExt
 
 #endif //EpetraExt_LINEARPROBLEM_GRAPHTRANS_H
-

@@ -44,6 +44,14 @@
 #ifndef EPETRA_GIDTYPESERIALDENSEVECTOR_H
 #define EPETRA_GIDTYPESERIALDENSEVECTOR_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_LongLongSerialDenseVector.h"

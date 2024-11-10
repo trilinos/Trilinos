@@ -47,6 +47,7 @@
       <Parameter name="factory"                             type="string"   value="RAPFactory"/>
 
       <ParameterList name="TransferFactories">
+        <Parameter name="For AggregateQualities"            type="string"   value="myAggregateQualityFact"/>
         <Parameter name="For Coordinates"                   type="string"   value="myTransferCoordinatesFact"/>
       </ParameterList>
 
@@ -58,15 +59,14 @@
 
     <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
-
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
-      <Parameter name="Coordinates"                         type="string"   value="myTransferCoordinatesFact"/>
       <Parameter name="DofsPerNode"                         type="string"   value="myCoalesceDropFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
       <Parameter name="P"                                   type="string"   value="myPFact"/>
       <Parameter name="Aggregates"                          type="string"   value="myAggregateFact"/>
-      <Parameter name="CoarseMap"                           type="string"   value="myCoarseMapFact"/>
       <Parameter name="AggregateQualities"                  type="string"   value="myAggregateQualityFact"/>
+      <Parameter name="CoarseMap"                           type="string"   value="myCoarseMapFact"/>
+      <Parameter name="Coordinates"                         type="string"   value="myTransferCoordinatesFact"/>
     </ParameterList>
 
   </ParameterList>

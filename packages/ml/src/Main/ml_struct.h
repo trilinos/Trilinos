@@ -13,6 +13,12 @@
 #ifndef __MLSTRUCT__
 #define __MLSTRUCT__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* ******************************************************************** */
 /* data structure type definition                                       */
 /* ******************************************************************** */
@@ -422,6 +428,3 @@ extern int ML_Get_Label( ML *ml, char *label);
 
 
 #endif
-
-
-

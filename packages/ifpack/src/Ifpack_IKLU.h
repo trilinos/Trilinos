@@ -43,6 +43,12 @@
 #ifndef IFPACK_IKLU_H
 #define IFPACK_IKLU_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ScalingType.h"

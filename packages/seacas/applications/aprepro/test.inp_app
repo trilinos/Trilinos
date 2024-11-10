@@ -148,19 +148,19 @@ $ Test if - else lines
 {endif}
 $ ========================================================================
 $ Test switch
-{ switch(PI) }
+{switch(PI)}
 This is in a switch, but prior to any case, it should not run
 {a = 0.5} Should not execute
 
-   {case (1) }
+{case (1)}
 This should not echo
 {a = 1}
 
-{	case (2)	}
+{case (2)}
 This should not echo
 {a = 2}
 
-	{case	(PI)}
+{case (PI)}
 This should echo
 {a = PI}
 
@@ -171,7 +171,7 @@ This should not echo since a previous case matched.
 {default}
 {a=4}
 
-{  endswitch	}
+{endswitch}
 
 This should be equal to PI --  {PI}
 $ Test int and [] (shortcut for int)
@@ -179,15 +179,14 @@ $ Test int and [] (shortcut for int)
 {[5.01]}	{[-5.01]}
 
 $ Test looping - print sin, cos from 0 to 90 by 5
-{_angle = -5}
-{Loop(19)}
-{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)}
+{Loop(19, _angle, 0, 5)}
+{_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
 {EndLoop}
 
 $$$$ Test formatting and string concatenation
-{_i = 0} {_SAVE = _FORMAT}
+{_SAVE = _FORMAT}
 {loop(20)}
-{IO(++_i)} Using the format {_FORMAT = "%." // tostring(_i) // "g"},	PI = {PI}
+{IO(__loop_1+1)} Using the format {_FORMAT = "%." // tostring(__loop_1+1) // "g"},	PI = {PI}
 {endloop}
 Reset format to default: {_FORMAT = _SAVE}
 
@@ -201,12 +200,12 @@ $$$$ Test string rescanning and executing
 Original String:
 {Test}
 Rescanned String:
-{rescan(Test)}
+{rescan(Test)} 
 Original String:
 {Test2}
 Print Value of variable T = {T}
 Rescanned String:
-{rescan(Test2)}
+{rescan(Test2)} 
 Print Value of variable T = {T}
 
 Original String: {t1 = "atan2(0,-1)"}
@@ -227,9 +226,8 @@ string = {_string = " one two, three"}
 delimiter "{_delm = " ,"}"
 word count = { iwords = word_count(_string,_delm)}
 
-{_n = 0}
-	{loop(iwords)}
-word {++_n} = "{get_word(_n,_string,_delm)}"
+	{loop(iwords, _n, 1)}
+word {_n} = "{get_word(_n,_string,_delm)}"
    {endloop}
 
 $ Check parsing of escaped braces...
@@ -245,5 +243,12 @@ $ Test variable deletion
 $ Test extract
 {ex_found = extract("The test string is found", "test", "")}
 {ex_null  = extract("The test string is not found", "xxxx", "yyyy")}
+
+$ Test string tokenization optimization
+{list1 ='51,52,53,54,61,62,63,64'}
+{list2 ='71,72,73,74,81,82,83,84'}
+{loop(8, _i, 1)}
+Word {_i} of list1 and list2 are {get_word(_i,list1,',')} and {get_word(_i,list2,',')}
+{endloop}
 
 $End of test file

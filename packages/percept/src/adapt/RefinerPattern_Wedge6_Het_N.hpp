@@ -147,7 +147,7 @@ namespace percept {
             }
         }
 
-      unsigned num_faces_marked = 0;
+      //unsigned num_faces_marked = 0;
       unsigned face_marks[DiscretizeWedge::nfaces] = {0,0,0,0,0};
       stk::mesh::EntityRank rank = m_eMesh.face_rank();
 
@@ -158,7 +158,7 @@ namespace percept {
               if (new_sub_entity_nodes[rank][iface].size())
                 {
                   face_marks[iface] = 1;
-                  ++num_faces_marked;
+                  //++num_faces_marked;
                 }
             }
         }
@@ -891,9 +891,6 @@ namespace percept {
 
       Elem::StdMeshObjTopologies::bootstrap();
 
-      //typedef RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1, QuadTransition > FaceBreaker;
-      typedef RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1, TriHangingNode >  TriFaceBreakerType;
-
       m_bp.resize(6);
 
       m_bp[0] = new  RefinerPattern<shards::Wedge<6>, shards::Wedge<6>, -1, WedgeWedgePartial > (eMesh, block_names) ;
@@ -1001,17 +998,17 @@ namespace percept {
               ++num_edges_marked;
             }
         }
-      unsigned num_faces_marked = 0;
-      stk::mesh::EntityRank rank = m_eMesh.face_rank();
+      //unsigned num_faces_marked = 0;
+      //stk::mesh::EntityRank rank = m_eMesh.face_rank();
 
-      for (int iface = 0; iface < 6; iface++)
-        {
-          if ( new_sub_entity_nodes[rank].size() )
-            {
-              if (new_sub_entity_nodes[rank][iface].size())
-                ++num_faces_marked;
-            }
-        }
+      //for (int iface = 0; iface < 6; iface++)
+      //  {
+      //    if ( new_sub_entity_nodes[rank].size() )
+      //      {
+      //        if (new_sub_entity_nodes[rank][iface].size())
+      //          ++num_faces_marked;
+      //      }
+      //  }
 
       if ( num_edges_marked == 9 )
         //if ( num_edges_marked == 9 && num_faces_marked == 5)

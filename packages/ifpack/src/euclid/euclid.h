@@ -43,6 +43,12 @@
 #ifndef EUCLID_USER_INTERFAACE
 #define EUCLID_USER_INTERFAACE
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /* collection of everthing that should be included for user apps */
 
 #include "Euclid_dh.h"

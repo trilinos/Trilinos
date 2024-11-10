@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _FROSCH_HARMONICCOARSEOPERATOR_DECL_HPP
 #define _FROSCH_HARMONICCOARSEOPERATOR_DECL_HPP
@@ -153,6 +121,122 @@ namespace FROSch {
             ConstSCView data_in;
             UN          j_out;
             SCView      data_out;
+        };
+
+
+        struct ScaleTag {};
+        struct CountNnzTag {};
+        struct TotalNnzTag {};
+        struct FillNzEntriesTag {};
+        template<class indicesView, class SCView, class localRowMapType, class localMVBasisType, class RowptrType, class IndicesType, class ValuesType>
+        struct detectLinearDependenciesFunctor
+        {
+            using Real = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+            using STS = Kokkos::ArithTraits<SC>;
+            using RTS = Kokkos::ArithTraits<Real>;
+
+            UN numRows;
+            UN numCols;
+            SCView scale;
+            localMVBasisType localMVBasis;
+
+            SC tresholdDropping;
+            indicesView indicesGammaDofsAll;
+            localRowMapType localRowMap;
+            localRowMapType localRepeatedMap;
+
+            RowptrType  Rowptr;
+            IndicesType Indices;
+            ValuesType  Values;
+
+            // Constructor for ScaleTag
+            detectLinearDependenciesFunctor(UN numRows_, UN numCols_, SCView scale_, localMVBasisType localMVBasis_) :
+            numRows (numRows_),
+            numCols (numCols_),
+            scale (scale_),
+            localMVBasis (localMVBasis_)
+            {}
+
+            // Constructor for CountNnzTag
+            detectLinearDependenciesFunctor(UN numRows_, UN numCols_, localMVBasisType localMVBasis_, SC tresholdDropping_, 
+                                            indicesView indicesGammaDofsAll_, localRowMapType localRowMap_, localRowMapType localRepeatedMap_,
+                                            RowptrType Rowptr_) :
+            numRows (numRows_),
+            numCols (numCols_),
+            scale (),
+            localMVBasis (localMVBasis_),
+            tresholdDropping (tresholdDropping_),
+            indicesGammaDofsAll (indicesGammaDofsAll_),
+            localRowMap (localRowMap_),
+            localRepeatedMap (localRepeatedMap_),
+            Rowptr (Rowptr_)
+            {}
+
+            // Constructor for FillNzEntriesTag
+            detectLinearDependenciesFunctor(UN numRows_, UN numCols_, SCView scale_, localMVBasisType localMVBasis_,
+                                            SC tresholdDropping_, indicesView indicesGammaDofsAll_,
+                                            localRowMapType localRowMap_, localRowMapType localRepeatedMap_,
+                                            RowptrType Rowptr_, IndicesType Indices_, ValuesType Values_) :
+            numRows (numRows_),
+            numCols (numCols_),
+            scale (scale_),
+            localMVBasis (localMVBasis_),
+            tresholdDropping (tresholdDropping_),
+            indicesGammaDofsAll (indicesGammaDofsAll_),
+            localRowMap (localRowMap_),
+            localRepeatedMap (localRepeatedMap_),
+            Rowptr (Rowptr_),
+            Indices (Indices_),
+            Values (Values_)
+            {}
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const ScaleTag &, const int j) const {
+                scale(j) = STS::zero();
+                for (UN i = 0; i < numRows; i++) {
+                    scale(j) += localMVBasis(i,j)*localMVBasis(i,j);
+                }
+                scale(j) = RTS::one()/RTS::sqrt(STS::abs(scale(j)));
+            }
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const CountNnzTag &, const int i) const {
+                LO rowID = indicesGammaDofsAll[i];
+                GO iGlobal = localRepeatedMap.getGlobalElement(rowID);
+                LO iLocal = localRowMap.getLocalElement(iGlobal);
+                if (iLocal!=-1) { // This should prevent duplicate entries on the interface
+                    for (UN j=0; j<numCols; j++) {
+                        SC valueTmp=localMVBasis(i,j);
+                        if (fabs(valueTmp)>tresholdDropping) {
+                            Rowptr(iLocal+1) ++;
+                        }
+                    }
+                }
+            }
+
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const TotalNnzTag&, const size_t i, UN &lsum) const {
+                 lsum += Rowptr[i];
+            }
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const FillNzEntriesTag &, const int i) const {
+                LO rowID = indicesGammaDofsAll[i];
+                GO iGlobal = localRepeatedMap.getGlobalElement(rowID);
+                LO iLocal = localRowMap.getLocalElement(iGlobal);
+                if (iLocal!=-1) { // This should prevent duplicate entries on the interface
+                    UN nnz_i = Rowptr(iLocal);
+                    for (UN j=0; j<numCols; j++) {
+                        SC valueTmp=localMVBasis(i,j);
+                        if (fabs(valueTmp)>tresholdDropping) {
+                            Indices(nnz_i) = j; //localBasisMap.getGlobalElement(j);
+                            Values(nnz_i) = valueTmp*scale(j);
+                            nnz_i ++;
+                        }
+                    }
+                }
+            }
         };
         #endif
 

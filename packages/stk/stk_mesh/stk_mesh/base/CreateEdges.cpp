@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "stk_mesh/base/CreateEdges.hpp"
 
@@ -39,7 +39,9 @@
 #include <functional>                   // for equal_to
 #include <iterator>                     // for back_insert_iterator, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
@@ -51,6 +53,9 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/baseImpl/CreateEdgesOnFaces.hpp"
+#include "stk_mesh/baseImpl/DeleteEdgesOnFaces.hpp"
+
 #include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert
@@ -155,7 +160,7 @@ struct create_single_edge_impl
     else {
       side = iedge->second;
     }
-    perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
+    perm = stk::mesh::find_permutation(mesh, elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
     STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, side, m_edge_ordinal, perm, scratch1, scratch2, scratch3);
   }
@@ -268,7 +273,7 @@ struct create_edge_impl
         else {
           side = iedge->second;
         }
-        perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
+        perm = stk::mesh::find_permutation(mesh, elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
         STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], side, e, perm, scratch1, scratch2, scratch3);
       }
@@ -390,6 +395,20 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
     mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
   }
 }
+
+
+Part* create_edges_on_faces( BulkData& mesh, const Selector& element_selector, Part* part_to_insert_new_edges)
+{
+  impl::EdgesOnFacesCreator edgeCreator(mesh, element_selector, part_to_insert_new_edges);
+  return edgeCreator.create_edges();
+}
+
+void delete_edges_on_faces( BulkData& mesh, Part* edgePart)
+{
+  impl::EdgesOnFacesDeleter edgeDeleter(mesh, edgePart);
+  edgeDeleter.delete_surface_edges();
+}
+
 
 }
 }

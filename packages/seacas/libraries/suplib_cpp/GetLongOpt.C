@@ -197,7 +197,7 @@ int GetLongOption::parse(int argc, char *const *argv)
           }
         }
       } /* end if */
-    }   /* end for */
+    } /* end for */
 
     if (matchStatus == PartialMatch) {
       int stat = setcell(pc, tmptoken, *(argv + 1), pname);
@@ -277,7 +277,7 @@ int GetLongOption::parse(char *const str, char *const p)
           pc          = t;
         }
       } /* end if */
-    }   /* end for */
+    } /* end for */
 
     if (matchStatus == PartialMatch) {
       ladtoken = strtok(nullptr, " \t");

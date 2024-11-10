@@ -43,6 +43,12 @@
 #ifndef IFPACK_SOLVEOBJECT_H
 #define IFPACK_SOLVEOBJECT_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"

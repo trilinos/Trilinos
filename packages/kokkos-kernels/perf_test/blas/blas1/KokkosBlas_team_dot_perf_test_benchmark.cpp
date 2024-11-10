@@ -53,8 +53,7 @@
 template <class Vector, class ExecSpace>
 struct teamDotFunctor {
   // Compile - time check to see if your data type is a Kokkos::View:
-  static_assert(Kokkos::is_view<Vector>::value,
-                "Vector is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<Vector>::value, "Vector is not a Kokkos::View.");
 
   using Scalar = typename Vector::non_const_value_type;
   // Vector is templated on memory space
@@ -68,9 +67,7 @@ struct teamDotFunctor {
 
   // Functor instead of KOKKOS_LAMBDA expression
 
-  KOKKOS_INLINE_FUNCTION void operator()(const team_member& team) const {
-    KokkosBlas::Experimental::dot(team, x, y);
-  }
+  KOKKOS_INLINE_FUNCTION void operator()(const team_member& team) const { KokkosBlas::Experimental::dot(team, x, y); }
   // Constructor
   teamDotFunctor(Vector X_, Vector Y_) {
     x = X_;
@@ -107,21 +104,17 @@ static void run(benchmark::State& state) {
 
   for (auto _ : state) {
     // Warm up run of dot:
-    teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
-        teamDotFunctorWarmUpInstance(x, y);
+    teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorWarmUpInstance(x, y);
 
-    Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO),
-                         teamDotFunctorWarmUpInstance);
+    Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO), teamDotFunctorWarmUpInstance);
 
     // The live test of dot:
 
     Kokkos::fence();
     Kokkos::Timer timer;
 
-    teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
-        teamDotFunctorLiveTestInstance(x, y);
-    Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO),
-                         teamDotFunctorLiveTestInstance);
+    teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorLiveTestInstance(x, y);
+    Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO), teamDotFunctorLiveTestInstance);
 
     // Kokkos Timer set up and data capture
     double total = timer.seconds();
@@ -132,10 +125,8 @@ static void run(benchmark::State& state) {
     printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
     state.SetIterationTime(timer.seconds());
 
-    state.counters["Avg DOT time (s):"] =
-        benchmark::Counter(avg, benchmark::Counter::kDefaults);
-    state.counters["Avg DOT FLOP/s:"] =
-        benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+    state.counters["Avg DOT time (s):"] = benchmark::Counter(avg, benchmark::Counter::kDefaults);
+    state.counters["Avg DOT FLOP/s:"]   = benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
   }
 }
 

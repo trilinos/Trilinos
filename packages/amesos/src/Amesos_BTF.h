@@ -31,6 +31,12 @@ This file is out of date.  Is has not been refactored to use Amesos_Status.
 #ifndef _AMESOS_BTF_H_
 #define _AMESOS_BTF_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"

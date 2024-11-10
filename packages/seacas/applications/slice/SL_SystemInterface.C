@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,8 +37,6 @@ namespace {
 } // namespace
 
 SystemInterface::SystemInterface() { enroll_options(); }
-
-SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::enroll_options()
 {
@@ -279,7 +277,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         "\nThe following options were specified via the SLICE_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, GetLongOption::basename(*argv));
   }
 
   processorCount_   = options_.get_option_value("processors", processorCount_);
@@ -298,7 +296,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         fmt::print(stderr,
-                   "\nThe 'file' decompositon method was specified, but no element "
+                   "\nThe 'file' decomposition method was specified, but no element "
                    "to processor mapping file was specified via the -decomposition_file option\n");
         return false;
       }
@@ -349,11 +347,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
   ignore_x_ = options_.retrieve("ignore_x") != nullptr;
   ignore_y_ = options_.retrieve("ignore_y") != nullptr;
   ignore_z_ = options_.retrieve("ignore_z") != nullptr;
-  if ((ignore_x_ ? 1 : 0) + (ignore_y_ ? 1 : 0) + (ignore_z_ ? 1 : 0) > 1) {
-    fmt::print(stderr,
-               "\nERROR: Can only specify one of `ignore_x`, `ignore_y`, or `ignore_z`.\n\n");
-    exit(EXIT_FAILURE);
-  }
 #endif
 
   if (outputDecompMap_ && outputDecompField_) {
@@ -431,10 +424,7 @@ void SystemInterface::parse_step_option(const char *tokens)
     if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
-      int vals[3];
-      vals[0] = stepMin_;
-      vals[1] = stepMax_;
-      vals[2] = stepInterval_;
+      std::array<int, 3> vals = {stepMin_, stepMax_, stepInterval_};
 
       int j = 0;
       for (int &val : vals) {

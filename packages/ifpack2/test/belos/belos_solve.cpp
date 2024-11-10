@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -53,6 +20,7 @@
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
 
 #include "build_problem.hpp"
 #include "build_solver.hpp"
@@ -95,6 +63,7 @@ int main (int argc, char* argv[])
   typedef Tpetra::MultiVector<Scalar,LO,GO>    TMV;
   typedef Tpetra::Operator<Scalar,LO,GO>       TOP;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
   typedef Belos::LinearProblem<Scalar,TMV,TOP> BLinProb;
   typedef Belos::SolverManager<Scalar,TMV,TOP> BSolverMgr;
   using Teuchos::RCP;
@@ -171,8 +140,27 @@ int main (int argc, char* argv[])
     std::string prec_side("Left");
     Ifpack2::getParameter (test_params, "Preconditioner Side", prec_side);
     if (tifpack_precond != "not specified") {
-      auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
-      RCP<TOP> precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+      RCP<TOP> precond;
+      if (tifpack_precond == "RBILUK") {
+        int blockSize = 0;
+        Teuchos::ParameterList& prec_params = test_params.sublist("Ifpack2");
+        Ifpack2::getParameter (prec_params, "fact: block size", blockSize);
+        assert(blockSize >= 1);
+        auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
+        if (blockSize > 1) {
+          auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_crs, blockSize);
+          auto A = Teuchos::rcp_const_cast<const block_crs_matrix_type>(Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize));
+          precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+        }
+        else {
+          auto A = Teuchos::rcp_const_cast<const block_crs_matrix_type>(Tpetra::convertToBlockCrsMatrix(*A_crs, blockSize));
+          precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+        }
+      }
+      else {
+        auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
+        precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+      }
       if (prec_side == "Left")
         problem->setLeftPrec (precond);
       else if (prec_side == "Right")

@@ -43,6 +43,12 @@
 #ifndef _ifp_parameters_h_
 #define _ifp_parameters_h_
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_config.h"
 
 #include <Ifpack_ConfigDefs.h>
@@ -105,4 +111,3 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
 }//namespace Ifpack
 
 #endif //_ifp_parameters_h_
-

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,6 +29,9 @@
 #include <algorithm>
 #include <array>
 #include <cstring> // for strlen, etc
+#include <fmt/chrono.h>
+#include <fmt/ostream.h>
+#include <fmt/printf.h>
 #include <iostream>
 #include <numeric>
 #include <string>
@@ -36,11 +39,9 @@
 
 #include "add_to_log.h" // for add_to_log
 #include "exodusII.h"   // for ex_get_variable_param, etc
-#include "fmt/chrono.h"
-#include "fmt/ostream.h"
-#include "fmt/printf.h"
-#include "matio.h" // for Mat_VarCreate, Mat_VarFree, etc
+#include "matio.h"      // for Mat_VarCreate, Mat_VarFree, etc
 #include "time_stamp.h"
+#include "vector_data.h"
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
@@ -58,7 +59,7 @@ namespace {
   mat_t *mat_file = nullptr; /* file for binary .mat output */
   bool   debug    = false;
 
-  std::array<std::string, 3> qainfo{"exo2mat", "2021/09/27", "4.08"};
+  const std::array<std::string, 3> qainfo{"exo2mat", "2021/09/27", "4.08"};
 
   void logger(const char *message)
   {
@@ -349,10 +350,10 @@ namespace {
       logger("\tTruth Table");
     }
     std::vector<int> truth_table(num_vars * num_blocks);
-    ex_get_truth_table(exo_file, type, num_blocks, num_vars, truth_table.data());
+    ex_get_truth_table(exo_file, type, num_blocks, num_vars, Data(truth_table));
 
     std::vector<int> ids(num_blocks);
-    ex_get_ids(exo_file, type, ids.data());
+    ex_get_ids(exo_file, type, Data(ids));
 
     size_t num_entity = std::accumulate(num_per_block.begin(), num_per_block.end(), 0);
 
@@ -366,7 +367,7 @@ namespace {
           Mat_VarCreate(var_name.c_str(), MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
 
-      std::vector<double> scr(num_vars * num_time_steps * num_entity);
+      std::vector<double> scr(static_cast<size_t>(num_vars) * num_time_steps * num_entity);
       dims[0]       = num_entity;
       dims[1]       = num_time_steps;
       size_t offset = 0;
@@ -430,7 +431,7 @@ namespace {
         if (debug) {
           logger("\tWriting");
         }
-        PutDbl(str, num_entity, num_time_steps, scr.data());
+        PutDbl(str, num_entity, num_time_steps, Data(scr));
       }
     }
   }
@@ -438,7 +439,7 @@ namespace {
   std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_cell_arrays)
   {
     std::vector<int> ids(num_blocks);
-    ex_get_ids(exo_file, EX_ELEM_BLOCK, ids.data());
+    ex_get_ids(exo_file, EX_ELEM_BLOCK, Data(ids));
 
     std::vector<int> num_elem_in_block(num_blocks);
 
@@ -475,19 +476,19 @@ namespace {
         types[i]             = std::string(type);
         num_elem_in_block[i] = num_elem;
         num_node_per_elem[i] = num_node;
-        conn_size += num_elem * num_node;
+        conn_size += static_cast<size_t>(num_elem) * num_node;
       }
 
       std::vector<int> connect(conn_size);
       size_t           conn_off = 0;
       for (int i = 0; i < num_blocks; i++) {
         std::vector<char> name(max_name_length + 1);
-        ex_get_name(exo_file, EX_ELEM_BLOCK, ids[i], name.data());
+        ex_get_name(exo_file, EX_ELEM_BLOCK, ids[i], Data(name));
         dims[0]      = 1;
-        dims[1]      = std::strlen(name.data());
+        dims[1]      = std::strlen(Data(name));
         size_t index = num_field * i + 0;
         cell_element[index] =
-            Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+            Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)Data(name), 0);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         dims[0]             = 1;
@@ -522,22 +523,22 @@ namespace {
       std::vector<int>    connect;
       std::vector<double> attr;
 
-      PutInt("blkids", num_blocks, 1, ids.data());
+      PutInt("blkids", num_blocks, 1, Data(ids));
       std::vector<char> type(max_name_length + 1);
       std::string       types;
       for (int i = 0; i < num_blocks; i++) {
         int num_elem = 0;
         int num_node = 0;
         int num_attr = 0;
-        ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], type.data(), &num_elem, &num_node, nullptr,
+        ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], Data(type), &num_elem, &num_node, nullptr,
                      nullptr, &num_attr);
-        types += type.data();
+        types += Data(type);
         types += "\n";
         num_elem_in_block[i] = num_elem;
-        connect.resize(num_elem * num_node);
-        ex_get_conn(exo_file, EX_ELEM_BLOCK, ids[i], connect.data(), nullptr, nullptr);
+        connect.resize(static_cast<size_t>(num_elem) * num_node);
+        ex_get_conn(exo_file, EX_ELEM_BLOCK, ids[i], Data(connect), nullptr, nullptr);
         std::string str = fmt::sprintf("blk%02d", i + 1);
-        PutInt(str, num_node, num_elem, connect.data());
+        PutInt(str, num_node, num_elem, Data(connect));
 
         // Handle block attributes (if any...)
         attr.resize(num_elem);
@@ -557,8 +558,8 @@ namespace {
 
           for (int j = 0; j < num_attr; j++) {
             str = fmt::sprintf("blk%02d_attr%02d", i + 1, j + 1);
-            ex_get_one_attr(exo_file, EX_ELEM_BLOCK, ids[i], j + 1, attr.data());
-            PutDbl(str, num_elem, 1, attr.data());
+            ex_get_one_attr(exo_file, EX_ELEM_BLOCK, ids[i], j + 1, Data(attr));
+            PutDbl(str, num_elem, 1, Data(attr));
           }
         }
       }
@@ -577,7 +578,7 @@ namespace {
         logger("Node Sets");
       }
       std::vector<int> ids(num_sets);
-      ex_get_ids(exo_file, EX_NODE_SET, ids.data());
+      ex_get_ids(exo_file, EX_NODE_SET, Data(ids));
 
       size_t           tot_nodes = 0;
       size_t           tot_dfac  = 0;
@@ -617,12 +618,12 @@ namespace {
 
         for (int i = 0; i < num_sets; i++) {
           std::vector<char> name(max_name_length + 1);
-          ex_get_name(exo_file, EX_NODE_SET, ids[i], name.data());
+          ex_get_name(exo_file, EX_NODE_SET, ids[i], Data(name));
           dims[0]      = 1;
-          dims[1]      = std::strlen(name.data());
+          dims[1]      = std::strlen(Data(name));
           size_t index = 4 * i + 0;
           cell_element[index] =
-              Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+              Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)Data(name), 0);
           Mat_VarSetCell(cell_array, index, cell_element[index]);
 
           dims[0]             = 1;
@@ -657,22 +658,22 @@ namespace {
         Mat_VarFree(cell_array);
       }
       else {
-        PutInt("nsids", num_sets, 1, ids.data());
+        PutInt("nsids", num_sets, 1, Data(ids));
 
         for (int i = 0; i < num_sets; i++) {
           std::vector<int> node_list(num_nodes[i]);
-          ex_get_set(exo_file, EX_NODE_SET, ids[i], node_list.data(), nullptr);
+          ex_get_set(exo_file, EX_NODE_SET, ids[i], Data(node_list), nullptr);
           /* nodes list */
           std::string str;
           str = fmt::sprintf("nsnod%02d", i + 1);
-          PutInt(str, node_list.size(), 1, node_list.data());
+          PutInt(str, node_list.size(), 1, Data(node_list));
 
           /* distribution-factors list */
           if (num_df[i] > 0) {
             std::vector<double> dist_fac(num_df[i]);
-            ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], dist_fac.data());
+            ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], Data(dist_fac));
             str = fmt::sprintf("nsfac%02d", i + 1);
-            PutDbl(str, dist_fac.size(), 1, dist_fac.data());
+            PutDbl(str, dist_fac.size(), 1, Data(dist_fac));
           }
         }
       }
@@ -680,8 +681,8 @@ namespace {
       get_put_user_names(exo_file, EX_NODE_SET, num_sets, "nsusernames");
 
       /* Store # nodes and # dis. factors per node set */
-      PutInt("nnsnodes", num_sets, 1, num_nodes.data());
-      PutInt("nnsdfac", num_sets, 1, num_df.data());
+      PutInt("nnsnodes", num_sets, 1, Data(num_nodes));
+      PutInt("nnsdfac", num_sets, 1, Data(num_df));
     }
     return num_nodes;
   }
@@ -693,7 +694,7 @@ namespace {
     std::vector<int> num_sideset_nodes(num_sets);
     if (num_sets > 0) {
       std::vector<int> ids(num_sets);
-      ex_get_ids(exo_file, EX_SIDE_SET, ids.data());
+      ex_get_ids(exo_file, EX_SIDE_SET, Data(ids));
 
       // Storing:
       // 1) name
@@ -736,12 +737,12 @@ namespace {
 
         for (int i = 0; i < num_sets; i++) {
           std::vector<char> name(max_name_length + 1);
-          ex_get_name(exo_file, EX_SIDE_SET, ids[i], name.data());
+          ex_get_name(exo_file, EX_SIDE_SET, ids[i], Data(name));
           dims[0]      = 1;
-          dims[1]      = std::strlen(name.data());
+          dims[1]      = std::strlen(Data(name));
           size_t index = 7 * i + 0;
           cell_element[index] =
-              Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+              Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)Data(name), 0);
           Mat_VarSetCell(cell_array, index, cell_element[index]);
 
           dims[0]             = 1;
@@ -757,7 +758,7 @@ namespace {
           num_sideset_sides[i] = n1;
           num_sideset_dfac[i]  = n2;
 
-          bool has_ss_dfac = !(n2 == 0 || n1 == n2);
+          bool has_ss_dfac = (n2 != 0 && n1 != n2);
           if (!has_ss_dfac) {
             num_sideset_dfac[i] = num_sideset_nodes[i];
           }
@@ -819,7 +820,7 @@ namespace {
         Mat_VarFree(cell_array);
       }
       else {
-        PutInt("ssids", num_sets, 1, ids.data());
+        PutInt("ssids", num_sets, 1, Data(ids));
         std::vector<int>    elem_list;
         std::vector<int>    side_list;
         std::vector<int>    num_nodes_per_side;
@@ -839,39 +840,39 @@ namespace {
 
           num_nodes_per_side.resize(n1);
           side_nodes.resize(n2);
-          ex_get_side_set_node_list(exo_file, ids[i], num_nodes_per_side.data(), side_nodes.data());
+          ex_get_side_set_node_list(exo_file, ids[i], Data(num_nodes_per_side), Data(side_nodes));
 
           /* number-of-nodes-per-side list */
           std::string str;
           str = fmt::sprintf("ssnum%02d", i + 1);
-          PutInt(str, n1, 1, num_nodes_per_side.data());
+          PutInt(str, n1, 1, Data(num_nodes_per_side));
           /* nodes list */
           str = fmt::sprintf("ssnod%02d", i + 1);
-          PutInt(str, n2, 1, side_nodes.data());
+          PutInt(str, n2, 1, Data(side_nodes));
 
           /* distribution-factors list */
           if (has_ss_dfac) {
             ssdfac.resize(n2);
-            ex_get_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], ssdfac.data());
+            ex_get_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], Data(ssdfac));
             str = fmt::sprintf("ssfac%02d", i + 1);
-            PutDbl(str, n2, 1, ssdfac.data());
+            PutDbl(str, n2, 1, Data(ssdfac));
           }
 
           /* element and side list for side sets (dgriffi) */
           elem_list.resize(n1);
           side_list.resize(n1);
-          ex_get_set(exo_file, EX_SIDE_SET, ids[i], elem_list.data(), side_list.data());
+          ex_get_set(exo_file, EX_SIDE_SET, ids[i], Data(elem_list), Data(side_list));
           str = fmt::sprintf("ssside%02d", i + 1);
-          PutInt(str, n1, 1, side_list.data());
+          PutInt(str, n1, 1, Data(side_list));
           str = fmt::sprintf("sselem%02d", i + 1);
-          PutInt(str, n1, 1, elem_list.data());
+          PutInt(str, n1, 1, Data(elem_list));
         }
       }
       get_put_user_names(exo_file, EX_SIDE_SET, num_sets, "ssusernames");
 
       /* Store # sides and # dis. factors per side set (dgriffi) */
-      PutInt("nsssides", num_sets, 1, num_sideset_sides.data());
-      PutInt("nssdfac", num_sets, 1, num_sideset_dfac.data());
+      PutInt("nsssides", num_sets, 1, Data(num_sideset_sides));
+      PutInt("nssdfac", num_sets, 1, Data(num_sideset_dfac));
     }
     return num_sideset_sides;
   }
@@ -889,13 +890,13 @@ namespace {
     if (num_axes == 3) {
       z.resize(num_nodes);
     }
-    ex_get_coord(exo_file, x.data(), y.data(), z.data());
-    PutDbl("x0", num_nodes, 1, x.data());
+    ex_get_coord(exo_file, Data(x), Data(y), Data(z));
+    PutDbl("x0", num_nodes, 1, Data(x));
     if (num_axes >= 2) {
-      PutDbl("y0", num_nodes, 1, y.data());
+      PutDbl("y0", num_nodes, 1, Data(y));
     }
     if (num_axes == 3) {
-      PutDbl("z0", num_nodes, 1, z.data());
+      PutDbl("z0", num_nodes, 1, Data(z));
     }
   }
 
@@ -1142,8 +1143,8 @@ int main(int argc, char *argv[])
       logger("Time Steps");
     }
     std::vector<double> scr(num_time_steps);
-    ex_get_all_times(exo_file, scr.data());
-    PutDbl("time", num_time_steps, 1, scr.data());
+    ex_get_all_times(exo_file, Data(scr));
+    PutDbl("time", num_time_steps, 1, Data(scr));
   }
 
   /* global variables */
@@ -1192,8 +1193,8 @@ int main(int argc, char *argv[])
       std::vector<double> scr(num_time_steps);
       for (int i = 0; i < num_global_vars; i++) {
         str = fmt::sprintf("gvar%02d", i + 1);
-        ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, scr.data());
-        PutDbl(str, num_time_steps, 1, scr.data());
+        ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, Data(scr));
+        PutDbl(str, num_time_steps, 1, Data(scr));
       }
     }
   }
@@ -1212,7 +1213,7 @@ int main(int argc, char *argv[])
       dims[1]              = num_nodal_vars;
       matvar_t *cell_array = Mat_VarCreate("nvar", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
-      std::vector<double> scr(num_nodal_vars * num_time_steps * num_nodes);
+      std::vector<double> scr(static_cast<size_t>(num_nodal_vars) * num_time_steps * num_nodes);
       dims[0]       = num_nodes;
       dims[1]       = num_time_steps;
       size_t offset = 0;
@@ -1258,7 +1259,7 @@ int main(int argc, char *argv[])
         if (debug) {
           logger("\tWriting");
         }
-        PutDbl(str, num_nodes, num_time_steps, scr.data());
+        PutDbl(str, num_nodes, num_time_steps, Data(scr));
       }
     }
   }
@@ -1296,15 +1297,15 @@ int main(int argc, char *argv[])
   }
   ex_opts(0); /* turn off error reporting. It is not an error to have no map*/
   std::vector<int> ids(num_nodes);
-  err = ex_get_id_map(exo_file, EX_NODE_MAP, ids.data());
+  err = ex_get_id_map(exo_file, EX_NODE_MAP, Data(ids));
   if (err == 0) {
-    PutInt("node_num_map", num_nodes, 1, ids.data());
+    PutInt("node_num_map", num_nodes, 1, Data(ids));
   }
 
   ids.resize(num_elements);
-  err = ex_get_id_map(exo_file, EX_ELEM_MAP, ids.data());
+  err = ex_get_id_map(exo_file, EX_ELEM_MAP, Data(ids));
   if (err == 0) {
-    PutInt("elem_num_map", num_elements, 1, ids.data());
+    PutInt("elem_num_map", num_elements, 1, Data(ids));
   }
 
   if (debug) {

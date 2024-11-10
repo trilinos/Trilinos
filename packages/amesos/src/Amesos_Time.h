@@ -1,6 +1,12 @@
 #ifndef AMESOS_TIME_H
 #define AMESOS_TIME_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Comm.h"
 #include "Epetra_Time.h"
 #include "Teuchos_Array.hpp"

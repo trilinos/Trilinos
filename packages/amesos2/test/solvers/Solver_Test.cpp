@@ -1,44 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Amesos2: Templated Direct Sparse Solver Package
-//                  Copyright 2011 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2011 NTESS and the Amesos2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /**
@@ -66,6 +32,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_Comm.hpp>
 
 #include <Tpetra_Core.hpp>
@@ -104,6 +71,7 @@ using Teuchos::CONJ_TRANS;
 using Teuchos::ParameterList;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
+using Teuchos::StackedTimer;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 
@@ -211,15 +179,13 @@ int main(int argc, char*argv[])
 {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
-  TimeMonitor TotalTimer(*total_timer);
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-
   int root = 0;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   string xml_file("solvers_test.xml"); // default xml file
   string src_memory_space_name("Undefined"); // default src memory space (no special testing)
   bool allprint = false;
+  bool useStackedTimer = false;
   Teuchos::CommandLineProcessor cmdp;
   cmdp.setDocString("A test driver for Amesos2 solvers.  It reads parameters\n"
                     "from a given (or default) xml file which describes:\n"
@@ -231,6 +197,7 @@ int main(int argc, char*argv[])
 
   cmdp.setOption("xml-params", &xml_file, "XML Parameters file");
   cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
+  cmdp.setOption("stacked-timer","no-stacked-timer",&useStackedTimer,"Add Stacked Timers");
   cmdp.setOption("filedir", &filedir, "Directory to search for matrix files");
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
   cmdp.setOption("multiple-solves","single-solve", &multiple_solves, "Perform multiple solves with different RHS arguments");
@@ -241,51 +208,70 @@ int main(int argc, char*argv[])
     return EXIT_SUCCESS;        // help was printed, exit gracefully.
   }
 
-  // set up output streams based on command-line parameters
-  fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  if( !allprint ) fos->setOutputToRootOnly( root );
-
-  Teuchos::oblackholestream blackhole;
-  if( verbosity > 3 ){
-    compare_fos = fos;
-  } else {
-    compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
+  RCP<StackedTimer> stackedTimer;
+  if(useStackedTimer)
+  {
+    stackedTimer = rcp(new StackedTimer("Amesos2 Solve-Test"));
+    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
-
-  //Read the contents of the xml file into a ParameterList.
-  if( verbosity > 0 ){
-    *fos << "Every proc reading parameters from xml_file: "
-         << xml_file << std::endl;
-  }
-  ParameterList test_params =
-    Teuchos::ParameterXMLFileReader(xml_file).getParameters();
-
-  // Check the parameterlist for the presence of any of the other params
-  if( test_params.isParameter("all-print") ){
-    allprint = test_params.get<bool>("all-print");
-  }
-  if( test_params.isParameter("filedir") ){
-    filedir = test_params.get<string>("filedir");
-  }
-  if( test_params.isParameter("verbosity") ){
-    verbosity = test_params.get<int>("verbosity");
-  }
-
-
-  // Go through the input parameters and execute tests accordingly.
   bool success = true;
-  ParameterList::ConstIterator mat_it;
-  for( mat_it = test_params.begin(); mat_it != test_params.end(); ++mat_it ){
-    if( test_params.entry(mat_it).isList() ){ // each matrix entry must be a list
-      success &= do_mat_test(Teuchos::getValue<ParameterList>(test_params.entry(mat_it)));
+  {
+    TimeMonitor TotalTimer(*total_timer);
+
+    // set up output streams based on command-line parameters
+    fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    if( !allprint ) fos->setOutputToRootOnly( root );
+
+    Teuchos::oblackholestream blackhole;
+    if( verbosity > 3 ){
+      compare_fos = fos;
     } else {
-      *fos << "unexpected non-list entry in xml input, ignoring..." << std::endl;
+      compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
+    }
+
+    //Read the contents of the xml file into a ParameterList.
+    if( verbosity > 0 ){
+      *fos << "Every proc reading parameters from xml_file: "
+           << xml_file << std::endl;
+    }
+    ParameterList test_params =
+      Teuchos::ParameterXMLFileReader(xml_file).getParameters();
+
+    // Check the parameterlist for the presence of any of the other params
+    if( test_params.isParameter("all-print") ){
+      allprint = test_params.get<bool>("all-print");
+    }
+    if( test_params.isParameter("filedir") ){
+      filedir = test_params.get<string>("filedir");
+    }
+    if( test_params.isParameter("verbosity") ){
+      verbosity = test_params.get<int>("verbosity");
+    }
+
+    // Go through the input parameters and execute tests accordingly.
+    ParameterList::ConstIterator mat_it;
+    for( mat_it = test_params.begin(); mat_it != test_params.end(); ++mat_it ){
+      if( test_params.entry(mat_it).isList() ){ // each matrix entry must be a list
+        success &= do_mat_test(Teuchos::getValue<ParameterList>(test_params.entry(mat_it)));
+      } else {
+        *fos << "unexpected non-list entry in xml input, ignoring..." << std::endl;
+      }
     }
   }
-
   // The summary table is very verbose
   if( verbosity > 3 ){
     TimeMonitor::summarize();
+  }
+  if(useStackedTimer)
+  {
+    stackedTimer->stopBaseTimer();
+    StackedTimer::OutputOptions options;
+    options.num_histogram=3;
+    options.print_warnings = false;
+    options.output_histogram = true;
+    options.output_fraction=true;
+    options.output_minmax = true;
+    stackedTimer->report(std::cout, comm, options);
   }
 
   // This output is used to indicate a passed test, the test framework
@@ -624,15 +610,30 @@ do_solve_routine(const string& solver_name,
     solver->setParameters( rcpFromRef(solve_params) );
     switch (phase) {
     case Amesos2::CLEAN:
+      if (verbosity > 2) {
+        *fos << endl << " ** CLEAN **" << std::endl << std::flush;
+      }
       break;
     case Amesos2::PREORDERING:
+      if (verbosity > 2) {
+        *fos << endl << " ** preOrdering **" << std::endl << std::flush;
+      }
       solver->preOrdering ();
       break;
     case Amesos2::SYMBFACT:
+      if (verbosity > 2) {
+        *fos << endl << " ** symbolicFactorization **" << std::endl << std::flush;
+      }
       solver->symbolicFactorization ();
       break;
     case Amesos2::NUMFACT:
+      if (verbosity > 2) {
+        *fos << endl << " ** numlicFactorization **" << std::endl << std::flush;
+      }
       solver->numericFactorization ();
+    }
+    if (verbosity > 2) {
+      *fos << endl << " ** done **" << std::endl << std::flush;
     }
     ++phase;
   }
@@ -673,20 +674,32 @@ do_solve_routine(const string& solver_name,
     // Do first solve according to our current style
     switch( style ){
     case SOLVE_VERBOSE:
+      if (verbosity > 2) {
+        *fos << endl << " ++ VERBOSE ++" << std::endl << std::flush;
+      }
       solver->preOrdering();
       solver->symbolicFactorization();
       solver->numericFactorization();
       solver->solve();
       break;
     case SOLVE_XB:
+      if (verbosity > 2) {
+        *fos << endl << " ++ SOLVE_XB ++" << std::endl << std::flush;
+      }
       solver->preOrdering();
       solver->symbolicFactorization();
       solver->numericFactorization();
       solver->solve(outArg(*Xhat), ptrInArg(**rhs_it));
       break;
     case SOLVE_SHORT:
+      if (verbosity > 2) {
+        *fos << endl << " ++ SOLVE_SHORT ++" << std::endl << std::flush;
+      }
       solver->solve(outArg(*Xhat), ptrInArg(**rhs_it));
       break;
+    }
+    if (verbosity > 2) {
+      *fos << endl << " ++ DONE ++" << std::endl << std::flush;
     }
 
     success &= checker(*x_it, Xhat);
@@ -939,7 +952,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   const size_t numVecs = 5;     // arbitrary number
-  const size_t numRHS = 5;        // also arbitrary
+  const size_t numRHS  = 5;     // also arbitrary
 
   bool transpose = solve_params.get<bool>("Transpose", false);
 
@@ -1502,7 +1515,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
       auto row_map = A2->graph.row_map;
       Kokkos::RangePolicy<execution_space> policy(0, vals.size());
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA(size_t i) {
-        if(i < row_map(1)) { // just do 1st row
+        if(i < size_t(row_map(1))) { // just do 1st row
           vals(i) = vals(i) * vals(i);
         }
       });

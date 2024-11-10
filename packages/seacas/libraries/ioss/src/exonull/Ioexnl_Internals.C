@@ -4,24 +4,16 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <exonull/Ioexnl_Internals.h> // for Internals, ElemBlock, etc
-#include <exonull/Ioexnl_Utils.h>
-
-#include "exodusII.h" // for ex_err, ex_opts, etc
+#include "exonull/Ioexnl_Internals.h" // for Internals, ElemBlock, etc
+#include "exonull/Ioexnl_Utils.h"
 
 extern "C" {
-#include <exodusII_int.h>
 }
 
-#include <cassert>  // for assert
-#include <cstddef>  // for size_t
-#include <cstdio>   // for nullptr
-#include <cstdlib>  // for exit, EXIT_FAILURE
-#include <cstring>  // for strlen
-#include <fmt/format.h>
-#include <ostream>  // for operator<<, etc
-#include <string>   // for string, operator==, etc
-#include <vector>   // for vector
+#include <cassert> // for assert
+#include <cstring> // for strlen
+#include <string>  // for string, operator==, etc
+#include <vector>  // for vector
 
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
@@ -29,9 +21,11 @@ extern "C" {
 #include "Ioss_EdgeSet.h"
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementSet.h"
+#include "Ioss_ElementTopology.h"
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
@@ -464,7 +458,7 @@ void Mesh::get_global_counts()
   // they can determine the offsets and totals...
   global_counts.resize(counts.size() * parallelUtil.parallel_size());
 
-  MPI_Allgather(&counts[0], counts.size(), MPI_LONG_LONG_INT, &global_counts[0], counts.size(),
+  MPI_Allgather(Data(counts), counts.size(), MPI_LONG_LONG_INT, Data(global_counts), counts.size(),
                 MPI_LONG_LONG_INT, parallelUtil.communicator());
 
   std::vector<int64_t> offsets(counts.size());

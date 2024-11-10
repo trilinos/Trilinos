@@ -42,6 +42,12 @@
 #ifndef _EpetraExt_LINEARPROBLEM_CRSSINGLETONFILTER_H_
 #define _EpetraExt_LINEARPROBLEM_CRSSINGLETONFILTER_H_
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_CrsMatrix.h"

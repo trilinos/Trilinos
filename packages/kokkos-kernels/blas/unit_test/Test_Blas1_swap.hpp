@@ -3,11 +3,12 @@
 namespace Test {
 namespace Impl {
 
-template <class VectorType>
+template <class ScalarType, class DeviceType>
 void test_swap(int const vector_length) {
-  using vector_type     = VectorType;
-  using execution_space = typename vector_type::execution_space;
-  using scalar_type     = typename VectorType::non_const_value_type;
+  using execution_space = typename DeviceType::execution_space;
+  using memory_space    = typename DeviceType::memory_space;
+  using vector_type     = Kokkos::View<ScalarType*, memory_space>;
+  using scalar_type     = typename vector_type::non_const_value_type;
   using mag_type        = typename Kokkos::ArithTraits<scalar_type>::mag_type;
 
   // Note that Xref and Yref need to always be copies of X and Y
@@ -43,21 +44,18 @@ void test_swap(int const vector_length) {
 }  // namespace Impl
 }  // namespace Test
 
-template <class scalar_type, class execution_space>
+template <class ScalarType, class DeviceType>
 int test_swap() {
-  using Vector = Kokkos::View<scalar_type*, execution_space>;
-
-  Test::Impl::test_swap<Vector>(0);
-  Test::Impl::test_swap<Vector>(10);
-  Test::Impl::test_swap<Vector>(256);
-  Test::Impl::test_swap<Vector>(1024);
+  Test::Impl::test_swap<ScalarType, DeviceType>(0);
+  Test::Impl::test_swap<ScalarType, DeviceType>(10);
+  Test::Impl::test_swap<ScalarType, DeviceType>(256);
+  Test::Impl::test_swap<ScalarType, DeviceType>(1024);
 
   return 0;
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_float");
   test_swap<float, TestDevice>();
@@ -66,8 +64,7 @@ TEST_F(TestCategory, swap_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_double");
   test_swap<double, TestDevice>();
@@ -76,8 +73,7 @@ TEST_F(TestCategory, swap_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_complex_float");
   test_swap<Kokkos::complex<float>, TestDevice>();
@@ -86,8 +82,7 @@ TEST_F(TestCategory, swap_complex_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, swap_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::swap_complex_double");
   test_swap<Kokkos::complex<double>, TestDevice>();

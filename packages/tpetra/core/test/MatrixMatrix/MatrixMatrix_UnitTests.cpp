@@ -1,49 +1,17 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
+
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Teuchos_Assert.hpp"
 #include "TpetraExt_TripleMatrixMultiply.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_Core.hpp"
@@ -435,6 +403,56 @@ add_test_results add_into_test(
 
   return toReturn;
 }
+
+
+template<class Matrix_t>
+add_test_results reuse_add_test(
+    const std::string& name,
+    RCP<Matrix_t > A,
+    RCP<Matrix_t > B,
+    bool AT,
+    bool BT,
+    RCP<Matrix_t > C,
+    RCP<const Comm<int> > comm)
+{
+  typedef typename Matrix_t::scalar_type SC;
+  typedef typename Matrix_t::local_ordinal_type LO;
+  typedef typename Matrix_t::global_ordinal_type GO;
+  typedef typename Matrix_t::node_type NT;
+  typedef Map<LO,GO,NT> Map_t;
+
+  add_test_results toReturn;
+  toReturn.correctNorm = C->getFrobeniusNorm ();
+
+  RCP<const Map_t > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  size_t estSize = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+         // estSize is upper bound for A, B; estimate only for AT, BT.
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, estSize));
+
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
+  computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
+
+  // Call Add a second time
+  Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
+
+  TEUCHOS_ASSERT(A->getDomainMap()->isSameAs(*computedC->getDomainMap()));
+  TEUCHOS_ASSERT(A->getRangeMap()->isSameAs(*computedC->getRangeMap()));
+
+  toReturn.computedNorm = computedC->getFrobeniusNorm ();
+  toReturn.epsilon = fabs(toReturn.correctNorm - toReturn.computedNorm);
+
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedC);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", C);
+#endif
+
+
+  return toReturn;
+}
+
 
 template<class Matrix_t>
 mult_test_results multiply_test_manualfc(
@@ -1190,6 +1208,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
       TEST_COMPARE(results.epsilon, <, epsilon);
       newOut << "Regular Add Test Results: " << endl;
+      newOut << "\tCorrect Norm: " << results.correctNorm << endl;
+      newOut << "\tComputed norm: " << results.computedNorm << endl;
+      newOut << "\tEpsilon: " << results.epsilon << endl;
+
+      if (verbose)
+        newOut << "Running 3-argument add reuse test (nonnull C on input) for "
+               << currentSystem.name() << endl;
+
+      results = reuse_add_test(name+"_add",A, B, AT, BT, C, comm);
+
+      TEST_COMPARE(results.epsilon, <, epsilon);
+      newOut << "Reuse Add Test Results: " << endl;
       newOut << "\tCorrect Norm: " << results.correctNorm << endl;
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
@@ -2786,7 +2816,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
 // FIXME_SYCL requires querying free device memory in KokkosKernels, see
 // https://github.com/kokkos/kokkos-kernels/issues/1062.
 // The SYCL specifications don't allow asking for that.
-#ifdef HAVE_TPETRA_SYCL
+#if defined(HAVE_TPETRA_SYCL)
   #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )  \
     UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )
 #else

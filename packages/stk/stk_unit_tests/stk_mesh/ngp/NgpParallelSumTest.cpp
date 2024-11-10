@@ -32,11 +32,11 @@ void check_field_on_device(stk::mesh::NgpMesh &mesh,
                                  });
 }
 
-class NgpParallelSum : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpParallelSum : public stk::unit_test_util::MeshFixture
 {
 protected:
   NgpParallelSum()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {
   }
 
@@ -85,11 +85,11 @@ protected:
   }
 };
 
-class NgpCopyOwnedToShared : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpCopyOwnedToShared : public stk::unit_test_util::MeshFixture
 {
 protected:
   NgpCopyOwnedToShared()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {
   }
 
@@ -115,11 +115,11 @@ protected:
 
 };
 
-class NgpCommunicateFieldData : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpCommunicateFieldData : public stk::unit_test_util::MeshFixture
 {
 protected:
   NgpCommunicateFieldData()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {
   }
 
@@ -163,7 +163,7 @@ void build_homogeneous_mesh_hex_proc_0(stk::mesh::BulkData & bulk)
     1,0,1, 1,1,1, 1,2,1
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_hex_proc_1(stk::mesh::BulkData & bulk)
@@ -178,7 +178,7 @@ void build_homogeneous_mesh_hex_proc_1(stk::mesh::BulkData & bulk)
     1,0,1, 1,1,1, 1,2,1
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_hex_both_procs(stk::mesh::BulkData & bulk)
@@ -193,7 +193,7 @@ void build_homogeneous_mesh_hex_both_procs(stk::mesh::BulkData & bulk)
     1,0,1, 1,1,1, 1,2,1
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_tet_proc_0(stk::mesh::BulkData & bulk)
@@ -207,7 +207,7 @@ void build_homogeneous_mesh_tet_proc_0(stk::mesh::BulkData & bulk)
     0,0,2, 0,1,2, 0,2,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_tet_proc_1(stk::mesh::BulkData & bulk)
@@ -221,7 +221,7 @@ void build_homogeneous_mesh_tet_proc_1(stk::mesh::BulkData & bulk)
     0,0,2, 0,1,2, 0,2,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_tet_both_procs(stk::mesh::BulkData & bulk)
@@ -235,7 +235,7 @@ void build_homogeneous_mesh_tet_both_procs(stk::mesh::BulkData & bulk)
     0,0,2, 0,1,2, 0,2,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_pyramid_proc_0(stk::mesh::BulkData & bulk)
@@ -249,7 +249,7 @@ void build_homogeneous_mesh_pyramid_proc_0(stk::mesh::BulkData & bulk)
     0,1,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_pyramid_proc_1(stk::mesh::BulkData & bulk)
@@ -263,7 +263,7 @@ void build_homogeneous_mesh_pyramid_proc_1(stk::mesh::BulkData & bulk)
     0,1,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_homogeneous_mesh_pyramid_both_procs(stk::mesh::BulkData & bulk)
@@ -277,7 +277,7 @@ void build_homogeneous_mesh_pyramid_both_procs(stk::mesh::BulkData & bulk)
     0,1,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 NGP_TEST_F(NgpParallelSum, homogeneousMesh_hexProc0)
@@ -361,7 +361,7 @@ void build_heterogeneous_mesh_no_empty_blocks(stk::mesh::BulkData & bulk)
     0,0,2, 0,1,2, 0,2,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_heterogeneous_mesh_pyramid_only_on_proc_1(stk::mesh::BulkData & bulk)
@@ -381,7 +381,7 @@ void build_heterogeneous_mesh_pyramid_only_on_proc_1(stk::mesh::BulkData & bulk)
     0,0,2, 0,1,2, 0,2,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 void build_heterogeneous_mesh_elem_types_all_on_one_proc(stk::mesh::BulkData & bulk)
@@ -401,7 +401,7 @@ void build_heterogeneous_mesh_elem_types_all_on_one_proc(stk::mesh::BulkData & b
     0,0,2, 0,1,2, 0,2,2
   };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 }
 
 
@@ -628,10 +628,9 @@ NGP_TEST_F(NgpParallelSum, Performance)
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_SELF).create();
-    bulk->mesh_meta_data().use_simple_fields();
 
     std::string meshSpecDefault = "10x10x10";
-    std::string meshSpec = stk::unit_test_util::simple_fields::get_command_line_option("-m", meshSpecDefault);
+    std::string meshSpec = stk::unit_test_util::get_command_line_option("-m", meshSpecDefault);
 
     stk::io::fill_mesh("generated:" + meshSpec, *bulk);
     stk::io::write_mesh(serialMeshName, *bulk);
@@ -655,10 +654,10 @@ NGP_TEST_F(NgpParallelSum, Performance)
   stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   const bool useSimpleDefault = true;
-  bool useSimple = stk::unit_test_util::simple_fields::get_command_line_option("-s", useSimpleDefault);
+  bool useSimple = stk::unit_test_util::get_command_line_option("-s", useSimpleDefault);
 
   const int numIterationsDefault = 1;
-  int numIterations = stk::unit_test_util::simple_fields::get_command_line_option("-n", numIterationsDefault);
+  int numIterations = stk::unit_test_util::get_command_line_option("-n", numIterationsDefault);
 
   for (int i = 0; i < numIterations; ++i) {
     if (useSimple) {

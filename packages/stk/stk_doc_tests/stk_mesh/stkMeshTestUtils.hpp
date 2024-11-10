@@ -36,10 +36,11 @@
 #define stkMeshTestUtilsHpp
 
 #include <gtest/gtest.h>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_topology/topology.hpp>
+
+namespace stk { namespace mesh { class BulkData; } }
 
 namespace testUtils
 {
@@ -47,30 +48,29 @@ namespace testUtils
 inline
 int get_other_proc(int myproc)
 {
-  int otherproc = 1;
-  if (myproc == 1)
-    otherproc = 0;
-  return otherproc;
+  return myproc == 0 ? 1 : 0;
 }
 
 inline
-void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField, double prescribedTemperatureValue, const std::set<stk::mesh::EntityId> &boundaryNodeIds)
+void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField,
+                                      const stk::mesh::Selector& boundaryNodesSelector,
+                                      double prescribedTemperatureValue)
 {
-  stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
-  stk::mesh::EntityVector nodes;
-  stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-  for(size_t i=0; i<nodes.size(); ++i)
-  {
-    double *temperature = stk::mesh::field_data(temperatureField, nodes[i]);
-    if(boundaryNodeIds.find(stkMeshBulkData.identifier(nodes[i])) != boundaryNodeIds.end())
-    {
+  const stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
+
+  stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector,
+    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+      const double *temperature = stk::mesh::field_data(temperatureField, node);
       EXPECT_EQ(prescribedTemperatureValue, *temperature);
-    }
-    else
-    {
+    });
+
+  stk::mesh::Selector nonBoundaryNodes = !boundaryNodesSelector;
+
+  stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, nonBoundaryNodes,
+    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+      const double *temperature = stk::mesh::field_data(temperatureField, node);
       EXPECT_EQ(0.0, *temperature);
-    }
-  }
+    });
 }
 }
 

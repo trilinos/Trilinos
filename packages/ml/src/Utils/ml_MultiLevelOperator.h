@@ -32,6 +32,12 @@
 #ifndef ML_MULTILEVELOPERATOR_H
 #define ML_MULTILEVELOPERATOR_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 class Epetra_MultiVector;
 class Epetra_BlockMap;
 class Epetra_Comm;
@@ -208,4 +214,3 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 }
 
 #endif /* ML_MULTILEVELOPERATOR_H */
-

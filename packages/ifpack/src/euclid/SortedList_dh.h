@@ -43,6 +43,12 @@
 #ifndef SORTEDLIST_DH_H
 #define SORTEDLIST_DH_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /* for private use by mpi factorization algorithms */
 
 #include "euclid_common.h"

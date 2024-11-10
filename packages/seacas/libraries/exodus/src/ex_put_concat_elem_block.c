@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,7 +49,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -144,7 +144,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     free(eb_array);
@@ -180,7 +180,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
       num_attr = ((int *)num_attr_this_blk)[iblk];
     }
 
-    cur_num_elem_blk = ex__get_file_item(exoid, ex__get_counter_list(EX_ELEM_BLOCK));
+    cur_num_elem_blk = exi_get_file_item(exoid, exi_get_counter_list(EX_ELEM_BLOCK));
     if (cur_num_elem_blk >= num_elem_blk) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: exceeded number of element blocks (%d) defined in file id %d", num_elem_blk,
@@ -189,9 +189,9 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
       goto error_ret;
     }
 
-    /* NOTE: ex__inc_file_item  is used to find the number of element blocks
+    /* NOTE: exi_inc_file_item  is used to find the number of element blocks
        for a specific file and returns that value incremented. */
-    cur_num_elem_blk = ex__inc_file_item(exoid, ex__get_counter_list(EX_ELEM_BLOCK));
+    cur_num_elem_blk = exi_inc_file_item(exoid, exi_get_counter_list(EX_ELEM_BLOCK));
 
     if (eb_array[iblk] == 0) { /* Is this a NULL element block? */
       continue;
@@ -236,7 +236,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
       ex_err_fn(exoid, __func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
-    ex__compress_variable(exoid, connid, 1);
+    exi_compress_variable(exoid, connid, 1);
 
     /* store element type as attribute of connectivity variable */
     if ((status = nc_put_att_text(exoid, connid, ATT_NAME_ELB, strlen(elem_type[iblk]) + 1,
@@ -314,7 +314,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
           ex_err_fn(exoid, __func__, errmsg, status);
           goto error_ret; /* exit define mode and return */
         }
-        ex__compress_variable(exoid, temp, 1);
+        exi_compress_variable(exoid, temp, 1);
       }
     }
 
@@ -338,13 +338,13 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
           ex_err_fn(exoid, __func__, errmsg, status);
           goto error_ret; /* exit define mode and return */
         }
-        ex__compress_variable(exoid, temp, 1);
+        exi_compress_variable(exoid, temp, 1);
       }
     }
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     free(eb_array);
@@ -385,6 +385,6 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 /* Fatal error: exit definition mode and return */
 error_ret:
   free(eb_array);
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

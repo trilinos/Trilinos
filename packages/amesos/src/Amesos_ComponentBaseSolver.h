@@ -36,6 +36,12 @@
 #ifndef _AMESOS_COMPONENTBASESOLVER_H_
 #define _AMESOS_COMPONENTBASESOLVER_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_LinearProblem.h"
 class Epetra_LinearProblem;

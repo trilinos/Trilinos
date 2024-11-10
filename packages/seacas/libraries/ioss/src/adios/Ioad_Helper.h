@@ -22,13 +22,13 @@ namespace Ioad {
       typename std::enable_if<std::is_base_of<Ioss::GroupingEntity, T>::value, bool>::type;
 
   template <typename T>
-  using IossHas3ParametersConstructor = decltype(DerivedFromIossGroupingEntity<T>{},
-                                                 T(nullptr, std::string{}, int64_t{}));
+  using IossHas3ParametersConstructor =
+      decltype(DerivedFromIossGroupingEntity<T>{}, T(nullptr, std::string{}, int64_t{}));
 
   template <typename T>
-  using IossHas4ParametersConstructor = decltype(DerivedFromIossGroupingEntity<T>{},
-                                                 T(nullptr, std::string{}, std::string{},
-                                                   int64_t{}));
+  using IossHas4ParametersConstructor =
+      decltype(DerivedFromIossGroupingEntity<T>{},
+               T(nullptr, std::string{}, std::string{}, int64_t{}));
 
   // Takes an extra unused parameter "entity_type" to match the API of the function
   // "NewEntity" used for objects that are not EntitySets which require that parameter.
@@ -37,35 +37,38 @@ namespace Ioad {
   // parameters.
   template <typename T>
   auto NewEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                 const std::string & /*entity_type*/, size_t       entity_count)
-      -> IossHas3ParametersConstructor<T> *
+                 const std::string & /*entity_type*/,
+                 size_t entity_count) -> IossHas3ParametersConstructor<T> *
   {
     return new T(io_database, my_name, entity_count);
   }
 
   template <typename T>
   auto NewEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                 const std::string &entity_type, size_t entity_count)
-      -> IossHas4ParametersConstructor<T> *
+                 const std::string &entity_type,
+                 size_t             entity_count) -> IossHas4ParametersConstructor<T> *
   {
     return new T(io_database, my_name, entity_type, entity_count);
   }
 
-  IOAD_EXPORT int find_field_in_mapset(const std::string &entity_type, const std::string &field_name,
-                           const std::map<std::string, std::set<std::string>> &mapset);
+  IOAD_EXPORT int find_field_in_mapset(const std::string &entity_type,
+                                       const std::string &field_name,
+                                       const std::map<std::string, std::set<std::string>> &mapset);
 
-  IOAD_EXPORT std::string              get_property_variable_name(const std::string &property_name);
-  IOAD_EXPORT std::vector<std::string> properties_to_save(const Ioss::GroupingEntity *const entity_block);
+  IOAD_EXPORT std::string get_property_variable_name(const std::string &property_name);
+  IOAD_EXPORT             std::vector<std::string>
+                          properties_to_save(const Ioss::GroupingEntity *const entity_block);
 
   IOAD_EXPORT std::string stringify_side_block_names(const Ioss::SideBlockContainer &sblocks);
 
   IOAD_EXPORT std::string encode_field_name(std::vector<std::string> names);
 
-  IOAD_EXPORT std::string encode_sideblock_name(const std::string &type_string, const std::string &name);
+  IOAD_EXPORT std::string encode_sideblock_name(const std::string &type_string,
+                                                const std::string &name);
 
   IOAD_EXPORT bool is_sideblock_name(const std::string &name);
 
   IOAD_EXPORT bool use_transformed_storage(const Ioss::Field &field, const std::string &entity_type,
-                               const std::string &field_name);
+                                           const std::string &field_name);
 
 } // namespace Ioad

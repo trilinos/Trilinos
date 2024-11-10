@@ -50,14 +50,14 @@ int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids,
   assert(pt_coordinates != NULL);
   assert(tags != NULL);
 
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* make the definitions */
   /* go into define mode. define num_frames, num_frames9 */
   int status;
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -91,7 +91,7 @@ int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids,
   }
 
   /* leave define mode */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -125,7 +125,7 @@ int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids,
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (ex__comp_ws(exoid) == 4) {
+  if (exi_comp_ws(exoid) == 4) {
     status = nc_put_var_float(exoid, varcoords, pt_coordinates);
   }
   else {
@@ -140,6 +140,6 @@ int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids,
   EX_FUNC_LEAVE(EX_NOERR);
 
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

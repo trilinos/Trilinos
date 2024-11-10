@@ -44,6 +44,12 @@
 #ifndef IFPACK_SERIALTRIDIMATRIX_H
 #define IFPACK_SERIALTRIDIMATRIX_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"

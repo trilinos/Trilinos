@@ -1,59 +1,86 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Assembly.h>
-#include <Ioss_Beam2.h>
-#include <Ioss_Beam3.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_FaceGenerator.h>
-#include <Ioss_Hex20.h>
-#include <Ioss_Hex27.h>
-#include <Ioss_Hex8.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_Node.h>
-#include <Ioss_Pyramid13.h>
-#include <Ioss_Pyramid14.h>
-#include <Ioss_Pyramid5.h>
-#include <Ioss_Quad4.h>
-#include <Ioss_Quad8.h>
-#include <Ioss_Quad9.h>
-#include <Ioss_Sort.h>
-#include <Ioss_Spring2.h>
-#include <Ioss_Spring3.h>
-#include <Ioss_StructuredBlock.h>
-#include <Ioss_Tet10.h>
-#include <Ioss_Tet4.h>
-#include <Ioss_Tri3.h>
-#include <Ioss_Tri4.h>
-#include <Ioss_Tri6.h>
-#include <Ioss_Unknown.h>
-#include <Ioss_Utils.h>
-#include <Ioss_Wedge15.h>
-#include <Ioss_Wedge18.h>
-#include <Ioss_Wedge6.h>
-
+#include "Ioss_Assembly.h"
+#include "Ioss_Beam2.h"
+#include "Ioss_Beam3.h"
+#include "Ioss_CodeTypes.h"
+#include "Ioss_FaceGenerator.h"
+#include "Ioss_Hex20.h"
+#include "Ioss_Hex27.h"
+#include "Ioss_Hex8.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Node.h"
+#include "Ioss_Pyramid13.h"
+#include "Ioss_Pyramid14.h"
+#include "Ioss_Pyramid5.h"
+#include "Ioss_Quad4.h"
+#include "Ioss_Quad8.h"
+#include "Ioss_Quad9.h"
+#include "Ioss_Sort.h"
+#include "Ioss_Spring2.h"
+#include "Ioss_Spring3.h"
+#include "Ioss_StructuredBlock.h"
+#include "Ioss_Tet10.h"
+#include "Ioss_Tet4.h"
+#include "Ioss_Tri3.h"
+#include "Ioss_Tri6.h"
+#include "Ioss_Unknown.h"
+#include "Ioss_Utils.h"
+#include "Ioss_Wedge15.h"
+#include "Ioss_Wedge18.h"
+#include "Ioss_Wedge6.h"
+#include <assert.h>
 #include <fmt/chrono.h>
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <stdint.h>
+#include <stdlib.h>
+#if !defined __NVCC__
 #include <fmt/color.h>
-#include <fmt/ostream.h>
-#include <numeric>
-#include <set>
-#include <tokenize.h>
-
-#include <cgns/Iocgns_StructuredZoneData.h>
-#include <cgns/Iocgns_Utils.h>
-
+#endif
+#include "cgns/Iocgns_StructuredZoneData.h"
+#include "cgns/Iocgns_Utils.h"
 #include <cgnsconfig.h>
 #include <cgnstypes.h>
+#include <cmath>
+#include <cstring>
+#include <ctime>
+#include <fmt/ostream.h>
+#include <limits>
+#include <numeric>
+#include <ostream>
+#include <set>
+#include <string>
+#include <tokenize.h>
+
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_MeshType.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_VariableType.h"
+#include "Ioss_ZoneConnectivity.h"
+#include "robin_hash.h"
+#include "robin_set.h"
 #if CG_BUILD_PARALLEL
 #include <pcgnslib.h>
 #else
 #include <cgnslib.h>
 #endif
 
-#include <cgns/Iocgns_Defines.h>
+#include "cgns/Iocgns_Defines.h"
 
 #define CGERR(funcall)                                                                             \
   do {                                                                                             \
@@ -63,7 +90,7 @@
   } while (0)
 
 namespace {
-#if defined(__IOSS_WINDOWS__)
+#if defined(__IOSS_WINDOWS__) || defined(__CYGWIN__)
   const char *strcasestr(const char *haystack, const char *needle)
   {
     std::string lneedle(Ioss::Utils::lowercase(needle));
@@ -421,6 +448,7 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
   }
 #endif
+
 } // namespace
 
 std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &name, bool is_parallel)
@@ -866,7 +894,7 @@ namespace {
 
     // Now clean out existing ZGC lists for all blocks and add on the consolidated instances.
     // Also create a vector for mapping from zone to sb name.
-    std::vector<std::string> sb_names(structured_blocks.size() + 1);
+    Ioss::NameList sb_names(structured_blocks.size() + 1);
     for (auto &sb : structured_blocks) {
       sb->m_zoneConnectivity.clear();
       auto zone = sb->get_property("zone").get_int();
@@ -1039,8 +1067,8 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
   }
 }
 
-size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &region,
-                                             std::vector<size_t> &zone_offset, bool is_parallel_io)
+size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &region,
+                                            std::vector<size_t> &zone_offset, bool is_parallel_io)
 {
 #if !IOSS_ENABLE_HYBRID
   // Make sure mesh is not hybrid...
@@ -1054,7 +1082,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   }
 #endif
 
-  region.get_database()->progress("\tEnter common_write_meta_data");
+  region.get_database()->progress("\tEnter common_write_metadata");
   int base           = 0;
   int phys_dimension = region.get_property("spatial_dimension").get_int();
   CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
@@ -1067,7 +1095,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   std::string code_version = region.get_optional_property("code_version", "unknown");
   std::string code_name    = region.get_optional_property("code_name", "unknown");
 
-  std::string mpi_version = "";
+  std::string mpi_version{};
 #if CG_BUILD_PARALLEL
   {
     char version[MPI_MAX_LIBRARY_VERSION_STRING];
@@ -1390,8 +1418,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         }
 
         CGERR(cg_1to1_write(file_ptr, base, db_zone, connect_name.c_str(), donor_name.c_str(),
-                            owner_range.data(), donor_range.data(), zgc.m_transform.data(),
-                            &zgc_idx));
+                            Data(owner_range), Data(donor_range), Data(zgc.m_transform), &zgc_idx));
 
         if (zgc.is_from_decomp()) {
           CGERR(cg_goto(file_ptr, base, "Zone_t", db_zone, "ZoneGridConnectivity", 0,
@@ -1407,7 +1434,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     }
   }
 
-  region.get_database()->progress("\tReturn from common_write_meta_data");
+  region.get_database()->progress("\tReturn from common_write_metadata");
   return element_count;
 }
 
@@ -1912,7 +1939,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
 
   for (auto &owner_block : blocks) {
     int  owner_zone = owner_block->get_property("zone").get_int();
-    auto owner_ids  = owner_block->get_cell_node_ids(true);
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
       assert(zgc.m_donorProcessor >= 0);
       assert(zgc.m_ownerProcessor >= 0);
@@ -1925,9 +1951,6 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
         auto donor_block = region.get_structured_block(zgc.m_donorName);
         assert(donor_block != nullptr);
         int donor_zone = donor_block->get_property("zone").get_int();
-
-        auto donor_ids = donor_block->get_cell_node_ids(true);
-
         std::vector<int> i_range = zgc.get_range(1);
         std::vector<int> j_range = zgc.get_range(2);
         std::vector<int> k_range = zgc.get_range(3);
@@ -2074,7 +2097,7 @@ void Iocgns::Utils::generate_boundary_faces(
     auto              &boundary = boundary_faces[name];
     auto              &faces    = face_generator.faces(name);
     for (auto &face : faces) {
-      if (face.elementCount_ == 1) {
+      if (face.element_count() == 1) {
         boundary.insert(face);
       }
     }
@@ -2164,7 +2187,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
   // Now write the timestep time values...
   CGCHECK(cg_goto(cgns_file_ptr, base, "BaseIterativeData_t", 1, "end"));
   cgsize_t dimtv[1] = {(cgsize_t)timesteps.size()};
-  CGCHECK(cg_array_write("TimeValues", CGNS_ENUMV(RealDouble), 1, dimtv, timesteps.data()));
+  CGCHECK(cg_array_write("TimeValues", CGNS_ENUMV(RealDouble), 1, dimtv, Data(timesteps)));
 
   // Output the ZoneIterativeData which maps a zones flow solutions to timesteps.
   // One per zone and the number of entries matches the number of timesteps...
@@ -2204,7 +2227,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
     if (has_cell_center_fields || has_nodal_fields) {
       CGCHECK(cg_ziter_write(cgns_file_ptr, base, zone, "ZoneIterativeData"));
       CGCHECK(cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneIterativeData_t", 1, "end"));
-      CGCHECK(cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, dim, names.data()));
+      CGCHECK(cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, dim, Data(names)));
 
       if (has_nodal_fields) {
         int index     = 1;
@@ -2215,7 +2238,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
         }
 
         CGCHECK(cg_array_write("VertexSolutionIndices", CGNS_ENUMV(Integer), 1, &dim[1],
-                               indices.data()));
+                               Data(indices)));
         CGCHECK(cg_descriptor_write("VertexPrefix", "Vertex"));
       }
       if (has_cell_center_fields) {
@@ -2227,7 +2250,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
         }
 
         CGCHECK(
-            cg_array_write("CellCenterIndices", CGNS_ENUMV(Integer), 1, &dim[1], indices.data()));
+            cg_array_write("CellCenterIndices", CGNS_ENUMV(Integer), 1, &dim[1], Data(indices)));
         CGCHECK(cg_descriptor_write("CellCenterPrefix", "CellCenter"));
       }
     }
@@ -2276,19 +2299,20 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
       int field_count = 0;
       CGCHECK(cg_nfields(cgns_file_ptr, b, z, sol, &field_count));
 
-      char **field_names = Ioss::Utils::get_name_array(field_count, CGNS_MAX_NAME_LENGTH);
+      Ioss::NameList field_names;
+      field_names.reserve(field_count);
       for (int field = 1; field <= field_count; field++) {
         CGNS_ENUMT(DataType_t) data_type;
         char field_name[CGNS_MAX_NAME_LENGTH + 1];
         CGCHECK(cg_field_info(cgns_file_ptr, b, z, sol, field, &data_type, field_name));
-        Ioss::Utils::copy_string(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH + 1);
+        field_names.emplace_back(field_name);
       }
 
       // Convert raw field names into composite fields (a_x, a_y, a_z ==> 3D vector 'a')
       std::vector<Ioss::Field> fields;
       if (grid_loc == CGNS_ENUMV(CellCenter)) {
         size_t entity_count = block->entity_count();
-        Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
+        Ioss::Utils::get_fields(entity_count, field_names, Ioss::Field::TRANSIENT,
                                 region->get_database(), nullptr, fields);
         size_t index = 1;
         for (const auto &field : fields) {
@@ -2312,7 +2336,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
           IOSS_ERROR(errmsg);
         }
         size_t entity_count = nb->entity_count();
-        Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
+        Ioss::Utils::get_fields(entity_count, field_names, Ioss::Field::TRANSIENT,
                                 region->get_database(), nullptr, fields);
         size_t index = 1;
         for (const auto &field : fields) {
@@ -2321,8 +2345,6 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
           nb->field_add(field);
         }
       }
-
-      Ioss::Utils::delete_name_array(field_names, field_count);
     }
   };
   // ==========================================
@@ -2366,7 +2388,7 @@ int Iocgns::Utils::get_step_times(int cgns_file_ptr, std::vector<double> &timest
   // Read the timestep time values.
   CGCHECK(cg_goto(cgns_file_ptr, base, "BaseIterativeData_t", 1, "end"));
   std::vector<double> times(num_timesteps);
-  CGCHECK(cg_array_read_as(1, CGNS_ENUMV(RealDouble), times.data()));
+  CGCHECK(cg_array_read_as(1, CGNS_ENUMV(RealDouble), Data(times)));
 
   timesteps.reserve(num_timesteps);
   for (int i = 0; i < num_timesteps; i++) {
@@ -2394,7 +2416,7 @@ void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string 
   int num_families = 0;
   CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
 
-  std::vector<std::string> families;
+  Ioss::NameList families;
   families.reserve(num_families);
   for (int family = 1; family <= num_families; family++) {
     char name[CGNS_MAX_NAME_LENGTH + 1];
@@ -2562,9 +2584,12 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
         px++;
         if (verbose && rank == 0) {
           fmt::print(Ioss::DebugOut(), "{}",
-                     fmt::format(fg(fmt::color::red),
-                                 "\nProcessor {} work: {}, workload ratio: {} (exceeds)", i,
-                                 fmt::group_digits(work_vector[i]), workload_ratio));
+                     fmt::format(
+#if !defined __NVCC__
+                         fg(fmt::color::red),
+#endif
+                         "\nProcessor {} work: {}, workload ratio: {} (exceeds)", i,
+                         fmt::group_digits(work_vector[i]), workload_ratio));
         }
       }
       else {
@@ -2578,7 +2603,7 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
       fmt::print(Ioss::DebugOut(), "\n\nWorkload threshold exceeded on {} processors.\n", px);
     }
     bool single_zone = zones.size() == 1;
-    if (single_zone) {
+    if (single_zone) { // GDS: Don't understand this code...  !single_zone?
       auto active = std::count_if(zones.begin(), zones.end(),
                                   [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
       if (active >= proc_count) {
@@ -2714,19 +2739,21 @@ int Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, d
   int  new_zone_id = static_cast<int>(zones.size()) + 1;
 
   // See if can split each zone over a set of procs...
-  std::vector<int> splits(zones.size());
+  std::vector<int> splits(zones.size(), 1);
 
-  for (size_t i = 0; i < zones.size(); i++) {
-    auto zone = zones[i];
-    if (zone->m_lineOrdinal != 7) {
-      double work = zone->work();
-      if (load_balance <= 1.2) {
-        splits[i] = int(std::ceil(work / avg_work));
+  if ((int)zones.size() < proc_count) {
+    for (size_t i = 0; i < zones.size(); i++) {
+      auto zone = zones[i];
+      if (zone->m_lineOrdinal != 7) {
+        double work = zone->work();
+        if (load_balance <= 1.2) {
+          splits[i] = int(std::ceil(work / avg_work));
+        }
+        else {
+          splits[i] = int(std::round(work / avg_work + 0.2));
+        }
+        splits[i] = splits[i] == 0 ? 1 : splits[i];
       }
-      else {
-        splits[i] = int(std::round(work / avg_work + 0.2));
-      }
-      splits[i] = splits[i] == 0 ? 1 : splits[i];
     }
   }
 
@@ -2734,32 +2761,34 @@ int Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, d
   int  diff              = proc_count - num_splits;
   bool adjustment_needed = diff > 0;
 
-  while (diff != 0) {
-    // Adjust splits so sum is equal to proc_count.
-    // Adjust the largest split count(s)
-    int    step      = diff < 0 ? -1 : 1;
-    size_t min_z     = 0;
-    double min_delta = 1.0e27;
-    for (size_t i = 0; i < zones.size(); i++) {
-      auto   zone = zones[i];
-      double work = zone->work();
+  if (num_splits != (int)zones.size()) {
+    while (diff != 0) {
+      // Adjust splits so sum is equal to proc_count.
+      // Adjust the largest split count(s)
+      int    step      = diff < 0 ? -1 : 1;
+      size_t min_z     = 0;
+      double min_delta = 1.0e27;
+      for (size_t i = 0; i < zones.size(); i++) {
+        auto   zone = zones[i];
+        double work = zone->work();
 
-      if (splits[i] == 0) {
-        continue;
-      }
-      if ((splits[i] + step) > 0) {
-        double delta = std::abs(avg_work - work / (double)(splits[i] + step));
-        if (delta < min_delta) {
-          min_delta = delta;
-          min_z     = i;
+        if (splits[i] == 0) {
+          continue;
+        }
+        if ((splits[i] + step) > 0) {
+          double delta = std::abs(avg_work - work / (double)(splits[i] + step));
+          if (delta < min_delta) {
+            min_delta = delta;
+            min_z     = i;
+          }
         }
       }
+      splits[min_z] += step;
+      diff -= step;
     }
-    splits[min_z] += step;
-    diff -= step;
+    assert(diff == 0);
+    assert(std::accumulate(splits.begin(), splits.end(), 0) == proc_count);
   }
-  assert(diff == 0);
-  assert(std::accumulate(splits.begin(), splits.end(), 0) == proc_count);
 
   // See if splits result in avg_work for all zones in range...
   double min_avg      = avg_work / load_balance;
@@ -2962,7 +2991,7 @@ std::vector<Iocgns::ZoneBC> Iocgns::Utils::parse_zonebc_sideblocks(int cgns_file
     }
 
     std::array<cgsize_t, 2> point_range;
-    CGCHECK(cg_boco_read(cgns_file_ptr, base, zone, i + 1, point_range.data(), nullptr));
+    CGCHECK(cg_boco_read(cgns_file_ptr, base, zone, i + 1, Data(point_range), nullptr));
     zonebc.emplace_back(boco_name, point_range);
   }
   return zonebc;
@@ -3069,7 +3098,7 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
 
   // All faces generated for this element block; now extract boundary faces...
   for (auto &face : all_faces) {
-    if (face.elementCount_ == 1) {
+    if (face.element_count() == 1) {
       boundary.insert(face);
     }
   }

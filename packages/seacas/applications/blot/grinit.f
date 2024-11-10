@@ -40,38 +40,7 @@ C   --   GRSDEV - (GRPLIB) Select device
       PARAMETER (KDVDI=10000)
       PARAMETER (KHCHSZ=1, KSCHSZ=2, KCHLSZ=6)
 
-      COMMON /GRPCOC/ DEVNAM(2), DEVCOD(2)
-      CHARACTER*3 DEVNAM
-      CHARACTER*8 DEVCOD
-      COMMON /GRPCOM/ ICURDV, ISHARD, DEVOK(2), TALKOK(2),
-     &   NSNAP(2), IFONT(2), SOFTCH(2), AUTOPL(2),
-     &   MAXCOL(2), NUMCOL(0:1,2), MAPALT(2), MAPUSE(2)
-      LOGICAL ISHARD, DEVOK, TALKOK, SOFTCH, AUTOPL
-C      --For all device-dependent parameters:
-C      --   (1) terminal, (2) hardcopy (file)
-C      --ICURDV - the selected device number (1 or 2)
-C      --ISHARD - true iff a single hardcopy plot is being done
-C      --DEVNAM - the device name
-C      --DEVOK - true iff the device is defined
-C      --DEVCOD - a code associated with a class of devices:
-C      --   DICOMED  = Dicomed
-C      --   CAMERA   = Raster Tech with video
-C      --   WAIT     = TK4 or any device that requires a wait after graph drawn
-C      --            = other
-C      --TALKOK - true iff interactive graphics device
-C      --NSNAP - the number of frames to snap for the device
-C      --IFONT - font (1=stick, 2=sanserif, 3=Roman)
-C      --SOFTCH - true iff software characters are to be used
-C      --AUTOPL - true iff automatic plotting (no response requested at end)
-C      --MAXCOL - the maximum number of colors available on the graphics device
-C      --   (excluding black and white)
-C      --NUMCOL - the number of colors to be used (excluding black and white)
-C      --   (0,x) - on standard rainbow
-C      --   (1,x) - on alternate color map
-C      --MAPALT - the alternate color map type:
-C      --   0 = standard rainbow (no alternate)
-C      --   1 = spectrum
-C      --MAPUSE - the color map type to use (as in MAPALT)
+      include 'grpcom.blk'
 
       REAL DBORD0(KTOP)
       REAL CHLSIZ

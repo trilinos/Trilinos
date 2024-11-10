@@ -49,6 +49,12 @@
 #ifndef _EPETRAEXT_PETSCAIJMATRIX_H_
 #define _EPETRAEXT_PETSCAIJMATRIX_H_
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_RowMatrix.h"

@@ -49,6 +49,7 @@
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldBLAS.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector
@@ -81,7 +82,6 @@ TEST(StkMeshIoBrokerHowTo, useNodesetDbVarForNodalFields)
         s_elems_per_edge + "|shell:xyzXYZ";
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(input_filename, "generated",
                             stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -113,20 +113,12 @@ TEST(StkMeshIoBrokerHowTo, useNodesetDbVarForNodalFields)
     stkIo.use_nodeset_for_block_nodes_fields(fh, true);
     stkIo.add_field(fh, temperature, dbFieldName);
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(),
-                            stk::topology::NODE_RANK, nodes);
-
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (size_t i=0; i < 3; i++) {
       double time = i;
 
-      for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[inode]);
-        if (fieldDataForNode)
-          *fieldDataForNode = time;
-      }
+      stk::mesh::field_fill(time, temperature);
 
       stkIo.begin_output_step(fh, time);
       stkIo.write_defined_output_fields(fh);

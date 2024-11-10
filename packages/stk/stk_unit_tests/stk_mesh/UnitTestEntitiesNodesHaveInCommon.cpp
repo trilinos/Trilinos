@@ -211,7 +211,7 @@ TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshell)
       for (unsigned i=0 ; i<4 ; ++i) {
         nodes[i] = mesh.begin_nodes(shell)[i];
       }
-      EXPECT_TRUE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,4,&nodes[0]));
+      EXPECT_TRUE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh, 4, nodes.data()));
     }
     {
       stk::mesh::Entity hex = (*mesh.buckets(stk::topology::ELEMENT_RANK)[0])[0];
@@ -220,7 +220,7 @@ TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshell)
       for (unsigned i=0 ; i<8 ; ++i) {
         nodes[i] = mesh.begin_nodes(hex)[i];
       }
-      EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,8,&nodes[0]));
+      EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh, 8, nodes.data()));
     }
 
   }
@@ -243,8 +243,7 @@ TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshellwra
     for (unsigned i=0 ; i<4 ; ++i) {
       nodes[i] = mesh.begin_nodes(hex)[i];
     }
-    EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,4,&nodes[0]));
-
+    EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh, 4, nodes.data()));
   }
 }
 
@@ -257,7 +256,7 @@ std::string vec_to_string(const std::vector<T> &vec)
   return s + " ]";
 }
 
-class EntitiesNodesHaveInCommon : public stk::unit_test_util::simple_fields::MeshFixture
+class EntitiesNodesHaveInCommon : public stk::unit_test_util::MeshFixture
 {
 protected:
   void expect_nodes_have_elems_in_common(stk::mesh::EntityId elemId,

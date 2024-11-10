@@ -31,7 +31,16 @@ class hip : public ::testing::Test {
   static void TearDownTestCase() {}
 };
 
+using HIPSpaceDevice        = Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>;
+using HIPManagedSpaceDevice = Kokkos::Device<Kokkos::HIP, Kokkos::HIPManagedSpace>;
+
 #define TestCategory hip
-#define TestDevice Kokkos::HIP
+
+// Prefer <HIP, HIPSpace> for any testing where only one exec space is used
+#if defined(KOKKOSKERNELS_INST_MEMSPACE_HIPMANAGEDSPACE) && !defined(KOKKOSKERNELS_INST_MEMSPACE_HIPSPACE)
+#define TestDevice HIPManagedSpaceDevice
+#else
+#define TestDevice HIPSpaceDevice
+#endif
 
 #endif  // TEST_HIP_HPP

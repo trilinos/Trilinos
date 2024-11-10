@@ -56,3 +56,9 @@ int rectangular(const Epetra_Comm& Comm, bool verbose);
 
 int Young1(const Epetra_Comm& Comm, bool verbose);
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

@@ -48,7 +48,7 @@ void connect_enforce(struct vtx_data **graph,       /* data structure for graph 
   int              *degree;             /* number of neighbors of a vertex */
   int              *comp_flag;          /* component number for each vtx */
   double            ewgt;               /* edge weight */
-  int               nbndy;              /* number of sets adjecent to component */
+  int               nbndy;              /* number of sets adjacent to component */
   int               domain;             /* which subdomain I'm working on */
   int               new_domain;         /* subdomain to move some vertices to */
   double            max_bndy;           /* max connectivity to other domain */

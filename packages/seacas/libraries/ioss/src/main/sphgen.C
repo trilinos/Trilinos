@@ -1,20 +1,19 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ionit_Initializer.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Hex8.h>
-#include <Ioss_Utils.h>
-#include <Ioss_Wedge6.h>
+#include "Ionit_Initializer.h"
+#include "Ioss_Hex8.h"
+#include "Ioss_Utils.h"
 #include <cmath>
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <fmt/ostream.h>
-#include <iostream>
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <stdio.h>
 #include <string>
 #include <vector>
 
@@ -26,6 +25,7 @@
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
 #include "Ioss_ScopeGuard.h"
@@ -225,22 +225,21 @@ namespace {
     // The first time, just count the number of hex elements since
     // that will be the number of output element and nodes in the
     // sphere mesh.
-    size_t                                      sph_node_count = 0;
-    const Ioss::ElementBlockContainer          &ebs            = region.get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator I              = ebs.begin();
+    size_t      sph_node_count = 0;
+    const auto &ebs            = region.get_element_blocks();
+    auto        I              = ebs.begin();
     while (I != ebs.end()) {
       Ioss::ElementBlock *eb = *I;
       ++I;
       std::string type = eb->topology()->name();
+      std::string name = eb->name();
       if (type == Ioss::Hex8::name) {
         sph_node_count += eb->entity_count();
 
         // Add the element block...
-        int                 num_elem = eb->entity_count();
-        std::string         name     = eb->name();
-        Ioss::ElementBlock *ebn =
-            new Ioss::ElementBlock(output_region.get_database(), name, "sphere", num_elem);
-        int id = eb->get_property("id").get_int();
+        int   num_elem = eb->entity_count();
+        auto *ebn = new Ioss::ElementBlock(output_region.get_database(), name, "sphere", num_elem);
+        int   id  = eb->get_property("id").get_int();
         ebn->property_add(Ioss::Property("id", id));
         ebn->field_add(Ioss::Field("radius", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE,
                                    num_elem, 1));
@@ -253,6 +252,9 @@ namespace {
         auto ns = new Ioss::NodeSet(output_region.get_database(), name, num_elem);
         ns->property_add(Ioss::Property("id", id));
         output_region.add(ns);
+      }
+      else {
+        fmt::print("Skipping block {} which contains {} elements.\n", name, type);
       }
     }
 
@@ -268,11 +270,11 @@ namespace {
 
     output_region.begin_mode(Ioss::STATE_MODEL);
 
-    Ioss::NodeBlock    *nb = region.get_node_blocks()[0];
+    auto               *nb = region.get_node_blocks()[0];
     std::vector<double> coordinates;
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
-    Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
+    auto            *onb = output_region.get_node_blocks()[0];
     std::vector<int> node_ids(sph_node_count);
     for (size_t i = 0; i < sph_node_count; i++) {
       node_ids[i] = i + 1;
@@ -292,13 +294,13 @@ namespace {
         hex_volume(*I, coordinates, &centroids[3 * offset], volume, radius, globals.scale_factor);
 
         // Find corresponding output element block...
-        Ioss::ElementBlock *output_eb = output_region.get_element_block((*I)->name());
+        auto *output_eb = output_region.get_element_block((*I)->name());
         if (output_eb == nullptr) {
           fmt::print(stderr, "ERROR: Could not find output element block '{}'\n", (*I)->name());
           std::exit(EXIT_FAILURE);
         }
 
-        Ioss::NodeSet *output_ns = output_region.get_nodeset((*I)->name() + "_nodes");
+        auto *output_ns = output_region.get_nodeset((*I)->name() + "_nodes");
         if (output_ns == nullptr) {
           fmt::print(stderr, "ERROR: Could not find output node set '{}_nodes'\n", (*I)->name());
           std::exit(EXIT_FAILURE);

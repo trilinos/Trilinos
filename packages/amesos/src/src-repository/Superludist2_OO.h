@@ -37,6 +37,12 @@
 #ifndef _SUPERLUDIST2_OO_H_
 #define _SUPERLUDIST2_OO_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
@@ -299,4 +305,3 @@ class Superludist2_OO {
 
 
 #endif /* _SUPERLUDIST2_OO_H_ */
-

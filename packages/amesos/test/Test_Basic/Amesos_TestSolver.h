@@ -30,7 +30,7 @@
 
 #include "Epetra_Comm.h"
 enum SparseSolverType { DSCPACK, UMFPACK, 
-			SCALAPACK, MUMPS, TAUCS, PARDISO, PARAKLETE, KLU,
+			SCALAPACK, MUMPS, TAUCS, PARDISO, CSS, PARAKLETE, KLU,
                         LAPACK, SUPERLUDIST, SUPERLU } ; 
 enum AMESOS_MatrixType { AMESOS_Serial, AMESOS_Distributed } ; 
 
@@ -46,3 +46,9 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 		      SparseSolverType SparseSolver,
 		      bool tranpose, int special, AMESOS_MatrixType MatrixType );
 
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif

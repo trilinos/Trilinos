@@ -127,7 +127,7 @@ public:
   void store_value(unsigned column, int rank, unsigned value) { m_localValues[column][rank] = value; }
   double get_rank_value(unsigned column, int rank) { return m_values[column][rank]; }
 
-  virtual unsigned num_columns() { return m_numColumns; }
+  virtual unsigned num_columns() override { return m_numColumns; }
 
   virtual void collect_data(stk::ParallelMachine comm, int numRanks) override;
   virtual void process_data(stk::ParallelMachine comm) override;

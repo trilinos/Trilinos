@@ -43,6 +43,12 @@
 #ifndef EPETRAEXT_CONFIGDEFS_H
 #define EPETRAEXT_CONFIGDEFS_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #ifndef __cplusplus
 #define __cplusplus
 #endif

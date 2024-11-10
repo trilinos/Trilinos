@@ -15,7 +15,7 @@
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }
-namespace stk { class topology; }
+namespace stk { struct topology; }
 
 namespace krino {
 struct Edge
@@ -60,6 +60,7 @@ int get_edge_parallel_owner_rank(const stk::mesh::BulkData & mesh, const Edge ed
 std::string debug_edge(const stk::mesh::BulkData & mesh, const Edge edge);
 
 std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
+std::vector<Edge> get_edges_of_elements(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & elements);
 
 }
 

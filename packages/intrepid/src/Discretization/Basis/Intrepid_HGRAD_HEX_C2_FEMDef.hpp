@@ -1107,3 +1107,10 @@ void Basis_HGRAD_HEX_C2_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Dof
 
 }// namespace Intrepid
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

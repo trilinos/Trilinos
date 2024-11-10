@@ -40,6 +40,12 @@
 //@HEADER
 #ifndef EPETRAEXT_VECTORIN_H
 #define EPETRAEXT_VECTORIN_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_Comm;
 class Epetra_Vector;

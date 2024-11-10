@@ -46,7 +46,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   const char *vmap;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -98,7 +98,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* Check for duplicate map id entry */
-  status = ex__id_lkup(exoid, map_type, map_id);
+  status = exi_id_lkup(exoid, map_type, map_id);
   if (status == -EX_LOOKUPFAIL) { /* did not find the map id */
     map_exists = 0;               /* Map is being defined */
   }
@@ -118,10 +118,10 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
 
     /* Keep track of the total number of maps defined using a
        counter stored in a linked list keyed by exoid.  NOTE:
-       ex__get_file_item is used to find the number of element maps for a
+       exi_get_file_item is used to find the number of element maps for a
        specific file and returns that value.
     */
-    cur_num_maps = ex__get_file_item(exoid, ex__get_counter_list(map_type));
+    cur_num_maps = exi_get_file_item(exoid, exi_get_counter_list(map_type));
     if (cur_num_maps >= (int)num_maps) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: exceeded number of %ss (%zu) specified in file id %d",
@@ -130,16 +130,16 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    /*   NOTE: ex__inc_file_item  is used to find the number of element maps
+    /*   NOTE: exi_inc_file_item  is used to find the number of element maps
          for a specific file and returns that value incremented. */
-    cur_num_maps = ex__inc_file_item(exoid, ex__get_counter_list(map_type));
+    cur_num_maps = exi_inc_file_item(exoid, exi_get_counter_list(map_type));
 
     if (id_is_index) {
       cur_num_maps = map_id - 1;
     }
   }
   else {
-    int map_ndx  = ex__id_lkup(exoid, map_type, map_id);
+    int map_ndx  = exi_id_lkup(exoid, map_type, map_id);
     cur_num_maps = map_ndx - 1;
   }
 
@@ -159,7 +159,11 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* Check input parameters for a valid range of numbers */
-  if (ent_start <= 0 || ent_start > num_mobj) {
+  if (ent_count == 0) {
+    ent_start = 0;
+  }
+
+  if (ent_start < 0 || ent_start > num_mobj) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: start count is invalid in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -169,7 +173,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  if (ent_start + ent_count - 1 > num_mobj) {
+  if (ent_count > 0 && (ent_start + ent_count - 1 > num_mobj)) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start+count-1 is larger than mesh object count in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);

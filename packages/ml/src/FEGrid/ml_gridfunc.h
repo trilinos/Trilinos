@@ -13,6 +13,12 @@
 #ifndef __MLGRIDFUNC__
 #define __MLGRIDFUNC__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
@@ -90,4 +96,3 @@ int ML_compute_basis_coefficients2D(void *grid, double *coord,
 #endif
 
 #endif
-

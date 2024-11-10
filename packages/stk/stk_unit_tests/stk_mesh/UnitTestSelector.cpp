@@ -60,7 +60,7 @@ namespace stk { namespace mesh { class Bucket; } }
 
 namespace {
 
-using stk::mesh::fixtures::simple_fields::SelectorFixture;
+using stk::mesh::fixtures::SelectorFixture;
 
 void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
 
@@ -182,7 +182,6 @@ TEST(Verify, selectorEmptyDuringMeshMod)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk = *bulkPtr;
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Part& block1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   meta.commit();
 
@@ -794,7 +793,6 @@ std::shared_ptr<stk::mesh::BulkData> create_mesh(stk::ParallelMachine comm,
   stk::mesh::MeshBuilder builder(comm);
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -909,7 +907,31 @@ TEST(Selector, get_parts_intersection_ranked)
   EXPECT_EQ(rankedPart.mesh_meta_data_ordinal(), selector2Parts[0]->mesh_meta_data_ordinal());
 }
 
+TEST(Selector, selectUnion_clone_for_different_mesh)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
 
+  constexpr unsigned spatialDim = 3;
+  stk::mesh::MetaData meta1(spatialDim);
+  std::string part1Name("myPart1"), part2Name("myPart2");
+  stk::mesh::PartVector parts1 = { &meta1.declare_part(part1Name), &meta1.declare_part(part2Name)};
+  stk::mesh::Selector select1 = stk::mesh::selectUnion(parts1);
+
+  stk::mesh::MetaData meta2;
+  meta2.declare_part(part1Name);
+  meta2.declare_part(part2Name);
+  meta2.initialize(spatialDim);
+
+  stk::mesh::Selector select2 = select1.clone_for_different_mesh(meta2);
+  stk::mesh::PartVector parts2;
+  select2.get_parts(parts2);
+
+  EXPECT_EQ(2u, parts2.size());
+  EXPECT_NE(parts2[0]->mesh_meta_data_ordinal(), parts1[0]->mesh_meta_data_ordinal());
+  EXPECT_NE(parts2[1]->mesh_meta_data_ordinal(), parts1[1]->mesh_meta_data_ordinal());
+  EXPECT_EQ(parts2[0]->name(), part1Name);
+  EXPECT_EQ(parts2[1]->name(), part2Name);
+}
 
 TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 {

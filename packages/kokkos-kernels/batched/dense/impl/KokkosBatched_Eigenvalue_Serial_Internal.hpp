@@ -61,11 +61,9 @@ struct SerialEigenvalueInternal {
   ///     returns -1.
   template <typename RealType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m,
-                                           /* */ RealType *H, const int hs0,
-                                           const int hs1,
+                                           /* */ RealType *H, const int hs0, const int hs1,
                                            /* */ RealType *er, const int ers,
-                                           /* */ RealType *ei, const int eis,
-                                           const bool restart           = false,
+                                           /* */ RealType *ei, const int eis, const bool restart = false,
                                            const int user_max_iteration = -1) {
     typedef RealType real_type;
     typedef Kokkos::ArithTraits<real_type> ats;
@@ -94,8 +92,7 @@ struct SerialEigenvalueInternal {
         /// compute eigenvalues from the characteristic determinant equation
         bool is_complex;
         Kokkos::complex<real_type> lambda1, lambda2;
-        SerialWilkinsonShiftInternal::invoke(H[0], H[hs1], H[hs0], H[hs],
-                                             &lambda1, &lambda2, &is_complex);
+        SerialWilkinsonShiftInternal::invoke(H[0], H[hs1], H[hs0], H[hs], &lambda1, &lambda2, &is_complex);
         er[0] = lambda1.real();
         ei[0] = lambda1.imag();
         er[1] = lambda2.real();
@@ -150,9 +147,8 @@ struct SerialEigenvalueInternal {
               bool is_complex;
               real_type *sub2x2 = H + (mend - 2) * hs;
               if (2 == mdiff) {
-                SerialWilkinsonShiftInternal::invoke(
-                    sub2x2[0], sub2x2[hs1], sub2x2[hs0], sub2x2[hs], &lambda1,
-                    &lambda2, &is_complex);
+                SerialWilkinsonShiftInternal::invoke(sub2x2[0], sub2x2[hs1], sub2x2[hs0], sub2x2[hs], &lambda1,
+                                                     &lambda2, &is_complex);
                 sub2x2[hs0] = zero;
 
                 /// eigenvalues are from wilkinson shift
@@ -161,13 +157,10 @@ struct SerialEigenvalueInternal {
                 er[(mbeg + 1) * ers] = lambda2.real();
                 ei[(mbeg + 1) * eis] = lambda2.imag();
               } else {
-                SerialWilkinsonShiftInternal::invoke(
-                    sub2x2[0], sub2x2[hs1], sub2x2[hs0], sub2x2[hs], &lambda1,
-                    &lambda2, &is_complex);
+                SerialWilkinsonShiftInternal::invoke(sub2x2[0], sub2x2[hs1], sub2x2[hs0], sub2x2[hs], &lambda1,
+                                                     &lambda2, &is_complex);
 
-                SerialFrancisInternal::invoke(0, mdiff, mdiff, H + hs * mbeg,
-                                              hs0, hs1, lambda1, lambda2,
-                                              is_complex);
+                SerialFrancisInternal::invoke(0, mdiff, mdiff, H + hs * mbeg, hs0, hs1, lambda1, lambda2, is_complex);
                 /* */ auto &val1    = *(sub2x2 + hs0);
                 /* */ auto &val2    = *(sub2x2 - hs1);
                 const auto abs_val1 = ats::abs(val1);
@@ -217,18 +210,15 @@ struct SerialEigenvalueInternal {
 
   /// complex interface
   template <typename RealType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const int m,
-      /* */ RealType *H, const int hs0, const int hs1,
-      /* */ Kokkos::complex<RealType> *e, const int es,
-      const int max_iteration       = 300,
-      const RealType user_tolerence = RealType(-1),
-      const bool restart            = false) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m,
+                                           /* */ RealType *H, const int hs0, const int hs1,
+                                           /* */ Kokkos::complex<RealType> *e, const int es,
+                                           const int max_iteration = 300, const RealType user_tolerence = RealType(-1),
+                                           const bool restart = false) {
     RealType *er     = (RealType *)e;
     RealType *ei     = er + 1;
     const int two_es = 2 * es;
-    return invoke(m, H, hs0, hs1, er, two_es, ei, two_es, user_tolerence,
-                  restart, max_iteration);
+    return invoke(m, H, hs0, hs1, er, two_es, ei, two_es, user_tolerence, restart, max_iteration);
   }
 };
 

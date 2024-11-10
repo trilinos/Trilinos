@@ -13,6 +13,12 @@
 #ifndef _MLRAP_
 #define _MLRAP_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_struct.h"

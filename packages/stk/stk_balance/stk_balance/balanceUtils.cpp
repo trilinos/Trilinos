@@ -532,11 +532,23 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
     return 4;
   case stk::topology::SHELL_TRI_6:
     return 8;
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    return 3;
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
+    return 4;
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    return 8;
   case stk::topology::SHELL_QUAD_4:
     return 6;
   case stk::topology::SHELL_QUAD_8:
     return 8;
   case stk::topology::SHELL_QUAD_9:
+    return 9;
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+    return 6;
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
+    return 8;
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     return 9;
   case stk::topology::TET_4:
     return 1;
@@ -680,8 +692,11 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
   case stk::topology::TRI_4_2D:
   case stk::topology::QUAD_4_2D:
   case stk::topology::SHELL_TRI_3:
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
   case stk::topology::SHELL_TRI_4:
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_4:
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
     tableIndex = 2;
     break;
   case stk::topology::TET_4:
@@ -694,8 +709,11 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
   case stk::topology::QUAD_8_2D:
   case stk::topology::QUAD_9_2D:
   case stk::topology::SHELL_TRI_6:
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_8:
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_9:
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     tableIndex = 4;
     break;
   case stk::topology::TET_8:
@@ -746,8 +764,11 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
   case stk::topology::TRI_4_2D:
   case stk::topology::QUAD_4_2D:
   case stk::topology::SHELL_TRI_3:
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
   case stk::topology::SHELL_TRI_4:
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_4:
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
     tableIndex = 2;
     break;
   case stk::topology::TET_4:
@@ -762,10 +783,13 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
   case stk::topology::QUAD_8_2D:
   case stk::topology::QUAD_9_2D:
   case stk::topology::SHELL_TRI_6:
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_9:
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     tableIndex = 5;
     break;
   case stk::topology::SHELL_QUAD_8:
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
   case stk::topology::TET_8:
   case stk::topology::TET_10:
   case stk::topology::TET_11:

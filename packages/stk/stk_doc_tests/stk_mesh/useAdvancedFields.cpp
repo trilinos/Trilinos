@@ -40,22 +40,21 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_scalars_per_entity, etc
-#include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_io/IossBridge.hpp"
-namespace stk { namespace mesh { class Part; } }
+#include "stk_unit_test_utils/TextMesh.hpp"
 
 namespace {
 
 //BEGINUseAdvancedFields
 TEST(stkMeshHowTo, useAdvancedFields)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
   const unsigned spatialDimension = 3;
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
-  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
+  std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> DoubleField;
@@ -78,16 +77,12 @@ TEST(stkMeshHowTo, useAdvancedFields)
   stk::mesh::put_field_on_mesh(variableSizeField, hexPart, numVectorValues, numCopies, initialVectorValue);
   stk::io::set_field_output_type(variableSizeField, stk::io::FieldOutputType::VECTOR_3D);
 
-  metaData.commit();
-  stk::mesh::BulkData& mesh = *bulkPtr;
-  mesh.modification_begin();
-  stk::mesh::EntityId tetId = 1;
-  stk::mesh::EntityIdVector tetNodes {1, 2, 3, 4};
-  stk::mesh::Entity tetElem=stk::mesh::declare_element(mesh, tetPart, tetId, tetNodes);
-  stk::mesh::EntityId hexId = 2;
-  stk::mesh::EntityIdVector hexNodes {5, 6, 7, 8, 9, 10, 11, 12};
-  stk::mesh::Entity hexElem=stk::mesh::declare_element(mesh, hexPart, hexId, hexNodes);
-  mesh.modification_end();
+  std::string meshSpec = "0,1,TET_4, 1,2,3,4, tetElementPart\n"
+                         "0,2,HEX_8, 5,6,7,8,9,10,11,12, hexElementPart";
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, meshSpec);
+
+  stk::mesh::Entity tetElem = bulkPtr->get_entity(stk::topology::ELEM_RANK, 1);
+  stk::mesh::Entity hexElem = bulkPtr->get_entity(stk::topology::ELEM_RANK, 2);
 
   const int tensorScalarsPerTet = stk::mesh::field_scalars_per_entity(tensorField, tetElem);
   const int tensorScalarsPerHex = stk::mesh::field_scalars_per_entity(tensorField, hexElem);

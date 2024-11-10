@@ -1,6 +1,6 @@
 /*
 
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -88,7 +88,10 @@ extern "C" {
 #define EX_FILE_ID_MASK (0xffff0000) /**< Must match FILE_ID_MASK in NetCDF nc4internal.h */
 #define EX_GRP_ID_MASK  (0x0000ffff) /**< Must match GRP_ID_MASK in NetCDF nc4internal.h */
 
-void ex__reset_error_status(void);
+/* Utility function to find variable to store entity attribute on */
+int exi_get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id);
+
+EXODUS_EXPORT void exi_reset_error_status(void);
 
 #if defined(EXODUS_THREADSAFE)
 #if !defined(exerrval)
@@ -114,18 +117,18 @@ typedef struct EX_mutex_struct
 } EX_mutex_t;
 
 extern EX_mutex_t   EX_g;
-extern int          ex__mutex_lock(EX_mutex_t *mutex);
-extern int          ex__mutex_unlock(EX_mutex_t *mutex, const char *func, int line);
-extern void         ex__pthread_first_thread_init(void);
-extern EX_errval_t *exerrval_get();
+extern int          exi_mutex_lock(EX_mutex_t *mutex);
+extern int          exi_mutex_unlock(EX_mutex_t *mutex, const char *func, int line);
+extern void         exi_pthread_first_thread_init(void);
+extern EX_errval_t *exerrval_get(void);
 
 #define EX_FUNC_ENTER()                                                                            \
   do {                                                                                             \
     /* Initialize the thread-safe code */                                                          \
-    pthread_once(&EX_first_init_g, ex__pthread_first_thread_init);                                 \
+    pthread_once(&EX_first_init_g, exi_pthread_first_thread_init);                                 \
                                                                                                    \
     /* Grab the mutex for the library */                                                           \
-    ex__mutex_lock(&EX_g);                                                                         \
+    exi_mutex_lock(&EX_g);                                                                         \
     ex_errval               = exerrval_get();                                                      \
     exerrval                = 0;                                                                   \
     ex_errval->last_err_num = 0;                                                                   \
@@ -134,28 +137,28 @@ extern EX_errval_t *exerrval_get();
 #define EX_FUNC_ENTER_INT()                                                                        \
   do {                                                                                             \
     /* Initialize the thread-safe code */                                                          \
-    pthread_once(&EX_first_init_g, ex__pthread_first_thread_init);                                 \
+    pthread_once(&EX_first_init_g, exi_pthread_first_thread_init);                                 \
                                                                                                    \
     /* Grab the mutex for the library */                                                           \
-    ex__mutex_lock(&EX_g);                                                                         \
+    exi_mutex_lock(&EX_g);                                                                         \
     ex_errval = exerrval_get();                                                                    \
   } while (0)
 
 #define EX_FUNC_LEAVE(error)                                                                       \
   do {                                                                                             \
-    ex__mutex_unlock(&EX_g, __func__, __LINE__);                                                   \
+    exi_mutex_unlock(&EX_g, __func__, __LINE__);                                                   \
     return error;                                                                                  \
   } while (0)
 
 #define EX_FUNC_VOID()                                                                             \
   do {                                                                                             \
-    ex__mutex_unlock(&EX_g, __func__, __LINE__);                                                   \
+    exi_mutex_unlock(&EX_g, __func__, __LINE__);                                                   \
     return;                                                                                        \
   } while (0)
 
 #define EX_FUNC_UNLOCK()                                                                           \
   do {                                                                                             \
-    ex__mutex_unlock(&EX_g, __func__, __LINE__);                                                   \
+    exi_mutex_unlock(&EX_g, __func__, __LINE__);                                                   \
   } while (0)
 
 #else
@@ -165,7 +168,7 @@ extern EX_errval_t *exerrval_get();
 EXODUS_EXPORT int indent;
 #define EX_FUNC_ENTER()                                                                            \
   do {                                                                                             \
-    ex__reset_error_status();                                                                      \
+    exi_reset_error_status();                                                                      \
     fprintf(stderr, "%d Enter: %s\n", indent, __func__);                                           \
     indent++;                                                                                      \
   } while (0)
@@ -194,7 +197,7 @@ EXODUS_EXPORT int indent;
 #else
 #define EX_FUNC_ENTER()                                                                            \
   do {                                                                                             \
-    ex__reset_error_status();                                                                      \
+    exi_reset_error_status();                                                                      \
   } while (0)
 #define EX_FUNC_ENTER_INT()
 #define EX_FUNC_LEAVE(error) return error
@@ -276,10 +279,10 @@ EXODUS_EXPORT int indent;
 #define VAR_ID_EL_BLK                "eb_prop1"     /**< element block ids props   */
 #define VAR_ID_ED_BLK                "ed_prop1"     /**< edge    block ids props   */
 #define VAR_ID_FA_BLK                "fa_prop1"     /**< face    block ids props   */
-#define DIM_NUM_ENTITY_ASSEMBLY(num) ex__catstr("num_entity_assembly", num)
-#define VAR_ENTITY_ASSEMBLY(num)     ex__catstr("assembly_entity", num)
-#define DIM_NUM_VALUES_BLOB(num)     ex__catstr("num_values_blob", num)
-#define VAR_ENTITY_BLOB(num)         ex__catstr("blob_entity", num)
+#define DIM_NUM_ENTITY_ASSEMBLY(num) exi_catstr("num_entity_assembly", num)
+#define VAR_ENTITY_ASSEMBLY(num)     exi_catstr("assembly_entity", num)
+#define DIM_NUM_VALUES_BLOB(num)     exi_catstr("num_values_blob", num)
+#define VAR_ENTITY_BLOB(num)         exi_catstr("blob_entity", num)
 #define EX_ATTRIBUTE_TYPE            "_type"
 #define EX_ATTRIBUTE_TYPENAME        "_typename"
 #define EX_ATTRIBUTE_NAME            "_name"
@@ -288,84 +291,84 @@ EXODUS_EXPORT int indent;
 /*! element type names for each element block      */
 #define ATT_NAME_ELB "elem_type"
 /*! number of elements in element  block num               */
-#define DIM_NUM_EL_IN_BLK(num) ex__catstr("num_el_in_blk", num)
+#define DIM_NUM_EL_IN_BLK(num) exi_catstr("num_el_in_blk", num)
 /*! number of nodes per element in element block num       */
-#define DIM_NUM_NOD_PER_EL(num) ex__catstr("num_nod_per_el", num)
+#define DIM_NUM_NOD_PER_EL(num) exi_catstr("num_nod_per_el", num)
 /*! number of attributes in element block num               */
-#define DIM_NUM_ATT_IN_BLK(num) ex__catstr("num_att_in_blk", num)
+#define DIM_NUM_ATT_IN_BLK(num) exi_catstr("num_att_in_blk", num)
 /*! number of edges in edge block num               */
-#define DIM_NUM_ED_IN_EBLK(num) ex__catstr("num_ed_in_blk", num)
+#define DIM_NUM_ED_IN_EBLK(num) exi_catstr("num_ed_in_blk", num)
 /*! number of nodes per edge in edge block num          */
-#define DIM_NUM_NOD_PER_ED(num) ex__catstr("num_nod_per_ed", num)
+#define DIM_NUM_NOD_PER_ED(num) exi_catstr("num_nod_per_ed", num)
 /*! number of edges per element in element block num       */
-#define DIM_NUM_EDG_PER_EL(num) ex__catstr("num_edg_per_el", num)
+#define DIM_NUM_EDG_PER_EL(num) exi_catstr("num_edg_per_el", num)
 /*! number of attributes in edge block num               */
-#define DIM_NUM_ATT_IN_EBLK(num) ex__catstr("num_att_in_eblk", num)
+#define DIM_NUM_ATT_IN_EBLK(num) exi_catstr("num_att_in_eblk", num)
 /*! number of faces in face block num               */
-#define DIM_NUM_FA_IN_FBLK(num) ex__catstr("num_fa_in_blk", num)
+#define DIM_NUM_FA_IN_FBLK(num) exi_catstr("num_fa_in_blk", num)
 /*! number of nodes per face in face block num          */
-#define DIM_NUM_NOD_PER_FA(num) ex__catstr("num_nod_per_fa", num)
+#define DIM_NUM_NOD_PER_FA(num) exi_catstr("num_nod_per_fa", num)
 /*! number of faces per element in element block num       */
-#define DIM_NUM_FAC_PER_EL(num) ex__catstr("num_fac_per_el", num)
+#define DIM_NUM_FAC_PER_EL(num) exi_catstr("num_fac_per_el", num)
 /*! number of attributes in face block num               */
-#define DIM_NUM_ATT_IN_FBLK(num) ex__catstr("num_att_in_fblk", num)
+#define DIM_NUM_ATT_IN_FBLK(num) exi_catstr("num_att_in_fblk", num)
 /*! element connectivity for element block num       */
-#define VAR_CONN(num) ex__catstr("connect", num)
+#define VAR_CONN(num) exi_catstr("connect", num)
 /*! array containing number of entity per */
 /*  entity for n-sided face/element blocks */
-#define VAR_EBEPEC(num) ex__catstr("ebepecnt", num)
+#define VAR_EBEPEC(num) exi_catstr("ebepecnt", num)
 /*! list of attributes for element block num       */
-#define VAR_ATTRIB(num) ex__catstr("attrib", num)
+#define VAR_ATTRIB(num) exi_catstr("attrib", num)
 /*! list of attribute names for element block num     */
-#define VAR_NAME_ATTRIB(num) ex__catstr("attrib_name", num)
+#define VAR_NAME_ATTRIB(num) exi_catstr("attrib_name", num)
 /*! list of the numth property for all element blocks  */
-#define VAR_EB_PROP(num) ex__catstr("eb_prop", num)
+#define VAR_EB_PROP(num) exi_catstr("eb_prop", num)
 /*! edge connectivity for element block num       */
-#define VAR_ECONN(num) ex__catstr("edgconn", num)
+#define VAR_ECONN(num) exi_catstr("edgconn", num)
 /*! edge connectivity for edge block num          */
-#define VAR_EBCONN(num) ex__catstr("ebconn", num)
+#define VAR_EBCONN(num) exi_catstr("ebconn", num)
 /*! list of attributes for edge block num          */
-#define VAR_EATTRIB(num) ex__catstr("eattrb", num)
+#define VAR_EATTRIB(num) exi_catstr("eattrb", num)
 /*! list of attribute names for edge block num        */
-#define VAR_NAME_EATTRIB(num) ex__catstr("eattrib_name", num)
+#define VAR_NAME_EATTRIB(num) exi_catstr("eattrib_name", num)
 #define VAR_NATTRIB           "nattrb"
 #define VAR_NAME_NATTRIB      "nattrib_name"
 #define DIM_NUM_ATT_IN_NBLK   "num_att_in_nblk"
 
-#define VAR_NSATTRIB(num)      ex__catstr("nsattrb", num)
-#define VAR_NAME_NSATTRIB(num) ex__catstr("nsattrib_name", num)
-#define DIM_NUM_ATT_IN_NS(num) ex__catstr("num_att_in_ns", num)
+#define VAR_NSATTRIB(num)      exi_catstr("nsattrb", num)
+#define VAR_NAME_NSATTRIB(num) exi_catstr("nsattrib_name", num)
+#define DIM_NUM_ATT_IN_NS(num) exi_catstr("num_att_in_ns", num)
 
-#define VAR_SSATTRIB(num)      ex__catstr("ssattrb", num)
-#define VAR_NAME_SSATTRIB(num) ex__catstr("ssattrib_name", num)
-#define DIM_NUM_ATT_IN_SS(num) ex__catstr("num_att_in_ss", num)
+#define VAR_SSATTRIB(num)      exi_catstr("ssattrb", num)
+#define VAR_NAME_SSATTRIB(num) exi_catstr("ssattrib_name", num)
+#define DIM_NUM_ATT_IN_SS(num) exi_catstr("num_att_in_ss", num)
 
-#define VAR_ESATTRIB(num)      ex__catstr("esattrb", num)
-#define VAR_NAME_ESATTRIB(num) ex__catstr("esattrib_name", num)
-#define DIM_NUM_ATT_IN_ES(num) ex__catstr("num_att_in_es", num)
+#define VAR_ESATTRIB(num)      exi_catstr("esattrb", num)
+#define VAR_NAME_ESATTRIB(num) exi_catstr("esattrib_name", num)
+#define DIM_NUM_ATT_IN_ES(num) exi_catstr("num_att_in_es", num)
 
-#define VAR_FSATTRIB(num)      ex__catstr("fsattrb", num)
-#define VAR_NAME_FSATTRIB(num) ex__catstr("fsattrib_name", num)
-#define DIM_NUM_ATT_IN_FS(num) ex__catstr("num_att_in_fs", num)
+#define VAR_FSATTRIB(num)      exi_catstr("fsattrb", num)
+#define VAR_NAME_FSATTRIB(num) exi_catstr("fsattrib_name", num)
+#define DIM_NUM_ATT_IN_FS(num) exi_catstr("num_att_in_fs", num)
 
-#define VAR_ELSATTRIB(num)      ex__catstr("elsattrb", num)
-#define VAR_NAME_ELSATTRIB(num) ex__catstr("elsattrib_name", num)
-#define DIM_NUM_ATT_IN_ELS(num) ex__catstr("num_att_in_els", num)
+#define VAR_ELSATTRIB(num)      exi_catstr("elsattrb", num)
+#define VAR_NAME_ELSATTRIB(num) exi_catstr("elsattrib_name", num)
+#define DIM_NUM_ATT_IN_ELS(num) exi_catstr("num_att_in_els", num)
 
 /*! list of the numth property for all edge blocks     */
-#define VAR_ED_PROP(num) ex__catstr("ed_prop", num)
+#define VAR_ED_PROP(num) exi_catstr("ed_prop", num)
 /*! face connectivity for element block num       */
-#define VAR_FCONN(num) ex__catstr("facconn", num)
+#define VAR_FCONN(num) exi_catstr("facconn", num)
 /*! face connectivity for face block num          */
-#define VAR_FBCONN(num) ex__catstr("fbconn", num)
+#define VAR_FBCONN(num) exi_catstr("fbconn", num)
 /*! array containing number of entity per entity for n-sided face/element blocks */
-#define VAR_FBEPEC(num) ex__catstr("fbepecnt", num)
+#define VAR_FBEPEC(num) exi_catstr("fbepecnt", num)
 /*! list of attributes for face block num          */
-#define VAR_FATTRIB(num) ex__catstr("fattrb", num)
+#define VAR_FATTRIB(num) exi_catstr("fattrb", num)
 /*! list of attribute names for face block num        */
-#define VAR_NAME_FATTRIB(num) ex__catstr("fattrib_name", num)
+#define VAR_NAME_FATTRIB(num) exi_catstr("fattrib_name", num)
 /*! list of the numth property for all face blocks     */
-#define VAR_FA_PROP(num) ex__catstr("fa_prop", num)
+#define VAR_FA_PROP(num) exi_catstr("fa_prop", num)
 /*! name attached to element block, node set, side set, element map,
     or map properties */
 #define ATT_PROP_NAME "name"
@@ -374,73 +377,73 @@ EXODUS_EXPORT int indent;
 #define VAR_SS_STAT   "ss_status"     /**< side set status           */
 #define VAR_SS_IDS    "ss_prop1"      /**< side set id properties    */
 /*! number of sides in side set num*/
-#define DIM_NUM_SIDE_SS(num) ex__catstr("num_side_ss", num)
+#define DIM_NUM_SIDE_SS(num) exi_catstr("num_side_ss", num)
 /*! number of distribution factors in side set num           */
-#define DIM_NUM_DF_SS(num) ex__catstr("num_df_ss", num)
+#define DIM_NUM_DF_SS(num) exi_catstr("num_df_ss", num)
 /*! the distribution factors for each node in side set num */
-#define VAR_FACT_SS(num) ex__catstr("dist_fact_ss", num)
+#define VAR_FACT_SS(num) exi_catstr("dist_fact_ss", num)
 /*! list of elements in side set num                 */
-#define VAR_ELEM_SS(num) ex__catstr("elem_ss", num)
+#define VAR_ELEM_SS(num) exi_catstr("elem_ss", num)
 /*! list of sides in side set */
-#define VAR_SIDE_SS(num) ex__catstr("side_ss", num)
+#define VAR_SIDE_SS(num) exi_catstr("side_ss", num)
 /*! list of the numth property for all side sets       */
-#define VAR_SS_PROP(num) ex__catstr("ss_prop", num)
+#define VAR_SS_PROP(num) exi_catstr("ss_prop", num)
 #define DIM_NUM_ES       "num_edge_sets" /**< number of edge sets            */
 #define VAR_ES_STAT      "es_status"     /**< edge set status           */
 #define VAR_ES_IDS       "es_prop1"      /**< edge set id properties    */
 /*! number of edges in edge set num*/
-#define DIM_NUM_EDGE_ES(num) ex__catstr("num_edge_es", num)
+#define DIM_NUM_EDGE_ES(num) exi_catstr("num_edge_es", num)
 /*! number of distribution factors in edge set num           */
-#define DIM_NUM_DF_ES(num) ex__catstr("num_df_es", num)
+#define DIM_NUM_DF_ES(num) exi_catstr("num_df_es", num)
 /*! the distribution factors for each node in edge set num */
-#define VAR_FACT_ES(num) ex__catstr("dist_fact_es", num)
+#define VAR_FACT_ES(num) exi_catstr("dist_fact_es", num)
 /*! list of edges in edge set num                 */
-#define VAR_EDGE_ES(num) ex__catstr("edge_es", num)
+#define VAR_EDGE_ES(num) exi_catstr("edge_es", num)
 /*! list of orientations in the edge set.            */
-#define VAR_ORNT_ES(num) ex__catstr("ornt_es", num)
+#define VAR_ORNT_ES(num) exi_catstr("ornt_es", num)
 /*! list of the numth property for all edge sets       */
-#define VAR_ES_PROP(num) ex__catstr("es_prop", num)
+#define VAR_ES_PROP(num) exi_catstr("es_prop", num)
 #define DIM_NUM_FS       "num_face_sets" /**< number of face sets            */
 #define VAR_FS_STAT      "fs_status"     /**< face set status           */
 #define VAR_FS_IDS       "fs_prop1"      /**< face set id properties    */
 /*! number of faces in side set num*/
-#define DIM_NUM_FACE_FS(num) ex__catstr("num_face_fs", num)
+#define DIM_NUM_FACE_FS(num) exi_catstr("num_face_fs", num)
 /*! number of distribution factors in face set num           */
-#define DIM_NUM_DF_FS(num) ex__catstr("num_df_fs", num)
+#define DIM_NUM_DF_FS(num) exi_catstr("num_df_fs", num)
 /*! the distribution factors for each node in face set num                 */
-#define VAR_FACT_FS(num) ex__catstr("dist_fact_fs", num)
+#define VAR_FACT_FS(num) exi_catstr("dist_fact_fs", num)
 /*! list of elements in face set num                 */
-#define VAR_FACE_FS(num) ex__catstr("face_fs", num)
+#define VAR_FACE_FS(num) exi_catstr("face_fs", num)
 /*! list of sides in side set */
-#define VAR_ORNT_FS(num) ex__catstr("ornt_fs", num)
+#define VAR_ORNT_FS(num) exi_catstr("ornt_fs", num)
 /*! list of the numth property for all face sets       */
-#define VAR_FS_PROP(num) ex__catstr("fs_prop", num)
+#define VAR_FS_PROP(num) exi_catstr("fs_prop", num)
 #define DIM_NUM_ELS      "num_elem_sets" /**< number of elem sets            */
 /*! number of elements in elem set num                     */
-#define DIM_NUM_ELE_ELS(num) ex__catstr("num_ele_els", num)
+#define DIM_NUM_ELE_ELS(num) exi_catstr("num_ele_els", num)
 /*! number of distribution factors in element set num        */
-#define DIM_NUM_DF_ELS(num) ex__catstr("num_df_els", num)
+#define DIM_NUM_DF_ELS(num) exi_catstr("num_df_els", num)
 #define VAR_ELS_STAT        "els_status" /**< elem set status           */
 #define VAR_ELS_IDS         "els_prop1"  /**< elem set id properties    */
 /*! list of elements in elem set num                 */
-#define VAR_ELEM_ELS(num) ex__catstr("elem_els", num)
+#define VAR_ELEM_ELS(num) exi_catstr("elem_els", num)
 /*! list of distribution factors in elem set num */
-#define VAR_FACT_ELS(num) ex__catstr("dist_fact_els", num)
+#define VAR_FACT_ELS(num) exi_catstr("dist_fact_els", num)
 /*! list of the numth property for all elem sets       */
-#define VAR_ELS_PROP(num) ex__catstr("els_prop", num)
+#define VAR_ELS_PROP(num) exi_catstr("els_prop", num)
 #define DIM_NUM_NS        "num_node_sets" /**< number of node sets            */
 /*! number of nodes in node set num                     */
-#define DIM_NUM_NOD_NS(num) ex__catstr("num_nod_ns", num)
+#define DIM_NUM_NOD_NS(num) exi_catstr("num_nod_ns", num)
 /*! number of distribution factors in node set num           */
-#define DIM_NUM_DF_NS(num) ex__catstr("num_df_ns", num)
+#define DIM_NUM_DF_NS(num) exi_catstr("num_df_ns", num)
 #define VAR_NS_STAT        "ns_status" /**< node set status           */
 #define VAR_NS_IDS         "ns_prop1"  /**< node set id properties    */
 /*! list of nodes in node set num                     */
-#define VAR_NODE_NS(num) ex__catstr("node_ns", num)
+#define VAR_NODE_NS(num) exi_catstr("node_ns", num)
 /*! list of distribution factors in node set num */
-#define VAR_FACT_NS(num) ex__catstr("dist_fact_ns", num)
+#define VAR_FACT_NS(num) exi_catstr("dist_fact_ns", num)
 /*! list of the numth property for all node sets       */
-#define VAR_NS_PROP(num) ex__catstr("ns_prop", num)
+#define VAR_NS_PROP(num) exi_catstr("ns_prop", num)
 #define DIM_NUM_QA       "num_qa_rec"       /**< number of QA records           */
 #define VAR_QA_TITLE     "qa_records"       /**< QA records                */
 #define DIM_NUM_INFO     "num_info"         /**< number of information records  */
@@ -463,49 +466,49 @@ EXODUS_EXPORT int indent;
 #define VAR_NAME_NOD_VAR "name_nod_var"     /**< names of nodal variables  */
 #define VAR_NOD_VAR      "vals_nod_var"     /**< values of nodal variables \deprecated */
 /*! values of nodal variables */
-#define VAR_NOD_VAR_NEW(num) ex__catstr("vals_nod_var", num)
+#define VAR_NOD_VAR_NEW(num) exi_catstr("vals_nod_var", num)
 
 #define DIM_NUM_ASSEMBLY_VAR         "num_assembly_var"  /**< number of assembly variables    */
 #define VAR_NAME_ASSEMBLY_VAR        "name_assembly_var" /**< names of assembly variables*/
-#define VAR_ASSEMBLY_VAR(num1, num2) ex__catstr2("vals_assembly_var", num1, "assembly", num2)
+#define VAR_ASSEMBLY_VAR(num1, num2) exi_catstr2("vals_assembly_var", num1, "assembly", num2)
 
 #define DIM_NUM_BLOB_VAR         "num_blob_var"  /**< number of blob variables    */
 #define VAR_NAME_BLOB_VAR        "name_blob_var" /**< names of blob variables*/
-#define VAR_BLOB_VAR(num1, num2) ex__catstr2("vals_blob_var", num1, "blob", num2)
+#define VAR_BLOB_VAR(num1, num2) exi_catstr2("vals_blob_var", num1, "blob", num2)
 
 #define DIM_NUM_ELE_VAR  "num_elem_var"  /**< number of element variables    */
 #define VAR_NAME_ELE_VAR "name_elem_var" /**< names of element variables*/
 /*! values of element variable num1 in element block num2                    */
-#define VAR_ELEM_VAR(num1, num2) ex__catstr2("vals_elem_var", num1, "eb", num2)
+#define VAR_ELEM_VAR(num1, num2) exi_catstr2("vals_elem_var", num1, "eb", num2)
 #define DIM_NUM_EDG_VAR          "num_edge_var"  /**< number of edge variables       */
 #define VAR_NAME_EDG_VAR         "name_edge_var" /**< names of edge variables   */
 /*! values of edge variable num1 in edge block num2 */
-#define VAR_EDGE_VAR(num1, num2) ex__catstr2("vals_edge_var", num1, "eb", num2)
+#define VAR_EDGE_VAR(num1, num2) exi_catstr2("vals_edge_var", num1, "eb", num2)
 #define DIM_NUM_FAC_VAR          "num_face_var"  /**< number of face variables       */
 #define VAR_NAME_FAC_VAR         "name_face_var" /**< names of face variables   */
 /*! values of face variable num1 in face block num2 */
-#define VAR_FACE_VAR(num1, num2) ex__catstr2("vals_face_var", num1, "fb", num2)
+#define VAR_FACE_VAR(num1, num2) exi_catstr2("vals_face_var", num1, "fb", num2)
 
 #define DIM_NUM_NSET_VAR  "num_nset_var"  /**< number of nodeset variables    */
 #define VAR_NAME_NSET_VAR "name_nset_var" /**< names of nodeset variables*/
 /*! values of nodeset variable num1 in nodeset num2    */
-#define VAR_NS_VAR(num1, num2) ex__catstr2("vals_nset_var", num1, "ns", num2)
+#define VAR_NS_VAR(num1, num2) exi_catstr2("vals_nset_var", num1, "ns", num2)
 #define DIM_NUM_ESET_VAR       "num_eset_var" /**< number of edgeset variables    */
 /*! values of edgeset variable num1 in edgeset num2    */
 #define VAR_NAME_ESET_VAR      "name_eset_var" /**< names of edgeset variables*/
-#define VAR_ES_VAR(num1, num2) ex__catstr2("vals_eset_var", num1, "es", num2)
+#define VAR_ES_VAR(num1, num2) exi_catstr2("vals_eset_var", num1, "es", num2)
 #define DIM_NUM_FSET_VAR       "num_fset_var"  /**< number of faceset variables    */
 #define VAR_NAME_FSET_VAR      "name_fset_var" /**< names of faceset variables*/
 /*! values of faceset variable num1 in faceset num2    */
-#define VAR_FS_VAR(num1, num2) ex__catstr2("vals_fset_var", num1, "fs", num2)
+#define VAR_FS_VAR(num1, num2) exi_catstr2("vals_fset_var", num1, "fs", num2)
 #define DIM_NUM_SSET_VAR       "num_sset_var"  /**< number of sideset variables    */
 #define VAR_NAME_SSET_VAR      "name_sset_var" /**< names of sideset variables*/
 /*! values of sideset variable num1 in sideset num2    */
-#define VAR_SS_VAR(num1, num2) ex__catstr2("vals_sset_var", num1, "ss", num2)
+#define VAR_SS_VAR(num1, num2) exi_catstr2("vals_sset_var", num1, "ss", num2)
 #define DIM_NUM_ELSET_VAR      "num_elset_var"  /**< number of element set variables*/
 #define VAR_NAME_ELSET_VAR     "name_elset_var" /**< names of elemset variables*/
 /*! values of elemset variable num1 in elemset num2    */
-#define VAR_ELS_VAR(num1, num2) ex__catstr2("vals_elset_var", num1, "es", num2)
+#define VAR_ELS_VAR(num1, num2) exi_catstr2("vals_elset_var", num1, "es", num2)
 
 /**
  * \defgroup ReductionVariables Variables controlling storage of reduction variables
@@ -513,51 +516,51 @@ EXODUS_EXPORT int indent;
  */
 #define DIM_NUM_ASSEMBLY_RED_VAR  "num_assembly_red_var"  /**< number of assembly variables    */
 #define VAR_NAME_ASSEMBLY_RED_VAR "name_assembly_red_var" /**< names of assembly variables*/
-#define VAR_ASSEMBLY_RED_VAR(num) ex__catstr("vals_red_var_assembly", num)
+#define VAR_ASSEMBLY_RED_VAR(num) exi_catstr("vals_red_var_assembly", num)
 
 #define DIM_NUM_BLOB_RED_VAR  "num_blob_red_var"  /**< number of blob variables    */
 #define VAR_NAME_BLOB_RED_VAR "name_blob_red_var" /**< names of blob variables*/
-#define VAR_BLOB_RED_VAR(num) ex__catstr("vals_red_var_blob", num)
+#define VAR_BLOB_RED_VAR(num) exi_catstr("vals_red_var_blob", num)
 
 #define DIM_NUM_ELE_RED_VAR  "num_elem_red_var"  /**< number of element variables    */
 #define VAR_NAME_ELE_RED_VAR "name_elem_red_var" /**< names of element variables*/
 /*! values of element variable num in element block num                    */
-#define VAR_ELEM_RED_VAR(num) ex__catstr("vals_red_var_eb", num)
+#define VAR_ELEM_RED_VAR(num) exi_catstr("vals_red_var_eb", num)
 
 #define DIM_NUM_EDG_RED_VAR  "num_edge_red_var"  /**< number of edge variables       */
 #define VAR_NAME_EDG_RED_VAR "name_edge_red_var" /**< names of edge variables   */
 /*! values of edge variable num in edge block num */
-#define VAR_EDGE_RED_VAR(num) ex__catstr("vals_red_var_edb", num)
+#define VAR_EDGE_RED_VAR(num) exi_catstr("vals_red_var_edb", num)
 
 #define DIM_NUM_FAC_RED_VAR  "num_face_red_var"  /**< number of face variables       */
 #define VAR_NAME_FAC_RED_VAR "name_face_red_var" /**< names of face variables   */
 /*! values of face variable num in face block num */
-#define VAR_FACE_RED_VAR(num) ex__catstr("vals_red_var_fb", num)
+#define VAR_FACE_RED_VAR(num) exi_catstr("vals_red_var_fb", num)
 
 #define DIM_NUM_NSET_RED_VAR  "num_nset_red_var"  /**< number of nodeset variables    */
 #define VAR_NAME_NSET_RED_VAR "name_nset_red_var" /**< names of nodeset variables*/
 /*! values of nodeset variable num in nodeset num    */
-#define VAR_NS_RED_VAR(num) ex__catstr("vals_red_var_nset", num)
+#define VAR_NS_RED_VAR(num) exi_catstr("vals_red_var_nset", num)
 
 #define DIM_NUM_ESET_RED_VAR "num_eset_red_var" /**< number of edgeset variables    */
 /*! values of edgeset variable num in edgeset num    */
 #define VAR_NAME_ESET_RED_VAR "name_eset_red_var" /**< names of edgeset variables*/
-#define VAR_ES_RED_VAR(num)   ex__catstr("vals_red_var_eset", num)
+#define VAR_ES_RED_VAR(num)   exi_catstr("vals_red_var_eset", num)
 
 #define DIM_NUM_FSET_RED_VAR  "num_fset_red_var"  /**< number of faceset variables    */
 #define VAR_NAME_FSET_RED_VAR "name_fset_red_var" /**< names of faceset variables*/
 /*! values of faceset variable num in faceset num    */
-#define VAR_FS_RED_VAR(num) ex__catstr("vals_red_var_fset", num)
+#define VAR_FS_RED_VAR(num) exi_catstr("vals_red_var_fset", num)
 
 #define DIM_NUM_SSET_RED_VAR  "num_sset_red_var"  /**< number of sideset variables    */
 #define VAR_NAME_SSET_RED_VAR "name_sset_red_var" /**< names of sideset variables*/
 /*! values of sideset variable num in sideset num    */
-#define VAR_SS_RED_VAR(num) ex__catstr("vals_red_var_sset", num)
+#define VAR_SS_RED_VAR(num) exi_catstr("vals_red_var_sset", num)
 
 #define DIM_NUM_ELSET_RED_VAR  "num_elset_red_var"  /**< number of element set variables*/
 #define VAR_NAME_ELSET_RED_VAR "name_elset_red_var" /**< names of elemset variables*/
 /*! values of elemset variable num in elemset num    */
-#define VAR_ELS_RED_VAR(num) ex__catstr("vals_red_var_elset", num)
+#define VAR_ELS_RED_VAR(num) exi_catstr("vals_red_var_elset", num)
 /** @}*/
 
 /*! general dimension of length MAX_STR_LENGTH used for some string lengths   */
@@ -576,27 +579,27 @@ EXODUS_EXPORT int indent;
 #define VAR_NODE_NUM_MAP "node_num_map"  /**< node numbering map        */
 #define DIM_NUM_EM       "num_elem_maps" /**< number of element maps         */
 /*! the numth element map     */
-#define VAR_ELEM_MAP(num) ex__catstr("elem_map", num)
+#define VAR_ELEM_MAP(num) exi_catstr("elem_map", num)
 /*! list of the numth property for all element maps    */
-#define VAR_EM_PROP(num) ex__catstr("em_prop", num)
+#define VAR_EM_PROP(num) exi_catstr("em_prop", num)
 #define DIM_NUM_EDM      "num_edge_maps" /**< number of edge maps            */
 /*! the numth edge map        */
-#define VAR_EDGE_MAP(num) ex__catstr("edge_map", num)
+#define VAR_EDGE_MAP(num) exi_catstr("edge_map", num)
 /* list of the numth property for all edge maps       */
-#define VAR_EDM_PROP(num) ex__catstr("edm_prop", num)
+#define VAR_EDM_PROP(num) exi_catstr("edm_prop", num)
 #define DIM_NUM_FAM       "num_face_maps" /**< number of face maps            */
 /*! the numth face map        */
-#define VAR_FACE_MAP(num) ex__catstr("face_map", num)
+#define VAR_FACE_MAP(num) exi_catstr("face_map", num)
 /*! list of the numth property for all face maps       */
-#define VAR_FAM_PROP(num) ex__catstr("fam_prop", num)
+#define VAR_FAM_PROP(num) exi_catstr("fam_prop", num)
 #define DIM_NUM_NM        "num_node_maps" /**< number of node maps            */
 /*! the numth node map        */
-#define VAR_NODE_MAP(num) ex__catstr("node_map", num)
+#define VAR_NODE_MAP(num) exi_catstr("node_map", num)
 /*! list of the numth property for all node maps       */
-#define VAR_NM_PROP(num) ex__catstr("nm_prop", num)
+#define VAR_NM_PROP(num) exi_catstr("nm_prop", num)
 /*! list of the numth property for all assemblies      */
-#define VAR_ASSEMBLY_PROP(num) ex__catstr("assembly_prop", num)
-#define VAR_BLOB_PROP(num)     ex__catstr("blob_prop", num)
+#define VAR_ASSEMBLY_PROP(num) exi_catstr("assembly_prop", num)
+#define VAR_BLOB_PROP(num)     exi_catstr("blob_prop", num)
 
 #define DIM_NUM_CFRAMES  "num_cframes"
 #define DIM_NUM_CFRAME9  "num_cframes_9"
@@ -660,7 +663,7 @@ EXODUS_EXPORT int indent;
 #define DIM_NCNT_CMAP        "ncnt_cmap"
 #define DIM_ECNT_CMAP        "ecnt_cmap"
 
-enum ex__element_type {
+enum exi_element_type {
   EX_EL_UNK          = -1, /**< unknown entity */
   EX_EL_NULL_ELEMENT = 0,
   EX_EL_TRIANGLE     = 1,  /**< Triangle entity */
@@ -676,39 +679,42 @@ enum ex__element_type {
   EX_EL_TRISHELL     = 11, /**< Triangular Shell entity */
   EX_EL_PYRAMID      = 12  /**< Pyramid entity */
 };
-typedef enum ex__element_type ex__element_type;
+typedef enum exi_element_type exi_element_type;
 
 /* Internal structure declarations */
 
-struct ex__file_item
+struct exi_file_item
 {
   int          file_id;
-  nc_type      netcdf_type_code;
+  nc_type      netcdf_type_code; /**< NC_FLOAT or NC_DOUBLE */
   int          int64_status;
   int          maximum_name_length;
   int          time_varid; /* Store to avoid lookup each timestep */
   unsigned int assembly_count;
   unsigned int blob_count;
+  unsigned int compression_level;        /**< 0 (disabled) to 9 (maximum) compression level for
+                                            gzip, 4..32 and even for szip; NetCDF-4 only */
+  unsigned int persist_define_mode : 10; /**< Stay in define mode until exi_persist_leavedef is
+                                            called. Set by exi_persist_redef... */
   unsigned int
-      compression_algorithm : 2;      /**< GZIP/ZLIB, SZIP, more may be supported by NetCDF soon */
-  unsigned int compression_level : 6; /**< 0 (disabled) to 9 (maximum) compression level for
-                                         gzip, 4..32 and even for szip; NetCDF-4 only */
+      compression_algorithm : 4; /**< GZIP/ZLIB, SZIP, more may be supported by NetCDF soon */
+  unsigned int shuffle : 1;      /**< 1 true, 0 false */
   unsigned int user_compute_wordsize : 1; /**< 0 for 4 byte or 1 for 8 byte reals */
-  unsigned int shuffle : 1;               /**< 1 true, 0 false */
   unsigned int
       file_type : 2; /**< 0 - classic, 1 -- 64 bit classic, 2 --NetCDF4,  3 --NetCDF4 classic */
-  unsigned int          is_write : 1;    /**< for output or append */
-  unsigned int          is_parallel : 1; /**< 1 true, 0 false */
-  unsigned int          is_hdf5 : 1;     /**< 1 true, 0 false */
-  unsigned int          is_pnetcdf : 1;  /**< 1 true, 0 false */
-  unsigned int          has_nodes : 1;   /**< for input only at this time */
-  unsigned int          has_edges : 1;   /**< for input only at this time */
-  unsigned int          has_faces : 1;   /**< for input only at this time */
-  unsigned int          has_elems : 1;   /**< for input only at this time */
-  struct ex__file_item *next;
+  unsigned int          is_write : 1;       /**< for output or append */
+  unsigned int          is_parallel : 1;    /**< 1 true, 0 false */
+  unsigned int          is_hdf5 : 1;        /**< 1 true, 0 false */
+  unsigned int          is_pnetcdf : 1;     /**< 1 true, 0 false */
+  unsigned int          has_nodes : 1;      /**< for input only at this time */
+  unsigned int          has_edges : 1;      /**< for input only at this time */
+  unsigned int          has_faces : 1;      /**< for input only at this time */
+  unsigned int          has_elems : 1;      /**< for input only at this time */
+  unsigned int          in_define_mode : 1; /**< Is the file in nc define mode... */
+  struct exi_file_item *next;
 };
 
-struct ex__elem_blk_parm
+struct exi_elem_blk_parm
 {
   char             elem_type[33];
   int64_t          elem_blk_id;
@@ -718,25 +724,25 @@ struct ex__elem_blk_parm
   int              num_nodes_per_side[6];
   int              num_attr;
   int64_t          elem_ctr;
-  ex__element_type elem_type_val;
+  exi_element_type elem_type_val;
 };
 
 /* Used in exo_jack.c for fortran interface */
-enum ex__coordinate_frame_type {
+enum exi_coordinate_frame_type {
   EX_CF_RECTANGULAR = 1,
   EX_CF_CYLINDRICAL = 2,
   EX_CF_SPHERICAL   = 3
 };
-typedef enum ex__coordinate_frame_type ex__coordinate_frame_type;
+typedef enum exi_coordinate_frame_type exi_coordinate_frame_type;
 
-struct ex__list_item
+struct exi_list_item
 { /* for use with ex_get_file_item */
   int                   exo_id;
   int                   value;
-  struct ex__list_item *next;
+  struct exi_list_item *next;
 };
 
-struct ex__obj_stats
+struct exi_obj_stats
 {
   int64_t              *id_vals;
   int                  *stat_vals;
@@ -745,125 +751,139 @@ struct ex__obj_stats
   char                  valid_ids;
   char                  valid_stat;
   char                  sequential;
-  struct ex__obj_stats *next;
+  struct exi_obj_stats *next;
 };
 
 #ifndef EXODUS_EXPORT
 #define EXODUS_EXPORT extern
 #endif /* EXODUS_EXPORT */
 
-EXODUS_EXPORT void ex__iqsort(int v[], int iv[], size_t N);
-EXODUS_EXPORT void ex__iqsort64(int64_t v[], int64_t iv[], int64_t N);
+EXODUS_EXPORT void exi_iqsort(int v[], int iv[], size_t N);
+EXODUS_EXPORT void exi_iqsort64(int64_t v[], int64_t iv[], int64_t N);
 
-EXODUS_EXPORT char *ex__catstr(const char * /*string*/, int /*num*/);
-EXODUS_EXPORT char *ex__catstr2(const char * /*string1*/, int /*num1*/, const char * /*string2*/,
+EXODUS_EXPORT char *exi_catstr(const char * /*string*/, int /*num*/);
+EXODUS_EXPORT char *exi_catstr2(const char * /*string1*/, int /*num1*/, const char * /*string2*/,
                                 int /*num2*/);
-EXODUS_EXPORT char *ex__dim_num_entries_in_object(ex_entity_type /*obj_type*/, int /*idx*/);
-EXODUS_EXPORT char *ex__dim_num_objects(ex_entity_type obj_type);
-EXODUS_EXPORT char *ex__name_var_of_object(ex_entity_type /*obj_type*/, int /*i*/, int /*j*/);
-EXODUS_EXPORT char *ex__name_red_var_of_object(ex_entity_type /*obj_type*/, int /*indx*/);
-EXODUS_EXPORT char *ex__name_of_map(ex_entity_type /*map_type*/, int /*map_index*/);
+EXODUS_EXPORT char *exi_dim_num_entries_in_object(ex_entity_type /*obj_type*/, int /*idx*/);
+EXODUS_EXPORT char *exi_dim_num_objects(ex_entity_type obj_type);
+EXODUS_EXPORT char *exi_name_var_of_object(ex_entity_type /*obj_type*/, int /*i*/, int /*j*/);
+EXODUS_EXPORT char *exi_name_red_var_of_object(ex_entity_type /*obj_type*/, int /*indx*/);
+EXODUS_EXPORT char *exi_name_of_map(ex_entity_type /*map_type*/, int /*map_index*/);
 
-EXODUS_EXPORT int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
+EXODUS_EXPORT int exi_conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
                                 int int64_status, bool is_parallel, bool is_hdf5, bool is_pnetcdf,
                                 bool is_write);
 
-EXODUS_EXPORT void ex__conv_exit(int exoid);
+EXODUS_EXPORT void exi_conv_exit(int exoid);
 
 EXODUS_EXPORT nc_type nc_flt_code(int exoid);
-EXODUS_EXPORT int     ex__comp_ws(int exoid);
-EXODUS_EXPORT int     ex__get_cpu_ws(void);
-EXODUS_EXPORT int     ex__is_parallel(int exoid);
+EXODUS_EXPORT int     exi_comp_ws(int exoid);
+EXODUS_EXPORT int     exi_get_cpu_ws(void);
+EXODUS_EXPORT int     exi_is_parallel(int exoid);
 
-EXODUS_EXPORT struct ex__list_item **ex__get_counter_list(ex_entity_type obj_type);
-EXODUS_EXPORT int  ex__get_file_item(int /*exoid*/, struct ex__list_item  **/*list_ptr*/);
-EXODUS_EXPORT int  ex__inc_file_item(int /*exoid*/, struct ex__list_item  **/*list_ptr*/);
-EXODUS_EXPORT void ex__rm_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
+EXODUS_EXPORT struct exi_list_item **exi_get_counter_list(ex_entity_type obj_type);
+EXODUS_EXPORT int  exi_get_file_item(int /*exoid*/, struct exi_list_item  **/*list_ptr*/);
+EXODUS_EXPORT int  exi_inc_file_item(int /*exoid*/, struct exi_list_item  **/*list_ptr*/);
+EXODUS_EXPORT void exi_rm_file_item(int /*exoid*/, struct exi_list_item ** /*list_ptr*/);
 
-extern struct ex__obj_stats *exoII_eb;
-extern struct ex__obj_stats *exoII_ed;
-extern struct ex__obj_stats *exoII_fa;
-extern struct ex__obj_stats *exoII_ns;
-extern struct ex__obj_stats *exoII_es;
-extern struct ex__obj_stats *exoII_fs;
-extern struct ex__obj_stats *exoII_ss;
-extern struct ex__obj_stats *exoII_els;
-extern struct ex__obj_stats *exoII_em;
-extern struct ex__obj_stats *exoII_edm;
-extern struct ex__obj_stats *exoII_fam;
-extern struct ex__obj_stats *exoII_nm;
+extern struct exi_obj_stats *exoII_eb;
+extern struct exi_obj_stats *exoII_ed;
+extern struct exi_obj_stats *exoII_fa;
+extern struct exi_obj_stats *exoII_ns;
+extern struct exi_obj_stats *exoII_es;
+extern struct exi_obj_stats *exoII_fs;
+extern struct exi_obj_stats *exoII_ss;
+extern struct exi_obj_stats *exoII_els;
+extern struct exi_obj_stats *exoII_em;
+extern struct exi_obj_stats *exoII_edm;
+extern struct exi_obj_stats *exoII_fam;
+extern struct exi_obj_stats *exoII_nm;
 
-struct ex__file_item *ex__find_file_item(int exoid);
-struct ex__file_item *ex__add_file_item(int exoid);
-struct ex__obj_stats *ex__get_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr);
+EXODUS_EXPORT struct exi_file_item *exi_find_file_item(int exoid);
+struct exi_file_item               *exi_add_file_item(int exoid);
+struct exi_obj_stats               *exi_get_stat_ptr(int exoid, struct exi_obj_stats **obj_ptr);
 
-EXODUS_EXPORT void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr);
+EXODUS_EXPORT void exi_rm_stat_ptr(int exoid, struct exi_obj_stats **obj_ptr);
 
-EXODUS_EXPORT void ex__set_compact_storage(int exoid, int varid);
-EXODUS_EXPORT void ex__compress_variable(int exoid, int varid, int type);
-EXODUS_EXPORT int  ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
-EXODUS_EXPORT int  ex__check_valid_file_id(
+EXODUS_EXPORT void exi_set_compact_storage(int exoid, int varid);
+EXODUS_EXPORT void exi_compress_variable(int exoid, int varid, int type);
+EXODUS_EXPORT int  exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
+EXODUS_EXPORT int  exi_check_valid_file_id(
      int exoid, const char *func); /** Return fatal error if exoid does not refer to valid file */
-EXODUS_EXPORT int   ex__check_multiple_open(const char *path, int mode, const char *func);
-EXODUS_EXPORT int   ex__check_file_type(const char *path, int *type);
-EXODUS_EXPORT char *ex__canonicalize_filename(const char *path);
-EXODUS_EXPORT int   ex__get_dimension(int exoid, const char *DIMENSION, const char *label,
+EXODUS_EXPORT int   exi_check_multiple_open(const char *path, int mode, const char *func);
+EXODUS_EXPORT int   exi_check_file_type(const char *path, int *type);
+EXODUS_EXPORT char *exi_canonicalize_filename(const char *path);
+EXODUS_EXPORT int   exi_get_dimension(int exoid, const char *DIMENSION, const char *label,
                                       size_t *count, int *dimid, const char *routine);
 
-EXODUS_EXPORT int ex__get_nodal_var(int exoid, int time_step, int nodal_var_index,
-                                    int64_t num_nodes, void *nodal_var_vals);
-
-EXODUS_EXPORT int ex__put_nodal_var(int exoid, int time_step, int nodal_var_index,
-                                    int64_t num_nodes, const void *nodal_var_vals);
-
-EXODUS_EXPORT int ex__get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
+EXODUS_EXPORT int exi_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
                                          int beg_time_step, int end_time_step,
                                          void *nodal_var_vals);
 
-EXODUS_EXPORT int ex__get_partial_nodal_var(int exoid, int time_step, int nodal_var_index,
+EXODUS_EXPORT int exi_put_nodal_var_multi_time(int exoid, int nodal_var_index, int64_t num_nodes,
+                                               int beg_time_step, int end_time_step,
+                                               const void *nodal_var_vals);
+
+EXODUS_EXPORT int exi_get_nodal_var_multi_time(int exoid, int nodal_var_index, int64_t node_number,
+                                               int beg_time_step, int end_time_step,
+                                               void *nodal_var_vals);
+
+EXODUS_EXPORT int exi_put_nodal_var_time(int exoid, int nodal_var_index, int64_t num_nodes,
+                                         int beg_time_step, int end_time_step,
+                                         const void *nodal_var_vals);
+
+EXODUS_EXPORT int exi_get_partial_nodal_var(int exoid, int time_step, int nodal_var_index,
                                             int64_t start_node, int64_t num_nodes, void *var_vals);
 
-EXODUS_EXPORT int ex__put_partial_nodal_var(int exoid, int time_step, int nodal_var_index,
+EXODUS_EXPORT int exi_put_partial_nodal_var(int exoid, int time_step, int nodal_var_index,
                                             int64_t start_node, int64_t num_nodes,
                                             const void *nodal_var_vals);
-EXODUS_EXPORT int ex__get_glob_vars(int exoid, int time_step, int num_glob_vars,
+EXODUS_EXPORT int exi_get_glob_vars(int exoid, int time_step, int num_glob_vars,
                                     void *glob_var_vals);
 
-EXODUS_EXPORT int ex__get_glob_var_time(int exoid, int glob_var_index, int beg_time_step,
+EXODUS_EXPORT int exi_get_glob_vars_multi_time(int exoid, int num_glob_vars, int beg_time_step,
+                                               int end_time_step, void *glob_var_vals);
+
+EXODUS_EXPORT int exi_get_glob_var_time(int exoid, int glob_var_index, int beg_time_step,
                                         int end_time_step, void *glob_var_vals);
 
-EXODUS_EXPORT int  ex__get_name(int exoid, int varid, size_t index, char *name, int name_size,
+EXODUS_EXPORT int  exi_get_name(int exoid, int varid, size_t index, char *name, int name_size,
                                 ex_entity_type obj_type, const char *routine);
-EXODUS_EXPORT int  ex__get_names(int exoid, int varid, size_t num_entity, char **names,
+EXODUS_EXPORT int  exi_get_names(int exoid, int varid, size_t num_entity, char **names,
                                  ex_entity_type obj_type, const char *routine);
-EXODUS_EXPORT int  ex__put_name(int exoid, int varid, size_t index, const char *name,
+EXODUS_EXPORT int  exi_put_name(int exoid, int varid, size_t index, const char *name,
                                 ex_entity_type obj_type, const char *subtype, const char *routine);
-EXODUS_EXPORT int  ex__put_names(int exoid, int varid, size_t num_entity, char *const *names,
+EXODUS_EXPORT int  exi_put_names(int exoid, int varid, size_t num_entity, char *const *names,
                                  ex_entity_type obj_type, const char *subtype, const char *routine);
-EXODUS_EXPORT void ex__trim(char *name);
-EXODUS_EXPORT void ex__update_max_name_length(int exoid, int length);
-EXODUS_EXPORT int  ex__leavedef(int         exoid,    /* NemesisI file ID         */
+EXODUS_EXPORT void exi_trim(char *name);
+EXODUS_EXPORT void exi_update_max_name_length(int exoid, int length);
+EXODUS_EXPORT int  exi_redef(int exoid, const char *call_func);
+EXODUS_EXPORT int  exi_persist_redef(int exoid, const char *call_func);
+EXODUS_EXPORT int  exi_leavedef(int         exoid,    /* NemesisI file ID         */
                                 const char *call_rout /* Name of calling function */
  );
+EXODUS_EXPORT int  exi_persist_leavedef(int         exoid,    /* NemesisI file ID         */
+                                        const char *call_rout /* Name of calling function */
+ );
 
-EXODUS_EXPORT int ex__check_version(int run_version);
-EXODUS_EXPORT int ex__handle_mode(unsigned int my_mode, int is_parallel, int run_version);
-EXODUS_EXPORT int ex__populate_header(int exoid, const char *path, int my_mode, int is_parallel,
+EXODUS_EXPORT int exi_check_version(int run_version);
+EXODUS_EXPORT int exi_handle_mode(unsigned int my_mode, int is_parallel, int run_version);
+EXODUS_EXPORT int exi_populate_header(int exoid, const char *path, int my_mode, int is_parallel,
                                       int *comp_ws, int *io_ws);
 
-EXODUS_EXPORT int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
-                                      struct ex__elem_blk_parm *elem_blk_parm);
+EXODUS_EXPORT int exi_get_block_param(int exoid, ex_entity_id id, int ndim,
+                                      struct exi_elem_blk_parm *elem_blk_parm);
 
-EXODUS_EXPORT int ex__get_file_type(int exoid, char *ftype);
+EXODUS_EXPORT int exi_get_file_type(int exoid, char *ftype);
 
-EXODUS_EXPORT int ex__put_nemesis_version(int exoid);
+EXODUS_EXPORT int exi_put_nemesis_version(int exoid);
 
-EXODUS_EXPORT int ex__put_homogenous_block_params(int exoid, size_t block_count,
+EXODUS_EXPORT int exi_put_homogenous_block_params(int exoid, size_t block_count,
                                                   const struct ex_block *blocks);
 
-EXODUS_EXPORT int ne__check_file_version(int exoid);
+EXODUS_EXPORT int nei_check_file_version(int exoid);
 
-EXODUS_EXPORT int ne__id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
+EXODUS_EXPORT int nei_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
                               const char  *ne_var_name, /* Nemesis variable name */
                               int64_t     *idx,         /* index variable for variable, length 2 */
                               ex_entity_id ne_var_id    /* NetCDF variable ID */
@@ -888,7 +908,7 @@ EXODUS_EXPORT int ne__id_lkup(int          exoid,       /* NetCDF/Exodus file ID
  * Note that this is a global setting for all databases. If you are
  * accessing multiple databases, they will all use the same value.
  */
-EXODUS_EXPORT int ex__default_max_name_length;
+EXODUS_EXPORT int exi_default_max_name_length;
 /*! @} */
 
 #ifdef __cplusplus

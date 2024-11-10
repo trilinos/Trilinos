@@ -43,6 +43,12 @@
 #ifndef _IFPACK_ILUK_GRAPH_H_
 #define _IFPACK_ILUK_GRAPH_H_
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_CrsGraph.h"

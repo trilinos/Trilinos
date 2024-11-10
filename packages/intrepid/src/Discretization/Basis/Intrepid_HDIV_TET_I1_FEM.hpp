@@ -148,3 +148,10 @@ public:
 #include "Intrepid_HDIV_TET_I1_FEMDef.hpp"
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

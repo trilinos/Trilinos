@@ -34,6 +34,23 @@ RefinementSupport::get(const stk::mesh::MetaData & meta)
   return *support;
 }
 
+stk::mesh::Selector RefinementSupport::do_not_refine_or_unrefine_selector(const stk::mesh::MetaData & meta)
+{
+  if (!CDFEM_Support::is_active(meta))
+  {
+    stk::mesh::Selector emptySelector;
+    return emptySelector;
+  }
+
+  const CDFEM_Support & cdfemSupport = CDFEM_Support::get(meta);
+  const stk::mesh::Selector parent_or_child_selector =
+      cdfemSupport.get_child_part() | cdfemSupport.get_parent_part();
+  const stk::mesh::Selector decomposed_blocks_selector =
+      krino::Phase_Support::get(cdfemSupport.get_mesh_meta()).get_all_decomposed_blocks_selector();
+  const stk::mesh::Selector do_not_refine_selector = (!decomposed_blocks_selector) | parent_or_child_selector;
+  return do_not_refine_selector;
+}
+
 RefinementSupport::RefinementSupport(stk::mesh::MetaData & meta)
   : myMeta(meta),
     myTimer("Noninterface Conforming Adapt", sierra::Diag::sierraTimer())
@@ -43,19 +60,7 @@ RefinementSupport::RefinementSupport(stk::mesh::MetaData & meta)
 
 stk::mesh::Selector RefinementSupport::get_do_not_refine_or_unrefine_selector() const
 {
-  if (!CDFEM_Support::is_active(myMeta))
-  {
-    stk::mesh::Selector emptySelector;
-    return emptySelector;
-  }
-
-  const CDFEM_Support & cdfemSupport = CDFEM_Support::get(myMeta);
-  const stk::mesh::Selector parent_or_child_selector =
-      cdfemSupport.get_child_part() | cdfemSupport.get_parent_part();
-  const stk::mesh::Selector decomposed_blocks_selector =
-      krino::Phase_Support::get(cdfemSupport.get_mesh_meta()).get_all_decomposed_blocks_selector();
-  const stk::mesh::Selector do_not_refine_selector = (!decomposed_blocks_selector) | parent_or_child_selector;
-  return do_not_refine_selector;
+  return do_not_refine_or_unrefine_selector(myMeta);
 }
 
 void

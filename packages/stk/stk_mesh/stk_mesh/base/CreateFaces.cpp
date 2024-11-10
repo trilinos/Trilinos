@@ -43,6 +43,7 @@
 #include <array>
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
@@ -116,7 +117,7 @@ struct create_face_impl
   {}
 
   template <typename Topology>
-  void operator()(Topology t)
+  void operator()(Topology)
   {
     typedef topology::topology_type< Topology::value> ElemTopology;
 
@@ -173,13 +174,13 @@ struct create_face_impl
                           mesh.declare_relation(face,node,n);
                       }
 
-                      Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
+                      Permutation permut = stk::mesh::find_permutation(mesh, elemTopology, elem_nodes,
                                                                                        faceTopology, &permuted_face_nodes[0], side_ordinal);
                       mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);
                   }
                   else {
                       face = iface->second;
-                      Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
+                      Permutation permut = stk::mesh::find_permutation(mesh, elemTopology, elem_nodes,
                                                                  faceTopology, &permuted_face_nodes[0], side_ordinal);
                       STK_ThrowRequireMsg(permut != INVALID_PERMUTATION, "CreateFaces:  could not find valid permutation to connect face to element");
                       mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);

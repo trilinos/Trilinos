@@ -41,6 +41,12 @@
 #ifndef EPETRAEXT_BLOCKMAPIN_H
 #define EPETRAEXT_BLOCKMAPIN_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_ConfigDefs.h>
 #include <Epetra_ConfigDefs.h>
 class Epetra_Comm;

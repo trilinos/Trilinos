@@ -44,6 +44,14 @@
 #ifndef EPETRA_VBRROWMATRIX_H
 #define EPETRA_VBRROWMATRIX_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_Map.h"

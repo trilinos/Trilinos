@@ -7,7 +7,7 @@
  */
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for ex__compress_variable, etc
+#include "exodusII_int.h" // for exi_compress_variable, etc
 
 /*! \cond INTERNAL */
 static int ex_prepare_result_var(int exoid, int num_vars, char *type_name, char *dim_name,
@@ -18,7 +18,6 @@ static int ex_prepare_result_var(int exoid, int num_vars, char *type_name, char 
   int varid;
   int dims[2];
   int dim_str_name;
-  int fill = NC_FILL_CHAR;
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -60,8 +59,9 @@ static int ex_prepare_result_var(int exoid, int num_vars, char *type_name, char 
     }
     return (EX_FATAL); /* exit define mode and return */
   }
-  ex__set_compact_storage(exoid, varid);
+  exi_set_compact_storage(exoid, varid);
 #if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
+  int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, varid, 0, &fill);
 #endif
   return (EX_NOERR);
@@ -129,7 +129,7 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
   int  status;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -174,7 +174,7 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
   }
 
   /* put file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -202,9 +202,9 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
       ex_err_fn(exoid, __func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
-    ex__compress_variable(exoid, varid, 2);
+    exi_compress_variable(exoid, varid, 2);
     if (num_vars * 8 < 64 * 1024) {
-      ex__set_compact_storage(exoid, varid);
+      exi_set_compact_storage(exoid, varid);
     }
   }
   else if (obj_type == EX_NODAL) {
@@ -224,7 +224,7 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, varid, 2);
+      exi_compress_variable(exoid, varid, 2);
     }
   }
 
@@ -295,7 +295,7 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -305,6 +305,6 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

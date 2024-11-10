@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023, 2024 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -199,13 +199,12 @@ namespace {
   {
 #ifdef __unix__
     char ch;
-    int  c;
-    while ((c = read(0, &ch, 1)) == -1) {
+    while (read(0, &ch, 1) == -1) {
       if (errno != EINTR) {
         break;
       }
     }
-    c = (ch <= 0) ? -1 : ch;
+    int c = (ch <= 0) ? -1 : ch;
 #endif /* __unix__ */
 #ifdef MSDOS
     int c = _bios_keybrd(_NKEYBRD_READ);

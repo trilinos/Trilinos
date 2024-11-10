@@ -1,7 +1,5 @@
-#ifdef STK_BUILT_IN_SIERRA
-
-#ifndef CREATE_STK_MESH
-#define CREATE_STK_MESH
+#ifndef STK_MIDDLE_MESH_UTILS_CREATE_STK_MESH
+#define STK_MIDDLE_MESH_UTILS_CREATE_STK_MESH
 
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
@@ -46,7 +44,6 @@ class StkMeshCreator
           m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr()),
           m_autodecompMethod(autodecompMethod)
     {
-      m_metaDataPtr->use_simple_fields();
       declare_stk_vert_field();
       load_mesh(fname);
     }
@@ -108,4 +105,3 @@ class StkMeshCreator
 } // namespace stk
 #endif
 
-#endif

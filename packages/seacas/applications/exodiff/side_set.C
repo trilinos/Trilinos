@@ -48,7 +48,7 @@ template <typename INT> void Side_Set<INT>::entity_load_params()
   sets[0].extra_list               = nullptr;
   sets[0].distribution_factor_list = nullptr;
 
-  int err = ex_get_sets(fileId, 1, sets.data());
+  int err = ex_get_sets(fileId, 1, Data(sets));
 
   if (err < 0) {
     Error(fmt::format("{}: Failed to get sideset parameters for sideset {}. !  Aborting...\n",
@@ -136,7 +136,7 @@ template <typename INT> void Side_Set<INT>::load_df() const
     }
   }
   else {
-    int err = ex_get_side_set_node_count(fileId, id_, count.data());
+    int err = ex_get_side_set_node_count(fileId, id_, Data(count));
     if (err < 0) {
       Error(fmt::format("{}: Failed to read side set node count for sideset {}!  Aborting...\n",
                         __func__, id_));

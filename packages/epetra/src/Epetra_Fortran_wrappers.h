@@ -94,3 +94,9 @@
       EPETRA_ERROR_FLAG  epetra_crsmatrix_fillcomplete
       EPETRA_ERROR_FLAG  epetra_crsmatrix_matvec
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

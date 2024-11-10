@@ -44,6 +44,14 @@
 #ifndef EPETRA_ROWMATRIX_H
 #define EPETRA_ROWMATRIX_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 class Epetra_Comm;
 class Epetra_Import;
 class Epetra_Export;

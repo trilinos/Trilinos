@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 #ifndef _COMPADRE_OPERATORS_HPP_
 #define _COMPADRE_OPERATORS_HPP_
 
@@ -235,6 +243,7 @@ namespace Compadre {
         Power,
         Gaussian,
         CubicSpline,
+        CardinalCubicBSpline,
         Cosine,
         Sigmoid
     };

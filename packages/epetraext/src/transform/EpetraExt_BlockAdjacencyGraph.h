@@ -42,6 +42,12 @@
 #ifndef EpetraExt_BLOCK_ADJACENCY_GRAPH_H
 #define EpetraExt_BLOCK_ADJACENCY_GRAPH_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 class Epetra_CrsGraph;
 
 #include <Teuchos_RCP.hpp>

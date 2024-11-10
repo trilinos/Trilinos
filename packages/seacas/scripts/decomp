@@ -132,7 +132,10 @@ If possible, you should update your getopt to a newer version and make
 sure that the new getopt is in your path.
 
 Below are some options for getting the current getopt version:
-* If on a Mac: "sudo port install getopt" or "brew install gnu-getopt"
+* If on a Mac: 
+  * "sudo port install getopt" or 
+  *"brew install gnu-getopt"
+  * You may have to add to your `.bash_profile` if using the brew option
 * Search the internet for "getopt-1.1.5" or "getopt-1.1.4"; download and build
 
 Enter "-h" for the modified options that this version supports.

@@ -1,7 +1,6 @@
-#ifdef STK_BUILT_IN_SIERRA
 
-#ifndef STK_INTERFACE_EXODUS_WRITER
-#define STK_INTERFACE_EXODUS_WRITER
+#ifndef STK_MIDDLE_MESH_UTILS_STK_INTERFACE_EXODUS_WRITER
+#define STK_MIDDLE_MESH_UTILS_STK_INTERFACE_EXODUS_WRITER
 
 #include "stk_middle_mesh/field.hpp"
 #include "stk_middle_mesh/mesh.hpp"
@@ -30,7 +29,6 @@ class ExodusWriter
       , m_mesh(mesh)
       , m_meshFields(fields)
     {
-      m_metaDataOutPtr->use_simple_fields();
       initialize_output_mesh();
       create_part("block_1");
       declare_fields();
@@ -93,4 +91,3 @@ class ExodusWriter
 } // namespace stk
 #endif
 
-#endif

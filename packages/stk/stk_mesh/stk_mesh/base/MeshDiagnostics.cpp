@@ -284,7 +284,8 @@ void unpack_side_nodes_and_check_for_attached_locally_owned_elements(const stk::
                     nodes[i] = bulkData.get_entity(nodeKeys[i]);
 
                 stk::mesh::EntityVector connectedElements;
-                stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, nodes.size(), &nodes[0], connectedElements);
+                stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(
+                    bulkData, nodes.size(), nodes.data(), connectedElements);
 
                 sideKeyProcMap[std::make_pair(sideKey, proc_id)] = !connectedElements.empty();
             }
@@ -314,7 +315,8 @@ void unpack_side_nodes_and_check_for_elements(const stk::mesh::BulkData& bulkDat
                     nodes[i] = bulkData.get_entity(nodeKeys[i]);
 
                 stk::mesh::EntityVector connectedElements;
-                stk::mesh::impl::find_entities_these_nodes_have_in_common(bulkData, stk::topology::ELEM_RANK, nodes.size(), &nodes[0], connectedElements);
+                stk::mesh::impl::find_entities_these_nodes_have_in_common(
+                    bulkData, stk::topology::ELEM_RANK, nodes.size(), nodes.data(), connectedElements);
 
                 sideKeyProcMap[std::make_pair(sideKey, proc_id)] = !connectedElements.empty();
             }

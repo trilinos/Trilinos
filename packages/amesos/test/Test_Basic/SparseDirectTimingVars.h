@@ -30,6 +30,13 @@
 
 #ifndef SPARSEDIRECTTIMINGVARS_H
 #define SPARSEDIRECTTIMINGVARS_H
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #define SPARSE_DIRECT_TIMINGS
 #ifdef SPARSE_DIRECT_TIMINGS
 #include "SparseSolverResult.h" 
@@ -45,4 +52,3 @@ class SparseDirectTimingVars
 } ;
 #endif
 #endif
-

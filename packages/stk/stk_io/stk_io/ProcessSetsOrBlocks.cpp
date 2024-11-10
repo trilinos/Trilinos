@@ -21,12 +21,10 @@
 #include "StkIoUtils.hpp"                          // for part_primary_entit...
 #include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"                // for Bucket
-#include "stk_mesh/base/CoordinateSystems.hpp"     // for Cartesian
 #include "stk_mesh/base/EntityKey.hpp"             // for EntityKey
 #include "stk_mesh/base/FEMHelpers.hpp"            // for declare_element_edge
 #include "stk_mesh/base/Field.hpp"                 // for Field
 #include "stk_mesh/base/SideSetEntry.hpp"          // for SideSet
-#include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
 #include "stk_mesh/base/Types.hpp"                 // for EntityId, PartVector
 #include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"  // for connect_face_to_edges
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"     // for connect_edge_to_el...
@@ -55,28 +53,15 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   const  Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
-  if (meta.is_using_simple_fields()) {
-    auto & coord_field = meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
-    stk::io::set_field_output_type(coord_field, stk::io::FieldOutputType::VECTOR_3D);
-    stk::io::set_field_role(coord_field, Ioss::Field::MESH);
-    meta.set_coordinate_field(&coord_field);
-  }
-  else {
-    auto & coord_field =
-        stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta,
-                                                                                         stk::topology::NODE_RANK,
-                                                                                         meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
-    stk::io::set_field_role(coord_field, Ioss::Field::MESH);
-    meta.set_coordinate_field(&coord_field);
-  }
+  auto & coord_field = meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
+  stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
+  stk::io::set_field_output_type(coord_field, stk::io::FieldOutputType::VECTOR_3D);
+  stk::io::set_field_role(coord_field, Ioss::Field::MESH);
+  meta.set_coordinate_field(&coord_field);
 
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), stk::topology::NODE_RANK);
 }
-
-
 
 void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
@@ -143,24 +128,14 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
         if (!surface_df_defined) {
           stk::topology::rank_t side_rank = static_cast<stk::topology::rank_t>(stk::io::part_primary_entity_rank(*sb_part));
           std::string field_name = sset->name() + "_df";
-          if (meta.is_using_simple_fields()) {
-            distribution_factors_field = &meta.declare_field<double>(side_rank, field_name);
-          }
-          else {
-            distribution_factors_field = &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(meta, side_rank, field_name);
-          }
+          distribution_factors_field = &meta.declare_field<double>(side_rank, field_name);
           stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
           stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
           surface_df_defined = true;
         }
         stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
         int side_node_count = sb->topology()->number_nodes();
-        if (meta.is_using_simple_fields()) {
-          stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count, nullptr);
-        }
-        else {
-          stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count, nullptr);
-        }
+        stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count, nullptr);
       }
     }
   }
@@ -233,6 +208,128 @@ void create_processed_face(stk::mesh::BulkData& bulk,
     }
 }
 
+Ioss::ElementTopology* get_side_block_topology_from_entries(Ioss::DatabaseIO* db, Ioss::SideBlock* sb)
+{
+  Ioss::Region* region = db->get_region();
+  if(nullptr == region) return nullptr;
+
+  Ioss::Int64Vector elementSide;
+  if (db->int_byte_size_api() == 4) {
+    Ioss::IntVector es32;
+    sb->get_field_data("element_side", es32);
+    elementSide.resize(es32.size());
+    std::copy(es32.begin(), es32.end(), elementSide.begin());
+  }
+  else {
+    sb->get_field_data("element_side", elementSide);
+  }
+
+  int heterogenousTopo = 0;
+  Ioss::ElementTopology* blockSideTopo = nullptr;
+  size_t              number_sides = elementSide.size() / 2;
+  Ioss::ElementBlock *block        = nullptr;
+  std::int64_t sideSetOffset = Ioss::Utils::get_side_offset(sb);
+  for (size_t iel = 0; iel < number_sides; iel++) {
+    int64_t elemId   = elementSide[2 * iel]; 
+    int64_t elemSide = elementSide[2 * iel + 1] + sideSetOffset - 1;
+    elemId           = db->element_global_to_local(elemId);
+    if (block == nullptr || !block->contains(elemId)) {
+      block = region->get_element_block(elemId);
+      assert(block != nullptr);
+    }
+
+    int64_t oneBasedElemSide = elemSide + 1;
+    Ioss::ElementTopology* sideTopo = block->topology()->boundary_type(oneBasedElemSide);
+
+    if(nullptr != blockSideTopo && sideTopo != blockSideTopo) {
+      blockSideTopo = nullptr;
+      heterogenousTopo = 1;
+      break;      
+    }
+
+    blockSideTopo = sideTopo;	
+  }
+
+  int topoId = (blockSideTopo != nullptr) ? Ioss::ElementTopology::get_unique_id(blockSideTopo->name()) : 0;
+
+  if (db->is_parallel()) {
+    std::vector<int> topoVec{topoId, heterogenousTopo};
+    db->util().global_array_minmax(topoVec, Ioss::ParallelUtils::DO_MAX);
+    topoId = topoVec[0];
+    heterogenousTopo = topoVec[1];
+  }
+
+  blockSideTopo = heterogenousTopo ? nullptr : Ioss::ElementTopology::factory(topoId);
+
+  return blockSideTopo;
+}
+
+bool set_sideset_topology(const Ioss::SideSet *ss, stk::mesh::Part* part,
+          	          const Ioss::ElementTopology* sbTopo, stk::topology stkTopology,
+			  bool printWarning = false)
+{
+  if (stkTopology == stk::topology::INVALID_TOPOLOGY) {
+    if (printWarning) {
+      std::ostringstream os;
+      os<<"stk_io WARNING: failed to obtain sensible topology for sideset: " << ss->name()<<", iossTopology: "<<sbTopo->name()<<", stk-part: "<<part->name()<<", rank: "<<part->primary_entity_rank()<<", stk-topology: "<<stkTopology<<". Probably because this GroupingEntity is empty on this MPI rank. Unable to set correct stk topology hierarchy. Proceeding, but beware of unexpected behavior."<<std::endl;
+      std::cerr<<os.str();
+    }
+  }
+  else {
+    for(auto subsetPart : part->subsets()) {
+      if(subsetPart->topology() != stkTopology) {
+	return false;
+      }
+    }
+      
+    stk::mesh::set_topology(*part, stkTopology);
+    return true;
+  }
+
+  return false;
+}
+
+void set_sideset_topology(const Ioss::SideSet *ss, stk::mesh::Part *part, const stk::mesh::MetaData &meta)
+{
+  if(nullptr == ss) return;
+  if(nullptr == part) return;
+  if(ss->side_block_count() != 1) return;
+
+  Ioss::DatabaseIO* db = ss->get_database();
+  Ioss::Region* region = db->get_region();
+  if(nullptr == region) return;
+
+  Ioss::SideBlock* sb = ss->get_block(0);
+
+  if(sb->name() != ss->name()) {
+    stk::topology stkTopology = map_ioss_topology_to_stk(sb->topology(), meta.spatial_dimension());
+    if(set_sideset_topology(ss, part, sb->topology(), stkTopology, true)) return;
+  }
+
+  Ioss::ElementTopology* blockSideTopo = get_side_block_topology_from_entries(db, sb);
+  
+  if(nullptr != blockSideTopo) {
+    stk::topology stkTopology = map_ioss_topology_to_stk(blockSideTopo, meta.spatial_dimension());
+    set_sideset_topology(ss, part, blockSideTopo, stkTopology);
+  }
+}
+
+void adjust_par_dimen_for_shell_all_face_sides(stk::topology topo, int& par_dimen)
+{
+  switch (topo) {
+    case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
+    case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
+      par_dimen = 2;
+      break;
+    default: 
+      break;
+  }
+}
+
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, std::vector<ElemSidePartOrds> &sidesToMove, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
@@ -241,6 +338,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
     const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
+
+    bool useShellAllFaceSides = region->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
 
     stk::mesh::SideSet *stkSideSet = nullptr;
     stk::mesh::Part *stkSideSetPart = get_part_for_grouping_entity(*region, meta, sset);
@@ -310,6 +409,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             //       is not split into homogenous side_blocks, then the topology will not necessarily
             //       be the same and this could fail (a sideset of mixed edges and faces)
             int par_dimen = block->topology()->parametric_dimension();
+            // NOTE: Needed for shell side topology offset translation to IOSS
+            std::int64_t sideSetOffset = Ioss::Utils::get_side_offset(block);
 
             size_t side_count = elem_side.size() / 2;
             for(size_t is=0; is<side_count; ++is) {
@@ -321,15 +422,15 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                 // non-null.
                 if (bulk.is_valid(elem)) {
                     // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-                    int side_ordinal = elem_side[is*2+1] - 1;
+                    int side_ordinal = elem_side[is*2+1] + sideSetOffset - 1;
                     stk::mesh::EntityId side_id_for_classic_behavior = stk::mesh::impl::side_id_formula(elem_side[is*2], side_ordinal);
 
                     if(par_dimen == 0)
                     {
                         stk::topology elemTopo = bulk.bucket(elem).topology();
-                        stk::topology faceTopo = elemTopo.sub_topology(elemTopo.side_rank(), side_ordinal);
+                        stk::topology sideTopo = elemTopo.sub_topology(elemTopo.side_rank(side_ordinal), side_ordinal);
 
-                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(faceTopo.name(), false);
+                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(sideTopo.name(), false);
                         par_dimen = ioss_topo->parametric_dimension();
                     }
 
@@ -343,8 +444,18 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                          }
                     }
 
+                    if (useShellAllFaceSides) {
+                      stk::topology elemTopo = bulk.bucket(elem).topology();
+                      adjust_par_dimen_for_shell_all_face_sides(elemTopo, par_dimen);
+                    }
+
                     if (par_dimen == 1) {
-                        create_processed_edge(bulk, elem, side_ordinal, add_parts, behavior, side_id_for_classic_behavior);
+                      stk::topology elemTopo = bulk.bucket(elem).topology();
+                      // conversion from face ordinal to edge ordinal for shells
+                      if (elemTopo.is_shell()) {
+                        side_ordinal -= elemTopo.num_faces();
+                      }
+                      create_processed_edge(bulk, elem, side_ordinal, add_parts, behavior, side_id_for_classic_behavior);
                     }
                     else if (par_dimen == 2) {
                         create_processed_face(bulk, elem, side_ordinal, add_parts, behavior,

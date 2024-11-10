@@ -11,6 +11,7 @@
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_FieldRef.hpp>
 #include <Akri_AdaptivityHelpers.hpp>
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_MeshInputOptions.hpp>
@@ -38,9 +39,11 @@
 #include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_PostProcess.hpp>
 #include <Akri_Surface_Manager.hpp>
 #include <Akri_RefinementInterface.hpp>
 #include <Akri_RefinementSupport.hpp>
+#include <Ioss_GroupingEntity.h>
 
 namespace krino{
 
@@ -54,8 +57,9 @@ Region::Region(Simulation & owning_simulation, const std::string & regionName)
   my_timerExecute("Execute", my_timerRegion),
   my_timerMeshInput("Mesh input", my_timerRegion),
   my_timerMeshOutput("Mesh output", my_timerRegion),
-  my_output_file_index(0),
-  my_output_file_created(false)
+  myOutputFileIndex(0),
+  myOutputFileNumRevisions(0),
+  myIsOutputFileCreatedAndCurrent(false)
 { /* %TRACE[ON]% */ Trace trace__("krino::Region::Region()"); /* %TRACE% */
   my_simulation.add_region(this);
   myOutputBroker = std::make_unique<stk::io::StkMeshIoBroker>(stk::EnvData::parallel_comm());
@@ -96,6 +100,8 @@ void Region::commit()
   CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
   RefinementSupport & refinementSupport = RefinementSupport::get(meta);
 
+  myPostProcessors.commit(meta);
+
   if (krino::CDFEM_Support::is_active(meta))
   {
     if (cdfem_mesh_displacements_requested_in_results_fields(CDFEM_Support::cdfem_mesh_displacements_field_name(), my_results_options->get_nodal_fields()))
@@ -110,18 +116,17 @@ void Region::commit()
   auto & active_part = AuxMetaData::get(meta).active_part();
   stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
 
-  if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
-      (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
-  {
-    auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
-    RefinementInterface & refinement = KrinoRefinement::create(meta);
-    refinementSupport.set_non_interface_conforming_refinement(refinement);
-  }
-
   if (cdfem_support.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
   {
     auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
     cdfem_support.register_cdfem_snap_displacements_field();
+  }
+
+  if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
+      (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
+  {
+    RefinementInterface & refinement = KrinoRefinement::create(meta);
+    refinementSupport.set_non_interface_conforming_refinement(refinement);
   }
 
   if (krino::CDFEM_Support::is_active(meta))
@@ -184,13 +189,15 @@ void zero_error_indicator(stk::mesh::BulkData & mesh)
 static void refine_elements_near_interface(RefinementInterface & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
-    const int numRefinementSteps)
+    const int numRefinementSteps,
+    const bool doInitializeLS)
 {
   std::function<void(int)> mark_elements_near_interface =
-      [&mesh, &refinementSupport, numRefinementSteps]
+      [&mesh, &refinementSupport, numRefinementSteps, doInitializeLS]
        (int num_refinements)
       {
-        LevelSet::initialize(mesh.mesh_meta_data());
+        if (doInitializeLS)
+          LevelSet::initialize(mesh.mesh_meta_data());
         if (num_refinements < numRefinementSteps)
         {
           const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
@@ -208,13 +215,15 @@ static void refine_elements_near_interface(RefinementInterface & refinement,
 static void refine_interface_elements(RefinementInterface & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
-    const int numRefinementSteps)
+    const int numRefinementSteps,
+    const bool doInitializeLS)
 {
   std::function<void(int)> marker_function =
-      [&mesh, &refinementSupport, numRefinementSteps]
+      [&mesh, &refinementSupport, numRefinementSteps, doInitializeLS]
        (int num_refinements)
       {
-        LevelSet::initialize(mesh.mesh_meta_data());
+        if (doInitializeLS)
+          LevelSet::initialize(mesh.mesh_meta_data());
         if(num_refinements < numRefinementSteps)
         {
           const auto & auxMeta = krino::AuxMetaData::get(mesh.mesh_meta_data());
@@ -235,6 +244,7 @@ static void refine_elements_that_intersect_interval(RefinementInterface & refine
       [&mesh, &refinementSupport, numRefinementSteps]
        (int num_refinements)
       {
+        constexpr bool isDefaultCoarsen = true;
         LevelSet::initialize(mesh.mesh_meta_data());
         if (num_refinements < numRefinementSteps)
         {
@@ -242,8 +252,9 @@ static void refine_elements_that_intersect_interval(RefinementInterface & refine
           krino::mark_elements_that_intersect_interval(mesh,
               refinementSupport.get_non_interface_conforming_refinement(),
               *interfaceGeometry,
-              refinementSupport,
-              num_refinements);
+              refinementSupport.get_refinement_interval(),
+              refinementSupport.get_interface_minimum_refinement_level(),
+              isDefaultCoarsen);
         }
       };
 
@@ -274,7 +285,7 @@ static void refine_based_on_indicator_field(RefinementInterface & refinement,
   perform_multilevel_adaptivity(refinement, mesh, marker_function, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, stk::mesh::BulkData & mesh)
+void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, const bool doInitializeLS, stk::mesh::BulkData & mesh)
 {
   stk::diag::TimeBlock adapt_timer__(refinementSupport.get_timer());
 
@@ -297,10 +308,10 @@ void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, 
     if (doNearbyRefinementBeforeInterfaceRefinement)
     {
       const int numNearbyRefinementSteps = numRefinementLevels;
-      refine_elements_near_interface(refinement, refinementSupport, mesh, numNearbyRefinementSteps);
+      refine_elements_near_interface(refinement, refinementSupport, mesh, numNearbyRefinementSteps, doInitializeLS);
     }
     const int numInterfaceRefinementSteps = doNearbyRefinementBeforeInterfaceRefinement ? numRefinementLevels : (2*numRefinementLevels); // Make sure refinement completes so that interfacial elements are fully refined
-    refine_interface_elements(refinement, refinementSupport, mesh, numInterfaceRefinementSteps);
+    refine_interface_elements(refinement, refinementSupport, mesh, numInterfaceRefinementSteps, doInitializeLS);
   }
 }
 
@@ -320,7 +331,7 @@ void do_post_adapt_uniform_refinement(const Simulation & simulation, const Refin
       // the transition elements are handled.
       auto & refinement = refinementSupport.get_non_interface_conforming_refinement();
       const int num_levels = refinementSupport.get_post_adapt_refinement_levels();
-      FieldRef marker_field = refinement.get_marker_field();
+      FieldRef marker_field = refinement.get_marker_field_and_sync_to_host();
 
       std::function<void(int)> marker_function =
           [&mesh, marker_field, num_levels]
@@ -381,6 +392,7 @@ void Region::initialize()
   auto & bulk = mesh_bulk_data();
   const auto & auxMeta = AuxMetaData::get(mesh_meta_data());
 
+  const bool doInitializeLSDuringRefinement = true;
   const bool doRefinement = refinementSupport.get_initial_refinement_levels() > 0 ||
       refinementSupport.get_interface_maximum_refinement_level() > 0 ||
       refinementSupport.get_post_adapt_refinement_levels() > 0;
@@ -393,7 +405,7 @@ void Region::initialize()
     if (refinementSupport.get_initial_refinement_levels() > 0)
       refinement.do_uniform_refinement(refinementSupport.get_initial_refinement_levels());
 
-    do_adaptive_refinement(refinementSupport, bulk);
+    do_adaptive_refinement(refinementSupport, doInitializeLSDuringRefinement, bulk);
 
     do_post_adapt_uniform_refinement(my_simulation, refinementSupport, auxMeta, bulk);
   }
@@ -422,17 +434,10 @@ void Region::initialize()
     for(auto&& ls : surfaceManager.get_levelsets())
     {
       ls->initialize(0.);
-
       if (my_simulation.is_transient())
       {
         // initialize does not end with the facets constructed so manually construct them now
-        ls->build_facets_locally(mesh_meta_data().universal_part());
-
-        // debugging
-        if (krinolog.shouldPrint(LOG_FACETS))
-        {
-          ls->write_facets();
-        }
+        ls->build_initial_facets(0.);
       }
     }
   }
@@ -453,13 +458,31 @@ void Region::execute()
     return;
   }
 
-  double deltaTime = time_step();
+  const RefinementSupport & refinementSupport = RefinementSupport::get(mesh_meta_data());
+  const bool doRefinement = refinementSupport.get_interface_maximum_refinement_level() > 0 ||
+      refinementSupport.get_post_adapt_refinement_levels() > 0;
+
+  if (doRefinement)
+  {
+    const bool doInitializeLSDuringRefinement = false;
+    auto & bulk = mesh_bulk_data();
+    const auto & auxMeta = AuxMetaData::get(mesh_meta_data());
+
+    do_adaptive_refinement(refinementSupport, doInitializeLSDuringRefinement, bulk);
+    do_post_adapt_uniform_refinement(my_simulation, refinementSupport, auxMeta, bulk);
+    mesh_topology_has_changed();
+  }
+
+  const double timeN = get_old_time();
+  const double timeNp1 = get_current_time();
 
   const Surface_Manager & surfaceManager = Surface_Manager::get(mesh_meta_data());
   for(auto&& ls : surfaceManager.get_levelsets())
   {
-    ls->advance_semilagrangian(deltaTime);
+    ls->advance_semilagrangian(timeN, timeNp1);
   }
+
+  myPostProcessors.postprocess(mesh_bulk_data(), AuxMetaData::get(mesh_meta_data()).get_current_coordinates(), timeNp1);
 }
 
 unsigned Region::spatial_dimension() const { return mesh_meta_data().spatial_dimension(); }
@@ -468,6 +491,8 @@ stk::mesh::BulkData& Region::mesh_bulk_data() { return myMesh->bulk_data(); }
 const stk::mesh::MetaData& Region::mesh_meta_data() const { return myMesh->meta_data(); }
 stk::mesh::MetaData& Region::mesh_meta_data() { return myMesh->meta_data(); }
 double Region::time_step() const { return my_simulation.get_time_step(); }
+double Region::get_current_time() const { return my_simulation.get_current_time(); }
+double Region::get_old_time() const { return my_simulation.get_old_time(); }
 
 stk::io::StkMeshIoBroker & Region::stkOutput()
 {
@@ -477,22 +502,41 @@ stk::io::StkMeshIoBroker & Region::stkOutput()
 
 void Region::create_output_mesh()
 {
+  myIsOutputFileCreatedAndCurrent = true;
+
   bool output_mesh = my_results_options->get_num_step_increments() != 0;
 
   if(!output_mesh) return;
 
   my_results_options->get_scheduler().set_termination_time(my_simulation.get_stop_time());
 
-  my_output_file_index = stkOutput().create_output_mesh(my_results_options->get_filename(), stk::io::WRITE_RESULTS, my_results_options->get_properties());
+  const std::string baseFileName = my_results_options->get_filename();
+  Ioss::PropertyManager fileProperties(my_results_options->get_properties());
+  fileProperties.add(Ioss::Property("base_filename", baseFileName));
+
+  std::string filename = baseFileName;
+  if (myOutputFileNumRevisions > 0)
+  {
+    std::shared_ptr<Ioss::Region> ioRegion = stkOutput().get_output_ioss_region(myOutputFileIndex);
+    int stateCount = ioRegion->get_property("state_count").get_int();
+    if (ioRegion->property_exists("state_offset"))
+      stateCount += ioRegion->get_property("state_offset").get_int();
+    filename = create_filename_from_base_filename(baseFileName, myOutputFileNumRevisions);
+    fileProperties.add(Ioss::Property("state_offset", stateCount));
+  }
+
+  const auto oldOutputFileIndex = myOutputFileIndex;
+  myOutputFileIndex = stkOutput().create_output_mesh(filename, stk::io::WRITE_RESULTS, fileProperties);
+
+  if (myOutputFileNumRevisions > 0)
+    stkOutput().close_output_mesh(oldOutputFileIndex);
 
   std::shared_ptr<stk::mesh::Selector> active_selector = std::make_shared<stk::mesh::Selector>(AuxMetaData::get(mesh_meta_data()).active_part());
-  stkOutput().set_subset_selector(my_output_file_index, active_selector);
+  stkOutput().set_subset_selector(myOutputFileIndex, active_selector);
 
-  stkOutput().write_output_mesh(my_output_file_index);
+  declare_output_variables(myOutputFileIndex);
 
-  declare_output_variables(my_output_file_index);
-
-  my_output_file_created = true;
+  myOutputFileNumRevisions++;
 }
 
 void
@@ -556,13 +600,9 @@ void Region::process_output(bool forceOutput)
 
   if(!doOutput) return;
 
-  // A couple of krino tests that just compute surface distances never call Region::initialize()
-  // where we normally create the output mesh.
-  if(!my_output_file_created) create_output_mesh();
+  if(!myIsOutputFileCreatedAndCurrent) create_output_mesh();
 
-  stkOutput().begin_output_step(my_output_file_index, currentTime);
-  stkOutput().write_defined_output_fields(my_output_file_index);
-  stkOutput().end_output_step(my_output_file_index);
+  stkOutput().process_output_request(myOutputFileIndex, currentTime);
 }
 
 void

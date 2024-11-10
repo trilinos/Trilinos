@@ -5,6 +5,12 @@
 #ifndef ML_EPETRA_H
 #define ML_EPETRA_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 // prints out an error message if variable is not zero,
 // and return this value. This macro always returns.
 #define ML_RETURN(ml_err) \

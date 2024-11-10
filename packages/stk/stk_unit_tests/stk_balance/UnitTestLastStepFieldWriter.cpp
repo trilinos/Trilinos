@@ -119,7 +119,7 @@ size_t get_global_num_nodes_parallel(const std::string& inputFilename, MPI_Comm 
 TEST(Stk_Balance, checkParallelAndSerialNumNodesConsistency)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  std::string inputFilename = stk::unit_test_util::simple_fields::get_option("-i", "generated:4x4x4");
+  std::string inputFilename = stk::unit_test_util::get_option("-i", "generated:4x4x4");
 
   size_t goldGlobalNumNodes = get_global_num_nodes_serial(inputFilename);
   size_t numNodesWIthComm =   get_global_num_nodes_parallel(inputFilename, comm);

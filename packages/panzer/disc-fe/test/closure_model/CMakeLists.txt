@@ -11,7 +11,9 @@ SET(SOURCES
     user_app_ClosureModel_Factory_TemplateBuilder.hpp
     user_app_ConstantModel.hpp
     user_app_ConstantModel_impl.hpp
-    ) 
+    user_app_TSquaredModel.hpp
+    user_app_TSquaredModel_impl.hpp
+    )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   closure_model

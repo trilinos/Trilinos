@@ -44,6 +44,12 @@
 #ifndef _AZ_F77FUNC_H_
 #define _AZ_F77FUNC_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include "az_aztec_defs.h"
 #include <string.h>
 

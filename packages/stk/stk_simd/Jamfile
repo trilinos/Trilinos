@@ -41,7 +41,8 @@ import path ;
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_simd-root)
     <define>STK_VOLATILE_SIMD
     <architecture>power:<define>USE_STK_SIMD_NONE
@@ -73,8 +74,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -144,7 +145,7 @@ exe stk_simd_unit
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_math//stk_math
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   : <tag>@sierra-exec-tag
   ;
 
@@ -155,7 +156,7 @@ exe stk_simd_old_unit
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos//kokkoscore
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   : <tag>@sierra-exec-tag
     $(export-dynamic)
   ;
@@ -166,7 +167,7 @@ exe stk_simd_docs_tests
     /sierra/stk_math//stk_math
     /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos//kokkoscore
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_simd-root)/../stk_doc_tests/stk_simd
     $(export-dynamic)

@@ -34,9 +34,9 @@
 
 #include <stk_mesh/baseImpl/AuraGhosting.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Visitors.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
@@ -92,15 +92,17 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
       static constexpr EntityRank nextHigherRank = stk::topology::EDGE_RANK;
       for (EntityRank higherRank = nextHigherRank; higherRank < endRank; ++higherRank) {
         const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
-        const Entity* rels     = bucket.begin(bucketOrd, higherRank);
+        if (num_rels > 0) {
+          const Entity* rels     = bucket.begin(bucketOrd, higherRank);
 
-        for (unsigned r = 0; r < num_rels; ++r) {
-          if (bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
-            stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+          for (unsigned r = 0; r < num_rels; ++r) {
+            if (bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
+              stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+            }
           }
         }
       }
-    }    
+    }
   ); // for_each_entity_run
 }
 

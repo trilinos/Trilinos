@@ -37,11 +37,8 @@ C   --   Uses IS3DIM of /D3NUMS/
 C   --   Uses NCNTR, NOCMIN, NOCMAX of /CNTR/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /CNTR/   CINTOK, LINCON, NCNTR, CMIN, CMAX, DELC,
-     &   CINTV(256), NOCMIN, NOCMAX, LABINC, MAXMIN, MAXMAX
-      LOGICAL CINTOK, LINCON, NOCMIN, NOCMAX
+      include 'd3nums.blk'
+      include 'cntr.blk'
 
       REAL VARFAC(*)
       INTEGER LENF(0:NELBLK)

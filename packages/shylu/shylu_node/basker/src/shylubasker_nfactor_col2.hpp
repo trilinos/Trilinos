@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_NFACTOR_COL2_HPP
 #define SHYLUBASKER_NFACTOR_COL2_HPP
 
@@ -877,7 +886,7 @@ namespace BaskerNS
 
     Int col_idx_offset    = 0;  //can get rid of?
    
-    BASKER_MATRIX        &U = LU(U_col)(U_row); 
+    BASKER_MATRIX        &U = LU(U_col)(U_row);
     pivot = U.tpivot;
     
     //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L

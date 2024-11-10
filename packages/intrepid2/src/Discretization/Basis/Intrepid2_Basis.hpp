@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
-//                    Nate Roberts  (nvrober@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_Basis.hpp
@@ -58,6 +24,7 @@
 #include "Intrepid2_CellTopologyTags.hpp"
 #include "Intrepid2_TensorPoints.hpp"
 #include "Shards_CellTopology.hpp"
+#include "Intrepid2_CellData.hpp"
 #include <Teuchos_RCPDecl.hpp>
 #include <Kokkos_Core.hpp>
 
@@ -198,14 +165,14 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
      */
     ordinal_type basisDegree_;
 
-    /** \brief  Base topology of the cells for which the basis is defined. See
+    /** \brief Identifier of the base topology of the cells for which the basis is defined. See
          the <a href="https://trilinos.org/packages/shards/">Shards</a> package
          for definition of base cell topology.  For TensorBasis subclasses, by default this the cell topology that is extruded (i.e., it is a lower-dimensional CellTopology than
          the space on which the tensor basis is defined).  This allows tensor bases to be defined in higher dimensions than shards::CellTopology supports.  TensorBasis subclasses can
-         opt to use an equivalent shards CellTopology for basisCellTopology_, as well as using Intrepid2's tagging for tensor bases in dimensions up to 3, by calling
+         opt to use an equivalent shards CellTopology for base topology, as well as using Intrepid2's tagging for tensor bases in dimensions up to 3, by calling
          TensorBasis::setShardsTopologyAndTags().
     */
-    shards::CellTopology basisCellTopology_;
+    unsigned basisCellTopologyKey_;
 
     /** \brief  Type of the basis
      */
@@ -398,7 +365,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       auto dataView = allocateOutputView(numPoints, operatorType);
       Data<Scalar,DeviceType> data(dataView);
       
-      bool useVectorData = (dataView.rank() == 3);
+      bool useVectorData = (rank(dataView) == 3);
       
       if (useVectorData)
       {
@@ -410,6 +377,61 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         TensorData<Scalar,DeviceType> tensorData(data);
         return BasisValues<Scalar,DeviceType>(tensorData);
       }
+    }
+
+
+    /** \brief  Return the size of the scratch space, in bytes, needed for using the team-level implementation of getValues.
+
+        Warning, <var>inputPoints</var> is only used to deduce the type of the points where to evaluate basis functions.
+        The rank of </var>inputPoints</var> and its size are not relevant, however, 
+        when using DFAD types, </var>inputPoints</var> cannot be empty, 
+        otherwise the size of the scracth space needed won't be deduced correctly.
+
+        \param  space             [in]  - inputPoints
+        \param  perTeamSpaceSize  [out] - size of the scratch space needed per team
+        \param  perThreadeSize    [out] - size of the scratch space beeded per thread
+    */
+    virtual
+    void getScratchSpaceSize(       ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                                const PointViewType inputPoints,
+                                const EOperator operatorType = OPERATOR_VALUE) const {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( true, std::logic_error,
+                                    ">>> ERROR (Basis::getValuesScratchSpace): this method is not supported or should be overridden accordingly by derived classes.");
+    }
+
+
+    /** \brief  Team-level evaluation of basis functions on a <strong>reference cell</strong>.
+
+        Returns values of <var>operatorType</var> acting on basis functions for a set of
+        points in the <strong>reference cell</strong> for which the basis is defined.
+
+        The interface allow also to select basis functions associated to a particular entity. 
+        As an example, if <var>subcellDim==1</var> (edges) and <var>subcellOrdinal==0</var>, <var>outputValues</var> will contain all the basis functions associated with the first edge.
+        <var>outputValues</var> will contain all the cell basis functions when the default value (-1) is used for <var>subcellDim</var> and <var>subcellOrdinal</var>
+
+        \param  outputValues      [out] - variable rank array with the basis values
+        \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
+        \param  operatorType      [in]  - the operator acting on the basis functions
+        \param  teamMember        [in]  - team member of the Kokkos::TemaPolicy
+        \param  scratchStorage    [in]  - scratch space to use by each team
+        \param  subcellDim        [in]  - the dimension of the subcells, the default values of -1 returns basis functions associated to subcells of all dimensions
+        \param  subcellOrdinal    [in]  - the ordinal of the subcell, the default values of -1 returns basis functions associated to subcells of all ordinals
+
+        \remark This function is supposed to be called within a TeamPolicy kernel. 
+                The size of the required scratch space is determined by the getScratchSpaceSize function.
+    */
+    KOKKOS_INLINE_FUNCTION
+    virtual
+    void getValues(       OutputViewType /* outputValues */,
+                    const PointViewType  /* inputPoints */,
+                    const EOperator /* operatorType */,
+                    const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& teamMember,
+                    const typename ExecutionSpace::scratch_memory_space &scratchStorage, 
+                    const ordinal_type subcellDim=-1,
+                    const ordinal_type subcellOrdinal=-1) const {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( true, std::logic_error,
+                                    ">>> ERROR (Basis::getValues): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
@@ -810,7 +832,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     */
     shards::CellTopology
     getBaseCellTopology() const {
-      return basisCellTopology_;
+      return getCellTopologyData(basisCellTopologyKey_);
     }
 
 

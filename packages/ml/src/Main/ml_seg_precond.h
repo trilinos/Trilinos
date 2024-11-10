@@ -12,6 +12,12 @@
 #ifndef __SEGSTRUCT__
 #define __SEGSTRUCT__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* ******************************************************************** */
 /* local include files                                                  */
 /* ******************************************************************** */
@@ -222,5 +228,3 @@ extern double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
 #endif
 #endif
 #endif
-
-

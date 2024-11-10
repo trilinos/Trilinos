@@ -30,6 +30,12 @@
 #ifndef AMESOS_SCALAPACK_WRAPPERS_H
 #define AMESOS_SCALAPACK_WRAPPERS_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_LAPACK_wrappers.h"
 #include <stdio.h>

@@ -5,6 +5,12 @@
 #ifndef ML_VIZ_VTK_H
 #define ML_VIZ_VTK_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_include.h"
 #include "ml_viz_stats.h"
 
@@ -27,4 +33,3 @@ int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
 #endif
 
 #endif /* #ifndef ML_VIZ_VTK_H */
-

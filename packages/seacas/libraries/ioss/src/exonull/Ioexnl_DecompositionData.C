@@ -1,33 +1,23 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <exonull/Ioexnl_DecompositionData.h>
+#include "Ioss_CodeTypes.h"
+#include "exonull/Ioexnl_DecompositionData.h"
 #if defined PARALLEL_AWARE_EXODUS
-#include <Ioss_ElementTopology.h> // for ElementTopology
-#include <Ioss_Field.h>           // for Field, etc
-#include <Ioss_Map.h>             // for Map, MapContainer
-#include <Ioss_PropertyManager.h> // for PropertyManager
-#include <Ioss_SmartAssert.h>
-#include <Ioss_Sort.h>
-#include <Ioss_Utils.h>
-#include <exonull/Ioexnl_Utils.h>
+#include "Ioss_Field.h"           // for Field, etc
+#include "Ioss_Map.h"             // for Map, MapContainer
+#include "Ioss_PropertyManager.h" // for PropertyManager
+#include "Ioss_Utils.h"
+#include "exonull/Ioexnl_Utils.h"
 
-#include <algorithm> // for lower_bound, copy, etc
-#include <cassert>   // for assert
-#include <climits>   // for INT_MAX
-#include <cmath>
-#include <cstdlib>   // for exit, EXIT_FAILURE
-#include <cstring>
-#include <fmt/ostream.h>
-#include <iostream> // for operator<<, ostringstream, etc
-#include <iterator> // for distance
-#include <map>      // for map
-#include <numeric>  // for accumulate
-#include <utility>  // for pair, make_pair
+#include <algorithm>
+#include <climits>
+#include <cstdlib>
+#include <iterator>
+#include <utility>
 
 namespace Ioexnl {
   template DecompositionData<int>::DecompositionData(const Ioss::PropertyManager &props,
@@ -90,7 +80,7 @@ namespace Ioexnl {
     // The number of locally-owned nodes on this processor is 'position'
     *locally_owned_count = position;
 
-    MPI_Allgather(locally_owned_count, 1, MPI_LONG_LONG_INT, &rcv_count[0], 1, MPI_LONG_LONG_INT,
+    MPI_Allgather(locally_owned_count, 1, MPI_LONG_LONG_INT, Data(rcv_count), 1, MPI_LONG_LONG_INT,
                   comm_);
     m_decomposition.show_progress("\tAllgather finished");
 
@@ -107,7 +97,7 @@ namespace Ioexnl {
 
     // Now, tell the other processors how many nodes I will be sending
     // them (Nodes they own that I share with them)
-    MPI_Alltoall(snd_count.data(), 1, MPI_LONG_LONG_INT, rcv_count.data(), 1, MPI_LONG_LONG_INT,
+    MPI_Alltoall(Data(snd_count), 1, MPI_LONG_LONG_INT, Data(rcv_count), 1, MPI_LONG_LONG_INT,
                  comm_);
     m_decomposition.show_progress("\tCommunication 1 finished");
 

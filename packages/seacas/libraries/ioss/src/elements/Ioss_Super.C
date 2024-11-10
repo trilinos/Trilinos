@@ -4,13 +4,13 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Super.h>
-#include <cstddef> // for size_t
-#include <cstdlib>
+#include "Ioss_ElementVariableType.h" // for ElementVariableType
+#include "Ioss_Super.h"
 #include <string> // for string
+
+#include "Ioss_CodeTypes.h"       // for IntVector
+#include "Ioss_ElementTopology.h" // for ElementTopology
+#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity

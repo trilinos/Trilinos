@@ -4,23 +4,25 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-#include <algorithm>
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
 #include <cstddef>
 #include <fmt/ostream.h>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
+#include "Ioss_CodeTypes.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
 
 namespace {
-  std::string id_str() { return std::string("id"); }
+  std::string id_str() { return {"id"}; }
   void check_for_duplicate_names(const Ioss::SideSet *sset, const Ioss::SideBlock *side_block)
   {
     const std::string &name = side_block->name();
@@ -134,10 +136,10 @@ int64_t Ioss::SideSet::internal_get_zc_field_data(const Field &field, void **dat
 Ioss::Property Ioss::SideSet::get_implicit_property(const std::string &my_name) const
 {
   if (my_name == "side_block_count") {
-    return Ioss::Property(my_name, static_cast<int>(sideBlocks.size()));
+    return {my_name, static_cast<int>(sideBlocks.size())};
   }
   if (my_name == "block_count") {
-    return Ioss::Property(my_name, static_cast<int>(sideBlocks.size()));
+    return {my_name, static_cast<int>(sideBlocks.size())};
   }
 
   return Ioss::GroupingEntity::get_implicit_property(my_name);
@@ -163,12 +165,12 @@ int Ioss::SideSet::max_parametric_dimension() const
   return max_par_dim;
 }
 
-void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
+void Ioss::SideSet::block_membership(Ioss::NameList &block_members)
 {
   IOSS_FUNC_ENTER(m_);
   if (blockMembership.empty()) {
     for (auto &sb : sideBlocks) {
-      std::vector<std::string> blocks;
+      Ioss::NameList blocks;
       sb->block_membership(blocks);
       blockMembership.insert(blockMembership.end(), blocks.begin(), blocks.end());
     }
@@ -200,11 +202,11 @@ bool Ioss::SideSet::equal_(const SideSet &rhs, const bool /* quiet */) const
   }
 
   // COMPARE block membership
-  std::vector<std::string> lhs_block_membership = this->blockMembership;
-  std::vector<std::string> rhs_block_membership = rhs.blockMembership;
+  Ioss::NameList lhs_block_membership = this->blockMembership;
+  Ioss::NameList rhs_block_membership = rhs.blockMembership;
 
   for (const auto &lhs_block_member : lhs_block_membership) {
-    std::vector<std::string>::iterator it;
+    Ioss::NameList::iterator it;
     for (it = rhs_block_membership.begin(); it != rhs_block_membership.end(); ++it) {
       if ((*it) == lhs_block_member) {
         break;

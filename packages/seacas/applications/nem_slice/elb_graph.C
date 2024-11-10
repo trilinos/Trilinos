@@ -33,7 +33,7 @@ namespace {
 
   template <typename INT>
   int find_adjacency(Problem_Description * /*problem*/, Mesh_Description<INT> * /*mesh*/,
-                     Graph_Description<INT> * /*graph*/, Weight_Description<INT> * /*weight*/,
+                     Graph_Description<INT> * /*graph*/, Weight_Description * /*weight*/,
                      Sphere_Info * /*sphere*/);
 } // namespace
 /*****************************************************************************/
@@ -44,17 +44,16 @@ namespace {
  * This function does the work to generate the graph from the FE mesh.
  *****************************************************************************/
 template int generate_graph(Problem_Description *problem, Mesh_Description<int> *mesh,
-                            Graph_Description<int> *graph, Weight_Description<int> *weight,
+                            Graph_Description<int> *graph, Weight_Description *weight,
                             Sphere_Info *sphere);
 
 template int generate_graph(Problem_Description *problem, Mesh_Description<int64_t> *mesh,
-                            Graph_Description<int64_t> *graph, Weight_Description<int64_t> *weight,
+                            Graph_Description<int64_t> *graph, Weight_Description *weight,
                             Sphere_Info *sphere);
 
 template <typename INT>
 int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
-                   Graph_Description<INT> *graph, Weight_Description<INT> *weight,
-                   Sphere_Info *sphere)
+                   Graph_Description<INT> *graph, Weight_Description *weight, Sphere_Info *sphere)
 {
   double time1 = get_time();
   /* Find the elements surrounding a node */
@@ -180,8 +179,7 @@ namespace {
    *****************************************************************************/
   template <typename INT>
   int find_adjacency(Problem_Description *problem, Mesh_Description<INT> *mesh,
-                     Graph_Description<INT> *graph, Weight_Description<INT> *weight,
-                     Sphere_Info *sphere)
+                     Graph_Description<INT> *graph, Weight_Description *weight, Sphere_Info *sphere)
   {
     std::vector<INT> pt_list;
     std::vector<INT> hold_elem;
@@ -223,7 +221,7 @@ namespace {
             }
           }
         } /* End "for(ecnt=0; ecnt < graph->nsur_elem[ncnt]; ecnt++)" */
-      }   /* End "for(ncnt=0; ncnt < mesh->num_nodes; ncnt++)" */
+      } /* End "for(ncnt=0; ncnt < mesh->num_nodes; ncnt++)" */
     }
     /* Find the adjacency for a elemental based decomposition */
     else {
@@ -312,7 +310,7 @@ namespace {
                 }
               }
             } /* End "for(ncnt=0; ...)" */
-          }   /* End: "if (problem->face_adj == 0)" */
+          } /* End: "if (problem->face_adj == 0)" */
 
           /* So if this is a 3-d element and we're forcing face
            * adjacency, if it gets to this else below
@@ -396,9 +394,9 @@ namespace {
                   }
 
                   for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-                    nelem = find_inter(
-                        hold_elem.data(), &graph->sur_elem[side_nodes[(ncnt + 1)]][0], nhold,
-                        graph->sur_elem[side_nodes[(ncnt + 1)]].size(), pt_list.data());
+                    nelem = find_inter(Data(hold_elem), &graph->sur_elem[side_nodes[(ncnt + 1)]][0],
+                                       nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(),
+                                       Data(pt_list));
 
                     /*  If less than 2 ( 0 or 1 ) elements only
                         touch nodes 0 and ncnt+1 then try next side node, i.e.,
@@ -433,7 +431,7 @@ namespace {
                         find_inter(&graph->sur_elem[side_nodes[inode]][0],
                                    &graph->sur_elem[side_nodes[(ncnt + 2)]][0],
                                    graph->sur_elem[side_nodes[inode]].size(),
-                                   graph->sur_elem[side_nodes[(ncnt + 2)]].size(), pt_list.data());
+                                   graph->sur_elem[side_nodes[(ncnt + 2)]].size(), Data(pt_list));
 
                     /*
                      * If there are multiple elements in the intersection, then
@@ -610,12 +608,12 @@ namespace {
                           count++;
                           fmt::print("Now we have {} bad element connections.\n", count);
                         } /* End "if (sid > 0)" */
-                      }   /* End: "if(ecnt != entry)" */
+                      } /* End: "if(ecnt != entry)" */
                     }
                   } /* End: "for(i=0; i < nelem; i++)" */
-                }   /* End: "if (nelem > 1)" */
-              }     /* End: "for (nscnt = 0; nscnt < nsides; nscnt++)" */
-            }       /* End: "if(element_3d)" */
+                } /* End: "if (nelem > 1)" */
+              } /* End: "for (nscnt = 0; nscnt < nsides; nscnt++)" */
+            } /* End: "if(element_3d)" */
 
             else {
 
@@ -657,15 +655,15 @@ namespace {
                       }
                     }
                   } /* End: if(ecnt != entry) */
-                }   /* for(i=0; i < graph->nsur_elem[node]; i++) */
-              }     /* End "for(ncnt=0; ...)" */
-            }       /* End: "else" (if !element_3d) */
-          }         /* End: "else" (if face_adj != 0) */
+                } /* for(i=0; i < graph->nsur_elem[node]; i++) */
+              } /* End "for(ncnt=0; ...)" */
+            } /* End: "else" (if !element_3d) */
+          } /* End: "else" (if face_adj != 0) */
 
           cnt++;
 
         } /* End "if(etype != SPHERE)" */
-      }   /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
+      } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
     }
 
     graph->start[problem->num_vertices] = graph->adj.size();

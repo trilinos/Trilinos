@@ -54,3 +54,9 @@ int MatrixTests(const Epetra_BlockMap & map, const Epetra_LocalMap & LocalMap,
 int VectorTests(const Epetra_BlockMap & Map, bool verbose);
 
 int BadResidual(bool verbose, double * Residual);
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

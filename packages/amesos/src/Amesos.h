@@ -31,6 +31,12 @@
 #ifndef _AMESOS_FACTORY_H_
 #define _AMESOS_FACTORY_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_BaseSolver.h"
 
 /** \brief Factory for binding a third party direct solver to an

@@ -1,54 +1,20 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <ostream>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -73,7 +39,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWitho
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
 
   Level fineLevel;
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
@@ -90,7 +56,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWitho
 
   dropFact.Build(fineLevel);
 
-  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &dropFact);
   auto myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
 
   TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
@@ -144,8 +110,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithF
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-  Xpetra::UnderlyingLib lib           = TestHelpers_kokkos::Parameters::getLib();
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
 
   Level fineLevel;
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
@@ -166,7 +132,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithF
 
   dropFact.Build(fineLevel);
 
-  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &dropFact);
   auto myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
 
   TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
@@ -223,8 +189,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithou
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-  Xpetra::UnderlyingLib lib           = TestHelpers_kokkos::Parameters::getLib();
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
 
   Level fineLevel;
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
@@ -245,7 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithou
 
   dropFact.Build(fineLevel);
 
-  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &dropFact);
   auto myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
 
   TEST_EQUALITY(as<int>(myDofsPerNode) == blockSize, true);
@@ -316,8 +282,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFi
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-  Xpetra::UnderlyingLib lib           = TestHelpers_kokkos::Parameters::getLib();
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
 
   Level fineLevel;
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
@@ -338,7 +304,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFi
 
   dropFact.Build(fineLevel);
 
-  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+  auto graph         = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &dropFact);
   auto myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
 
   TEST_EQUALITY(as<int>(myDofsPerNode) == 3, true);
@@ -751,8 +717,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-  Xpetra::UnderlyingLib lib           = TestHelpers_kokkos::Parameters::getLib();
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
 
   RCP<const Map> dofMap    = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 12 * comm->getSize(), 0, comm);
   Teuchos::RCP<Matrix> mtx = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
@@ -773,7 +739,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
 
     dropFact.Build(fineLevel);
 
-    RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+    RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &dropFact);
 
     auto boundaryNodes     = graph->GetBoundaryNodeMap();
     auto boundaryNodesHost = Kokkos::create_mirror_view(boundaryNodes);
@@ -836,12 +802,218 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
 
 }  // AggresiveDroppingIsMarkedAsBoundary
 
-#define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                           \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, Constructor, SC, LO, GO, NO)                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicScalarWithoutFiltering, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicScalarWithFiltering, SC, LO, GO, NO)    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering, SC, LO, GO, NO)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, AggresiveDroppingIsMarkedAsBoundary, SC, LO, GO, NO)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
+
+  // Set up a 2x2 matrix.
+  Teuchos::RCP<Matrix> mtx = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::build2x2(lib,
+                                                                                       2.0, -1.0,
+                                                                                       -1.5, 2.0);
+  mtx->SetFixedBlockSize(1);
+
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  Teuchos::RCP<Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>> coords;
+  coords = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(mtx->getRowMap(), 1);
+  {
+    auto lclCoords  = coords->getHostLocalView(Xpetra::Access::OverwriteAll);
+    auto rank       = comm->getRank();
+    lclCoords(0, 0) = 2 * rank;
+    lclCoords(1, 0) = 2 * rank + 1;
+  }
+
+  using TF                = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+  using local_matrix_type = typename Matrix::local_matrix_type::HostMirror;
+
+  std::vector<Teuchos::ParameterList> params;
+  std::vector<local_matrix_type> expectedFilteredMatrices;
+  std::vector<std::vector<bool>> expectedBoundaryNodesVector;
+
+  for (bool reuseGraph : {false, true}) {
+    // test case 0
+    Teuchos::ParameterList params0 = Teuchos::ParameterList();
+    params0.set("aggregation: Dirichlet threshold", 0.);
+    // dropFact.SetParameter("aggregation: row sum drop tol", Teuchos::ParameterEntry(0.2));
+
+    params0.set("aggregation: drop scheme", "classical");
+    params0.set("aggregation: use ml scaling of drop tol", false);
+    params0.set("aggregation: drop tol", 0.);
+    params0.set("aggregation: dropping may create Dirichlet", false);
+    params0.set("filtered matrix: reuse graph", reuseGraph);
+    params0.set("filtered matrix: use lumping", false);
+    params.push_back(params0);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, -1.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({false, false});
+
+    // test case 1
+    Teuchos::ParameterList params1 = Teuchos::ParameterList(params0);
+    params1.set("aggregation: Dirichlet threshold", 0.2);
+    params.push_back(params1);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, -1.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({false, false});
+
+    // test case 2
+    Teuchos::ParameterList params2 = Teuchos::ParameterList(params0);
+    params2.set("aggregation: Dirichlet threshold", 1.1);
+    params.push_back(params2);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, -1.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({true, false});
+
+    // test case 3
+    Teuchos::ParameterList params3 = Teuchos::ParameterList(params0);
+    params3.set("aggregation: drop tol", 0.51);
+    params.push_back(params3);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, 0.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({false, false});
+
+    // test case 4
+    Teuchos::ParameterList params4 = Teuchos::ParameterList(params0);
+    params4.set("aggregation: Dirichlet threshold", 1.1);
+    params4.set("aggregation: drop tol", 0.51);
+    params.push_back(params4);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, 0.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({true, false});
+
+    // test case 5
+    Teuchos::ParameterList params5 = Teuchos::ParameterList(params0);
+    params5.set("aggregation: Dirichlet threshold", 1.1);
+    params5.set("aggregation: dropping may create Dirichlet", true);
+    params5.set("aggregation: drop tol", 0.51);
+    params.push_back(params5);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, 0.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({true, false});
+
+    // test case 6
+    Teuchos::ParameterList params6 = Teuchos::ParameterList(params4);
+    params6.set("aggregation: Dirichlet threshold", 1.1);
+    params6.set("filtered matrix: use lumping", true);
+    params.push_back(params6);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(1.0, 0.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({true, false});
+
+    // test case 7
+    Teuchos::ParameterList params7 = Teuchos::ParameterList(params0);
+    params7.set("aggregation: drop scheme", "distance laplacian");
+    params.push_back(params7);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, -1.0,
+                                                             -1.5, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({false, false});
+
+    // test case 8
+    Teuchos::ParameterList params8 = Teuchos::ParameterList(params0);
+    params8.set("aggregation: drop scheme", "distance laplacian");
+    params8.set("aggregation: drop tol", 1.01);
+    params.push_back(params8);
+    expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, 0.0,
+                                                             0.0, 2.0, reuseGraph));
+    expectedBoundaryNodesVector.push_back({true, true});
+  }
+
+  for (size_t testNo = 0; testNo < params.size(); ++testNo) {
+    out << "\n\nRunning test number " << testNo << std::endl
+        << std::endl;
+
+    auto param                  = params[testNo];
+    auto expectedFilteredMatrix = expectedFilteredMatrices[testNo];
+    auto expectedBoundaryNodes  = expectedBoundaryNodesVector[testNo];
+
+    for (bool useKokkos : {false, true}) {
+      RCP<Matrix> filteredA;
+      Kokkos::View<bool *, Kokkos::HostSpace> boundaryNodes;
+      {
+        Level fineLevel;
+        TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
+        fineLevel.Set("A", mtx);
+        fineLevel.Set("Coordinates", coords);
+
+        RCP<MueLu::SingleLevelFactoryBase> dropFact;
+        RCP<MueLu::SingleLevelFactoryBase> filteredAFact;
+        if (useKokkos) {
+          out << "\nKokkos code path\nparams:\n"
+              << param << "\n";
+          dropFact = rcp(new CoalesceDropFactory_kokkos());
+          dropFact->SetParameterList(param);
+          filteredAFact = dropFact;
+        } else {
+          out << "\nNon-Kokkos code path\nparams:\n"
+              << param << "\n";
+          dropFact            = rcp(new CoalesceDropFactory());
+          filteredAFact       = rcp(new FilteredAFactory());
+          auto paramCopy      = Teuchos::ParameterList(param);
+          auto paramFilteredA = Teuchos::ParameterList();
+          paramFilteredA.set("filtered matrix: use lumping", paramCopy.get<bool>("filtered matrix: use lumping"));
+          paramCopy.remove("filtered matrix: use lumping");
+          paramFilteredA.set("filtered matrix: reuse graph", paramCopy.get<bool>("filtered matrix: reuse graph"));
+          paramCopy.remove("filtered matrix: reuse graph");
+          paramFilteredA.set("filtered matrix: Dirichlet threshold", paramCopy.get<double>("aggregation: Dirichlet threshold"));
+          dropFact->SetParameterList(paramCopy);
+          filteredAFact->SetParameterList(paramFilteredA);
+          filteredAFact->SetFactory("Graph", dropFact);
+          filteredAFact->SetFactory("Filtering", dropFact);
+        }
+        fineLevel.Request("A", filteredAFact.get());
+        fineLevel.Request("Graph", dropFact.get());
+        fineLevel.Request("DofsPerNode", dropFact.get());
+        dropFact->Build(fineLevel);
+
+        filteredA = fineLevel.Get<RCP<Matrix>>("A", filteredAFact.get());
+
+        if (useKokkos) {
+          auto graph           = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
+          auto boundaryNodes_d = graph->GetBoundaryNodeMap();
+          boundaryNodes        = Kokkos::View<bool *, Kokkos::HostSpace>("boundaryNodes_host", boundaryNodes_d.extent(0));
+          Kokkos::deep_copy(boundaryNodes, boundaryNodes_d);
+        } else {
+          auto graph    = fineLevel.Get<RCP<LWGraph>>("Graph", dropFact.get());
+          boundaryNodes = graph->GetBoundaryNodeMap();
+        }
+      }
+
+      auto lclFilteredA         = filteredA->getLocalMatrixHost();
+      auto lclExpectedFilteredA = expectedFilteredMatrix;
+
+      out << "Filtered A:\n"
+          << TF::localMatToString(lclFilteredA);
+
+      TEST_EQUALITY(lclFilteredA.graph.row_map.extent(0), lclExpectedFilteredA.graph.row_map.extent(0));
+      for (size_t row = 0; row < std::min(lclFilteredA.graph.row_map.extent(0), lclExpectedFilteredA.graph.row_map.extent(0)); ++row)
+        TEST_EQUALITY(lclFilteredA.graph.row_map(row), lclExpectedFilteredA.graph.row_map(row));
+
+      TEST_EQUALITY(lclFilteredA.graph.entries.extent(0), lclExpectedFilteredA.graph.entries.extent(0));
+      for (size_t entry = 0; entry < std::min(lclFilteredA.graph.entries.extent(0), lclExpectedFilteredA.graph.entries.extent(0)); ++entry) {
+        TEST_EQUALITY(lclFilteredA.graph.entries(entry), lclExpectedFilteredA.graph.entries(entry));
+        TEST_EQUALITY(lclFilteredA.values(entry), lclExpectedFilteredA.values(entry));
+      }
+
+      auto boundaryNodes_h = Kokkos::create_mirror_view(boundaryNodes);
+      Kokkos::deep_copy(boundaryNodes_h, boundaryNodes);
+      TEST_EQUALITY(boundaryNodes_h.extent(0), expectedBoundaryNodes.size());
+      for (size_t row = 0; row < std::min(boundaryNodes_h.extent(0), expectedBoundaryNodes.size()); ++row)
+        TEST_EQUALITY(boundaryNodes_h(row), expectedBoundaryNodes[row]);
+    }
+    out << "Done with test number " << testNo << std::endl;
+  }
+}
+
+#define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, Constructor, SC, LO, GO, NO)                         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicScalarWithoutFiltering, SC, LO, GO, NO)       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicScalarWithFiltering, SC, LO, GO, NO)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering, SC, LO, GO, NO)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, AggresiveDroppingIsMarkedAsBoundary, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, 2x2, SC, LO, GO, NO)
 
 // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering,     SC, LO, GO, NO) // not implemented yet
 

@@ -7,7 +7,8 @@ C See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE MUNNPS (NUMNPS, ISTAT, LNPSNL,
      &   IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS,
-     &   LTNX, FACX, IXNPS, NNX, ISCR, NODSCR, NUMNP)
+     &   LTNX, FACX, IXNPS, NNX, ISCR, NODSCR,
+     $   NAMNS, NAMSC, NUMNP)
 C=======================================================================
 
 C   --*** MUNNPS *** (GJOIN) Compress and rearrange nodal point sets
@@ -36,6 +37,8 @@ C   --   ISCR - SCRATCH - size = NUMNPS
 C   --   NUMNP - IN -- number of nodes in model
 C   --   NODSCR - SCRATCH - size = NUMNOD
 
+      include 'gj_namlen.blk'
+
       INTEGER ISTAT(*)
       INTEGER IDNPS(*)
       INTEGER NNNPS(*)
@@ -46,7 +49,9 @@ C   --   NODSCR - SCRATCH - size = NUMNOD
       INTEGER NNX(*)
       INTEGER ISCR(*)
       INTEGER NODSCR(*)
-
+      character*(namlen) namns(*)
+      character*(namlen) namsc(*)
+      
       IF (NUMNPS .LE. 0) RETURN
 
       JNPS = 0
@@ -81,7 +86,7 @@ C   --   NODSCR - SCRATCH - size = NUMNOD
 
             NNEW = 0
             DO 100 I = 1, NNNPS(N)
-               IF (nodscr(ltnnps(inn0+i)) .eq. 0) then
+ 2             IF (nodscr(ltnnps(inn0+i)) .eq. 0) then
                   NNEW = NNEW + 1
                   LTNX(JNN0+NNEW) = LTNNPS(INN0+I)
                   FACX(JNN0+NNEW) = FACNPS(INN0+I)
@@ -93,6 +98,7 @@ C   --   NODSCR - SCRATCH - size = NUMNOD
   120 CONTINUE
 
       CALL ORDIX (JNPS, IXNPS, NUMNPS, IDNPS, ISCR, IDNPS)
+      CALL ORDNAM (JNPS, IXNPS, NUMNPS, NAMNS, NAMSC, NAMNS)
       CALL MOVINT (JNPS, NNX, NNNPS)
       NUMNPS = JNPS
       JNN = 1

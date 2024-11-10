@@ -386,13 +386,13 @@ void MakeParFile(const int& my_proc_id, const int& num_procs, const int& ncuts_x
                       num_nodes_globalx,  num_nodes_globaly,  num_nodes_globalz);
     // Write element block attributes. Only 1 block here.
 
-    ierr = ex_put_elem_block(exoid, block_id, elem_type, num_elem, num_nodes_per_elem, num_attr);
+    ierr = ex_put_block(exoid, EX_ELEM_BLOCK, block_id, elem_type, num_elem, num_nodes_per_elem, 0, 0, num_attr);
 
     assert ( ierr>=0 );
 
     // Write element block connectivity
 
-    ierr = ex_put_elem_conn(exoid, block_id, conn);
+    ierr = ex_put_conn(exoid, EX_ELEM_BLOCK, block_id, conn, nullptr, nullptr);
 
     assert ( ierr>=0 );
 
@@ -403,10 +403,10 @@ void MakeParFile(const int& my_proc_id, const int& num_procs, const int& ncuts_x
 
     // Write proc_id as element variable
 
-    ierr = ex_put_var_param(exoid, "e", 1);
+    ierr = ex_put_variable_param(exoid, EX_ELEM_BLOCK, 1);
     assert ( ierr >= 0 );
 
-    ierr = ex_put_var_name(exoid, "e", 1, "Domain #");
+    ierr = ex_put_variable_name(exoid, EX_ELEM_BLOCK, 1, "Domain #");
     assert ( ierr >= 0 );
 
     double time_value = 1.0;
@@ -425,7 +425,7 @@ void MakeParFile(const int& my_proc_id, const int& num_procs, const int& ncuts_x
       values[ii] = colorVal;
     }
 
-    ierr = ex_put_elem_var(exoid, 1, 1, 1, num_elem, values);
+    ierr = ex_put_var(exoid, 1, EX_ELEM_BLOCK, 1, 1, num_elem, values);
     assert ( ierr >= 0 );
 
     delete[] values; values = 0;
@@ -922,7 +922,7 @@ void WriteNodeElemMaps(int num_nodes, int nelem_per_edge, int num_elem,
       }
 
   assert( counter == num_nodes);
-  int ierr = ex_put_node_num_map(exoid, nodemap);
+  int ierr = ex_put_id_map(exoid, EX_NODE_MAP, nodemap);
   assert(ierr>=0);
   (void)(ierr);
   delete[] nodemap;
@@ -945,7 +945,7 @@ void WriteNodeElemMaps(int num_nodes, int nelem_per_edge, int num_elem,
 
   assert( counter == num_elem);
 
-  ierr = ex_put_elem_num_map(exoid, elemmap);
+  ierr = ex_put_id_map(exoid, EX_ELEM_MAP, elemmap);
 
   assert( ierr>=0);
 
@@ -965,30 +965,30 @@ void WriteNodesets(int xc, int exoid, int num_nodes_in_set,
   int ierr = 0;
   if(xc == 0) // left_face
   {
-    ierr = ex_put_node_set_param(exoid, 1, num_nodes_in_set, num_nodes_in_set);
+    ierr = ex_put_set_param(exoid, EX_NODE_SET, 1, num_nodes_in_set, num_nodes_in_set);
     assert( ierr >= 0);
-    ierr = ex_put_node_set(exoid, 1, nodelist1);
+    ierr = ex_put_set(exoid, EX_NODE_SET, 1, nodelist1, nullptr);
     assert( ierr>= 0);
-    ierr = ex_put_node_set_dist_fact(exoid, 1, df_ns);
+    ierr = ex_put_set_dist_fact(exoid, EX_NODE_SET, 1, df_ns);
     assert( ierr>= 0);
   }
   else // if no nodeset on this subdomain
   {
-    ierr = ex_put_node_set_param(exoid, 1, 0, 0);
+    ierr = ex_put_set_param(exoid, EX_NODE_SET, 1, 0, 0);
     assert( ierr >= 0);
   }
   if(xc == ncuts_x - 1) // right_face
   {
-    ierr = ex_put_node_set_param(exoid, 2, num_nodes_in_set, num_nodes_in_set);
+    ierr = ex_put_set_param(exoid, EX_NODE_SET, 2, num_nodes_in_set, num_nodes_in_set);
     assert( ierr >= 0);
-    ierr = ex_put_node_set(exoid, 2, nodelist2);
+    ierr = ex_put_set(exoid, EX_NODE_SET, 2, nodelist2, nullptr);
     assert( ierr >= 0);
-    ierr = ex_put_node_set_dist_fact(exoid, 2, df_ns);
+    ierr = ex_put_set_dist_fact(exoid, EX_NODE_SET, 2, df_ns);
     assert( ierr >= 0);
   }
   else // if no nodeset on this subdomain
   {
-    ierr = ex_put_node_set_param(exoid, 2, 0, 0);
+    ierr = ex_put_set_param(exoid, EX_NODE_SET, 2, 0, 0);
     if (ierr < 0) {
       assert( ierr >= 0);
     }

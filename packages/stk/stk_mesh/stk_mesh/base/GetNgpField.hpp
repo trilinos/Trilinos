@@ -94,3 +94,4 @@ NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
 }}
 
 #endif // GETNGPFIELD_HPP
+

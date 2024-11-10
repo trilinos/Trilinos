@@ -12,6 +12,7 @@
 #include <stk_util/diag/Timer.hpp>
 #include <string>
 #include <memory>
+#include <Akri_PostProcess.hpp>
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class BulkData; } }
@@ -35,6 +36,8 @@ public:
   virtual void execute();
 
   double time_step() const;
+  double get_old_time() const;
+  double get_current_time() const;
   const std::string & name() const { return my_name; }
   unsigned spatial_dimension() const;
   const stk::mesh::BulkData& mesh_bulk_data() const;
@@ -52,9 +55,12 @@ public:
   void declare_output_variables(size_t result_output_index);
   void process_output(bool forceOutput);
   ResultsOutputOptions * get_results_options() { return my_results_options.get(); }
+  void mesh_topology_has_changed() { myIsOutputFileCreatedAndCurrent = false; }
+  PostProcessors & get_postprocessors() { return myPostProcessors; }
 
 private:
   Simulation & my_simulation;
+  PostProcessors myPostProcessors;
   std::unique_ptr<MeshInterface> myMesh;
   std::unique_ptr<stk::io::StkMeshIoBroker> myOutputBroker;
   std::unique_ptr<ResultsOutputOptions> my_results_options;
@@ -66,8 +72,9 @@ private:
   mutable stk::diag::Timer my_timerExecute;          ///< Execute timer
   mutable stk::diag::Timer my_timerMeshInput;        ///< Mesh input timer
   mutable stk::diag::Timer my_timerMeshOutput;       ///< Mesh output timer
-  size_t my_output_file_index;
-  bool my_output_file_created;
+  size_t myOutputFileIndex;
+  int myOutputFileNumRevisions;
+  bool myIsOutputFileCreatedAndCurrent;
 };
 
 } // namespace krino

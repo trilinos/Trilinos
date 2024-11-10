@@ -34,32 +34,24 @@ namespace KokkosBatched {
 /// A(m x m), B(m x n)
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
-                ArgDiag, Algo::Trsm::Unblocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_0(), A.stride_1(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                    B.extent(1), alpha, A.data(), A.stride_0(),
+                                                                    A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
-                ArgDiag, Algo::Trsm::Blocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_0(), A.stride_1(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                  B.extent(1), alpha, A.data(), A.stride_0(),
+                                                                  A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
@@ -70,32 +62,80 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
 /// A(n x n), B(m x n)
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose,
-                ArgDiag, Algo::Trsm::Unblocked> {
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha,
-        A.data(), A.stride_1(), A.stride_0(), B.data(), B.stride_1(),
-        B.stride_0());
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(1),
+                                                                    B.extent(0), alpha, A.data(), A.stride_1(),
+                                                                    A.stride_0(), B.data(), B.stride_1(), B.stride_0());
   }
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose,
-                ArgDiag, Algo::Trsm::Blocked> {
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha,
-        A.data(), A.stride_1(), A.stride_0(), B.data(), B.stride_1(),
-        B.stride_0());
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(1),
+                                                                  B.extent(0), alpha, A.data(), A.stride_1(),
+                                                                  A.stride_0(), B.data(), B.stride_1(), B.stride_0());
+  }
+};
+
+///
+/// R/L/NT
+///
+/// B := (alpha*B) inv(tril(A))
+/// A(n x n), B(m x n)
+
+template <typename MemberType, typename ArgDiag>
+struct TeamTrsm<MemberType, Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
+                                           const BViewType &B) {
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(1),
+                                                                    B.extent(0), alpha, A.data(), A.stride_1(),
+                                                                    A.stride_0(), B.data(), B.stride_1(), B.stride_0());
+  }
+};
+
+template <typename MemberType, typename ArgDiag>
+struct TeamTrsm<MemberType, Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
+                                           const BViewType &B) {
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(1),
+                                                                  B.extent(0), alpha, A.data(), A.stride_1(),
+                                                                  A.stride_0(), B.data(), B.stride_1(), B.stride_0());
+  }
+};
+
+///
+/// R/U/T
+///
+/// B := (alpha*B) inv(triu(A))
+/// A(n x n), B(m x n)
+
+template <typename MemberType, typename ArgDiag>
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
+                                           const BViewType &B) {
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(1),
+                                                                    B.extent(0), alpha, A.data(), A.stride_0(),
+                                                                    A.stride_1(), B.data(), B.stride_1(), B.stride_0());
+  }
+};
+
+template <typename MemberType, typename ArgDiag>
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
+                                           const BViewType &B) {
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(1),
+                                                                  B.extent(0), alpha, A.data(), A.stride_0(),
+                                                                  A.stride_1(), B.data(), B.stride_1(), B.stride_0());
   }
 };
 
@@ -106,32 +146,24 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose,
 /// A(m x m), B(m x n)
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
-                ArgDiag, Algo::Trsm::Unblocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_0(), A.stride_1(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                    B.extent(1), alpha, A.data(), A.stride_0(),
+                                                                    A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
-                ArgDiag, Algo::Trsm::Blocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_0(), A.stride_1(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                  B.extent(1), alpha, A.data(), A.stride_0(),
+                                                                  A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
@@ -142,32 +174,24 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
 /// A(m x m), B(m x n)
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
-                Algo::Trsm::Unblocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_1(), A.stride_0(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                    B.extent(1), alpha, A.data(), A.stride_1(),
+                                                                    A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
-                Algo::Trsm::Blocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_1(), A.stride_0(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                  B.extent(1), alpha, A.data(), A.stride_1(),
+                                                                  A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
@@ -178,32 +202,24 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
 /// A(m x m), B(m x n)
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
-                Algo::Trsm::Unblocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_1(), A.stride_0(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                    B.extent(1), alpha, A.data(), A.stride_1(),
+                                                                    A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
-                Algo::Trsm::Blocked> {
+struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha,
-        A.data(), A.stride_1(), A.stride_0(), B.data(), B.stride_0(),
-        B.stride_1());
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
+                                                                  B.extent(1), alpha, A.data(), A.stride_1(),
+                                                                  A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
 

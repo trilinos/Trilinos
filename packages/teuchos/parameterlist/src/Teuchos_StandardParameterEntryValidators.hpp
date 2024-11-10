@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_STANDARD_PARAMETER_ENTRY_VALIDATORS_H
@@ -317,6 +285,14 @@ public:
     std::string const& paramName,
     std::string const& sublistName
     ) const;
+  
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
+  void validateAndModify(
+    std::string const& paramName,
+    std::string const& sublistName,
+    ParameterEntry * entry
+  ) const;
+#endif
 
   //@}
 
@@ -328,8 +304,24 @@ private:
 
   typedef std::map<std::string,IntegralType> map_t;
   map_t map_;
+  typedef std::map<IntegralType,std::string> inv_map_t;
+  inv_map_t inv_map_;
 
   const bool caseSensitive_;
+
+  /** \brief Auxiliary method to simplify constructors
+   * 
+   * \param strings [in] Array of unique names for the enum or integer
+   *   values.  These are the strings which users will see and use
+   *   when setting parameters.  <tt>strings[i]</tt> will be
+   *   associated with the enum or integer value
+   *   <tt>integralValues[i]</tt>.
+   *
+   * \param integralValues [in] Array of the enum or integer values
+   *   associated with <tt>strings[]</tt>.
+  */
+  void init(const ArrayView<const std::string>& strings, 
+            const ArrayView<const IntegralType>& integralValues);
 
   void setValidValues(
     ArrayView<const std::string> const& strings,
@@ -434,8 +426,8 @@ stringToIntegralParameterEntryValidator(
  *
  * The function <tt>getIntegralValue()</tt> can then be used to extract the
  * integral value of the std::string parameter.  In this case, the integral
- * value return will just be the zero-based index of the std::string value in
- * the list <tt>strings</tt>.
+ * value returned will just be the zero-based index of the std::string value
+ * in the list <tt>strings</tt>.
  *
  * \relates ParameterList
  */
@@ -497,9 +489,9 @@ void setStringToIntegralParameter(
 /** \brief Get an integral value for a parameter that is assumed to already be
  * set.
  *
- * This function does a dynamic cast to get the underlying valiator of type
+ * This function does a dynamic cast to get the underlying validator of type
  * StringToIntegralParameterEntryValidator<IntegralType>.  If this dynamic
- * cast failes then an <tt>Exceptions::InvalidParameterType</tt>
+ * cast fails then an <tt>Exceptions::InvalidParameterType</tt>
  * std::exception is thrown with an excellent error message.
  *
  * \relates ParameterList
@@ -2423,16 +2415,10 @@ StringToIntegralParameterEntryValidator (ArrayView<const std::string> const& str
   defaultParameterName_ (defaultParameterName),
   caseSensitive_ (caseSensitive)
 {
-  typedef typename map_t::value_type val_t;
-  for (int i = 0; i < static_cast<int> (strings.size ()); ++i) {
-    const bool unique = caseSensitive_ ?
-      map_.insert (val_t (strings[i], static_cast<IntegralType> (i))).second :
-      map_.insert (val_t (upperCase (strings[i]), static_cast<IntegralType> (i))).second;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! unique, std::logic_error,
-      "For parameter \"" << defaultParameterName_ << "\": "
-      "strings[" << i << "] = \"" << strings[i] << "\" is a duplicate.");
-  }
+  const int length = static_cast<int>(strings.size());
+  Array<IntegralType> integralValues(length);
+  for (int i = 0; i < length; ++i) integralValues[i] = static_cast<IntegralType>(i);
+  init(strings, integralValues);
   setValidValues (strings);
 }
 
@@ -2450,22 +2436,7 @@ StringToIntegralParameterEntryValidator (ArrayView<const std::string> const& str
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    strings.size() != integralValues.size(),
-    std::logic_error,
-    "The input arrays strings and integralValues must have the same length.");
-
-  typedef typename map_t::value_type val_t;
-  for (int i = 0; i < static_cast<int> (strings.size ()); ++i) {
-    const bool unique = caseSensitive_ ?
-      map_.insert (val_t (strings[i], integralValues[i])).second :
-      map_.insert (val_t (upperCase (strings[i]), integralValues[i])).second;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! unique, std::logic_error,
-      "For parameter \"" << defaultParameterName_ << "\": "
-      "strings[" << i << "] = \"" << strings[i] << "\" is a duplicate.");
-  }
+  init(strings, integralValues);
   setValidValues (strings);
 }
 
@@ -2482,30 +2453,44 @@ StringToIntegralParameterEntryValidator (ArrayView<const std::string>    const& 
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
-  TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    strings.size() != integralValues.size(),
-    std::logic_error,
-    "The input arrays strings and integralValues must have the same length.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     strings.size() != stringsDocs.size(),
     std::logic_error,
     "The input arrays strings and stringsDocs must have the same length.");
 
-  typedef typename map_t::value_type val_t;
-  for (int i = 0; i < static_cast<int> (strings.size ()); ++i) {
-    const bool unique = caseSensitive_ ?
-      map_.insert (val_t (strings[i], integralValues[i])).second :
-      map_.insert (val_t (upperCase (strings[i]), integralValues[i])).second;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! unique, std::logic_error,
-      "For parameter \"" << defaultParameterName_ << "\": "
-      "strings[" << i << "] = \"" << strings[i] << "\" is a duplicate.");
-  }
+  init(strings, integralValues);
   setValidValues(strings,&stringsDocs);
+}
+
+template <class IntegralType>
+void StringToIntegralParameterEntryValidator<IntegralType>::init(
+    ArrayView<const std::string> const &strings,
+    ArrayView<const IntegralType> const &integralValues) {
+
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(strings.size(), integralValues.size());
+#endif
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      strings.size() != integralValues.size(), std::logic_error,
+      "The input arrays strings and integralValues must have the same length.");
+
+  typedef typename map_t::value_type val_t;
+  typedef typename inv_map_t::value_type inv_val_t;
+  for (int i = 0; i < static_cast<int>(strings.size()); ++i) {
+    const std::string name =
+        caseSensitive_ ? strings[i] : upperCase(strings[i]);
+    const bool unique = map_.insert(val_t(name, integralValues[i])).second;
+    TEUCHOS_TEST_FOR_EXCEPTION(!unique, std::logic_error,
+                               "For parameter \"" << defaultParameterName_
+                                                  << "\": "
+                                                     "strings["
+                                                  << i << "] = \"" << strings[i]
+                                                  << "\" is a duplicate.");
+    inv_map_.insert(inv_val_t(integralValues[i], name));
+  }
 }
 
 // Lookup functions
@@ -2540,18 +2525,22 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ,const std::string &sublistName, const bool activeQuery
   ) const
 {
-  const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-    !validType, Exceptions::InvalidParameterType
-    ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
-    << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
-    << "\nin the sublist \"" << sublistName << "\""
-    << "\nhas the wrong type."
-    << "\n\nThe correct type is \"string\"!"
-    );
-  const std::string
-    &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
-  return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!
+  if (entry.isType<IntegralType>()){
+    return any_cast<IntegralType>(entry.getAny(activeQuery));
+  } else{
+    const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+      !validType, Exceptions::InvalidParameterType
+      ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
+      << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
+      << "\nin the sublist \"" << sublistName << "\""
+      << "\nhas the wrong type."
+      << "\n\nThe correct type is \"string\"!"
+      );
+    const std::string
+      &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
+    return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!
+  }
 }
 
 
@@ -2562,10 +2551,18 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
   ,const std::string &sublistName, const bool activeQuery
   ) const
 {
-  // Validate the parameter's type and value
-  this->getIntegralValue(entry,paramName,sublistName,activeQuery);
-  // Return the std::string value which is now validated!
-  return any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
+  if (entry.isType<IntegralType>()){
+    const IntegralType intVal = any_cast<IntegralType>(entry.getAny(activeQuery));
+    typename inv_map_t::const_iterator itr = inv_map_.find(intVal);
+    // typename inv_map_t::const_iterator itr = inv_map_.find(intVal);
+    // TODO: Maybe do a test on intVal but it should be valid by construction
+    return (*itr).second;
+  } else{
+    // Validate the parameter's type and value
+    this->getIntegralValue(entry,paramName,sublistName,activeQuery);
+    // Return the std::string value which is now validated!
+    return any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
+  }
 }
 
 
@@ -2592,7 +2589,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
 {
   const std::string& strValue =
     paramList.get (paramName,
-                   caseSensitive_ ? defaultValue : upperCase (defaultValue));
+                  caseSensitive_ ? defaultValue : upperCase (defaultValue));
   getIntegralValue(strValue,paramName,paramList.name()); // Validate!
   return strValue;
 }
@@ -2674,6 +2671,19 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 {
   this->getIntegralValue (entry, paramName, sublistName, false);
 }
+
+
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
+template<class IntegralType>
+void StringToIntegralParameterEntryValidator<IntegralType>::validateAndModify(
+  std::string const& paramName,
+  std::string const& sublistName,
+  ParameterEntry * entry
+  ) const
+{
+  entry->setValue(this->getIntegralValue(*entry, paramName, sublistName, false));
+}
+#endif
 
 
 // private
@@ -2889,12 +2899,16 @@ IntegralType Teuchos::getIntegralValue(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
-  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
-    integralValidator = getStringToIntegralParameterEntryValidator<IntegralType>(
-      entry, paramList, paramName
-      );
-  return integralValidator->getIntegralValue(
-    entry, paramName, paramList.name(), true );
+  if (entry.isType<IntegralType>()){
+    return getValue<IntegralType>(entry);
+  } else{
+    RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+      integralValidator = getStringToIntegralParameterEntryValidator<IntegralType>(
+        entry, paramList, paramName
+        );
+    return integralValidator->getIntegralValue(
+      entry, paramName, paramList.name(), true );
+  }
 }
 
 

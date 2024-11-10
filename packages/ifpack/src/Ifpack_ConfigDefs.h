@@ -43,6 +43,12 @@
 #ifndef _IFPACK_CONFIGDEFS_H_
 #define _IFPACK_CONFIGDEFS_H_
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -135,12 +141,28 @@
   std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
     return;  } }
+// prints out an error message if variable is not zero,
+// and returns false
+#define IFPACK_CHK_ERRB(ifpack_err) \
+{ if (ifpack_err < 0) { \
+  std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
+    << __FILE__ << ", line " << __LINE__ << std::endl; \
+    return false;  } }
 // prints out an error message and returns
 #define IFPACK_RETURN(ifpack_err) \
 { if (ifpack_err < 0) { \
   std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
                        } return(ifpack_err); }
+// prints out an error message if its *global* variable is not zero,
+// and returns this *global* value.
+#define IFPACK_CHK_GLOBAL_ERR(ifpack_err) \
+{ int local_err = ifpack_err; \
+  int global_min_err = 0; \
+  Comm().MinAll(&local_err, &global_min_err, 1); \
+  if (global_min_err < 0) { \
+    return global_min_err; \
+  } }
 
 #define IFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
 #define IFPACK_ABS(x) (((x) > 0.0) ? (x) : (-x))  /* abs function */

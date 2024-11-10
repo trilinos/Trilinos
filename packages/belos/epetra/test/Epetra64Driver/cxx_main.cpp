@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                 Belos: Block Linear Solvers Package
+//
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 //  This program computes the linear solution using Belos and a laplacian matrix.
 //  NOTE:  The laplacian matrix generated has row and column ids larger than INT_MAX
 //         to test Epetra64 functionality with Belos solvers.

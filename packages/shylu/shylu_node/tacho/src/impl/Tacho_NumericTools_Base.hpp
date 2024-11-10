@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_NUMERIC_TOOLS_BASE_HPP__
 #define __TACHO_NUMERIC_TOOLS_BASE_HPP__
@@ -44,6 +36,7 @@ public:
   using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
   using size_type_array = typename supernode_info_type::size_type_array;
   using value_type_array = typename supernode_info_type::value_type_array;
+  using int_type_array = typename supernode_info_type::int_type_array;
 
   using ordinal_pair_type_array = typename supernode_info_type::ordinal_pair_type_array;
   using value_type_matrix = typename supernode_info_type::value_type_matrix;
@@ -53,9 +46,9 @@ public:
   using host_space = typename host_device_type::execution_space;
   using host_memory_space = typename host_device_type::memory_space;
 
-  using ordinal_type_array_host = typename ordinal_type_array::HostMirror;
-  using size_type_array_host = typename size_type_array::HostMirror;
-  using supernode_type_array_host = typename supernode_type_array::HostMirror;
+  using ordinal_type_array_host = Kokkos::View<ordinal_type *, host_device_type>;
+  using size_type_array_host = Kokkos::View<size_type *, host_device_type>;
+  using supernode_type_array_host = Kokkos::View<typename supernode_info_type::supernode_type *, host_device_type>;
 
 protected:
   ///
@@ -132,9 +125,10 @@ protected:
   virtual void print_stat_factor() {
     const double kilo(1024);
     printf("  Time\n");
+    printf("             time for extra tasks (allocation):               %10.6f s\n", stat.t_extra);
     printf("             time for copying A into supernodes:              %10.6f s\n", stat.t_copy);
     printf("             time for numeric factorization:                  %10.6f s\n", stat.t_factor);
-    printf("             total time spent:                                %10.6f s\n", (stat.t_copy + stat.t_factor));
+    printf("             total time spent:                                %10.6f s\n", (stat.t_extra + stat.t_copy + stat.t_factor));
     printf("\n");
     printf("  Memory\n");
     printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used / kilo / kilo);

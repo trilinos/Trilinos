@@ -47,7 +47,8 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <define>STK_SHOW_DEPRECATED_WARNINGS
     <define>STK_HIDE_DEPRECATED_CODE
     <define>SIERRA_MIGRATION
@@ -85,8 +86,8 @@ local installed-developer-files =
 local xml-files =
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -290,7 +291,7 @@ exe stk_tools_pmesh_unit_tester
       $(stk_tools-root)/stk_tools/pmesh_lib/UnitTest/*.cpp
     ]
     stk_pmesh_lib
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   :
     <tag>@sierra-exec-tag
   ;

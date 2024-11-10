@@ -70,9 +70,14 @@ FILE(GLOB SOURCES_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/balance_main/*.cpp)
 FILE(GLOB SOURCES_M2N_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/m2n_main/*.cpp)
 
 if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(search_tolerance_algs
+    NOINSTALLHEADERS ${HEADERS_SEARCH_TOLERANCE_ALGS}
+    SOURCES ${SOURCES_SEARCH_TOLERANCE_ALGS}
+  )
+
   TRIBITS_ADD_LIBRARY(stk_balance_lib
-    NOINSTALLHEADERS ${HEADERS} ${HEADERS_INTERNAL} ${HEADERS_M2N} ${HEADERS_SETUP} ${HEADERS_SEARCH_TOLERANCE} ${HEADERS_SEARCH_TOLERANCE_ALGS}
-    SOURCES ${SOURCES} ${SOURCES_INTERNAL} ${SOURCES_M2N} ${SOURCES_SETUP} ${SOURCES_SEARCH_TOLERANCE_ALGS}
+    NOINSTALLHEADERS ${HEADERS} ${HEADERS_INTERNAL} ${HEADERS_M2N} ${HEADERS_SETUP}
+    SOURCES ${SOURCES} ${SOURCES_INTERNAL} ${SOURCES_M2N} ${SOURCES_SETUP}
   )
 
   TRIBITS_ADD_EXECUTABLE(stk_balance
@@ -87,7 +92,12 @@ if(HAVE_STK_Trilinos)
 else()
   find_package(Zoltan2Core REQUIRED)
 
-  add_library(stk_balance_lib ${SOURCES} ${SOURCES_INTERNAL} ${SOURCES_M2N} ${SOURCES_SETUP} ${SOURCES_SEARCH_TOLERANCE_ALGS})
+  add_library(search_tolerance_algs ${SOURCES_SEARCH_TOLERANCE_ALGS})
+  target_link_libraries(search_tolerance_algs PUBLIC stk_mesh_base)
+
+  add_library(stk_balance_lib ${SOURCES} ${SOURCES_INTERNAL} ${SOURCES_M2N} ${SOURCES_SETUP})
+
+  target_link_libraries(stk_balance_lib PUBLIC search_tolerance_algs)
   target_link_libraries(stk_balance_lib PUBLIC stk_io)
   target_link_libraries(stk_balance_lib PUBLIC stk_tools_lib)
   target_link_libraries(stk_balance_lib PUBLIC stk_util_registry)
@@ -101,6 +111,10 @@ else()
   target_link_libraries(stk_balance_m2n PUBLIC stk_balance_lib)
 endif()
 
+target_include_directories(search_tolerance_algs PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_balance>
+  $<INSTALL_INTERFACE:include>
+)
 target_include_directories(stk_balance_lib PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_balance>
   $<INSTALL_INTERFACE:include>
@@ -120,7 +134,8 @@ INSTALL(FILES ${HEADERS_SEARCH_TOLERANCE_ALGS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_balance/search_tolerance_algs)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_balance_lib DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS search_tolerance_algs EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_balance_lib EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
   INSTALL(TARGETS stk_balance DESTINATION ${STK_INSTALL_BINDIR})
 endif()
 

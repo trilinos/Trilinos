@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef MUELU_HIERARCHYMANAGER_DECL_HPP
 #define MUELU_HIERARCHYMANAGER_DECL_HPP
 
@@ -207,6 +171,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     }
 
     H.SetPRrebalance(doPRrebalance_);
+
     H.SetPRViaCopyrebalance(doPRViaCopyrebalance_);
     H.SetImplicitTranspose(implicitTranspose_);
     H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
@@ -230,6 +195,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     //   2. Interpreter constructs keep_ array with names and factories for
     //      that level
     //   3. For each level, we call Keep(name, factory) for each keep_
+
     for (int i = 0; i < numDesiredLevel_; i++) {
       std::map<int, std::vector<keep_pair>>::const_iterator it = keep_.find(i);
       if (it != keep_.end()) {
@@ -257,9 +223,9 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     ExportDataSetKeepFlags(H, elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
 
-    // Data to save only (these do not have a level, so we do all levels)
-    for (int i = 0; i < dataToSave_.size(); i++)
-      ExportDataSetKeepFlagsAll(H, dataToSave_[i]);
+    // Data to keep only (these do not have a level, so we do all levels)
+    for (int i = 0; i < dataToKeep_.size(); i++)
+      ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);
 
     int levelID      = 0;
     int lastLevelID  = numDesiredLevel_ - 1;
@@ -276,6 +242,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
       isLastLevel = r || (levelID == lastLevelID);
       levelID++;
     }
+
     if (!matvecParams_.is_null())
       H.SetMatvecParams(matvecParams_);
     H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
@@ -283,6 +250,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     // This is cached, but involves and MPI_Allreduce.
     H.description();
     H.describe(H.GetOStream(Runtime0), verbosity_);
+    H.CheckForEmptySmoothersAndCoarseSolve();
 
     // When we reuse hierarchy, it is necessary that we don't
     // change the number of levels. We also cannot make requests
@@ -311,6 +279,12 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 #endif
 
   }  // SetupHierarchy
+
+  //! Set the number of desired levels.
+  void SetNumDesiredLevel(int numDesiredLevel) { numDesiredLevel_ = numDesiredLevel; }
+
+  //! Get the number of desired levels.
+  int GetNumDesiredLevel() { return numDesiredLevel_; }
 
   //@}
 
@@ -346,7 +320,6 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
   //! @group Hierarchy parameters
   //! @{
-
   mutable int numDesiredLevel_;
   Xpetra::global_size_t maxCoarseSize_;
   MsgType verbosity_;
@@ -376,8 +349,8 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
   Teuchos::Array<int> aggregatesToPrint_;
   Teuchos::Array<int> elementToNodeMapsToPrint_;
 
-  // Data we'll need to save, not necessarily print
-  Teuchos::Array<std::string> dataToSave_;
+  // Data we'll need to keep, either to dump to disk or to use post-setup
+  Teuchos::Array<std::string> dataToKeep_;
 
   // Matrices we'll need to print
   std::map<std::string, Teuchos::Array<int>> matricesToPrint_;
@@ -508,7 +481,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
         v[i] = colMap.getGlobalElement(fcont(i, j));
     }
 
-    Xpetra::IO<GO, LO, GO, NO>::Write(fileName, *vec);
+    Xpetra::IO<SC, LO, GO, NO>::WriteGOMV(fileName, *vec);
   }
 
   // Levels

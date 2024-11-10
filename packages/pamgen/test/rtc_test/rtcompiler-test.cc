@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include "RTC_FunctionRTC.hh"
 #include "RTC_RegistrarRTC.hh"
 #include "RTC_TokenizerRTC.hh"
@@ -258,7 +267,7 @@ int main( int argc, char* argv[] )
   realProgram(arrayOneReal, arrayTwoReal, plainValOneReal,
               plainValTwoReal, plainValThreeReal, testChar);
 
-  const double epsilon = 1.0e-15;
+  [[maybe_unused]] const double epsilon = 1.0e-15;
 
   for (int i = 0; i < 9; ++i) {
     assert ( fabs(arrayOne[i] - arrayOneReal[i]) < epsilon);

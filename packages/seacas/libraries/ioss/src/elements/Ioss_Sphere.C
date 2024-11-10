@@ -1,16 +1,17 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementPermutation.h"  // for ElementPermutation
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Sphere.h>
+#include "Ioss_ElementVariableType.h" // for ElementVariableType
+#include "Ioss_Sphere.h"
 #include <cassert> // for assert
-#include <cstddef> // for nullptr
+
+#include "Ioss_CodeTypes.h"          // for IntVector
+#include "Ioss_ElementPermutation.h" // for ElementPermutation
+#include "Ioss_ElementTopology.h"    // for ElementTopology
+#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -55,12 +56,6 @@ Ioss::Sphere::Sphere() : Ioss::ElementTopology(Ioss::Sphere::name, "Particle")
   Ioss::ElementTopology::alias(Ioss::Sphere::name, "circle1");
   Ioss::ElementTopology::alias(Ioss::Sphere::name, "point");
   Ioss::ElementTopology::alias(Ioss::Sphere::name, "point1");
-}
-
-const std::string &Ioss::Sphere::base_topology_permutation_name() const
-{
-  static std::string permutationName(Ioss::SpherePermutation::name);
-  return permutationName;
 }
 
 int Ioss::Sphere::parametric_dimension() const { return 0; }

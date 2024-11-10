@@ -81,3 +81,9 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
 #endif
 
 #endif
+
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif

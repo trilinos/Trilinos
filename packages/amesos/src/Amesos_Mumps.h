@@ -29,6 +29,12 @@
 #ifndef AMESOS_MUMPS_H
 #define AMESOS_MUMPS_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 class Epetra_Import;
 class Epetra_RowMatrix;
 class Epetra_MultiVector;

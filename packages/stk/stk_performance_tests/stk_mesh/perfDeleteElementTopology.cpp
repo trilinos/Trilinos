@@ -10,7 +10,7 @@
 namespace
 {
 
-class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
     DestroyElementTopologyPerformanceTest()
@@ -41,11 +41,11 @@ private:
 };
 
 
-class DestroyElementTopologyPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class DestroyElementTopologyPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
     DestroyElementTopologyPerformance(stk::mesh::BulkData &bulk)
-      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+      : stk::unit_test_util::PerformanceTester(bulk.parallel()),
         bulkData(bulk)
     { }
 protected:
@@ -64,11 +64,11 @@ TEST_F(DestroyElementTopologyPerformanceTest, DestroyElementTopology)
 }
 
 
-class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
     DestroyAllElementsIndividuallyPerformance(stk::mesh::BulkData &bulk)
-      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+      : stk::unit_test_util::PerformanceTester(bulk.parallel()),
         bulkData(bulk)
     { }
 protected:

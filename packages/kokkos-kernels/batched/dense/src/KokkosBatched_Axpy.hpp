@@ -44,9 +44,7 @@ namespace KokkosBatched {
 
 struct SerialAxpy {
   template <typename XViewType, typename YViewType, typename alphaViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const alphaViewType &alpha,
-                                           const XViewType &X,
-                                           const YViewType &Y);
+  KOKKOS_INLINE_FUNCTION static int invoke(const alphaViewType &alpha, const XViewType &X, const YViewType &Y);
 };
 
 /// \brief Team Batched AXPY:
@@ -72,9 +70,7 @@ struct SerialAxpy {
 template <typename MemberType>
 struct TeamAxpy {
   template <typename XViewType, typename YViewType, typename alphaViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const alphaViewType &alpha,
-                                           const XViewType &X,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const alphaViewType &alpha, const XViewType &X,
                                            const YViewType &Y);
 };
 
@@ -102,9 +98,7 @@ struct TeamAxpy {
 template <typename MemberType>
 struct TeamVectorAxpy {
   template <typename XViewType, typename YViewType, typename alphaViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const alphaViewType &alpha,
-                                           const XViewType &X,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const alphaViewType &alpha, const XViewType &X,
                                            const YViewType &Y);
 };
 

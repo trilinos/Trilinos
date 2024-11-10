@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_ILUT_DEF_HPP
 #define IFPACK2_ILUT_DEF_HPP
@@ -555,11 +522,16 @@ void ILUT<MatrixType>::initialize ()
       const int NumMyRows = A_local_crs->getRowMap()->getLocalNumElements();
       L_rowmap_ = ulno_row_view_t("L_row_map", NumMyRows + 1);
       U_rowmap_ = ulno_row_view_t("U_row_map", NumMyRows + 1);
+      L_rowmap_orig_ = ulno_row_view_t("L_row_map_orig", NumMyRows + 1);
+      U_rowmap_orig_ = ulno_row_view_t("U_row_map_orig", NumMyRows + 1);
 
       KokkosSparse::Experimental::par_ilut_symbolic(KernelHandle_.getRawPtr(),
                                                     A_local_crs_device.graph.row_map, A_local_crs_device.graph.entries,
                                                     L_rowmap_,
                                                     U_rowmap_);
+
+      Kokkos::deep_copy(L_rowmap_orig_, L_rowmap_);
+      Kokkos::deep_copy(U_rowmap_orig_, U_rowmap_);
     }
 
     IsInitialized_ = true;
@@ -935,6 +907,15 @@ void ILUT<MatrixType>::compute ()
 
   } //if (!this->useKokkosKernelsParILUT_)
   else {
+    // Set L, U rowmaps back to original state. Par_ilut can change them, which invalidates them
+    // if compute is called again.
+    if (this->isComputed()) {
+      Kokkos::resize(L_rowmap_, L_rowmap_orig_.size());
+      Kokkos::resize(U_rowmap_, U_rowmap_orig_.size());
+      Kokkos::deep_copy(L_rowmap_, L_rowmap_orig_);
+      Kokkos::deep_copy(U_rowmap_, U_rowmap_orig_);
+    }
+
     RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_local_);
     {//Make sure values in A is picked up even in case of pattern reuse
       if(A_local_crs.is_null()) {
@@ -1013,7 +994,6 @@ void ILUT<MatrixType>::compute ()
     L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
     U_solver_->setMatrix (U_);
     U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
-
   } //if (!this->useKokkosKernelsParILUT_) ... else ...
 
   } // Timer scope for timing compute()

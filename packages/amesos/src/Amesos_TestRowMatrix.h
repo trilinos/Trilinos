@@ -1,6 +1,12 @@
 #ifndef IFPACK_ROWMATRIX_H
 #define IFPACK_ROWMATRIX_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -369,4 +375,3 @@ private:
 };
 
 #endif /* IFPACK_ROWMATRIX_H */
-

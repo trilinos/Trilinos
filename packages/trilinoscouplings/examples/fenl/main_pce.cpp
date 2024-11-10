@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Kokkos_View_MP_Vector_Fwd.hpp"
 #include "Kokkos_View_UQ_PCE_Fwd.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"

@@ -32,8 +32,7 @@ using namespace KokkosBatched;
 namespace Test {
 namespace TeamVectorGesv {
 
-template <typename DeviceType, typename MatrixType, typename VectorType,
-          typename AlgoTagType>
+template <typename DeviceType, typename MatrixType, typename VectorType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorGesv {
   using execution_space = typename DeviceType::execution_space;
   const MatrixType _A;
@@ -41,20 +40,18 @@ struct Functor_TestBatchedTeamVectorGesv {
   const VectorType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamVectorGesv(const MatrixType &A, const VectorType &X,
-                                    const VectorType &B)
+  Functor_TestBatchedTeamVectorGesv(const MatrixType &A, const VectorType &X, const VectorType &B)
       : _A(A), _X(X), _B(B) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     const int matrix_id = static_cast<int>(member.league_rank());
-    auto A = Kokkos::subview(_A, matrix_id, Kokkos::ALL, Kokkos::ALL);
-    auto x = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
-    auto b = Kokkos::subview(_B, matrix_id, Kokkos::ALL);
+    auto A              = Kokkos::subview(_A, matrix_id, Kokkos::ALL, Kokkos::ALL);
+    auto x              = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
+    auto b              = Kokkos::subview(_B, matrix_id, Kokkos::ALL);
 
     member.team_barrier();
-    KokkosBatched::TeamVectorGesv<MemberType, AlgoTagType>::invoke(member, A, x,
-                                                                   b);
+    KokkosBatched::TeamVectorGesv<MemberType, AlgoTagType>::invoke(member, A, x, b);
     member.team_barrier();
   }
 
@@ -64,13 +61,10 @@ struct Functor_TestBatchedTeamVectorGesv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::TeamPolicy<execution_space> policy(_X.extent(0), Kokkos::AUTO(),
-                                               Kokkos::AUTO());
+    Kokkos::TeamPolicy<execution_space> policy(_X.extent(0), Kokkos::AUTO(), Kokkos::AUTO());
 
-    using MatrixViewType =
-        Kokkos::View<typename MatrixType::non_const_value_type **,
-                     typename MatrixType::array_layout,
-                     typename MatrixType::execution_space>;
+    using MatrixViewType = Kokkos::View<typename MatrixType::non_const_value_type **, typename MatrixType::array_layout,
+                                        typename MatrixType::execution_space>;
 
     const int n    = _A.extent(1);
     size_t bytes_0 = MatrixViewType::shmem_size(n, n + 4);
@@ -81,15 +75,13 @@ struct Functor_TestBatchedTeamVectorGesv {
   }
 };
 
-template <typename DeviceType, typename MatrixType, typename VectorType,
-          typename AlgoTagType>
+template <typename DeviceType, typename MatrixType, typename VectorType, typename AlgoTagType>
 void impl_test_batched_gesv(const int N, const int BlkSize) {
   typedef typename MatrixType::value_type value_type;
   typedef Kokkos::ArithTraits<value_type> ats;
 
   using MagnitudeType = typename Kokkos::ArithTraits<value_type>::mag_type;
-  using NormViewType =
-      Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
+  using NormViewType  = Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
 
   NormViewType sqr_norm_j("sqr_norm_j", N);
   auto sqr_norm_j_host = Kokkos::create_mirror_view(sqr_norm_j);
@@ -110,23 +102,18 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Functor_TestBatchedTeamVectorGesv<DeviceType, MatrixType, VectorType,
-                                    AlgoTagType>(A, X, B)
-      .run();
+  Functor_TestBatchedTeamVectorGesv<DeviceType, MatrixType, VectorType, AlgoTagType>(A, X, B).run();
 
   Kokkos::fence();
 
   Kokkos::deep_copy(X_host, X);
 
   for (int l = 0; l < N; ++l)
-    KokkosBlas::SerialGemv<Trans::NoTranspose,
-                           KokkosBlas::Algo::Gemv::Unblocked>::
-        invoke(-1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL),
-               Kokkos::subview(X_host, l, Kokkos::ALL), 1,
-               Kokkos::subview(B_host, l, Kokkos::ALL));
+    KokkosBlas::SerialGemv<Trans::NoTranspose, KokkosBlas::Algo::Gemv::Unblocked>::invoke(
+        -1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL), Kokkos::subview(X_host, l, Kokkos::ALL), 1,
+        Kokkos::subview(B_host, l, Kokkos::ALL));
 
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(B_host, B_host,
-                                                       sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(B_host, B_host, sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e3 * ats::epsilon();
 
@@ -139,29 +126,21 @@ template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_teamvector_gesv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        MatrixType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType>
-        VectorType;
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> MatrixType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> VectorType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamVectorGesv::impl_test_batched_gesv<DeviceType, MatrixType,
-                                                   VectorType, AlgoTagType>(
-          1024, i);
+      Test::TeamVectorGesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        MatrixType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        VectorType;
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> MatrixType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> VectorType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamVectorGesv::impl_test_batched_gesv<DeviceType, MatrixType,
-                                                   VectorType, AlgoTagType>(
-          1024, i);
+      Test::TeamVectorGesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType, AlgoTagType>(1024, i);
     }
   }
 #endif

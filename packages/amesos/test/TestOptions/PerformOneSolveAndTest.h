@@ -14,3 +14,9 @@ int PerformOneSolveAndTest(const char* AmesosClass,
 			   double& relerror,
 			   double& relresidual,
 			   int ExpectedError = 0) ;
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif

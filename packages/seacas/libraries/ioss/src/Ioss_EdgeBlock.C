@@ -1,14 +1,14 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h> // for IntVector
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Property.h>
+#include "Ioss_CodeTypes.h" // for IntVector
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EdgeBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Property.h"
 #include <cstddef>
 #include <string>
 
@@ -35,8 +35,6 @@ Ioss::EdgeBlock::EdgeBlock(Ioss::DatabaseIO *io_database, const std::string &my_
     properties.add(Ioss::Property("original_edge_type", edge_type));
   }
 }
-
-Ioss::EdgeBlock::~EdgeBlock() = default;
 
 Ioss::Property Ioss::EdgeBlock::get_implicit_property(const std::string &my_name) const
 {

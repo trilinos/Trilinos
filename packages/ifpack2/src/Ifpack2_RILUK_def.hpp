@@ -1,46 +1,16 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef IFPACK2_CRSRILUK_DEF_HPP
 #define IFPACK2_CRSRILUK_DEF_HPP
 
+#include "Ifpack2_RILUK_decl.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -91,7 +61,8 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
-    num_streams_(0)
+    num_streams_(0),
+    hasStreamReordered_(false)
 {
   allocateSolvers();
 }
@@ -116,14 +87,15 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
-    num_streams_(0)
+    num_streams_(0),
+    hasStreamReordered_(false)
 {
   allocateSolvers();
 }
 
 
 template<class MatrixType>
-RILUK<MatrixType>::~RILUK() 
+RILUK<MatrixType>::~RILUK()
 {
   if (!isKokkosKernelsStream_) {
     if (Teuchos::nonnull (KernelHandle_)) {
@@ -313,12 +285,12 @@ void RILUK<MatrixType>::allocate_L_and_U ()
       for (int i = 0; i < num_streams_; i++) {
         L_v_[i] = null;
         U_v_[i] = null;
-	  
+
         L_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getL_Graph ()));
         U_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getU_Graph ()));
         L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
         U_v_[i]->setAllToScalar (STS::zero ());
-	  
+
         L_v_[i]->fillComplete ();
         U_v_[i]->fillComplete ();
       }
@@ -412,7 +384,7 @@ setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<int, int, global_ordinal_type>
       (nstreams, params, paramName, prefix);
   }
-  
+
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
@@ -423,10 +395,18 @@ setParameters (const Teuchos::ParameterList& params)
 
   LevelOfFill_ = fillLevel;
   Overalloc_ = overalloc;
+#ifdef KOKKOS_ENABLE_OPENMP
+  if constexpr (std::is_same_v<execution_space, Kokkos::OpenMP>) {
+    nstreams = std::min(nstreams, execution_space{}.concurrency());
+  }
+#endif
   num_streams_ = nstreams;
 
   if (num_streams_ >= 1) {
     this->isKokkosKernelsStream_ = true;
+    // Will we do reordering in streams?
+    if (params.isParameter("fact: kspiluk reordering in streams"))
+      hasStreamReordered_ = params.get<bool> ("fact: kspiluk reordering in streams");
   }
   else {
     this->isKokkosKernelsStream_ = false;
@@ -524,7 +504,7 @@ void RILUK<MatrixType>::initialize ()
      "matrix until the matrix is fill complete.  If your matrix is a "
      "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
      "range Maps, if appropriate) before calling this method.");
-  
+
   Teuchos::Time timer ("RILUK::initialize");
   double startTime = timer.wallTime();
   { // Start timing
@@ -541,6 +521,9 @@ void RILUK<MatrixType>::initialize ()
     isAllocated_   = false;
     isComputed_    = false;
     Graph_ = Teuchos::null;
+    Y_tmp_ = nullptr;
+    reordered_x_ = nullptr;
+    reordered_y_ = nullptr;
 
     if (isKokkosKernelsStream_) {
       Graph_v_ = std::vector< Teuchos::RCP<iluk_graph_type> >(num_streams_);
@@ -564,14 +547,14 @@ void RILUK<MatrixType>::initialize ()
     // we just copy the input matrix if it's not a CrsMatrix.
 
     {
-      RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(A_local_);
-      if(A_local_crs.is_null()) {
+      A_local_crs_ = Details::getCrsMatrix(A_local_);
+      if(A_local_crs_.is_null()) {
         local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
         }
-        RCP<crs_matrix_type> A_local_crs_nc =
+        A_local_crs_nc_ =
           rcp (new crs_matrix_type (A_local_->getRowMap (),
                                     A_local_->getColMap (),
                                     entriesPerRow()));
@@ -581,26 +564,56 @@ void RILUK<MatrixType>::initialize ()
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
           A_local_->getLocalRowCopy(i, indices, values, numEntries);
-          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
+          A_local_crs_nc_->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
         }
-        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
-        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+        A_local_crs_nc_->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
+        A_local_crs_ = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc_);
       }
       if (!isKokkosKernelsStream_) {
-        Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs->getCrsGraph (),
+        Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs_->getCrsGraph (),
                                                                              LevelOfFill_, 0, Overalloc_));
       }
       else {
-        auto lclMtx = A_local_crs->getLocalMatrixDevice();
-        KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
+        std::vector<int> weights(num_streams_);
+        std::fill(weights.begin(), weights.end(), 1);
+        exec_space_instances_ = Kokkos::Experimental::partition_space(execution_space(), weights);
+
+        auto lclMtx = A_local_crs_->getLocalMatrixDevice();
+        if (!hasStreamReordered_) {
+          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
+        } else {
+          perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
+          reverse_perm_v_.resize(perm_v_.size());
+          for(size_t istream=0; istream < perm_v_.size(); ++istream) {
+            using perm_type = typename lno_nonzero_view_t::non_const_type;
+            const auto perm = perm_v_[istream];
+            const auto perm_length = perm.extent(0);
+            perm_type reverse_perm(
+                Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm"),
+                perm_length);
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(exec_space_instances_[istream], 0, perm_length),
+              KOKKOS_LAMBDA(const local_ordinal_type ii) {
+                reverse_perm(perm(ii)) = ii;
+              });
+            reverse_perm_v_[istream] = reverse_perm;
+          }
+        }
+
+        A_local_diagblks_rowmap_v_  = std::vector<lno_row_view_t>(num_streams_);
+        A_local_diagblks_entries_v_ = std::vector<lno_nonzero_view_t>(num_streams_);
+        A_local_diagblks_values_v_  = std::vector<scalar_nonzero_view_t>(num_streams_);
 
         for(int i = 0; i < num_streams_; i++) {
+          A_local_diagblks_rowmap_v_[i]  = A_local_diagblks[i].graph.row_map;
+          A_local_diagblks_entries_v_[i] = A_local_diagblks[i].graph.entries;
+          A_local_diagblks_values_v_[i]  = A_local_diagblks[i].values;
+
           Teuchos::RCP<const crs_map_type> A_local_diagblks_RowMap = rcp (new crs_map_type(A_local_diagblks[i].numRows(),
                                                                                            A_local_diagblks[i].numRows(),
-                                                                                           A_local_crs->getRowMap()->getComm()));
+                                                                                           A_local_crs_->getRowMap()->getComm()));
           Teuchos::RCP<const crs_map_type> A_local_diagblks_ColMap = rcp (new crs_map_type(A_local_diagblks[i].numCols(),
                                                                                            A_local_diagblks[i].numCols(),
-                                                                                           A_local_crs->getColMap()->getComm()));
+                                                                                           A_local_crs_->getColMap()->getComm()));
           Teuchos::RCP<crs_matrix_type> A_local_diagblks_ = rcp (new crs_matrix_type(A_local_diagblks_RowMap,
                                                                                      A_local_diagblks_ColMap,
                                                                                      A_local_diagblks[i]));
@@ -613,9 +626,9 @@ void RILUK<MatrixType>::initialize ()
     if (this->isKokkosKernelsSpiluk_) {
       if (!isKokkosKernelsStream_) {
         this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
-        KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
+        KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                              A_local_->getLocalNumRows(),
-                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1), 
+                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1),
                                              2*A_local_->getLocalNumEntries()*(LevelOfFill_+1) );
         Graph_->initialize (KernelHandle_); // this calls spiluk_symbolic
       }
@@ -623,15 +636,12 @@ void RILUK<MatrixType>::initialize ()
         KernelHandle_v_ = std::vector< Teuchos::RCP<kk_handle_type> >(num_streams_);
         for (int i = 0; i < num_streams_; i++) {
           KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
-          KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
+          KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                                     A_local_diagblks[i].numRows(),
-                                                    2*A_local_diagblks[i].nnz()*(LevelOfFill_+1), 
+                                                    2*A_local_diagblks[i].nnz()*(LevelOfFill_+1),
                                                     2*A_local_diagblks[i].nnz()*(LevelOfFill_+1) );
           Graph_v_[i]->initialize (KernelHandle_v_[i]); // this calls spiluk_symbolic
         }
-        std::vector<int> weights(num_streams_);
-        std::fill(weights.begin(), weights.end(), 1);
-        exec_space_instances_ = Kokkos::Experimental::partition_space(execution_space(), weights);
       }
     }
     else {
@@ -648,12 +658,7 @@ void RILUK<MatrixType>::initialize ()
       L_solver_->setMatrices (L_v_);
     }
     L_solver_->initialize ();
-    //NOTE (Nov-09-2022): 
-    //For Cuda >= 11.3 (using cusparseSpSV), skip trisolve computes here.
-    //Instead, call trisolve computes within RILUK compute
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
-    L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
-#endif
+
     if (!isKokkosKernelsStream_) {
       U_solver_->setMatrix (U_);
     }
@@ -662,9 +667,6 @@ void RILUK<MatrixType>::initialize ()
       U_solver_->setMatrices (U_v_);
     }
     U_solver_->initialize ();
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
-    U_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
-#endif
 
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
@@ -830,6 +832,268 @@ initAllValues (const row_matrix_type& A)
   isInitialized_ = true;
 }
 
+template<class MatrixType>
+void RILUK<MatrixType>::compute_serial ()
+{
+  // Fill L and U with numbers. This supports nonzero pattern reuse by calling
+  // initialize() once and then compute() multiple times.
+  initAllValues (*A_local_);
+
+  // MinMachNum should be officially defined, for now pick something a little
+  // bigger than IEEE underflow value
+
+  const scalar_type MinDiagonalValue = STS::rmin ();
+  const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
+
+  size_t NumIn, NumL, NumU;
+
+  // Get Maximum Row length
+  const size_t MaxNumEntries =
+          L_->getLocalMaxNumRowEntries () + U_->getLocalMaxNumRowEntries () + 1;
+
+  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<scalar_type> InV(MaxNumEntries);
+  size_t num_cols = U_->getColMap()->getLocalNumElements();
+  Teuchos::Array<int> colflag(num_cols, -1);
+
+  auto DV = Kokkos::subview(D_->getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
+
+  // Now start the factorization.
+
+  using IST = typename row_matrix_type::impl_scalar_type;
+  for (size_t i = 0; i < L_->getLocalNumRows (); ++i) {
+    local_ordinal_type local_row = i;
+    // Need some integer workspace and pointers
+    size_t NumUU;
+    local_inds_host_view_type UUI;
+    values_host_view_type UUV;
+
+    // Fill InV, InI with current row of L, D and U combined
+
+    NumIn = MaxNumEntries;
+    nonconst_local_inds_host_view_type InI_v(InI.data(),MaxNumEntries);
+    nonconst_values_host_view_type     InV_v(reinterpret_cast<IST*>(InV.data()),MaxNumEntries);
+
+    L_->getLocalRowCopy (local_row, InI_v , InV_v, NumL);
+
+    InV[NumL] = DV(i); // Put in diagonal
+    InI[NumL] = local_row;
+
+    nonconst_local_inds_host_view_type InI_sub(InI.data()+NumL+1,MaxNumEntries-NumL-1);
+    nonconst_values_host_view_type     InV_sub(reinterpret_cast<IST*>(InV.data())+NumL+1,MaxNumEntries-NumL-1);
+
+    U_->getLocalRowCopy (local_row, InI_sub,InV_sub, NumU);
+    NumIn = NumL+NumU+1;
+
+    // Set column flags
+    for (size_t j = 0; j < NumIn; ++j) {
+      colflag[InI[j]] = j;
+    }
+
+    scalar_type diagmod = STS::zero (); // Off-diagonal accumulator
+
+    for (size_t jj = 0; jj < NumL; ++jj) {
+      local_ordinal_type j = InI[jj];
+      IST multiplier = InV[jj]; // current_mults++;
+
+      InV[jj] *= static_cast<scalar_type>(DV(j));
+
+      U_->getLocalRowView(j, UUI, UUV); // View of row above
+      NumUU = UUI.size();
+
+      if (RelaxValue_ == STM::zero ()) {
+        for (size_t k = 0; k < NumUU; ++k) {
+          const int kk = colflag[UUI[k]];
+          // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+          // colflag above using size_t (which is generally unsigned),
+          // but now we're querying it using int (which is signed).
+          if (kk > -1) {
+            InV[kk] -= static_cast<scalar_type>(multiplier * UUV[k]);
+          }
+        }
+
+      }
+      else {
+        for (size_t k = 0; k < NumUU; ++k) {
+          // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+          // colflag above using size_t (which is generally unsigned),
+          // but now we're querying it using int (which is signed).
+          const int kk = colflag[UUI[k]];
+          if (kk > -1) {
+            InV[kk] -= static_cast<scalar_type>(multiplier*UUV[k]);
+          }
+          else {
+            diagmod -= static_cast<scalar_type>(multiplier*UUV[k]);
+          }
+        }
+      }
+    }
+
+    if (NumL) {
+      // Replace current row of L
+      L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
+    }
+
+    DV(i) = InV[NumL]; // Extract Diagonal value
+
+    if (RelaxValue_ != STM::zero ()) {
+      DV(i) += RelaxValue_*diagmod; // Add off diagonal modifications
+    }
+
+    if (STS::magnitude (DV(i)) > STS::magnitude (MaxDiagonalValue)) {
+      if (STS::real (DV(i)) < STM::zero ()) {
+        DV(i) = -MinDiagonalValue;
+      }
+      else {
+        DV(i) = MinDiagonalValue;
+      }
+    }
+    else {
+      DV(i) = static_cast<impl_scalar_type>(STS::one ()) / DV(i); // Invert diagonal value
+    }
+
+    for (size_t j = 0; j < NumU; ++j) {
+      InV[NumL+1+j] *= static_cast<scalar_type>(DV(i)); // Scale U by inverse of diagonal
+    }
+
+    if (NumU) {
+      // Replace current row of L and U
+      U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
+    }
+
+    // Reset column flags
+    for (size_t j = 0; j < NumIn; ++j) {
+      colflag[InI[j]] = -1;
+    }
+  }
+
+  // The domain of L and the range of U are exactly their own row maps
+  // (there is no communication).  The domain of U and the range of L
+  // must be the same as those of the original matrix, However if the
+  // original matrix is a VbrMatrix, these two latter maps are
+  // translation from a block map to a point map.
+  // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
+  // always one-to-one?
+  L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+  U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
+
+  // If L_solver_ or U_solver store modified factors internally, we need to reset those
+  L_solver_->setMatrix (L_);
+  L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+  U_solver_->setMatrix (U_);
+  U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+
+}
+
+template<class MatrixType>
+void RILUK<MatrixType>::compute_kkspiluk()
+{
+  L_->resumeFill ();
+  U_->resumeFill ();
+
+  L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+  U_->setAllToScalar (STS::zero ());
+
+  using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
+  auto lclL = L_->getLocalMatrixDevice();
+  row_map_type L_rowmap  = lclL.graph.row_map;
+  auto L_entries = lclL.graph.entries;
+  auto L_values  = lclL.values;
+
+  auto lclU = U_->getLocalMatrixDevice();
+  row_map_type U_rowmap  = lclU.graph.row_map;
+  auto U_entries = lclU.graph.entries;
+  auto U_values  = lclU.values;
+
+  auto lclMtx = A_local_crs_->getLocalMatrixDevice();
+  KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_,
+                                              lclMtx.graph.row_map, lclMtx.graph.entries, lclMtx.values,
+                                              L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+
+  L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+  U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
+
+  L_solver_->compute ();
+  U_solver_->compute ();
+}
+
+template<class MatrixType>
+void RILUK<MatrixType>::compute_kkspiluk_stream()
+{
+  for(int i = 0; i < num_streams_; i++) {
+    L_v_[i]->resumeFill ();
+    U_v_[i]->resumeFill ();
+
+    L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+    U_v_[i]->setAllToScalar (STS::zero ());
+  }
+  std::vector<lno_row_view_t>        L_rowmap_v(num_streams_);
+  std::vector<lno_nonzero_view_t>    L_entries_v(num_streams_);
+  std::vector<scalar_nonzero_view_t> L_values_v(num_streams_);
+  std::vector<lno_row_view_t>        U_rowmap_v(num_streams_);
+  std::vector<lno_nonzero_view_t>    U_entries_v(num_streams_);
+  std::vector<scalar_nonzero_view_t> U_values_v(num_streams_);
+  std::vector<kk_handle_type *>      KernelHandle_rawptr_v_(num_streams_);
+  for(int i = 0; i < num_streams_; i++) {
+    auto lclL = L_v_[i]->getLocalMatrixDevice();
+    L_rowmap_v[i]  = lclL.graph.row_map;
+    L_entries_v[i] = lclL.graph.entries;
+    L_values_v[i]  = lclL.values;
+
+    auto lclU = U_v_[i]->getLocalMatrixDevice();
+    U_rowmap_v[i]  = lclU.graph.row_map;
+    U_entries_v[i] = lclU.graph.entries;
+    U_values_v[i]  = lclU.values;
+    KernelHandle_rawptr_v_[i] = KernelHandle_v_[i].getRawPtr();
+  }
+
+  {
+    auto lclMtx = A_local_crs_->getLocalMatrixDevice();
+    // A_local_diagblks was already setup during initialize, just copy the corresponding
+    // values from A_local_crs_ in parallel now.
+    using TeamPolicy = Kokkos::TeamPolicy<execution_space>;
+    const auto A_nrows = lclMtx.numRows();
+    auto rows_per_block = ((A_nrows % num_streams_) == 0)
+                                      ? (A_nrows / num_streams_)
+                                      : (A_nrows / num_streams_ + 1);
+    for(int i = 0; i < num_streams_; i++) {
+      const auto start_row_offset = i * rows_per_block;
+      auto rowptrs = A_local_diagblks_rowmap_v_[i];
+      auto colindices = A_local_diagblks_entries_v_[i];
+      auto values = A_local_diagblks_values_v_[i];
+      const bool reordered = hasStreamReordered_;
+      typename lno_nonzero_view_t::non_const_type reverse_perm = hasStreamReordered_ ? reverse_perm_v_[i] : typename lno_nonzero_view_t::non_const_type{};
+      TeamPolicy pol(exec_space_instances_[i], A_local_diagblks_rowmap_v_[i].extent(0) - 1, Kokkos::AUTO);
+      Kokkos::parallel_for(pol, KOKKOS_LAMBDA (const typename TeamPolicy::member_type &team) {
+        const auto irow = team.league_rank();
+        const auto irow_A = start_row_offset + (reordered ? reverse_perm(irow) : irow);
+        const auto A_local_crs_row = lclMtx.rowConst(irow_A);
+        const auto begin_row = rowptrs(irow);
+        const auto num_entries = rowptrs(irow + 1) - begin_row;
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_entries), [&](const int j) {
+          const auto colidx = colindices(begin_row + j);
+          const auto colidx_A = start_row_offset + (reordered ? reverse_perm(colidx) : colidx);
+          // Find colidx in A_local_crs_row
+          const int offset = KokkosSparse::findRelOffset(
+            &A_local_crs_row.colidx(0), A_local_crs_row.length, colidx_A, 0, false);
+          values(begin_row + j) = A_local_crs_row.value(offset);
+        });
+      });
+    }
+  }
+
+  KokkosSparse::Experimental::spiluk_numeric_streams( exec_space_instances_, KernelHandle_rawptr_v_, LevelOfFill_,
+                                                      A_local_diagblks_rowmap_v_, A_local_diagblks_entries_v_, A_local_diagblks_values_v_,
+                                                      L_rowmap_v, L_entries_v, L_values_v,
+                                                      U_rowmap_v, U_entries_v, U_values_v );
+  for(int i = 0; i < num_streams_; i++) {
+    L_v_[i]->fillComplete ();
+    U_v_[i]->fillComplete ();
+  }
+
+  L_solver_->compute ();
+  U_solver_->compute ();
+}
 
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
@@ -868,279 +1132,34 @@ void RILUK<MatrixType>::compute ()
   isComputed_ = false;
 
   if (!this->isKokkosKernelsSpiluk_) {
-    // Fill L and U with numbers. This supports nonzero pattern reuse by calling
-    // initialize() once and then compute() multiple times.
-    initAllValues (*A_local_);
-
-    // MinMachNum should be officially defined, for now pick something a little
-    // bigger than IEEE underflow value
-
-    const scalar_type MinDiagonalValue = STS::rmin ();
-    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
-
-    size_t NumIn, NumL, NumU;
-
-    // Get Maximum Row length
-    const size_t MaxNumEntries =
-            L_->getLocalMaxNumRowEntries () + U_->getLocalMaxNumRowEntries () + 1;
-
-    Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
-    Teuchos::Array<scalar_type> InV(MaxNumEntries);
-    size_t num_cols = U_->getColMap()->getLocalNumElements();
-    Teuchos::Array<int> colflag(num_cols);
-
-    auto DV = Kokkos::subview(D_->getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
-
-    // Now start the factorization.
-
-    for (size_t j = 0; j < num_cols; ++j) {
-      colflag[j] = -1;
-    }
-    using IST = typename row_matrix_type::impl_scalar_type;
-    for (size_t i = 0; i < L_->getLocalNumRows (); ++i) {
-      local_ordinal_type local_row = i;
-      // Need some integer workspace and pointers
-      size_t NumUU;
-      local_inds_host_view_type UUI;
-      values_host_view_type UUV;
-
-      // Fill InV, InI with current row of L, D and U combined
-
-      NumIn = MaxNumEntries;
-      nonconst_local_inds_host_view_type InI_v(InI.data(),MaxNumEntries);
-      nonconst_values_host_view_type     InV_v(reinterpret_cast<IST*>(InV.data()),MaxNumEntries);
-
-      L_->getLocalRowCopy (local_row, InI_v , InV_v, NumL);
-
-      InV[NumL] = DV(i); // Put in diagonal
-      InI[NumL] = local_row;
-
-      nonconst_local_inds_host_view_type InI_sub(InI.data()+NumL+1,MaxNumEntries-NumL-1);
-      nonconst_values_host_view_type     InV_sub(reinterpret_cast<IST*>(InV.data())+NumL+1,MaxNumEntries-NumL-1);
-  
-      U_->getLocalRowCopy (local_row, InI_sub,InV_sub, NumU);
-      NumIn = NumL+NumU+1;
-
-      // Set column flags
-      for (size_t j = 0; j < NumIn; ++j) {
-        colflag[InI[j]] = j;
-      }
-
-      scalar_type diagmod = STS::zero (); // Off-diagonal accumulator
-
-      for (size_t jj = 0; jj < NumL; ++jj) {
-        local_ordinal_type j = InI[jj];
-        IST multiplier = InV[jj]; // current_mults++;
-        
-        InV[jj] *= static_cast<scalar_type>(DV(j));
-        
-        U_->getLocalRowView(j, UUI, UUV); // View of row above
-        NumUU = UUI.size();
-        
-        if (RelaxValue_ == STM::zero ()) {
-          for (size_t k = 0; k < NumUU; ++k) {
-            const int kk = colflag[UUI[k]];
-            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-            // colflag above using size_t (which is generally unsigned),
-            // but now we're querying it using int (which is signed).
-            if (kk > -1) {
-              InV[kk] -= static_cast<scalar_type>(multiplier * UUV[k]);
-            }
-          }
-
-        }
-        else {
-          for (size_t k = 0; k < NumUU; ++k) {
-            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-            // colflag above using size_t (which is generally unsigned),
-            // but now we're querying it using int (which is signed).
-            const int kk = colflag[UUI[k]];
-            if (kk > -1) {
-              InV[kk] -= static_cast<scalar_type>(multiplier*UUV[k]);
-            }
-            else {
-              diagmod -= static_cast<scalar_type>(multiplier*UUV[k]);
-            }
-          }
-        }
-      }
-
-      if (NumL) {
-        // Replace current row of L
-        L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
-      }
-
-      DV(i) = InV[NumL]; // Extract Diagonal value
-
-      if (RelaxValue_ != STM::zero ()) {
-        DV(i) += RelaxValue_*diagmod; // Add off diagonal modifications
-      }
-
-      if (STS::magnitude (DV(i)) > STS::magnitude (MaxDiagonalValue)) {
-        if (STS::real (DV(i)) < STM::zero ()) {
-          DV(i) = -MinDiagonalValue;
-        }
-        else {
-          DV(i) = MinDiagonalValue;
-        }
-      }
-      else {
-        DV(i) = static_cast<impl_scalar_type>(STS::one ()) / DV(i); // Invert diagonal value
-      }
-
-      for (size_t j = 0; j < NumU; ++j) {
-        InV[NumL+1+j] *= static_cast<scalar_type>(DV(i)); // Scale U by inverse of diagonal
-      }
-
-      if (NumU) {
-        // Replace current row of L and U        
-        U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
-      }
-
-      // Reset column flags
-      for (size_t j = 0; j < NumIn; ++j) {
-        colflag[InI[j]] = -1;
-      }
-    }
-
-    // The domain of L and the range of U are exactly their own row maps
-    // (there is no communication).  The domain of U and the range of L
-    // must be the same as those of the original matrix, However if the
-    // original matrix is a VbrMatrix, these two latter maps are
-    // translation from a block map to a point map.
-    // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
-    // always one-to-one?
-    L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
-    U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
-
-    // If L_solver_ or U_solver store modified factors internally, we need to reset those
-    L_solver_->setMatrix (L_);
-    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
-    U_solver_->setMatrix (U_);
-    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+    compute_serial();
   }
   else {
-    {//Make sure values in A is picked up even in case of pattern reuse
-      RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(A_local_);
-      if(A_local_crs.is_null()) {
-        local_ordinal_type numRows = A_local_->getLocalNumRows();
-        Array<size_t> entriesPerRow(numRows);
-        for(local_ordinal_type i = 0; i < numRows; i++) {
-          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
-        }
-        RCP<crs_matrix_type> A_local_crs_nc =
-          rcp (new crs_matrix_type (A_local_->getRowMap (),
-                                    A_local_->getColMap (),
-                                    entriesPerRow()));
-        // copy entries into A_local_crs
-        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
-        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
-        for(local_ordinal_type i = 0; i < numRows; i++) {
-          size_t numEntries = 0;
-          A_local_->getLocalRowCopy(i, indices, values, numEntries);
-          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
-        }
-        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
-        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+    //Make sure values in A is picked up even in case of pattern reuse
+    if(!A_local_crs_nc_.is_null()) {
+      A_local_crs_nc_->resumeFill();
+      local_ordinal_type numRows = A_local_->getLocalNumRows();
+      Array<size_t> entriesPerRow(numRows);
+      for(local_ordinal_type i = 0; i < numRows; i++) {
+        entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
       }
-      auto lclMtx = A_local_crs->getLocalMatrixDevice();
-      if (!isKokkosKernelsStream_) {
-        A_local_rowmap_  = lclMtx.graph.row_map;
-        A_local_entries_ = lclMtx.graph.entries;
-        A_local_values_  = lclMtx.values;
+      // copy entries into A_local_crs
+      nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+      nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
+      for(local_ordinal_type i = 0; i < numRows; i++) {
+        size_t numEntries = 0;
+        A_local_->getLocalRowCopy(i, indices, values, numEntries);
+        A_local_crs_nc_->replaceLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
       }
-      else {
-        KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
-        A_local_diagblks_rowmap_v_  = std::vector<lno_row_view_t>(num_streams_);
-        A_local_diagblks_entries_v_ = std::vector<lno_nonzero_view_t>(num_streams_);
-        A_local_diagblks_values_v_  = std::vector<scalar_nonzero_view_t>(num_streams_);
-        for(int i = 0; i < num_streams_; i++) {
-          A_local_diagblks_rowmap_v_[i]  = A_local_diagblks[i].graph.row_map;
-          A_local_diagblks_entries_v_[i] = A_local_diagblks[i].graph.entries;
-          A_local_diagblks_values_v_[i]  = A_local_diagblks[i].values;
-        }
-      }
+      A_local_crs_nc_->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
     }
 
     if (!isKokkosKernelsStream_) {
-      L_->resumeFill ();
-      U_->resumeFill ();
-
-      if (L_->isStaticGraph () || L_->isLocallyIndexed ()) {
-        L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-        U_->setAllToScalar (STS::zero ());
-      }
+      compute_kkspiluk();
     }
     else {
-      for(int i = 0; i < num_streams_; i++) {
-        L_v_[i]->resumeFill ();
-        U_v_[i]->resumeFill ();
-	    
-        if (L_v_[i]->isStaticGraph () || L_v_[i]->isLocallyIndexed ()) {
-          L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-          U_v_[i]->setAllToScalar (STS::zero ());
-        }
-      }
+      compute_kkspiluk_stream();
     }
-
-    using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
-
-    if (!isKokkosKernelsStream_) {
-      auto lclL = L_->getLocalMatrixDevice();
-      row_map_type L_rowmap  = lclL.graph.row_map;
-      auto L_entries = lclL.graph.entries;
-      auto L_values  = lclL.values;
-
-      auto lclU = U_->getLocalMatrixDevice();
-      row_map_type U_rowmap  = lclU.graph.row_map;
-      auto U_entries = lclU.graph.entries;
-      auto U_values  = lclU.values;
-
-      KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
-                                                  A_local_rowmap_, A_local_entries_, A_local_values_, 
-                                                  L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
-
-      L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
-      U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
-
-      L_solver_->setMatrix (L_);
-      U_solver_->setMatrix (U_);
-	}
-    else {
-      std::vector<lno_row_view_t>        L_rowmap_v(num_streams_);
-      std::vector<lno_nonzero_view_t>    L_entries_v(num_streams_);
-      std::vector<scalar_nonzero_view_t> L_values_v(num_streams_);
-      std::vector<lno_row_view_t>        U_rowmap_v(num_streams_);
-      std::vector<lno_nonzero_view_t>    U_entries_v(num_streams_);
-      std::vector<scalar_nonzero_view_t> U_values_v(num_streams_);
-      std::vector<kk_handle_type *>      KernelHandle_rawptr_v_(num_streams_);
-      for(int i = 0; i < num_streams_; i++) {
-        auto lclL = L_v_[i]->getLocalMatrixDevice();
-        L_rowmap_v[i]  = lclL.graph.row_map;
-        L_entries_v[i] = lclL.graph.entries;
-        L_values_v[i]  = lclL.values;
-	  
-        auto lclU = U_v_[i]->getLocalMatrixDevice();
-        U_rowmap_v[i]  = lclU.graph.row_map;
-        U_entries_v[i] = lclU.graph.entries;
-        U_values_v[i]  = lclU.values;
-        KernelHandle_rawptr_v_[i] = KernelHandle_v_[i].getRawPtr();
-      }
-      KokkosSparse::Experimental::spiluk_numeric_streams( exec_space_instances_, KernelHandle_rawptr_v_, LevelOfFill_,
-                                                          A_local_diagblks_rowmap_v_, A_local_diagblks_entries_v_, A_local_diagblks_values_v_,
-                                                          L_rowmap_v, L_entries_v, L_values_v,
-                                                          U_rowmap_v, U_entries_v, U_values_v );
-      for(int i = 0; i < num_streams_; i++) {
-        L_v_[i]->fillComplete ();
-        U_v_[i]->fillComplete ();
-      }
-
-      L_solver_->setMatrices (L_v_);
-      U_solver_->setMatrices (U_v_);
-    }
-
-    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
-    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
   }
 
   isComputed_ = true;
@@ -1148,6 +1167,15 @@ void RILUK<MatrixType>::compute ()
   computeTime_ += (timer.wallTime() - startTime);
 }
 
+namespace Impl {
+template <typename MV, typename Map>
+void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const size_t numVectors, bool initialize)
+{
+  if(!mv_ptr || mv_ptr->getNumVectors() != numVectors) {
+    mv_ptr.reset(new MV(map, numVectors, initialize));
+  }
+}
+}
 
 template<class MatrixType>
 void
@@ -1181,8 +1209,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "fixed.  There is a FIXME in this file about this very issue.");
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    const magnitude_type D_nrm1 = D_->norm1 ();
-    TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
+    if (!isKokkosKernelsStream_) {
+      const magnitude_type D_nrm1 = D_->norm1 ();
+      TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
+    }
     Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
     X.norm1 (norms ());
     bool good = true;
@@ -1204,71 +1234,129 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-        //NOTE (Nov-15-2022):
-        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
-        //since cusparseSpSV_solve() does not support in-place computation
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-
-        // Start by solving L Y_tmp = X for Y_tmp.
-        L_solver_->apply (X, Y_tmp, mode);
-
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
-          // write "solve D Y = Y for Y."
-          Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+      if (isKokkosKernelsSpiluk_ && isKokkosKernelsStream_ && hasStreamReordered_) {
+        Impl::resetMultiVecIfNeeded(reordered_x_, X.getMap(), X.getNumVectors(), false);
+        Impl::resetMultiVecIfNeeded(reordered_y_, Y.getMap(), Y.getNumVectors(), false);
+        Kokkos::fence();
+        for (size_t j = 0; j < X.getNumVectors(); j++) {
+          auto X_j = X.getVector(j);
+          auto ReorderedX_j = reordered_x_->getVectorNonConst(j);
+          auto X_lcl = X_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto ReorderedX_lcl = ReorderedX_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
+          local_ordinal_type stream_begin = 0;
+          local_ordinal_type stream_end;
+          for(int i = 0; i < num_streams_; i++) {
+            auto perm_i = perm_v_[i];
+            stream_end = stream_begin + perm_i.extent(0);
+            auto X_lcl_sub = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            auto ReorderedX_lcl_sub = Kokkos::subview (ReorderedX_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(exec_space_instances_[i], 0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+              ReorderedX_lcl_sub(perm_i(ii)) = X_lcl_sub(ii);
+            });
+            stream_begin = stream_end;
+          }
+        }
+        Kokkos::fence();
+        if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
+          // Solve L Y = X for Y.
+          L_solver_->apply (*reordered_x_, Y, mode);
+          // Solve U Y = Y for Y.
+          U_solver_->apply (Y, *reordered_y_, mode);
+        }
+        else { // Solve U^P (L^P Y) = X for Y (where P is * or T).
+          // Solve U^P Y = X for Y.
+          U_solver_->apply (*reordered_x_, Y, mode);
+          // Solve L^P Y = Y for Y.
+          L_solver_->apply (Y, *reordered_y_, mode);
         }
 
-        U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
-#else
-        // Start by solving L Y = X for Y.
-        L_solver_->apply (X, Y, mode);
-
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
-          // write "solve D Y = Y for Y."
-          Y.elementWiseMultiply (one, *D_, Y, zero);
+        for (size_t j = 0; j < Y.getNumVectors(); j++) {
+          auto Y_j = Y.getVectorNonConst(j);
+          auto ReorderedY_j = reordered_y_->getVector(j);
+          auto Y_lcl = Y_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
+          auto ReorderedY_lcl = ReorderedY_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          local_ordinal_type stream_begin = 0;
+          local_ordinal_type stream_end;
+          for(int i = 0; i < num_streams_; i++) {
+            auto perm_i = perm_v_[i];
+            stream_end = stream_begin + perm_i.extent(0);
+            auto Y_lcl_sub = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            auto ReorderedY_lcl_sub = Kokkos::subview (ReorderedY_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(exec_space_instances_[i], 0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+              Y_lcl_sub(ii) = ReorderedY_lcl_sub(perm_i(ii));
+            });
+            stream_begin = stream_end;
+          }
         }
-
-        U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
-#endif
+        Kokkos::fence();
       }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).          
+      else {
+        if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-        //NOTE (Nov-15-2022):
-        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
-        //since cusparseSpSV_solve() does not support in-place computation
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          //NOTE (Nov-15-2022):
+          //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+          //since cusparseSpSV_solve() does not support in-place computation
+          Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
 
-        // Start by solving U^P Y_tmp = X for Y_tmp.
-        U_solver_->apply (X, Y_tmp, mode);
+          // Start by solving L Y_tmp = X for Y_tmp.
+          L_solver_->apply (X, *Y_tmp_, mode);
 
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D^P Y = Y.
-          //
-          // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
-          // need to do an elementwise multiply with the conjugate of
-          // D_, not just with D_ itself.
-          Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
-	    }
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+            // write "solve D Y = Y for Y."
+            Y_tmp_->elementWiseMultiply (one, *D_, *Y_tmp_, zero);
+          }
 
-        L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+          U_solver_->apply (*Y_tmp_, Y, mode); // Solve U Y = Y_tmp.
 #else
-        // Start by solving U^P Y = X for Y.
-        U_solver_->apply (X, Y, mode);
+          // Start by solving L Y = X for Y.
+          L_solver_->apply (X, Y, mode);
 
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D^P Y = Y.
-          //
-          // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
-          // need to do an elementwise multiply with the conjugate of
-          // D_, not just with D_ itself.
-          Y.elementWiseMultiply (one, *D_, Y, zero);
-	    }
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+            // write "solve D Y = Y for Y."
+            Y.elementWiseMultiply (one, *D_, Y, zero);
+          }
 
-        L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+          U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
 #endif
+        }
+        else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+          //NOTE (Nov-15-2022):
+          //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+          //since cusparseSpSV_solve() does not support in-place computation
+          Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
+
+          // Start by solving U^P Y_tmp = X for Y_tmp.
+          U_solver_->apply (X, *Y_tmp_, mode);
+
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D^P Y = Y.
+            //
+            // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+            // need to do an elementwise multiply with the conjugate of
+            // D_, not just with D_ itself.
+            Y_tmp_->elementWiseMultiply (one, *D_, *Y_tmp_, zero);
+	      }
+
+          L_solver_->apply (*Y_tmp_, Y, mode); // Solve L^P Y = Y_tmp.
+#else
+          // Start by solving U^P Y = X for Y.
+          U_solver_->apply (X, Y, mode);
+
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D^P Y = Y.
+            //
+            // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+            // need to do an elementwise multiply with the conjugate of
+            // D_, not just with D_ itself.
+            Y.elementWiseMultiply (one, *D_, Y, zero);
+	      }
+
+          L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+#endif
+        }
       }
     }
     else { // alpha != 1 or beta != 0
@@ -1282,9 +1370,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Y.scale (beta);
         }
       } else { // alpha != zero
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-        apply (X, Y_tmp, mode);
-        Y.update (alpha, Y_tmp, beta);
+        Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
+        apply (X, *Y_tmp_, mode);
+        Y.update (alpha, *Y_tmp_, beta);
       }
     }
   }//end timing
@@ -1357,8 +1445,8 @@ std::string RILUK<MatrixType>::description () const
   os << "Level-of-fill: " << getLevelOfFill() << ", ";
 
  if(isKokkosKernelsSpiluk_) os<<"KK-SPILUK, ";
- if(isKokkosKernelsStream_) os<<"KK-Stream, ";	
-    
+ if(isKokkosKernelsStream_) os<<"KK-Stream, ";
+
   if (A_.is_null ()) {
     os << "Matrix: null";
   }

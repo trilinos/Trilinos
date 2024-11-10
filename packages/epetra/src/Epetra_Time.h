@@ -44,6 +44,14 @@
 #ifndef EPETRA_TIME_H
 #define EPETRA_TIME_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 //! Epetra_Time:  The Epetra Timing Class.
 /*! The Epetra_Time class is a wrapper that encapsulates the general
   information needed getting timing information.  Currently it return

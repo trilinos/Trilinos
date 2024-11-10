@@ -43,6 +43,14 @@
 
 #ifndef EPETRA_MPIDISTRIBUTOR_H
 #define EPETRA_MPIDISTRIBUTOR_H
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
 #include "Epetra_Object.h"
 #include "Epetra_Distributor.h"
 class Epetra_MpiComm;

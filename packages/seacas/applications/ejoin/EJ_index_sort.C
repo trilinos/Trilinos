@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,7 +6,7 @@
 /*!
  * The following 'indexed qsort' routine is modified from Sedgewicks
  * algorithm It selects the pivot based on the median of the left,
- * right, and center values to try to avoid degenerate cases ocurring
+ * right, and center values to try to avoid degenerate cases occurring
  * when a single value is chosen.  It performs a quicksort on
  * intervals down to the EX_QSORT_CUTOFF size and then performs a final
  * insertion sort on the almost sorted final array.  Based on data in
@@ -89,7 +89,7 @@ namespace {
 
     size_t ndx = 0;
 
-    using TT = typename std::remove_cv<T>::type;
+    using TT = typename std::remove_cv_t<T>;
     TT small = v[iv[0]];
     for (size_t i = 1; i < N; i++) {
       if (v[iv[i]] < small) {
@@ -110,7 +110,7 @@ namespace {
     }
   }
 
-  template <typename T, typename INT> void ex__iqsort(T *v, INT iv[], size_t N)
+  template <typename T, typename INT> void exi_iqsort(T *v, INT iv[], size_t N)
   {
     if (N <= 1) {
       return;
@@ -138,14 +138,14 @@ void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, i
   for (size_t i = axis; i < xyz.size(); i += 3) {
     comp[j++] = xyz[i];
   }
-  ex__iqsort(comp.data(), index.data(), index.size());
+  exi_iqsort(Data(comp), Data(index), index.size());
 }
 
 template <typename INT> void index_sort(const std::vector<INT> &ids, std::vector<INT> &index)
 {
   index.resize(ids.size());
   std::iota(index.begin(), index.end(), (INT)0);
-  ex__iqsort(ids.data(), index.data(), index.size());
+  exi_iqsort(Data(ids), Data(index), index.size());
 }
 
 template void index_coord_sort(const std::vector<double> &xyz, std::vector<int> &index, int axis);

@@ -10,7 +10,7 @@ SET(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
-SET(KokkosKernels_VERSION_MINOR 2)
+SET(KokkosKernels_VERSION_MINOR 4)
 SET(KokkosKernels_VERSION_PATCH 1)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
@@ -127,13 +127,22 @@ ELSE()
   IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
     # This is a standalone build
     FIND_PACKAGE(Kokkos REQUIRED)
-    IF((${Kokkos_VERSION} VERSION_EQUAL "4.1.00") OR (${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.2.00"))
+    IF(Kokkos_COMPILE_LANGUAGE)
+      ENABLE_LANGUAGE(${Kokkos_COMPILE_LANGUAGE})
+      IF(Kokkos_COMPILE_LANGUAGE STREQUAL CUDA)
+        SET(CMAKE_CUDA_ARCHITECTURES ${Kokkos_CUDA_ARCHITECTURES})
+      ENDIF()
+      IF(Kokkos_COMPILE_LANGUAGE STREQUAL HIP)
+        SET(CMAKE_HIP_ARCHITECTURES ${Kokkos_HIP_ARCHITECTURES})
+      ENDIF()
+    ENDIF()
+    IF(${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.3.01")
       MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
-      IF((${Kokkos_VERSION} VERSION_GREATER "4.2.99"))
+      IF((${Kokkos_VERSION} VERSION_GREATER "4.4.99"))
         MESSAGE(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       ENDIF()
     ELSE()
-      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires 4.1.00, 4.2.00, 4.2.01 or develop")
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.3.01 or greater (found ${Kokkos_VERSION})")
     ENDIF()
   ENDIF()
 
@@ -156,8 +165,15 @@ ELSE()
   KOKKOSKERNELS_ADD_OPTION_AND_DEFINE(
     LINALG_OPT_LEVEL
     KOKKOSLINALG_OPT_LEVEL
-    "Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems. Default: 1"
+    "DEPRECATED. Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems. Default: 1"
     "1")
+
+  if (KokkosKernels_LINALG_OPT_LEVEL AND NOT KokkosKernels_LINALG_OPT_LEVEL STREQUAL "1")
+   message(WARNING "KokkosKernels_LINALG_OPT_LEVEL is deprecated!")
+ endif()
+  if(KokkosKernels_KOKKOSLINALG_OPT_LEVEL AND NOT KokkosKernels_KOKKOSLINALG_OPT_LEVEL STREQUAL "1")
+    message(WARNING "KokkosKernels_KOKKOSLINALG_OPT_LEVEL is deprecated!")
+  endif()
 
   # Enable experimental features of KokkosKernels if set at configure
   # time. Default is no.
@@ -375,8 +391,10 @@ ELSE()
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MKL)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUBLAS)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUSPARSE)
+  KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUSOLVER)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCBLAS)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCSPARSE)
+  KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCSOLVER)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC METIS)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ARMPL)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)
@@ -425,7 +443,7 @@ ELSE()
   IF (KOKKOSKERNELS_ALL_COMPONENTS_ENABLED)
     IF (KokkosKernels_ENABLE_PERFTESTS)
       MESSAGE(STATUS "Enabling perf tests.")
-      KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
+      add_subdirectory(perf_test) # doesn't require KokkosKernels_ENABLE_TESTS=ON
     ENDIF ()
     IF (KokkosKernels_ENABLE_EXAMPLES)
       MESSAGE(STATUS "Enabling examples.")

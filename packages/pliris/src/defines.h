@@ -44,6 +44,12 @@
 #ifndef __DEFINESH__
 #define __DEFINESH__
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 
 #undef CBLAS
 #undef DEBUG

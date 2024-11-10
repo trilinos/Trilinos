@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -22,88 +22,6 @@
    attributes which are currently supported in Exodus.
 */
 
-static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
-{
-  const char *entryptr = NULL;
-  char        errmsg[MAX_ERR_LENGTH];
-
-  int id_ndx = 0;
-  int status = 0;
-  int varid  = 0;
-
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  if (obj_type == EX_GLOBAL) {
-    return NC_GLOBAL;
-  }
-
-  if (obj_type == EX_ASSEMBLY) {
-    if ((status = nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(id), &varid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to locate %s id  %" PRId64 " in id array in file id %d",
-               ex_name_of_object(obj_type), id, exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
-      return EX_FATAL;
-    }
-    return varid;
-  }
-
-  if (obj_type == EX_BLOB) {
-    if ((status = nc_inq_varid(exoid, VAR_ENTITY_BLOB(id), &varid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to locate %s id  %" PRId64 " in id array in file id %d",
-               ex_name_of_object(obj_type), id, exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
-      return EX_FATAL;
-    }
-    return varid;
-  }
-
-  /* Everything else ... */
-  /* First, locate index of this objects id `obj_type` id array */
-  id_ndx = ex__id_lkup(exoid, obj_type, id);
-  if (id_ndx <= 0) {
-    ex_get_err(NULL, NULL, &status);
-    if (status != 0) {
-      if (status == EX_NULLENTITY) { /* NULL object?    */
-        return EX_NOERR;
-      }
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to locate %s id  %" PRId64 " in id array in file id %d",
-               ex_name_of_object(obj_type), id, exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
-      return EX_FATAL;
-    }
-  }
-
-  switch (obj_type) {
-  case EX_NODE_SET: entryptr = VAR_NODE_NS(id_ndx); break;
-  case EX_EDGE_SET: entryptr = VAR_EDGE_ES(id_ndx); break;
-  case EX_FACE_SET: entryptr = VAR_FACE_FS(id_ndx); break;
-  case EX_SIDE_SET: entryptr = VAR_ELEM_SS(id_ndx); break;
-  case EX_ELEM_SET: entryptr = VAR_ELEM_ELS(id_ndx); break;
-  case EX_EDGE_BLOCK: entryptr = VAR_EBCONN(id_ndx); break;
-  case EX_FACE_BLOCK: entryptr = VAR_FBCONN(id_ndx); break;
-  case EX_ELEM_BLOCK: entryptr = VAR_CONN(id_ndx); break;
-  default:
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported in call to %s", obj_type,
-             __func__);
-    ex_err(__func__, errmsg, EX_BADPARAM);
-    return EX_FATAL;
-  }
-
-  if ((status = nc_inq_varid(exoid, entryptr, &varid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate entity list array for %s %" PRId64 " in file id %d",
-             ex_name_of_object(obj_type), id, exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-    return EX_FATAL;
-  }
-  return varid;
-}
-
 /* define and output a double attribute */
 int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
                             const char *atr_name, int num_values, const double *values)
@@ -113,14 +31,14 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
   int  varid;
 
   EX_FUNC_ENTER();
-  varid = ex__get_varid(exoid, obj_type, id);
+  varid = exi_get_varid(exoid, obj_type, id);
   if (varid <= 0 && obj_type != EX_GLOBAL) {
-    /* Error message handled in ex__get_varid */
+    /* Error message handled in exi_get_varid */
     EX_FUNC_LEAVE(varid);
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -136,7 +54,7 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -146,7 +64,7 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }
 
@@ -159,14 +77,14 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
   int  varid;
 
   EX_FUNC_ENTER();
-  varid = ex__get_varid(exoid, obj_type, id);
+  varid = exi_get_varid(exoid, obj_type, id);
   if (varid <= 0 && obj_type != EX_GLOBAL) {
-    /* Error message handled in ex__get_varid */
+    /* Error message handled in exi_get_varid */
     EX_FUNC_LEAVE(varid);
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -188,7 +106,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -198,7 +116,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }
 
@@ -212,14 +130,14 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
 
   EX_FUNC_ENTER();
 
-  varid = ex__get_varid(exoid, obj_type, id);
+  varid = exi_get_varid(exoid, obj_type, id);
   if (varid <= 0 && obj_type != EX_GLOBAL) {
-    /* Error message handled in ex__get_varid */
+    /* Error message handled in exi_get_varid */
     EX_FUNC_LEAVE(varid);
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -234,7 +152,7 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -244,7 +162,7 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }
 

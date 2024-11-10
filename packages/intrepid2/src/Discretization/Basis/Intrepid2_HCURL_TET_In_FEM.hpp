@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HCURL_TET_In_FEM.hpp
@@ -59,14 +26,14 @@
 namespace Intrepid2 {
 
 /** \class  Intrepid2::Basis_HCURL_TET_In_FEM
-    \brief  Implementation of the default H(curl)-compatible Nedelec (first kind) 
-            basis of arbitrary degree  on Tetrahedron cell.  
+    \brief  Implementation of the default H(curl)-compatible Nedelec (first kind)
+            basis of arbitrary degree  on Tetrahedron cell.
 
             The lowest order space
             is indexted with 1 rather than 0.
             Implements nodal basis of degree n (n>=1) on the reference Tetrahedron cell. The basis has
             cardinality n*(n+2)*(n+3)/2 and spans an INCOMPLETE
-            polynomial space of degree n. Basis functions are dual 
+            polynomial space of degree n. Basis functions are dual
             to a unisolvent set of degrees-of-freedom (DoF) defined by
 
             \li The tangential component of the vector field at n
@@ -136,7 +103,9 @@ public:
   typename inputPointValueType,  class ...inputPointProperties,
   typename vinvValueType,        class ...vinvProperties>
   static void
-  getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+  getValues(
+      const typename DeviceType::execution_space& space,
+            Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
       const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
       const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
       const EOperator operatorType);
@@ -204,30 +173,34 @@ template<typename DeviceType = void,
     typename pointValueType = double>
 class Basis_HCURL_TET_In_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
-    public:
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+  public:
+  using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+  using typename BasisBase::ExecutionSpace;
+
+  using typename BasisBase::OrdinalTypeArray1DHost;
+  using typename BasisBase::OrdinalTypeArray2DHost;
+  using typename BasisBase::OrdinalTypeArray3DHost;
+
+  using typename BasisBase::OutputViewType;
+  using typename BasisBase::PointViewType ;
+  using typename BasisBase::ScalarViewType;
 
   /** \brief  Constructor.
    */
   Basis_HCURL_TET_In_FEM(const ordinal_type order,
       const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-
-  using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
   typedef typename Basis<DeviceType,outputValueType,pointValueType>::scalarType  scalarType;
 
-  using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+  using BasisBase::getValues;
 
   virtual
   void
-  getValues(       OutputViewType outputValues,
-      const PointViewType  inputPoints,
-      const EOperator operatorType = OPERATOR_VALUE) const override {
+  getValues(
+      const ExecutionSpace& space,
+            OutputViewType  outputValues,
+      const PointViewType   inputPoints,
+      const EOperator       operatorType = OPERATOR_VALUE) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HCURL_Args(outputValues,
         inputPoints,
@@ -237,18 +210,36 @@ class Basis_HCURL_TET_In_FEM
 #endif
     constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
     Impl::Basis_HCURL_TET_In_FEM::
-    getValues<DeviceType,numPtsPerEval>( outputValues,
-        inputPoints,
-        this->coeffs_,
-        operatorType);
+    getValues<DeviceType,numPtsPerEval>(space,
+                                        outputValues,
+                                        inputPoints,
+                                        this->coeffs_,
+                                        operatorType);
   }
 
-  virtual
-  void
-  getDofCoords( ScalarViewType dofCoords ) const override {
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
+                              ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPointsconst,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
+    virtual
+    void
+    getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoords) != 2, std::invalid_argument,
         ">>> ERROR: (Intrepid2::Basis_HCURL_TET_In_FEM::getDofCoords) rank = 2 required for dofCoords array");
     // Verify 0th dimension of output array.
     INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,
@@ -259,13 +250,13 @@ class Basis_HCURL_TET_In_FEM
 #endif
     Kokkos::deep_copy(dofCoords, this->dofCoords_);
   }
-  
+
   virtual
   void
   getDofCoeffs( ScalarViewType dofCoeffs ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoeffs) != 2, std::invalid_argument,
         ">>> ERROR: (Intrepid2::Basis_HCURL_TET_In_FEM::getDofCoeffs) rank = 2 required for dofCoeffs array");
     // Verify 0th dimension of output array.
     INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
@@ -321,7 +312,7 @@ class Basis_HCURL_TET_In_FEM
   BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
   getHostBasis() const override{
     return Teuchos::rcp(new Basis_HCURL_TET_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_, pointType_));
-  }  
+  }
 
     private:
 

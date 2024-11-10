@@ -34,7 +34,6 @@ TEST(PMESH, a)
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::fill_mesh("cube.exo.1.0", *bulk);
 
   size_t numElements = stk::mesh::count_selected_entities(meta.locally_owned_part(), bulk->buckets(stk::topology::ELEM_RANK));

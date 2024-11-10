@@ -42,6 +42,12 @@
 #ifndef EPETRA_EXT_MODEL_EVALUATOR_HPP
 #define EPETRA_EXT_MODEL_EVALUATOR_HPP
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include "EpetraExt_PolynomialVectorTraits.h"
 #include "Teuchos_RCP.hpp"

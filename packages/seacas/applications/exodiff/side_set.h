@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -17,6 +17,8 @@ public:
   Side_Set(int file_id, size_t id);
   Side_Set(int file_id, size_t id, size_t ns, size_t ndf = 0);
   ~Side_Set() override;
+  Side_Set(const Side_Set &)                  = delete;
+  const Side_Set &operator=(const Side_Set &) = delete;
 
   void                apply_map(const std::vector<INT> &elmt_map);
   const INT          *Elements() const;
@@ -28,13 +30,10 @@ public:
   const double       *Distribution_Factors() const;
   void                Free_Distribution_Factors() const;
 
-  int    Check_State() const;
   size_t Distribution_Factor_Count() const { return num_dist_factors; }
 
 private:
-  Side_Set(const Side_Set &);                  // Not written.
-  const Side_Set &operator=(const Side_Set &); // Not written.
-
+  int  Check_State() const override;
   void load_sides(const std::vector<INT> &elmt_map) const;
   void load_df() const;
   void entity_load_params() override;

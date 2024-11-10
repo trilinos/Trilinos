@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 #ifndef NOX_TPETRA_1DFEM_FUNCTORS_HPP
 #define NOX_TPETRA_1DFEM_FUNCTORS_HPP
 
@@ -59,26 +67,26 @@ struct RowCountsFunctor
   void operator() (const LO localRow, std::size_t& curNumLocalEntries) const
   {
     // Add a diagonal matrix entry
-    Kokkos::atomic_increment(&counts_(localRow));
+    Kokkos::atomic_inc(&counts_(localRow));
     ++curNumLocalEntries;
     // Contribute a matrix entry to the previous row
     if (localRow > 0) {
-      Kokkos::atomic_increment(&counts_(localRow-1));
+      Kokkos::atomic_inc(&counts_(localRow-1));
       ++curNumLocalEntries;
     }
     // Contribute a matrix entry to the next row
     if (localRow < numMyNodes_-1) {
-      Kokkos::atomic_increment(&counts_(localRow+1));
+      Kokkos::atomic_inc(&counts_(localRow+1));
       ++curNumLocalEntries;
     }
     // MPI process to the left sends us an entry
     if ((myRank_ > 0) && (localRow == 0)) {
-      Kokkos::atomic_increment(&counts_(localRow));
+      Kokkos::atomic_inc(&counts_(localRow));
       ++curNumLocalEntries;
     }
     // MPI process to the right sends us an entry
     if ((myRank_ < numProcs_-1) && (localRow == numMyNodes_-1)) {
-      Kokkos::atomic_increment(&counts_(localRow));
+      Kokkos::atomic_inc(&counts_(localRow));
       ++curNumLocalEntries;
     }
   }

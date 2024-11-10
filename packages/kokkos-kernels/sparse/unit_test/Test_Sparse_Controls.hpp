@@ -46,8 +46,7 @@ void test_controls_il() {
     EXPECT_EQ(c.getParameter("key1"), "val1");
   }
   {
-    KokkosKernels::Experimental::Controls c(
-        {{"key1", "val1"}, {"key2", "val2"}});
+    KokkosKernels::Experimental::Controls c({{"key1", "val1"}, {"key2", "val2"}});
     EXPECT_EQ(c.isParameter("blah"), false);
     EXPECT_EQ(c.getParameter("blah"), "");
     EXPECT_EQ(c.getParameter("key1"), "val1");

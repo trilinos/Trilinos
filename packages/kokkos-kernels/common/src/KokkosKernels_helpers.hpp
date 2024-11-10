@@ -16,7 +16,7 @@
 #ifndef KOKKOSKERNELS_HELPERS_HPP_
 #define KOKKOSKERNELS_HELPERS_HPP_
 
-#include "KokkosKernels_config.h"  // KOKKOSKERNELS_INST_LAYOUTLEFT, KOKKOSKERNELS_INST_LAYOUTRIGHT
+#include "KokkosKernels_config.h"           // KOKKOSKERNELS_INST_LAYOUTLEFT, KOKKOSKERNELS_INST_LAYOUTRIGHT
 #include "KokkosKernels_default_types.hpp"  // default_layout
 
 #include <type_traits>
@@ -29,49 +29,43 @@ namespace Impl {
 // Used to reduce number of code instantiations.
 template <class ViewType, class PreferredLayoutType>
 struct GetUnifiedLayoutPreferring {
-  typedef typename std::conditional<
-      ((ViewType::rank == 1) && (!std::is_same<typename ViewType::array_layout,
-                                               Kokkos::LayoutStride>::value)) ||
-          ((ViewType::rank == 0)),
-      PreferredLayoutType, typename ViewType::array_layout>::type array_layout;
+  using array_layout =
+      typename std::conditional<((ViewType::rank == 1) &&
+                                 !std::is_same_v<typename ViewType::array_layout, Kokkos::LayoutStride>) ||
+                                    (ViewType::rank == 0),
+                                PreferredLayoutType, typename ViewType::array_layout>::type;
 };
 
 template <class ViewType>
 struct GetUnifiedLayout {
-  using array_layout =
-      typename GetUnifiedLayoutPreferring<ViewType,
-                                          default_layout>::array_layout;
+  using array_layout = typename GetUnifiedLayoutPreferring<ViewType, default_layout>::array_layout;
 };
 
-template <class T, class TX, bool do_const,
-          bool isView = Kokkos::is_view<T>::value>
+template <class T, class TX, bool do_const, bool isView = Kokkos::is_view<T>::value>
 struct GetUnifiedScalarViewType {
   typedef typename TX::non_const_value_type type;
 };
 
 template <class T, class TX>
 struct GetUnifiedScalarViewType<T, TX, false, true> {
-  typedef Kokkos::View<typename T::non_const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           T, typename TX::array_layout>::array_layout,
-                       typename T::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<
+      typename T::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<T, typename TX::array_layout>::array_layout,
+      typename T::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       type;
 };
 
 template <class T, class TX>
 struct GetUnifiedScalarViewType<T, TX, true, true> {
-  typedef Kokkos::View<typename T::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           T, typename TX::array_layout>::array_layout,
-                       typename T::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<
+      typename T::const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<T, typename TX::array_layout>::array_layout,
+      typename T::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       type;
 };
 
 template <class... Ts>
-struct are_integral : std::bool_constant<((std::is_integral_v<Ts> ||
-                                           std::is_enum_v<Ts>)&&...)> {};
+struct are_integral : std::bool_constant<((std::is_integral_v<Ts> || std::is_enum_v<Ts>)&&...)> {};
 
 template <class... Ts>
 inline constexpr bool are_integral_v = are_integral<Ts...>::value;

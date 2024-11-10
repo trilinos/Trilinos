@@ -1,14 +1,17 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Hex8.h>
+#include "Ioss_ElementVariableType.h" // for ElementVariableType
+#include "Ioss_Hex8.h"
 #include <cassert> // for assert
+#include <string>
+
+#include "Ioss_CodeTypes.h"       // for IntVector
+#include "Ioss_ElementTopology.h" // for ElementTopology
+#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -29,38 +32,33 @@ namespace Ioss {
 namespace {
   struct Constants
   {
-    static const int nnode     = 8;
-    static const int nedge     = 12;
-    static const int nedgenode = 2;
-    static const int nface     = 6;
-    static const int nfacenode = 4;
-    static const int nfaceedge = 4;
-    static int       edge_node_order[nedge][nedgenode];
-    static int       face_node_order[nface][nfacenode];
-    static int       face_edge_order[nface][nfaceedge];
-    static int       nodes_per_face[nface + 1];
-    static int       edges_per_face[nface + 1];
+    static constexpr int nnode     = 8;
+    static constexpr int nedge     = 12;
+    static constexpr int nedgenode = 2;
+    static constexpr int nface     = 6;
+    static constexpr int nfacenode = 4;
+    static constexpr int nfaceedge = 4;
+
+    // Edge numbers are zero-based [0..number_edges)
+    static constexpr int edge_node_order[nedge][nedgenode] = // [edge][edge_node]
+        {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
+         {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+
+    // Face numbers are zero-based [0..number_faces)
+    static constexpr int face_node_order[nface][nfacenode] = // [face][face_node]
+        {{0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {0, 4, 7, 3}, {0, 3, 2, 1}, {4, 5, 6, 7}};
+
+    static constexpr int face_edge_order[nface][nfaceedge] = // [face][face_edge]
+        {{0, 9, 4, 8}, {1, 10, 5, 9}, {2, 11, 6, 10}, {8, 7, 11, 3}, {3, 2, 1, 0}, {4, 5, 6, 7}};
+
+    // face 0 returns number of nodes for all faces if homogeneous
+    //        returns -1 if faces have differing topology
+    static constexpr int nodes_per_face[nface + 1] = {4, 4, 4, 4, 4, 4, 4};
+
+    // face 0 returns number of edges for all faces if homogeneous
+    //        returns -1 if faces have differing topology
+    static constexpr int edges_per_face[nface + 1] = {4, 4, 4, 4, 4, 4, 4};
   };
-
-  // Edge numbers are zero-based [0..number_edges)
-  int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-      {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
-       {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
-
-  // Face numbers are zero-based [0..number_faces)
-  int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-      {{0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {0, 4, 7, 3}, {0, 3, 2, 1}, {4, 5, 6, 7}};
-
-  int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-      {{0, 9, 4, 8}, {1, 10, 5, 9}, {2, 11, 6, 10}, {8, 7, 11, 3}, {3, 2, 1, 0}, {4, 5, 6, 7}};
-
-  // face 0 returns number of nodes for all faces if homogeneous
-  //        returns -1 if faces have differing topology
-  int Constants::nodes_per_face[nface + 1] = {4, 4, 4, 4, 4, 4, 4};
-
-  // face 0 returns number of edges for all faces if homogeneous
-  //        returns -1 if faces have differing topology
-  int Constants::edges_per_face[nface + 1] = {4, 4, 4, 4, 4, 4, 4};
 } // namespace
 
 void Ioss::Hex8::factory()

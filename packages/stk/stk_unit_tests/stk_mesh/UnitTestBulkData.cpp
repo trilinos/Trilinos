@@ -40,6 +40,7 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <algorithm>                    // for sort
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
@@ -104,8 +105,8 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::simple_fields::RingFixture;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
 
 //====================
 
@@ -183,7 +184,8 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
     }
   }
 
-  mesh.change_entity_owner(change);
+  const bool someEntitiesMoved = mesh.change_entity_owner(change);
+  ASSERT_TRUE(someEntitiesMoved);
 
   count_entities(select_owned, mesh, after_count);
 
@@ -303,7 +305,8 @@ TEST(BulkData, testChangeOwner_nodes)
 
   std::vector<EntityProc> change;
 
-  bulk.change_entity_owner(change);
+  const bool anyEntitiesMoved = bulk.change_entity_owner(change);
+  ASSERT_FALSE(anyEntitiesMoved);
 
   for(unsigned i = 0; i < id_total; ++i)
   {
@@ -994,7 +997,6 @@ TEST(BulkData, testChangeOwner_box)
 
   const int spatial_dimension = 3;
   MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
 
   meta.commit();
 
@@ -1606,7 +1608,6 @@ TEST(BulkData, testFamilyTreeGhosting)
   builder.set_entity_rank_names(entity_rank_names);
   std::shared_ptr<BulkData> bulkPtr = builder.create();
   MetaData& meta_data = bulkPtr->mesh_meta_data();
-  meta_data.use_simple_fields();
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
   Part &elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
   meta_data.commit();
@@ -1933,7 +1934,8 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     // Create local version of side on each proc
     Entity side = mesh.declare_element_side(elem, local_side_ordinal, stk::mesh::ConstPartVector{&side_part});
 
-    stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_ordinal), &side_nodes[0], local_side_ordinal);
+    stk::mesh::Permutation perm1 = stk::mesh::find_permutation(mesh,
+        elem_top, nodes.data(), elem_top.side_topology(local_side_ordinal), side_nodes.data(), local_side_ordinal);
     ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
     mesh.modification_end();
 
@@ -1965,7 +1967,8 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     }
     side = mesh.declare_element_side(elem, local_side_ordinal, stk::mesh::ConstPartVector{&side_part});
 
-    stk::mesh::Permutation perm2 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_ordinal), &side_nodes[0], local_side_ordinal);
+    stk::mesh::Permutation perm2 = stk::mesh::find_permutation(mesh,
+        elem_top, nodes.data(), elem_top.side_topology(local_side_ordinal), side_nodes.data(), local_side_ordinal);
     ASSERT_TRUE(perm2 != stk::mesh::Permutation::INVALID_PERMUTATION);
 
     mesh.modification_end();
@@ -2003,7 +2006,7 @@ TEST(BulkData, testParallelSideCreationWithoutAura)
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-class BulkDataWithHexes : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
+class BulkDataWithHexes : public stk::mesh::fixtures::TestHexFixture {};
 
 // Testing of field_data_footprint(.)
 TEST_F(BulkDataWithHexes, test_total_field_data_footprint )
@@ -2188,7 +2191,6 @@ TEST(BulkData, testFieldComm)
 
   const int spatial_dimension = 3;
   MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
 
   meta.commit();
 
@@ -2226,7 +2228,7 @@ TEST(BulkData, testFieldComm)
   // 2d, not so much
   if(p_size <= 4)
   {
-    stk::mesh::fixtures::simple_fields::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
+    stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     PressureFieldType& p_field = fixture.m_meta.declare_field<int>(stk::topology::NODE_RANK, "p");
     stk::mesh::put_field_on_mesh(p_field, fixture.m_meta.universal_part(), nullptr);
     fixture.m_meta.commit();
@@ -2301,7 +2303,7 @@ TEST(BulkData, testCommList)
   //------------------------------
   // test begin/end pair
   {
-    stk::mesh::fixtures::simple_fields::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
+    stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     fixture.m_meta.commit();
     fixture.generate_mesh();
     stk::mesh::BulkData & bulk = fixture.m_bulk_data;
@@ -2312,7 +2314,7 @@ TEST(BulkData, testCommList)
   //------------------------------
   // test begin/end pair with mesh mods
   {
-    stk::mesh::fixtures::simple_fields::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
+    stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     fixture.m_meta.commit();
     fixture.generate_mesh();
     stk::mesh::BulkData & bulk = fixture.m_bulk_data;
@@ -2432,7 +2434,6 @@ TEST(BulkData, get_ghost_data)
   if(psize == 3)
   { // Skip unless we're on 3 processors
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.use_simple_fields();
     const string generatedMeshSpecification = "generated:1x1x3";
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
@@ -2580,7 +2581,6 @@ TEST(DocTestBulkData, onlyTheOwnerCanChangeEntityParts)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x2";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -2627,7 +2627,6 @@ TEST(BulkData, onlyKeepTheOwnersParts)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x2";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -2704,7 +2703,6 @@ TEST(BulkData, newSharedNodeGetMergedPartsFromElements)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x2";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -2770,14 +2768,10 @@ TEST(BulkData, newSharedNodeGetMergedPartsFromElements)
 TEST(BulkData, mayCreateRelationsToNodesDifferently)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
-  int numProcs = stk::parallel_machine_size(communicator);
-  if(numProcs != 2)
-  {
-    return;
-  }
+  const int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs != 2) { GTEST_SKIP(); }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x2";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -2830,7 +2824,9 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
     {
       stkMeshBulkData.declare_relation(element1, filler_node, filler_rel_id);
     }
-  }EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+  }
+  EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+
   {
     stk::mesh::Bucket & nodeBucket = stkMeshBulkData.bucket(sharedNode0);
     EXPECT_TRUE( nodeBucket.member(partA));
@@ -2849,8 +2845,8 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
   {
     stk::mesh::RelationIdentifier node_rel_id = 1;
     stkMeshBulkData.declare_relation(element1, sharedNode1, node_rel_id);
-
-  }EXPECT_NO_THROW( stkMeshBulkData.modification_end());
+  }
+  stkMeshBulkData.modification_end();
 
   {
     stk::mesh::Bucket & nodeBucket = stkMeshBulkData.bucket(sharedNode1);
@@ -2913,7 +2909,6 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
   const int myRank = stk::parallel_machine_rank(communicator);
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   stk::mesh::PartVector pv = setupFixture(stkMeshIoBroker);
   stk::mesh::Part & partA = *pv[0];
   stk::mesh::Part & partB = *pv[1];
@@ -3100,17 +3095,15 @@ TEST(BulkData, ModificationEnd)
   {
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester *stkMeshBulkData = new stk::unit_test_util::BulkDataTester(stkMeshMetaData, communicator);
 
-    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x4");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x4");
 
     // STK IO module will be described in separate chapter.
     // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
     // The order of the following lines in {} are important
     {
       stk::io::StkMeshIoBroker exodusFileReader(communicator);
-      exodusFileReader.use_simple_fields();
 
       // Inform STK IO which STK Mesh objects to populate later
       exodusFileReader.set_bulk_data(*stkMeshBulkData);
@@ -3178,12 +3171,10 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
 
   const int spatialDim = 3;
   stk::mesh::MetaData stkMeshMetaData(spatialDim);
-  stkMeshMetaData.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x3");
+  std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x3");
   {
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
     exodusFileReader.set_bulk_data(mesh);
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     exodusFileReader.create_input_mesh();
@@ -3225,17 +3216,15 @@ TEST(BulkData, verify_closure_count_is_correct)
   {
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester *stkMeshBulkData = new stk::unit_test_util::BulkDataTester(stkMeshMetaData, communicator);
 
-    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x2");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x2");
 
     // STK IO module will be described in separate chapter.
     // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
     // The order of the following lines in {} are important
     {
       stk::io::StkMeshIoBroker exodusFileReader(communicator);
-      exodusFileReader.use_simple_fields();
 
       // Inform STK IO which STK Mesh objects to populate later
       exodusFileReader.set_bulk_data(*stkMeshBulkData);
@@ -3368,7 +3357,6 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta,communicator);
 
   stk::mesh::Part& element_part = meta.declare_part_with_topology("Beam2Part", stk::topology::BEAM_2);
@@ -3446,7 +3434,6 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_deletes)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta,communicator);
 
   bulk.modification_begin();
@@ -3486,7 +3473,6 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_3pro
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta,communicator);
 
   bulk.modification_begin();
@@ -3547,7 +3533,6 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_2pro
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta,communicator);
 
   bulk.modification_begin();
@@ -3594,7 +3579,6 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_adds_element)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta,communicator);
 
   stk::mesh::Part& element_part = meta.declare_part_with_topology("Beam2Part", stk::topology::BEAM_2);
@@ -3645,7 +3629,6 @@ TEST(BulkData, change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk( meta, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   std::vector<stk::mesh::Entity> elems;
@@ -3683,7 +3666,6 @@ TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh( meta, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest_no_ghost(mesh, meta);
@@ -3737,7 +3719,6 @@ TEST(BulkData, change_entity_owner_2Elem2ProcMove)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk( meta, pm);
 
   std::vector<stk::mesh::Entity> elems;
@@ -3775,7 +3756,6 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh( meta, pm);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest(mesh, meta);
@@ -3810,7 +3790,6 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveRight)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  meta_data.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -3853,7 +3832,6 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveLeft)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  meta_data.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -3908,7 +3886,6 @@ TEST(BulkData, change_entity_owner_4Elem4ProcEdge)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  meta_data.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -3980,7 +3957,6 @@ TEST(BulkData, change_entity_owner_8Elem4ProcMoveTop)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
 
   CEOUtils::fillMeshfor8Elem4ProcMoveTopAndTest(mesh, meta);
@@ -4029,7 +4005,6 @@ TEST(BulkData, change_entity_owner_4Elem4ProcRotate)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
   const int p_rank = mesh.parallel_rank();
 
@@ -4097,7 +4072,6 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
 
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
   const int p_rank = mesh.parallel_rank();
   CEOUtils::fillMeshfor3Elem4Proc1Edge3DAndTest(mesh, meta);
@@ -4135,7 +4109,6 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
 {
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::mesh::Part& elem_part = meta.declare_part_with_topology("beam2", stk::topology::BEAM_2);
   meta.commit();
 
@@ -4230,7 +4203,6 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
 {
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::SHELL_TRIANGLE_3);
   meta.commit();
 
@@ -4352,7 +4324,6 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
 void write_mesh(const std::string& filename, stk::mesh::BulkData& mesh)
 {
   stk::io::StkMeshIoBroker writer(mesh.parallel());
-  writer.use_simple_fields();
   writer.set_bulk_data(mesh);
   size_t output_handle = writer.create_output_mesh(filename, stk::io::WRITE_RESULTS);
   writer.write_output_mesh(output_handle);
@@ -4423,7 +4394,6 @@ TEST(BulkData, can_we_create_shared_nodes)
     {
       unsigned spatialDim = 3;
       stk::mesh::MetaData meta(spatialDim);
-      meta.use_simple_fields();
 
       stk::mesh::Selector all_nodes = meta.universal_part();
       typedef stk::mesh::Field<double> CoordFieldType;
@@ -5139,7 +5109,6 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 {
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::TRIANGLE_3_2D);
 
   meta.commit();
@@ -5658,7 +5627,6 @@ TEST(BulkData, generate_new_ids)
   int psize = stk::parallel_machine_size(communicator);
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   std::ostringstream os;
   os << "generated:10x10x" << psize;
   const std::string generatedMeshSpec = os.str();
@@ -5728,7 +5696,6 @@ TEST(BulkData, test_generate_new_entities)
   int psize = stk::parallel_machine_size(communicator);
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   std::ostringstream os;
   os << "generated:10x10x" << psize;
   const std::string generatedMeshSpec = os.str();
@@ -5799,7 +5766,6 @@ TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with
   if ( psize == 2 )
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.use_simple_fields();
     std::ostringstream os;
     os << "generated:2x2x2";
     const std::string generatedMeshSpec = os.str();
@@ -5847,7 +5813,6 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
   if (numProcs==2)
   {
     stk::mesh::MetaData meta(3);
-    meta.use_simple_fields();
     stk::unit_test_util::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
     const std::string generatedMeshSpec = "generated:1x1x2";
@@ -5880,7 +5845,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
     mesh.modification_begin();
 
-    stk::mesh::Entity side = stk::unit_test_util::simple_fields::declare_element_side_with_nodes(mesh, elem, nodes, 1+procId, meta.get_topology_root_part(stk::topology::QUAD_4));
+    stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(mesh, elem, nodes, 1+procId, meta.get_topology_root_part(stk::topology::QUAD_4));
 
     EXPECT_TRUE(mesh.is_valid(side));
 

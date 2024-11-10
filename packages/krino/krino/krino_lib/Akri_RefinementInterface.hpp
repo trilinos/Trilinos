@@ -11,10 +11,12 @@
 
 #include <Akri_FieldRef.hpp>
 #include "Akri_Refinement.hpp"
+#include "stk_util/diag/Timer.hpp"
 
 namespace stk { namespace mesh { class Entity; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace diag { class Timer; } }
 
 namespace krino {
 
@@ -61,12 +63,13 @@ public:
   virtual void update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const = 0;
   virtual unsigned get_num_children(const stk::mesh::Entity elem) const = 0;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const = 0;
-  virtual FieldRef get_marker_field() const = 0;
+  virtual FieldRef get_marker_field_and_sync_to_host() const = 0;
   virtual bool require_post_refinement_fixups() const = 0;
   virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const = 0;
 
   virtual bool do_refinement(const int debugLevel = 0) = 0;
-  virtual void do_uniform_refinement(const int numUniformRefinementLevels) = 0;
+  virtual bool do_uniform_refinement(const int numUniformRefinementLevels) = 0;
+  virtual void delete_parent_elements() = 0;
 };
 
 class KrinoRefinement : public RefinementInterface
@@ -74,6 +77,9 @@ class KrinoRefinement : public RefinementInterface
 public:
   static KrinoRefinement & get(const stk::mesh::MetaData & meta);
   static KrinoRefinement & create(stk::mesh::MetaData & meta);
+  static KrinoRefinement & create(stk::mesh::MetaData & meta, stk::diag::Timer & timer);
+  static KrinoRefinement & get_or_create(stk::mesh::MetaData & meta);
+  static KrinoRefinement & get_or_create(stk::mesh::MetaData & meta, stk::diag::Timer & timer);
   static bool is_created(const stk::mesh::MetaData & meta);
   static void register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta);
 
@@ -97,25 +103,28 @@ public:
   int partially_refined_level(const stk::mesh::Entity elem) const;
   virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const override;
 
-  virtual FieldRef get_marker_field() const override;
+  virtual FieldRef get_marker_field_and_sync_to_host() const override;
   virtual bool require_post_refinement_fixups() const override { return false; };
 
   virtual bool do_refinement(const int debugLevel = 0) override;
 
-  virtual void do_uniform_refinement(const int numUniformRefinementLevels) override;
+  virtual bool do_uniform_refinement(const int numUniformRefinementLevels) override;
 
   void restore_after_restart();
   void set_marker_field(const std::string & markerFieldName);
+  virtual void delete_parent_elements() override {myRefinement.delete_parent_elements();};
 
 private:
-  KrinoRefinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit);
-  std::pair<unsigned,unsigned> get_marked_element_counts() const;
+  KrinoRefinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit, stk::diag::Timer & parent_timer);
+  std::array<unsigned, 2>  get_marked_element_counts() const;
+  bool is_supported_uniform_refinement_element() const;
   TransitionElementEdgeMarker & setup_marker() const;
   TransitionElementEdgeMarker & get_marker() const;
   stk::mesh::MetaData & myMeta;
-  Refinement myRefinement;
   FieldRef myElementMarkerField;
   mutable std::unique_ptr<TransitionElementEdgeMarker> myMarker;
+  mutable stk::diag::Timer myRefinementTimer;
+  Refinement myRefinement;
 };
 
 void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementInterface & refinement);

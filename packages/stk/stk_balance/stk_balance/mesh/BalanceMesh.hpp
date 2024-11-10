@@ -34,10 +34,11 @@
 #ifndef STK_BALANCE_BALANCE_MESH_HPP
 #define STK_BALANCE_BALANCE_MESH_HPP
 
-#include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/BulkData.hpp"
-
 namespace stk {
+
+namespace mesh { class MetaData; }
+namespace mesh { class BulkData; }
+
 namespace balance {
 
 class BalanceMesh

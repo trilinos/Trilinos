@@ -10,3 +10,9 @@ int PartialFactorization( const char* AmesosClass,
 			  Teuchos::ParameterList ParamList, 
 			  Epetra_CrsMatrix *& Amat, 
 			  double Rcond ) ;
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif

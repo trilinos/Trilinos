@@ -49,6 +49,14 @@ error the way that an assert command does. */
 
 #ifndef EPETRA_TEST_ERR_H
 #define EPETRA_TEST_ERR_H
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
 #include "Epetra_ConfigDefs.h"
 using namespace std;
 // This function is to be used when first identifying an error.

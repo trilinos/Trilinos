@@ -10,5 +10,5 @@
 static std::array<std::string, 3> qainfo{
     "exomatlab",
     "2012/04/17",
-    "0.9.4",
+    "1.2.0",
 };

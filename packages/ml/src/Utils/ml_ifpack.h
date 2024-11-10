@@ -6,6 +6,12 @@
 #ifndef ML_IFPACK_H
 #define ML_IFPACK_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_include.h"
 
 typedef struct Ifpack_Handle_Struct Ifpack_Handle_Type;

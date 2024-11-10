@@ -39,6 +39,12 @@
 #ifndef AMESOS_TAUCS_H
 #define AMESOS_TAUCS_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos_NoCopiable.h"

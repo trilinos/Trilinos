@@ -99,9 +99,8 @@ void verify_field_is_valid(const stk::mesh::MetaData &meta,
   stk::topology::rank_t rank = meta.mesh_bulk_data().entity_rank(entity);
   stk::mesh::FieldBase* field = meta.get_field(rank, fieldName);
   ASSERT_TRUE(field != nullptr);
-  double* fieldDataForEntity = static_cast<double*>(stk::mesh::field_data(*field, entity) );
-  unsigned numScalars = stk::mesh::field_scalars_per_entity(*field, entity);
-  ASSERT_EQ(fieldLength, numScalars);
+  const double* fieldDataForEntity = static_cast<double*>(stk::mesh::field_data(*field, entity) );
+  ASSERT_EQ(fieldLength, stk::mesh::field_scalars_per_entity(*field, entity));
   ASSERT_EQ(initialValue[0], fieldDataForEntity[0]);
 }
 
@@ -164,7 +163,7 @@ void verify_nodesetField_in_file(stk::mesh::BulkData& input_bulk, stk::mesh::Ent
   verify_field_in_file(input_bulk, node, nodesetName, fieldName, filename);
 }
 
-class MeshWithNodeset : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithNodeset : public stk::unit_test_util::MeshFixture
 {
 };
 
@@ -212,7 +211,7 @@ void verify_sidesetField_in_file(stk::mesh::BulkData& input_bulk, stk::mesh::Ent
   verify_field_in_file(input_bulk, side, sidesetName, fieldName, filename);
 }
 
-class MeshWithSideset : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithSideset : public stk::unit_test_util::MeshFixture
 {
 };
 

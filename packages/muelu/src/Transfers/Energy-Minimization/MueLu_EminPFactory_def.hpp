@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef MUELU_EMINPFACTORY_DEF_HPP
 #define MUELU_EMINPFACTORY_DEF_HPP
 
@@ -26,8 +35,7 @@ RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   SET_VALID_ENTRY("emin: num reuse iterations");
   SET_VALID_ENTRY("emin: iterative method");
   {
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-    validParamList->getEntry("emin: iterative method").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("cg", "sd", "gmres"), "emin: iterative method")));
+    validParamList->getEntry("emin: iterative method").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("cg", "sd", "gmres"))));
   }
 #undef SET_VALID_ENTRY
 

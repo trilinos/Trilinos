@@ -89,9 +89,6 @@ alias install-targets
     $(installed-developer-files)
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets : ;
-
 #
 # SECTION 3: End-user install
 #
@@ -170,7 +167,7 @@ exe stk_emend_independent_set_utest
     [ glob $(stk_emend-root)/stk_emend/independent_set/unit_tests/*.cpp ]
     stk_independent_set_lib
     /sierra/stk_unit_test_utils//stk_unit_main
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_emend-root)/stk_emend/independent_set/unit_tests
     [ ifdevbuild

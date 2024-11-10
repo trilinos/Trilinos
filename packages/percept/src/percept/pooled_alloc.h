@@ -198,4 +198,3 @@ struct PooledSet
 };
 
 #endif // ndef INCL_POOLED_ALLOC
-

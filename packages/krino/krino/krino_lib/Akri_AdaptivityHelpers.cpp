@@ -41,14 +41,14 @@ void filter_refinement_marker(const RefinementInterface & refinement, const stk:
     if (do_not_refine_or_unrefine_selector(*bucketPtr))
     {
       for (int i = 0; i < size; ++i)
-        if (markers[i] == Refinement_Marker::REFINE || markers[i] == Refinement_Marker::COARSEN)
-          markers[i] = Refinement_Marker::NOTHING;
+        if (markers[i] == static_cast<int>(Refinement_Marker::REFINE) || markers[i] == static_cast<int>(Refinement_Marker::COARSEN))
+          markers[i] = static_cast<int>(Refinement_Marker::NOTHING);
     }
     else if (bucketPtr->member(parentPart))
     {
       for (int i = 0; i < size; ++i)
-        if (markers[i] == Refinement_Marker::REFINE)
-          markers[i] = Refinement_Marker::NOTHING;
+        if (markers[i] == static_cast<int>(Refinement_Marker::REFINE))
+          markers[i] = static_cast<int>(Refinement_Marker::NOTHING);
     }
   }
 }
@@ -63,7 +63,7 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
 
   const auto & aux_meta = AuxMetaData::get(mesh.mesh_meta_data());
 
-  const FieldRef elem_marker = refinement.get_marker_field();
+  const FieldRef elem_marker = refinement.get_marker_field_and_sync_to_host();
 
   const stk::mesh::Selector active_selector = aux_meta.active_part();
   const stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
@@ -84,7 +84,7 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
       int * markers = field_data<int>(elem_marker, *b_ptr);
       for (size_t i = 0; i < b_ptr->size(); ++i)
       {
-        if (markers[i] == Refinement_Marker::REFINE) ++num_marked_refine;
+        if (markers[i] == static_cast<int>(Refinement_Marker::REFINE)) ++num_marked_refine;
       }
     }
 

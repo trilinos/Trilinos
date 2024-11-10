@@ -1,6 +1,7 @@
 #ifndef EXAMPLEMESHES_H_
 #define EXAMPLEMESHES_H_
 
+#include "stk_util/stk_config.h"
 #include <generated/Iogn_DashSurfaceMesh.h>
 #include <vector>
 
@@ -13,9 +14,9 @@ namespace exampleMeshes
 inline void fillDataForUnitCube(std::vector<double> &coordinates)
 {
     // Nodes in Exodus Ordering for hex elements which is same as Flanagan/Belytschko paper
-    double *x = &coordinates[0];
-    double *y = &coordinates[8];
-    double *z = &coordinates[16];
+    double *x = coordinates.data();
+    double *y = coordinates.data() + 8;
+    double *z = coordinates.data() + 16;
     x[4] = 1; x[5] = 1; x[6] = 1; x[7] = 1;
     y[1] = 1; y[2] = 1; y[5] = 1; y[6] = 1;
     z[2] = 1; z[3] = 1; z[6] = 1; z[7] = 1;
@@ -24,9 +25,9 @@ inline void fillDataForUnitCube(std::vector<double> &coordinates)
 inline void fillDataForRectangloid(std::vector<double> &coordinates)
 {
     // Nodes in Exodus Ordering for hex elements which is same as Flanagan/Belytschko paper
-    double *x = &coordinates[0];
-    double *y = &coordinates[8];
-    double *z = &coordinates[16];
+    double *x = coordinates.data();
+    double *y = coordinates.data() + 8;
+    double *z = coordinates.data() + 16;
     x[4] = 3; x[5] = 3; x[6] = 3; x[7] = 3;
     y[1] = 2; y[2] = 2; y[5] = 2; y[6] = 2;
     z[2] = 0.5; z[3] = 0.5; z[6] = 0.5; z[7] = 0.5;
@@ -105,18 +106,14 @@ Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes)
 
 namespace simple_fields {
 
-inline void fillDataForUnitCube(std::vector<double> &coordinates) {
-  unitTestUtils::exampleMeshes::fillDataForUnitCube(coordinates);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void fillDataForUnitCube(std::vector<double> &coordinates);
 
-inline void fillDataForRectangloid(std::vector<double> &coordinates) {
-  unitTestUtils::exampleMeshes::fillDataForRectangloid(coordinates);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void fillDataForRectangloid(std::vector<double> &coordinates);
 
-inline
-Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes) {
-  return unitTestUtils::exampleMeshes::createExodusDataForDisconnectedHex8s(numberOfHexes);
-}
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes);
 
 } // namespace simple_fields
 

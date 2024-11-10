@@ -1,14 +1,23 @@
-#define DOCTEST_CONFIG_IMPLEMENT
-#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
-#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
-#include <doctest.h>
+#include "Ionit_Initializer.h"
+#include <catch2/catch_session.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <cstdlib>
+#include <fmt/core.h>
+#include <math.h>
 #include <string>
+#include <vector>
 
-#include <Ionit_Initializer.h>
-#include <Ioss_ScopeGuard.h>
-#include <Ioss_SubSystem.h>
-
-#include <fmt/format.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_Field.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
+#include "Ioss_State.h"
 
 namespace {
   std::string tst_filename = "test.hb";
@@ -18,6 +27,7 @@ namespace {
     Ioss::Init::Initializer init_db;
 
     Ioss::PropertyManager properties;
+    properties.add(Ioss::Property("FULL_PRECISION", "yes"));
     properties.add(Ioss::Property("SHOW_LABELS", "yes"));
     properties.add(Ioss::Property("SHOW_LEGEND", "no"));
     properties.add(Ioss::Property("SHOW_TIME_STAMP", 1));
@@ -30,10 +40,10 @@ namespace {
     return dbo;
   }
   // BeginDocTest2
-  DOCTEST_TEST_CASE("Ioss::write_file")
+  TEST_CASE("Ioss::write_file")
   {
     auto *db = create_heartbeat(tst_filename);
-    DOCTEST_CHECK(db->ok());
+    CHECK(db->ok());
 
     Ioss::Region region(db);
 
@@ -72,15 +82,23 @@ int main(IOSS_MAYBE_UNUSED int argc, char **argv)
   MPI_Init(&argc, &argv);
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
+  Catch::Session session; // There must be exactly one instance
 
-  doctest::Context context;
+  // Build a new parser on top of Catch2's
+  using namespace Catch::Clara;
+  auto cli = session.cli()                   // Get Catch2's command line parser
+             | Opt(tst_filename, "filename") // bind variable to a new option, with a hint string
+                   ["-f"]["--filename"]      // the option names it will respond to
+             ("Filename to write heartbeat data to."); // description string for the help output
 
-  while (*++argv) {
-    if (std::string(*argv) == "--filename") {
-      tst_filename = *++argv;
-      break;
-    }
-    fmt::print("'{}'\n", tst_filename);
-  }
-  return context.run();
+  // Now pass the new composite back to Catch2 so it uses that
+  session.cli(cli);
+
+  // Let Catch2 (using Clara) parse the command line
+  int returnCode = session.applyCommandLine(argc, argv);
+  if (returnCode != 0) // Indicates a command line error
+    return returnCode;
+
+  fmt::print("'{}'\n", tst_filename);
+  return session.run();
 }

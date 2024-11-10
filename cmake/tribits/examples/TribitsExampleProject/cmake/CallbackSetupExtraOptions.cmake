@@ -12,11 +12,11 @@ macro(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     set(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
   endif()
 
-  if ("${PYTHON_EXECUTABLE}" STREQUAL "")
+  if ("${Python3_EXECUTABLE}" STREQUAL "")
     message(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_WrapExternal=OFF"
-      " because PYTHON_EXECUTABLE=''!"
+      " because Python3_EXECUTABLE=''!"
       "\n***\n"
       )
     set(${PROJECT_NAME}_ENABLE_WrapExternal OFF)

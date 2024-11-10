@@ -42,6 +42,12 @@
 #ifndef EpetraExt_PERMUTATION_H
 #define EpetraExt_PERMUTATION_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_GIDTypeVector.h>
 
@@ -285,4 +291,3 @@ public:
 #include <EpetraExt_Permutation_impl.h>
 
 #endif
-

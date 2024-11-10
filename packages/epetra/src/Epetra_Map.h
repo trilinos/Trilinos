@@ -44,6 +44,14 @@
 #ifndef EPETRA_MAP_H
 #define EPETRA_MAP_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 //! Epetra_Map: A class for partitioning vectors and matrices.
 
 /*! It is often the case that multiple matrix and vector objects have an identical distribution

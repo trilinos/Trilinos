@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_THREAD_HPP
 #define SHYLUBASKER_THREAD_HPP
 
@@ -263,7 +272,7 @@ namespace BaskerNS
     BASKER_INLINE
     void atomic_barrier_fanout(volatile Int &value, const Int l_size)
     {
-      Kokkos::atomic_increment(&(value));
+      Kokkos::atomic_inc(&(value));
       while(value < l_size)
       {
         BASKER_NO_OP;

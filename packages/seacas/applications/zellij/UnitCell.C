@@ -14,6 +14,7 @@
 #include "Ioss_SmartAssert.h"
 #include "Ioss_Sort.h"
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 
 //! \file
 
@@ -48,8 +49,9 @@ namespace {
     // Check if the numbers are really close -- needed
     // when comparing numbers near zero.
     double diff = std::abs(A - B);
-    if (diff <= maxDiff)
+    if (diff <= maxDiff) {
       return true;
+    }
 
     A              = std::abs(A);
     B              = std::abs(B);
@@ -277,7 +279,7 @@ void UnitCell::generate_boundary_faces(unsigned int which_faces)
   auto                   &faces = face_generator.faces("ALL");
   Ioss::ElementBlock     *block = nullptr;
   for (const auto &face : faces) {
-    if (face.elementCount_ == 1) {
+    if (face.element_count() == 1) {
       block             = get_element_block(block, face.element[0] / 10, m_region);
       auto block_offset = block->get_offset();
       for (int i = 0; i < 6; i++) {

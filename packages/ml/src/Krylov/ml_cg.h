@@ -13,6 +13,12 @@
 #ifndef __MLCG__
 #define __MLCG__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_krylov.h"
 
@@ -36,4 +42,3 @@ extern int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data,
 #endif
 #endif
 #endif
-

@@ -28,7 +28,7 @@
  *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex__comp_ws, etc
+#include "exodusII_int.h" // for EX_FATAL, exi_comp_ws, etc
 
 /*!
  * writes the coordinates of some of the nodes in the model
@@ -55,7 +55,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
   char    errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -165,7 +165,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
     }
 
     if (coor != NULL && coordid != -1) {
-      if (ex__comp_ws(exoid) == 4) {
+      if (exi_comp_ws(exoid) == 4) {
         status = nc_put_vara_float(exoid, coordid, start, count, coor);
       }
       else {

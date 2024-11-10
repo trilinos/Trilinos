@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <numeric>
 #include <strings.h>
+#include <cassert>      // for assert
 
 #include "TextMeshFuncs.hpp"
 #include "TextMeshDataTypes.hpp"

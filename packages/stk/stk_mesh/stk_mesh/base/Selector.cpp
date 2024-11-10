@@ -583,18 +583,40 @@ stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData
     newSelector.m_meta = &differentMeta;
     for(SelectorNode &selectorNode : newSelector.m_expr)
     {
-        if(selectorNode.m_type == SelectorNodeType::PART)
+        if(selectorNode.m_type == SelectorNodeType::PART ||
+           selectorNode.m_type == SelectorNodeType::PART_UNION ||
+           selectorNode.m_type == SelectorNodeType::PART_INTERSECTION)
         {
+          if (selectorNode.m_partOrd != InvalidPartOrdinal) {
             const std::string& oldPartName = oldMeta.get_part(selectorNode.part()).name();
             Part* differentPart = differentMeta.get_part(oldPartName);
             STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
             selectorNode.m_partOrd = differentPart->mesh_meta_data_ordinal();
+          }
+          for(unsigned i=0; i<selectorNode.m_partOrds.size(); ++i) {
+            unsigned oldOrd = selectorNode.m_partOrds[i];
+            if (oldOrd != InvalidPartOrdinal) {
+              const std::string& oldPartName = oldMeta.get_part(oldOrd).name();
+              Part* differentPart = differentMeta.get_part(oldPartName);
+              STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
+              selectorNode.m_partOrds[i] = differentPart->mesh_meta_data_ordinal();
+            }
+          }
+          for(unsigned i=0; i<selectorNode.m_subsetPartOrds.size(); ++i) {
+            unsigned oldOrd = selectorNode.m_subsetPartOrds[i];
+            if (oldOrd != InvalidPartOrdinal) {
+              const std::string& oldPartName = oldMeta.get_part(oldOrd).name();
+              Part* differentPart = differentMeta.get_part(oldPartName);
+              STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
+              selectorNode.m_subsetPartOrds[i] = differentPart->mesh_meta_data_ordinal();
+            }
+          }
         }
         else if(selectorNode.m_type == SelectorNodeType::FIELD)
         {
             unsigned ord = selectorNode.m_field_ptr->mesh_meta_data_ordinal();
             STK_ThrowRequireMsg(selectorNode.m_field_ptr->name() == differentMeta.get_fields()[ord]->name(),
-                            "Attepting to clone selector into mesh with different parts");
+                            "Attepting to clone selector into mesh with different fields");
             selectorNode.m_field_ptr = differentMeta.get_fields()[ord];
         }
     }
@@ -729,7 +751,9 @@ Selector selectUnion( const VectorType & union_vector )
 {
   if constexpr(std::is_same_v<VectorType,PartVector> || std::is_same_v<VectorType,ConstPartVector>) {
     OrdinalVector partOrdinals;
+    partOrdinals.reserve(union_vector.size());
     OrdinalVector subsetPartOrdinals;
+    subsetPartOrdinals.reserve(union_vector.size());
     const MetaData* metaPtr = nullptr;
     for(const Part* part : union_vector) {
       if (part == nullptr) continue;
@@ -749,30 +773,6 @@ Selector selectUnion( const VectorType & union_vector )
     stk::util::sort_and_unique(partOrdinals);
     stk::util::sort_and_unique(subsetPartOrdinals);
     Selector selector(SelectorNodeType::PART_UNION, metaPtr, partOrdinals, subsetPartOrdinals);
-//    if (partOrdinals.size() > 1) {
-//      Selector selectorOld;
-//      bool foundFirstNonNullptr = false;
-//      for(unsigned i=0; i<union_vector.size(); ++i) {
-//        if (get_pointer(union_vector[i]) == nullptr) continue;
-//        if (!foundFirstNonNullptr) {
-//          selectorOld = dereference_if_pointer(union_vector[i]);
-//          foundFirstNonNullptr = true;
-//          continue;
-//        }
-//        selectorOld |= dereference_if_pointer(union_vector[i]);
-//      }
-//      if (metaPtr!=nullptr && metaPtr->has_mesh()) {
-//        for(EntityRank rank : {stk::topology::NODE_RANK,stk::topology::FACE_RANK,stk::topology::ELEM_RANK}) {
-//          const BucketVector& bkts = selector.get_buckets(rank);
-//          const BucketVector& bktsOld = selectorOld.get_buckets(rank);
-//          STK_ThrowRequireMsg(bkts.size()==bktsOld.size(),"ERROR, selector: "<<selector<<" vs selectorOld: "<<selectorOld);
-//        }
-//      }
-//      return selectorOld;
-//      std::ostringstream os;
-//      os<<"\n"<<counter<<"{\nselector: "<<selector<<"\nselectorOld: "<<selectorOld<<"\n}\n"<<std::endl;
-//      std::cerr<<os.str();
-//    }
     return selector;
   }
   else {

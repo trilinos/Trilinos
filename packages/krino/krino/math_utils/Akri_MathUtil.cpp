@@ -261,6 +261,35 @@ std::pair<bool, double> find_root_newton_raphson( const std::function<std::pair<
   return find_bracketed_root_newton_raphson(f, x, fx, dfx, xa, xb, fa, fb, maxIters, fTol);
 }
 
+double find_quadratic_crossing( const double d0, const double d1, const double d2 )
+{
+  const double epsilon = std::numeric_limits<double>::epsilon()*std::sqrt(d0*d0 + d1*d1 + d2*d2);
+  if ( std::fabs(d0) < epsilon ) return 0.0;
+  if ( std::fabs(d1) < epsilon ) return 1.0;
+  if ( std::fabs(d2) < epsilon ) return 0.5;
+
+  STK_ThrowAssert(d0*d1 < 0.0 && (d0*d2 < 0.0 || d1*d2 < 0.0)); // Insist on one and only one crossing
+
+  const double a = 2.0*(d0 - 2.0*d2 + d1);
+  const double b = -3.0*d0 - d1 + 4.0*d2;
+  const double c = d0;
+  const int sign_b = ( b < 0.0 ) ? -1 : 1;
+  const double q = -0.5*(b + sign_b*std::sqrt(b*b-4.0*a*c));
+
+  const int sign_a = ( a < 0.0 ) ? -1 : 1;
+
+  if (q*sign_a > 0.0 && q*sign_a < a*sign_a)
+    {
+      STK_ThrowAssert(!(c*(( q < 0.0 ) ? -1 : 1) > 0.0 && c*(( q < 0.0 ) ? -1 : 1) < q*(( q < 0.0 ) ? -1 : 1))); // Insist on only one crossing
+      return (q/a);
+    }
+  else
+    {
+      STK_ThrowAssert(c*(( q < 0.0 ) ? -1 : 1) > 0.0 && c*(( q < 0.0 ) ? -1 : 1) < q*(( q < 0.0 ) ? -1 : 1));
+      return (c/q);
+    }
+}
+
 }
 
 

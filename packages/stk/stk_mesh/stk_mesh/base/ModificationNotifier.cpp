@@ -16,13 +16,17 @@ std::vector<size_t> get_global_max(const std::vector<size_t> &allObserverValues,
     return maxValues;
 }
 
-void ModificationNotifier::reduce_values_for_observers(MPI_Comm communicator)
+bool ModificationNotifier::reduce_values_for_observers(MPI_Comm communicator)
 {
-    std::vector<size_t> allObserverValues;
-    std::vector<std::vector<size_t> > observerValues(observers.size());
-    get_values_to_reduce_from_observers(allObserverValues, observerValues);
-    std::vector<size_t> maxValues = get_global_max(allObserverValues, communicator);
-    set_max_values_on_observers(maxValues, observerValues);
+    m_allObserverValues.clear();
+    m_observerValues.resize(observers.size());
+    get_values_to_reduce_from_observers(m_allObserverValues, m_observerValues);
+    size_t localAnyModification = anyModification ? 1 : 0;
+    m_allObserverValues.push_back(localAnyModification);
+    std::vector<size_t> maxValues = get_global_max(m_allObserverValues, communicator);
+    bool globalAnyModification = maxValues.back()==1 ? true : false;
+    set_max_values_on_observers(maxValues, m_observerValues);
+    return globalAnyModification;
 }
 
 void ModificationNotifier::get_values_to_reduce_from_observers(std::vector<size_t> &allObserverValues,
@@ -31,7 +35,9 @@ void ModificationNotifier::get_values_to_reduce_from_observers(std::vector<size_
     for(size_t i = 0; i < observers.size(); ++i)
     {
         observers[i]->fill_values_to_reduce(observerValues[i]);
-        allObserverValues.insert(allObserverValues.end(), observerValues[i].begin(), observerValues[i].end());
+        if (!observerValues[i].empty()) {
+          allObserverValues.insert(allObserverValues.end(), observerValues[i].begin(), observerValues[i].end());
+        }
     }
 }
 void ModificationNotifier::set_max_values_on_observers(const std::vector<size_t> &maxValues,

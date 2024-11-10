@@ -80,10 +80,8 @@ void
 NodeBalancer::getGlobalLoadImbalance(double &loadFactor, int& numLocallyOwnedNodes)
 {
   stk::mesh::Selector localSelector = m_metaData.locally_owned_part();
-  stk::mesh::EntityVector ownedNodes;
-  stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, localSelector, ownedNodes);
+  numLocallyOwnedNodes = stk::mesh::count_entities(m_bulkData, stk::topology::NODE_RANK, localSelector);
 
-  numLocallyOwnedNodes = ownedNodes.size();
   int maxLocallyOwned = 0;
   int minLocallyOwned = 0;
   stk::all_reduce_max(m_bulkData.parallel(), &numLocallyOwnedNodes, &maxLocallyOwned, 1);
@@ -122,10 +120,10 @@ NodeBalancer::exchangeLocalSizes(const std::set<int>& neighborProcessors,
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0]);
+  MPI_Waitall(receiveRequests.size(), receiveRequests.data(), receiveStati.data());
 
   std::vector<MPI_Status> sendStati(sendRequests.size());
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0]);
+  MPI_Waitall(sendRequests.size(), sendRequests.data(), sendStati.data());
 
   int i = 0;
   for (int p : neighborProcessors) {

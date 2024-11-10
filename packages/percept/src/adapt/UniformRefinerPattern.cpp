@@ -715,7 +715,7 @@
             if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
                 << " with topo= " << getToTopoPartName() << std::endl;
             stk::mesh::set_topology(*block_to, stk::mesh::get_topology(shards::CellTopology(getToTopology()), eMesh.get_fem_meta_data()->spatial_dimension()));
-
+            eMesh.get_fem_meta_data()->set_part_id(*block_to, part->id());
             if (!stk::io::is_part_io_part(block_to)) {
               stk::io::put_io_part_attribute(*block_to);
             }
@@ -1382,7 +1382,7 @@
     /// helpers for interpolating fields, coordinates
     /// ------------------------------------------------------------------------------------------------------------------------
 
-    /// This version uses Intrepid for interpolation
+    /// This version uses Intrepid2 for interpolation
     void UniformRefinerPatternBase::
     prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
@@ -1423,9 +1423,9 @@
 
       FieldFunction field_func("tmp", field, eMesh, topoDim, fieldStride);
 
-      MDArray input_pts(1, topoDim);
-      MDArray input_param_coords(1, topoDim);
-      MDArray output_pts(1, fieldStride);
+      MDArray input_pts("input_pts",1, topoDim);
+      MDArray input_param_coords("input_param_coords",1, topoDim);
+      MDArray output_pts("input_param_coords",1, fieldStride);
 
       percept::MyPairIterRelation new_elem_nodes (eMesh, newElement, stk::topology::NODE_RANK);
       for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
@@ -1439,25 +1439,17 @@
             }
           double time_val=0.0;
 
-          /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
-
-          if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8
+          if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 
+              || toTopoKey == topo_key_line3  || toTopoKey == topo_key_shellline3
               || toTopoKey == topo_key_hex20
               || toTopoKey == topo_key_pyramid13 || toTopoKey == topo_key_pyramid5
               || toTopoKey == topo_key_tet10)
             {
-              prolongateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
+              prolongateIntrepid2(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
             }
           else
             {
-              if ((cell_topo.getDimension() == 1 || cell_topo.getDimension() == 2) && cell_topo.getNodeCount() == 3)  // Line<3> || Beam<3> element
-                {
-                  prolongateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
-                }
-              else
-                {
-                  field_func(input_pts, output_pts, element, input_param_coords, time_val);
-                }
+              field_func(input_pts, output_pts, element, input_param_coords, time_val);
             }
 
           stk::mesh::Entity new_node = new_elem_nodes[i_new_node].entity();
@@ -1474,7 +1466,7 @@
     }
 
     /// do interpolation for all fields
-    /// This version uses Intrepid
+    /// This version uses Intrepid2
     void UniformRefinerPatternBase::
     prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x)
@@ -1494,47 +1486,17 @@
     }
 
     void UniformRefinerPatternBase::
-    prolongateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
-                          MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
-    {
-      int fieldStride = output_pts.dimension(1);
-      unsigned *null_u = 0;
-
-      percept::MyPairIterRelation elem_nodes ( eMesh, element,  stk::topology::NODE_RANK);
-      double xi = input_param_coords(0, 0);
-
-      // FIXME assumes {-1,0,1} element parametric coords
-      //double basis_val[3] = { (xi)*(xi - 1.0)/2.0,  (1.0-xi)*(1.0+xi) , (xi)*(1.0+xi)/2.0 };
-
-      double basis_val[3] = { (xi)*(xi - 1.0)/2.0,  (xi)*(1.0+xi)/2.0, (1.0-xi)*(1.0+xi) };
-
-      for (int i_stride=0; i_stride < fieldStride; i_stride++)
-        {
-          output_pts(0, i_stride) = 0.0;
-        }
-      for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
-        {
-          stk::mesh::Entity node = elem_nodes[i_node].entity();
-          double *f_data = eMesh.field_data(field, node, null_u);
-          for (int i_stride=0; i_stride < fieldStride; i_stride++)
-            {
-              output_pts(0, i_stride) += f_data[i_stride]*basis_val[i_node];
-            }
-        }
-    }
-
-    void UniformRefinerPatternBase::
-    prolongateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
+    prolongateIntrepid2(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
                         MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
     {
 #if STK_PERCEPT_LITE
       VERIFY_MSG("not available in PerceptMeshLite");
 #else
-      int fieldStride = output_pts.dimension(1);
+      int fieldStride = output_pts.extent_int(1);
       unsigned *null_u = 0;
 
       percept::MyPairIterRelation elem_nodes (eMesh, element, stk::topology::NODE_RANK);
-      MDArray basis_val(elem_nodes.size(), 1);
+      MDArray basis_val("basis_val",elem_nodes.size(), 1);
       //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
       /// special for pyramid
@@ -1560,8 +1522,8 @@
         }
       else
         {
-          BasisTable::BasisTypeRCP basis = BasisTable::getBasis(cell_topo);
-          basis->getValues(basis_val, input_param_coords, Intrepid::OPERATOR_VALUE);
+          BasisTable::BasisTypeRCP basis = BasisTable::getInstance()->getBasis(cell_topo);
+          basis->getValues(basis_val, input_param_coords, Intrepid2::OPERATOR_VALUE);
         }
       if (0)
         std::cout << "\n tmp input_param_coords= "

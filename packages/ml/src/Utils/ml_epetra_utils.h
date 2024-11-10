@@ -15,6 +15,12 @@
 #ifndef _ML_EPETRA_UTILS_H_
 #define _ML_EPETRA_UTILS_H_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;

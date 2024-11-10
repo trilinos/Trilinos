@@ -142,7 +142,6 @@ public:
   void load_output_mesh(stk::mesh::BulkData& bulk) override
   {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stk::io::fill_mesh_preexisting(stkIo, fileName, bulk, stk::io::READ_RESTART);
     int numSteps = stkIo.get_num_time_steps();
     EXPECT_EQ(1, numSteps);

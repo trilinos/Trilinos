@@ -98,3 +98,10 @@
 #include "Teuchos_iostream_helpers.hpp"
 
 #endif
+
+#if defined(PyTrilinos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The PyTrilinos package is deprecated"
+#endif
+#endif
+

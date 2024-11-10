@@ -13,6 +13,12 @@
 #ifndef __MLTWOGRID__
 #define __MLTWOGRID__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_struct.h"
@@ -47,4 +53,3 @@ double ML_GetTwoLevelConvergenceFactor(ML *ml, double *approx_soln,
 #endif
 
 #endif /*ifdef __MLTWOGRID__*/
-

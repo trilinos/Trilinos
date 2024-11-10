@@ -1,46 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //         Stratimikos: Thyra-based strategies for linear solvers
-//                Copyright (2006) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
-// ***********************************************************************
+// Copyright 2006 NTESS and the Stratimikos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
-
 
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
@@ -63,7 +28,7 @@
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 #include "Thyra_BelosTpetrasSolverAdapter.hpp"
 #endif
 
@@ -109,7 +74,7 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::BiCGStab_name = "BiCGSt
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::FixedPoint_name = "Fixed Point";
 
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmres_name = "TPETRA GMRES";
 template<class Scalar>
@@ -419,7 +384,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "TFQMR",
         "BiCGStab",
         "Fixed Point"
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
         ,"TPETRA GMRES",
         "TPETRA GMRES PIPELINE",
         "TPETRA GMRES SINGLE REDUCE",
@@ -471,7 +436,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
 
         "Fixed point iteration"
 
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
         ,"Native Tpetra implementation of GMRES",
 
         "Native Tpetra implementation of pipeline GMRES",
@@ -493,7 +458,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         SOLVER_TYPE_TFQMR,
         SOLVER_TYPE_BICGSTAB,
         SOLVER_TYPE_FIXEDPOINT
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
         ,SOLVER_TYPE_TPETRA_GMRES,
         SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
         SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
@@ -583,7 +548,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
     {
       Thyra::BelosTpetraGmres<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(TpetraGmres_name).setParameters(
@@ -1007,7 +972,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       break;
     }
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
     case SOLVER_TYPE_TPETRA_GMRES:
     {
       // Get the PL

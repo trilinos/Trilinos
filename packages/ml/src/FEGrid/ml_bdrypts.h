@@ -13,6 +13,12 @@
 #ifndef __MLBDRYPTSH__
 #define __MLBDRYPTSH__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
@@ -70,4 +76,3 @@ extern int ML_BdryPts_ApplyZero_Dirichlet_Eqn(ML_BdryPts *, double *);
 #endif
 
 #endif
-

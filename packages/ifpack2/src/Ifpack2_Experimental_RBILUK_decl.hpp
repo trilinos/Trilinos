@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_Experimental_RBILUK_decl.hpp
 /// \brief Declaration of RBILUK interface
@@ -163,7 +130,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
       local_ordinal_type,
       global_ordinal_type,
       node_type> crs_matrix_type;
-  
+
   using crs_graph_type = Tpetra::CrsGraph<local_ordinal_type,
                                           global_ordinal_type,
                                           node_type>;
@@ -175,11 +142,16 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   template <class NewMatrixType> friend class RBILUK;
 
+  typedef typename block_crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename block_crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename block_crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
   //@}
   //! \name Implementation of KK ILU(k).
   //@{
-  
-  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+
+  typedef typename block_crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename block_crs_matrix_type::local_matrix_host_type local_matrix_host_type;
   typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
   typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
   typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
@@ -193,6 +165,8 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   //    <typename lno_row_view_t::non_const_value_type, typename lno_nonzero_view_t::non_const_value_type, typename scalar_nonzero_view_t::value_type,
   //    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;//test
   Teuchos::RCP<kk_handle_type> KernelHandle_;
+  Teuchos::RCP<kk_handle_type> L_Sptrsv_KernelHandle_;
+  Teuchos::RCP<kk_handle_type> U_Sptrsv_KernelHandle_;
 
   //@}
 
@@ -364,6 +338,8 @@ private:
 
   //! The inverse of the diagonal
   Teuchos::RCP<block_crs_matrix_type> D_block_inverse_;
+
+  Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type> tmp_;
 };
 
 

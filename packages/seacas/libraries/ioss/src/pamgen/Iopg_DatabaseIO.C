@@ -8,19 +8,19 @@
 #include <pamgen_im_exodusII.h>
 #include <pamgen_im_ne_nemesisI.h>
 
-#include <pamgen/Iopg_DatabaseIO.h>
+#include "pamgen/Iopg_DatabaseIO.h"
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_SubSystem.h"
+#include "Ioss_Utils.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cfloat>
-#include <ctime>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -154,7 +154,7 @@ namespace Iopg {
     return mesh_description;
   }
 
-  void DatabaseIO::read_meta_data__()
+  void DatabaseIO::read_meta_data_nl()
   {
     // The file for pamgen contains the mesh description.
     // The Iopg routine is expecting the mesh description to be a
@@ -372,10 +372,10 @@ namespace Iopg {
 
       // A nemesis file typically separates nodes into multiple
       // communication sets by processor.  (each set specifies
-      // nodes/elements that communicate with only a single processor).
-      // For Sierra, we want a single node commun. map and a single
-      // element commun. map specifying all communications so we combine
-      // all sets into a single set.
+      // nodes/elements that communicate with only a single
+      // processor).  For Sierra, we want a single node communication
+      // map and a single element communication map specifying all
+      // communications so we combine all sets into a single set.
       error = im_ne_get_init_global(get_file_pointer(), &global_nodes, &global_elements,
                                     &global_eblocks, &global_nsets, &global_ssets);
       if (error < 0)
@@ -442,7 +442,7 @@ namespace Iopg {
 
     Ioss::IntVector element_block_ids(elementBlockCount);
 
-    int error = im_ex_get_elem_blk_ids(get_file_pointer(), element_block_ids.data());
+    int error = im_ex_get_elem_blk_ids(get_file_pointer(), Data(element_block_ids));
     if (error < 0) {
       pamgen_error(get_file_pointer(), __LINE__, myProcessor);
     }
@@ -462,7 +462,7 @@ namespace Iopg {
       int nodes_per_element;
       int attributes_per_element;
 
-      char *const element_type = all_element_type.data() + iblk * (max_string_length + 1);
+      char *const element_type = Data(all_element_type) + iblk * (max_string_length + 1);
 
       error = im_ex_get_elem_block(get_file_pointer(), id, element_type, &number_elements,
                                    &nodes_per_element, &attributes_per_element);
@@ -499,7 +499,7 @@ namespace Iopg {
     for (iblk = 0; iblk < elementBlockCount; iblk++) {
       int         id           = element_block_ids[iblk];
       std::string alias        = Ioss::Utils::encode_entity_name("block", id);
-      char *const element_type = all_element_type.data() + iblk * (max_string_length + 1);
+      char *const element_type = Data(all_element_type) + iblk * (max_string_length + 1);
 
       Ioss::ElementBlock *block      = nullptr;
       std::string         block_name = Ioss::Utils::encode_entity_name("block", id);
@@ -560,7 +560,7 @@ namespace Iopg {
     // Get exodusII nodeset metadata
     if (nodesetCount > 0) {
       Ioss::IntVector nodeset_ids(nodesetCount);
-      int             error = im_ex_get_node_set_ids(get_file_pointer(), nodeset_ids.data());
+      int             error = im_ex_get_node_set_ids(get_file_pointer(), Data(nodeset_ids));
       if (error < 0) {
         pamgen_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -625,8 +625,8 @@ namespace Iopg {
         }
 
         int error =
-            im_ne_get_cmap_params(get_file_pointer(), nodeCmapIds.data(), nodeCmapNodeCnts.data(),
-                                  elemCmapIds.data(), elemCmapElemCnts.data(), myProcessor);
+            im_ne_get_cmap_params(get_file_pointer(), Data(nodeCmapIds), Data(nodeCmapNodeCnts),
+                                  Data(elemCmapIds), Data(elemCmapElemCnts), myProcessor);
         if (error < 0)
           pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -678,7 +678,7 @@ namespace Iopg {
       // Get exodusII sideset metadata
 
       Ioss::IntVector side_set_ids(sidesetCount);
-      int             error = im_ex_get_side_set_ids(get_file_pointer(), side_set_ids.data());
+      int             error = im_ex_get_side_set_ids(get_file_pointer(), Data(side_set_ids));
       if (error < 0) {
         pamgen_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -720,7 +720,7 @@ namespace Iopg {
         Ioss::IntVector element(number_sides);
         Ioss::IntVector sides(number_sides);
 
-        int ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), sides.data());
+        int ierr = im_ex_get_side_set(get_file_pointer(), id, Data(element), Data(sides));
         if (ierr < 0)
           pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -941,9 +941,9 @@ namespace Iopg {
     }
   } // namespace Iopg
 
-  bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::begin_nl(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::end_nl(Ioss::State /* state */) { return true; }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
@@ -966,7 +966,7 @@ namespace Iopg {
 
           double *rdata = static_cast<double *>(data);
 
-          int ierr = im_ex_get_coord(get_file_pointer(), x.data(), y.data(), z.data());
+          int ierr = im_ex_get_coord(get_file_pointer(), Data(x), Data(y), Data(z));
           if (ierr < 0) {
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
           }
@@ -1005,7 +1005,7 @@ namespace Iopg {
           // Cast 'data' to correct size -- double
           double *rdata = static_cast<double *>(data);
 
-          int ierr = im_ex_get_coord(get_file_pointer(), x.data(), y.data(), z.data());
+          int ierr = im_ex_get_coord(get_file_pointer(), Data(x), Data(y), Data(z));
           if (ierr < 0)
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -1121,7 +1121,7 @@ namespace Iopg {
                                          void *data, size_t data_size) const
   {
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
 
       size_t num_to_get = field.verify(data_size);
 
@@ -1288,7 +1288,7 @@ namespace Iopg {
             element = new int[number_sides];
           }
 
-          ierr = im_ex_get_side_set(get_file_pointer(), id, element, sides.data());
+          ierr = im_ex_get_side_set(get_file_pointer(), id, element, Data(sides));
           if (ierr < 0)
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -1300,7 +1300,7 @@ namespace Iopg {
           }
           else {
             Ioss::IntVector is_valid_side;
-            Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, sides.data(),
+            Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, Data(sides),
                                                         number_sides, get_region());
             size_t ieb = 0;
             for (int iel = 0; iel < number_sides; iel++) {
@@ -1335,7 +1335,7 @@ namespace Iopg {
           Ioss::IntVector element(number_sides);
           Ioss::IntVector sides(number_sides);
 
-          ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), sides.data());
+          ierr = im_ex_get_side_set(get_file_pointer(), id, Data(element), Data(sides));
           if (ierr < 0)
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -1349,8 +1349,8 @@ namespace Iopg {
           }
           else {
             Ioss::IntVector is_valid_side;
-            Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(),
-                                                        sides.data(), number_sides, get_region());
+            Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, Data(element),
+                                                        Data(sides), number_sides, get_region());
 
             size_t index = 0;
             for (int iel = 0; iel < number_sides; iel++) {
@@ -1434,13 +1434,13 @@ namespace Iopg {
 
       if (is_input()) {
         std::vector<int> node_map(nodeMap.map().size() - 1);
-        int              error = im_ex_get_node_num_map(get_file_pointer(), node_map.data());
+        int              error = im_ex_get_node_num_map(get_file_pointer(), Data(node_map));
         if (error < 0) {
           // Clear out the vector...
           Ioss::MapContainer().swap(nodeMap.map());
           pamgen_error(get_file_pointer(), __LINE__, myProcessor);
         }
-        nodeMap.set_map(node_map.data(), node_map.size(), 0, true);
+        nodeMap.set_map(Data(node_map), node_map.size(), 0, true);
       }
       else {
         unsupported("output nodal id map");
@@ -1458,13 +1458,13 @@ namespace Iopg {
 
       if (is_input()) {
         std::vector<int> elem_map(elemMap.map().size() - 1);
-        int              error = im_ex_get_elem_num_map(get_file_pointer(), elem_map.data());
+        int              error = im_ex_get_elem_num_map(get_file_pointer(), Data(elem_map));
         if (error < 0) {
           // Clear out the vector...
           Ioss::MapContainer().swap(elemMap.map());
           pamgen_error(get_file_pointer(), __LINE__, myProcessor);
         }
-        elemMap.set_map(elem_map.data(), elem_map.size(), 0, true);
+        elemMap.set_map(Data(elem_map), elem_map.size(), 0, true);
       }
       else {
         unsupported("output element map");
@@ -1473,8 +1473,8 @@ namespace Iopg {
     return elemMap;
   }
 
-  void DatabaseIO::compute_block_membership__(Ioss::SideBlock          *sideblock,
-                                              std::vector<std::string> &block_membership) const
+  void DatabaseIO::compute_block_membership_nl(Ioss::SideBlock *sideblock,
+                                               Ioss::NameList  &block_membership) const
   {
     Ioss::IntVector block_ids(elementBlockCount);
     if (elementBlockCount == 1) {
@@ -1530,13 +1530,13 @@ namespace Iopg {
     Ioss::IntVector element(number_sides);
     Ioss::IntVector side(number_sides);
 
-    ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), side.data());
+    ierr = im_ex_get_side_set(get_file_pointer(), id, Data(element), Data(side));
     if (ierr < 0)
       pamgen_error(get_file_pointer(), __LINE__, myProcessor);
     //----
 
     Ioss::IntVector is_valid_side;
-    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(), side.data(),
+    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, Data(element), Data(side),
                                                 number_sides, get_region());
 
     Ioss::IntVector     elconnect;
@@ -1574,7 +1574,7 @@ namespace Iopg {
             elconsize = nelem * nelnode;
             elconnect.resize(elconsize);
           }
-          get_field_internal(block, block->get_field("connectivity"), elconnect.data(),
+          get_field_internal(block, block->get_field("connectivity"), Data(elconnect),
                              nelem * nelnode * sizeof(int));
           conn_block   = block;
           current_side = -1;

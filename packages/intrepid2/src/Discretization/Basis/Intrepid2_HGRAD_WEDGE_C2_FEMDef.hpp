@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_HGRAD_WEDGE_C2_FEMDef.hpp
@@ -63,12 +30,13 @@ namespace Intrepid2 {
     Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::Serial<opType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
+      typedef typename inputViewType::value_type value_type;
       switch (opType) {
       case OPERATOR_VALUE: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
-        const auto w = 1.0 - x - y;
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
+        const value_type w = 1.0 - x - y;
 
         // output is a rank-1 array with dimensions (basisCardinality_)
         if constexpr (!serendipity) {
@@ -113,9 +81,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_GRAD: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
 
         if constexpr (!serendipity) {
           output.access(0, 0) = ((-3 + 4*x + 4*y)*(-1 + z)*z)/2.;
@@ -191,7 +159,7 @@ namespace Intrepid2 {
           output.access(17, 1) =  4*(-1 + x + 2*y)*(-1 + z*z);
           output.access(17, 2) =  8*y*(-1 + x + y)*z;
         } else {
-          const auto w = 1.0 - x - y;
+          const value_type w = 1.0 - x - y;
       
           output.access(0, 0) = -(2.0*w - 1.0 - 0.5*z)*(1.0 - z);
           output.access(0, 1) = -(2.0*w - 1.0 - 0.5*z)*(1.0 - z);
@@ -256,9 +224,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_D2: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
+        const value_type x = input(0);
+        const value_type y = input(1);
+        const value_type z = input(2);
 
         if constexpr (!serendipity) {
           output.access(0, 0) =  2.*(-1. + z)*z;
@@ -389,7 +357,7 @@ namespace Intrepid2 {
 
         } else { //serendipity element
         
-          const auto w = 1.0 - x - y;
+          const value_type w = 1.0 - x - y;
           output.access(0, 0) =  2.0*(1.0 - z);     
           output.access(0, 1) =  2.0*(1.0 - z);     
           output.access(0, 2) =  2.0*w - 0.5 - z;
@@ -499,9 +467,9 @@ namespace Intrepid2 {
       }
       case OPERATOR_D3: {
         if constexpr (!serendipity) {
-          const auto x = input(0);
-          const auto y = input(1);
-          const auto z = input(2);
+          const value_type x = input(0);
+          const value_type y = input(1);
+          const value_type z = input(2);
 
           output.access(0, 0) =  0.;
           output.access(0, 1) =  0.;
@@ -1031,12 +999,13 @@ namespace Intrepid2 {
   template<bool serendipity, typename DT, typename OT, typename PT>
   Basis_HGRAD_WEDGE_DEG2_FEM<serendipity,DT,OT,PT>::
   Basis_HGRAD_WEDGE_DEG2_FEM() {
-    this->basisCardinality_  = serendipity ? 15 : 18;
-    this->basisDegree_       = 2;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = serendipity ? 15 : 18;
+    this->basisDegree_          = 2;
+    this->basisCellTopologyKey_ = shards::Wedge<6>::key;
+    this->basisType_            = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
     // initialize tags
     {
@@ -1084,7 +1053,7 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,spaceDim);
 
     dofCoords(0,0) =  0.0;  dofCoords(0,1) =  0.0;  dofCoords(0,2) = -1.0;
     dofCoords(1,0) =  1.0;  dofCoords(1,1) =  0.0;  dofCoords(1,2) = -1.0;
@@ -1112,6 +1081,57 @@ namespace Intrepid2 {
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
+  }
+
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_WEDGE_DEG2_FEM<serendipity,DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perTeamSpaceSize = 0;
+    perThreadSpaceSize = 0;
+  }
+
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_WEDGE_DEG2_FEM<serendipity,DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_WEDGE_DEG2_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      (void) scratchStorage; //avoid unused variable warning
+
+      const int numPoints = inputPoints.extent(0);
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            using SerialValue = typename Impl::Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::template Serial<OPERATOR_VALUE>;
+            SerialValue::getValues( output, input);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            using SerialGrad = typename Impl::Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::template Serial<OPERATOR_GRAD>;
+            SerialGrad::getValues( output, input);
+          });
+          break;
+        default: {}
+    }
   }
 
 }// namespace Intrepid2

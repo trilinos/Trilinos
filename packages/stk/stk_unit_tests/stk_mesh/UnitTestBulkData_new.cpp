@@ -79,7 +79,7 @@ namespace {
  * is similar to the BoxFixture it inherits from, with the only difference
  * being the extra parts that this fixture declares for testing purposes.
  */
-struct TestBoxFixture : public fixtures::simple_fields::BoxFixture
+struct TestBoxFixture : public fixtures::BoxFixture
 {
   TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD)
     : BoxFixture(pm, stk::mesh::BulkData::AUTO_AURA),
@@ -203,7 +203,7 @@ TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   int p_size = stk::parallel_machine_size(pm);
   int p_rank = stk::parallel_machine_rank(pm);
 
-  fixtures::simple_fields::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
+  fixtures::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
   fixture.m_meta.commit();
   fixture.generate_mesh();
   BulkData & bulk = fixture.m_bulk_data;
@@ -248,11 +248,8 @@ TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   cell_part_vector.push_back ( &fixture.m_cell_part );
   bulk.change_entity_parts ( new_cell , cell_part_vector );
-#ifdef SIERRA_MIGRATION
   bulk.change_entity_parts ( new_node , cell_part_vector );
-#else
-  ASSERT_THROW ( bulk.change_entity_parts ( new_node , cell_part_vector ) , std::runtime_error );
-#endif
+  EXPECT_TRUE(bulk.bucket(new_node).member(fixture.m_cell_part));
 }
 
 TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
@@ -688,7 +685,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   const int p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
   if ( 8 < p_size ) { return ; }
 
-  fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
+  fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
   fixture.m_meta.commit();
   fixture.generate_mesh();
   const BulkData& mesh = fixture.m_bulk_data;
@@ -700,7 +697,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
         ASSERT_TRUE( mesh.is_valid(node) );
 
         ASSERT_TRUE( fixture.node_id(ix,iy,iz) == mesh.identifier(node) );
-        fixtures::simple_fields::HexFixture::Scalar * const node_coord = stk::mesh::field_data(*fixture.m_coord_field, node);
+        fixtures::HexFixture::Scalar * const node_coord = stk::mesh::field_data(*fixture.m_coord_field, node);
         ASSERT_TRUE( node_coord != NULL );
       }
     }
@@ -745,7 +742,6 @@ TEST ( UnitTestBulkData_new , testUninitializedMetaData )
 
   std::shared_ptr<BulkData> bulk = stk::mesh::MeshBuilder(pm).create();
   MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
 
   meta.initialize(2);
 
@@ -795,7 +791,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   builder.set_entity_rank_names(entity_rank_names);
   std::shared_ptr<BulkData> bulkPtr = builder.create();
   MetaData& meta_data = bulkPtr->mesh_meta_data();
-  meta_data.use_simple_fields();
   Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
   Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
@@ -811,8 +806,8 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   {
     for (unsigned ielem=0; ielem < nelems; ielem++) {
       int e_owner = static_cast<int>(elems_0[ielem][3]);
-      stk::mesh::fixtures::simple_fields::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
-      stk::mesh::fixtures::simple_fields::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
     }
   }
 
@@ -840,8 +835,8 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
         mesh.declare_relation( elem, nodes[1], 1 );
 
         // Node sharing
-        stk::mesh::fixtures::simple_fields::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
-        stk::mesh::fixtures::simple_fields::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
+        stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+        stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
       }
     }
 
@@ -901,7 +896,6 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   std::shared_ptr<BulkData> bulk = builder.create();
   MetaData& meta = bulk->mesh_meta_data();
 
-  meta.use_simple_fields();
 
   Part & node_part = meta.declare_part_with_topology("node_part", stk::topology::NODE);
 
@@ -917,5 +911,18 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   bulk->modification_end();
 
   EXPECT_EQ( bulk->bucket(node).capacity(), non_standard_bucket_capacity );
+}
+
+TEST(BulkData, bucket_debug_ThrowsWithInvalidEntity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+#ifndef NDEBUG
+  std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+
+  stk::mesh::Entity invalidEntity;
+  EXPECT_TRUE(nullptr == bulkPtr->bucket_ptr(invalidEntity));
+  EXPECT_ANY_THROW(bulkPtr->bucket(invalidEntity));
+#endif
 }
 

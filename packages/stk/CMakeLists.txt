@@ -34,19 +34,28 @@
 
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
+message("starting STK cmake configuration, CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
+
+option(STK_BUILT_FOR_SIERRA "Enable SIERRA capability" OFF)
+set(SIERRA_MIGRATION ${STK_BUILT_FOR_SIERRA} CACHE BOOL "Enable SIERRA capability")
+
+if(STK_BUILT_FOR_SIERRA)
+set(STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE ON)
+endif()
+
 IF(COMMAND TRIBITS_PACKAGE_DECL)
   SET(HAVE_STK_Trilinos ON)
   TRIBITS_PACKAGE_DECL(STK)
   MESSAGE("*** Building STK as a Trilinos package. ***")
 ELSE()
   SET(HAVE_STK_Trilinos OFF)
-  project(STK CXX)
+  project(STK CXX Fortran)
 
   SET(PACKAGE_NAME "STK")
 
   MESSAGE("*** Building STK as a stand-alone cmake package. ***")
 ENDIF()
-
+  
 SET(STK_TOPLEVEL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(STK_TOPLEVEL_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -123,8 +132,46 @@ ELSE()
   ENDIF()
 ENDIF()
 
+find_package(ArborX QUIET)
+if(TARGET ArborX::ArborX)
+  MESSAGE("Found ArborX, making it available within stk")
+  SET(STK_HAS_ARBORX ON)
+else()
+  MESSAGE("Optional search library ArborX is not enabled.")
+endif()
+
+if(NOT HAVE_STK_Trilinos)
+  find_package(SEACAS)
+endif()
+
+if(SEACAS_ENABLE_SEACASIoss)
+  message("Enabling stk usage of SEACASIoss")
+  SET(STK_HAS_SEACAS_IOSS ON)
+endif()
+if(SEACAS_ENABLE_SEACASExodus)
+  message("Enabling stk usage of SEACASExodus")
+  SET(STK_HAS_SEACAS_EXODUS ON)
+endif()
+if(SEACAS_ENABLE_SEACASNemesis)
+  message("Enabling stk usage of SEACASNemesis")
+  SET(STK_HAS_SEACAS_NEMESIS ON)
+endif()
+
+if (Trilinos_ENABLE_Intrepid2)
+  message("Intrepid2 is enabled, setting STK_HAVE_INTREPID2")
+  SET(STK_HAVE_INTREPID2 ON)
+endif()
+
 if(NOT HAVE_STK_Trilinos)
   stk_process_enables()
+endif()
+
+if(STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE)
+  set(STK_16BIT_UPWARDCONN_INDEX_TYPE ON)
+  message("STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE is ON, upward-connectivity tables limited to ~65K entries per bucket.")
+else()
+  set(STK_16BIT_UPWARDCONN_INDEX_TYPE OFF)
+  message("STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE is OFF, upward-connectivity tables using 32bit indexing, (allows ~4B entries per bucket).")
 endif()
 
 IF (TPL_ENABLE_Boost)
@@ -164,9 +211,6 @@ ELSE()
 ENDIF()
 
 MESSAGE("\nCMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-MESSAGE("${PROJECT_NAME}_INSTALL_INCLUDE_DIR: ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
-MESSAGE("${PROJECT_NAME}_INSTALL_LIBDIR: ${${PROJECT_NAME}_INSTALL_LIBDIR}")
-MESSAGE("${PROJECT_NAME}_INSTALL_BINDIR: ${${PROJECT_NAME}_INSTALL_BINDIR}\n")
 
 STK_CONFIGURE_FILE(STK_Trilinos_config.h)
 
@@ -177,3 +221,41 @@ STK_SUBPACKAGES()
 
 STK_PACKAGE_POSTPROCESS()
 
+IF (NOT HAVE_STK_Trilinos)
+  include(CMakePackageConfigHelpers)
+  
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/stkConfigVersion.cmake"
+    VERSION VOTD
+    COMPATIBILITY ExactVersion
+  )
+
+  install(EXPORT stkTargets
+    FILE stkTargets.cmake
+    NAMESPACE stk::
+    DESTINATION share/cmake/stk
+  )
+
+  install(
+    FILES
+      cmake/stkConfig.cmake
+      "${CMAKE_CURRENT_BINARY_DIR}/stkConfigVersion.cmake"
+    DESTINATION share/cmake/stk
+    COMPONENT Devel
+  )
+  if(STK_BUILT_FOR_SIERRA)
+    install(
+      FILES cmake/stkLapackSierra.cmake
+      DESTINATION share/cmake/stk
+      RENAME stkLapack.cmake
+      COMPONENT Devel
+    )
+  else()
+    install(
+      FILES cmake/stkLapackGeneric.cmake
+      DESTINATION share/cmake/stk
+      RENAME stkLapack.cmake
+      COMPONENT Devel
+    )
+  endif()
+ENDIF()

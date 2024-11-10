@@ -121,7 +121,12 @@ private:
         os << "    List of sides in skinned sideset but not in skinned part" << std::endl;
         for(size_t i = 0; i < diffFromSideSetToPart.size(); ++i)
         {
-            os << "        (" << i << ") " << m_bulkData.identifier(diffFromSideSetToPart[i]) << std::endl;
+            const stk::mesh::Bucket* bptr = m_bulkData.bucket_ptr(diffFromSideSetToPart[i]);
+            os << "        (" << i << ") side-entity " << m_bulkData.identifier(diffFromSideSetToPart[i]) << " " << bptr->topology() << " parts: { ";
+            for(const stk::mesh::Part* part : bptr->supersets()) {
+              os << part->name() << " ";
+            }
+            os << "}" << std::endl;
             report_sideset_info(diffFromSideSetToPart[i], os);
         }
         os << "    -----------------------------------" << std::endl;
@@ -132,7 +137,7 @@ private:
         int count = 0;
         for(const SideSetEntry & entry : setList)
         {
-            os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << (uint32_t)entry.side << ")"<< std::endl;
+            os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << m_bulkData.bucket(entry.element).topology() << "," << (uint32_t)entry.side << ")"<< std::endl;
             count++;
         }
     }

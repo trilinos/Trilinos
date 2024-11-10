@@ -146,7 +146,6 @@ void StkEdgeIoTest::test_faces(const stk::mesh::BulkData& bulk)
 void StkEdgeIoTest::output_mesh()
 {
   stk::io::StkMeshIoBroker stkIo;
-  stkIo.use_simple_fields();
   stkIo.set_bulk_data(get_bulk());
   size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
 

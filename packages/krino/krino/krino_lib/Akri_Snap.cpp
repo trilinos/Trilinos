@@ -24,6 +24,7 @@
 #include <Akri_SnapInfo.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Relation.hpp>
 #include <memory>
 
 namespace krino
@@ -822,7 +823,6 @@ static void fill_interpolation_nodes_and_weights_at_node_location_in_previous_co
 static std::vector<InterpolationPoint> build_interpolation_points_for_snapping(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, const FieldRef cdfemSnapField, const std::vector<stk::mesh::Entity> & snapNodes)
 {
   stk::mesh::Entity containingElem;
-  stk::math::Vector3d containingElementParametricCoords;
   std::vector<stk::mesh::Entity> interpNodes;
   std::vector<double> interpWeights;
 
@@ -1057,7 +1057,7 @@ void update_intersection_points_and_snap_infos_after_snap_iteration(const stk::m
     std::vector<IntersectionPoint> & intersectionPoints,
     std::vector<SnapInfo> & snapInfos)
 {
-  const std::vector<size_t> oldToNewIntPts = update_intersection_points_after_snap_iteration(mesh, geometry, iterationSortedSnapNodes, nodesToCapturedDomains, intersectionPoints);
+  const std::vector<size_t> oldToNewIntPts = update_intersection_points_after_snap_iteration(mesh, elementSelector, geometry, iterationSortedSnapNodes, nodesToCapturedDomains, intersectionPoints);
 
   const std::vector<stk::mesh::EntityId> sortedIdsOfNodesThatNeedNewSnapInfos = get_sorted_ids_of_owned_nodes_of_elements_of_nodes(mesh, elementSelector, iterationSortedSnapNodes);
 
@@ -1092,7 +1092,7 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
 
     std::vector<IntersectionPoint> intersectionPoints;
     geometry.store_phase_for_uncut_elements(mesh);
-    intersectionPoints = build_all_intersection_points(mesh, geometry, nodesToCapturedDomains);
+    intersectionPoints = build_all_intersection_points(mesh, elementSelector, geometry, nodesToCapturedDomains);
     std::vector<SnapInfo> snapInfos = build_snap_infos_from_intersection_points(mesh, sharpFeatureInfo.get(), elementSelector, nodesToCapturedDomains, intersectionPoints, qualityMetric, minIntPtWeightForEstimatingCutQuality, maxSnapForEdges, globalIDsAreParallelConsistent);
 
     while (true)

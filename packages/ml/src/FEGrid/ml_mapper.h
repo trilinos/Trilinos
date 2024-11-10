@@ -13,6 +13,12 @@
 #ifndef __MLMAPPERH__
 #define __MLMAPPERH__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
@@ -74,4 +80,3 @@ extern int ML_Mapper_Apply(ML_Mapper *, Epetra_MultiVector & , Epetra_MultiVecto
 #endif
 
 #endif
-

@@ -11,7 +11,7 @@
 #include <assert.h>
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
 #include <stk_mesh/base/Field.hpp>

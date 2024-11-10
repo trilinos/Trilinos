@@ -1,27 +1,27 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_MemoryUtils.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_PropertyManager.h>
-#include <Ioss_Utils.h>
-#include <algorithm>
-#include <cassert>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_MemoryUtils.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
 #include <cstddef>
 #include <cstdlib>
-#include <cstring>
 #include <fmt/ostream.h>
+#include <iosfwd>
 #include <numeric>
 #include <string>
 #include <tokenize.h>
 #include <vector>
 
+#include "Ioss_Property.h"
+
 #ifdef SEACAS_HAVE_MPI
-#include <Ioss_SerializeIO.h>
+#include "Ioss_SerializeIO.h"
 #endif
 
 namespace {
@@ -55,11 +55,11 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
   if (get_environment("IOSS_PROPERTIES", env_props, parallel_size() > 1)) {
     // env_props string should be of the form
     // "PROP1=VALUE1:PROP2=VALUE2:..."
-    std::vector<std::string> prop_val = tokenize(env_props, ":");
+    Ioss::NameList prop_val = tokenize(env_props, ":");
 
     int rank = parallel_rank();
     for (auto &elem : prop_val) {
-      std::vector<std::string> property = tokenize(elem, "=");
+      Ioss::NameList property = tokenize(elem, "=");
       if (property.size() != 2) {
         std::ostringstream errmsg;
         fmt::print(
@@ -116,11 +116,11 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       std::vector<char> broadcast_string(string_length + 1);
       if (rank == 0) {
-        Ioss::Utils::copy_string(broadcast_string.data(), result_string,
+        Ioss::Utils::copy_string(Data(broadcast_string), result_string,
                                  static_cast<size_t>(string_length) + 1);
       }
       broadcast(broadcast_string);
-      value = std::string(broadcast_string.data());
+      value = std::string(Data(broadcast_string));
     }
     else {
       value = std::string("");
@@ -288,14 +288,14 @@ void Ioss::ParallelUtils::attribute_reduction(IOSS_MAYBE_UNUSED const int length
 
     std::vector<char> recv_buf(length);
     const int         success =
-        MPI_Allreduce(buffer, recv_buf.data(), length, MPI_BYTE, MPI_BOR, communicator_);
+        MPI_Allreduce(buffer, Data(recv_buf), length, MPI_BYTE, MPI_BOR, communicator_);
     if (MPI_SUCCESS != success) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
       IOSS_ERROR(errmsg);
     }
 
-    std::memcpy(buffer, recv_buf.data(), length);
+    std::memcpy(buffer, Data(recv_buf), length);
   }
 #endif
 }
@@ -324,7 +324,7 @@ void Ioss::ParallelUtils::global_count(const IntVector &local_counts,
       IOSS_ERROR(errmsg);
     }
     const int success =
-        MPI_Allreduce((void *)local_counts.data(), global_counts.data(),
+        MPI_Allreduce((void *)Data(local_counts), Data(global_counts),
                       static_cast<int>(local_counts.size()), MPI_INT, MPI_SUM, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
@@ -357,7 +357,7 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts,
                  Ioss::SerializeIO::getOwner());
       IOSS_ERROR(errmsg);
     }
-    const int success = MPI_Allreduce((void *)local_counts.data(), global_counts.data(),
+    const int success = MPI_Allreduce((void *)Data(local_counts), Data(global_counts),
                                       static_cast<int>(local_counts.size()), MPI_LONG_LONG_INT,
                                       MPI_SUM, communicator_);
     if (success != MPI_SUCCESS) {
@@ -446,7 +446,7 @@ namespace Ioss {
 } // namespace Ioss
 
 template <typename T>
-void Ioss::ParallelUtils::broadcast(T &my_value, int root) const
+void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED T &my_value, IOSS_MAYBE_UNUSED int root) const
 {
   IOSS_PAR_UNUSED(my_value);
   IOSS_PAR_UNUSED(root);
@@ -483,7 +483,7 @@ namespace Ioss {
     IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
     if (parallel_size() > 1) {
-      const int success = MPI_Bcast(my_value.data(), (int)my_value.size() * 2, mpi_type(int(0)),
+      const int success = MPI_Bcast(Data(my_value), (int)my_value.size() * 2, mpi_type(int(0)),
                                     root, communicator_);
       if (success != MPI_SUCCESS) {
         std::ostringstream errmsg;
@@ -496,15 +496,15 @@ namespace Ioss {
 } // namespace Ioss
 
 template <typename T>
-void Ioss::ParallelUtils::broadcast(std::vector<T> &my_value,
-                                    int             root) const
+void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<T> &my_value,
+                                    IOSS_MAYBE_UNUSED int             root) const
 {
   IOSS_PAR_UNUSED(my_value);
   IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success =
-        MPI_Bcast(my_value.data(), (int)my_value.size(), mpi_type(T()), root, communicator_);
+        MPI_Bcast(Data(my_value), (int)my_value.size(), mpi_type(T()), root, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
@@ -538,7 +538,7 @@ template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T
   }
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Gather((void *)&my_value, 1, mpi_type(T()), (void *)result.data(), 1,
+    const int success = MPI_Gather((void *)&my_value, 1, mpi_type(T()), (void *)Data(result), 1,
                                    mpi_type(T()), 0, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
@@ -559,7 +559,7 @@ template <typename T> void Ioss::ParallelUtils::all_gather(T my_value, std::vect
   result.resize(parallel_size());
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Allgather((void *)&my_value, 1, mpi_type(T()), (void *)result.data(), 1,
+    const int success = MPI_Allgather((void *)&my_value, 1, mpi_type(T()), (void *)Data(result), 1,
                                       mpi_type(T()), communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
@@ -582,7 +582,7 @@ void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success =
-        MPI_Allgather(my_values.data(), my_values.size(), mpi_type(T()), (void *)result.data(),
+        MPI_Allgather(Data(my_values), my_values.size(), mpi_type(T()), (void *)Data(result),
                       my_values.size(), mpi_type(T()), communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
@@ -594,7 +594,7 @@ void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &
     result = my_values;
   }
 #else
-  result    = my_values;
+  result = my_values;
 #endif
 }
 
@@ -602,7 +602,7 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
 {
   static double begin = Utils::timer();
 
-  int64_t MiB = 1024 * 1024;
+  int64_t MiB = static_cast<int64_t>(1024) * static_cast<int64_t>(1024);
   int64_t min = 0, max = 0, avg = 0;
   memory_stats(min, max, avg);
 
@@ -628,8 +628,8 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
   }
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Gather((void *)my_values.data(), count, mpi_type(T()),
-                                   (void *)result.data(), count, mpi_type(T()), 0, communicator_);
+    const int success = MPI_Gather((void *)Data(my_values), count, mpi_type(T()),
+                                   (void *)Data(result), count, mpi_type(T()), 0, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Gather failed", __func__);
@@ -653,7 +653,7 @@ template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_
                                                      std::vector<char> &my_values,
                                                      std::vector<char> &result) const;
 template <typename T>
-int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
+int Ioss::ParallelUtils::gather(int num_vals, IOSS_MAYBE_UNUSED int size_per_val,
                                 std::vector<T> &my_values, std::vector<T> &result) const
 {
   IOSS_PAR_UNUSED(size_per_val);
@@ -678,8 +678,8 @@ int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
     result.resize(tot_vals * size_per_val);
   }
 
-  MPI_Gatherv(my_values.data(), (int)my_values.size(), mpi_type(T{}), result.data(),
-              vals_index.data(), vals_offset.data(), mpi_type(T{}), 0, communicator());
+  MPI_Gatherv(Data(my_values), (int)my_values.size(), mpi_type(T{}), Data(result), Data(vals_index),
+              Data(vals_offset), mpi_type(T{}), 0, communicator());
 #else
   int tot_vals = num_vals;
   result.resize(num_vals);

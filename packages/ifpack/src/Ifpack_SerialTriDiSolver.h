@@ -43,6 +43,12 @@
 
 #ifndef IFPACK_SERIALTRIDISOLVER_H
 #define IFPACK_SERIALTRIDISOLVER_H
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
 class Ifpack_SerialTriDiMatrix;
 //class Epetra_SerialDenseVector;
 class Epetra_SerialDenseMatrix;

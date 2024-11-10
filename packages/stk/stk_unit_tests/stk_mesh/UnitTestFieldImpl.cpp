@@ -64,7 +64,6 @@ public:
     pC(meta_data.declare_part( std::string("C") , stk::topology::NODE_RANK)),
     pD(meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK))
   {
-    meta_data.use_simple_fields();
   }
 
   void testFieldRestriction();

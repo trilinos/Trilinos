@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <Xpetra_Map.hpp>
@@ -55,6 +19,8 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
 #include <Tpetra_Details_KokkosCounter.hpp>
+
+#include <KokkosKernels_config.h>
 
 namespace MueLuTests {
 
@@ -103,11 +69,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
   // confirm that we did get a hierarchy with two levels -- a sanity check for this test
   TEST_EQUALITY(2, H->GetGlobalNumLevels());
 
+  // When Kokkos Kernels uses TPLs, some Kokkos::deep_copy in the Kokkos Kernels native implementations are not called.
+  int kkNativeDeepCopies = 8;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  if constexpr (Node::is_cpu)
+    kkNativeDeepCopies = 0;
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>) {
+    // kokkos kernels only uses cuSparse for these versions
+#if (CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040)
+    kkNativeDeepCopies = 0;
+#endif
+  }
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>)
+    kkNativeDeepCopies = 0;
+#endif
+
   if (Node::is_cpu) {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 0);
-  } else {
-    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 37);
   }
+#ifdef KOKKOS_HAS_SHARED_SPACE
+  else {
+    size_t targetNumDeepCopies = kkNativeDeepCopies + (std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 12 : 29);
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
+  }
+#else
+  else {
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), kkNativeDeepCopies + 29);
+  }
+#endif
 
   auto X = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(A->getRowMap(), 1);
   auto B = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(A->getRowMap(), 1);

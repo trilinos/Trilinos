@@ -14,9 +14,8 @@ printf "STK_INSTALL_DIR=${stk_install_dir}\n";
 printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_pure_cmake_stk'\n\n";
 
 # before running this script, load these modules:
-# module load cde/v3/cmake/3.23.1
-# module load cde/v3/gcc/10.3.0
-# module load cde/v3/openmpi/4.1.2-gcc-10.3.0
+# module load aue/cmake/3.27.7
+# module load aue/gcc/12.3.0
 
 mkdir -p $build_dir
 
@@ -37,6 +36,7 @@ cmake \
 -DSTK_ENABLE_ALL=ON \
 -DSTK_ENABLE_MPI:BOOL=OFF \
 -DSTK_ENABLE_STKMiddle_mesh=OFF \
+-DSTK_ENABLE_STKMiddle_mesh_util=OFF \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DKokkos_DIR=/fgs/william/kokkos/install/lib64/cmake/Kokkos \
 -DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \

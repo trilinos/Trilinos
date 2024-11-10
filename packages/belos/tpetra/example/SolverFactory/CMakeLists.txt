@@ -1,0 +1,14 @@
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Xpetra)
+
+IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SolverFactory_Tpetra_Galeri_Ex
+    SOURCES SolverFactoryTpetraGaleriEx.cpp
+    COMM serial mpi
+    ARGS --verbose
+    STANDARD_PASS_OUTPUT
+    )
+
+ENDIF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)

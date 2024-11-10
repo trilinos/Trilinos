@@ -57,10 +57,8 @@ namespace mesh {
 template<typename T, template <typename> class NgpDebugger>
 class HostField : public NgpFieldBase
 {
- private:
-  using ExecSpace = stk::ngp::ExecSpace;
-
  public:
+  using ExecSpace = stk::ngp::ExecSpace;
   using value_type = T;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
 
@@ -142,26 +140,10 @@ class HostField : public NgpFieldBase
     return data[component];
   }
 
-  T& get(HostMesh::MeshIndex entity, int component,
-         const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
-  {
-    T* data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
-    STK_ThrowAssert(data);
-    return data[component];
-  }
-
   T& operator()(const stk::mesh::FastMeshIndex& index, int component,
                 const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
-    STK_ThrowAssert(data);
-    return data[component];
-  }
-
-  T& operator()(const HostMesh::MeshIndex& index, int component,
-                const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
-  {
-    T* data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket->bucket_id(), index.bucketOrd));
     STK_ThrowAssert(data);
     return data[component];
   }
@@ -212,7 +194,9 @@ class HostField : public NgpFieldBase
   void sync_to_host() override
   {
     sync_to_host(Kokkos::DefaultExecutionSpace());
-    Kokkos::fence();
+    if constexpr (!std::is_same_v<Kokkos::DefaultExecutionSpace,Kokkos::Serial>) {
+      Kokkos::fence();
+    }
   }
 
   void sync_to_host(const ExecSpace& execSpace) override
@@ -263,10 +247,9 @@ class HostField : public NgpFieldBase
 
   FieldState state() const { return field->state(); }
 
-  void rotate_multistate_data() override { }
-
   void update_bucket_pointer_view() override { }
 
+  void swap_field_views(NgpFieldBase *other) override { }
   void swap(HostField<T> &other) { }
 
   stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }

@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_RILUK_decl.hpp
 /// \brief Declaration of RILUK interface
@@ -55,6 +22,7 @@
 #include "Ifpack2_IlukGraph.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 
+#include <memory>
 #include <type_traits>
 
 namespace Teuchos {
@@ -319,7 +287,7 @@ class RILUK:
     <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
     HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
   typedef Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type>, kk_handle_type> iluk_graph_type;
-  
+
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
@@ -402,7 +370,7 @@ class RILUK:
   }
 
   //! Get a rough estimate of cost per iteration
-  size_t getNodeSmootherComplexity() const;  
+  size_t getNodeSmootherComplexity() const;
 
 
 
@@ -568,6 +536,14 @@ public:
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
   Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
 
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -578,13 +554,16 @@ private:
   static void checkOrderingConsistency (const row_matrix_type& A);
   void initAllValues (const row_matrix_type& A);
 
-  /// \brief Return A, wrapped in a LocalFilter, if necessary.
-  ///
-  /// "If necessary" means that if A is already a LocalFilter, or if
-  /// its communicator only has one process, then we don't need to
-  /// wrap it, so we just return A.
-  static Teuchos::RCP<const row_matrix_type>
-  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+  void compute_serial();
+  void compute_kkspiluk();
+// Workaround Cuda limitation of KOKKOS_LAMBDA in private/protected member functions
+#ifdef KOKKOS_ENABLE_CUDA
+public:
+#endif
+  void compute_kkspiluk_stream();
+#ifdef KOKKOS_ENABLE_CUDA
+private:
+#endif
 
 protected:
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
@@ -599,9 +578,8 @@ protected:
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
-  lno_row_view_t A_local_rowmap_; 
-  lno_nonzero_view_t A_local_entries_;
-  scalar_nonzero_view_t A_local_values_;
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
   std::vector<local_matrix_device_type> A_local_diagblks;
   std::vector< lno_row_view_t > A_local_diagblks_rowmap_v_;
   std::vector< lno_nonzero_view_t > A_local_diagblks_entries_v_;
@@ -647,6 +625,12 @@ protected:
   bool isKokkosKernelsStream_;
   int num_streams_;
   std::vector<execution_space> exec_space_instances_;
+  bool hasStreamReordered_;
+  std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;
+  std::vector<typename lno_nonzero_view_t::non_const_type> reverse_perm_v_;
+  mutable std::unique_ptr<MV> Y_tmp_;
+  mutable std::unique_ptr<MV> reordered_x_;
+  mutable std::unique_ptr<MV> reordered_y_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

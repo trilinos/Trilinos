@@ -16,6 +16,7 @@
 #include <algorithm>                       // for lower_bound
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <vector> // for vector, vector<>::iterator, etc
 

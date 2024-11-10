@@ -19,11 +19,6 @@
 #include "Kokkos_Core.hpp"
 
 namespace KokkosKernels::Impl {
-// lbv - 07/26/2023:
-// MemoryTraits<T>::impl_value was added
-// in Kokkos 4.1.00 so we should guard
-// the content of this header until v4.3.0
-#if KOKKOS_VERSION >= 40100 || defined(DOXY)
 
 /*! \brief Yields a type that is View with Kokkos::Unmanaged added to the memory
  * traits
@@ -34,13 +29,11 @@ class with_unmanaged {
   using layout_type  = typename View::array_layout;
   using memory_space = typename View::memory_space;
 
-  using orig_traits = typename View::memory_traits;
-  static constexpr unsigned new_traits =
-      orig_traits::impl_value | Kokkos::Unmanaged;
+  using orig_traits                    = typename View::memory_traits;
+  static constexpr unsigned new_traits = orig_traits::impl_value | Kokkos::Unmanaged;
 
  public:
-  using type = Kokkos::View<data_type, layout_type, memory_space,
-                            Kokkos::MemoryTraits<new_traits> >;
+  using type = Kokkos::View<data_type, layout_type, memory_space, Kokkos::MemoryTraits<new_traits> >;
 };
 
 /*! \brief A type that is View with Kokkos::Unmanaged added to the memory traits
@@ -59,7 +52,6 @@ auto make_unmanaged(const View &v) {
   return typename with_unmanaged<View>::type(v);
 }
 
-#endif  // KOKKOS_VERSION >= 40100
 }  // namespace KokkosKernels::Impl
 
 #endif

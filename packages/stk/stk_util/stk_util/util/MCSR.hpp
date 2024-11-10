@@ -47,6 +47,23 @@
 namespace stk {
 namespace util {
 
+using IndexRange = std::pair<unsigned,unsigned>;
+
+template<typename T>
+int find_sorted_insertion_index(const std::vector<T>& items, const IndexRange& indices, const T& item)
+{
+  const T* begItems = items.data()+indices.first;
+  const T* endItems = items.data()+indices.second;
+  const T* it = std::lower_bound(begItems, endItems, item);
+  if (it != endItems) {
+    if (*it==item) {
+      return -1;
+    }
+    return indices.first + (it - begItems);
+  }
+  return indices.second;
+}
+
 template<typename T>
 class MCSR
 {
@@ -230,8 +247,6 @@ public:
   }
 
 private:
-  using IndexRange = std::pair<unsigned,unsigned>;
-
   bool is_valid(const T& item)
   {
     return item != m_invalidItem;
@@ -249,7 +264,7 @@ private:
     IndexRange& indices = m_offsets[row];
 
     if (indices.second >= numItems) {
-      int insertIdx = find_sorted_insertion_index(indices, item);
+      int insertIdx = find_sorted_insertion_index(m_items, indices, item);
       if (insertIdx < 0) {
         return false;
       }
@@ -265,7 +280,7 @@ private:
       return didInsert;
     }
     else {
-      const int insertIdx = find_sorted_insertion_index(indices, item);
+      const int insertIdx = find_sorted_insertion_index(m_items, indices, item);
       if (insertIdx < 0) {
         return false;
       }
@@ -277,20 +292,6 @@ private:
     }
 
     return false;
-  }
-
-  int find_sorted_insertion_index(const IndexRange& indices, const T& item)
-  {
-    const T* begItems = &m_items[indices.first];
-    const T* endItems = &m_items[indices.second];
-    const T* it = std::lower_bound(begItems, endItems, item);
-    if (it != endItems) {
-      if (*it==item) {
-        return -1;
-      }
-      return indices.first + (it - begItems);
-    }
-    return indices.second;
   }
 
   bool insert_item_at_index(IndexRange& indices, int insertIdx, const T& item)
@@ -311,7 +312,7 @@ private:
   
   bool insert_item_into_sorted_range(IndexRange& indices, const T& item)
   {
-    return insert_item_at_index(indices, find_sorted_insertion_index(indices, item), item);
+    return insert_item_at_index(indices, find_sorted_insertion_index(m_items, indices, item), item);
   }
   
   unsigned move_items_to_end(unsigned row)

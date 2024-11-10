@@ -102,7 +102,6 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   const unsigned int meshSizeZ = 4;
 
   stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stkMeshIoBroker->use_simple_fields();
   stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
   std::ostringstream osstr;
   osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
@@ -1899,7 +1898,6 @@ BLASFixture3d<A>::BLASFixture3d(A* init1_input, A* init2_input, A* init3_input)
 
   MPI_Comm my_comm = MPI_COMM_WORLD;
   stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stkMeshIoBroker->use_simple_fields();
   stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
   std::ostringstream osstr;
   osstr<<"generated:"<<meshSizeX<<"x"<<meshSizeY<<"x"<<meshSizeZ;
@@ -1941,8 +1939,8 @@ BLASFixture3d<A>::~BLASFixture3d() {
   delete stkMeshIoBroker;
 }
 
-template<class A,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-bool test3dfield(const stk::mesh::Field<A,T1,T2,T3,T4,T5,T6,T7> & field,const A* expected_value,const double tol=1.5e-3)
+template<class A>
+bool test3dfield(const stk::mesh::Field<A> & field,const A* expected_value,const double tol=1.5e-3)
 {
   bool result=true;
   const stk::mesh::BucketVector& buckets_init = field.get_mesh().get_buckets(field.entity_rank(),field.mesh_meta_data().universal_part() & stk::mesh::selectField(field));
@@ -1961,8 +1959,9 @@ bool test3dfield(const stk::mesh::Field<A,T1,T2,T3,T4,T5,T6,T7> & field,const A*
   return result;
 }
 
-template<class A,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-bool test3dfield(const stk::mesh::Field<std::complex<A>,T1,T2,T3,T4,T5,T6,T7> & field,const std::complex<A>* expected_value,const double tol=1.5e-3)
+template<class A>
+bool test3dfield(const stk::mesh::Field<std::complex<A>> & field,
+                 const std::complex<A>* expected_value, const double tol=1.5e-3)
 {
   bool result=true;
   const stk::mesh::BucketVector& buckets_init = field.get_mesh().get_buckets(field.entity_rank(),field.mesh_meta_data().universal_part() & stk::mesh::selectField(field));

@@ -30,11 +30,13 @@ namespace Impl {
 
 template <typename T>
 struct HostLapack {
-  static void gesv(int n, int rhs, T *a, int lda, int *ipiv, T *b, int ldb,
-                   int info);
+  static void gesv(int n, int rhs, T *a, int lda, int *ipiv, T *b, int ldb, int info);
 
-  static int trtri(const char uplo, const char diag, int n, const T *a,
-                   int lda);
+  static void gesvd(const char jobu, const char jobvt, const int m, const int n, T *A, const int lda,
+                    typename Kokkos::ArithTraits<T>::mag_type *S, T *U, const int ldu, T *Vt, const int ldvt, T *work,
+                    int lwork, typename Kokkos::ArithTraits<T>::mag_type *rwork, int info);
+
+  static int trtri(const char uplo, const char diag, int n, const T *a, int lda);
 };
 }  // namespace Impl
 }  // namespace KokkosLapack

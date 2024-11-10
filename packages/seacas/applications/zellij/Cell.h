@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,9 +37,6 @@ enum class Loc { C = 0, BL, B, BR, L, R, TL, T, TR };
 class Cell
 {
 public:
-  Cell()             = default;
-  Cell(const Cell &) = default;
-
   std::pair<double, double> get_coordinate_range(enum Axis) const;
   void                      initialize(size_t i, size_t j, std::shared_ptr<UnitCell> unit_cell);
 
@@ -153,7 +150,7 @@ public:
   double m_offY{0.0};
 
 private:
-  //! The UnitCell that occupies this location in the grid / latice
+  //! The UnitCell that occupies this location in the grid / lattice
   std::shared_ptr<UnitCell> m_unitCell;
 
   //! The MPI ranks of all surrounding cells in order:

@@ -14,6 +14,12 @@
 #ifndef _MLELMNTAGX_
 #define _MLELMNTAGX_
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include <stdio.h>
 /* #include <stdlib.h> */
 
@@ -65,4 +71,3 @@ extern int  ML_ElementAGX_ComposeCandidates
 #endif
 
 #endif
-

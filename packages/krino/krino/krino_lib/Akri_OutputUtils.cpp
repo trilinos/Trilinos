@@ -35,7 +35,16 @@ void output_mesh_with_fields_and_properties(const stk::mesh::BulkData & mesh, co
   stk::mesh::BulkData & workAroundNonConstMesh = const_cast<stk::mesh::BulkData &>(mesh);
   stkIo.set_bulk_data(workAroundNonConstMesh);
 
-  size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose, properties);
+  const size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose, properties);
+
+  const int filterDisconnectedNodes = true;
+  if (filterDisconnectedNodes)
+  {
+    // Will filter out nodes that are themselves selected, but without any attached elements that are selected.
+    // For example, if selector is BLOCK_1 | NODESET_1, a node will not be output if it is in NODESET_1 and not BLOCK_1.
+    std::shared_ptr<Ioss::Region> ioRegion = stkIo.get_output_ioss_region(outputFileIndex);
+    ioRegion->property_add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, filterDisconnectedNodes));
+  }
 
   if (step > 0)
   {
@@ -73,6 +82,14 @@ void output_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
+std::string create_filename_from_base_filename(const std::string & baseFileName, const int numFileRevisions)
+{
+  size_t lastIndex = baseFileName.find_last_of(".");
+  STK_ThrowRequire(lastIndex != std::string::npos);
+  const std::string fileBaseName = baseFileName.substr(0, lastIndex);
+  return create_file_name(fileBaseName, numFileRevisions);
+}
+
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex)
 {
   STK_ThrowAssert(fileIndex >= 0);
@@ -86,30 +103,35 @@ std::string create_file_name(const std::string & fileBaseName, const int fileInd
   return filename;
 }
 
-void
-write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm)
+template<class FACET>
+void write_facets( const std::vector<FACET> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm)
 {
-  int nfaces = facetedSurface.size();
-  const int nodes_per_elem = dim;
-  const int nnodes = nfaces * nodes_per_elem;
-  const int nelems = nfaces * 1; //writing out faces as elements
+  int numFacets = facets.size();
+  const int nodesPerFacet = FACET::DIM;
+  const int numNodes = numFacets * nodesPerFacet;
+  const unsigned numProcs = stk::parallel_machine_size(comm);
+  const int procId = stk::parallel_machine_rank(comm);
 
   // Type (ExodusII) is hard-wired at this time.
-  Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", create_file_name(fileBaseName, fileIndex), Ioss::WRITE_RESULTS);
+  Ioss::PropertyManager properties;
+  properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
+  const std::string fileName = create_file_name(fileBaseName, fileIndex);
+  properties.add(Ioss::Property("base_filename", create_file_name(fileBaseName, 0)));
+  if (fileIndex > 0)
+    properties.add(Ioss::Property("state_offset", fileIndex));
+  Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", create_file_name(fileBaseName, fileIndex), Ioss::WRITE_RESULTS, comm, properties);
+  STK_ThrowRequireMsg(db != nullptr && db->ok(), "ERROR: Could not open output database '" << fileName << "' of type 'exodus'\n");
   Ioss::Region io(db, "FacetRegion");
 
   // find offsets for consistent global numbering
   int elem_start = 0;
-  if ( stk::parallel_machine_size(comm) > 1 ) {
-    std::vector< int > num_faces;
-    num_faces.resize( stk::parallel_machine_size(comm) );
-
-    // Gather everyone's facet list sizes
-    // I don't think there is a framework call for this...
-    MPI_Allgather( &nfaces, 1, MPI_INT,
-                   &(num_faces[0]), 1, MPI_INT, comm );
-    for (int i = 0; i< stk::parallel_machine_rank(comm); ++i) {
-      elem_start += num_faces[i];
+  if ( numProcs > 1 ) {
+    std::vector< int > numFaces(numProcs);
+    // Gather everyone's facet list sizes.  I don't think there is a stk call for this...
+    MPI_Allgather( &numFacets, 1, MPI_INT,
+                   &(numFaces[0]), 1, MPI_INT, comm );
+    for (int i = 0; i<procId; ++i) {
+      elem_start += numFaces[i];
     }
   }
 
@@ -117,39 +139,32 @@ write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::
   io.property_add(Ioss::Property("title", description));
   io.begin_mode(Ioss::STATE_DEFINE_MODEL);
 
-  // if we have no elements bail now
-  if ( 0 == nelems ) {
-    io.end_mode(Ioss::STATE_DEFINE_MODEL);
-    return;
-  }
-
-  Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", nnodes, dim);
+  Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", numNodes, nodesPerFacet);
   io.add(nb);
+  nb->property_add(Ioss::Property("locally_owned_count", numNodes));
 
   std::string el_type;
-  if (dim == 3)
+  if constexpr (FACET::DIM == 3)
     el_type = "trishell3";
   else
     el_type = "shellline2d2";
 
-  Ioss::ElementBlock *eb = new Ioss::ElementBlock(db, "block_1", el_type, nelems);
+  Ioss::ElementBlock *eb = new Ioss::ElementBlock(db, "block_1", el_type, numFacets);
   io.add(eb);
 
   io.end_mode(Ioss::STATE_DEFINE_MODEL);
   io.begin_mode(Ioss::STATE_MODEL);
 
-  const FacetOwningVec & facets = facetedSurface.get_facets();
-
   // loop over elements and node to create maps
   {
     std::vector< int > nmap, emap;
-    nmap.reserve(nnodes);
-    emap.reserve(nelems);
+    nmap.reserve(numNodes);
+    emap.reserve(numFacets);
 
     for ( unsigned n=0, e=0; e<facets.size(); ++e ) {
       emap.push_back(elem_start + e + 1);
-      for ( int j = 0; j < nodes_per_elem; ++j ) {
-        nmap.push_back(nodes_per_elem*elem_start + n + 1);
+      for ( int j = 0; j < nodesPerFacet; ++j ) {
+        nmap.push_back(nodesPerFacet*elem_start + n + 1);
         ++n;
       }
     }
@@ -157,17 +172,23 @@ write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::
     eb->put_field_data("ids", emap);
   }
 
+  if (nb->get_database()->needs_shared_node_information())
+  {
+    std::vector<int> owningProcessor(numNodes, procId);
+    nb->put_field_data("owning_processor", owningProcessor);
+  }
+
   // generate coordinates
   {
     std::vector< double > xyz;
-    xyz.reserve(dim*nnodes);
+    xyz.reserve(FACET::DIM*numNodes);
 
     for ( auto&& facet : facets ) {
-      for ( int j = 0; j < nodes_per_elem; ++j ) {
-        const stk::math::Vector3d & vert = facet->facet_vertex(j);
+      for ( int j = 0; j < nodesPerFacet; ++j ) {
+        const stk::math::Vector3d & vert = facet.facet_vertex(j);
         xyz.push_back(vert[0]);
         xyz.push_back(vert[1]);
-        if (3 == dim) xyz.push_back(vert[2]);
+        if (3 == FACET::DIM) xyz.push_back(vert[2]);
       }
     }
     nb->put_field_data("mesh_model_coordinates", xyz);
@@ -176,14 +197,24 @@ write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::
   // generate connectivity
   {
     std::vector< int > conn;
-    conn.reserve(nnodes);
-    for ( int n = 0; n < nnodes; ++n ) {
-      conn.push_back(nodes_per_elem*elem_start + n+1);
+    conn.reserve(numNodes);
+    for ( int n = 0; n < numNodes; ++n ) {
+      conn.push_back(nodesPerFacet*elem_start + n+1);
     }
     eb->put_field_data("connectivity", conn);
   }
 
   io.end_mode(Ioss::STATE_MODEL);
+
+  // write fake transient
+  io.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+  io.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+
+  io.begin_mode(Ioss::STATE_TRANSIENT);
+  const int currentOutputStep = io.add_state(1.0*fileIndex);
+  io.begin_state(currentOutputStep);
+  io.end_state(currentOutputStep);
+  io.end_mode(Ioss::STATE_TRANSIENT);
 }
 
 stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector)
@@ -206,6 +237,11 @@ stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkDa
   }
   return emptyParts;
 }
+
+// Explicit template instantiation
+
+template void write_facets<Facet2d>( const std::vector<Facet2d> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
+template void write_facets<Facet3d>( const std::vector<Facet3d> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
 
 }
 

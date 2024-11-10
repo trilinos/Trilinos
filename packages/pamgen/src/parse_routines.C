@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include <math.h>
 #include "uns_inline_decomp.h"
 #include "element_density_function.h"
@@ -652,7 +661,13 @@ namespace PAMGEN_NEVADA {
                           ss << "Zblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_b[2] << ".";
                           token_stream->Semantics_Error(ss.str());
                         }
-                        Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = token_stream->Parse_Real();
+                        Real val = token_stream->Parse_Real();
+                        if(val <= 0.){
+                          std::stringstream ss;
+                          ss << "Block size must be positive." << Inline_Mesh_Desc::im_static_storage->inline_b[2] << ".";
+                          token_stream->Semantics_Error(ss.str());
+                        } 
+                        Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = val;
                         break;}
         case P_RBLOCK:{
                         block_index = token_stream->Parse_Integer()-1;
@@ -661,7 +676,13 @@ namespace PAMGEN_NEVADA {
                           ss << "Rblock/Xblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_b[0] << ".";
                           token_stream->Semantics_Error(ss.str());
                         }
-                        Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = token_stream->Parse_Real();
+                        Real val = token_stream->Parse_Real();
+                        if(val <= 0.){
+                          std::stringstream ss;
+                          ss << "Block size must be positive." << Inline_Mesh_Desc::im_static_storage->inline_b[2] << ".";
+                          token_stream->Semantics_Error(ss.str());
+                        } 
+                        Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = val;
                         break;}
         case P_ABLOCK:{
                         block_index = token_stream->Parse_Integer()-1;
@@ -670,7 +691,13 @@ namespace PAMGEN_NEVADA {
                           ss << "Ablock/Yblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_b[1] << ".";
                           token_stream->Semantics_Error(ss.str());
                         }
-                        Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = token_stream->Parse_Real();
+                        Real val = token_stream->Parse_Real();
+                        if(val <= 0.){
+                          std::stringstream ss;
+                          ss << "Block size must be positive." << Inline_Mesh_Desc::im_static_storage->inline_b[2] << ".";
+                          token_stream->Semantics_Error(ss.str());
+                        } 
+                        Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = val;
                         break;}
 
 

@@ -61,7 +61,6 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
   builder.set_spatial_dimension(spatialDim);
   builder.set_aura_option(auraOption);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -113,7 +112,7 @@ TEST(UnitTestChangeParts, test_batch_part_change)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
+  stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
 
   stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
   EXPECT_TRUE(bulkData.is_valid(elem1));
@@ -165,7 +164,7 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   stk::mesh::put_field_on_mesh(field, supersetPart, nullptr);
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
+  stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
 
   stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
   EXPECT_TRUE(bulkData.is_valid(node1));
@@ -303,11 +302,11 @@ TEST(ChangeElemParts, addThenRemoveElemPart_checkSharedNode)
   EXPECT_EQ(stk::mesh::Modified, bulk.state(node5));
 }
 
-class TestChangePartsWithSelector : public stk::unit_test_util::simple_fields::MeshFixture
+class TestChangePartsWithSelector : public stk::unit_test_util::MeshFixture
 {
 public:
   TestChangePartsWithSelector()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {
     setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "ON", 1);
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);

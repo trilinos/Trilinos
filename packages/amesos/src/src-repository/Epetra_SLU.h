@@ -29,6 +29,12 @@
 #ifndef _EPETRA_SLU_H_
 #define _EPETRA_SLU_H_
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 class Epetra_LinearProblem;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;

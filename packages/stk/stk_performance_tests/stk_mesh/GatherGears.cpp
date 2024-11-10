@@ -111,8 +111,8 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
 TEST(gather_gears, gather_gears)
 {
-  stk::mesh::fixtures::simple_fields::GearsFixture fixture(MPI_COMM_WORLD, 1,
-      stk::mesh::fixtures::simple_fields::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
+  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, 1,
+      stk::mesh::fixtures::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
   fixture.meta_data.commit();
 
   double start_time = stk::cpu_time();
@@ -152,7 +152,7 @@ TEST(gather_gears, gather_gears)
   const double timers[NUM_TIMERS] = {mesh_create_time, gather_time, total_time};
   const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
 
-  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+  stk::print_timers_and_memory(timer_names, timers, NUM_TIMERS);
 
   stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }

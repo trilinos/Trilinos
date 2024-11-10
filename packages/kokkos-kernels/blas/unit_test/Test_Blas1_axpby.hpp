@@ -34,16 +34,14 @@ void impl_test_axpby(int N) {
   const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
   const MagnitudeB max_val = 10;
   const MagnitudeB max_error =
-      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) +
-       Kokkos::ArithTraits<ScalarB>::abs(b)) *
-      max_val * eps;
+      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) + Kokkos::ArithTraits<ScalarB>::abs(b)) * max_val *
+      eps;
 
   view_stride_adapter<ViewTypeA> x("X", N);
   view_stride_adapter<ViewTypeB> y("Y", N);
   view_stride_adapter<ViewTypeB> org_y("Org_Y", N);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
@@ -58,8 +56,7 @@ void impl_test_axpby(int N) {
   KokkosBlas::axpby(a, x.d_view, b, y.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i) + b * org_y.h_view(i)),
-                   y.h_view(i), 2 * max_error);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i) + b * org_y.h_view(i)), y.h_view(i), 2 * max_error);
   }
 
   // Re-randomize y
@@ -68,8 +65,7 @@ void impl_test_axpby(int N) {
   KokkosBlas::axpby(a, x.d_view_const, b, y.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i) + b * org_y.h_view(i)),
-                   y.h_view(i), 2 * max_error);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i) + b * org_y.h_view(i)), y.h_view(i), 2 * max_error);
   }
 }
 
@@ -88,12 +84,10 @@ void impl_test_axpby_mv(int N, int K) {
   const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
   const MagnitudeB max_val = 10;
   const MagnitudeB max_error =
-      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) +
-       Kokkos::ArithTraits<ScalarB>::abs(b)) *
-      max_val * eps;
+      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) + Kokkos::ArithTraits<ScalarB>::abs(b)) * max_val *
+      eps;
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
@@ -109,16 +103,12 @@ void impl_test_axpby_mv(int N, int K) {
   Kokkos::deep_copy(org_y.h_base, y.d_base);
   Kokkos::deep_copy(x.h_base, x.d_base);
 
-  Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
-
   KokkosBlas::axpby(a, x.d_view, b, y.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(
-          static_cast<ScalarB>(a * x.h_view(i, j) + b * org_y.h_view(i, j)),
-          y.h_view(i, j), 2 * max_error);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i, j) + b * org_y.h_view(i, j)), y.h_view(i, j), 2 * max_error);
     }
   }
 
@@ -128,9 +118,7 @@ void impl_test_axpby_mv(int N, int K) {
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(
-          static_cast<ScalarB>(a * x.h_view(i, j) + b * org_y.h_view(i, j)),
-          y.h_view(i, j), 2 * max_error);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i, j) + b * org_y.h_view(i, j)), y.h_view(i, j), 2 * max_error);
     }
   }
 }
@@ -139,8 +127,7 @@ void impl_test_axpby_mv(int N, int K) {
 template <class ScalarA, class ScalarB, class Device>
 int test_axpby() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_axpby<view_type_a_ll, view_type_b_ll, Device>(0);
@@ -150,8 +137,7 @@ int test_axpby() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_axpby<view_type_a_lr, view_type_b_lr, Device>(0);
@@ -160,8 +146,7 @@ int test_axpby() {
   Test::impl_test_axpby<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_axpby<view_type_a_ls, view_type_b_ls, Device>(0);
@@ -170,8 +155,7 @@ int test_axpby() {
   Test::impl_test_axpby<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_axpby<view_type_a_ls, view_type_b_ll, Device>(1024);
   Test::impl_test_axpby<view_type_a_ll, view_type_b_ls, Device>(1024);
 #endif
@@ -182,8 +166,7 @@ int test_axpby() {
 template <class ScalarA, class ScalarB, class Device>
 int test_axpby_mv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_axpby_mv<view_type_a_ll, view_type_b_ll, Device>(0, 5);
@@ -193,8 +176,7 @@ int test_axpby_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_axpby_mv<view_type_a_lr, view_type_b_lr, Device>(0, 5);
@@ -203,8 +185,7 @@ int test_axpby_mv() {
   Test::impl_test_axpby_mv<view_type_a_lr, view_type_b_lr, Device>(132231, 5);
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_axpby_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
@@ -213,8 +194,7 @@ int test_axpby_mv() {
   Test::impl_test_axpby_mv<view_type_a_ls, view_type_b_ls, Device>(132231, 5);
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_axpby_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
   Test::impl_test_axpby_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
 #endif
@@ -223,8 +203,7 @@ int test_axpby_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_float");
   test_axpby<float, float, TestDevice>();
@@ -238,8 +217,7 @@ TEST_F(TestCategory, axpby_mv_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_double");
   test_axpby<double, double, TestDevice>();
@@ -252,8 +230,7 @@ TEST_F(TestCategory, axpby_mv_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_complex_double");
   test_axpby<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
@@ -266,9 +243,8 @@ TEST_F(TestCategory, axpby_mv_complex_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_INT) ||   \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_INT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_int");
   test_axpby<int, int, TestDevice>();
@@ -281,8 +257,7 @@ TEST_F(TestCategory, axpby_mv_int) {
 }
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, axpby_double_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_double_int");
   test_axpby<double, int, TestDevice>();

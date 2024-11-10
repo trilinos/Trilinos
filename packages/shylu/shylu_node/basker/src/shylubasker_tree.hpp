@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_TREE_HPP
 #define SHYLUBASKER_TREE_HPP
 
@@ -109,7 +118,7 @@ namespace BaskerNS
     for(Int i =0; i < tree.nblks+1; i++)
     {
       BASKER_ASSERT(num_threads > 0, "tree num_threads");
-      MALLOC_INT_1DARRAY(S[i], num_threads);
+      MALLOC_INT_1DARRAY(S(i), num_threads);
     }
 
     //this will want to be across all threads 
@@ -326,7 +335,7 @@ namespace BaskerNS
             l, t, lvl_counter ,lvl_idx, tree.nblks);
         #endif
 
-        S[l][t] = tree.lvlset[lvl_idx];
+        S(l)(t) = tree.lvlset[lvl_idx];
         if(lvl_counter >= (pow(tree.nparts,l)-1))
         {
           lvl_idx++;
@@ -347,7 +356,7 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        cout << S[l][t] << " , " ; 
+        cout << S(l)(t) << " , " ; 
       }//end over nhreads
       cout << endl;
     }//end over nlvls
@@ -359,11 +368,11 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        Int s_element = S[l][t];
+        Int s_element = S(l)(t);
         Int row_size = (tree.row_tabs[s_element+1] - 
             tree.row_tabs[s_element]);
-        thread_array[t].iws_size += row_size;
-        thread_array[t].ews_size += row_size;
+        thread_array(t).iws_size += row_size;
+        thread_array(t).ews_size += row_size;
       }//end over threads
     }//end over lvls
     
@@ -583,7 +592,7 @@ namespace BaskerNS
             l, t, lvl_counter ,lvl_idx, tree.nblks);
         #endif
 
-        S[l][t] = tree.lvlset[lvl_idx];
+        S(l)(t) = tree.lvlset[lvl_idx];
         if(lvl_counter >= (pow(tree.nparts,l)-1))
         {
           lvl_idx++;
@@ -602,7 +611,7 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        cout << S[l][t] << " , " ; 
+        cout << S(l)(t) << " , " ; 
       }//end over nhreads
       cout << endl;
     }//end over nlvls
@@ -615,10 +624,10 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        Int s_element = S[l][t];
+        Int s_element = S(l)(t);
         Int row_size = (tree.row_tabs[s_element+1] - tree.row_tabs[s_element]);
-        thread_array[t].iws_size += row_size;
-        thread_array[t].ews_size += row_size;
+        thread_array(t).iws_size += row_size;
+        thread_array(t).ews_size += row_size;
       }//end over threads
     }//end over lvls
     
@@ -846,11 +855,11 @@ namespace BaskerNS
       #endif
       for(Int j=i; j != -flat.ncol; j=tree.treetab[j])
       {
-        MATRIX_1DARRAY &UMtemp = AVM[j];
-        MATRIX_1DARRAY &LMtemp = ALM[i];
+        MATRIX_1DARRAY &UMtemp = AVM(j);
+        MATRIX_1DARRAY &LMtemp = ALM(i);
 
-        MATRIX_1DARRAY &LUtemp = LU[j];
-        MATRIX_1DARRAY &LLtemp = LL[i];
+        MATRIX_1DARRAY &LUtemp = LU(j);
+        MATRIX_1DARRAY &LLtemp = LL(i);
 
         #ifdef MY_DEBUG
         printf( " AVM(%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
@@ -1313,9 +1322,15 @@ namespace BaskerNS
       #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
       BASKER_BOOL alloc      = alloc_BTFA; //BASKER_FALSE;
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, alloc, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-      Kokkos::fence();
+      #ifdef BASKER_PARALLEL_INIT_2D
+       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, alloc, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
+       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+       Kokkos::fence();
+      #else
+       for (Int p = 0; p < num_threads; p++) {
+         this->t_init_2DA(p, alloc, keep_zeros);
+       }
+      #endif
       #else
       //Comeback
       #endif

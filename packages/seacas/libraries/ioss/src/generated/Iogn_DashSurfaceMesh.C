@@ -4,9 +4,10 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <algorithm> // for copy
-#include <generated/Iogn_DashSurfaceMesh.h>
+#include "generated/Iogn_DashSurfaceMesh.h"
 #include <vector> // for vector
+
+#include "Ioss_CodeTypes.h"
 
 namespace Iogn {
 
@@ -149,7 +150,6 @@ namespace Iogn {
       map[i]  = mDashSurfaceData.sharedNodes[i].nodeId;
       proc[i] = mDashSurfaceData.sharedNodes[i].procId;
     }
-    return;
   }
 
   void DashSurfaceMesh::node_map(Ioss::IntVector &map) const
@@ -350,7 +350,7 @@ namespace Iogn {
     }
   }
 
-  std::vector<std::string> ExodusMesh::sideset_touching_blocks(int64_t setId) const
+  Ioss::NameList ExodusMesh::sideset_touching_blocks(int64_t setId) const
   {
     return mExodusData.sidesetTouchingBlocks[setId - 1];
   }

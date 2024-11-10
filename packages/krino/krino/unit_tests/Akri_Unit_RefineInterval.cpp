@@ -7,6 +7,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <Akri_RefineNearLevelSets.hpp>
 #include <Akri_StkMeshFixture.hpp>
+#include <Akri_UnitMeshUtils.hpp>
 
 
 stk::mesh::Field<double> & create_levelset_field(stk::mesh::BulkData & mesh, const std::string & levelsetName)
@@ -76,7 +77,8 @@ TEST(RefineWithinDistanceOfLevelSets, twoIntersectingLevelSets_correctElementsGe
   const std::array<double,2> refinementDistanceInterval{-0.02,0.05};
   const unsigned numRefinementLevels = 6;
 
-  krino::refine_elements_that_intersect_distance_interval_from_levelsets(mesh, activePart, levelSetFields, initialize_levelsets, refinementDistanceInterval, numRefinementLevels);
+  for (auto & levelSetField : levelSetFields)
+    krino::refine_elements_that_intersect_distance_interval_from_levelset(mesh, activePart, *levelSetField, initialize_levelsets, refinementDistanceInterval, numRefinementLevels);
 
   const bool doWriteMesh = false;
   if (doWriteMesh)
@@ -84,5 +86,12 @@ TEST(RefineWithinDistanceOfLevelSets, twoIntersectingLevelSets_correctElementsGe
 
   test_refinement_level_for_elements_attached_to_node(mesh, activePart, meshAndBuilder.get_assigned_node_for_index(2), 2);
   test_refinement_level_for_elements_attached_to_node(mesh, activePart, meshAndBuilder.get_assigned_node_for_index(4), numRefinementLevels);
+
+  if (mesh.parallel_rank() == 0) // Whole mesh on 0
+  {
+    stk::mesh::Entity nodeOffCenter = krino::find_local_node_closest_to_location(mesh, mesh.mesh_meta_data().universal_part(), meshAndBuilder.get_coordinates_field(), stk::math::Vector3d(0.05,-0.05,0));
+    std::cout << "Checking element size for elements using node " << mesh.identifier(nodeOffCenter) << std::endl;
+    test_refinement_level_for_elements_attached_to_node(mesh, activePart, nodeOffCenter, numRefinementLevels);
+  }
 }
 

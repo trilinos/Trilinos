@@ -14,9 +14,9 @@
 
 int find_bndy(struct vtx_data **graph,      /* array of vtx data for graph */
               int               nvtxs,      /* number of vertices in graph */
-              int *             assignment, /* processor each vertex gets assigned to */
+              int              *assignment, /* processor each vertex gets assigned to */
               int               new_val,    /* assignment value for boundary vtxs */
-              int **            pbndy_list  /* returned list, end with zero */
+              int             **pbndy_list  /* returned list, end with zero */
 )
 {
   int *bndy_list;   /* returned list, end with zero */
@@ -55,10 +55,10 @@ int find_bndy(struct vtx_data **graph,      /* array of vtx data for graph */
 
 int find_side_bndy(struct vtx_data **graph,      /* array of vtx data for graph */
                    int               nvtxs,      /* number of vertices in graph */
-                   int *             assignment, /* processor each vertex gets assigned to */
+                   int              *assignment, /* processor each vertex gets assigned to */
                    int               side,       /* side to take vertices from */
                    int               new_val,    /* assignment value for boundary vtxs */
-                   int **            pbndy_list  /* returned list, end with zero */
+                   int             **pbndy_list  /* returned list, end with zero */
 )
 
 {

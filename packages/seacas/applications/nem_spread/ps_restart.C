@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,11 +12,12 @@
 #include "ps_pario_const.h" // for PIO_Info, etc
 #include "rf_allo.h"        // for array_alloc, safe_free
 #include "rf_io_const.h"    // for Exo_Res_File, ExoFile, etc
-#include <cassert>          // for assert
-#include <climits>          // for INT_MAX
-#include <cstddef>          // for size_t
-#include <cstdio>           // for stderr, nullptr, etc
-#include <cstdlib>          // for exit, free, malloc
+#include "vector_data.h"
+#include <cassert> // for assert
+#include <climits> // for INT_MAX
+#include <cstddef> // for size_t
+#include <cstdio>  // for stderr, nullptr, etc
+#include <cstdlib> // for exit, free, malloc
 #include <string>
 #include <vector> // for vector
 
@@ -92,8 +93,6 @@ template void NemSpread<float, int>::read_restart_data();
 template void NemSpread<double, int64_t>::read_restart_data();
 template void NemSpread<float, int64_t>::read_restart_data();
 
-template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
-
 /* Function which reads the restart variable data from the EXODUS II
  * database which contains the results information. Then distribute
  * it to the processors, and write it to the parallel exodus files.
@@ -110,7 +109,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
  *
  *----------------------------------------------------------------------------
  */
-
+template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
 {
   /* need to get the element block ids and counts */
   std::vector<INT> eb_ids_global(globals.Num_Elem_Blk);
@@ -166,7 +165,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     }
 
     /* Get the Element Block IDs from the input file */
-    if (ex_get_ids(exoid, EX_ELEM_BLOCK, eb_ids_global.data()) < 0) {
+    if (ex_get_ids(exoid, EX_ELEM_BLOCK, Data(eb_ids_global)) < 0) {
       fmt::print(stderr, "{}: unable to get element block IDs", __func__);
       exit(1);
     }
@@ -257,7 +256,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     }
 
     /* Get the Sideset IDs from the input file */
-    if (ex_get_ids(exoid, EX_SIDE_SET, ss_ids_global.data()) < 0) {
+    if (ex_get_ids(exoid, EX_SIDE_SET, Data(ss_ids_global)) < 0) {
       fmt::print(stderr, "{}: unable to get sideset IDs", __func__);
       exit(1);
     }
@@ -285,7 +284,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     }
 
     /* Get the Nodeset IDs from the input file */
-    if (ex_get_ids(exoid, EX_NODE_SET, ns_ids_global.data()) < 0) {
+    if (ex_get_ids(exoid, EX_NODE_SET, Data(ns_ids_global)) < 0) {
       fmt::print(stderr, "{}: unable to get nodeset IDs", __func__);
       exit(1);
     }
@@ -350,9 +349,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     double start_t = second();
 
     /* read and distribute the variables for this time step */
-    if (read_vars(exoid, Restart_Info.Time_Idx[time_idx], eb_ids_global.data(),
-                  eb_cnts_global.data(), eb_map_ptr, eb_cnts_local, ss_ids_global.data(),
-                  ss_cnts_global.data(), ns_ids_global.data(), ns_cnts_global.data()) < 0) {
+    if (read_vars(exoid, Restart_Info.Time_Idx[time_idx], Data(eb_ids_global), Data(eb_cnts_global),
+                  eb_map_ptr, eb_cnts_local, Data(ss_ids_global), Data(ss_cnts_global),
+                  Data(ns_ids_global), Data(ns_cnts_global)) < 0) {
       fmt::print(stderr, "{}: Error occurred while reading variables\n", __func__);
       exit(1);
     }
@@ -380,8 +379,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
        * Write out the variable data for the time steps in this
        * block to each parallel file.
        */
-      write_var_timestep(par_exoid[iproc], iproc, (time_idx + 1), eb_ids_global.data(),
-                         ss_ids_global.data(), ns_ids_global.data());
+      write_var_timestep(par_exoid[iproc], iproc, (time_idx + 1), Data(eb_ids_global),
+                         Data(ss_ids_global), Data(ns_ids_global));
 
       if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1) {
         fmt::print("{}", iproc);
@@ -513,7 +512,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     Restart_Info.GElem_TT.resize(globals.Num_Elem_Blk * Restart_Info.NVar_Elem);
 
     check_exodus_error(ex_get_truth_table(exoid, EX_ELEM_BLOCK, globals.Num_Elem_Blk,
-                                          Restart_Info.NVar_Elem, Restart_Info.GElem_TT.data()),
+                                          Restart_Info.NVar_Elem, Data(Restart_Info.GElem_TT)),
                        "ex_get_truth_table");
   }
 
@@ -557,7 +556,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     Restart_Info.GSset_TT.resize(globals.Num_Side_Set * Restart_Info.NVar_Sset);
 
     check_exodus_error(ex_get_truth_table(exoid, EX_SIDE_SET, globals.Num_Side_Set,
-                                          Restart_Info.NVar_Sset, Restart_Info.GSset_TT.data()),
+                                          Restart_Info.NVar_Sset, Data(Restart_Info.GSset_TT)),
                        "ex_get_truth_table");
   }
 
@@ -583,7 +582,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     Restart_Info.GNset_TT.resize(globals.Num_Node_Set * Restart_Info.NVar_Nset);
 
     check_exodus_error(ex_get_truth_table(exoid, EX_NODE_SET, globals.Num_Node_Set,
-                                          Restart_Info.NVar_Nset, Restart_Info.GNset_TT.data()),
+                                          Restart_Info.NVar_Nset, Data(Restart_Info.GNset_TT)),
                        "ex_get_var_tab");
   }
 
@@ -624,7 +623,7 @@ int NemSpread<T, INT>::read_vars(int exoid, int index, INT *eb_ids, INT *eb_cnts
   if (Restart_Info.NVar_Glob > 0) {
     /* get the global variables */
     if (ex_get_var(exoid, index, EX_GLOBAL, 1, 1, Restart_Info.NVar_Glob,
-                   Restart_Info.Glob_Vals.data()) < 0) {
+                   Data(Restart_Info.Glob_Vals)) < 0) {
       fmt::print(stderr, "{}: Could not get global variables from file\n", __func__);
       return -1;
     }
@@ -632,34 +631,22 @@ int NemSpread<T, INT>::read_vars(int exoid, int index, INT *eb_ids, INT *eb_cnts
 
   if (Restart_Info.NVar_Elem > 0) {
     fmt::print("Reading {} element variables...\n", Restart_Info.NVar_Elem);
-    if (read_elem_vars(exoid, index, eb_ids, eb_cnts, eb_map_ptr, eb_cnts_local) < 0) {
-      fmt::print(stderr, "{}: Error distributing elemental variables.\n", __func__);
-      return -1;
-    }
+    read_elem_vars(exoid, index, eb_ids, eb_cnts, eb_map_ptr, eb_cnts_local);
   }
 
   if (Restart_Info.NVar_Node > 0) {
     fmt::print("Reading {} nodal variables...\n", Restart_Info.NVar_Node);
-    if (read_nodal_vars(exoid, index) < 0) {
-      fmt::print(stderr, "{}: Error distributing nodal variables.\n", __func__);
-      return -1;
-    }
+    read_nodal_vars(exoid, index);
   }
 
   if (Restart_Info.NVar_Sset > 0) {
     fmt::print("Reading {} sideset variables...\n", Restart_Info.NVar_Sset);
-    if (read_sset_vars(exoid, index, ss_ids, ss_cnts) < 0) {
-      fmt::print(stderr, "{}: Error distributing sideset variables.\n", __func__);
-      return -1;
-    }
+    read_sset_vars(exoid, index, ss_ids, ss_cnts);
   }
 
   if (Restart_Info.NVar_Nset > 0) {
     fmt::print("Reading {} nodeset variables...\n", Restart_Info.NVar_Nset);
-    if (read_nset_vars(exoid, index, ns_ids, ns_cnts) < 0) {
-      fmt::print(stderr, "{}: Error distributing nodeset variables.\n", __func__);
-      return -1;
-    }
+    read_nset_vars(exoid, index, ns_ids, ns_cnts);
   }
 
   return 0;
@@ -677,7 +664,7 @@ int NemSpread<T, INT>::read_elem_vars(int exoid, int index, INT *eb_ids, INT *eb
   INT eb_offset = 0;
   for (int iblk = 0; iblk < globals.Num_Elem_Blk; iblk++) {
     read_elem_vars_1(exoid, index, eb_ids, eb_cnts, eb_map_ptr, eb_cnts_local, iblk, eb_offset,
-                     local_offset.data());
+                     Data(local_offset));
 
     /* need to keep track of this for the element number map */
     eb_offset += eb_cnts[iblk];
@@ -712,7 +699,7 @@ int NemSpread<T, INT>::read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *
        */
 
       check_exodus_error(ex_get_var(exoid, index, EX_ELEM_BLOCK, (ivar + 1), eb_ids[iblk],
-                                    eb_cnts[iblk], vals.data()),
+                                    eb_cnts[iblk], Data(vals)),
                          "ex_get_var");
 
       /*
@@ -767,7 +754,7 @@ int NemSpread<T, INT>::read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *
 
       /* Read in the specified variable values */
       check_exodus_error(ex_get_var(exoid, index, EX_SIDE_SET, (ivar + 1), ss_ids[iset],
-                                    ss_cnts[iset], vals.data()),
+                                    ss_cnts[iset], Data(vals)),
                          "ex_get_var");
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
@@ -816,7 +803,7 @@ int NemSpread<T, INT>::read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *
 
       /* Read in the specified variable values */
       check_exodus_error(ex_get_var(exoid, index, EX_NODE_SET, (ivar + 1), ns_ids[iset],
-                                    ns_cnts[iset], vals.data()),
+                                    ns_cnts[iset], Data(vals)),
                          "ex_get_nset_var");
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
@@ -853,7 +840,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::read_nodal_vars(int e
      * global FEM node numbers.
      */
     check_exodus_error(
-        ex_get_var(exoid, index, EX_NODAL, (var_num + 1), 1, globals.Num_Node, vals.data()),
+        ex_get_var(exoid, index, EX_NODAL, (var_num + 1), 1, globals.Num_Node, Data(vals)),
         "ex_get_var");
 
     /*

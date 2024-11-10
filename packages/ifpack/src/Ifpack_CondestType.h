@@ -43,6 +43,12 @@
 #ifndef IFPACK_CONDESTTYPE_H
 #define IFPACK_CONDESTTYPE_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 //! Ifpack_CondestType: enum to define the type of condition number estimate.
 
 enum Ifpack_CondestType {

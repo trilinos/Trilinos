@@ -1,44 +1,11 @@
 // @HEADER
-// ************************************************************************
-//
-//        Phalanx: A Partial Differential Equation Field Evaluation
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -83,8 +50,8 @@ void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
     RCP<Mock> a = rcp(new Mock);
     a->setName("Eval_A");
     a->evaluates("A");
-    a->requires("B");
-    a->requires("C");
+    a->depends("B");
+    a->depends("C");
     em.registerEvaluator(a);
   }
 
@@ -93,7 +60,7 @@ void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
     b->setName("Eval_B");
     b->evaluates("B");
     b->evaluates("D");
-    b->requires("E");
+    b->depends("E");
     em.registerEvaluator(b);
   }
 
@@ -101,7 +68,7 @@ void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
     RCP<Mock> c = rcp(new Mock);
     c->setName("Eval_C");
     c->evaluates("C");
-    c->requires("E");
+    c->depends("E");
     em.registerEvaluator(c);
   }
 
@@ -110,7 +77,7 @@ void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
     e->setName("Eval_E");
     e->evaluates("E");
     if (addCircularDependency)
-      e->requires("D");
+      e->depends("D");
     em.registerEvaluator(e);
   }
 
@@ -119,7 +86,7 @@ void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
     RCP<Mock> c = rcp(new Mock);
     c->setName("DUPLICATE Eval_C");
     c->evaluates("C");
-    c->requires("E");
+    c->depends("E");
     em.registerEvaluator(c);
   }
 }
@@ -375,22 +342,22 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_A");
     m->evaluates("A");
-    m->requires("B");
-    m->requires("C");
+    m->depends("B");
+    m->depends("C");
     dag.registerEvaluator(m);
   }
   {
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_B");
     m->evaluates("B");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
   {
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_C");
     m->evaluates("C");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
   {
@@ -502,8 +469,8 @@ TEUCHOS_UNIT_TEST(dag, contrib_and_eval_B)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_A");
     m->evaluates("A");
-    m->requires("B");
-    m->requires("C");
+    m->depends("B");
+    m->depends("C");
     dag.registerEvaluator(m);
   }
   {
@@ -516,7 +483,7 @@ TEUCHOS_UNIT_TEST(dag, contrib_and_eval_B)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_C");
     m->evaluates("C");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
   {
@@ -529,14 +496,14 @@ TEUCHOS_UNIT_TEST(dag, contrib_and_eval_B)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_B+");
     m->contributes("B");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
   { // Contributes to B also
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_B++");
     m->contributes("B");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
 
@@ -605,15 +572,15 @@ TEUCHOS_UNIT_TEST(dag, contrib_only_B)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_A");
     m->evaluates("A");
-    m->requires("B");
-    m->requires("C");
+    m->depends("B");
+    m->depends("C");
     dag.registerEvaluator(m);
   }
   {
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_C");
     m->evaluates("C");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
   {
@@ -626,14 +593,14 @@ TEUCHOS_UNIT_TEST(dag, contrib_only_B)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_B+");
     m->contributes("B");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
   { // Contributes to B also
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_B++");
     m->contributes("B");
-    m->requires("D");
+    m->depends("D");
     dag.registerEvaluator(m);
   }
 
@@ -698,7 +665,7 @@ TEUCHOS_UNIT_TEST(dag, alias_field)
     RCP<Mock> m = rcp(new Mock);
     m->setName("Eval_A");
     m->evaluates("A");
-    m->requires("B");
+    m->depends("B");
     dag.registerEvaluator(m);
   }
   {
@@ -779,14 +746,14 @@ TEUCHOS_UNIT_TEST(dag, use_range_and_unshared)
     RCP<Mock> e = rcp(new Mock);
     e->setName("c");
     e->evaluates("f3");
-    e->requires("f2");
+    e->depends("f2");
     dag.registerEvaluator(e);
   }
   {
     RCP<Mock> e = rcp(new Mock);
     e->setName("e");
     e->evaluates("f4");
-    e->requires("f3");
+    e->depends("f3");
     dag.registerEvaluator(e);
   }
   {
@@ -799,7 +766,7 @@ TEUCHOS_UNIT_TEST(dag, use_range_and_unshared)
     RCP<Mock> e = rcp(new Mock);
     e->setName("b");
     e->evaluates("f2");
-    e->requires("f1");
+    e->depends("f1");
     e->unshared("f2");
     e->unshared("f1");
     dag.registerEvaluator(e);
@@ -1030,7 +997,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_only)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Convection Operator");
     e->contributes("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1038,7 +1005,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_only)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Diffusion Operator");
     e->contributes("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1046,7 +1013,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_only)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Reaction Operator");
     e->contributes("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1056,7 +1023,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_only)
     // Important that this is "contributes" to catch writing graph
     // output correctly.
     e->contributes("Scatter",use_dynamic_layout);
-    e->requires("Residual",use_dynamic_layout);
+    e->depends("Residual",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1119,7 +1086,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_and_evalauted)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Initialize");
     e->evaluates("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1127,7 +1094,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_and_evalauted)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Convection Operator");
     e->contributes("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1135,7 +1102,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_and_evalauted)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Diffusion Operator");
     e->contributes("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1143,7 +1110,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_and_evalauted)
     RCP<Mock> e = rcp(new Mock);
     e->setName("Reaction Operator");
     e->contributes("Residual",use_dynamic_layout);
-    e->requires("X",use_dynamic_layout);
+    e->depends("X",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 
@@ -1153,7 +1120,7 @@ TEUCHOS_UNIT_TEST(contrib, basic_contrib_and_evalauted)
     // Important that this is "contributes" to catch writing graph
     // output correctly.
     e->contributes("Scatter",use_dynamic_layout);
-    e->requires("Residual",use_dynamic_layout);
+    e->depends("Residual",use_dynamic_layout);
     dm.registerEvaluator(e);
   }
 

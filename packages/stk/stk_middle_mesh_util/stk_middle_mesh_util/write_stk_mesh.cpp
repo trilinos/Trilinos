@@ -1,4 +1,3 @@
-#ifdef STK_BUILT_IN_SIERRA
 
 #include "write_stk_mesh.hpp"
 #include "stk_middle_mesh/field.hpp"
@@ -136,4 +135,3 @@ void StkMeshWriter::write_gid_field(std::shared_ptr<nonconformal::impl::Nonconfo
 } // namespace middle_mesh
 } // namespace stk
 
-#endif

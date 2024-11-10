@@ -42,7 +42,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>

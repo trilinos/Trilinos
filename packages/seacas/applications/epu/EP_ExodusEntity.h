@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -24,8 +24,6 @@ namespace Excn {
   class Mesh
   {
   public:
-    Mesh() = default;
-
     size_t count(ObjectType type) const
     {
       switch (type) {
@@ -64,8 +62,6 @@ namespace Excn {
   class Assembly
   {
   public:
-    Assembly() = default;
-
     size_t     entity_count() const { return entityCount; }
     ObjectType entity_type() const { return type_; }
 
@@ -88,8 +84,6 @@ namespace Excn {
     {
       copy_string(elType, other.elType);
     }
-
-    ~Block() = default;
 
     size_t entity_count() const { return elementCount; }
 
@@ -121,8 +115,6 @@ namespace Excn {
   template <typename INT> class NodeSet
   {
   public:
-    NodeSet() = default;
-
     ex_entity_id id{0};
     int64_t      nodeCount{0};
     int64_t      dfCount{0};
@@ -155,8 +147,6 @@ namespace Excn {
   template <typename INT> class SideSet
   {
   public:
-    SideSet() = default;
-
     ex_entity_id id{0};
     int64_t      sideCount{0};
     int64_t      dfCount{0};
@@ -189,7 +179,6 @@ namespace Excn {
     {
       copy_string(elType, other.elType);
     }
-    ~EdgeBlock() = default;
 
     char                     elType[MAX_STR_LENGTH + 1]{};
     std::string              name_;
@@ -235,7 +224,6 @@ namespace Excn {
     {
       copy_string(elType, other.elType);
     }
-    ~FaceBlock() = default;
 
     char                     elType[MAX_STR_LENGTH + 1]{};
     std::string              name_;
@@ -272,7 +260,6 @@ namespace Excn {
   class CommunicationMap
   {
   public:
-    CommunicationMap() = default;
     CommunicationMap(int the_id, int64_t count, char the_type)
         : id(the_id), entityCount(count), type(the_type)
     {

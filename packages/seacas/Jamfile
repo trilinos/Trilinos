@@ -1,5 +1,5 @@
 #---------------------------------------------------------------
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -160,8 +160,7 @@ alias install-user-include : install-user-include0
                              install-user-include4
                              install-user-include5
                              install-user-include6
-                             install-user-include7
-                             install-user-include8 ;
+                             install-user-include7 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -175,7 +174,7 @@ install install-user-include0
 explicit install-user-include1 ;
 install install-user-include1
   : [ glob $(seacas-root)/libraries/suplib_c/*.h ]
-  : <location>$(install-root)/sierra_seacas/include
+  : <location>$(install-root)/seacas/include
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -184,14 +183,14 @@ install install-user-include1
 explicit install-user-include2 ;
 install install-user-include2
   : [ path.glob-tree $(seacas-root)/libraries/exodus/include : *.h ]
-  : <location>$(install-root)/sierra_seacas/include/exodus
+  : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/include
   ;
 
 explicit install-user-include2b ;
 install install-user-include2b
   : [ path.glob-tree $(seacas-root)/libraries/exodus/sierra : *.h ]
-  : <location>$(install-root)/sierra_seacas/include/exodus
+  : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/sierra
   ;
 
@@ -201,21 +200,21 @@ install install-user-include2b
 explicit install-user-include3 ;
 install install-user-include3
   : [ path.glob-tree $(seacas-root)/libraries/nemesis : *.h ]
-  : <location>$(install-root)/sierra_seacas/include/nemesis
+  : <location>$(install-root)/seacas/include/nemesis
     <install-source-root>$(seacas-root)/libraries/nemesis
   ;
 
 explicit install-user-include4 ;
 install install-user-include4
   : [ path.glob-tree $(seacas-root)/libraries/exodus_for/include : *.inc ]
-  : <location>$(install-root)/sierra_seacas/include/exodus
+  : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus_for/include
   ;
 
 explicit install-user-include5 ;
 install install-user-include5
   : [ glob $(seacas-root)/libraries/suplib_cpp/*.h ]
-  : <location>$(install-root)/sierra_seacas/include
+  : <location>$(install-root)/seacas/include
   ;
 
 explicit install-user-include6 ;
@@ -230,14 +229,7 @@ install install-user-include6
 explicit install-user-include7 ;
 install install-user-include7
   : [ glob $(seacas-root)/libraries/aprepro_lib/*.h ]
-  : <location>$(install-root)/sierra_seacas/include
-  ;
-
-
-explicit install-user-include8 ;
-install install-user-include8
-  : [ glob $(seacas-root)/libraries/suplib_cpp/fmt/*.h ]
-  : <location>$(install-root)/io_system/include/fmt
+  : <location>$(install-root)/seacas/include
   ;
 
 
@@ -249,7 +241,7 @@ alias install-user-env : install-user-jamfile
 explicit install-user-jamfile ;
 install install-user-jamfile
   : [ glob $(seacas-root)/Jamfile ]
-  : <location>$(install-root)/sierra_seacas
+  : <location>$(install-root)/seacas
     <install-source-root>$(seacas-root)
   ;
 
@@ -270,21 +262,21 @@ install install-user-lib
     fastqlib
     mapvarlib
     aprepro_lib
-    ioex
-    ioexnl
+    Ioex
+    Ioexnl
     io_info_lib
-    iocgns
-    iopg
-    iohb
-    iogn
-    iogs
-    ionull
-    ioinit
-    ioss
-    iotr
-    iotm
-    iovs
-  : <location>$(install-root)/sierra_seacas/lib
+    Iocgns
+    Iopg
+    Iohb
+    Iogn
+    Iogs
+    Ionull
+    Ionit
+    Ioss
+    Iotr
+    Iotm
+    Iovs
+  : <location>$(install-root)/seacas/lib
   ;
 
 
@@ -313,14 +305,14 @@ alias install-exe-targets : ;
 #
 
 # Libs in seacas/ioss....
-lib ioex
+lib Ioex
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
          [ glob $(seacas-root)/libraries/ioss/src/exodus/*.[Cc] ]
     ]
-    ioss
+    Ioss
     exodus
     /tpl/netcdf-c//netcdf
     /tpl/trilinos//zoltan
@@ -329,24 +321,24 @@ lib ioex
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioex.a
+        <file>$(seacas-root)/lib/libIoex.a
     ]
   ;
 
-lib ioexnl
+lib Ioexnl
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
          [ glob $(seacas-root)/libraries/ioss/src/exonull/*.[C] ]
     ]
-    ioss
+    Ioss
     exodus
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioexnl.a
+        <file>$(seacas-root)/lib/libIoexnl.a
     ]
   ;
 
@@ -359,8 +351,8 @@ lib io_info_lib
         $(seacas-root)/libraries/ioss/src/main/volume.C
         $(seacas-root)/libraries/ioss/src/main/info_interface.C
     ]
-    ioinit
-    iocgns
+    Ionit
+    Iocgns
     /mpi//mpi
   :
     [ ifuserbuild
@@ -370,152 +362,152 @@ lib io_info_lib
     ]
   ;
 
-lib iopg
+lib Iopg
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/pamgen/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
     /tpl/trilinos//pamgen
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiopg.a
+        <file>$(seacas-root)/lib/libIopg.a
     ]
   ;
 
-lib iocgns
+lib Iocgns
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/cgns/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
     /tpl/cgns//cgns
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiocgns.a
+        <file>$(seacas-root)/lib/libIocgns.a
     ]
   ;
 
-lib iohb
+lib Iohb
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/heartbeat/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiohb.a
+        <file>$(seacas-root)/lib/libIohb.a
     ]
   ;
-lib iogn
+lib Iogn
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/generated/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiogn.a
+        <file>$(seacas-root)/lib/libIogn.a
     ]
   ;
-lib ionull
+lib Ionull
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/null/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libionull.a
+        <file>$(seacas-root)/lib/libIonull.a
     ]
   ;
-lib iotm
+lib Iotm
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/text_mesh/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiotm.a
+        <file>$(seacas-root)/lib/libIotm.a
     ]
   ;
 
-lib iogs
+lib Iogs
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/gen_struc/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiogs.a
+        <file>$(seacas-root)/lib/libIogs.a
     ]
   ;
 
-lib ioinit
+lib Ionit
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/init/*.C ]
     ]
-    iocgns
-    ioex
-    ioexnl
-    ionull
-    iopg
-    iohb
-    iogn
-    iogs
-    iotm
-    iotr
-    iovs
+    Iocgns
+    Ioex
+    Ioexnl
+    Ionull
+    Iopg
+    Iohb
+    Iogn
+    Iogs
+    Iotm
+    Iotr
+    Iovs
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioinit.a
+        <file>$(seacas-root)/lib/libIonit.a
     ]
   ;
 
-lib ioss
+lib Ioss
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -525,35 +517,36 @@ lib ioss
     ]
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
+    /tpl/fmt//fmt
     /mpi//mpi
   : <define>BUILT_IN_SIERRA
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioss.a
+        <file>$(seacas-root)/lib/libIoss.a
     ]
   :
   : <define>BUILT_IN_SIERRA
   ;
 
-lib iotr
+lib Iotr
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/transform/*.C ]
     ]
-    ioss
+    Ioss
     /mpi//mpi
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiotr.a
+        <file>$(seacas-root)/lib/libIotr.a
     ]
   ;
 
-lib iovs
+lib Iovs
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -562,7 +555,7 @@ lib iovs
 	       $(seacas-root)/libraries/ioss/src/visualization/cgns/*.C
                $(seacas-root)/libraries/ioss/src/visualization/utils/*.C ]
     ]
-    ioss
+    Ioss
   :
     <runtime-link>shared:<define>IOSS_DLOPEN_ENABLED
     [ ifdevbuild
@@ -576,7 +569,7 @@ lib iovs
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiovs.a
+        <file>$(seacas-root)/lib/libIovs.a
     ]
   ;
 
@@ -631,7 +624,7 @@ lib exodus
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libexodus.a
+        <file>$(sierra-root)/seacas/lib/libexodus.a
     ]
   :
   : <define>BUILT_IN_SIERRA
@@ -644,7 +637,7 @@ lib exodus
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include/exodus
+        <include>$(sierra-root)/seacas/include/exodus
     ]
   ;
 
@@ -687,7 +680,7 @@ lib exodus_for
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libexodus_for.a
+        <file>$(sierra-root)/seacas/lib/libexodus_for.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -710,7 +703,7 @@ lib exodus_for
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include/exodus
+        <include>$(sierra-root)/seacas/include/exodus
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -744,7 +737,7 @@ lib exoIIv2for32
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libexoIIv2for32.a
+        <file>$(sierra-root)/seacas/lib/libexoIIv2for32.a
     ]
     <define>DEFAULT_REAL_INT
   :
@@ -758,7 +751,7 @@ lib exoIIv2for32
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include/exodus
+        <include>$(sierra-root)/seacas/include/exodus
     ]
     <define>DEFAULT_REAL_INT
   ;
@@ -781,7 +774,7 @@ lib nemesis
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libnemesis.a
+        <file>$(sierra-root)/seacas/lib/libnemesis.a
     ]
   :
   :
@@ -793,7 +786,7 @@ lib nemesis
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include/nemesis
+        <include>$(sierra-root)/seacas/include/nemesis
     ]
   ;
 
@@ -817,7 +810,7 @@ lib suplib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -840,7 +833,7 @@ lib suplib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -862,6 +855,7 @@ lib suplib_cpp
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/suplib_cpp/*.C ]
     ]
+    /tpl/fmt//fmt
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -871,7 +865,7 @@ lib suplib_cpp
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
   :
   :
@@ -883,7 +877,7 @@ lib suplib_cpp
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
   ;
 
@@ -905,7 +899,7 @@ lib suplib_c
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
   :
   :
@@ -917,7 +911,7 @@ lib suplib_c
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
   ;
 
@@ -938,7 +932,7 @@ lib plt
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libplt.a
+        <file>$(sierra-root)/seacas/lib/libplt.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -961,7 +955,7 @@ lib plt
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -995,7 +989,7 @@ lib svdi_cdr
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libsvdi_cdr.a
+        <file>$(sierra-root)/seacas/lib/libsvdi_cdr.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1018,7 +1012,7 @@ lib svdi_cdr
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1062,7 +1056,7 @@ lib svdi_cgi
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libsvdi_cgi.a
+        <file>$(sierra-root)/seacas/lib/libsvdi_cgi.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1085,7 +1079,7 @@ lib svdi_cgi
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1178,7 +1172,7 @@ lib blotlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libblotlib.a
+        <file>$(sierra-root)/seacas/lib/libblotlib.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1196,7 +1190,7 @@ lib blotlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1228,7 +1222,7 @@ lib fastqlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libfastqlib.a
+        <file>$(sierra-root)/seacas/lib/libfastqlib.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1246,7 +1240,7 @@ lib fastqlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1280,7 +1274,7 @@ lib mapvarlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libmapvarlib.a
+        <file>$(sierra-root)/seacas/lib/libmapvarlib.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1303,7 +1297,7 @@ lib mapvarlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1337,7 +1331,7 @@ lib supes
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libsupes.a
+        <file>$(sierra-root)/seacas/lib/libsupes.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1360,7 +1354,7 @@ lib supes
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1389,7 +1383,9 @@ lib aprepro_lib
     ]
     exodus
     /tpl/netcdf-c//netcdf
+    /tpl/fmt//fmt
   : <define>EXODUS_SUPPORT
+    <define>FMT_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1398,10 +1394,11 @@ lib aprepro_lib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libaprepro_lib.a
+        <file>$(sierra-root)/seacas/lib/libaprepro_lib.a
     ]
   :
   : <define>EXODUS_SUPPORT
+    <define>FMT_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1410,7 +1407,7 @@ lib aprepro_lib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
  ;
 
@@ -1451,7 +1448,7 @@ lib chaco
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/sierra_seacas/lib/libchaco.a
+        <file>$(sierra-root)/seacas/lib/libchaco.a
     ]
  :
  :
@@ -1463,7 +1460,7 @@ lib chaco
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/sierra_seacas/include
+        <include>$(sierra-root)/seacas/include
     ]
  ;
 
@@ -1472,6 +1469,7 @@ exe aprepro
   :
   $(seacas-root)/applications/aprepro/aprepro.C
     aprepro_lib
+    suplib_cpp
   : <include>$(seacas-root)/applications/aprepro
     <include>$(seacas-root)/applications/aprepro
     <tag>@utility-exec-tag
@@ -1499,11 +1497,13 @@ exe slice
   :
   $(seacas-root)/applications/slice/Slice.C
   $(seacas-root)/applications/slice/SL_SystemInterface.C
+  $(seacas-root)/applications/slice/SL_Decompose.C
     suplib_cpp
     suplib_c
-    ioinit
+    Ionit
   : <include>$(seacas-root)/applications/slice
     <define>USE_METIS
+    <define>USE_ZOLTAN
     <tag>@utility-exec-tag
   ;
 
@@ -1517,7 +1517,7 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
     suplib_c
-    ioinit
+    Ionit
   : <include>$(seacas-root)/applications/ejoin
     <tag>@utility-exec-tag
   ;
@@ -1554,7 +1554,7 @@ exe exomatlab
   $(seacas-root)/applications/exomatlab/EML_SystemInterface.C
     suplib_cpp
     suplib_c
-    ioinit
+    Ionit
     exodus
   : <include>$(seacas-root)/applications/exomatlab
     <tag>@utility-exec-tag
@@ -1760,7 +1760,7 @@ exe io_shell
   :
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
-    ioinit
+    Ionit
     /mpi//mpi
   :
     <tag>@sierra-exec-tag
@@ -1769,7 +1769,7 @@ exe io_shell
 exe cgns_decomp
   :
     $(seacas-root)/libraries/ioss/src/main/cgns_decomp.C
-    ioinit
+    Ionit
     /mpi//mpi
   :
     <tag>@sierra-exec-tag
@@ -1788,8 +1788,8 @@ exe io_modify
   :
     $(seacas-root)/libraries/ioss/src/main/io_modify.C
     $(seacas-root)/libraries/ioss/src/main/modify_interface.C
-    ioinit
-    ioex
+    Ionit
+    Ioex
     /mpi//mpi
   :
     <tag>@sierra-exec-tag
@@ -1799,7 +1799,7 @@ exe shell_to_hex
   :
     $(seacas-root)/libraries/ioss/src/main/shell_to_hex.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
-    ioinit
+    Ionit
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1808,7 +1808,7 @@ exe cth_pressure_map
   :
     $(seacas-root)/libraries/ioss/src/main/cth_pressure_map.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
-    ioinit
+    Ionit
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1816,7 +1816,7 @@ exe cth_pressure_map
 exe struc_to_unstruc
   :
     $(seacas-root)/libraries/ioss/src/main/struc_to_unstruc.C
-    ioinit
+    Ionit
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1824,7 +1824,7 @@ exe struc_to_unstruc
 exe Utst_ioel
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_ioel.C
-    ioss
+    Ioss
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1832,7 +1832,7 @@ exe Utst_ioel
 exe Utst_sort
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_sort.C
-    ioss
+    Ioss
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1840,7 +1840,7 @@ exe Utst_sort
 exe Utst_map
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_map.C
-    ioss
+    Ioss
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1848,7 +1848,7 @@ exe Utst_map
 exe Utst_structured_decomp
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_structured_decomp.C
-    iocgns
+    Iocgns
     /mpi//mpi
   : <optimization>off <tag>@sierra-exec-tag
   ;
@@ -1856,7 +1856,7 @@ exe Utst_structured_decomp
 exe Utst_superelement
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_superelement.C
-    ioex
+    Ioex
   : <tag>@sierra-exec-tag
   ;
 
@@ -1864,19 +1864,19 @@ exe Utst_superelement
 exe Utst_database_io
   :
   [ glob $(seacas-root)/libraries/ioss/src/utest/Utst_IofxDatabaseIO.C ]
-    ioinit
+    Ionit
     /tpl/netcdf-c//netcdf
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   : <tag>@utility-exec-tag
   ;
 
 exe Utst_textmesh
   :
   [ glob $(seacas-root)/libraries/ioss/src/unit_tests/*.C ]
-    ioinit
-    iotm
+    Ionit
+    Iotm
     /tpl/netcdf-c//netcdf
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;

@@ -25,87 +25,90 @@
 #include "Kokkos_ArithTraits.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#include "mkl_types.h"
+#endif
 
 namespace KokkosBlas {
 namespace Impl {
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+using KK_INT = MKL_INT;
+#else
+using KK_INT = int;
+#endif
 
 template <typename T>
 struct HostBlas {
   typedef Kokkos::ArithTraits<T> ats;
   typedef typename ats::mag_type mag_type;
 
-  static void scal(int n, const T alpha,
-                   /* */ T *x, int x_inc);
+  static void scal(KK_INT n, const T alpha,
+                   /* */ T *x, KK_INT x_inc);
 
-  static int iamax(int n, const T *x, int x_inc);
+  static KK_INT iamax(KK_INT n, const T *x, KK_INT x_inc);
 
-  static mag_type nrm2(int n, const T *x, int x_inc);
+  static mag_type nrm2(KK_INT n, const T *x, KK_INT x_inc);
 
-  static mag_type asum(int n, const T *x, int x_inc);
+  static mag_type asum(KK_INT n, const T *x, KK_INT x_inc);
 
-  static T dot(int n, const T *x, int x_inc, const T *y, int y_inc);
+  static T dot(KK_INT n, const T *x, KK_INT x_inc, const T *y, KK_INT y_inc);
 
-  static void axpy(int n, const T alpha, const T *x, int x_inc,
-                   /* */ T *y, int y_inc);
+  static void axpy(KK_INT n, const T alpha, const T *x, KK_INT x_inc,
+                   /* */ T *y, KK_INT y_inc);
 
-  static void rot(int const N, T *X, int const incx, T *Y, int const incy,
-                  mag_type *c, mag_type *s);
+  static void rot(KK_INT const N, T *X, KK_INT const incx, T *Y, KK_INT const incy, mag_type *c, mag_type *s);
 
   static void rotg(T *a, T *b, mag_type *c, T *s);
 
-  static void rotm(const int n, T *X, const int incx, T *Y, const int incy,
-                   T const *param);
+  static void rotm(const KK_INT n, T *X, const KK_INT incx, T *Y, const KK_INT incy, T const *param);
 
   static void rotmg(T *d1, T *d2, T *x1, const T *y1, T *param);
 
-  static void swap(int const N, T *X, int const incx, T *Y, int const incy);
+  static void swap(KK_INT const N, T *X, KK_INT const incx, T *Y, KK_INT const incy);
 
-  static void gemv(const char trans, int m, int n, const T alpha, const T *a,
-                   int lda, const T *b, int ldb, const T beta,
-                   /* */ T *c, int ldc);
-
-  static void ger(int m, int n, const T alpha, const T *x, int incx, const T *y,
-                  int incy, T *a, int lda);
-
-  static void geru(int m, int n, const T alpha, const T *x, int incx,
-                   const T *y, int incy, T *a, int lda);
-
-  static void gerc(int m, int n, const T alpha, const T *x, int incx,
-                   const T *y, int incy, T *a, int lda);
-
-  static void syr(const char uplo, int n, const T alpha, const T *x, int incx,
-                  T *a, int lda);
-
-  template <typename tAlpha>
-  static void cher(const char uplo, int n, const tAlpha alpha, const T *x,
-                   int incx, T *a, int lda);
-
-  template <typename tAlpha>
-  static void zher(const char uplo, int n, const tAlpha alpha, const T *x,
-                   int incx, T *a, int lda);
-
-  static void trsv(const char uplo, const char transa, const char diag, int m,
-                   const T *a, int lda,
-                   /* */ T *b, int ldb);
-
-  static void gemm(const char transa, const char transb, int m, int n, int k,
-                   const T alpha, const T *a, int lda, const T *b, int ldb,
+  static void gemv(const char trans, KK_INT m, KK_INT n, const T alpha, const T *a, KK_INT lda, const T *b, KK_INT ldb,
                    const T beta,
-                   /* */ T *c, int ldc);
+                   /* */ T *c, KK_INT ldc);
 
-  static void herk(const char transa, const char transb, int n, int k,
-                   const T alpha, const T *a, int lda, const T beta,
-                   /* */ T *c, int ldc);
+  static void ger(KK_INT m, KK_INT n, const T alpha, const T *x, KK_INT incx, const T *y, KK_INT incy, T *a,
+                  KK_INT lda);
 
-  static void trmm(const char side, const char uplo, const char transa,
-                   const char diag, int m, int n, const T alpha, const T *a,
-                   int lda,
-                   /* */ T *b, int ldb);
+  static void geru(KK_INT m, KK_INT n, const T alpha, const T *x, KK_INT incx, const T *y, KK_INT incy, T *a,
+                   KK_INT lda);
 
-  static void trsm(const char side, const char uplo, const char transa,
-                   const char diag, int m, int n, const T alpha, const T *a,
-                   int lda,
-                   /* */ T *b, int ldb);
+  static void gerc(KK_INT m, KK_INT n, const T alpha, const T *x, KK_INT incx, const T *y, KK_INT incy, T *a,
+                   KK_INT lda);
+
+  static void syr(const char uplo, KK_INT n, const T alpha, const T *x, KK_INT incx, T *a, KK_INT lda);
+
+  static void syr2(const char uplo, KK_INT n, const T alpha, const T *x, KK_INT incx, const T *y, KK_INT incy, T *a,
+                   KK_INT lda);
+
+  template <typename tAlpha>
+  static void her(const char uplo, KK_INT n, const tAlpha alpha, const T *x, KK_INT incx, T *a, KK_INT lda);
+
+  static void her2(const char uplo, KK_INT n, const T alpha, const T *x, KK_INT incx, const T *y, KK_INT incy, T *a,
+                   KK_INT lda);
+
+  static void trsv(const char uplo, const char transa, const char diag, KK_INT m, const T *a, KK_INT lda,
+                   /* */ T *b, KK_INT ldb);
+
+  static void gemm(const char transa, const char transb, KK_INT m, KK_INT n, KK_INT k, const T alpha, const T *a,
+                   KK_INT lda, const T *b, KK_INT ldb, const T beta,
+                   /* */ T *c, KK_INT ldc);
+
+  static void herk(const char transa, const char transb, KK_INT n, KK_INT k, const T alpha, const T *a, KK_INT lda,
+                   const T beta,
+                   /* */ T *c, KK_INT ldc);
+
+  static void trmm(const char side, const char uplo, const char transa, const char diag, KK_INT m, KK_INT n,
+                   const T alpha, const T *a, KK_INT lda,
+                   /* */ T *b, KK_INT ldb);
+
+  static void trsm(const char side, const char uplo, const char transa, const char diag, KK_INT m, KK_INT n,
+                   const T alpha, const T *a, KK_INT lda,
+                   /* */ T *b, KK_INT ldb);
 };
 }  // namespace Impl
 }  // namespace KokkosBlas

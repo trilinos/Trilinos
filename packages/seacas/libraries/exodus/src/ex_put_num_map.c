@@ -42,7 +42,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   int    status;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -100,7 +100,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   }
 
   /* Check for duplicate map id entry */
-  status = ex__id_lkup(exoid, map_type, map_id);
+  status = exi_id_lkup(exoid, map_type, map_id);
   if (status != -EX_LOOKUPFAIL) { /* found the map id */
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s %" PRId64 " already defined in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
@@ -117,15 +117,15 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  int num_maps = num_entries;
 
   /* Keep track of the total number of maps defined using a counter stored
      in a linked list keyed by exoid.
-     NOTE: ex__get_file_item  is used to find the number of maps
+     NOTE: exi_get_file_item  is used to find the number of maps
      for a specific file and returns that value.
   */
-  int cur_num_maps = ex__get_file_item(exoid, ex__get_counter_list(map_type));
+  int cur_num_maps = exi_get_file_item(exoid, exi_get_counter_list(map_type));
   if (!overwrite_map) {
+    int num_maps = num_entries;
     if (cur_num_maps >= num_maps) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: exceeded number of %ss (%d) specified in file id %d",
                ex_name_of_object(map_type), num_maps, exoid);
@@ -133,9 +133,9 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    /*   NOTE: ex__inc_file_item  is used to find the number of maps
+    /*   NOTE: exi_inc_file_item  is used to find the number of maps
          for a specific file and returns that value incremented. */
-    cur_num_maps = ex__inc_file_item(exoid, ex__get_counter_list(map_type));
+    cur_num_maps = exi_inc_file_item(exoid, exi_get_counter_list(map_type));
   }
 
   if (id_is_index) {
@@ -190,7 +190,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -207,9 +207,9 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define map %s in file id %d", vmap, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
     }
-    ex__compress_variable(exoid, varid, 1);
+    exi_compress_variable(exoid, varid, 1);
 
-    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) { /* exit define mode */
+    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) { /* exit define mode */
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
       ex_err_fn(exoid, __func__, errmsg, status);
       varid = -1; /* force early exit */

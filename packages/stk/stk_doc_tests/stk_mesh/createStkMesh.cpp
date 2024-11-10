@@ -54,7 +54,6 @@ TEST(StkMeshHowTo, UseStkIO)
   if(stk::parallel_machine_size(communicator) == 1)
   {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
 
     stk::io::StkMeshIoBroker meshReader;
     meshReader.set_bulk_data(*bulkPtr);
@@ -63,7 +62,7 @@ TEST(StkMeshHowTo, UseStkIO)
     meshReader.add_all_mesh_fields_as_input_fields();
     meshReader.populate_bulk_data();
 
-    unsigned numElems = stk::mesh::count_selected_entities(bulkPtr->mesh_meta_data().universal_part(), bulkPtr->buckets(stk::topology::ELEM_RANK));
+    unsigned numElems = stk::mesh::count_entities(*bulkPtr, stk::topology::ELEM_RANK, bulkPtr->mesh_meta_data().universal_part());
     EXPECT_EQ(512u, numElems);
   }
 }

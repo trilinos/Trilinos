@@ -45,6 +45,12 @@
 #ifndef _AZTECOO_SCALING_H_
 #define _AZTECOO_SCALING_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include <Epetra_Object.h>
 #include <Epetra_CrsMatrix.h>
 
@@ -63,4 +69,3 @@ int AztecOO_scale_epetra(int action,
                          AZ_SCALING* scaling);
 
 #endif
-

@@ -44,6 +44,12 @@
 #ifndef _AZOO_printf_h_
 #define _AZOO_printf_h_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -79,4 +85,3 @@ void AZOO_clear_streams();
 #endif
 
 #endif
-

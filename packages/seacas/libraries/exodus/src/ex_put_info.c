@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -80,7 +80,7 @@ int ex_put_info(int exoid, int num_info, char *const info[])
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -95,7 +95,7 @@ int ex_put_info(int exoid, int num_info, char *const info[])
     if (status != NC_NOERR) {
 
       /* put file into define mode  */
-      if ((status = nc_redef(rootid)) != NC_NOERR) {
+      if ((status = exi_redef(rootid, __func__)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed put file id %d into define mode", rootid);
         ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
@@ -141,13 +141,13 @@ int ex_put_info(int exoid, int num_info, char *const info[])
        * compilers/mpi so are doing it this way...
        */
 #if defined(PARALLEL_AWARE_EXODUS)
-      if (ex__is_parallel(rootid)) {
+      if (exi_is_parallel(rootid)) {
         nc_var_par_access(rootid, varid, NC_INDEPENDENT);
       }
 #endif
 
       /*   leave define mode  */
-      if ((status = ex__leavedef(rootid, __func__)) != NC_NOERR) {
+      if ((status = exi_leavedef(rootid, __func__)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
         ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
@@ -182,7 +182,7 @@ int ex_put_info(int exoid, int num_info, char *const info[])
     }
     /* PnetCDF applies setting to entire file, so put back to collective... */
 #if defined(PARALLEL_AWARE_EXODUS)
-    if (ex__is_parallel(rootid)) {
+    if (exi_is_parallel(rootid)) {
       nc_var_par_access(rootid, varid, NC_COLLECTIVE);
     }
 #endif
@@ -191,6 +191,6 @@ int ex_put_info(int exoid, int num_info, char *const info[])
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(rootid, __func__);
+  exi_leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

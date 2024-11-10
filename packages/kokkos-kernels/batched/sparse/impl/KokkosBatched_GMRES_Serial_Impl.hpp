@@ -36,17 +36,12 @@ namespace KokkosBatched {
 /// Serial GMRES
 ///
 
-template <typename OperatorType, typename VectorViewType,
-          typename PrecOperatorType, typename KrylovHandleType>
-KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
-                                               const VectorViewType& _B,
-                                               const VectorViewType& _X,
-                                               const PrecOperatorType& P,
-                                               const KrylovHandleType& handle,
-                                               const int GMRES_id) {
+template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
+KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const VectorViewType& _B,
+                                               const VectorViewType& _X, const PrecOperatorType& P,
+                                               const KrylovHandleType& handle, const int GMRES_id) {
   typedef int OrdinalType;
-  typedef typename Kokkos::ArithTraits<
-      typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
+  typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
   typedef Kokkos::ArithTraits<MagnitudeType> ATM;
 
   using SerialCopy1D = SerialCopy<Trans::NoTranspose, 1>;
@@ -55,9 +50,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
   const OrdinalType numMatrices = _X.extent(0);
   const OrdinalType numRows     = _X.extent(1);
 
-  size_t maximum_iteration = handle.get_max_iteration() < numRows
-                                 ? handle.get_max_iteration()
-                                 : numRows;
+  size_t maximum_iteration          = handle.get_max_iteration() < numRows ? handle.get_max_iteration() : numRows;
   const MagnitudeType tolerance     = handle.get_tolerance();
   const MagnitudeType max_tolerance = handle.get_max_tolerance();
 
@@ -72,15 +65,12 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
   const int first_matrix = handle.first_index(GMRES_id);
   const int last_matrix  = handle.last_index(GMRES_id);
 
-  auto V_view = Kokkos::subview(
-      handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
-      Kokkos::ALL, Kokkos::make_pair(offset_V, offset_V + n_V));
-  auto H_view = Kokkos::subview(
-      handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
-      Kokkos::ALL, Kokkos::make_pair(offset_H, offset_H + n_H));
-  auto Givens_view = Kokkos::subview(
-      handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
-      Kokkos::ALL, Kokkos::make_pair(offset_Givens, offset_Givens + n_Givens));
+  auto V_view      = Kokkos::subview(handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL,
+                                     Kokkos::make_pair(offset_V, offset_V + n_V));
+  auto H_view      = Kokkos::subview(handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL,
+                                     Kokkos::make_pair(offset_H, offset_H + n_H));
+  auto Givens_view = Kokkos::subview(handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL,
+                                     Kokkos::make_pair(offset_Givens, offset_Givens + n_Givens));
 
   int n_G    = maximum_iteration + 1;
   int n_W    = numRows;
@@ -91,18 +81,12 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
   int offset_mask = offset_W + n_W;
   int offset_tmp  = offset_mask + n_mask;
 
-  auto G    = Kokkos::subview(handle.tmp_view,
-                           Kokkos::make_pair(first_matrix, last_matrix),
-                           Kokkos::make_pair(offset_G, offset_G + n_G));
-  auto W    = Kokkos::subview(handle.tmp_view,
-                           Kokkos::make_pair(first_matrix, last_matrix),
-                           Kokkos::make_pair(offset_W, offset_W + n_W));
-  auto mask = Kokkos::subview(handle.tmp_view,
-                              Kokkos::make_pair(first_matrix, last_matrix),
-                              offset_mask);
-  auto tmp =
-      Kokkos::subview(handle.tmp_view,
-                      Kokkos::make_pair(first_matrix, last_matrix), offset_tmp);
+  auto G    = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix),
+                              Kokkos::make_pair(offset_G, offset_G + n_G));
+  auto W    = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix),
+                              Kokkos::make_pair(offset_W, offset_W + n_W));
+  auto mask = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), offset_mask);
+  auto tmp  = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), offset_tmp);
 
   // Deep copy of b into r_0:
   SerialCopy2D::invoke(_B, W);
@@ -149,19 +133,14 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
     if (handle.get_ortho_strategy() == 0) {
       for (OrdinalType l = 0; l < numMatrices; ++l) {
         auto W_l   = Kokkos::subview(W, l, Kokkos::ALL);
-        auto V_old = Kokkos::subview(
-            V_view, l, Kokkos::make_pair(0, (int)j + 1), Kokkos::ALL);
-        auto H_old =
-            Kokkos::subview(H_view, l, j, Kokkos::make_pair(0, (int)j + 1));
+        auto V_old = Kokkos::subview(V_view, l, Kokkos::make_pair(0, (int)j + 1), Kokkos::ALL);
+        auto H_old = Kokkos::subview(H_view, l, j, Kokkos::make_pair(0, (int)j + 1));
 
         // Inner products
-        KokkosBlas::SerialGemv<Trans::NoTranspose,
-                               Algo::Gemv::Unblocked>::invoke(1, V_old, W_l, 0,
-                                                              H_old);
+        KokkosBlas::SerialGemv<Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(1, V_old, W_l, 0, H_old);
 
         // Update
-        KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
-            -1, V_old, H_old, 1, W_l);
+        KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(-1, V_old, H_old, 1, W_l);
       }
     }
     if (handle.get_ortho_strategy() == 1) {
@@ -179,8 +158,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
 
     for (OrdinalType i = 0; i < numMatrices; ++i) {
       H_view(i, j, j + 1) = ATM::sqrt(tmp(i));
-      tmp(i) =
-          H_view(i, j, j + 1) > max_tolerance ? 1. / H_view(i, j, j + 1) : 0.;
+      tmp(i)              = H_view(i, j, j + 1) > max_tolerance ? 1. / H_view(i, j, j + 1) : 0.;
     }
 
     if (j + 1 < maximum_iteration) {
@@ -207,8 +185,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
         }
 
         // Compute the new Givens rotation:
-        Kokkos::pair<typename VectorViewType::non_const_value_type,
-                     typename VectorViewType::non_const_value_type>
+        Kokkos::pair<typename VectorViewType::non_const_value_type, typename VectorViewType::non_const_value_type>
             G_new(1, 0);
         typename VectorViewType::non_const_value_type alpha = 0;
         SerialGivensInternal::invoke(H_j(j), H_j(j + 1), &G_new, &alpha);
@@ -241,8 +218,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
     }
 
     bool all_converged = true;
-    for (OrdinalType l = 0; l < numMatrices; ++l)
-      all_converged = (all_converged && mask(l) == 0.);
+    for (OrdinalType l = 0; l < numMatrices; ++l) all_converged = (all_converged && mask(l) == 0.);
     if (all_converged) {
       maximum_iteration = j + 1;
       break;
@@ -255,23 +231,19 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
     auto A_l = Kokkos::subview(H_view, l, first_indices, first_indices);
     auto B_l = Kokkos::subview(G, l, first_indices);
 
-    SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit,
-               Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
+    SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit, Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
   }
 
   if (handle.get_ortho_strategy() == 0) {
     for (OrdinalType l = 0; l < numMatrices; ++l) {
       KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
-          1, Kokkos::subview(V_view, l, first_indices, Kokkos::ALL),
-          Kokkos::subview(G, l, first_indices), 1,
+          1, Kokkos::subview(V_view, l, first_indices, Kokkos::ALL), Kokkos::subview(G, l, first_indices), 1,
           Kokkos::subview(_X, l, Kokkos::ALL));
     }
   }
   if (handle.get_ortho_strategy() == 1) {
     for (size_t j = 0; j < maximum_iteration; ++j) {
-      SerialAxpy::invoke(Kokkos::subview(G, Kokkos::ALL, j),
-                         Kokkos::subview(V_view, Kokkos::ALL, j, Kokkos::ALL),
-                         _X);
+      SerialAxpy::invoke(Kokkos::subview(G, Kokkos::ALL, j), Kokkos::subview(V_view, Kokkos::ALL, j, Kokkos::ALL), _X);
     }
   }
 
@@ -289,12 +261,9 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
   return status;
 }
 
-template <typename OperatorType, typename VectorViewType,
-          typename KrylovHandleType>
-KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
-                                               const VectorViewType& _B,
-                                               const VectorViewType& _X,
-                                               const KrylovHandleType& handle) {
+template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
+KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const VectorViewType& _B,
+                                               const VectorViewType& _X, const KrylovHandleType& handle) {
   Identity P;
   return invoke<OperatorType, VectorViewType, Identity>(A, _B, _X, P, handle);
 }

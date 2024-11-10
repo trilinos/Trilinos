@@ -635,7 +635,7 @@ static void xci(anything **params, int num_surfaces, anything **surf_list)
         set_dev_descrip();
         dev_descrip.set_flag = TRUE;
       } /* end if set_flag */
-    }   /* end if surface not initialized */
+    } /* end if surface not initialized */
 
     else { /* this surface has been initialized once already */
 
@@ -1135,7 +1135,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
       break;
 
     } /* end switch */
-  }   /* end for i */
+  } /* end for i */
 } /* end xcesc */
 
 /* INQUIRE DEVICE IDENTIFICATION */
@@ -1527,7 +1527,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
           vdlina(&cur_x, &cur_y);
         }
       } /* end for j */
-    }   /* end no clipping on */
+    } /* end no clipping on */
 
     else { /* clipping is on */
 
@@ -1715,8 +1715,8 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
 
           default: done = TRUE; break;
           } /* end switch */
-        }   /* end while !done */
-      }     /* end while j*/
+        } /* end while !done */
+      } /* end while j*/
 
     } /* end else clipping is on */
 
@@ -1771,7 +1771,7 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
         vdlina(&x2, &y2);
 
       } /* end for j */
-    }   /* end if clipping is off */
+    } /* end if clipping is off */
 
     else { /* clipping is on */
 
@@ -1932,9 +1932,9 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
           default: done = TRUE; break;
 
           } /* end switch */
-        }   /* end while !done */
-      }     /* end for j */
-    }       /* end else clipping is on */
+        } /* end while !done */
+      } /* end for j */
+    } /* end else clipping is on */
 
     /* flag that the page has been marked */
     cur_state->pic_dirty = CDIRTY;
@@ -2099,8 +2099,8 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
             np = (int)((cur_state->clipmax.x - x) / char_width);
           }
         } /* end if ok in x */
-      }   /* end if ok in y */
-    }     /* end if clip_on */
+      } /* end if ok in y */
+    } /* end if clip_on */
 
     ok = ok && np > 0; /* make sure there is still some text left */
 
@@ -2214,7 +2214,7 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
           vdi_ls = (int)temp_array[4];
           vdstls(&vdi_ls);
         }
-      }      /* end if hollow OR no poly support */
+      } /* end if hollow OR no poly support */
       else { /* solid polygon */
         vdpoly(xnew, ynew, &npnew);
       }
@@ -2370,7 +2370,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
         } /* end clip at top edge */
 
       } /* end if ok */
-    }   /* end if clip is on */
+    } /* end if clip is on */
 
     /* make sure there is still something left */
     ok = ok && (nx1 > 0 && ny1 > 0);
@@ -2439,9 +2439,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
               vdpixi(&ix, &iy, &cells[index], &nx1);
               index = index + nx; /* compute next index */
               iy    = iy + yinc;  /* compute next raster line */
-            }                     /* end for k */
-          }                       /* end else no special case */
-        }                         /* end x increasing */
+            } /* end for k */
+          } /* end else no special case */
+        } /* end x increasing */
 
         else { /* x decreasing */
 
@@ -2480,8 +2480,8 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
             index = index + index_inc;
 
           } /* end for k */
-        }   /* end x decreasing */
-      }     /* end if indexed color */
+        } /* end x decreasing */
+      } /* end if indexed color */
 
       else { /*  direct color */
 
@@ -2529,7 +2529,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
             index = index + index_inc;
 
           } /* end for k */
-        }   /* end if x increasing */
+        } /* end if x increasing */
 
         else { /* x decreasing */
 
@@ -2566,14 +2566,14 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
             index = index + index_inc;
 
           } /* end for k */
-        }   /* end else x decreasing */
-      }     /* end else direct color */
+        } /* end else x decreasing */
+      } /* end else direct color */
 
       /* flag that the page has been marked */
       cur_state->pic_dirty = CDIRTY;
 
     } /* end if ok */
-  }   /* end for each surface */
+  } /* end for each surface */
 } /* end xcca */
 
 /* PIXEL ARRAY */
@@ -2752,7 +2752,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
         } /* end clip top edge */
 
       } /* end if ok */
-    }   /* end if clip_on */
+    } /* end if clip_on */
 
     /* make sure there is still something to draw */
     ok = ok && (nx1 > 0 && ny1 > 0);
@@ -2822,9 +2822,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
               vdpixi(&ix, &iy, &pxclrs[index], &nx1);
               index = index + nx; /* compute next index */
               iy    = iy + yinc;  /* compute next raster line */
-            }                     /* end for k */
-          }                       /* end else no special case */
-        }                         /* end x increasing */
+            } /* end for k */
+          } /* end else no special case */
+        } /* end x increasing */
 
         else { /* x decreasing */
 
@@ -2863,8 +2863,8 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
             index = index + index_inc;
 
           } /* end for k */
-        }   /* end x decreasing */
-      }     /* end if indexed color */
+        } /* end x decreasing */
+      } /* end if indexed color */
 
       else { /*  direct color */
 
@@ -2911,7 +2911,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
             index = index + index_inc;
 
           } /* end for k */
-        }   /* end if x increasing */
+        } /* end if x increasing */
 
         else { /* x decreasing */
 
@@ -2948,14 +2948,14 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
             index = index + index_inc;
 
           } /* end for k */
-        }   /* end else x decreasing */
-      }     /* end else direct color */
+        } /* end else x decreasing */
+      } /* end else direct color */
 
       /* flag that the page has been marked */
       cur_state->pic_dirty = CDIRTY;
 
     } /* end if ok */
-  }   /* end for each surface */
+  } /* end for each surface */
 } /* end xcpxa */
 
 /* LINE TYPE */
@@ -3339,8 +3339,8 @@ static void xccsm(anything **params, int num_surfaces, anything **surf_list)
           functions with affected parameters ignored until reset */
         report_error(cur_state, 3, 305, *(short *)params[0]);
         cur_state->csm = -1; /* flag error condition */
-      }                      /* end else must be an error */
-    }                        /* end else */
+      } /* end else must be an error */
+    } /* end else */
 
   } /* end for each surface */
 } /* end xccsm */
@@ -4084,7 +4084,7 @@ static void xcqlna(anything **params, anything **surf_list)
   /* line type */
   *(int *)params[3] = cur_state->line_type;
 
-  /* line width spcification mode - only support scaled */
+  /* line width specification mode - only support scaled */
   *(int *)params[4] = CSCA;
 
   /* line width */
@@ -4124,7 +4124,7 @@ static void xcqmka(anything **params, anything **surf_list)
   /* marker type */
   *(int *)params[3] = cur_state->mark_type;
 
-  /* marker size spcification mode - only support scaled */
+  /* marker size specification mode - only support scaled */
   *(int *)params[4] = CSCA;
 
   /* marker size */
@@ -4902,7 +4902,7 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
       cur_state->vdi_attrib.fg_rgb[1] = -1.0;
       cur_state->vdi_attrib.fg_rgb[2] = -1.0;
     } /* end does foreground... */
-  }   /* end indexed color */
+  } /* end indexed color */
 
   else /* direct color */
 
@@ -4983,7 +4983,7 @@ static void set_background_color(surf_statelist *surf_state, int *colors)
             index = i;
           }
         } /* end for i */
-      }   /* end vector SVDI */
+      } /* end vector SVDI */
 
       /* is it close enough? */
       if (dmin <= epsilon) {
@@ -4995,7 +4995,7 @@ static void set_background_color(surf_statelist *surf_state, int *colors)
         vdstco(&one, &dev_descrip.index_array[cur_state->bg_index], &cur_state->vdi_attrib.bg_rgb,
                &dev_descrip.col_mode);
         cur_state->color_set = TRUE; /* flag that CT has been set */
-      }                              /* end else not close enough */
+      } /* end else not close enough */
 
     } /* end has never been set */
 
@@ -5063,7 +5063,7 @@ static void report_error(surf_statelist *surf_state, int e_class, int e_num, int
         surf_state->err_queue[err_slot - 1].err_num   = 0;
         surf_state->err_queue[err_slot - 1].func_id   = 2;
       } /* end else create */
-    }   /* end not enuff room in the queue */
+    } /* end not enuff room in the queue */
 
   } /* end if error reporting is on */
 } /* end report_error */
@@ -5102,7 +5102,7 @@ static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, 
       /* c is not whitespace, is start of token */
       workstate = 1;
     } /* end if c is whitespace */
-  }   /* end while skipping whitespace */
+  } /* end while skipping whitespace */
 
   while (workstate == 1) { /* while in token */
     c = data_p[*index_p];
@@ -5119,7 +5119,7 @@ static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, 
       if (*index_p >= *numrecs_p * 80) {
         workstate = 2;
       } /* end if off end of data */
-    }   /* end if c is whitespace */
+    } /* end if c is whitespace */
 
   } /* end while putting chars into outtoken */
 
@@ -5210,7 +5210,7 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
           xtemp[*lenout]     = t.x;
           ytemp[(*lenout)++] = t.y;
         } /* end intersect */
-      }   /* end else p outside, s inside */
+      } /* end else p outside, s inside */
 
       s.x = p.x;
       s.y = p.y;
@@ -5459,6 +5459,6 @@ void pstbuf(int *numwds, char *outary)
         cur_state->buff_ptr = 0;
 
       } /* end if > BUFFER_SIZE */
-    }   /* end for i=... */
+    } /* end for i=... */
   }
 } /* end pstbuf */

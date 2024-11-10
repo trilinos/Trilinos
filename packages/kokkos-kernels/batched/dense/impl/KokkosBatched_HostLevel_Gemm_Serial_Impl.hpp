@@ -76,9 +76,8 @@ namespace Impl {
 ///                     ArgResultsPerThread, ScalarType, AViewType,
 ///                     BViewType, CViewType>(alpha, A, B, beta, C).invoke();
 // clang-format on
-template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
-          class ArgResultsPerThread, class ScalarType, class AViewType,
-          class BViewType, class CViewType>
+template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim, class ArgResultsPerThread,
+          class ScalarType, class AViewType, class BViewType, class CViewType>
 class BatchedSerialGemm {
  private:
   AViewType A;
@@ -92,10 +91,8 @@ class BatchedSerialGemm {
 
   void run() {
     using execution_space = typename CViewType::device_type::execution_space;
-    using policy_type =
-        Kokkos::RangePolicy<ArgResultsPerThread, execution_space>;
-    Kokkos::parallel_for("BatchedSerialGemm", policy_type(0, batch_size),
-                         *this);
+    using policy_type     = Kokkos::RangePolicy<ArgResultsPerThread, execution_space>;
+    Kokkos::parallel_for("BatchedSerialGemm", policy_type(0, batch_size), *this);
   }
 
  public:
@@ -117,8 +114,7 @@ class BatchedSerialGemm {
       batch_size *= divisor;
 
       run();
-    } else if (std::is_same<ArgResultsPerThread,
-                            ResultsPerThread::Rank2>::value) {
+    } else if (std::is_same<ArgResultsPerThread, ResultsPerThread::Rank2>::value) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value)
         batch_size = C.extent(0);
       else
@@ -132,8 +128,7 @@ class BatchedSerialGemm {
     return 0;
   }
 
-  BatchedSerialGemm(ScalarType _alpha, AViewType _A, BViewType _B,
-                    ScalarType _beta, CViewType _C)
+  BatchedSerialGemm(ScalarType _alpha, AViewType _A, BViewType _B, ScalarType _beta, CViewType _C)
       : A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -149,34 +144,26 @@ class BatchedSerialGemm {
 
     // Due to taking 1-rank subviews out, we must handle transpose here.
     // Use overloads of subview_wrapper to handle transpose at compile time.
-    auto svA_row = subview_wrapper(A, batch_idx, row_idx, Kokkos::ALL(),
-                                   batch_layout_tag, transA_tag);
-    auto svB_col = subview_wrapper(B, batch_idx, Kokkos::ALL(), col_idx,
-                                   batch_layout_tag, transB_tag);
-    auto svC_ele =
-        subview_wrapper(C, batch_idx, row_idx, col_idx, batch_layout_tag);
+    auto svA_row = subview_wrapper(A, batch_idx, row_idx, Kokkos::ALL(), batch_layout_tag, transA_tag);
+    auto svB_col = subview_wrapper(B, batch_idx, Kokkos::ALL(), col_idx, batch_layout_tag, transB_tag);
+    auto svC_ele = subview_wrapper(C, batch_idx, row_idx, col_idx, batch_layout_tag);
 
     // Kokkos::subview(scalar, ALL) or Kokkos::subview(ALL, scalar) always
     // returns a column vector. Since the subviews above handle the
     // matrix transpositions, here we must perform the GEMM on:
     // row_vec x col_vec, which is svA_row' x svB_col to compute the element
     // of C.
-    KokkosBatched::SerialGemm<Trans::Transpose, Trans::NoTranspose,
-                              ArgMode>::invoke(alpha, svA_row, svB_col, beta,
-                                               svC_ele);
+    KokkosBatched::SerialGemm<Trans::Transpose, Trans::NoTranspose, ArgMode>::invoke(alpha, svA_row, svB_col, beta,
+                                                                                     svC_ele);
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ResultsPerThread::Rank2 &, const int &i) const {
-    auto svA =
-        subview_wrapper(A, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
-    auto svB =
-        subview_wrapper(B, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
-    auto svC =
-        subview_wrapper(C, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
+    auto svA = subview_wrapper(A, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
+    auto svB = subview_wrapper(B, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
+    auto svC = subview_wrapper(C, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
 
-    KokkosBatched::SerialGemm<ArgTransA, ArgTransB, ArgMode>::invoke(
-        alpha, svA, svB, beta, svC);
+    KokkosBatched::SerialGemm<ArgTransA, ArgTransB, ArgMode>::invoke(alpha, svA, svB, beta, svC);
   }
 };
 }  // namespace Impl

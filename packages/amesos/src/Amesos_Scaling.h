@@ -40,6 +40,12 @@
 #ifndef AMESOS_SCALING_H
 #define AMESOS_SCALING_H
 
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
 //! Amesos_Scaling: base class for scaling procedures.
 class Amesos_Scaling
 {

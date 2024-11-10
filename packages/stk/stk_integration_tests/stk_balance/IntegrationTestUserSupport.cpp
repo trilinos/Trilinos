@@ -32,7 +32,7 @@ using stk::unit_test_util::build_mesh;
 
 TEST(Stkbalance, DISABLED_Ticket15830)
 {
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "rs1.rsout");
+  std::string filename = stk::unit_test_util::get_option("-i", "rs1.rsout");
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
@@ -132,7 +132,7 @@ TEST(Stkbalance, NumOverlappingBB)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 3) return;
 
   const std::string dummyFileName("ARefLA.e");
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", dummyFileName);
+  std::string filename = stk::unit_test_util::get_option("-i", dummyFileName);
 
   std::vector<double> coordMinOnProc(3, std::numeric_limits<double>::max());
   std::vector<double> coordMaxOnProc(3, std::numeric_limits<double>::lowest());
@@ -190,7 +190,7 @@ TEST(Stkbalance, modifyMeshIfNeeded)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 3) return;
 
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "ARefLA.e");
+  std::string filename = stk::unit_test_util::get_option("-i", "ARefLA.e");
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
@@ -283,7 +283,7 @@ TEST(Stkbalance, modifyMeshIfNeeded)
 // actually check anything.
 TEST(Stkbalance, checkForDegenerateElements)
 {
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "ZDZ.e");
+  std::string filename = stk::unit_test_util::get_option("-i", "ZDZ.e");
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;

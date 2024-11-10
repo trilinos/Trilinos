@@ -77,9 +77,7 @@ TEST(stkMeshHowTo, createSharedNodes)
   const unsigned spatialDimension = 2;
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
-  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::mesh::Part &triPart = metaData.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3_2D);
@@ -122,9 +120,7 @@ TEST(stkMeshHowTo, createIndependentSharedNodes)
   const unsigned spatialDimension = 2;
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
-  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   metaData.commit();
@@ -159,9 +155,7 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
   const unsigned spatialDimension = 2;
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
-  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::BulkData& bulkData = *bulkPtr;
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::Part &triPart = metaData.declare_part_with_topology("triPart", stk::topology::TRIANGLE_3_2D);

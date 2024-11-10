@@ -54,6 +54,8 @@ ENDIF()
 # Set the package version number
 SET(PyTrilinos_VERSION ${Trilinos_VERSION})
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
 # of modules is similar to the packages, except it contains the names
@@ -236,7 +238,7 @@ MESSAGE(STATUS "    ${PyTrilinos_PACKAGES}")
 # Determine the PyTrilinos default installation directory prefix.  If
 # CMAKE_INSTALL_PREFIX is set by the user, then use it.  Else the
 # prefix is set to the value of python's sys.prefix.
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.prefix)"
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c "import sys; print(sys.prefix)"
   OUTPUT_VARIABLE PYTHON_PREFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )

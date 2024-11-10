@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_CRSGRAPH_DEF_HPP
@@ -728,6 +698,61 @@ namespace Tpetra {
     lclIndsPacked_wdv = local_inds_wdv_type(lclGraph.entries);
     lclIndsUnpacked_wdv = lclIndsPacked_wdv;
     setRowPtrs(lclGraph.row_map);
+
+    set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
+
+    if (! params.is_null() && params->isParameter("sorted") &&
+        ! params->get<bool>("sorted")) {
+      indicesAreSorted_ = false;
+    }
+    else {
+      indicesAreSorted_ = true;
+    }
+
+    const bool callComputeGlobalConstants =
+      params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants ();
+    }
+    fillComplete_ = true;
+    checkInternalState ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const row_ptrs_device_view_type& rowPointers,
+            const local_inds_wdv_type& columnIndices,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const Teuchos::RCP<const import_type>& importer,
+            const Teuchos::RCP<const export_type>& exporter,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
+    rowMap_ (rowMap),
+    colMap_ (colMap),
+    rangeMap_ (rangeMap.is_null () ? rowMap : rangeMap),
+    domainMap_ (domainMap.is_null () ? rowMap : domainMap),
+    importer_ (importer),
+    exporter_ (exporter),
+    numAllocForAllRows_ (0),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
+    indicesAreAllocated_ (true),
+    indicesAreLocal_ (true)
+  {
+    staticAssertions();
+    const char tfecfFuncName[] = "Tpetra::CrsGraph(row_ptrs_device_view_type,local_inds_wdv_type"
+      "Map,Map,Map,Map,Import,Export,params): ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (colMap.is_null (), std::runtime_error,
+       "The input column Map must be nonnull.");
+
+    lclIndsPacked_wdv = columnIndices;
+    lclIndsUnpacked_wdv = lclIndsPacked_wdv;
+    setRowPtrs(rowPointers);
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -5846,10 +5871,8 @@ namespace Tpetra {
     }
 
     execute_sync_host_uvm_access(); // protect host UVM access
-    Kokkos::parallel_reduce
-      ("Tpetra::CrsGraph::pack: totalNumPackets",
-       inputRange,
-       [=, &prefix] (const LO i, size_t& curTotalNumPackets) {
+    totalNumPackets = 0;
+    for (size_t i=0; i<numExportLIDs; ++i) {
          const LO lclRow = exportLIDs_h[i];
          const GO gblRow = rowMap.getGlobalElement (lclRow);
          if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
@@ -5865,10 +5888,9 @@ namespace Tpetra {
          else {
            const size_t numEnt = this->getNumEntriesInGlobalRow (gblRow);
            numPacketsPerLID_h(i) = numEnt;
-           curTotalNumPackets += numEnt;
+           totalNumPackets += numEnt;
          }
-      },
-      totalNumPackets);
+      }
 
     if (verbose) {
       std::ostringstream os;

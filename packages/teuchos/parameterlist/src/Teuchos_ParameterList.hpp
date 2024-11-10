@@ -1,44 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #ifndef TEUCHOS_PARAMETER_LIST_H
 #define TEUCHOS_PARAMETER_LIST_H
@@ -264,7 +231,7 @@ public:
    */
   ParameterList& disableRecursiveAll();
 
-  /*! \brief Set a parameter whose value has type T.
+  /*! \brief Templated set method.
 
     \param name [in] The parameter's name.
     \param value [in] The parameter's value.  This determines the
@@ -283,10 +250,21 @@ public:
     </ul>
   */
   template<typename T>
-  ParameterList& set (std::string const& name, 
-		      T const& value, 
-		      std::string const& docString = "",
-		      RCP<const ParameterEntryValidator> const& validator = null);
+  ParameterList& set (std::string const& name,
+                      T&& value,
+                      std::string const& docString = "",
+                      RCP<const ParameterEntryValidator> const& validator = null);
+  
+  /*! \overload
+    
+    \note This fallback is necessary to support legacy use cases that specify the type
+          of the parameter at the call site, and the type is hence not deduced.  
+  */
+  template<typename T, typename S, typename = std::enable_if_t<std::is_convertible_v<S, std::remove_const_t<T>>>>
+  ParameterList& set (std::string const& name,
+                      const S& value,
+                      std::string const& docString = "",
+                      RCP<const ParameterEntryValidator> const& validator = null);
 
   /// \brief Specialization of set() for a parameter which is a <tt>char[]</tt>.
   ///
@@ -954,7 +932,7 @@ ParameterList& ParameterList::setName( const std::string &name_in )
 template<typename T>
 inline
 ParameterList& ParameterList::set(
-  std::string const& name_in, T const& value_in, std::string const& docString_in,
+  std::string const& name_in, T&& value_in, std::string const& docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
@@ -967,7 +945,7 @@ ParameterList& ParameterList::set(
     const RCP<const ParameterEntryValidator> validator =
       (nonnull(validator_in) ? validator_in : param->validator());
      // Create temp param to validate before setting
-    ParameterEntry param_new(value_in, false, false, docString, validator );
+    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString, validator );
     if (nonnull(validator)) {
       validator->validate(param_new, name_in, this->name());
     }
@@ -975,7 +953,7 @@ ParameterList& ParameterList::set(
     *param = param_new;
   }
   else {
-    ParameterEntry param_new(value_in, false, false, docString_in, validator_in);
+    ParameterEntry param_new(std::forward<T>(value_in), false, false, docString_in, validator_in);
     if (nonnull(param_new.validator())) {
       param_new.validator()->validate(param_new, name_in, this->name());
     }
@@ -984,6 +962,15 @@ ParameterList& ParameterList::set(
   return *this;
 }
 
+template<typename T, typename S, typename>
+inline
+ParameterList& ParameterList::set(
+  std::string const& name_in, const S& value_in, std::string const& docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
+  )
+{
+  return set(name_in, static_cast<const T&>(value_in), docString_in, validator_in);
+}
 
 inline
 ParameterList& ParameterList::set(

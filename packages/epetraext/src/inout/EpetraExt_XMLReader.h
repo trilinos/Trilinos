@@ -44,6 +44,12 @@
 #ifndef EPETRAEXT_XMLREADER_H
 #define EPETRAEXT_XMLREADER_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include "Epetra_ConfigDefs.h"
 #include "Teuchos_RCP.hpp"

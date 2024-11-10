@@ -1,36 +1,23 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <null/Ionull_DatabaseIO.h>
+#include "Ioss_CodeTypes.h"
+#include "null/Ionull_DatabaseIO.h"
 
-#include "Ioss_Assembly.h"
-#include "Ioss_Blob.h"
-#include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
-#include "Ioss_EdgeBlock.h"
-#include "Ioss_EdgeSet.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementSet.h"
-#include "Ioss_EntityBlock.h"
-#include "Ioss_EntitySet.h"
 #include "Ioss_EntityType.h"
-#include "Ioss_FaceBlock.h"
-#include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
-#include "Ioss_GroupingEntity.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_NodeSet.h"
-#include "Ioss_Property.h"
-#include "Ioss_Region.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
 #include "Ioss_State.h"
-#include "Ioss_VariableType.h"
+
+namespace Ioss {
+  class Assembly;
+  class Blob;
+  class PropertyManager;
+} // namespace Ioss
 
 namespace Ionull {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
@@ -40,9 +27,7 @@ namespace Ionull {
   {
   }
 
-  DatabaseIO::~DatabaseIO() = default;
-
-  void DatabaseIO::read_meta_data__() {}
+  void DatabaseIO::read_meta_data_nl() {}
 
   unsigned DatabaseIO::entity_field_support() const
   {
@@ -52,13 +37,13 @@ namespace Ionull {
            Ioss::STRUCTUREDBLOCK;
   }
 
-  bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::begin_nl(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::end_nl(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::begin_state__(int /* state */, double) { return true; }
+  bool DatabaseIO::begin_state_nl(int /* state */, double) { return true; }
 
-  bool DatabaseIO::end_state__(int /* state */, double) { return true; }
+  bool DatabaseIO::end_state_nl(int /* state */, double) { return true; }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::Region *, const Ioss::Field &field, void *,
                                          size_t data_size) const

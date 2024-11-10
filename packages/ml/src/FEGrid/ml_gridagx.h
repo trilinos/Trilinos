@@ -14,6 +14,12 @@
 #ifndef __MLGRIDAGX__
 #define __MLGRIDAGX__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include <stdio.h>
 /* #include <stdlib.h> */
 #include "ml_common.h"
@@ -94,4 +100,3 @@ extern int  ML_GridAGX_Load_AllVertCoordinates(ML_GridAGX*,int,double*);
 #endif
 
 #endif
-

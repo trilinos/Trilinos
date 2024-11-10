@@ -10,6 +10,12 @@
 #ifndef __MLAGGINFO__
 #define __MLAGGINFO__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 
 #ifndef ML_CPP
 #ifdef __cplusplus

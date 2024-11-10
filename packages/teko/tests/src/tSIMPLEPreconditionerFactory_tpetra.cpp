@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_Config.h"
 #include "tSIMPLEPreconditionerFactory_tpetra.hpp"
@@ -268,6 +231,20 @@ int tSIMPLEPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream &st
   status = test_isCompatable(verbosity, failstrm);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"isCompatable\" ... PASSED",
                        "   \"isCompatable\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
+  status = test_iterativeSolves(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"iterativeSolves\" ... PASSED",
+                       "   \"iterativeSolves\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
+  status = test_hierarchicalSolves(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"hierarchicalSolves\" ... PASSED",
+                       "   \"hierarchicalSolves\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -713,6 +690,86 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_result(int verbosity, std::ostrea
    allPassed &= status;
 
    return allPassed;*/
+  return true;
+}
+
+bool tSIMPLEPreconditionerFactory_tpetra::test_iterativeSolves(int verbosity, std::ostream &os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  RCP<ParameterList> params = Teuchos::rcp(new ParameterList());
+  ParameterList &tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  tekoList.set("Inverse Type", "SIMPLE");
+  ParameterList &ifl = tekoList.sublist("Inverse Factory Library");
+  ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
+  ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Velocity Type", "Ifpack2");
+  ifl.sublist("SIMPLE").set("Inverse Pressure Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Pressure Type", "Ifpack2");
+
+  RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("SIMPLE");
+
+  Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, A_);
+  TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+
+  if (!inv.is_null()) {
+    Teko::rebuildInverse(*invFact, A_, inv);
+    TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+  }
+
+  return true;
+}
+
+bool tSIMPLEPreconditionerFactory_tpetra::test_hierarchicalSolves(int verbosity, std::ostream &os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > blkOp = Thyra::defaultBlockedLinearOp<ST>();
+  blkOp->beginBlockFill(3, 3);
+  blkOp->setBlock(0, 0, F_);
+  blkOp->setBlock(0, 1, Bt_);
+  blkOp->setBlock(1, 0, B_);
+  blkOp->setBlock(1, 1, C_);
+  blkOp->setBlock(1, 2, B_);
+  blkOp->setBlock(2, 1, Bt_);
+  blkOp->setBlock(2, 2, F_);
+  blkOp->endBlockFill();
+
+  RCP<ParameterList> params = Teuchos::rcp(new ParameterList());
+  ParameterList &tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  tekoList.set("Inverse Type", "HBGS");
+  ParameterList &ifl = tekoList.sublist("Inverse Factory Library");
+
+  ifl.sublist("HBGS").set("Type", "Hierarchical Block Gauss-Seidel");
+
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Included Subblocks", "1,2");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Inverse Type", "Belos");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Preconditioner Type", "SIMPLE");
+
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Included Subblocks", "3");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Inverse Type", "Belos");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Preconditioner Type", "SINGLE_BLOCK");
+
+  ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
+  ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Velocity Type", "Ifpack2");
+  ifl.sublist("SIMPLE").set("Inverse Pressure Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Pressure Type", "Ifpack2");
+
+  ifl.sublist("SINGLE_BLOCK").set("Type", "Ifpack2");
+
+  RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("HBGS");
+
+  Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, blkOp);
+  TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+
+  if (!inv.is_null()) {
+    Teko::rebuildInverse(*invFact, blkOp, inv);
+    TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+  }
+
   return true;
 }
 

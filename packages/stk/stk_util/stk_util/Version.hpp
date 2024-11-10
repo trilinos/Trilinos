@@ -37,6 +37,16 @@
 
 #include <stk_util/registry/ProductRegistry.hpp>
 
+//STK_VERSION is related to the Sierra release/sprint number,
+//which appears in the below 'version_string()' as
+//something like '5.19.2-725-g23c8d219'.
+
+//See the file CHANGELOG.md for a listing that shows the
+//correspondence between version numbers and API changes.
+
+#define STK_VERSION 5210600
+
+
 namespace stk
 {
 

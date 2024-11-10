@@ -25,8 +25,7 @@
 #include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
-#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && \
-    defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
 #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
 #endif
 
@@ -52,80 +51,68 @@ enum class SPTRSVAlgorithm {
   SUPERNODAL_SPMV_DAG
 };
 
-template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
-          class TemporaryMemorySpace, class PersistentMemorySpace>
+template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace, class TemporaryMemorySpace,
+          class PersistentMemorySpace>
 class SPTRSVHandle {
  public:
-  typedef ExecutionSpace HandleExecSpace;
-  typedef TemporaryMemorySpace HandleTempMemorySpace;
-  typedef PersistentMemorySpace HandlePersistentMemorySpace;
+  using HandleExecSpace             = ExecutionSpace;
+  using HandleTempMemorySpace       = TemporaryMemorySpace;
+  using HandlePersistentMemorySpace = PersistentMemorySpace;
 
-  typedef ExecutionSpace execution_space;
-  typedef HandlePersistentMemorySpace memory_space;
+  using execution_space = ExecutionSpace;
+  using memory_space    = HandlePersistentMemorySpace;
 
-  typedef typename std::remove_const<size_type_>::type size_type;
-  typedef const size_type const_size_type;
+  using TeamPolicy  = Kokkos::TeamPolicy<execution_space>;
+  using RangePolicy = Kokkos::RangePolicy<execution_space>;
 
-  typedef typename std::remove_const<lno_t_>::type nnz_lno_t;
-  typedef const nnz_lno_t const_nnz_lno_t;
+  using size_type       = typename std::remove_const<size_type_>::type;
+  using const_size_type = const size_type;
 
-  typedef typename std::remove_const<scalar_t_>::type scalar_t;
-  typedef const scalar_t const_nnz_scalar_t;
+  using nnz_lno_t       = typename std::remove_const<lno_t_>::type;
+  using const_nnz_lno_t = const nnz_lno_t;
 
-  // row_map type (managed memory)
-  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace>
-      nnz_row_view_temp_t;
-  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace>
-      nnz_row_view_t;
-  typedef typename nnz_row_view_t::HostMirror host_nnz_row_view_t;
-  typedef typename Kokkos::View<int *, HandlePersistentMemorySpace>
-      int_row_view_t;
-  typedef typename Kokkos::View<int64_t *, HandlePersistentMemorySpace>
-      int64_row_view_t;
+  using scalar_t           = typename std::remove_const<scalar_t_>::type;
+  using const_nnz_scalar_t = const scalar_t;
+
+  // Row_map type (managed memory)
+  using nnz_row_view_temp_t = typename Kokkos::View<size_type *, HandleTempMemorySpace>;
+  using nnz_row_view_t      = typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
+  using host_nnz_row_view_t = typename nnz_row_view_t::HostMirror;
+  using int_row_view_t      = typename Kokkos::View<int *, HandlePersistentMemorySpace>;
+  using int64_row_view_t    = typename Kokkos::View<int64_t *, HandlePersistentMemorySpace>;
   // typedef typename row_lno_persistent_work_view_t::HostMirror
   // row_lno_persistent_work_host_view_t; //Host view type
-  typedef typename Kokkos::View<
-      const size_type *, HandlePersistentMemorySpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
-      nnz_row_unmanaged_view_t;  // for rank1 subviews
+  using nnz_row_unmanaged_view_t =
+      typename Kokkos::View<const size_type *, HandlePersistentMemorySpace,
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;  // for rank1 subviews
 
   // values type (managed memory)
-  typedef typename Kokkos::View<scalar_t *, HandleTempMemorySpace>
-      nnz_scalar_view_temp_t;
-  typedef typename Kokkos::View<scalar_t *, HandlePersistentMemorySpace>
-      nnz_scalar_view_t;
-  typedef typename nnz_scalar_view_t::HostMirror host_nnz_scalar_view_t;
-  typedef typename Kokkos::View<
-      const scalar_t *, HandlePersistentMemorySpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
-      nnz_scalar_unmanaged_view_t;  // for rank1 subviews
+  using nnz_scalar_view_temp_t = typename Kokkos::View<scalar_t *, HandleTempMemorySpace>;
+  using nnz_scalar_view_t      = typename Kokkos::View<scalar_t *, HandlePersistentMemorySpace>;
+  using host_nnz_scalar_view_t = typename nnz_scalar_view_t::HostMirror;
+  using nnz_scalar_unmanaged_view_t =
+      typename Kokkos::View<const scalar_t *, HandlePersistentMemorySpace,
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;  // for rank1 subviews
 
   // entries type (managed memory)
-  typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>
-      nnz_lno_view_temp_t;
-  typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>
-      nnz_lno_view_t;
-  typedef typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>
-      hostspace_nnz_lno_view_t;
-  typedef typename nnz_lno_view_t::HostMirror host_nnz_lno_view_t;
-  typedef typename Kokkos::View<
-      const nnz_lno_t *, HandlePersistentMemorySpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
-      nnz_lno_unmanaged_view_t;  // for rank1 subviews
+  using nnz_lno_view_temp_t      = typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>;
+  using nnz_lno_view_t           = typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
+  using hostspace_nnz_lno_view_t = typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
+  using host_nnz_lno_view_t      = typename nnz_lno_view_t::HostMirror;
+  using nnz_lno_unmanaged_view_t =
+      typename Kokkos::View<const nnz_lno_t *, HandlePersistentMemorySpace,
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;  // for rank1 subviews
   // typedef typename nnz_lno_persistent_work_view_t::HostMirror
   // nnz_lno_persistent_work_host_view_t; //Host view type
 
-  typedef typename std::make_signed<
-      typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
-  typedef Kokkos::View<signed_integral_t *,
-                       typename nnz_row_view_t::array_layout,
-                       typename nnz_row_view_t::device_type,
-                       typename nnz_row_view_t::memory_traits>
-      signed_nnz_lno_view_t;
-  typedef typename signed_nnz_lno_view_t::HostMirror host_signed_nnz_lno_view_t;
+  using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
+  using signed_nnz_lno_view_t =
+      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type,
+                   typename nnz_row_view_t::memory_traits>;
 
-  typedef typename Kokkos::View<scalar_t **, HandlePersistentMemorySpace>
-      mtx_scalar_view_t;
+  using host_signed_nnz_lno_view_t = typename signed_nnz_lno_view_t::HostMirror;
+
+  using mtx_scalar_view_t = typename Kokkos::View<scalar_t **, HandlePersistentMemorySpace>;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #if (CUDA_VERSION >= 11030)
@@ -141,8 +128,7 @@ class SPTRSVHandle {
     cuSparseHandleType(bool transpose_, bool /*is_lower*/) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
 
-      KOKKOS_CUSPARSE_SAFE_CALL(
-          cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
 
       if (transpose_) {
         transpose = CUSPARSE_OPERATION_TRANSPOSE;
@@ -214,7 +200,7 @@ class SPTRSVHandle {
   };
 #endif
 
-  typedef cuSparseHandleType SPTRSVcuSparseHandleType;
+  using SPTRSVcuSparseHandleType = cuSparseHandleType;
 #endif
 
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
@@ -228,7 +214,7 @@ class SPTRSVHandle {
     //~cudaGraphWrapperType() { }
   };
 
-  typedef cudaGraphWrapperType SPTRSVcudaGraphWrapperType;
+  using SPTRSVcudaGraphWrapperType = cudaGraphWrapperType;
 
   void create_SPTRSVcudaGraphWrapperType() {
     destroy_SPTRSVcudaGraphWrapperType();
@@ -253,22 +239,17 @@ class SPTRSVHandle {
   using supercols_memory_space = TemporaryMemorySpace;
 
   using supercols_host_execution_space = Kokkos::DefaultHostExecutionSpace;
-  using supercols_host_memory_space =
-      typename supercols_host_execution_space::memory_space;
+  using supercols_host_memory_space    = typename supercols_host_execution_space::memory_space;
 
   using integer_view_t      = Kokkos::View<int *, supercols_memory_space>;
   using integer_view_host_t = Kokkos::View<int *, supercols_host_memory_space>;
 
-  using workspace_t = typename Kokkos::View<
-      scalar_t *, Kokkos::Device<execution_space, supercols_memory_space>>;
+  using workspace_t = typename Kokkos::View<scalar_t *, Kokkos::Device<execution_space, supercols_memory_space>>;
 
   //
-  using host_crsmat_t =
-      KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,
-                              supercols_host_execution_space, void, size_type>;
-  using crsmat_t = KokkosSparse::CrsMatrix<
-      scalar_t, nnz_lno_t,
-      Kokkos::Device<execution_space, PersistentMemorySpace>, void, size_type>;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type>;
+  using crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, Kokkos::Device<execution_space, PersistentMemorySpace>,
+                                           void, size_type>;
 
   //
   using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
@@ -296,6 +277,7 @@ class SPTRSVHandle {
   nnz_lno_view_t nodes_grouped_by_level;
   hostspace_nnz_lno_view_t hnodes_grouped_by_level;  // NEW
   size_type nlevel;
+  size_type block_size;  // block_size > 0 implies BSR
 
   int team_size;
   int vector_size;
@@ -323,10 +305,8 @@ class SPTRSVHandle {
         /*|| algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
         || algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-        || algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-        algm == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-        algm == SPTRSVAlgorithm::SUPERNODAL_DAG ||
-        algm == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        || algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE || algm == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+        algm == SPTRSVAlgorithm::SUPERNODAL_DAG || algm == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
         algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG
 #endif
     ) {
@@ -337,8 +317,7 @@ class SPTRSVHandle {
   }
 
   void set_if_algm_require_symb_chain() {
-    if (algm ==
-        KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
+    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
       require_symbolic_chain_phase = true;
     } else {
       require_symbolic_chain_phase = false;
@@ -399,9 +378,8 @@ class SPTRSVHandle {
   integer_view_t perm;
 
   // graphs
-  host_graph_t
-      original_graph_host;  // graph on host before merge (only if merged)
-  host_graph_t graph_host;  // mirror of graph on host
+  host_graph_t original_graph_host;  // graph on host before merge (only if merged)
+  host_graph_t graph_host;           // mirror of graph on host
   graph_t graph;
 
   // crsmat
@@ -422,7 +400,7 @@ class SPTRSVHandle {
 #endif
 
  public:
-  SPTRSVHandle(SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_,
+  SPTRSVHandle(SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, const size_type block_size_ = 0,
                bool symbolic_complete_ = false, bool numeric_complete_ = false)
       :
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
@@ -438,6 +416,7 @@ class SPTRSVHandle {
         nodes_grouped_by_level(),
         hnodes_grouped_by_level(),
         nlevel(0),
+        block_size(block_size_),
         team_size(-1),
         vector_size(-1),
         stored_diagonal(false),
@@ -476,6 +455,30 @@ class SPTRSVHandle {
     this->set_if_algm_require_symb_lvlsched();
     this->set_if_algm_require_symb_chain();
 
+    // Check a few prerequisites before allowing users
+    // to run with the cusparse implementation of sptrsv.
+    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+      throw(
+          std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
+                             "cuSPARSE TPL not enabled."));
+#else
+      if (!std::is_same_v<HandleExecSpace, Kokkos::Cuda>) {
+        throw(
+            std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
+                               "HandleExecSpace is not Kokkos::CUDA."));
+      }
+#endif
+    }
+
+#if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+        std::is_same_v<execution_space, Kokkos::Cuda> && block_size_ != 0) {
+      throw(std::runtime_error(
+          "sptrsv handle: SPTRSV may not work with blocks+clang+cuda+complex due to a compiler bug"));
+    }
+#endif
+
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     if (lower_tri) {
       // lower-triangular is stored in CSC
@@ -491,13 +494,11 @@ class SPTRSVHandle {
   // set nsuper and supercols (# of supernodes, and map from supernode to column
   // id
   template <class input_int_type>
-  void set_supernodes(signed_integral_t nsuper_, input_int_type *supercols_,
-                      int *etree_) {
+  void set_supernodes(signed_integral_t nsuper_, input_int_type *supercols_, int *etree_) {
     // set etree (just wrap etree in a view)
     this->etree_host = integer_view_host_t(etree_, nsuper_);
     // set supernodes (make a copy, from input_int_type to int)
-    integer_view_host_t supercols_view =
-        integer_view_host_t("supercols", 1 + nsuper_);
+    integer_view_host_t supercols_view = integer_view_host_t("supercols", 1 + nsuper_);
     for (signed_integral_t i = 0; i <= nsuper_; i++) {
       supercols_view(i) = supercols_[i];
     }
@@ -505,16 +506,14 @@ class SPTRSVHandle {
     set_supernodes(nsuper_, supercols_view, etree_);
   }
 
-  void set_supernodes(signed_integral_t nsuper_, integer_view_host_t supercols_,
-                      int *etree_) {
+  void set_supernodes(signed_integral_t nsuper_, integer_view_host_t supercols_, int *etree_) {
     // set etree
     this->etree_host = integer_view_host_t(etree_, nsuper_);
     // set supernodes
     set_supernodes(nsuper_, supercols_);
   }
 
-  void set_supernodes(signed_integral_t nsuper_,
-                      integer_view_host_t supercols_view) {
+  void set_supernodes(signed_integral_t nsuper_, integer_view_host_t supercols_view) {
     this->nsuper = nsuper_;
 
     // supercols
@@ -530,11 +529,10 @@ class SPTRSVHandle {
     this->work_offset      = integer_view_t("workoffset", nsuper_);
 
     // kernel type
-    this->diag_kernel_type_host =
-        integer_view_host_t("diag_kernel_type_host", nsuper_);
-    this->diag_kernel_type = integer_view_t("diag_kernel_type", nsuper_);
-    this->kernel_type_host = integer_view_host_t("kernel_type_host", nsuper_);
-    this->kernel_type      = integer_view_t("kernel_type", nsuper_);
+    this->diag_kernel_type_host = integer_view_host_t("diag_kernel_type_host", nsuper_);
+    this->diag_kernel_type      = integer_view_t("diag_kernel_type", nsuper_);
+    this->kernel_type_host      = integer_view_host_t("kernel_type_host", nsuper_);
+    this->kernel_type           = integer_view_t("kernel_type", nsuper_);
 
     // number of streams
     this->num_streams = 0;
@@ -575,9 +573,7 @@ class SPTRSVHandle {
   KOKKOS_INLINE_FUNCTION
   integer_view_t get_work_offset() const { return this->work_offset; }
 
-  integer_view_host_t get_work_offset_host() const {
-    return this->work_offset_host;
-  }
+  integer_view_host_t get_work_offset_host() const { return this->work_offset_host; }
 
   // specify whether too run KokkosKernels::trmm on device or not
   void set_trmm_on_device(bool flag) { this->trmm_on_device = flag; }
@@ -589,13 +585,9 @@ class SPTRSVHandle {
 
   int get_supernode_size_blocked() { return this->sup_size_blocked; }
 
-  void set_supernode_size_unblocked(int size_unblocked) {
-    this->sup_size_unblocked = size_unblocked;
-  }
+  void set_supernode_size_unblocked(int size_unblocked) { this->sup_size_unblocked = size_unblocked; }
 
-  void set_supernode_size_blocked(int size_blocked) {
-    this->sup_size_blocked = size_blocked;
-  }
+  void set_supernode_size_blocked(int size_blocked) { this->sup_size_blocked = size_blocked; }
 
   // specify to merge supernodes
   void set_merge_supernodes(bool flag) { this->merge_supernodes = flag; }
@@ -623,9 +615,7 @@ class SPTRSVHandle {
   // kernel type
   integer_view_host_t get_kernel_type_host() { return this->kernel_type_host; }
 
-  integer_view_host_t get_diag_kernel_type_host() {
-    return this->diag_kernel_type_host;
-  }
+  integer_view_host_t get_diag_kernel_type_host() { return this->diag_kernel_type_host; }
 
   KOKKOS_INLINE_FUNCTION
   integer_view_t get_kernel_type() { return this->kernel_type; }
@@ -649,16 +639,12 @@ class SPTRSVHandle {
   bool has_perm() { return this->perm_avail; }
 
   // graph on host (before merge)
-  void set_original_graph_host(host_graph_t graph_host_) {
-    this->original_graph_host = graph_host_;
-  }
+  void set_original_graph_host(host_graph_t graph_host_) { this->original_graph_host = graph_host_; }
 
   host_graph_t get_original_graph_host() { return this->original_graph_host; }
 
   // graph on host
-  void set_graph_host(host_graph_t graph_host_) {
-    this->graph_host = graph_host_;
-  }
+  void set_graph_host(host_graph_t graph_host_) { this->graph_host = graph_host_; }
 
   host_graph_t get_graph_host() { return this->graph_host; }
 
@@ -682,16 +668,12 @@ class SPTRSVHandle {
   crsmat_t get_crsmat() { return this->crsmat; }
 
   // submatrices
-  void set_submatrices(crsmat_list_t subcrsmats) {
-    this->sub_crsmats = subcrsmats;
-  }
+  void set_submatrices(crsmat_list_t subcrsmats) { this->sub_crsmats = subcrsmats; }
 
   crsmat_t get_submatrix(int i) { return this->sub_crsmats[i]; }
 
   // diagonal subblocks
-  void set_diagblocks(crsmat_list_t subcrsmats) {
-    this->diag_blocks = subcrsmats;
-  }
+  void set_diagblocks(crsmat_list_t subcrsmats) { this->diag_blocks = subcrsmats; }
 
   crsmat_t get_diagblock(int i) { return this->diag_blocks[i]; }
 
@@ -708,8 +690,7 @@ class SPTRSVHandle {
   void setNumStreams(int num_streams_) {
     this->num_streams = num_streams_;
     if (num_streams_ > 0) {
-      this->cuda_streams =
-          (cudaStream_t *)malloc(num_streams_ * sizeof(cudaStream_t));
+      this->cuda_streams = (cudaStream_t *)malloc(num_streams_ * sizeof(cudaStream_t));
       for (int i = 0; i < num_streams_; i++) {
         cudaStreamCreate(&(this->cuda_streams[i]));
       }
@@ -731,24 +712,16 @@ class SPTRSVHandle {
     // TODO: Set sizes differently/smaller, resize during symbolic to save space
     if (this->require_symbolic_lvlsched_phase == true) {
       set_num_levels(0);
-      level_list = signed_nnz_lno_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "level_list"),
-          nrows_);
+      level_list = signed_nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "level_list"), nrows_);
       Kokkos::deep_copy(level_list, signed_integral_t(-1));
       // The host side views need to be initialized, but the device-side views
       // don't. Symbolic computes on the host (and requires these are 0
       // initialized), and then copies to device.
-      hnodes_per_level =
-          hostspace_nnz_lno_view_t("host nodes_per_level", nrows_);
-      hnodes_grouped_by_level =
-          hostspace_nnz_lno_view_t("host nodes_grouped_by_level", nrows_);
-      nodes_per_level = nnz_lno_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "nodes_per_level"),
-          nrows_);
+      hnodes_per_level        = hostspace_nnz_lno_view_t("host nodes_per_level", nrows_);
+      hnodes_grouped_by_level = hostspace_nnz_lno_view_t("host nodes_grouped_by_level", nrows_);
+      nodes_per_level = nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "nodes_per_level"), nrows_);
       nodes_grouped_by_level =
-          nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                            "nodes_grouped_by_level"),
-                         nrows_);
+          nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "nodes_grouped_by_level"), nrows_);
 
 #if 0
       std::cout << "  newinit_handle: level schedule allocs" << std::endl;
@@ -761,12 +734,9 @@ class SPTRSVHandle {
     }
 
     if (stored_diagonal) {
-      diagonal_offsets = nnz_lno_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "diagonal_offsets"),
-          nrows_);
-      diagonal_values = nnz_scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "diagonal_values"),
-          nrows_);  // inserted by rowid
+      diagonal_offsets  = nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "diagonal_offsets"), nrows_);
+      diagonal_values   = nnz_scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "diagonal_values"),
+                                            nrows_);  // inserted by rowid
       hdiagonal_offsets = Kokkos::create_mirror_view(diagonal_offsets);
       hdiagonal_values  = Kokkos::create_mirror_view(diagonal_values);
     }
@@ -778,33 +748,28 @@ class SPTRSVHandle {
         // within a kernel
         if (team_size == -1) {
           this->chain_threshold = 0;
-          h_chain_ptr = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
+          h_chain_ptr           = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
         } else {
           std::cout << "  Warning: chain_threshold was not set - will default "
                        "to team_size = "
-                    << this->team_size
-                    << "  chain_threshold = " << this->chain_threshold
-                    << std::endl;
+                    << this->team_size << "  chain_threshold = " << this->chain_threshold << std::endl;
           this->chain_threshold = this->team_size;
-          h_chain_ptr = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
+          h_chain_ptr           = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
         }
       } else {
         if (this->team_size >= this->chain_threshold) {
           h_chain_ptr = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
         } else if (this->team_size == -1 && chain_threshold > 0) {
-          std::cout << "  Warning: team_size was not set; chain_threshold = "
-                    << this->chain_threshold << std::endl;
+          std::cout << "  Warning: team_size was not set; chain_threshold = " << this->chain_threshold << std::endl;
           std::cout << "  Automatically setting team_size to chain_threshold - "
                        "if this exceeds the hardware limitations relaunch with "
                        "reduced chain_threshold or set a valid team_size"
                     << std::endl;
           this->team_size = this->chain_threshold;
-          h_chain_ptr = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
+          h_chain_ptr     = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
         } else {
-          std::cout
-              << "  EXPERIMENTAL: team_size less than chain size. team_size = "
-              << this->team_size
-              << "  chain_threshold = " << this->chain_threshold << std::endl;
+          std::cout << "  EXPERIMENTAL: team_size less than chain size. team_size = " << this->team_size
+                    << "  chain_threshold = " << this->chain_threshold << std::endl;
           h_chain_ptr = host_signed_nnz_lno_view_t("h_chain_ptr", this->nrows);
         }
       }
@@ -843,13 +808,10 @@ class SPTRSVHandle {
     }
   }
 
-  SPTRSVcuSparseHandleType *get_cuSparseHandle() {
-    return this->cuSPARSEHandle;
-  }
+  SPTRSVcuSparseHandleType *get_cuSparseHandle() { return this->cuSPARSEHandle; }
 
   void allocate_tmp_int_rowmap(size_type N) {
-    tmp_int_rowmap = int_row_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_int_rowmap"), N);
+    tmp_int_rowmap = int_row_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_int_rowmap"), N);
   }
   template <typename RowViewType>
   int_row_view_t get_int_rowmap_view_copy(const RowViewType &rowmap) {
@@ -866,8 +828,7 @@ class SPTRSVHandle {
   int *get_int_rowmap_ptr() { return tmp_int_rowmap.data(); }
 
   void allocate_tmp_int64_rowmap(size_type N) {
-    tmp_int64_rowmap = int64_row_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_int64_rowmap"), N);
+    tmp_int64_rowmap = int64_row_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_int64_rowmap"), N);
   }
   template <typename RowViewType>
   int64_t *get_int64_rowmap_ptr_copy(const RowViewType &rowmap) {
@@ -878,9 +839,7 @@ class SPTRSVHandle {
   int64_t *get_int64_rowmap_ptr() { return tmp_int64_rowmap.data(); }
 #endif
 
-  bool algm_requires_symb_lvlsched() const {
-    return require_symbolic_lvlsched_phase;
-  }
+  bool algm_requires_symb_lvlsched() const { return require_symbolic_lvlsched_phase; }
 
   bool algm_requires_symb_chain() const { return require_symbolic_chain_phase; }
 
@@ -904,9 +863,7 @@ class SPTRSVHandle {
     return hlevel_list;
   }
 
-  void set_stored_diagonal(const bool stored_diagonal_) {
-    stored_diagonal = stored_diagonal_;
-  }
+  void set_stored_diagonal(const bool stored_diagonal_) { stored_diagonal = stored_diagonal_; }
 
   KOKKOS_INLINE_FUNCTION
   nnz_lno_view_t get_diagonal_offsets() const { return diagonal_offsets; }
@@ -915,34 +872,22 @@ class SPTRSVHandle {
   nnz_scalar_view_t get_diagonal_values() const { return diagonal_values; }
 
   KOKKOS_INLINE_FUNCTION
-  host_nnz_lno_view_t get_host_diagonal_offsets() const {
-    return hdiagonal_offsets;
-  }
+  host_nnz_lno_view_t get_host_diagonal_offsets() const { return hdiagonal_offsets; }
 
   KOKKOS_INLINE_FUNCTION
-  host_nnz_scalar_view_t get_host_diagonal_values() const {
-    return hdiagonal_values;
-  }
+  host_nnz_scalar_view_t get_host_diagonal_values() const { return hdiagonal_values; }
 
-  inline host_signed_nnz_lno_view_t get_host_chain_ptr() const {
-    return h_chain_ptr;
-  }
+  inline host_signed_nnz_lno_view_t get_host_chain_ptr() const { return h_chain_ptr; }
 
   KOKKOS_INLINE_FUNCTION
   nnz_lno_view_t get_nodes_per_level() const { return nodes_per_level; }
 
-  inline hostspace_nnz_lno_view_t get_host_nodes_per_level() const {
-    return hnodes_per_level;
-  }
+  inline hostspace_nnz_lno_view_t get_host_nodes_per_level() const { return hnodes_per_level; }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_t get_nodes_grouped_by_level() const {
-    return nodes_grouped_by_level;
-  }
+  nnz_lno_view_t get_nodes_grouped_by_level() const { return nodes_grouped_by_level; }
 
-  inline hostspace_nnz_lno_view_t get_host_nodes_grouped_by_level() const {
-    return hnodes_grouped_by_level;
-  }
+  inline hostspace_nnz_lno_view_t get_host_nodes_grouped_by_level() const { return hnodes_grouped_by_level; }
 
   KOKKOS_INLINE_FUNCTION
   size_type get_nrows() const { return nrows; }
@@ -965,18 +910,14 @@ class SPTRSVHandle {
         //  h_chain_ptr = host_signed_nnz_lno_view_t("h_chain_ptr",
         //  this->nrows);
       } else {
-        std::cout << "  EXPERIMENTAL: team_size < chain_size: team_size = "
-                  << this->team_size
-                  << "  chain_threshold = " << this->chain_threshold
-                  << std::endl;
+        std::cout << "  EXPERIMENTAL: team_size < chain_size: team_size = " << this->team_size
+                  << "  chain_threshold = " << this->chain_threshold << std::endl;
       }
     }
   }
 
   KOKKOS_INLINE_FUNCTION
-  signed_integral_t get_chain_threshold() const {
-    return this->chain_threshold;
-  }
+  signed_integral_t get_chain_threshold() const { return this->chain_threshold; }
 
   bool is_lower_tri() const { return lower_tri; }
   bool is_upper_tri() const { return !lower_tri; }
@@ -991,6 +932,13 @@ class SPTRSVHandle {
 
   void set_num_levels(size_type nlevels_) { this->nlevel = nlevels_; }
 
+  KOKKOS_INLINE_FUNCTION
+  size_type get_block_size() const { return block_size; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_block_size(const size_type block_size_) { this->block_size = block_size_; }
+
+  bool is_block_enabled() const { return block_size > 0; }
   void set_symbolic_complete() { this->symbolic_complete = true; }
   void set_symbolic_incomplete() { this->symbolic_complete = false; }
 
@@ -1012,12 +960,10 @@ class SPTRSVHandle {
   void set_num_chain_entries(const int nce) { this->num_chain_entries = nce; }
 
   void print_algorithm() {
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_RP)
-      std::cout << "SEQLVLSCHD_RP" << std::endl;
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_RP) std::cout << "SEQLVLSCHD_RP" << std::endl;
     ;
 
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1)
-      std::cout << "SEQLVLSCHD_TP1" << std::endl;
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1) std::cout << "SEQLVLSCHD_TP1" << std::endl;
     ;
     /*
         if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
@@ -1026,28 +972,21 @@ class SPTRSVHandle {
        int-int ordinal-offset pair" << std::endl;
         }
     */
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN)
-      std::cout << "SEQLVLSCHD_TP1CHAIN" << std::endl;
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) std::cout << "SEQLVLSCHD_TP1CHAIN" << std::endl;
     ;
 
-    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE)
-      std::cout << "SPTRSV_CUSPARSE" << std::endl;
+    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) std::cout << "SPTRSV_CUSPARSE" << std::endl;
     ;
 
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE)
-      std::cout << "SUPERNODAL_NAIVE" << std::endl;
+    if (algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE) std::cout << "SUPERNODAL_NAIVE" << std::endl;
 
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_ETREE)
-      std::cout << "SUPERNODAL_ETREE" << std::endl;
+    if (algm == SPTRSVAlgorithm::SUPERNODAL_ETREE) std::cout << "SUPERNODAL_ETREE" << std::endl;
 
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_DAG)
-      std::cout << "SUPERNODAL_DAG" << std::endl;
+    if (algm == SPTRSVAlgorithm::SUPERNODAL_DAG) std::cout << "SUPERNODAL_DAG" << std::endl;
 
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV)
-      std::cout << "SUPERNODAL_SPMV" << std::endl;
+    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV) std::cout << "SUPERNODAL_SPMV" << std::endl;
 
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)
-      std::cout << "SUPERNODAL_SPMV_DAG" << std::endl;
+    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) std::cout << "SUPERNODAL_SPMV_DAG" << std::endl;
   }
 
   std::string return_algorithm_string() {
@@ -1060,11 +999,9 @@ class SPTRSVHandle {
         if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 )
           ret_string = "SEQLVLSCHED_TP2";
     */
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN)
-      ret_string = "SEQLVLSCHD_TP1CHAIN";
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) ret_string = "SEQLVLSCHD_TP1CHAIN";
 
-    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE)
-      ret_string = "SPTRSV_CUSPARSE";
+    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) ret_string = "SPTRSV_CUSPARSE";
 
     return ret_string;
   }

@@ -34,7 +34,6 @@
 #define STK_BALANCE_UTILS
 
 #include "mpi.h"
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
@@ -44,6 +43,8 @@
 
 namespace stk
 {
+namespace mesh { class BulkData; }
+
 namespace balance
 {
 

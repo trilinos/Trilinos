@@ -42,6 +42,12 @@
 #ifndef EPETRAEXT_MMHELPERS_H
 #define EPETRAEXT_MMHELPERS_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
@@ -534,4 +540,3 @@ void PrintMultiplicationStatistics(Epetra_Export * Transfer, const std::string &
 }//namespace EpetraExt
 
 #endif
-

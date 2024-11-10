@@ -43,6 +43,12 @@
 #ifndef IFPACK_NODEFILTER_H
 #define IFPACK_NODEFILTER_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #ifdef IFPACK_NODE_AWARE_CODE
 
 #include "Ifpack_ConfigDefs.h"

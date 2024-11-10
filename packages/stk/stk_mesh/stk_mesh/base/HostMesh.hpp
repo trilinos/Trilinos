@@ -34,9 +34,9 @@
 #ifndef STK_MESH_HOSTMESH_HPP
 #define STK_MESH_HOSTMESH_HPP
 
-#include "stk_mesh/base/NgpMeshBase.hpp"
 #include <stk_util/stk_config.h>
 #include <stk_util/util/StridedArray.hpp>
+#include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
 #include "stk_mesh/base/Entity.hpp"
@@ -56,46 +56,47 @@
 namespace stk {
 namespace mesh {
 
-struct HostMeshIndex
-{
-  const stk::mesh::Bucket *bucket;
-  size_t bucketOrd;
-};
-
-class HostMesh : public NgpMeshBase
+template<typename NgpMemSpace>
+class HostMeshT : public NgpMeshBase
 {
 public:
-  using MeshExecSpace     = stk::ngp::HostExecSpace;
-  using MeshIndex         = HostMeshIndex;
+  typedef NgpMemSpace ngp_mem_space;
+
+  static_assert(Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, NgpMemSpace>::accessible);
+  static_assert(Kokkos::is_memory_space_v<NgpMemSpace>);
+  using MeshExecSpace     = typename NgpMemSpace::execution_space;
+  using MeshIndex         = FastMeshIndex;
   using BucketType        = stk::mesh::Bucket;
   using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
   using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
   using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
   using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
-  HostMesh()
+  HostMeshT()
     : NgpMeshBase(),
       bulk(nullptr)
   {
 
   }
 
-  HostMesh(const stk::mesh::BulkData& b)
+  HostMeshT(const stk::mesh::BulkData& b)
     : NgpMeshBase(),
-      bulk(&b)
+      bulk(&b),
+      m_syncCountWhenUpdated(bulk->synchronized_count())
   {
     require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
 
-  virtual ~HostMesh() override = default;
+  virtual ~HostMeshT() override = default;
 
-  HostMesh(const HostMesh &) = default;
-  HostMesh(HostMesh &&) = default;
-  HostMesh& operator=(const HostMesh&) = default;
-  HostMesh& operator=(HostMesh&&) = default;
+  HostMeshT(const HostMeshT &) = default;
+  HostMeshT(HostMeshT &&) = default;
+  HostMeshT& operator=(const HostMeshT&) = default;
+  HostMeshT& operator=(HostMeshT&&) = default;
 
   void update_mesh() override
   {
+    m_syncCountWhenUpdated = bulk->synchronized_count();
   }
 
   unsigned get_spatial_dimension() const
@@ -122,12 +123,6 @@ public:
                                const stk::mesh::FastMeshIndex& meshIndex) const
   {
     return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];
-  }
-
-  ConnectedNodes get_nodes(const MeshIndex &elem) const
-  {
-    const stk::mesh::Bucket& bucket = *elem.bucket;
-    return ConnectedNodes(bucket.begin_nodes(elem.bucketOrd), bucket.num_nodes(elem.bucketOrd));
   }
 
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
@@ -214,11 +209,6 @@ public:
     return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
   }
 
-  stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity) const
-  {
-    return fast_mesh_index(entity);
-  }
-
   stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
   {
     return fast_mesh_index(entity);
@@ -244,28 +234,9 @@ public:
     return *bulk->buckets(rank)[i];
   }
 
-  DeviceCommMapIndices volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+  NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
   {
-    DeviceCommMapIndices commMap("CommMapIndices", 0);
-    if (bulk->parallel_size() > 1) {
-      const stk::mesh::BucketIndices & stkBktIndices = bulk->volatile_fast_shared_comm_map(rank)[proc];
-      const size_t numEntities = stkBktIndices.ords.size();
-      commMap = DeviceCommMapIndices("CommMapIndices", numEntities);
-
-      size_t stkOrdinalIndex = 0;
-      for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
-        const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
-        const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
-        for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
-          const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex];
-          const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
-          commMap[stkOrdinalIndex] = stkFastMeshIndex;
-          ++stkOrdinalIndex;
-        }
-      }
-    }
-
-    return commMap;
+    return bulk->volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
   }
 
   const stk::mesh::BulkData &get_bulk_on_host() const
@@ -273,14 +244,19 @@ public:
     return *bulk;
   }
 
-  bool is_up_to_date() const { return true; }
+  bool is_up_to_date() const
+  {
+    return m_syncCountWhenUpdated == bulk->synchronized_count();
+  }
 
 private:
   const stk::mesh::BulkData *bulk;
+  size_t m_syncCountWhenUpdated;
 };
+
+using HostMesh = HostMeshT<typename stk::ngp::HostExecSpace::memory_space>;
 
 }
 }
 
 #endif
-

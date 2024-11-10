@@ -21,8 +21,8 @@ FUNCTION(CHECK_HOST_BLAS_RETURN_COMPLEX VARNAME)
 
 extern \"C\" {
   void F77_BLAS_MANGLE(zdotc,ZDOTC)(
-    std::complex<double>* result, const int* n, 
-    const std::complex<double> x[], const int* incx, 
+    std::complex<double>* result, const int* n,
+    const std::complex<double> x[], const int* incx,
     const std::complex<double> y[], const int* incy);
 }
 
@@ -49,9 +49,9 @@ int main() {
 CHECK_CXX_SOURCE_RUNS("${SOURCE}" KK_BLAS_RESULT_AS_POINTER_ARG)
 
 IF(${KK_BLAS_RESULT_AS_POINTER_ARG})
-  SET(VARNAME OFF)
+  SET(${VARNAME} OFF PARENT_SCOPE)
 ELSE()
-  SET(VARNAME ON)
+  SET(${VARNAME} ON PARENT_SCOPE)
 ENDIF()
 
 ENDFUNCTION()

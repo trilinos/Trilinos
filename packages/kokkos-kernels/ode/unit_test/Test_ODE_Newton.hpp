@@ -21,7 +21,7 @@
 
 namespace Test {
 
-template <class system_type, class mat_type, class vec_type, class status_view>
+template <class system_type, class mat_type, class vec_type, class status_view, class scale_type>
 struct NewtonSolve_wrapper {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
@@ -32,10 +32,11 @@ struct NewtonSolve_wrapper {
   mat_type J, tmp;
   status_view status;
 
-  NewtonSolve_wrapper(const system_type& my_nls_, const newton_params& params_,
-                      const vec_type& x_, const vec_type& rhs_,
-                      const vec_type& update_, const mat_type& J_,
-                      const mat_type& tmp_, const status_view& status_)
+  scale_type scale;
+
+  NewtonSolve_wrapper(const system_type& my_nls_, const newton_params& params_, const vec_type& x_,
+                      const vec_type& rhs_, const vec_type& update_, const mat_type& J_, const mat_type& tmp_,
+                      const status_view& status_, const scale_type& scale_)
       : my_nls(my_nls_),
         params(params_),
         x(x_),
@@ -43,43 +44,34 @@ struct NewtonSolve_wrapper {
         update(update_),
         J(J_),
         tmp(tmp_),
-        status(status_) {}
+        status(status_),
+        scale(scale_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
     // Take subviews to create the local problem
     auto local_x = Kokkos::subview(
-        x, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
-                                  static_cast<int>(my_nls.neqs * (idx + 1))));
+        x, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx), static_cast<int>(my_nls.neqs * (idx + 1))));
     auto local_rhs = Kokkos::subview(
-        rhs, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
-                                    static_cast<int>(my_nls.neqs * (idx + 1))));
+        rhs, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx), static_cast<int>(my_nls.neqs * (idx + 1))));
     auto local_update = Kokkos::subview(
-        update,
-        Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
-                               static_cast<int>(my_nls.neqs * (idx + 1))));
+        update, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx), static_cast<int>(my_nls.neqs * (idx + 1))));
     auto local_J = Kokkos::subview(
-        J,
-        Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
-                               static_cast<int>(my_nls.neqs * (idx + 1))),
+        J, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx), static_cast<int>(my_nls.neqs * (idx + 1))),
         Kokkos::ALL());
     auto local_tmp = Kokkos::subview(
-        tmp,
-        Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
-                               static_cast<int>(my_nls.neqs * (idx + 1))),
+        tmp, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx), static_cast<int>(my_nls.neqs * (idx + 1))),
         Kokkos::ALL());
 
     // Run Newton nonlinear solver
-    status(idx) = KokkosODE::Experimental::Newton::Solve(
-        my_nls, params, local_J, local_tmp, local_x, local_rhs, local_update);
+    status(idx) = KokkosODE::Experimental::Newton::Solve(my_nls, params, local_J, local_tmp, local_x, local_rhs,
+                                                         local_update, scale);
   }
 };
 
 template <class system_type, class Device, class scalar_type>
-void run_newton_test(const system_type& mySys,
-                     KokkosODE::Experimental::Newton_params& params,
-                     const scalar_type* const initial_val,
-                     const scalar_type* const solution) {
+void run_newton_test(const system_type& mySys, KokkosODE::Experimental::Newton_params& params,
+                     const scalar_type* const initial_val, const scalar_type* const solution) {
   using execution_space      = typename Device::execution_space;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using vec_type             = typename Kokkos::View<scalar_type*, Device>;
@@ -87,14 +79,15 @@ void run_newton_test(const system_type& mySys,
 
   Kokkos::View<newton_solver_status*, Device> status("Newton status", 1);
 
-  vec_type x("solution vector", mySys.neqs),
-      rhs("right hand side vector", mySys.neqs);
+  vec_type scale("scaling factors", mySys.neqs);
+  Kokkos::deep_copy(scale, 1);
+
+  vec_type x("solution vector", mySys.neqs), rhs("right hand side vector", mySys.neqs);
   auto x_h = Kokkos::create_mirror_view(x);
   auto r_h = Kokkos::create_mirror_view(rhs);
 
   vec_type update("update", mySys.neqs);
-  mat_type J("jacobian", mySys.neqs, mySys.neqs),
-      tmp("temp mem", mySys.neqs, mySys.neqs + 4);
+  mat_type J("jacobian", mySys.neqs, mySys.neqs), tmp("temp mem", mySys.neqs, mySys.neqs + 4);
 
   // Initial values
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
@@ -103,8 +96,7 @@ void run_newton_test(const system_type& mySys,
   Kokkos::deep_copy(x, x_h);
 
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-  NewtonSolve_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp,
-                                    status);
+  NewtonSolve_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp, status, scale);
 
   Kokkos::parallel_for(my_policy, solve_wrapper);
 
@@ -122,9 +114,7 @@ void run_newton_test(const system_type& mySys,
   }
   std::cout << " ), " << KokkosBlas::serial_nrm2(rhs) << ", (";
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
-    std::cout << " "
-              << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]) /
-                     Kokkos::abs(solution[eqIdx]);
+    std::cout << " " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]) / Kokkos::abs(solution[eqIdx]);
   }
   std::cout << " )]" << std::endl;
 #else
@@ -145,13 +135,9 @@ struct QuadraticEquation {
 
   QuadraticEquation() {}
 
-  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
-    f(0) = y(0) * y(0) - y(0) - 2;
-  }
+  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const { f(0) = y(0) * y(0) - y(0) - 2; }
 
-  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    jac(0, 0) = 2 * y(0) - 1;
-  }
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const { jac(0, 0) = 2 * y(0) - 1; }
 };
 
 // Trigonometric equation
@@ -167,13 +153,9 @@ struct TrigonometricEquation {
 
   TrigonometricEquation() {}
 
-  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
-    f(0) = Kokkos::cos(y(0)) - y(0);
-  }
+  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const { f(0) = Kokkos::cos(y(0)) - y(0); }
 
-  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    jac(0, 0) = -Kokkos::sin(y(0)) - 1;
-  }
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const { jac(0, 0) = -Kokkos::sin(y(0)) - 1; }
 };
 
 // Logarithmic equation
@@ -193,9 +175,7 @@ struct LogarithmicEquation {
     f(0) = 7 * y(0) - Kokkos::log(7 * y(0)) - 1;
   }
 
-  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    jac(0, 0) = 7 - 1 / y(0);
-  }
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const { jac(0, 0) = 7 - 1 / y(0); }
 };
 
 template <typename Device, typename scalar_type>
@@ -204,6 +184,9 @@ void test_newton_status() {
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using vec_type             = typename Kokkos::View<scalar_type*, Device>;
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
+
+  vec_type scale("scaling factors", 1);
+  Kokkos::deep_copy(scale, 1);
 
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
@@ -226,9 +209,8 @@ void test_newton_status() {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   scalar_type solution[3] = {2.0, -1.0, 0.0};
 #endif
-  newton_solver_status newton_status[3] = {
-      newton_solver_status::NLS_SUCCESS, newton_solver_status::MAX_ITER,
-      newton_solver_status::LIN_SOLVE_FAIL};
+  newton_solver_status newton_status[3] = {newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
+                                           newton_solver_status::LIN_SOLVE_FAIL};
   vec_type x("solution vector", 1), rhs("right hand side vector", 1);
   auto x_h = Kokkos::create_mirror_view(x);
   auto r_h = Kokkos::create_mirror_view(rhs);
@@ -241,8 +223,7 @@ void test_newton_status() {
     Kokkos::deep_copy(x, initial_value[idx]);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    NewtonSolve_wrapper solve_wrapper(my_system, params, x, rhs, update, J, tmp,
-                                      status);
+    NewtonSolve_wrapper solve_wrapper(my_system, params, x, rhs, update, J, tmp, status, scale);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     Kokkos::deep_copy(status_h, status);
@@ -251,10 +232,8 @@ void test_newton_status() {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     Kokkos::deep_copy(x_h, x);
     Kokkos::deep_copy(r_h, rhs);
-    printf("Non-linear problem solution and residual with initial value %f:\n",
-           initial_value[idx]);
-    printf("  [%f, %g, %g]\n", x_h(0), r_h(0),
-           Kokkos::abs(x_h(0) - solution[idx]) / Kokkos::abs(solution[idx]));
+    printf("Non-linear problem solution and residual with initial value %f:\n", initial_value[idx]);
+    printf("  [%f, %g, %g]\n", x_h(0), r_h(0), Kokkos::abs(x_h(0) - solution[idx]) / Kokkos::abs(solution[idx]));
 #endif
   }
 }
@@ -284,8 +263,7 @@ void test_simple_problems() {
     system_type mySys{};
     scalar_type initial_value[2] = {1.0, -0.5}, solution[2] = {2.0, -1.0};
     for (int idx = 0; idx < 2; ++idx) {
-      run_newton_test<system_type, Device, scalar_type>(
-          mySys, params, &(initial_value[idx]), &(solution[idx]));
+      run_newton_test<system_type, Device, scalar_type>(mySys, params, &(initial_value[idx]), &(solution[idx]));
     }
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Quadratic Equation problem" << std::endl;
@@ -300,8 +278,7 @@ void test_simple_problems() {
     using system_type = TrigonometricEquation<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[1] = {0.1}, solution[1] = {0.739085};
-    run_newton_test<system_type, Device, scalar_type>(mySys, params,
-                                                      initial_value, solution);
+    run_newton_test<system_type, Device, scalar_type>(mySys, params, initial_value, solution);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Trigonometric Equation problem" << std::endl;
 #endif
@@ -315,10 +292,8 @@ void test_simple_problems() {
     using system_type = LogarithmicEquation<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[1] = {static_cast<scalar_type>(0.5)},
-                solution[1]      = {static_cast<scalar_type>(1.0) /
-                               static_cast<scalar_type>(7.0)};
-    run_newton_test<system_type, Device, scalar_type>(mySys, params,
-                                                      initial_value, solution);
+                solution[1]      = {static_cast<scalar_type>(1.0) / static_cast<scalar_type>(7.0)};
+    run_newton_test<system_type, Device, scalar_type>(mySys, params, initial_value, solution);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Logarithmic Equation problem" << std::endl;
 #endif
@@ -419,8 +394,7 @@ void test_simple_systems() {
     system_type mySys{};
     scalar_type initial_values[2] = {1.5, 1.5};
     scalar_type solution[2]       = {10.75 / 6, 0.8887803753};
-    run_newton_test<system_type, Device, scalar_type>(mySys, params,
-                                                      initial_values, solution);
+    run_newton_test<system_type, Device, scalar_type>(mySys, params, initial_values, solution);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Circles Intersetcion problem" << std::endl;
 #endif
@@ -429,8 +403,7 @@ void test_simple_systems() {
   {
     // Second problem: circle / hyperbola intersection
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-    std::cout << "\nStarting Circle/Hyperbola Intersetcion problem"
-              << std::endl;
+    std::cout << "\nStarting Circle/Hyperbola Intersetcion problem" << std::endl;
 #endif
     using system_type = CircleHyperbolaIntersection<Device, scalar_type>;
     system_type mySys{};
@@ -438,12 +411,9 @@ void test_simple_systems() {
     scalar_type init_vals[2] = {0.0, 1.0};
     scalar_type solutions[2] = {
         Kokkos::ArithTraits<scalar_type>::one() /
-            Kokkos::sqrt(static_cast<scalar_type>(
-                4 + Kokkos::sqrt(static_cast<scalar_type>(12.0)) / 2)),
-        Kokkos::sqrt(static_cast<scalar_type>(
-            (4 + Kokkos::sqrt(static_cast<scalar_type>(12.0))) / 2))};
-    run_newton_test<system_type, Device, scalar_type>(mySys, params, init_vals,
-                                                      solutions);
+            Kokkos::sqrt(static_cast<scalar_type>(4 + Kokkos::sqrt(static_cast<scalar_type>(12.0)) / 2)),
+        Kokkos::sqrt(static_cast<scalar_type>((4 + Kokkos::sqrt(static_cast<scalar_type>(12.0))) / 2))};
+    run_newton_test<system_type, Device, scalar_type>(mySys, params, init_vals, solutions);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Circle/Hyperbola Intersetcion problem" << std::endl;
 #endif
@@ -481,14 +451,16 @@ void test_newton_on_device() {
 
   system_type mySys{};
 
+  vec_type scale("scaling factors", mySys.neqs);
+  Kokkos::deep_copy(scale, 1);
+
   vec_type x("solution vector", mySys.neqs * num_systems);
   vec_type rhs("right hand side vector", mySys.neqs * num_systems);
   vec_type update("update", mySys.neqs * num_systems);
   mat_type J("jacobian", mySys.neqs * num_systems, mySys.neqs);
   mat_type tmp("temp mem", mySys.neqs * num_systems, mySys.neqs + 4);
 
-  Kokkos::View<newton_solver_status*, execution_space> status("solver status",
-                                                              num_systems);
+  Kokkos::View<newton_solver_status*, execution_space> status("solver status", num_systems);
 
   auto x_h = Kokkos::create_mirror_view(x);
   auto r_h = Kokkos::create_mirror_view(rhs);
@@ -502,8 +474,7 @@ void test_newton_on_device() {
   Kokkos::deep_copy(x, x_h);
 
   Kokkos::RangePolicy<execution_space> my_policy(0, num_systems);
-  NewtonSolve_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp,
-                                    status);
+  NewtonSolve_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp, status, scale);
 
   Kokkos::parallel_for(my_policy, solve_wrapper);
   Kokkos::fence();
@@ -521,30 +492,14 @@ void test_newton_on_device() {
 
 // No ETI is performed for these device routines
 // Just pick scalar types at will...
-TEST_F(TestCategory, Newton_status_float) {
-  ::Test::test_newton_status<TestDevice, float>();
-}
-TEST_F(TestCategory, Newton_status_double) {
-  ::Test::test_newton_status<TestDevice, double>();
-}
+TEST_F(TestCategory, Newton_status_float) { ::Test::test_newton_status<TestDevice, float>(); }
+TEST_F(TestCategory, Newton_status_double) { ::Test::test_newton_status<TestDevice, double>(); }
 
-TEST_F(TestCategory, Newton_simple_float) {
-  ::Test::test_simple_problems<TestDevice, float>();
-}
-TEST_F(TestCategory, Newton_simple_double) {
-  ::Test::test_simple_problems<TestDevice, double>();
-}
+TEST_F(TestCategory, Newton_simple_float) { ::Test::test_simple_problems<TestDevice, float>(); }
+TEST_F(TestCategory, Newton_simple_double) { ::Test::test_simple_problems<TestDevice, double>(); }
 
-TEST_F(TestCategory, Newton_system_float) {
-  ::Test::test_simple_systems<TestDevice, float>();
-}
-TEST_F(TestCategory, Newton_system_double) {
-  ::Test::test_simple_systems<TestDevice, double>();
-}
+TEST_F(TestCategory, Newton_system_float) { ::Test::test_simple_systems<TestDevice, float>(); }
+TEST_F(TestCategory, Newton_system_double) { ::Test::test_simple_systems<TestDevice, double>(); }
 
-TEST_F(TestCategory, Newton_parallel_float) {
-  ::Test::test_newton_on_device<TestDevice, float>();
-}
-TEST_F(TestCategory, Newton_parallel_double) {
-  ::Test::test_newton_on_device<TestDevice, double>();
-}
+TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<TestDevice, float>(); }
+TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }

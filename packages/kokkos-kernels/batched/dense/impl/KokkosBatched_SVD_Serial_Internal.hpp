@@ -49,18 +49,12 @@ struct SerialSVDInternal {
   // however this is simpler because it exploits the symmetric structure, and
   // the realness of the eigenvalues.
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void symEigen2x2(value_type a11, value_type a21,
-                                                 value_type a22, value_type& e1,
+  KOKKOS_INLINE_FUNCTION static void symEigen2x2(value_type a11, value_type a21, value_type a22, value_type& e1,
                                                  value_type& e2) {
-    value_type a = Kokkos::ArithTraits<value_type>::one();
-    value_type b = -a11 - a22;
-    value_type c = a11 * a22 - a21 * a21;
-#if KOKKOS_VERSION >= 30699
-    using Kokkos::sqrt;
-#else
-    using Kokkos::Experimental::sqrt;
-#endif
-    value_type sqrtDet = sqrt(b * b - 4 * a * c);
+    value_type a       = Kokkos::ArithTraits<value_type>::one();
+    value_type b       = -a11 - a22;
+    value_type c       = a11 * a22 - a21 * a21;
+    value_type sqrtDet = Kokkos::sqrt(b * b - 4 * a * c);
     e1                 = (-b + sqrtDet) / (2 * a);
     e2                 = (-b - sqrtDet) / (2 * a);
   }
@@ -71,10 +65,8 @@ struct SerialSVDInternal {
   //
   // B22 is nsub * nsub, Usub is m * nsub, and Vtsub is nsub * n
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void svdStep(value_type* B, value_type* U,
-                                             value_type* Vt, int um, int vn,
-                                             int n, int Bs0, int Bs1, int Us0,
-                                             int Us1, int Vts0, int Vts1) {
+  KOKKOS_INLINE_FUNCTION static void svdStep(value_type* B, value_type* U, value_type* Vt, int um, int vn, int n,
+                                             int Bs0, int Bs1, int Us0, int Us1, int Vts0, int Vts1) {
     using KAT = Kokkos::ArithTraits<value_type>;
     // Compute the eigenvalues of trailing 2x2
     value_type dn     = SVDIND(B, n - 1, n - 1);
@@ -85,7 +77,7 @@ struct SerialSVDInternal {
     value_type e1, e2, mu;
     symEigen2x2(dm * dm + fmm1 * fmm1, dm * fm, target, e1, e2);
     // the shift is the eigenvalue closer to the last diagonal entry of B^T*B
-    if (fabs(e1 - target) < fabs(e2 - target))
+    if (Kokkos::abs(e1 - target) < Kokkos::abs(e2 - target))
       mu = e1;
     else
       mu = e2;
@@ -95,34 +87,30 @@ struct SerialSVDInternal {
       // Use Givens to zero out z in [y; z]
       Kokkos::pair<value_type, value_type> G;
       value_type discard;  // Don't actually write [alpha; 0] anywhere
-      KokkosBatched::SerialGivensInternal::invoke<value_type>(y, z, &G,
-                                                              &discard);
+      KokkosBatched::SerialGivensInternal::invoke<value_type>(y, z, &G, &discard);
       // apply the Givens transformation to B on the right, to columns k,k+1
       // B := BG(k, k+1, theta)
       int minrow = KOKKOSKERNELS_MACRO_MAX(0, k - 1);
       int maxrow = KOKKOSKERNELS_MACRO_MIN(n, k + 2);
-      KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(
-          G, maxrow - minrow, &SVDIND(B, minrow, k + 1), Bs0,
-          &SVDIND(B, minrow, k), Bs0);
+      KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(G, maxrow - minrow, &SVDIND(B, minrow, k + 1),
+                                                                        Bs0, &SVDIND(B, minrow, k), Bs0);
       if (Vt) {
-        KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(
-            G, vn, &SVDIND(Vt, k + 1, 0), Vts1, &SVDIND(Vt, k, 0), Vts1);
+        KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(G, vn, &SVDIND(Vt, k + 1, 0), Vts1,
+                                                                         &SVDIND(Vt, k, 0), Vts1);
       }
       y = SVDIND(B, k, k);
       z = SVDIND(B, k + 1, k);
-      KokkosBatched::SerialGivensInternal::invoke<value_type>(y, z, &G,
-                                                              &SVDIND(B, k, k));
+      KokkosBatched::SerialGivensInternal::invoke<value_type>(y, z, &G, &SVDIND(B, k, k));
       SVDIND(B, k + 1, k) = KAT::zero();
       int mincol          = k + 1;
       int maxcol          = KOKKOSKERNELS_MACRO_MIN(n, k + 3);
       // apply Givens transformation to B on the left, to rows k, k + 1
       // B := G(k, k+1, theta)^T * B
-      KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(
-          G, maxcol - mincol, &SVDIND(B, k + 1, mincol), Bs1,
-          &SVDIND(B, k, mincol), Bs1);
+      KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(G, maxcol - mincol, &SVDIND(B, k + 1, mincol),
+                                                                       Bs1, &SVDIND(B, k, mincol), Bs1);
       if (U) {
-        KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(
-            G, um, &SVDIND(U, 0, k + 1), Us0, &SVDIND(U, 0, k), Us0);
+        KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(G, um, &SVDIND(U, 0, k + 1), Us0,
+                                                                          &SVDIND(U, 0, k), Us0);
       }
       if (k < n - 2) {
         y = SVDIND(B, k, k + 1);
@@ -135,71 +123,64 @@ struct SerialSVDInternal {
   // Assumes i is not the last row.
   // U is m*m, B is n*n
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void svdZeroRow(int i, value_type* B, int n,
-                                                int Bs0, int Bs1, value_type* U,
-                                                int m, int Us0, int Us1) {
+  KOKKOS_INLINE_FUNCTION static void svdZeroRow(int i, value_type* B, int n, int Bs0, int Bs1, value_type* U, int Um,
+                                                int Us0, int Us1) {
     Kokkos::pair<value_type, value_type> G;
     for (int j = i + 1; j < n; j++) {
       // Zero out B(i, j) against diagonal j, introducing nonzero in B(i, j + 1)
-      KokkosBatched::SerialGivensInternal::invoke<value_type>(
-          SVDIND(B, j, j), SVDIND(B, i, j), &G, &SVDIND(B, j, j));
+      KokkosBatched::SerialGivensInternal::invoke<value_type>(SVDIND(B, j, j), SVDIND(B, i, j), &G, &SVDIND(B, j, j));
       SVDIND(B, i, j) = Kokkos::ArithTraits<value_type>::zero();
       // Now, only need to apply givens to a single column (if not already at
       // the end), introducing the next nonzero
       if (j < n - 1) {
-        KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(
-            G, 1, &SVDIND(B, i, j + 1), Bs1, &SVDIND(B, j, j + 1), Bs1);
+        KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(G, 1, &SVDIND(B, i, j + 1), Bs1,
+                                                                         &SVDIND(B, j, j + 1), Bs1);
       }
       if (U) {
-        KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(
-            G, m, &SVDIND(U, 0, i), Us0, &SVDIND(U, 0, j), Us0);
+        KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(G, Um, &SVDIND(U, 0, i), Us0,
+                                                                          &SVDIND(U, 0, j), Us0);
       }
     }
   }
 
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void svdZeroLastColumn(value_type* B, int n,
-                                                       int Bs0, int Bs1,
-                                                       value_type* Vt, int Vts0,
-                                                       int Vts1) {
-    // Deal with B(n-1, n-1) = 0, by chasing the superdiagonal nonzero up the
-    // last column.
+  KOKKOS_INLINE_FUNCTION static void svdZeroLastColumn(value_type* B, int n, int Bs0, int Bs1, int vn, value_type* Vt,
+                                                       int Vts0, int Vts1) {
+    // Deal with B(n-1, n-1) = 0, by chasing the superdiagonal nonzero up the last column.
     Kokkos::pair<value_type, value_type> G;
     for (int j = n - 2; j >= 0; j--) {
-      KokkosBatched::SerialGivensInternal::invoke<value_type>(
-          SVDIND(B, j, j), SVDIND(B, j, n - 1), &G, &SVDIND(B, j, j));
+      KokkosBatched::SerialGivensInternal::invoke<value_type>(SVDIND(B, j, j), SVDIND(B, j, n - 1), &G,
+                                                              &SVDIND(B, j, j));
       SVDIND(B, j, n - 1) = Kokkos::ArithTraits<value_type>::zero();
       if (j != 0) {
-        KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(
-            G, 1, &SVDIND(B, j - 1, n - 1), Bs0, &SVDIND(B, j - 1, j), Bs0);
+        KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(G, 1, &SVDIND(B, j - 1, n - 1), Bs0,
+                                                                          &SVDIND(B, j - 1, j), Bs0);
       }
       if (Vt) {
-        KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(
-            G, n, &SVDIND(Vt, n - 1, 0), Vts1, &SVDIND(Vt, j, 0), Vts1);
+        KokkosBatched::SerialApplyLeftGivensInternal::invoke<value_type>(G, vn, &SVDIND(Vt, n - 1, 0), Vts1,
+                                                                         &SVDIND(Vt, j, 0), Vts1);
       }
     }
   }
 
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void bidiagonalize(
-      int m, int n, value_type* A, int As0, int As1, value_type* U, int Us0,
-      int Us1, value_type* Vt, int Vts0, int Vts1, value_type* work) {
+  KOKKOS_INLINE_FUNCTION static void bidiagonalize(int m, int n, value_type* A, int As0, int As1, value_type* U,
+                                                   int Us0, int Us1, value_type* Vt, int Vts0, int Vts1,
+                                                   value_type* work) {
     using KAT = Kokkos::ArithTraits<value_type>;
     value_type tau;
     for (int i = 0; i < n; i++) {
       // Eliminating column i of A below the diagonal
-      KokkosBatched::SerialLeftHouseholderInternal::invoke<value_type>(
-          m - i - 1, &SVDIND(A, i, i), &SVDIND(A, i + 1, i), As0, &tau);
+      KokkosBatched::SerialLeftHouseholderInternal::invoke<value_type>(m - i - 1, &SVDIND(A, i, i),
+                                                                       &SVDIND(A, i + 1, i), As0, &tau);
       if (n - i > 1) {
         KokkosBatched::SerialApplyLeftHouseholderInternal::invoke<value_type>(
-            m - i - 1, n - i - 1, &tau, &SVDIND(A, i + 1, i), As0,
-            &SVDIND(A, i, i + 1), As1, &SVDIND(A, i + 1, i + 1), As0, As1,
-            work);
+            m - i - 1, n - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(A, i, i + 1), As1, &SVDIND(A, i + 1, i + 1),
+            As0, As1, work);
       }
       if (U) {
         KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(
-            m, m - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(U, 0, i),
-            Us0, &SVDIND(U, 0, i + 1), Us0, Us1, work);
+            m, m - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(U, 0, i), Us0, &SVDIND(U, 0, i + 1), Us0, Us1, work);
       }
       // Zero out A subdiag explicitly (NOTE: may not be necessary...)
       for (int j = i + 1; j < m; j++) {
@@ -207,19 +188,17 @@ struct SerialSVDInternal {
       }
       if (i < n - 2) {
         // Eliminating row i of A to the right of the 1st superdiagonal
-        KokkosBatched::SerialLeftHouseholderInternal::invoke<value_type>(
-            n - i - 2, &SVDIND(A, i, i + 1), &SVDIND(A, i, i + 2), As1, &tau);
+        KokkosBatched::SerialLeftHouseholderInternal::invoke<value_type>(n - i - 2, &SVDIND(A, i, i + 1),
+                                                                         &SVDIND(A, i, i + 2), As1, &tau);
         if (m - i > 1) {
-          KokkosBatched::SerialApplyRightHouseholderInternal::invoke<
-              value_type>(m - i - 1, n - i - 2, &tau, &SVDIND(A, i, i + 2), As1,
-                          &SVDIND(A, i + 1, i + 1), As0,
-                          &SVDIND(A, i + 1, i + 2), As0, As1, work);
+          KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(
+              m - i - 1, n - i - 2, &tau, &SVDIND(A, i, i + 2), As1, &SVDIND(A, i + 1, i + 1), As0,
+              &SVDIND(A, i + 1, i + 2), As0, As1, work);
         }
         if (Vt) {
           KokkosBatched::SerialApplyLeftHouseholderInternal::invoke<value_type>(
-              n - i - 2, n, &tau, &SVDIND(A, i, i + 2), As1,
-              &SVDIND(Vt, i + 1, 0), Vts1, &SVDIND(Vt, i + 2, 0), Vts0, Vts1,
-              work);
+              n - i - 2, n, &tau, &SVDIND(A, i, i + 2), As1, &SVDIND(Vt, i + 1, 0), Vts1, &SVDIND(Vt, i + 2, 0), Vts0,
+              Vts1, work);
         }
         // Zero out A superdiag row explicitly
         for (int j = i + 2; j < n; j++) {
@@ -233,11 +212,9 @@ struct SerialSVDInternal {
   // U and Vt to maintain the product U*B*Vt. At the end, the singular values
   // are copied to sigma.
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void bidiSVD(int m, int n, value_type* B,
-                                             int Bs0, int Bs1, value_type* U,
-                                             int Us0, int Us1, value_type* Vt,
-                                             int Vts0, int Vts1,
-                                             value_type* sigma, int ss) {
+  KOKKOS_INLINE_FUNCTION static void bidiSVD(int m, int n, value_type* B, int Bs0, int Bs1, value_type* U, int Us0,
+                                             int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
+                                             const value_type& tol) {
     using KAT            = Kokkos::ArithTraits<value_type>;
     const value_type eps = Kokkos::ArithTraits<value_type>::epsilon();
     int p                = 0;
@@ -245,8 +222,9 @@ struct SerialSVDInternal {
     while (true) {
       // Zero out tiny superdiagonal entries
       for (int i = 0; i < n - 1; i++) {
-        if (fabs(SVDIND(B, i, i + 1)) <
-            eps * (fabs(SVDIND(B, i, i)) + fabs(SVDIND(B, i + 1, i + 1)))) {
+        if (Kokkos::abs(SVDIND(B, i, i + 1)) <
+                eps * (Kokkos::abs(SVDIND(B, i, i)) + Kokkos::abs(SVDIND(B, i + 1, i + 1))) ||
+            Kokkos::abs(SVDIND(B, i, i + 1)) < tol) {
           SVDIND(B, i, i + 1) = KAT::zero();
         }
       }
@@ -267,26 +245,32 @@ struct SerialSVDInternal {
       for (p = q - 1; p > 0; p--) {
         if (SVDIND(B, p - 1, p) == KAT::zero()) break;
       }
+      value_type* Bsub  = &SVDIND(B, p, p);
+      value_type* Usub  = &SVDIND(U, 0, p);
+      value_type* Vtsub = &SVDIND(Vt, p, 0);
+      int nsub          = q - p;
       // If there are zero diagonals in this range, eliminate the entire row
       //(effectively decoupling into two subproblems)
       for (int i = q - 1; i >= p; i--) {
         if (SVDIND(B, i, i) == KAT::zero()) {
-          if (i == n - 1) {
+          if (i == q - 1) {
             // Last diagonal entry being 0 is a special case.
             // Zero out the superdiagonal above it.
-            // Deal with B(n-1, n-1) = 0, by chasing the superdiagonal nonzero
-            // up the last column.
-            svdZeroLastColumn(B, n, Bs0, Bs1, Vt, Vts0, Vts1);
+            // Deal with B(q-1, q-1) = 0, by chasing the superdiagonal nonzero
+            // B(q-2, q-1) up the last column.
+            //
+            // Once that nonzero reaches B(p, q-1), we are either at the top of B
+            // (if p == 0) or the superdiag above B(p, p) is zero.
+            // In either case, the chase stops after eliminating B(p, q-1) because no
+            // new entry is introduced by the Givens.
+            svdZeroLastColumn(Bsub, nsub, Bs0, Bs1, n, Vtsub, Vts0, Vts1);
           } else if (SVDIND(B, i, i + 1) != KAT::zero()) {
-            svdZeroRow(i, B, n, Bs0, Bs1, U, m, Us0, Us1);
+            svdZeroRow(i - p, Bsub, nsub, Bs0, Bs1, Usub, m, Us0, Us1);
           }
         }
-        continue;
       }
-      int nsub = q - p;
       // B22 is nsub * nsub, Usub is m * nsub, and Vtsub is nsub * n
-      svdStep(&SVDIND(B, p, p), &SVDIND(U, 0, p), &SVDIND(Vt, p, 0), m, n, nsub,
-              Bs0, Bs1, Us0, Us1, Vts0, Vts1);
+      svdStep(Bsub, Usub, Vtsub, m, n, nsub, Bs0, Bs1, Us0, Us1, Vts0, Vts1);
     }
     for (int i = 0; i < n; i++) {
       sigma[i * ss] = SVDIND(B, i, i);
@@ -296,11 +280,8 @@ struct SerialSVDInternal {
   // Convert SVD into conventional form: singular values positive and in
   // descending order
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void postprocessSVD(int m, int n, value_type* U,
-                                                    int Us0, int Us1,
-                                                    value_type* Vt, int Vts0,
-                                                    int Vts1, value_type* sigma,
-                                                    int ss) {
+  KOKKOS_INLINE_FUNCTION static void postprocessSVD(int m, int n, value_type* U, int Us0, int Us1, value_type* Vt,
+                                                    int Vts0, int Vts1, value_type* sigma, int ss) {
     // First step: flip signs on negative singular values
     for (int i = 0; i < n; i++) {
       if (sigma[i * ss] < 0) {
@@ -329,23 +310,19 @@ struct SerialSVDInternal {
       if (i != maxloc) {
         SVDSWAP(sigma[i * ss], sigma[maxloc * ss]);
         if (U) {
-          for (int j = 0; j < m; j++)
-            SVDSWAP(SVDIND(U, j, i), SVDIND(U, j, maxloc))
+          for (int j = 0; j < m; j++) SVDSWAP(SVDIND(U, j, i), SVDIND(U, j, maxloc))
         }
         if (Vt) {
-          for (int j = 0; j < n; j++)
-            SVDSWAP(SVDIND(Vt, i, j), SVDIND(Vt, maxloc, j))
+          for (int j = 0; j < n; j++) SVDSWAP(SVDIND(Vt, i, j), SVDIND(Vt, maxloc, j))
         }
       }
     }
   }
 
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static int invoke(int m, int n, value_type* A, int As0,
-                                           int As1, value_type* U, int Us0,
-                                           int Us1, value_type* Vt, int Vts0,
-                                           int Vts1, value_type* sigma, int ss,
-                                           value_type* work) {
+  KOKKOS_INLINE_FUNCTION static int invoke(int m, int n, value_type* A, int As0, int As1, value_type* U, int Us0,
+                                           int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
+                                           value_type* work, value_type tol = Kokkos::ArithTraits<value_type>::zero()) {
     // First, if m < n, need to instead compute (V, s, U^T) = A^T.
     // This just means swapping U & Vt, and implicitly transposing A, U and Vt.
     if (m < n) {
@@ -358,19 +335,17 @@ struct SerialSVDInternal {
       SVDSWAP(Us1, Vts0);
     }
     if (U) {
-      KokkosBatched::SerialSetIdentityInternal::invoke<value_type>(m, m, U, Us0,
-                                                                   Us1);
+      KokkosBatched::SerialSetIdentityInternal::invoke<value_type>(m, m, U, Us0, Us1);
     }
     if (Vt) {
-      KokkosBatched::SerialSetIdentityInternal::invoke<value_type>(n, n, Vt,
-                                                                   Vts0, Vts1);
+      KokkosBatched::SerialSetIdentityInternal::invoke<value_type>(n, n, Vt, Vts0, Vts1);
     }
     if (m == 0 || n == 0) {
       // sigma is length 0, so there's nothing left to compute
       return 0;
     }
     bidiagonalize(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, work);
-    bidiSVD(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss);
+    bidiSVD(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss, tol);
     postprocessSVD(m, n, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss);
     return 0;
   }

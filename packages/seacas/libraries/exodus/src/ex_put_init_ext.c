@@ -30,7 +30,7 @@ static void write_dummy_names(int exoid, ex_entity_type obj_type, int num)
   if (num > 0) {
     int    varid;
     size_t num_entity;
-    ex__get_dimension(exoid, ex__dim_num_objects(obj_type), ex_name_of_object(obj_type),
+    exi_get_dimension(exoid, exi_dim_num_objects(obj_type), ex_name_of_object(obj_type),
                       &num_entity, &varid, __func__);
 
     char *text = "";
@@ -57,7 +57,7 @@ static int ex_write_object_names(int exoid, const char *type, const char *dimens
       ex_err_fn(exoid, __func__, errmsg, status);
       return (status); /* exit define mode and return */
     }
-    ex__set_compact_storage(exoid, varid);
+    exi_set_compact_storage(exoid, varid);
 #if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
     int fill = NC_FILL_CHAR;
     nc_def_var_fill(exoid, varid, 0, &fill);
@@ -96,7 +96,7 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
 
     int sixty_four_kb = 64 * 1024; // Compact storage can only be used for < 64KiByte data sizes
     if (4 * count < sixty_four_kb) {
-      ex__set_compact_storage(exoid, varid);
+      exi_set_compact_storage(exoid, varid);
     }
 
     /* type id array */
@@ -115,7 +115,7 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
       return (status); /* exit define mode and return */
     }
     if (int_size * count < sixty_four_kb) {
-      ex__set_compact_storage(exoid, varid);
+      exi_set_compact_storage(exoid, varid);
     }
 
     /*   store property name as attribute of property array variable */
@@ -234,7 +234,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   int header_size, fixed_var_size, iows;
 #endif
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
   int rootid = exoid & EX_FILE_ID_MASK;
@@ -247,7 +247,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   /* put file into define mode */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -294,10 +294,10 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
     goto error_ret;
   }
   {
-    struct ex__file_item *file = ex__find_file_item(exoid);
+    struct exi_file_item *file = exi_find_file_item(exoid);
     file->time_varid           = temp;
   }
-  ex__compress_variable(exoid, temp, -2); /* Don't compress, but do set collective io */
+  exi_compress_variable(exoid, temp, -2); /* Don't compress, but do set collective io */
 
   if (model->num_dim > 0) {
     if ((status = nc_def_dim(exoid, DIM_NUM_DIM, model->num_dim, &numdimdim)) != NC_NOERR) {
@@ -449,7 +449,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, temp, 2);
+      exi_compress_variable(exoid, temp, 2);
     }
 
     if (model->num_dim > 1) {
@@ -461,7 +461,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, temp, 2);
+      exi_compress_variable(exoid, temp, 2);
     }
 
     if (model->num_dim > 2) {
@@ -473,7 +473,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, temp, 2);
+      exi_compress_variable(exoid, temp, 2);
     }
   }
 
@@ -533,7 +533,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   /* leave define mode */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -624,6 +624,6 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

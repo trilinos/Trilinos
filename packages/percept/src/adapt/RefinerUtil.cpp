@@ -25,7 +25,6 @@
 
 namespace percept {
 
-  using namespace std;
   using namespace percept;
 
 #define EXTRA_PRINT_UR_GETBLOCKS 0

@@ -55,11 +55,7 @@ namespace Test {
 // - symbolic/numeric with Views
 // - symbolic/numeric with CrsMatrices
 // - non-reuse with CrsMatrices
-enum spgemm_call_mode {
-  spgemm_reuse_view,
-  spgemm_reuse_matrix,
-  spgemm_noreuse
-};
+enum spgemm_call_mode { spgemm_reuse_view, spgemm_reuse_matrix, spgemm_noreuse };
 
 // Randomize matrix values again from the same uniform distribution as
 // kk_generate_sparse_matrix uses.
@@ -69,7 +65,10 @@ void randomize_matrix_values(const Values &v) {
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
   Kokkos::Random_XorShift64_Pool<typename Values::execution_space> pool(13718);
-  Kokkos::fill_random(v, pool, randStart, randEnd);
+  // Instead of sampling from [-50, 50] or [-50-50i, 50+50i],
+  // sample from [1, 50] or [1+i, 50+50i]. That way relative
+  // error between values can't become large if values happen to sum close to 0.
+  Kokkos::fill_random(v, pool, randEnd / 50.0, randEnd);
 }
 
 template <typename crsMat_t>
@@ -78,17 +77,14 @@ void run_spgemm_noreuse(crsMat_t A, crsMat_t B, crsMat_t &C) {
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm(crsMat_t &A, crsMat_t &B,
-               KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C,
-               bool testReuse) {
+int run_spgemm(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C, bool testReuse) {
   typedef typename crsMat_t::size_type size_type;
   typedef typename crsMat_t::ordinal_type lno_t;
   typedef typename crsMat_t::value_type scalar_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                           typename device::memory_space, typename device::memory_space>
       KernelHandle;
 
   KernelHandle kh;
@@ -116,12 +112,8 @@ int run_spgemm(crsMat_t &A, crsMat_t &B,
     if (testReuse) {
       // Give A and B completely new random values (changing both the pointer
       // and contents), and re-run just numeric.
-      A.values = scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"),
-          A.nnz());
-      B.values = scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"),
-          B.nnz());
+      A.values = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"), A.nnz());
+      B.values = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"), B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
       KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
@@ -135,9 +127,8 @@ int run_spgemm(crsMat_t &A, crsMat_t &B,
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
-                             KokkosSparse::SPGEMMAlgorithm spgemm_algorithm,
-                             crsMat_t &result, bool testReuse) {
+int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &result,
+                             bool testReuse) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -147,9 +138,8 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                           typename device::memory_space, typename device::memory_space>
       KernelHandle;
 
   KernelHandle kh;
@@ -174,23 +164,18 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
     EXPECT_FALSE(sh->are_rowptrs_computed());
     EXPECT_FALSE(sh->are_entries_computed());
 
-    KokkosSparse::Experimental::spgemm_symbolic(
-        &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-        A.graph.entries, false, B.graph.row_map, B.graph.entries, false,
-        row_mapC);
+    KokkosSparse::Experimental::spgemm_symbolic(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+                                                A.graph.entries, false, B.graph.row_map, B.graph.entries, false,
+                                                row_mapC);
 
     EXPECT_TRUE(sh->is_symbolic_called());
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    entriesC          = lno_nnz_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-        c_nnz_size);
-    valuesC = scalar_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
-    KokkosSparse::Experimental::spgemm_numeric(
-        &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-        A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
-        B.values, false, row_mapC, entriesC, valuesC);
+    entriesC          = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC           = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
+    KokkosSparse::Experimental::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+                                               A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
+                                               B.values, false, row_mapC, entriesC, valuesC);
 
     EXPECT_TRUE(sh->are_entries_computed());
     EXPECT_TRUE(sh->is_numeric_called());
@@ -198,18 +183,13 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
     if (testReuse) {
       // Give A and B completely new random values (changing both the pointer
       // and contents), and re-run just numeric.
-      A.values = scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"),
-          A.nnz());
-      B.values = scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"),
-          B.nnz());
+      A.values = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"), A.nnz());
+      B.values = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"), B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
-      KokkosSparse::Experimental::spgemm_numeric(
-          &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-          A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
-          B.values, false, row_mapC, entriesC, valuesC);
+      KokkosSparse::Experimental::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+                                                 A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
+                                                 B.values, false, row_mapC, entriesC, valuesC);
       EXPECT_TRUE(sh->are_entries_computed());
       EXPECT_TRUE(sh->is_numeric_called());
     }
@@ -224,17 +204,14 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
 
 // Generate matrices and test all supported spgemm algorithms.
 // C := AB, where A is m*k, B is k*n, and C is m*n.
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
-void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
-                 lno_t row_size_variance, Test::spgemm_call_mode callMode,
-                 bool testReuse = false) {
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_t row_size_variance,
+                 Test::spgemm_call_mode callMode, bool testReuse = false) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
   {
-    std::cerr
-        << "TEST SKIPPED: See "
-           "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
-        << std::endl;
+    std::cerr << "TEST SKIPPED: See "
+                 "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
+              << std::endl;
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
@@ -250,10 +227,10 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
-  crsMat_t A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      m, k, nnz, row_size_variance, bandwidth);
-  crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      k, n, nnz, row_size_variance, bandwidth);
+  crsMat_t A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, k, nnz, row_size_variance, bandwidth);
+  crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(k, n, nnz, row_size_variance, bandwidth);
+  randomize_matrix_values(A.values);
+  randomize_matrix_values(B.values);
 
   KokkosSparse::sort_crs_matrix(A);
   KokkosSparse::sort_crs_matrix(B);
@@ -271,8 +248,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     algorithms = {SPGEMM_KK};
   } else {
     algorithms = {
-        SPGEMM_KK, SPGEMM_KK_LP,
-        SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+        SPGEMM_KK, SPGEMM_KK_LP, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
         SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
     };
   }
@@ -298,12 +274,10 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     try {
       switch (callMode) {
         case spgemm_reuse_view:
-          res = run_spgemm_old_interface<crsMat_t, device>(
-              A, B, spgemm_algorithm, output_mat, testReuse);
+          res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
           break;
         case spgemm_reuse_matrix:
-          res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat,
-                                             testReuse);
+          res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
           break;
         case spgemm_noreuse: run_spgemm_noreuse(A, B, output_mat); break;
       }
@@ -330,8 +304,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     timer1.reset();
     if (!is_expected_to_fail) {
       EXPECT_TRUE((res == 0)) << algo;
-      bool is_identical =
-          is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
+      bool is_identical = is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
       EXPECT_TRUE(is_identical) << algo;
       // EXPECT_TRUE( equal) << algo;
     }
@@ -341,8 +314,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   // device::execution_space::finalize();
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
   using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using graph_t        = typename crsMat_t::StaticCrsGraphType;
@@ -350,9 +322,9 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
   using entries_t      = typename graph_t::entries_type;
   using rowmap_t       = typename graph_t::row_map_type::non_const_type;
   using const_rowmap_t = typename graph_t::row_map_type;
-  using KernelHandle   = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                       typename device::memory_space, typename device::memory_space>;
   // A is m*n, B is n*k, C is m*k
   int m = 100;
   int n = 300;
@@ -370,11 +342,9 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
     B = crsMat_t("B", n, k, 0, emptyValues, B_rowmap, emptyEntries);
   } else {
     size_type nnz = 1000;
-    A   = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnz, 10,
-                                                                50);
-    nnz = 1000;
-    B   = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(n, k, nnz, 10,
-                                                                50);
+    A             = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnz, 10, 50);
+    nnz           = 1000;
+    B             = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(n, k, nnz, 10, 50);
     KokkosSparse::sort_crs_matrix(A);
     KokkosSparse::sort_crs_matrix(B);
   }
@@ -383,37 +353,31 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
   Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, C_reference, false);
   // Now call just symbolic, and specifically request that rowptrs be populated
   // Make sure this never depends on C_rowmap being initialized
-  rowmap_t C_rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmapC"),
-                    m + 1);
+  rowmap_t C_rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmapC"), m + 1);
   Kokkos::deep_copy(C_rowmap, size_type(123));
   KernelHandle kh;
   kh.create_spgemm_handle();
   if (callSymbolicFirst) {
-    KokkosSparse::Experimental::spgemm_symbolic(
-        &kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
-        B.graph.entries, false, C_rowmap);
+    KokkosSparse::Experimental::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
+                                                B.graph.entries, false, C_rowmap);
   }
-  KokkosSparse::Experimental::spgemm_symbolic(
-      &kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
-      B.graph.entries, false, C_rowmap, true);
+  KokkosSparse::Experimental::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
+                                              B.graph.entries, false, C_rowmap, true);
   kh.destroy_spgemm_handle();
-  bool isCorrect = KokkosKernels::Impl::kk_is_identical_view<
-      const_rowmap_t, const_rowmap_t, size_type,
-      typename device::execution_space>(C_rowmap, C_reference.graph.row_map, 0);
-  EXPECT_TRUE(isCorrect)
-      << " spgemm_symbolic produced incorrect rowptrs - callSymbolicFirst = "
-      << callSymbolicFirst << ", empty A/B = " << testEmpty;
+  bool isCorrect = KokkosKernels::Impl::kk_is_identical_view<const_rowmap_t, const_rowmap_t, size_type,
+                                                             typename device::execution_space>(
+      C_rowmap, C_reference.graph.row_map, 0);
+  EXPECT_TRUE(isCorrect) << " spgemm_symbolic produced incorrect rowptrs - callSymbolicFirst = " << callSymbolicFirst
+                         << ", empty A/B = " << testEmpty;
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_issue402() {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
   {
-    std::cerr
-        << "TEST SKIPPED: See "
-           "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
-        << std::endl;
+    std::cerr << "TEST SKIPPED: See "
+                 "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
+              << std::endl;
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
@@ -436,8 +400,7 @@ void test_issue402() {
     auto rowmapHost  = Kokkos::create_mirror_view(Arowmap);
     auto entriesHost = Kokkos::create_mirror_view(Aentries);
     auto valuesHost  = Kokkos::create_mirror_view(Avalues);
-    for (lno_t i = 0; i < numRows + 1; i++)
-      rowmapHost(i) = MatrixIssue402::rowmap[i];
+    for (lno_t i = 0; i < numRows + 1; i++) rowmapHost(i) = MatrixIssue402::rowmap[i];
     for (size_type i = 0; i < nnz; i++) {
       entriesHost(i) = MatrixIssue402::entries[i];
       valuesHost(i)  = MatrixIssue402::values[i];
@@ -451,9 +414,8 @@ void test_issue402() {
   lno_view_t Browmap("B = A^T rowmap", numRows + 1);
   lno_nnz_view_t Bentries("B = A^T entries", nnz);
   scalar_view_t Bvalues("B = A^T values", nnz);
-  KokkosSparse::Impl::transpose_matrix<
-      lno_view_t, lno_nnz_view_t, scalar_view_t, lno_view_t, lno_nnz_view_t,
-      scalar_view_t, lno_view_t, typename device::execution_space>(
+  KokkosSparse::Impl::transpose_matrix<lno_view_t, lno_nnz_view_t, scalar_view_t, lno_view_t, lno_nnz_view_t,
+                                       scalar_view_t, lno_view_t, typename device::execution_space>(
       numRows, numRows, Arowmap, Aentries, Avalues, Browmap, Bentries, Bvalues);
   crsMat_t B("B=A^T", numRows, numRows, nnz, Bvalues, Browmap, Bentries);
   KokkosSparse::sort_crs_matrix(A);
@@ -476,36 +438,23 @@ void test_issue402() {
     errMsg  = e.what();
     success = false;
   }
-  EXPECT_TRUE(success) << "SpGEMM still has issue 402 bug! Error message:\n"
-                       << errMsg << '\n';
+  EXPECT_TRUE(success) << "SpGEMM still has issue 402 bug! Error message:\n" << errMsg << '\n';
   bool correctResult = is_same_matrix<crsMat_t, device>(C, Cgold);
-  EXPECT_TRUE(correctResult)
-      << "SpGEMM still has issue 402 bug; C=AA' is incorrect!\n";
+  EXPECT_TRUE(correctResult) << "SpGEMM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_issue1738() {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11000) && \
-    (CUDA_VERSION < 11040)
-  {
-    std::cerr
-        << "TEST SKIPPED: See "
-           "https://github.com/kokkos/kokkos-kernels/issues/1777 for details."
-        << std::endl;
-    return;
-  }
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
   // Make sure that std::invalid_argument is thrown if you:
   //  - call numeric where an input matrix's entries have changed.
   //  - try to reuse an spgemm handle by calling symbolic with new input
   //  matrices
   // This check is only enabled in debug builds.
 #ifndef NDEBUG
-  using crsMat_t     = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>;
+  using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                       typename device::memory_space, typename device::memory_space>;
   crsMat_t A1 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
   crsMat_t B1 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
   crsMat_t A2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(50);
@@ -517,8 +466,7 @@ void test_issue1738() {
     KokkosSparse::spgemm_symbolic(kh, A1, false, B1, false, C1);
     KokkosSparse::spgemm_numeric(kh, A1, false, B1, false, C1);
     crsMat_t C2;
-    EXPECT_THROW(KokkosSparse::spgemm_symbolic(kh, A2, false, B2, false, C2),
-                 std::invalid_argument);
+    EXPECT_THROW(KokkosSparse::spgemm_symbolic(kh, A2, false, B2, false, C2), std::invalid_argument);
   }
   {
     KernelHandle kh;
@@ -529,58 +477,39 @@ void test_issue1738() {
     // row is 0. Change it to a 1 and make sure spgemm_numeric notices that it
     // changed.
     Kokkos::deep_copy(Kokkos::subview(A1.graph.entries, 0), 1);
-    EXPECT_THROW(KokkosSparse::spgemm_numeric(kh, A1, false, B1, false, C1),
-                 std::invalid_argument);
+    EXPECT_THROW(KokkosSparse::spgemm_numeric(kh, A1, false, B1, false, C1), std::invalid_argument);
   }
 #endif
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
-  TEST_F(TestCategory,                                                         \
-         sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_matrix);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_view);     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_matrix,      \
-        true);                                                                 \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_view, true); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_noreuse);        \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_noreuse);          \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, true);         \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, true);        \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);        \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);       \
-    test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
-    test_issue1738<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                                   \
+  TEST_F(TestCategory, sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                              \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_matrix); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_view);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_matrix,    \
+                                                 true);                                                               \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_view,      \
+                                                 true);                                                               \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, ::Test::spgemm_reuse_matrix);                    \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, ::Test::spgemm_reuse_view);                      \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, ::Test::spgemm_reuse_matrix);                    \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, ::Test::spgemm_reuse_view);                      \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, ::Test::spgemm_reuse_matrix);                  \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, ::Test::spgemm_reuse_view);                    \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, ::Test::spgemm_reuse_matrix);                   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, ::Test::spgemm_reuse_view);                     \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_noreuse);      \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_noreuse);        \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, ::Test::spgemm_noreuse);                         \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, ::Test::spgemm_noreuse);                         \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, ::Test::spgemm_noreuse);                       \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, ::Test::spgemm_noreuse);                        \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, true);                                                \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, true);                                               \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);                                               \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);                                              \
+    test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                                 \
+    test_issue1738<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                                \
   }
 
 // test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);

@@ -1,10 +1,11 @@
-// @HEADER
-// ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
 //
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
-// ****************************************************************************
-// @HEADER
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
 
 #ifndef Tempus_SolutionHistory_impl_hpp
 #define Tempus_SolutionHistory_impl_hpp
@@ -234,8 +235,16 @@ void SolutionHistory<Scalar>::initWorkingState()
         "Can not initialize working state without a current state!\n");
 
     // If workingState_ has a valid pointer, we are still working on it,
-    // i.e., step failed and trying again, so do not initialize it.
-    if (getWorkingState(false) != Teuchos::null) return;
+    // i.e., step failed and trying again.  There are a couple options:
+    //   1. Reuse the workingState as it might be a good guess.  This
+    //      could help with performance.  This was the initial implementation.
+    //   2. Reset the workingState to the last time step.  This could
+    //      be more robust in the case of the workingState failing with nans.
+    //      This is the current implementation.
+    if (getWorkingState(false) != Teuchos::null) {
+      Thyra::V_V(getWorkingState()->getX().ptr(), *(getCurrentState()->getX()));
+      return;
+    }
 
     Teuchos::RCP<SolutionState<Scalar> > newState;
     if (getNumStates() < storageLimit_) {

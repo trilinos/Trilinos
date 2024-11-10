@@ -31,11 +31,9 @@
 namespace Test_Sparse_MergeMatrix {
 
 template <typename View>
-View from_std_vec(const std::string &label,
-                  const std::vector<typename View::non_const_value_type> &vec) {
-  Kokkos::View<const typename View::value_type *, Kokkos::HostSpace,
-               Kokkos::MemoryUnmanaged>
-      uvec(vec.data(), vec.size());
+View from_std_vec(const std::string &label, const std::vector<typename View::non_const_value_type> &vec) {
+  Kokkos::View<const typename View::value_type *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> uvec(vec.data(),
+                                                                                                   vec.size());
   View result(label, uvec.size());
   Kokkos::deep_copy(result, uvec);
   return result;
@@ -54,13 +52,10 @@ struct CopyMmdToView {
 };
 
 template <typename MMD>
-void expect_mmd_entries(
-    const MMD &mmd,
-    const std::vector<typename MMD::non_const_value_type> &expected) {
+void expect_mmd_entries(const MMD &mmd, const std::vector<typename MMD::non_const_value_type> &expected) {
   using execution_space = typename MMD::execution_space;
   using Policy          = Kokkos::RangePolicy<execution_space>;
-  using View =
-      Kokkos::View<typename MMD::non_const_value_type *, execution_space>;
+  using View            = Kokkos::View<typename MMD::non_const_value_type *, execution_space>;
 
   // size is as expected
   EXPECT_EQ(mmd.size(), expected.size());
@@ -216,8 +211,7 @@ std::tuple<AView, BView> view_view_case_3() {
   // -1 | 0 0 0
   //  9 | 1 1 1
   //  9 | 1 1 1
-  AView a = from_std_vec<AView>("view-view-case-3-a",
-                                {AEntry(-1), AEntry(9), AEntry(9)});
+  AView a = from_std_vec<AView>("view-view-case-3-a", {AEntry(-1), AEntry(9), AEntry(9)});
   BView b = from_std_vec<BView>("view-view-case-3-b", {0, 2, 7});
   // 0: {}
   // 1: {0}
@@ -239,8 +233,7 @@ std::tuple<AView, BView> view_view_case_4() {
   // 6 | 1   1 0
   // 6 | 1   1 0
   AView a = from_std_vec<AView>("view-view-case-4-a", {1, 6, 6});
-  BView b =
-      from_std_vec<BView>("view-view-case-4-b", {BEntry(-3), BEntry(-1), 7});
+  BView b = from_std_vec<BView>("view-view-case-4-b", {BEntry(-3), BEntry(-1), 7});
   // 0: {}
   // 1: {1}
   // 2: {1,1}
@@ -261,10 +254,8 @@ std::tuple<AView, BView> view_view_case_5() {
   //  -3 | 0 0 0
   //  -2 | 0 0 0
   //  2  | 1 1 1
-  AView a = from_std_vec<AView>("view-view-case-5-a",
-                                {AEntry{-3}, AEntry{-2}, AEntry{2}});
-  BView b = from_std_vec<BView>("view-view-case-5-b",
-                                {BEntry{-2}, BEntry{0}, BEntry{1}});
+  AView a = from_std_vec<AView>("view-view-case-5-a", {AEntry{-3}, AEntry{-2}, AEntry{2}});
+  BView b = from_std_vec<BView>("view-view-case-5-b", {BEntry{-2}, BEntry{0}, BEntry{1}});
   // 0: {}
   // 1: {0}
   // 2: {0,0}
@@ -291,8 +282,7 @@ void view_view_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 0
-      expect_mmd_entries(
-          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(0)));
+      expect_mmd_entries(mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(0)));
     }
   }
   {
@@ -300,8 +290,7 @@ void view_view_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 0
-      expect_mmd_entries(
-          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(1)));
+      expect_mmd_entries(mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(1)));
     }
   }
   {
@@ -490,8 +479,7 @@ void view_iota_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 0
-      expect_mmd_entries(
-          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(0)));
+      expect_mmd_entries(mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(0)));
     }
   }
   {
@@ -499,8 +487,7 @@ void view_iota_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 1
-      expect_mmd_entries(
-          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(1)));
+      expect_mmd_entries(mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(1)));
     }
   }
   {
@@ -530,16 +517,14 @@ void test_rank() {
     using AView = Kokkos::View<AEntry *, ExecSpace>;
     using BView = Kokkos::View<BEntry *, ExecSpace>;
     using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
-    static_assert(MMD::rank == 1,
-                  "MergeMatrixDiagonal should look like a rank-1 view");
+    static_assert(MMD::rank == 1, "MergeMatrixDiagonal should look like a rank-1 view");
   }
 
   {
     using AView = Kokkos::View<AEntry *, ExecSpace>;
     using BView = KokkosKernels::Impl::Iota<BEntry>;
     using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
-    static_assert(MMD::rank == 1,
-                  "MergeMatrixDiagonal should look like a rank-1 view");
+    static_assert(MMD::rank == 1, "MergeMatrixDiagonal should look like a rank-1 view");
   }
 }
 

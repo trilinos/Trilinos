@@ -50,7 +50,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/Gear.hpp"
@@ -77,7 +77,7 @@ namespace {
 
 static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-typedef stk::mesh::fixtures::simple_fields::GearsFixture::CartesianField CartesianField;
+typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
 typedef stk::mesh::Field<int> IntField;
 
 //
@@ -91,7 +91,7 @@ typedef stk::mesh::Field<int> IntField;
 // if do_separate_wedge == true then wedge must be nonnull pointer
 void separate_wedge(
     bool do_separate_wedge,
-    stk::mesh::fixtures::simple_fields::GearsFixture   & fixture,
+    stk::mesh::fixtures::GearsFixture   & fixture,
     stk::mesh::Entity wedge,
     CartesianField & velocity_field,
     stk::mesh::Part & skin_part
@@ -193,7 +193,7 @@ void separate_wedge(
  * in the wedges argument.
  */
 void find_and_shuffle_wedges_to_separate(
-    stk::mesh::fixtures::simple_fields::GearsFixture & fixture,
+    stk::mesh::fixtures::GearsFixture & fixture,
     stk::mesh::EntityVector & wedges
     )
 {
@@ -230,7 +230,7 @@ void find_and_shuffle_wedges_to_separate(
  * continue flying through the air.
  */
 void move_detached_wedges(
-    stk::mesh::fixtures::simple_fields::GearsFixture & fixture,
+    stk::mesh::fixtures::GearsFixture & fixture,
     CartesianField & velocity_field
     )
 {
@@ -267,7 +267,7 @@ void move_detached_wedges(
 //-----------------------------------------------------------------------------
 //
 
-void populate_processor_id_field_data( stk::mesh::fixtures::simple_fields::GearsFixture & fixture,
+void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixture,
     IntField & processor_field
     )
 {
@@ -300,8 +300,8 @@ TEST( gears_skinning, gears_skinning )
   const size_t NUM_GEARS = 1;
   double start_time = stk::wall_time();
 
-  stk::mesh::fixtures::simple_fields::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS,
-                                            stk::mesh::fixtures::simple_fields::GearParams(0.025, 0.6, 1.05, -0.4, 0.4));
+  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS,
+                                            stk::mesh::fixtures::GearParams(0.025, 0.6, 1.05, -0.4, 0.4));
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 
@@ -393,9 +393,9 @@ TEST( gears_skinning, gears_skinning )
   const double x = 0;
   const double y = 0;
   const double z = 0;
-  const stk::mesh::fixtures::simple_fields::GearMovement gear_movement_data(rotation,x,y,z);
+  const stk::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
 
-  stk::mesh::fixtures::simple_fields::Gear & gear = fixture.get_gear(0);
+  stk::mesh::fixtures::Gear & gear = fixture.get_gear(0);
 
   // Iterate over the time steps, updating the locations of the entities and
   // writing the current mesh state to output files.

@@ -2,6 +2,7 @@
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_ML
+  ${PACKAGE_NAME}_ENABLE_Zoltan2Core
   )
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -36,12 +37,22 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
       Maxwell3D
       NAME "Maxwell3D-Tpetra"
       ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
-      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml --ensure-kn"
       COMM serial mpi
       NUM_MPI_PROCS 4
       )
+
+    IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+      TRIBITS_ADD_TEST(
+        Maxwell3D
+        NAME "Maxwell3D-Tpetra2"
+        ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
+        COMM serial mpi
+        NUM_MPI_PROCS 4
+      )
+    ENDIF()
 
     TRIBITS_ADD_TEST(
       Maxwell3D

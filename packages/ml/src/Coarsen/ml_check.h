@@ -6,6 +6,12 @@
 #ifndef __MLCHECK__
 #define __MLCHECK__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
@@ -28,4 +34,3 @@ extern int ML_Reitzinger_Check_Hierarchy(ML *ml, ML_Operator **Tmat_array, int i
 #endif
 #endif
 #endif
-

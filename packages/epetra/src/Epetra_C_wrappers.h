@@ -44,6 +44,14 @@
 #ifndef EPETRA_C_WRAPPERS_H
 #define EPETRA_C_WRAPPERS_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 
 #ifdef EPETRA_FORTRAN

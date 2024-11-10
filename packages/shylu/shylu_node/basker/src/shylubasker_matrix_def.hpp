@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_MATRIX_DEF_HPP
 #define SHYLUBASKER_MATRIX_DEF_HPP
 
@@ -319,7 +328,7 @@ namespace BaskerNS
     if(nnz == _nnz)
     {
       copy_vec(_row_idx, _nnz, row_idx);
-      copy_vec(_val,_nnz,     val);
+      copy_vec(_val,     _nnz,     val);
     }
     else
     {
@@ -489,6 +498,13 @@ namespace BaskerNS
     return 0;
   }
   
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_ptr()
+  {
+    for (Int i = 0; i < ncol+1; i ++) col_ptr(i) = 0;
+  }
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::convert2D

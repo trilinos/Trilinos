@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -23,9 +23,9 @@ namespace {
   double find_range(const double *x, size_t num_nodes);
 
   template <typename INT>
-  INT Find(double x0, double y0, double z0, const std::vector<double> &x,
-           const std::vector<double> &y, const std::vector<double> &z, const std::vector<INT> &id,
-           int dim, bool ignore_dups);
+  int64_t Find(double x0, double y0, double z0, const std::vector<double> &x,
+               const std::vector<double> &y, const std::vector<double> &z,
+               const std::vector<INT> &id, int dim, bool ignore_dups);
 
   template <typename INT>
   void Compute_Node_Map(std::vector<INT> &node_map, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
@@ -105,7 +105,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
   }
 
   // Sort by x value.
-  index_qsort(x2.data(), id.data(), num_elmts);
+  index_qsort(Data(x2), Data(id), num_elmts);
 
 #if 0
   fmt::print("******************  elmts  ******************** \n");
@@ -164,7 +164,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
       }
 
       // Locate midpoint in sorted array.
-      INT sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, dim, interFace.ignore_dups);
+      int64_t sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, dim, interFace.ignore_dups);
 
       if (sort_idx < 0) {
         Error(fmt::format("Files are different (couldn't match element {} from block {} from first "
@@ -284,7 +284,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
             Error(out);
           }
         } // End of local node loop on file1's element.
-      }   // End of local node search block.
+      } // End of local node search block.
 
       ++e1;
 
@@ -396,7 +396,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
   }
 
   // Sort by x value.
-  index_qsort(x2.data(), id2.data(), num_elmts2);
+  index_qsort(Data(x2), Data(id2), num_elmts2);
 
 #if 0
   fmt::print("******************  elmts  ******************** \n");
@@ -457,7 +457,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
       }
 
       // Locate midpoint in sorted array.
-      INT sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, dim, interFace.ignore_dups);
+      int64_t sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, dim, interFace.ignore_dups);
       if (sort_idx < 0) {
         unmatched++;
         if (first && interFace.show_unmatched) {
@@ -543,7 +543,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
             Error(out);
           }
         } // End of local node loop on file1's element.
-      }   // End of local node search block.
+      } // End of local node search block.
 
       ++e1;
 
@@ -605,12 +605,12 @@ namespace {
     // Check whether sorting needed...
     bool sort1_needed = check_sort(file1_id_map, count);
     if (sort1_needed) {
-      index_qsort(file1_id_map, id1.data(), count);
+      index_qsort(file1_id_map, Data(id1), count);
     }
 
     bool sort2_needed = check_sort(file2_id_map, count);
     if (sort2_needed) {
-      index_qsort(file2_id_map, id2.data(), count);
+      index_qsort(file2_id_map, Data(id2), count);
     }
 
     for (size_t i = 0; i < count; i++) {
@@ -619,7 +619,7 @@ namespace {
       }
       else {
         Error(fmt::format("Unable to match {0} {1} in first file with {0} in second file.\n", type,
-                          file1_id_map[id1[i]]));
+                          fmt::group_digits(file1_id_map[id1[i]])));
       }
     }
 
@@ -826,9 +826,9 @@ namespace {
   }
 
   template <typename INT>
-  INT Find(double x0, double y0, double z0, const std::vector<double> &x,
-           const std::vector<double> &y, const std::vector<double> &z, const std::vector<INT> &id,
-           int dim, bool ignore_dups)
+  int64_t Find(double x0, double y0, double z0, const std::vector<double> &x,
+               const std::vector<double> &y, const std::vector<double> &z,
+               const std::vector<INT> &id, int dim, bool ignore_dups)
   {
     if (x.empty()) {
       return -1;
@@ -856,7 +856,7 @@ namespace {
       }
     }
 
-    INT i = low == N ? N - 1 : low; // Make sure index falls within array bounds.
+    int64_t i = low == N ? N - 1 : low; // Make sure index falls within array bounds.
 
     if (i == 0 && interFace.coord_tol.Diff(x[id[i]], x0)) {
       // Could not find an index within tolerance on x coordinate.
@@ -871,7 +871,7 @@ namespace {
     // Search until tolerance between the x coordinate fails or a match is found.
     // If a match is found, the loop continues in order to check for dups.
 
-    INT index = -1;
+    int64_t index = -1;
     do {
       if (dim == 1 || (dim == 2 && !interFace.coord_tol.Diff(y[id[i]], y0)) ||
           (dim == 3 && !interFace.coord_tol.Diff(y[id[i]], y0) &&
@@ -900,7 +900,7 @@ namespace {
 
         index = i;
       }
-    } while (++i < (INT)N && !interFace.coord_tol.Diff(x[id[i]], x0));
+    } while (++i < (int64_t)N && !interFace.coord_tol.Diff(x[id[i]], x0));
 
     interFace.coord_tol.type = save_tolerance_type;
     return index;
@@ -970,7 +970,7 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
   }
 
   // Sort based on coordinate with largest range...
-  index_qsort(r, indx.data(), num_nodes);
+  index_qsort(r, Data(indx), num_nodes);
 
   double min = DBL_MAX;
   switch (file.Dimension()) {

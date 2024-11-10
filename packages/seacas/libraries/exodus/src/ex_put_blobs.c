@@ -23,13 +23,13 @@ int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs)
 
   EX_FUNC_ENTER();
 
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   int *entlst_id = (int *)calloc(count, sizeof(int));
 
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     free(entlst_id);
@@ -85,7 +85,7 @@ int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs)
       }
       goto error_ret; /* exit define mode and return */
     }
-    ex__compress_variable(exoid, entlst_id[i], 1);
+    exi_compress_variable(exoid, entlst_id[i], 1);
 
     if (ex_int64_status(exoid) & EX_IDS_INT64_DB) {
       long long id = blobs[i].id;
@@ -111,13 +111,13 @@ int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs)
     }
 
     /* Increment blob count */
-    struct ex__file_item *file = ex__find_file_item(exoid);
+    struct exi_file_item *file = exi_find_file_item(exoid);
     if (file) {
       file->blob_count++;
     }
   }
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     free(entlst_id);
@@ -141,7 +141,7 @@ int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   free(entlst_id);
   EX_FUNC_LEAVE(EX_FATAL);
 }

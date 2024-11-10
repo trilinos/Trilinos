@@ -29,8 +29,8 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   double     coeffs[25];         /* various products of yvecs */
   double     vars[3];            /* angular variables */
   double     best[3];            /* best minimizer found so far */
-  double     grad[3];            /* gradiant of the function */
-  double     gradc[3];           /* gradiant of the constraint */
+  double     grad[3];            /* gradient of the function */
+  double     gradc[3];           /* gradient of the constraint */
   double     hess[3][3];         /* hessian of the function */
   double     hessc[3][3];        /* hessian of the constraint */
   double     step[3];            /* Newton step in optimization */

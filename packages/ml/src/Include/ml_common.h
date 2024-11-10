@@ -13,6 +13,12 @@
 #ifndef __MLCOMMON__
 #define __MLCOMMON__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* this avoids the classic build system from picking up a spurious
  * macro from other packages that may have been autotooled */
 #ifdef ML_CLASSIC_BUILD

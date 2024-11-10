@@ -42,6 +42,12 @@
 #ifndef EpetraExt_LINEARPROBLEM_SOLVERMAP_H
 #define EpetraExt_LINEARPROBLEM_SOLVERMAP_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 
 #include <EpetraExt_SolverMap_CrsMatrix.h>
@@ -79,4 +85,3 @@ class LinearProblem_SolverMap : public StructuralSameTypeTransform<Epetra_Linear
 } //namespace EpetraExt
 
 #endif //EpetraExt_LINEARPROBLEM_SOLVERMAP_H
-

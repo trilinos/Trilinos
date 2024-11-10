@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2023 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -6,8 +6,8 @@ C    See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2023/04/17                      '
-      QAINFO(3) = ' 1.40                           '
+      QAINFO(2) = '2024/05/29                      '
+      QAINFO(3) = ' 1.42                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -77,3 +77,5 @@ c - don't mclong if adding zero bytes
 c - remove warning about expxyz material matching routine
 c - fix name length issues
 c - fix parsing if no nodesets on models
+c - handle mirroring of tet10 models
+c - correct handling of nset and sset names

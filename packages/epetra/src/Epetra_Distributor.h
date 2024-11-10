@@ -44,6 +44,14 @@
 #ifndef EPETRA_DISTRIBUTOR_H
 #define EPETRA_DISTRIBUTOR_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 //! Epetra_Distributor:  The Epetra Gather/Scatter Setup Base Class.
 /*! The Epetra_Distributor class is an interface that encapsulates the general
   information and services needed for other Epetra classes to perform gather/scatter

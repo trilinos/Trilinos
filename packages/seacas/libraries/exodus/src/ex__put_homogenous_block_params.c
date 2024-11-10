@@ -15,14 +15,14 @@
  * Permits some optimizations and safer for N->1 parallel.
  * Arbitrary  polyhedra are handled in more general routine; not here.
  */
-int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct ex_block *blocks)
+int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct ex_block *blocks)
 {
 
   int  status;
   int  varid, dims[2];
   char errmsg[MAX_ERR_LENGTH];
 
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -118,7 +118,7 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
 
   /* ======================================================================== */
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_FATAL);
@@ -133,7 +133,7 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
   }
 
   for (size_t i = 0; i < block_count; i++) {
-    int blk_id_ndx = 1 + ex__inc_file_item(exoid, ex__get_counter_list(blocks[i].type));
+    int blk_id_ndx = 1 + exi_inc_file_item(exoid, exi_get_counter_list(blocks[i].type));
 
     if (blocks[i].num_entry == 0) { /* Is this a NULL element block? */
       continue;
@@ -266,7 +266,7 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, varid, 2);
+      exi_compress_variable(exoid, varid, 2);
 
       /* Attribute names... */
       dims[0] = numattrdim;
@@ -305,7 +305,7 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, connid, 1);
+      exi_compress_variable(exoid, connid, 1);
 
       /* store element type as attribute of connectivity variable */
       if ((status = nc_put_att_text(exoid, connid, ATT_NAME_ELB, strlen(blocks[i].topology) + 1,
@@ -345,7 +345,7 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_FATAL);
@@ -386,6 +386,6 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   return (EX_FATAL);
 }

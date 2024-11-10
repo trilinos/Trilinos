@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_ParameterList.hpp"
@@ -474,6 +442,65 @@ TEUCHOS_UNIT_TEST( ParameterList, set_get_string )
 
 }
 
+TEUCHOS_UNIT_TEST( ParameterList, set_string_move_semantics)
+{
+  ParameterList pl;
+
+  ECHO(std::string my_str_1{"my text 1"});
+  ECHO(pl.set("my string 1", std::move(my_str_1)));
+
+  // Check that the parameter value was moved by checking that my_str_1 is now empty.
+  TEST_ASSERT(my_str_1.empty());
+
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 1"), "my text 1");
+}
+
+TEUCHOS_UNIT_TEST( ParameterList, set_string_specified_template_argument)
+{
+  // Check the templated set method and its overload when the template argument is specified.
+
+   ParameterList pl;
+
+  // The parameter value can be passed by rvalue reference.
+  // The main templated set method is called, and the parameter value is moved.
+  ECHO(std::string my_str_2{"my text 2"});
+  ECHO(pl.set<std::string>("my string 2", std::move(my_str_2)));
+  TEST_ASSERT(my_str_2.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 2"), "my text 2");
+  
+  // The parameter value cannot be passed by rvalue reference.
+  // The overload of the templated set method is called, and the parameter value is not moved.
+  ECHO(std::string my_str_3{"my text 3"});
+  ECHO(pl.set<std::string>("my string 3", my_str_3));
+  TEST_ASSERT( ! my_str_3.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 3"), "my text 3");
+
+  ECHO(const std::string my_str_4{"my text 4"});
+  ECHO(pl.set<std::string>("my string 4", my_str_4));
+  TEST_ASSERT( ! my_str_4.empty());
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 4"), "my text 4");
+
+  ECHO(pl.set<std::string>("my string 5", "my text 5"));
+  TEST_EQUALITY_CONST(pl.get<std::string>("my string 5"), "my text 5");
+}
+
+struct MyWrappedInt
+{
+    operator const int&() const { return value; }
+
+    int value;
+};
+
+TEUCHOS_UNIT_TEST( ParameterList, set_int_user_defined_conversion_function)
+{
+  // Check the templated set method and its overload when the template argument is specified
+  // and the parameter is set via a user defined conversion function. 
+  ParameterList pl;
+
+  ECHO(MyWrappedInt my_wrapped_int{42});
+  ECHO(pl.set<int>("my int", my_wrapped_int));
+  TEST_EQUALITY_CONST(pl.get<int>("my int"), my_wrapped_int.value);
+}
 
 TEUCHOS_UNIT_TEST( ParameterList, get_nonexisting_param )
 {
@@ -866,14 +893,39 @@ TEUCHOS_UNIT_TEST( ParameterList, validateAgainstSelf )
 }
 
 
-TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults )
+TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults_default )
 {
+  // Test for proper behavior when the user doesn't set `Nonlinear Solver`
   ParameterList PL_Main = createMainPL();
   ParameterList PL_Main_valid = createValidMainPL();
   ECHO(PL_Main.validateParametersAndSetDefaults(PL_Main_valid));
   TEST_NOTHROW(
     rcp_dynamic_cast<const StringToIntegralParameterEntryValidator<int> >(
       PL_Main.getEntry("Nonlinear Solver").validator(), true ) );
+  // Make sure the parameter entry is set to default and unused after validation
+  const ParameterEntry &default_entry = PL_Main.getEntry("Nonlinear Solver");
+  TEST_EQUALITY(default_entry.isDefault(), true);
+  TEST_EQUALITY(default_entry.isUsed(), false);
+  // Make sure the value is stored as an integer after validation
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
+  TEST_NOTHROW(Teuchos::any_cast<int>(default_entry.getAny()));
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults_noDefault )
+{
+  // Now make sure we have the correct behavior when not using a default value
+  ParameterList PL_Main = createMainPL();
+  PL_Main.set("Nonlinear Solver", "Trust Region Based");
+  ParameterList PL_Main_valid = createValidMainPL();
+  PL_Main.validateParametersAndSetDefaults(PL_Main_valid);
+  const ParameterEntry &entry = PL_Main.getEntry("Nonlinear Solver");
+  TEST_EQUALITY(entry.isDefault(), false);
+  TEST_EQUALITY(entry.isUsed(), false);
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
+  TEST_NOTHROW(Teuchos::any_cast<int>(entry.getAny()));
+#endif
 }
 
 
@@ -949,6 +1001,20 @@ TEUCHOS_UNIT_TEST( ParameterList, simpleModifierModifyReconcile )
   // Test the copy constructor
   ParameterList copy_valid_pl(valid_pl);
   TEST_EQUALITY(valid_pl, copy_valid_pl);
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, modify_CopiesModifiers ) {
+  RCP<ParameterListModifier> mod_top = rcp<ParameterListModifier>(new ParameterListModifier("Modifier Top"));
+  RCP<ParameterListModifier> mod_A = rcp<ParameterListModifier>(new ParameterListModifier("Modifier A"));
+  RCP<ParameterListModifier> mod_B = rcp<ParameterListModifier>(new ParameterListModifier("Modifier B"));
+  ParameterList input{"Plist"}, valid{"Plist", mod_top};
+  input.sublist("A").sublist("B");
+  valid.sublist("A", mod_A);
+  valid.sublist("A").sublist("B", mod_B);
+  input.modifyParameterList(valid);
+  // This calls `haveSameModifiers` to make sure they are all copied to `input`
+  TEST_EQUALITY(input, valid);
 }
 
 
@@ -1168,6 +1234,53 @@ TEUCHOS_UNIT_TEST( ParameterList, print ) {
     TEST_ASSERT(ss.str().size() == 0);
   }
 }
+
+// define enum class Shape in anonymous namespace outside of unittest
+// "NonPrintableParameterEntries" to avoid polution of class type in string comparison
+namespace {
+    enum class Shape : int { CIRCLE, SQUARE, TRIANGLE };
+}
+
+TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
+  // test printing std::vector<int> from a parameter list
+  {
+    std::vector<int> testVec = {1};
+    ParameterList paramList = ParameterList("std::vector test");
+    paramList.set("My std::vector<int>", testVec);
+
+    try {
+      paramList.print();  // Should throw!
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "If you get here then the test failed!");
+    }
+    catch (const NonprintableTypeException &except) {
+      std::string actualMessage = except.what();
+      std::string expectedMessage = "Trying to print type std::vector<int, std::allocator<int> > "
+                                    "which is not printable (i.e. does not have operator<<() defined)!";
+      TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
+    }
+  }
+
+  // test printing enum class from a parameter list
+  {
+    ParameterList paramList = ParameterList("enum class test");
+    paramList.set("My enum class", Shape::SQUARE);
+
+    try {
+      paramList.print();  // Should throw!
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "If you get here then the test failed!" );
+    }
+    catch (const NonprintableTypeException &except) {
+      std::string actualMessage = except.what();
+      std::string expectedMessage =
+              "Trying to print type Teuchos::(anonymous namespace)::Shape which is not printable "
+              "(i.e. does not have operator<<() defined)!";
+      TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
+    }
+  }
+}
+
+
+
 
 } // namespace Teuchos
 

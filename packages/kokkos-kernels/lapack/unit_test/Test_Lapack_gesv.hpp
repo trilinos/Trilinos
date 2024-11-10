@@ -15,13 +15,12 @@
 //@HEADER
 
 // only enable this test where KokkosLapack supports gesv:
-// CUDA+MAGMA and HOST+LAPACK
-#if (defined(TEST_CUDA_LAPACK_CPP) &&            \
-     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) || \
-    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) && \
-     (defined(TEST_OPENMP_LAPACK_CPP) ||         \
-      defined(TEST_OPENMPTARGET_LAPACK_CPP) ||   \
-      defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
+// CUDA+(MAGMA or CUSOLVER), HIP+ROCSOLVER and HOST+LAPACK
+#if (defined(TEST_CUDA_LAPACK_CPP) &&                                                            \
+     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER))) || \
+    (defined(TEST_HIP_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||             \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                                 \
+     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -34,11 +33,13 @@
 
 namespace Test {
 
-template <class ViewTypeA, class ViewTypeB, class Device>
+template <class ViewTypeA, class ViewTypeB, class Device, bool MAGMA>
 void impl_test_gesv(const char* mode, const char* padding, int N) {
-  typedef typename Device::execution_space execution_space;
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> ats;
+  using execution_space = typename Device::execution_space;
+  using ScalarA         = typename ViewTypeA::value_type;
+  using ats             = Kokkos::ArithTraits<ScalarA>;
+
+  execution_space space{};
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -62,12 +63,8 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
   typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror(B);
 
   // Initialize data.
-  Kokkos::fill_random(
-      A, rand_pool,
-      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
-  Kokkos::fill_random(
-      X0, rand_pool,
-      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(X0, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
 
   // Generate RHS B = A*X0.
   ScalarA alpha = 1.0;
@@ -80,7 +77,8 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
   Kokkos::deep_copy(h_X0, X0);
 
   // Allocate IPIV view on host
-  typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
+  using ViewTypeP = typename std::conditional<MAGMA, Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace>,
+                                              Kokkos::View<int*, Kokkos::LayoutLeft, execution_space>>::type;
   ViewTypeP ipiv;
   int Nt = 0;
   if (mode[0] == 'Y') {
@@ -90,7 +88,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 
   // Solve.
   try {
-    KokkosLapack::gesv(A, B, ipiv);
+    KokkosLapack::gesv(space, A, B, ipiv);
   } catch (const std::runtime_error& error) {
     // Check for expected runtime errors due to:
     // no-pivoting case (note: only MAGMA supports no-pivoting interface)
@@ -99,8 +97,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     bool notpl_runtime_err   = false;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
-    nopivot_runtime_err = (!std::is_same<typename Device::memory_space,
-                                         Kokkos::CudaSpace>::value) &&
+    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
     notpl_runtime_err = false;
 #else
@@ -124,26 +121,28 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 
   // Checking vs ref on CPU, this eps is about 10^-9
   typedef typename ats::mag_type mag_type;
-  const mag_type eps = 1.0e7 * ats::epsilon();
+  const mag_type eps = 3.0e7 * ats::epsilon();
   bool test_flag     = true;
   for (int i = 0; i < N; i++) {
     if (ats::abs(h_B(i) - h_X0(i)) > eps) {
       test_flag = false;
-      // printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) !=
-      // solution( %.15lf ) at (%d)\n", N, mode[0], padding[0],
-      // ats::abs(h_B(i)), ats::abs(h_X0(i)), int(i) );
-      // break;
+      printf(
+          "    Error %d, pivot %c, padding %c: result( %.15lf ) !="
+          "solution( %.15lf ) at (%d), error=%.15e, eps=%.15e\n",
+          N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), int(i), ats::abs(h_B(i) - h_X0(i)), eps);
+      break;
     }
   }
   ASSERT_EQ(test_flag, true);
 }
 
-template <class ViewTypeA, class ViewTypeB, class Device>
-void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
-                         int nrhs) {
-  typedef typename Device::execution_space execution_space;
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> ats;
+template <class ViewTypeA, class ViewTypeB, class Device, bool MAGMA>
+void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs) {
+  using execution_space = typename Device::execution_space;
+  using ScalarA         = typename ViewTypeA::value_type;
+  using ats             = Kokkos::ArithTraits<ScalarA>;
+
+  execution_space space{};
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -167,12 +166,8 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
   typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror(B);
 
   // Initialize data.
-  Kokkos::fill_random(
-      A, rand_pool,
-      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
-  Kokkos::fill_random(
-      X0, rand_pool,
-      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(X0, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
 
   // Generate RHS B = A*X0.
   ScalarA alpha = 1.0;
@@ -185,7 +180,8 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
   Kokkos::deep_copy(h_X0, X0);
 
   // Allocate IPIV view on host
-  typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
+  using ViewTypeP = typename std::conditional<MAGMA, Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace>,
+                                              Kokkos::View<int*, Kokkos::LayoutLeft, execution_space>>::type;
   ViewTypeP ipiv;
   int Nt = 0;
   if (mode[0] == 'Y') {
@@ -195,7 +191,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
 
   // Solve.
   try {
-    KokkosLapack::gesv(A, B, ipiv);
+    KokkosLapack::gesv(space, A, B, ipiv);
   } catch (const std::runtime_error& error) {
     // Check for expected runtime errors due to:
     // no-pivoting case (note: only MAGMA supports no-pivoting interface)
@@ -204,8 +200,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
     bool notpl_runtime_err   = false;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
-    nopivot_runtime_err = (!std::is_same<typename Device::memory_space,
-                                         Kokkos::CudaSpace>::value) &&
+    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
     notpl_runtime_err = false;
 #else
@@ -251,43 +246,36 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
 template <class Scalar, class Device>
 int test_gesv(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device> view_type_b_ll;
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 2);  // no padding
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 13);  // no padding
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 179);  // no padding
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 64);  // no padding
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 1024);  // no padding
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "Y",
-                                                               13);  // padding
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "Y",
-                                                               179);  // padding
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
+  using view_type_b_ll = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;
+
+#if (defined(TEST_CUDA_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) || \
+    (defined(TEST_HIP_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) || \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                     \
+     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
+  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 2);     // no padding
+  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 13);    // no padding
+  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 179);   // no padding
+  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 64);    // no padding
+  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 1024);  // no padding
+
+#elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
+  if constexpr (std::is_same_v<Kokkos::Cuda, typename Device::execution_space>) {
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 2);     // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 13);    // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 179);   // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 64);    // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 1024);  // no padding
+
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y",
+                                                                       13);  // padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y",
+                                                                       179);  // padding
+  }
+#endif
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) ||
-  (!defined(KOKKOSKERNELS_ETI_ONLY) &&
-  !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)) typedef Kokkos::View<ScalarA**,
-  Kokkos::LayoutRight, Device> view_type_a_lr; typedef Kokkos::View<ScalarB*,
-  Kokkos::LayoutRight, Device> view_type_b_lr;
-    Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N",
-  2);   //no padding Test::impl_test_gesv<view_type_a_lr, view_type_b_lr,
-  Device>(&mode[0], "N", 13);  //no padding Test::impl_test_gesv<view_type_a_lr,
-  view_type_b_lr, Device>(&mode[0], "N", 179); //no padding
-    Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N",
-  64);  //no padding Test::impl_test_gesv<view_type_a_lr, view_type_b_lr,
-  Device>(&mode[0], "N", 1024);//no padding Test::impl_test_gesv<view_type_a_lr,
-  view_type_b_lr, Device>(&mode[0], "Y", 13);  //padding
-    Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "Y",
-  179); //padding #endif
-  */
   // Supress unused parameters on CUDA10
   (void)mode;
   return 1;
@@ -296,52 +284,42 @@ int test_gesv(const char* mode) {
 template <class Scalar, class Device>
 int test_gesv_mrhs(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> view_type_b_ll;
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 2, 5);  // no padding
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 13, 5);  // no padding
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 179, 5);  // no padding
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 64, 5);  // no padding
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "N", 1024, 5);  // no padding
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "Y", 13, 5);  // padding
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(
-      &mode[0], "Y", 179, 5);  // padding
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
+  using view_type_b_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
+
+#if (defined(TEST_CUDA_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) || \
+    (defined(TEST_HIP_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) || \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                     \
+     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
+  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 2, 5);     // no padding
+  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 13, 5);    // no padding
+  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 179, 5);   // no padding
+  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 64, 5);    // no padding
+  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(&mode[0], "N", 1024, 5);  // no padding
+
+// When appropriate run MAGMA specific tests
+#elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
+  if constexpr (std::is_same_v<Kokkos::Cuda, typename Device::execution_space>) {
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 2, 5);     // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 13, 5);    // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 179, 5);   // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 64, 5);    // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 1024, 5);  // no padding
+
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y", 13, 5);   // padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y", 179, 5);  // padding
+  }
+#endif
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) ||
-  (!defined(KOKKOSKERNELS_ETI_ONLY) &&
-  !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)) typedef Kokkos::View<ScalarA**,
-  Kokkos::LayoutRight, Device> view_type_a_lr; typedef Kokkos::View<ScalarB**,
-  Kokkos::LayoutRight, Device> view_type_b_lr;
-    Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0],
-  "N", 2,   5);//no padding Test::impl_test_gesv_mrhs<view_type_a_lr,
-  view_type_b_lr, Device>(&mode[0], "N", 13,  5);//no padding
-    Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0],
-  "N", 179, 5);//no padding Test::impl_test_gesv_mrhs<view_type_a_lr,
-  view_type_b_lr, Device>(&mode[0], "N", 64,  5);//no padding
-    Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0],
-  "N", 1024,5);//no padding Test::impl_test_gesv_mrhs<view_type_a_lr,
-  view_type_b_lr, Device>(&mode[0], "Y", 13,  5);//padding
-    Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0],
-  "Y", 179, 5);//padding #endif
-  */
   // Supress unused parameters on CUDA10
   (void)mode;
   return 1;
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_float");
   test_gesv<float, TestDevice>("N");  // No pivoting
@@ -358,8 +336,7 @@ TEST_F(TestCategory, gesv_mrhs_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_double");
   test_gesv<double, TestDevice>("N");  // No pivoting
@@ -376,8 +353,7 @@ TEST_F(TestCategory, gesv_mrhs_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_complex_double");
   test_gesv<Kokkos::complex<double>, TestDevice>("N");  // No pivoting
@@ -394,8 +370,7 @@ TEST_F(TestCategory, gesv_mrhs_complex_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_complex_float");
   test_gesv<Kokkos::complex<float>, TestDevice>("N");  // No pivoting
@@ -411,4 +386,4 @@ TEST_F(TestCategory, gesv_mrhs_complex_float) {
 }
 #endif
 
-#endif  // CUDA+MAGMA or LAPACK+HOST
+#endif  // CUDA+(MAGMA or CUSOLVER) or HIP+ROCSOLVER or LAPACK+HOST

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,17 +47,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/** Maximum length of name permitted by NetCDF */
+#define EX_MAX_NAME NC_MAX_NAME
+
 #ifndef NC_INT64
 #error "NetCDF version 4.1.2 or later is required."
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "8.23"
-#define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 23
-#define EXODUS_RELEASE_DATE  "July 13, 2023"
+#define EXODUS_VERSION       "9.01"
+#define EXODUS_VERSION_MAJOR 9
+#define EXODUS_VERSION_MINOR 1
+#define EXODUS_RELEASE_DATE  "July 17, 2024"
 
-#define EX_API_VERS       8.23f
+#define EX_API_VERS       9.01f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -282,6 +285,98 @@ enum ex_entity_type {
 };
 typedef enum ex_entity_type ex_entity_type;
 
+enum ex_field_type {
+  EX_FIELD_TYPE_INVALID = 0,
+  EX_FIELD_TYPE_USER_DEFINED,
+  EX_FIELD_TYPE_SEQUENCE,
+  EX_BASIS,
+  EX_QUADRATURE,
+  EX_SCALAR,
+  EX_VECTOR_1D,
+  EX_VECTOR_2D,
+  EX_VECTOR_3D,
+  EX_QUATERNION_2D,
+  EX_QUATERNION_3D,
+  EX_FULL_TENSOR_36,
+  EX_FULL_TENSOR_32,
+  EX_FULL_TENSOR_22,
+  EX_FULL_TENSOR_16,
+  EX_FULL_TENSOR_12,
+  EX_SYM_TENSOR_33,
+  EX_SYM_TENSOR_31,
+  EX_SYM_TENSOR_21,
+  EX_SYM_TENSOR_13,
+  EX_SYM_TENSOR_11,
+  EX_SYM_TENSOR_10,
+  EX_ASYM_TENSOR_03,
+  EX_ASYM_TENSOR_02,
+  EX_ASYM_TENSOR_01,
+  EX_MATRIX_2X2,
+  EX_MATRIX_3X3
+};
+typedef enum ex_field_type ex_field_type;
+
+#define EX_MAX_FIELD_NESTING 2
+typedef struct ex_field
+{
+  ex_entity_type entity_type;
+  int64_t        entity_id;
+  char           name[EX_MAX_NAME + 1]; /* Name of the field */
+  /*
+   * For basis, user, quadrature -- what is name of the subtype. This
+   * is a comma-separated list of `nesting` names Use two consecutive
+   * commas for an empty type_name. Leave empty if no type_names
+   */
+  int           nesting; /* Number of composite fields (vector at each quadrature point = 2) */
+  char          type_name[EX_MAX_NAME + 1];
+  ex_field_type type[EX_MAX_FIELD_NESTING];                /* ex_field_type of each nested field */
+  int           cardinality[EX_MAX_FIELD_NESTING];         /* 0 to calculate based on type */
+  char          component_separator[EX_MAX_FIELD_NESTING]; /* empty defaults to '_'; */
+  char          suffices[EX_MAX_NAME + 1]; /* Optional comma-separated list of suffices if type is
+                                              EX_FIELD_TYPE_USER_DEFINED */
+} ex_field;
+
+typedef struct ex_basis
+{
+  /*
+   clang-format off
+   *
+   * subc_dim: dimension of the subcell associated with the specified DoF ordinal 
+   *      -- 0 node, 1 edge, 2 face, 3 volume [Range: 0..3]
+   * subc_ordinal: ordinal of the subcell relative to its parent cell
+   *      -- 0..n for each ordinal with the same subc dim [Range: <= DoF ordinal] 
+   * subc_dof_ordinal: ordinal of the DoF relative to the subcell 
+   * subc_num_dof: cardinality of the DoF set associated with this subcell. 
+   * xi, eta, mu (ξ, η, ζ): Parametric coordinate location of the DoF 
+   *      -- (Only first ndim values are valid)
+   *
+   clang-format on
+   */
+
+  char    name[EX_MAX_NAME + 1];
+  int     cardinality; /* number of `basis` points == dimension of non-null subc_*, xi, eta, mu */
+  int    *subc_dim;
+  int    *subc_ordinal;
+  int    *subc_dof_ordinal;
+  int    *subc_num_dof;
+  double *xi;
+  double *eta;
+  double *zeta;
+} ex_basis;
+
+typedef struct ex_quadrature
+{
+  char    name[EX_MAX_NAME + 1];
+  int     cardinality; /* Number of quadrature points */
+  int     dimension;   /* 1,2,3 -- spatial dimension of points */
+  double *xi;          /* xi  (x) coordinate of points; dimension = cardinality  or NULL */
+  double *
+      eta; /* eta (y) coordinate of points; dimension = cardinality if dimension = 2 or 3 or NULL */
+  double
+      *zeta; /* zeta (z) coordinate of points; dimension = cardinality if dimension == 3. or NULL */
+  double *weight; /* weights for each point; dimension = cardinality or NULL */
+} ex_quadrature;
+
 /*!
  * ex_opts() function codes - codes are OR'ed into exopts
  */
@@ -304,9 +399,6 @@ typedef enum ex_options ex_options;
  * constants that are used as netcdf dimensions must be of type long
  * @{
  */
-
-/** Maximum length of name permitted by NetCDF */
-#define EX_MAX_NAME NC_MAX_NAME
 
 /** Maximum length of QA record, element type name */
 #define MAX_STR_LENGTH 32L
@@ -369,31 +461,31 @@ typedef struct ex_attribute
 {
   ex_entity_type entity_type;
   int64_t        entity_id;
-  char           name[NC_MAX_NAME + 1];
+  char           name[EX_MAX_NAME + 1];
   ex_type        type; /* int, double, text */
-  size_t         value_count;
+  int            value_count;
   void          *values; /* not accessed if NULL */
 } ex_attribute;
 
 typedef struct ex_blob
 {
-  int64_t id;
-  char   *name;
-  int64_t num_entry;
+  ex_entity_id id;
+  char        *name;
+  int64_t      num_entry;
 } ex_blob;
 
 typedef struct ex_assembly
 {
-  int64_t        id;
+  ex_entity_id   id;
   char          *name;
   ex_entity_type type; /* EX_ELEM_BLOCK or EX_ASSEMBLY */
   int            entity_count;
-  int64_t       *entity_list;
+  ex_entity_id  *entity_list;
 } ex_assembly;
 
 typedef struct ex_block
 {
-  int64_t        id;
+  ex_entity_id   id;
   ex_entity_type type;
   char           topology[MAX_STR_LENGTH + 1];
   int64_t        num_entry;
@@ -405,7 +497,7 @@ typedef struct ex_block
 
 typedef struct ex_set
 {
-  int64_t        id;
+  ex_entity_id   id;
   ex_entity_type type;
   int64_t        num_entry;
   int64_t        num_distribution_factor;
@@ -472,6 +564,12 @@ typedef struct ex_var_params
 /** @} */
 
 #ifndef EXODUS_EXPORT
+#if defined(_WIN32) && defined(exodus_shared_EXPORTS)
+#define EXODUS_EXPORT __declspec(dllexport)
+#endif
+#endif /* EXODUS_EXPORT */
+
+#ifndef EXODUS_EXPORT
 #define EXODUS_EXPORT extern
 #endif /* EXODUS_EXPORT */
 
@@ -533,11 +631,11 @@ EXODUS_EXPORT void ex_set_err(const char *module_name, const char *message, int 
 EXODUS_EXPORT const char *ex_strerror(int err_num);
 EXODUS_EXPORT void        ex_get_err(const char **msg, const char **func, int *err_num);
 EXODUS_EXPORT int         ex_opts(int options);
-EXODUS_EXPORT int         ex_inquire(int exoid, ex_inquiry req_info, void_int         */*ret_int*/,
-                                     float         */*ret_float*/, char         */*ret_char*/);
-EXODUS_EXPORT int64_t     ex_inquire_int(int exoid, ex_inquiry req_info);
-EXODUS_EXPORT unsigned    ex_int64_status(int exoid);
-EXODUS_EXPORT int         ex_set_int64_status(int exoid, int mode);
+EXODUS_EXPORT int ex_inquire(int exoid, ex_inquiry req_info, void_int *ret_int, float *ret_float,
+                             char *ret_char);
+EXODUS_EXPORT int64_t  ex_inquire_int(int exoid, ex_inquiry req_info);
+EXODUS_EXPORT unsigned ex_int64_status(int exoid);
+EXODUS_EXPORT int      ex_set_int64_status(int exoid, int mode);
 
 EXODUS_EXPORT void        ex_print_config(void);
 EXODUS_EXPORT const char *ex_config(void);
@@ -617,6 +715,11 @@ EXODUS_EXPORT int ex_put_var(int exoid, int time_step, ex_entity_type var_type, 
                              ex_entity_id obj_id, int64_t num_entries_this_obj,
                              const void *var_vals);
 
+/*  Write Edge Face or Element Variable Values Defined On Blocks or Sets Through Time */
+EXODUS_EXPORT int ex_put_var_multi_time(int exoid, ex_entity_type var_type, int var_index,
+                                        ex_entity_id obj_id, int64_t num_entries_this_obj,
+                                        int beg_time_step, int end_time_step, const void *var_vals);
+
 /*  Write Partial Edge Face or Element Variable Values on Blocks or Sets at a Time Step */
 EXODUS_EXPORT int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type,
                                      int var_index, ex_entity_id obj_id, int64_t start_index,
@@ -631,6 +734,17 @@ EXODUS_EXPORT int ex_put_reduction_vars(int exoid, int time_step, ex_entity_type
 EXODUS_EXPORT int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
                              ex_entity_id obj_id, int64_t num_entry_this_obj, void *var_vals);
 
+/*  Read Edge Face or Element Variable Values Defined On Blocks or Sets at a Time Step */
+EXODUS_EXPORT int ex_get_var_multi_time(int exoid, ex_entity_type var_type, int var_index,
+                                        ex_entity_id obj_id, int64_t num_entry_this_obj,
+                                        int beg_time_step, int end_time_step, void *var_vals);
+
+/*  Read Edge Face or Element Variable Values Defined On Blocks or Sets Through Time */
+EXODUS_EXPORT int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index,
+                                  ex_entity_id id, int beg_time_step, int end_time_step,
+                                  void *var_vals);
+
+/*  Read Partial Edge Face or Element Variable Values on Blocks or Sets at a Time Step */
 EXODUS_EXPORT int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type,
                                      int var_index, ex_entity_id obj_id, int64_t start_index,
                                      int64_t num_entities, void *var_vals);
@@ -638,10 +752,6 @@ EXODUS_EXPORT int ex_get_partial_var(int exoid, int time_step, ex_entity_type va
 /*  Read Edge Face or Element Reduction Variable Values Defined On Blocks or Sets at a Time Step */
 EXODUS_EXPORT int ex_get_reduction_vars(int exoid, int time_step, ex_entity_type obj_type,
                                         ex_entity_id obj_id, int64_t num_variables, void *var_vals);
-
-/*  Read Edge Face or Element Variable Values Defined On Blocks or Sets Through Time */
-EXODUS_EXPORT int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t id,
-                                  int beg_time_step, int end_time_step, void *var_vals);
 
 /*! @} */
 
@@ -935,6 +1045,22 @@ EXODUS_EXPORT int ex_get_blob(int exoid, struct ex_blob *blob);
 EXODUS_EXPORT int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs);
 EXODUS_EXPORT int ex_get_blobs(int exoid, struct ex_blob *blobs);
 
+EXODUS_EXPORT int ex_put_multi_field_metadata(int exoid, const ex_field *field,
+                                              const int field_count);
+EXODUS_EXPORT int ex_put_field_metadata(int exoid, const ex_field field);
+EXODUS_EXPORT int ex_put_field_suffices(int exoid, const ex_field field, const char *suffices);
+EXODUS_EXPORT int ex_get_field_metadata(int exoid, ex_field *field);
+EXODUS_EXPORT int ex_get_field_metadata_count(int exoid, ex_entity_type obj_type, ex_entity_id id);
+EXODUS_EXPORT int ex_get_field_suffices(int exoid, const ex_field field, char *suffices);
+
+EXODUS_EXPORT int ex_get_basis_count(int exoid);
+EXODUS_EXPORT int ex_get_basis(int exoid, ex_basis **pbasis, int *num_basis);
+EXODUS_EXPORT int ex_put_basis(int exoid, const ex_basis basis);
+
+EXODUS_EXPORT int ex_get_quadrature_count(int exoid);
+EXODUS_EXPORT int ex_get_quadrature(int exoid, ex_quadrature **pquad, int *num_quad);
+EXODUS_EXPORT int ex_put_quadrature(int exoid, const ex_quadrature quad);
+
 /*  Write arbitrary integer, double, or text attributes on an entity */
 EXODUS_EXPORT int ex_put_attribute(int exoid, const ex_attribute attributes);
 EXODUS_EXPORT int ex_put_attributes(int exoid, size_t attr_count, const ex_attribute *attributes);
@@ -1183,6 +1309,17 @@ EXODUS_EXPORT int ex_put_elem_cmap(int             exoid,    /**< NetCDF/Exodus 
                                    const void_int *proc_ids, /**< Vector of processor IDs */
                                    int             processor /**< This processor ID */
 );
+
+EXODUS_EXPORT int ex_initialize_basis_struct(ex_basis *basis, size_t num_basis, int mode);
+EXODUS_EXPORT int ex_initialize_quadrature_struct(ex_quadrature *quad, size_t num_quad, int mode);
+
+EXODUS_EXPORT const char *ex_component_field_name(ex_field *field,
+                                                  int       component[EX_MAX_FIELD_NESTING]);
+EXODUS_EXPORT const char *ex_field_component_suffix(ex_field *field, int nest_level, int component);
+EXODUS_EXPORT int         ex_field_cardinality(const ex_field_type field_type);
+EXODUS_EXPORT const char *ex_field_type_name(const ex_field_type field_type);
+EXODUS_EXPORT ex_field_type ex_string_to_field_type_enum(const char *field_name);
+EXODUS_EXPORT const char   *ex_field_type_enum_to_string(const ex_field_type field_type);
 
 /*! @} */
 
@@ -1801,27 +1938,32 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
  * \defgroup ErrorReturnCodes Error return codes - #exerrval return values
  * @{
  */
-#define EX_MEMFAIL       1000  /**< memory allocation failure flag def       */
-#define EX_BADFILEMODE   1001  /**< bad file mode def                        */
-#define EX_BADFILEID     1002  /**< bad file id def                          */
-#define EX_WRONGFILETYPE 1003  /**< wrong file type for function             */
-#define EX_LOOKUPFAIL    1004  /**< id table lookup failed                   */
-#define EX_BADPARAM      1005  /**< bad parameter passed                     */
-#define EX_INTERNAL      1006  /**< internal logic error                     */
-#define EX_DUPLICATEID   1007  /**< duplicate id found                       */
-#define EX_DUPLICATEOPEN 1008  /**< duplicate open                           */
-#define EX_BADFILENAME   1009  /**< empty or null filename specified         */
-#define EX_MSG           -1000 /**< message print code - no error implied    */
-#define EX_PRTLASTMSG    -1001 /**< print last error message msg code        */
-#define EX_NOTROOTID     -1002 /**< file id is not the root id; it is a subgroup id */
-#define EX_LASTERR       -1003 /**< in ex_err, use existing err_num value */
-#define EX_NULLENTITY    -1006 /**< null entity found                        */
-#define EX_NOENTITY      -1007 /**< no entities of that type on database    */
-#define EX_NOTFOUND      -1008 /**< could not find requested variable on database */
+enum ex_error_return_code {
+  EX_MEMFAIL       = 1000,  /**< memory allocation failure flag def       */
+  EX_BADFILEMODE   = 1001,  /**< bad file mode def                        */
+  EX_BADFILEID     = 1002,  /**< bad file id def                          */
+  EX_WRONGFILETYPE = 1003,  /**< wrong file type for function             */
+  EX_LOOKUPFAIL    = 1004,  /**< id table lookup failed                   */
+  EX_BADPARAM      = 1005,  /**< bad parameter passed                     */
+  EX_INTERNAL      = 1006,  /**< internal logic error                     */
+  EX_DUPLICATEID   = 1007,  /**< duplicate id found                       */
+  EX_DUPLICATEOPEN = 1008,  /**< duplicate open                           */
+  EX_BADFILENAME   = 1009,  /**< empty or null filename specified         */
+  EX_MSG           = -1000, /**< message print code - no error implied    */
+  EX_PRTLASTMSG    = -1001, /**< print last error message msg code        */
+  EX_NOTROOTID     = -1002, /**< file id is not the root id; it is a subgroup id */
+  EX_LASTERR       = -1003, /**< in ex_err, use existing err_num value */
+  EX_NULLENTITY    = -1006, /**< null entity found                        */
+  EX_NOENTITY      = -1007, /**< no entities of that type on database    */
+  EX_INTSIZEMISMATCH = -1008, /**< integer sizes do not match on input/output databases in ex_copy  */
+  EX_NOTFOUND      = -1008, /**< could not find requested variable on database */
 
-#define EX_FATAL -1 /**< fatal error flag def                     */
-#define EX_NOERR 0  /**< no error flag def                        */
-#define EX_WARN  1  /**< warning flag def                         */
+  EX_FATAL = -1, /**< fatal error flag def                     */
+  EX_NOERR = 0,  /**< no error flag def                        */
+  EX_WARN  = 1   /**< warning flag def                         */
+};
+typedef enum ex_error_return_code ex_error_return_code;
+
 /** @} */
 
 #ifdef __cplusplus

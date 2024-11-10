@@ -44,6 +44,14 @@
 #ifndef _EPETRA_SERIALDENSEOPERATOR_H_
 #define _EPETRA_SERIALDENSEOPERATOR_H_
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 class Epetra_SerialDenseMatrix;
 

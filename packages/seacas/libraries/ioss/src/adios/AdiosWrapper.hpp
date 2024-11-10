@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,15 +7,15 @@
 #ifndef IOSS_Ioad_AdiosWrapper_hpp
 #define IOSS_Ioad_AdiosWrapper_hpp
 
+#include "Ioss_Utils.h" // for Utils, IOSS_ERROR, etc
 #include "adios/AdiosWrapper.h"
-#include <Ioss_Utils.h> // for Utils, IOSS_ERROR, etc
 
 namespace Ioad {
 
   template <typename T>
   void AdiosWrapper::DefineVariable(const std::string &name, const adios2::Dims &shape,
                                     const adios2::Dims &start, const adios2::Dims &count,
-                                    const bool constantDims)
+                                    const bool /*constantDims*/)
   {
     adios2::Variable<T> var = this->IO::InquireVariable<T>(name);
     if (!var) {

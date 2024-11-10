@@ -16,6 +16,12 @@
 #ifndef __MLCGSTABL__
 #define __MLCGSTABL__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
@@ -31,4 +37,3 @@ extern int ML_BICGSTABL_Solve(ML_Krylov *,int,double *rhs,double *sol);
 #endif
 
 #endif
-

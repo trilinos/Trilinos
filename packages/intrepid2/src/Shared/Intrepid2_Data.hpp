@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 //
 //  Intrepid2_Data.hpp
 //  QuadraturePerformance
@@ -26,7 +34,7 @@ namespace Intrepid2 {
 \class  Intrepid2::ZeroView
 \brief  A singleton class for a DynRankView containing exactly one zero entry.  (Technically, the entry is DataScalar(), the default value for the scalar type.)  This allows View-wrapping classes to return a reference to zero, even when that zero is not explicitly stored in the wrapped views.
  
-This is used by Interpid2::Data for its getEntry() and getWritableEntry() methods.
+This is used by Intrepid2::Data for its getEntry() and getWritableEntry() methods.
  
  \note There is no protection against the zero value being overwritten; perhaps we should add some (i.e., const-qualify DataScalar).  Because of implementation details in Intrepid2::Data, we don't do so yet.
  */
@@ -1482,43 +1490,37 @@ public:
         resultExtents[i]        = 1;
       }
       
-      ScalarView<DataScalar,DeviceType> data;
+      ScalarView<DataScalar,DeviceType> data; // new view will match this one in layout and fad dimension, if any
+      auto viewToMatch = A_MatData.getUnderlyingView();
       if (resultNumActiveDims == 1)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView1(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0]);
       }
       else if (resultNumActiveDims == 2)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView2(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1]);
       }
       else if (resultNumActiveDims == 3)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView3(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2]);
       }
       else if (resultNumActiveDims == 4)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView4(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3]);
       }
       else if (resultNumActiveDims == 5)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView5(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4]);
       }
       else if (resultNumActiveDims == 6)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView6(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5]);
       }
       else // resultNumActiveDims == 7
       {
-        auto viewToMatch = A_MatData.getUnderlyingView7(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5], resultDataDims[6]);
       }
@@ -1526,19 +1528,57 @@ public:
       return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes,resultBlockPlusDiagonalLastNonDiagonal);
     }
     
+    //! Constructs a container suitable for storing the result of a contraction over the final dimensions of the two provided containers.  The two containers must have the same logical shape.
+    //! \see storeInPlaceCombination()
+    //! \param A  [in] - the first data container.
+    //! \param B  [in] - the second data container.  Must have the same logical shape as A.
+    //! \param numContractionDims [in] - the number of dimensions over which the contraction should take place.
+    //! \return A numContractionDims-rank-lower container with the same logical shape as A and B in all but the last dimensions.
+    static Data<DataScalar,DeviceType> allocateContractionResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, const int &numContractionDims )
+    {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.rank() != B.rank(), std::invalid_argument, "A and B must have the same logical shape");
+      const int rank = A.rank();
+      const int resultRank = rank - numContractionDims;
+      std::vector<DimensionInfo> dimInfo(resultRank);
+      for (int d=0; d<resultRank; d++)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(d) != B.extent_int(d), std::invalid_argument, "A and B must have the same logical shape");
+        dimInfo[d] = A.combinedDataDimensionInfo(B, d);
+      }
+      Data<DataScalar,DeviceType> result(dimInfo);
+      return result;
+    }
+    
+    //! Constructs a container suitable for storing the result of a contraction over the final dimension of the two provided containers.  The two containers must have the same logical shape.
+    //! \see storeInPlaceCombination()
+    //! \param A  [in] - the first data container.
+    //! \param B  [in] - the second data container.  Must have the same logical shape as A.
+    //! \return A 1-rank-lower container with the same logical shape as A and B in all but the last dimension.
+    static Data<DataScalar,DeviceType> allocateDotProductResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B )
+    {
+      return allocateContractionResult(A, B, 1);
+    }
+    
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatVec()
-    static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
+    static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData, const bool transposeMatrix = false )
     {
       // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matData.rank() != vecData.rank() + 1, std::invalid_argument, "matData and vecData have incompatible ranks");
       const int vecDim  = vecData.extent_int(vecData.rank() - 1);
-      const int matRows = matData.extent_int(matData.rank() - 2);
-      const int matCols = matData.extent_int(matData.rank() - 1);
+      
+      const int D1_DIM = matData.rank() - 2;
+      const int D2_DIM = matData.rank() - 1;
+      
+      const int matRows = matData.extent_int(D1_DIM);
+      const int matCols = matData.extent_int(D2_DIM);
+      
+      const int rows  = transposeMatrix ? matCols : matRows;
+      const int cols  = transposeMatrix ? matRows : matCols;
       
       const int resultRank = vecData.rank();
       
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matCols != vecDim, std::invalid_argument, "matData column count != vecData dimension");
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cols != vecDim, std::invalid_argument, "matData column count != vecData dimension");
       
       Kokkos::Array<int,7> resultExtents;                      // logical extents
       Kokkos::Array<DataVariationType,7> resultVariationTypes; // for each dimension, whether the data varies in that dimension
@@ -1603,10 +1643,8 @@ public:
       }
       // for the final dimension, the variation type is always GENERAL
       // (Some combinations, e.g. CONSTANT/CONSTANT *would* generate a CONSTANT result, but constant matrices don't make a lot of sense beyond 1x1 matrices…)
-      resultVariationTypes[resultNumActiveDims] = GENERAL;
       resultActiveDims[resultNumActiveDims]     = resultRank - 1;
-      resultDataDims[resultNumActiveDims]       = matRows;
-      resultExtents[resultRank-1]               = matRows;
+      resultDataDims[resultNumActiveDims]       = rows;
       resultNumActiveDims++;
       
       for (int i=resultRank; i<7; i++)
@@ -1614,6 +1652,8 @@ public:
         resultVariationTypes[i] = CONSTANT;
         resultExtents[i]        = 1;
       }
+      resultVariationTypes[resultRank-1] = GENERAL;
+      resultExtents[resultRank-1]        = rows;
       
       ScalarView<DataScalar,DeviceType> data;
       if (resultNumActiveDims == 1)
@@ -1715,6 +1755,64 @@ public:
       }
     }
     
+    //! Places the result of a contraction along the final dimension of A and B into this data container.
+    void storeDotProduct(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      const int D_DIM = A.rank() - 1;
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(D_DIM) != B.extent_int(D_DIM), std::invalid_argument, "A and B have different extents");
+      const int vectorComponents = A.extent_int(D_DIM);
+      
+      // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      using ExecutionSpace = typename DeviceType::execution_space;
+      // note the use of getDataExtent() below: we only range over the possibly-distinct entries
+      if (rank_ == 1) // contraction result rank; e.g., (P)
+      {
+        Kokkos::parallel_for("compute dot product", getDataExtent(0),
+        KOKKOS_LAMBDA (const int &pointOrdinal) {
+          auto & val = thisData.getWritableEntry(pointOrdinal);
+          val = 0;
+          for (int i=0; i<vectorComponents; i++)
+          {
+            val += A(pointOrdinal,i) * B(pointOrdinal,i);
+          }
+        });
+      }
+      else if (rank_ == 2) // contraction result rank; e.g., (C,P)
+      {
+        // typical case for e.g. gradient data: (C,P,D)
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),getDataExtent(1)});
+        Kokkos::parallel_for("compute dot product", policy,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal) {
+          auto & val = thisData.getWritableEntry(cellOrdinal, pointOrdinal);
+          val = 0;
+          for (int i=0; i<vectorComponents; i++)
+          {
+            val += A(cellOrdinal,pointOrdinal,i) * B(cellOrdinal,pointOrdinal,i);
+          }
+        });
+      }
+      else if (rank_ == 3)
+      {
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),getDataExtent(2)});
+        Kokkos::parallel_for("compute dot product", policy,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &d) {
+          auto & val = thisData.getWritableEntry(cellOrdinal, pointOrdinal,d);
+          val = 0;
+          for (int i=0; i<vectorComponents; i++)
+          {
+            val += A(cellOrdinal,pointOrdinal,d,i) * B(cellOrdinal,pointOrdinal,d,i);
+          }
+        });
+      }
+      else
+      {
+        // TODO: handle other cases
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "rank not yet supported");
+      }
+    }
+    
     //! Places the result of an in-place combination (e.g., entrywise sum) into this data container.
     template<class BinaryOperator>
     void storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator);
@@ -1748,13 +1846,19 @@ public:
     }
     
     //! Places the result of a matrix-vector multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatVecResult(), or should match such a container in underlying data extent and variation types.
-    void storeMatVec( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
+    void storeMatVec( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData, const bool transposeMatrix = false )
     {
       // TODO: add a compile-time (SFINAE-type) guard against DataScalar types that do not support arithmetic operations.  (We support Orientation as a DataScalar type; it might suffice just to compare DataScalar to Orientation, and eliminate this method for that case.)
       // TODO: check for invalidly shaped containers.
       
-      const int matRows = matData.extent_int(matData.rank() - 2);
-      const int matCols = matData.extent_int(matData.rank() - 1);
+      const int D1_DIM = matData.rank() - 2;
+      const int D2_DIM = matData.rank() - 1;
+      
+      const int matRows = matData.extent_int(D1_DIM);
+      const int matCols = matData.extent_int(D2_DIM);
+      
+      const int rows  = transposeMatrix ? matCols : matRows;
+      const int cols  = transposeMatrix ? matRows : matCols;
       
       // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
       Data<DataScalar,DeviceType> thisData = *this;
@@ -1764,42 +1868,45 @@ public:
       if (rank_ == 3)
       {
         // typical case for e.g. gradient data: (C,P,D)
-        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),matRows});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),rows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &i) {
           auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i);
           val_i = 0;
-          for (int j=0; j<matCols; j++)
+          for (int j=0; j<cols; j++)
           {
-            val_i += matData(cellOrdinal,pointOrdinal,i,j) * vecData(cellOrdinal,pointOrdinal,j);
+            const auto & mat_ij  = transposeMatrix ? matData(cellOrdinal,pointOrdinal,j,i) : matData(cellOrdinal,pointOrdinal,i,j);
+            val_i += mat_ij * vecData(cellOrdinal,pointOrdinal,j);
           }
         });
       }
       else if (rank_ == 2)
       {
         //
-        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),matRows});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),rows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &vectorOrdinal, const int &i) {
           auto & val_i = thisData.getWritableEntry(vectorOrdinal, i);
           val_i = 0;
-          for (int j=0; j<matCols; j++)
+          for (int j=0; j<cols; j++)
           {
-            val_i += matData(vectorOrdinal,i,j) * vecData(vectorOrdinal,j);
+            const auto & mat_ij  = transposeMatrix ? matData(vectorOrdinal,j,i) : matData(vectorOrdinal,i,j);
+            val_i += mat_ij * vecData(vectorOrdinal,j);
           }
         });
       }
       else if (rank_ == 1)
       {
         // single-vector case
-        Kokkos::RangePolicy<ExecutionSpace> policy(0,matRows);
+        Kokkos::RangePolicy<ExecutionSpace> policy(0,rows);
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &i) {
           auto & val_i = thisData.getWritableEntry(i);
           val_i = 0;
-          for (int j=0; j<matCols; j++)
+          for (int j=0; j<cols; j++)
           {
-            val_i += matData(i,j) * vecData(j);
+            const auto & mat_ij  = transposeMatrix ? matData(j,i) : matData(i,j);
+            val_i += mat_ij * vecData(j);
           }
         });
       }
@@ -1885,7 +1992,7 @@ public:
         {
           Kokkos::parallel_for("compute mat-mat", policy,
           KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal) {
-            for (int i=0; i<leftCols; i++)
+            for (int i=0; i<leftRows; i++)
             {
               for (int j=0; j<rightCols; j++)
               {
@@ -2013,6 +2120,11 @@ public:
       return underlyingMatchesLogical_;
     }
   };
+
+  template<class DataScalar, typename DeviceType>
+  KOKKOS_INLINE_FUNCTION constexpr unsigned rank(const Data<DataScalar, DeviceType>& D) {
+    return D.rank();
+  }
 }
 
 // we do ETI for doubles and default ExecutionSpace's device_type

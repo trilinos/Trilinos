@@ -4,6 +4,12 @@
 /* ******************************************************************** */
 #ifndef __MLXYT__
 #define __MLXYT__
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 #include "ml_common.h"
 extern void setup_henry_xxt(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,

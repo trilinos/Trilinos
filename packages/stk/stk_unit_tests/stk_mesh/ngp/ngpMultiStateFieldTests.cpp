@@ -1,45 +1,36 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
 //
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
 //
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
-*/
 
 #include <stk_util/stk_config.h>
 #include <stk_ngp_test/ngp_test.hpp>
@@ -49,7 +40,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/NgpFieldBLAS.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -77,7 +68,7 @@ private:
   stk::mesh::NgpField<double> m_ngpField;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
 #define MY_LAMBDA KOKKOS_LAMBDA
 #else
 #define MY_LAMBDA [&]
@@ -103,7 +94,7 @@ void delete_class_on_device(ClassWithNgpField* devicePtr)
   Kokkos::kokkos_free<stk::ngp::MemSpace>(static_cast<void*>(devicePtr));
 }
 
-class NgpMultiStateFieldTest : public stk::mesh::fixtures::simple_fields::TestHexFixture
+class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
 {
 public:
 
@@ -201,6 +192,36 @@ public:
   stk::mesh::Field<double>* m_fieldOld;
 };
 
+NGP_TEST_F(NgpMultiStateFieldTest, multistateField_rotateDeviceStates_syncStatesUnchanged)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueNew = 44.4;
+  const double valueOld = 22.2;
+  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueNew);
+  check_field_data_value_on_device(ngpMesh, ngpFieldOld, valueOld);
+
+  const bool rotateDeviceNgpFieldStates = true;
+  get_bulk().update_field_data_states(rotateDeviceNgpFieldStates);
+
+  EXPECT_FALSE(ngpFieldNew.need_sync_to_host());
+  EXPECT_FALSE(ngpFieldOld.need_sync_to_host());
+  EXPECT_FALSE(ngpFieldNew.need_sync_to_device());
+  EXPECT_FALSE(ngpFieldOld.need_sync_to_device());
+
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueOld);
+  check_field_data_value_on_device(ngpMesh, ngpFieldOld, valueNew);
+}
+
 NGP_TEST_F(NgpMultiStateFieldTest, multistateField_copyHasCorrectDataAfterStateRotation)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
@@ -209,8 +230,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, multistateField_copyHasCorrectDataAfterStateR
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new());
-  stk::mesh::field_fill(valueOld, get_field_old());
+  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
@@ -231,6 +252,39 @@ NGP_TEST_F(NgpMultiStateFieldTest, multistateField_copyHasCorrectDataAfterStateR
   check_field_data_value_on_device(ngpMesh, copyOfNgpFieldNew, valueOld);
 }
 
+NGP_TEST_F(NgpMultiStateFieldTest, multistateField_copyHasWrongDataAfterDeviceStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueNew = 44.4;
+  const double valueOld = 22.2;
+  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  stk::mesh::NgpField<double> copyOfNgpFieldNew(ngpFieldNew);
+
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueNew);
+  check_field_data_value_on_device(ngpMesh, ngpFieldOld, valueOld);
+
+  const bool rotateDeviceNgpFieldStates = true;
+  get_bulk().update_field_data_states(rotateDeviceNgpFieldStates);
+
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueOld);
+  check_field_data_value_on_device(ngpMesh, ngpFieldOld, valueNew);
+
+#ifdef STK_USE_DEVICE_MESH
+  const double valueNewBecauseCopyOfDeviceFieldGotDisconnectedByDeviceRotation = valueNew;
+  check_field_data_value_on_device(ngpMesh, copyOfNgpFieldNew, valueNewBecauseCopyOfDeviceFieldGotDisconnectedByDeviceRotation);
+#else
+  check_field_data_value_on_device(ngpMesh, copyOfNgpFieldNew, valueOld);
+#endif
+}
+
 NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasCorrectDataAfterStateRotation)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
@@ -239,8 +293,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasCorrectDataAfterStat
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new());
-  stk::mesh::field_fill(valueOld, get_field_old());
+  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
@@ -256,6 +310,42 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasCorrectDataAfterStat
   ngpFieldOld.sync_to_device();
 
   check_field_data_value_on_device(ngpMesh, stk::topology::NODE_RANK, persistentDeviceClass, valueOld);
+
+  delete_class_on_device(persistentDeviceClass);
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasWrongDataAfterDeviceStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueNew = 44.4;
+  const double valueOld = 22.2;
+  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  ClassWithNgpField* persistentDeviceClass = create_class_on_device(ngpFieldNew);
+
+  check_field_data_value_on_device(ngpMesh, stk::topology::NODE_RANK, persistentDeviceClass, valueNew);
+
+  const bool rotateDeviceNgpFieldStates = true;
+  get_bulk().update_field_data_states(rotateDeviceNgpFieldStates);
+
+  ngpFieldNew.sync_to_device();
+  ngpFieldOld.sync_to_device();
+
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueOld);
+#ifdef STK_USE_DEVICE_MESH
+  const double valueNewBecausePersistentDeviceFieldGotDisconnectedByDeviceRotation = valueNew;
+  check_field_data_value_on_device(ngpMesh, stk::topology::NODE_RANK, persistentDeviceClass, valueNewBecausePersistentDeviceFieldGotDisconnectedByDeviceRotation);
+#else
+  check_field_data_value_on_device(ngpMesh, stk::topology::NODE_RANK, persistentDeviceClass, valueOld);
+#endif
 
   delete_class_on_device(persistentDeviceClass);
 }

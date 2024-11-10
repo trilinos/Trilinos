@@ -41,7 +41,7 @@
 namespace stk::mesh {
 class BulkData;
 class MetaData;
-class EntityKey;
+struct EntityKey;
 class Bucket;
 class Ghosting;
 }

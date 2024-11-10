@@ -1,44 +1,11 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
- */
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_IlukGraph.hpp
 /// \brief Declaration and definition of IlukGraph
@@ -189,7 +156,7 @@ public:
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
 
 private:
-  typedef typename GraphType::map_type map_type;  
+  typedef typename GraphType::map_type map_type;
 
   /// \brief Copy constructor (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -313,7 +280,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                              : Kokkos::ceil(static_cast<double>(RowMaxNumIndices)
                                     * Kokkos::pow(overalloc, levelfill));
                          });
-   
+
   };
 
   bool insertError;  // No error found yet while inserting entries
@@ -415,7 +382,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
           L_Graph_->getLocalRowCopy(i, CurrentRow_view, LenL);  // Get L Indices
           CurrentRow[LenL] = i;                              // Put in Diagonal
           if (LenU > 0) {
-            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,LenU);            
+            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,LenU);
             nonconst_local_inds_host_view_type URowView_v(URowView.data(),URowView.size());
 
             // Get U Indices
@@ -584,7 +551,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
 
   typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
   typedef typename Kokkos::View<data_type*, array_layout, device_type> lno_nonzero_view_t;
-  
+
   constructOverlapGraph();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
@@ -614,7 +581,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
     catch (std::runtime_error &e) {
       symbolicError = true;
       data_type nnzL = static_cast<data_type>(Overalloc_)*L_entries.extent(0);
-      data_type nnzU = static_cast<data_type>(Overalloc_)*U_entries.extent(0);	  
+      data_type nnzU = static_cast<data_type>(Overalloc_)*U_entries.extent(0);
       KernelHandle->get_spiluk_handle()->reset_handle(NumMyRows, nnzL, nnzU);
       Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
       Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
@@ -628,17 +595,17 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
 
   Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
   Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
-  
+
   RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
   params->set ("Optimize Storage",false);
-  
+
   L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 
+                                      OverlapGraph_->getRowMap (),
                                       L_row_map, L_entries));
   U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 
+                                      OverlapGraph_->getRowMap (),
                                       U_row_map, U_entries));
-									  
+
   RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
   RCP<const map_type> L_RangeMap  = Graph_->getRangeMap ();
   RCP<const map_type> U_DomainMap = Graph_->getDomainMap ();

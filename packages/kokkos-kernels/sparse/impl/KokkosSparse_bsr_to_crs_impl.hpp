@@ -36,9 +36,7 @@ Crs bsr_to_crs(const Bsr &bsr) {
   using crs_scalar_type  = typename Crs::non_const_value_type;
   using crs_size_type    = typename Crs::non_const_size_type;
 
-  using crs_row_map_type =
-      Kokkos::View<typename Crs::row_map_type::non_const_data_type,
-                   crs_device_type>;
+  using crs_row_map_type = Kokkos::View<typename Crs::row_map_type::non_const_data_type, crs_device_type>;
   using bsr_ordinal_type = typename Bsr::non_const_ordinal_type;
 
   using bsr_size_type = typename Bsr::non_const_size_type;
@@ -57,21 +55,16 @@ Crs bsr_to_crs(const Bsr &bsr) {
   Kokkos::deep_copy(bInds, bsr.graph.entries);
   Kokkos::deep_copy(bVals, bsr.values);
 
-  using Entry =
-      std::pair<crs_ordinal_type, crs_scalar_type>;  // {column, value}
-  using Row = std::vector<Entry>;                    // all entries in a row
-  std::map<crs_ordinal_type, Row> rows;              // entries in each row
+  using Entry = std::pair<crs_ordinal_type, crs_scalar_type>;  // {column, value}
+  using Row   = std::vector<Entry>;                            // all entries in a row
+  std::map<crs_ordinal_type, Row> rows;                        // entries in each row
 
   // sort entries in a row by column
-  auto by_col = [](const Entry &a, const Entry &b) {
-    return a.first < b.first;
-  };
+  auto by_col = [](const Entry &a, const Entry &b) { return a.first < b.first; };
 
   // Convert BSR data into CRS rows
-  for (bsr_ordinal_type bRow = 0; bRow < bsr_ordinal_type(bsr.numRows());
-       ++bRow) {
-    for (bsr_size_type bColIdx = bRows(bRow); bColIdx < bRows(bRow + 1);
-         ++bColIdx) {
+  for (bsr_ordinal_type bRow = 0; bRow < bsr_ordinal_type(bsr.numRows()); ++bRow) {
+    for (bsr_size_type bColIdx = bRows(bRow); bColIdx < bRows(bRow + 1); ++bColIdx) {
       const crs_ordinal_type bCol = bInds(bColIdx);
 
       // add all points in this block
@@ -136,8 +129,7 @@ Crs bsr_to_crs(const Bsr &bsr) {
   Kokkos::deep_copy(devCrsVals, hostCrsVals);
 
   // construct the resulting Crs matrix
-  Crs crs("", crsNumRows, crsNumCols, crsNnz, devCrsVals, devCrsRows,
-          devCrsIdx);
+  Crs crs("", crsNumRows, crsNumCols, crsNnz, devCrsVals, devCrsRows, devCrsIdx);
   return crs;
 }  // bsr_to_crs
 

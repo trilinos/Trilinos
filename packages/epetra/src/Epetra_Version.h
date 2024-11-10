@@ -47,3 +47,9 @@
 std::string Epetra_Version() {
   return("Epetra in Trilinos " TRILINOS_VERSION_STRING);
 }
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif

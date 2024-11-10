@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -21,7 +21,6 @@ namespace Excn {
   {
   public:
     explicit SystemInterface(int rank = 0);
-    ~SystemInterface();
 
     bool parse_options(int argc, char **argv);
 
@@ -78,6 +77,7 @@ namespace Excn {
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
     bool keep_temporary() const { return keepTemporary_; }
+    bool remove_file_per_rank_files() const;
     bool verify_valid_file() const { return verifyValidFile_; }
     int  max_open_files() const
     {
@@ -159,6 +159,7 @@ namespace Excn {
     bool         outputSharedNodes_{false};
     bool         auto_{false};
     bool         keepTemporary_{false};
+    bool         removeFilePerRankFiles_{false};
     bool         verifyValidFile_{false};
     bool         addNodalCommunicationMap_{false};
 

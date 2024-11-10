@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
@@ -64,7 +34,6 @@
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_ScalarViewTraits.hpp"
-#include "KokkosSparse_getDiagCopy.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
@@ -75,7 +44,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
-#include "KokkosBlas.hpp"
+#include "KokkosBlas1_scal.hpp"
+#include "KokkosSparse_getDiagCopy.hpp"
+#include "KokkosSparse_spmv.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 
 #include <memory>
 #include <sstream>
@@ -1028,6 +1000,7 @@ namespace Tpetra {
                                 staticGraph_->getLocalGraphHost());
   }
 
+#if KOKKOSKERNELS_VERSION < 40299
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
@@ -1035,10 +1008,8 @@ namespace Tpetra {
   getLocalMultiplyOperator () const
   {
     auto localMatrix = getLocalMatrixDevice();
-#ifdef HAVE_TPETRACORE_CUDA
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()) &&
-       std::is_same<Node, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+    if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()))
     {
       if(this->ordinalRowptrs.data() == nullptr)
       {
@@ -1060,11 +1031,11 @@ namespace Tpetra {
           std::make_shared<local_matrix_device_type>(localMatrix), this->ordinalRowptrs);
     }
 #endif
-#endif
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
     return std::make_shared<local_multiply_op_type>(
                            std::make_shared<local_matrix_device_type>(localMatrix));
   }
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1764,7 +1735,7 @@ namespace Tpetra {
     // details; look for GCC_WORKAROUND macro definition.
     if (numInserted > 0) {
       const size_t startOffset = oldNumEnt;
-      memcpy (&oldRowVals[startOffset], &newRowVals[0],
+      memcpy ((void*) &oldRowVals[startOffset], &newRowVals[0],
               numInserted * sizeof (impl_scalar_type));
     }
   }
@@ -4307,6 +4278,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (! isStaticGraph ()) { // Don't resume fill of a nonowned graph.
       myGraph_->resumeFill (params);
     }
+#if KOKKOSKERNELS_VERSION >= 40299
+    // Delete the apply helper (if it exists)
+    applyHelper.reset();
+#endif
     fillComplete_ = false;
   }
 
@@ -4899,6 +4874,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       return;
     }
+    else if (beta == ZERO) {
+      //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
+      //when bets==0. This was not the case with transpose in a multithreaded
+      //environment where a multiplication with subsequent atomic_adds is used
+      //since 0 is effectively not special cased. Doing the explicit set to zero here
+      //This catches cases where Y is nan or inf.
+      Y_in.putScalar (ZERO);
+    }
 
     const size_t numVectors = X_in.getNumVectors ();
 
@@ -5018,7 +5001,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
     auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
-    auto matrix_lcl = getLocalMultiplyOperator();
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
@@ -5074,15 +5056,72 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y may not alias one another.");
     }
 
+#if KOKKOSKERNELS_VERSION >= 40299
+    auto A_lcl = getLocalMatrixDevice();
+
+    if(!applyHelper.get()) {
+      // The apply helper does not exist, so create it.
+      // Decide now whether to use the imbalanced row path, or the default.
+      bool useMergePath = false;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      //TODO: when https://github.com/kokkos/kokkos-kernels/issues/2166 is fixed and,
+      //we can use SPMV_MERGE_PATH for the native spmv as well.
+      //Take out this ifdef to enable that.
+      //
+      //Until then, only use SPMV_MERGE_PATH when calling cuSPARSE.
+      if constexpr(std::is_same_v<execution_space, Kokkos::Cuda>) {
+        LocalOrdinal nrows = getLocalNumRows();
+        LocalOrdinal maxRowImbalance = 0;
+        if(nrows != 0)
+          maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+
+        if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+          useMergePath = true;
+      }
+#endif
+      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map,
+          useMergePath ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT);
+    }
+
+    // Translate mode (Teuchos enum) to KokkosKernels (1-character string)
+    const char* modeKK = nullptr;
+    switch(mode)
+    {
+      case Teuchos::NO_TRANS:
+        modeKK = KokkosSparse::NoTranspose;        break;
+      case Teuchos::TRANS:
+        modeKK = KokkosSparse::Transpose;          break;
+      case Teuchos::CONJ_TRANS:
+        modeKK = KokkosSparse::ConjugateTranspose; break;
+      default:
+        throw std::invalid_argument("Tpetra::CrsMatrix::localApply: invalid mode");
+    }
+
+    if(applyHelper->shouldUseIntRowptrs())
+    {
+      auto A_lcl_int_rowptrs = applyHelper->getIntRowptrMatrix(A_lcl);
+      KokkosSparse::spmv(
+          &applyHelper->handle_int, modeKK,
+          impl_scalar_type(alpha), A_lcl_int_rowptrs, X_lcl, impl_scalar_type(beta), Y_lcl);
+    }
+    else
+    {
+      KokkosSparse::spmv(
+          &applyHelper->handle, modeKK,
+          impl_scalar_type(alpha), A_lcl, X_lcl, impl_scalar_type(beta), Y_lcl);
+    }
+#else
     LocalOrdinal nrows = getLocalNumRows();
     LocalOrdinal maxRowImbalance = 0;
     if(nrows != 0)
       maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
 
+    auto matrix_lcl = getLocalMultiplyOperator();
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
     else
       matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
+#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5108,16 +5147,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else {
       ProfilingRegion regionTranspose ("Tpetra::CrsMatrix::apply (transpose)");
-
-      //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
-      //when bets==0. This was not the case with transpose in a multithreaded
-      //environment where a multiplication with subsequent atomic_adds is used
-      //since 0 is effectively not special cased. Doing the explicit set to zero here
-      //This catches cases where Y is nan or inf.
-      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-      if (beta == ZERO) {
-        Y.putScalar (ZERO);
-      }
       this->applyTranspose (X, Y, mode, alpha, beta);
     }
   }
@@ -8273,24 +8302,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          // Make sure that host has the latest version, since we're
-          // using the version on host.  If host has the latest
-          // version, syncing to host does nothing.
-          destMat->numExportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-          destMat->numImportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
-
+          destMat->numExportPacketsPerLID_.sync_device();
+          auto numExportPacketsPerLID = destMat->numExportPacketsPerLID_.view_device();
+          auto numImportPacketsPerLID = destMat->numImportPacketsPerLID_.view_device();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 3-arg doReversePostsAndWaits"
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doReversePostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
-                                            destMat->numImportPacketsPerLID_.view_host());
+          Distor.doReversePostsAndWaits(numExportPacketsPerLID, 1, numImportPacketsPerLID);
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 3-arg doReversePostsAndWaits"
@@ -8298,34 +8319,26 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
 
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
-          }
+          size_t totalImportPackets = Kokkos::Experimental::reduce(typename Node::execution_space(), numImportPacketsPerLID);
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
                                            verbosePrefix.get ());
           destMat->imports_.modify_host ();
-          auto hostImports = destMat->imports_.view_host();
-          // This is a legacy host pack/unpack path, so use the host
-          // version of exports_.
-          destMat->exports_.sync_host ();
-          auto hostExports = destMat->exports_.view_host();
+          auto deviceImports = destMat->imports_.view_device();
+          auto deviceExports = destMat->exports_.view_device();
           if (verbose) {
             std::ostringstream os;
-            os << *verbosePrefix << "Calling 4-arg doReversePostsAndWaits"
+            os << *verbosePrefix << "Calling 4-arg doReversePostsAndWaitsKokkos"
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doReversePostsAndWaits (hostExports,
-                                         numExportPacketsPerLID,
-                                         hostImports,
-                                         numImportPacketsPerLID);
+          destMat->imports_.sync_device();
+          Distor.doReversePostsAndWaitsKokkos (deviceExports, numExportPacketsPerLID, deviceImports, numImportPacketsPerLID);
           if (verbose) {
             std::ostringstream os;
-            os << *verbosePrefix << "Finished 4-arg doReversePostsAndWaits"
+            os << *verbosePrefix << "Finished 4-arg doReversePostsAndWaitsKokkos"
                << std::endl;
             std::cerr << os.str ();
           }
@@ -8368,23 +8381,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          // Make sure that host has the latest version, since we're
-          // using the version on host.  If host has the latest
-          // version, syncing to host does nothing.
-          destMat->numExportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-          destMat->numImportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+          destMat->numExportPacketsPerLID_.sync_device ();
+          auto numExportPacketsPerLID = destMat->numExportPacketsPerLID_.view_device();
+          auto numImportPacketsPerLID = destMat->numImportPacketsPerLID_.view_device();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 3-arg doPostsAndWaits"
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
-                                      destMat->numImportPacketsPerLID_.view_host());
+          Distor.doPostsAndWaits(numExportPacketsPerLID, 1, numImportPacketsPerLID);
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 3-arg doPostsAndWaits"
@@ -8392,34 +8398,26 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
 
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
-          }
+          size_t totalImportPackets = Kokkos::Experimental::reduce(typename Node::execution_space(), numImportPacketsPerLID);
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
                                            verbosePrefix.get ());
           destMat->imports_.modify_host ();
-          auto hostImports = destMat->imports_.view_host();
-          // This is a legacy host pack/unpack path, so use the host
-          // version of exports_.
-          destMat->exports_.sync_host ();
-          auto hostExports = destMat->exports_.view_host();
+          auto deviceImports = destMat->imports_.view_device();
+          auto deviceExports = destMat->exports_.view_device();
           if (verbose) {
             std::ostringstream os;
-            os << *verbosePrefix << "Calling 4-arg doPostsAndWaits"
+            os << *verbosePrefix << "Calling 4-arg doPostsAndWaitsKokkos"
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doPostsAndWaits (hostExports,
-                                  numExportPacketsPerLID,
-                                  hostImports,
-                                  numImportPacketsPerLID);
+          destMat->imports_.sync_device ();
+          Distor.doPostsAndWaitsKokkos (deviceExports, numExportPacketsPerLID, deviceImports, numImportPacketsPerLID);
           if (verbose) {
             std::ostringstream os;
-            os << *verbosePrefix << "Finished 4-arg doPostsAndWaits"
+            os << *verbosePrefix << "Finished 4-arg doPostsAndWaitsKokkos"
                << std::endl;
             std::cerr << os.str ();
           }
@@ -8466,12 +8464,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Teuchos::Array<int> RemotePids;
     if (runOnHost) {
       Teuchos::Array<int> TargetPids;
-      // Backwards compatibility measure.  We'll use this again below.
-  
-      // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
-      // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
-      // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
-      destMat->numImportPacketsPerLID_.modify_host(); //FIXME
   
 #  ifdef HAVE_TPETRA_MMM_TIMINGS
       RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
@@ -8662,14 +8654,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     } else {
       // run on device
-  
-  
-      // Backwards compatibility measure.  We'll use this again below.
-  
-      // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
-      // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
-      // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
-      destMat->numImportPacketsPerLID_.modify_host(); //FIXME
   
 #  ifdef HAVE_TPETRA_MMM_TIMINGS
       RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));

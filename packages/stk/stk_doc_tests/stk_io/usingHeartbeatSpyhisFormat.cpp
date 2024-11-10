@@ -85,7 +85,6 @@ TEST(StkMeshIoBrokerHowTo, writeHeartbeatSpyhisFormat)
     // EXAMPLE USAGE...
     // Begin use of stk io heartbeat file...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     // Define the heartbeat output.
     size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::SPYHIS);

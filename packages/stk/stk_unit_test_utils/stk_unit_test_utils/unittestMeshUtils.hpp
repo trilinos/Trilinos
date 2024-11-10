@@ -63,14 +63,18 @@ void put_elements_into_part(stk::mesh::BulkData& bulkData, const std::vector<Ele
 
 namespace simple_fields {
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void put_mesh_into_part(stk::mesh::BulkData& bulkData, stk::mesh::Part& part);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 std::string get_name_of_generated_mesh(int xdim, int ydim, int zdim, const std::string &options);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
                                   const stk::mesh::EntityVector& killedElements,
                                   const stk::mesh::PartVector& removeParts);
 
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
 void put_elements_into_part(stk::mesh::BulkData& bulkData, const std::vector<ElementAndPart> & entries);
 
 } // namespace simple_fields

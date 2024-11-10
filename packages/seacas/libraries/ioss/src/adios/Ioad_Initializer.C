@@ -4,8 +4,8 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <adios/Ioad_IOFactory.h>
-#include <adios/Ioad_Initializer.h>
+#include "adios/Ioad_IOFactory.h"
+#include "adios/Ioad_Initializer.h"
 
 namespace Ioad {
   int Initializer::useCount = 0;

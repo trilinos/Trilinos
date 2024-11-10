@@ -44,6 +44,12 @@
 #ifndef PLIRIS_CONFIGDEFS_H
 #define PLIRIS_CONFIGDEFS_H
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 #ifndef __cplusplus
 #define __cplusplus
 #endif // ifndef __cplusplus

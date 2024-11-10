@@ -43,7 +43,7 @@
 # - Find the python numpy module
 
 # This cmake module determines whether the python module numpy exists
-# for the current PYTHON_EXECUTABLE. This code sets the following
+# for the current Python3_EXECUTABLE. This code sets the following
 # variable:
 #
 #  NumPy_FOUND       = Set to TRUE if numpy is found
@@ -54,7 +54,7 @@
 #
 # If NumPy is required and python executable does not exist, then send
 # an error
-IF(NOT PYTHON_EXECUTABLE)
+IF(NOT Python3_EXECUTABLE)
   IF(NumPy_FIND_REQUIRED)
     MESSAGE(SEND_ERROR
       "Python executable not found, so required NumPy module not found"
@@ -62,11 +62,11 @@ IF(NOT PYTHON_EXECUTABLE)
   ENDIF(NumPy_FIND_REQUIRED)
 #
 # Continue processing if python executable is known
-ELSE(NOT PYTHON_EXECUTABLE)
+ELSE(NOT Python3_EXECUTABLE)
 
   # Retrieve the NumPy version
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.__version__)"
+    ${Python3_EXECUTABLE} -c "import numpy; print(numpy.__version__)"
     OUTPUT_VARIABLE NumPy_VERSION
     ERROR_VARIABLE  NumPy_VERSION_ERROR
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -84,7 +84,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
   # now look for the NumPy include directory
   IF(NOT NumPy_VERSION_ERROR)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
+      ${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
       OUTPUT_VARIABLE NumPy_INCLUDE_DIR
       ERROR_VARIABLE  NumPy_INCLUDE_ERROR
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -102,7 +102,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
     # and the wrong function name was called
     IF(NumPy_INCLUDE_ERROR)
       EXECUTE_PROCESS(COMMAND
-	${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_numpy_include())"
+	${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_numpy_include())"
         OUTPUT_VARIABLE NumPy_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
@@ -139,4 +139,4 @@ ELSE(NOT PYTHON_EXECUTABLE)
 
   ENDIF(NOT NumPy_VERSION_ERROR)
 
-ENDIF(NOT PYTHON_EXECUTABLE)
+ENDIF(NOT Python3_EXECUTABLE)

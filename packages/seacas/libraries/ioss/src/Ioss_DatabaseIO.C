@@ -1,32 +1,59 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_BoundingBox.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_Sort.h>
-#include <Ioss_State.h>
-#include <Ioss_SubSystem.h>
+#include "Ioss_BoundingBox.h"
+#include "Ioss_CodeTypes.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Enumerate.h"
+#include "Ioss_FileInfo.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Sort.h"
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
 #include <cmath>
 #include <cstddef>
-#include <cstring>
 #include <fmt/ostream.h>
-#include <iomanip>
 #include <iostream>
-#include <iterator>
+#include <map>
 #include <set>
+#include <stdint.h>
 #include <string>
 #include <tokenize.h>
 #include <utility>
 #include <vector>
+
+#include "Ioss_Assembly.h"
+#include "Ioss_Blob.h"
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DataSize.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EdgeBlock.h"
+#include "Ioss_EdgeSet.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementSet.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_FaceBlock.h"
+#include "Ioss_FaceSet.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Map.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Region.h"
+#include "Ioss_SerializeIO.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_StructuredBlock.h"
+#include "Ioss_SurfaceSplit.h"
+#include "Ioss_Utils.h"
+#include "Ioss_VariableType.h"
 
 #if defined SEACAS_HAVE_DATAWARP
 extern "C" {
@@ -151,16 +178,13 @@ namespace {
   }
 
   template <typename T>
-  std::vector<size_t> get_all_block_offsets(const std::string      &field_name,
-                                            const std::vector<T *> &entity_container)
+  std::vector<size_t> get_entity_offsets(const std::string      &field_name,
+                                         const std::vector<T *> &entity_container)
   {
-    size_t num_blocks = entity_container.size();
-
+    size_t              num_blocks = entity_container.size();
     std::vector<size_t> offsets(num_blocks + 1, 0);
 
-    for (size_t i = 0; i < num_blocks; i++) {
-      T *entity = entity_container[i];
-
+    for (auto [i, entity] : enumerate(entity_container)) {
       if (entity->field_exists(field_name)) {
         Ioss::Field field = entity->get_field(field_name);
         offsets[i + 1]    = entity->entity_count() * field.raw_storage()->component_count();
@@ -355,6 +379,8 @@ namespace Ioss {
 
   DatabaseIO::~DatabaseIO() = default;
 
+  Ioss::DataSize DatabaseIO::int_byte_size_data_size() const { return dbIntSizeAPI; }
+
   int DatabaseIO::int_byte_size_api() const
   {
     if (dbIntSizeAPI == USE_INT32_API) {
@@ -485,7 +511,7 @@ namespace Ioss {
     }
   }
 
-  /** \brief This function gets called inside closeDatabase__(), which checks if Cray Datawarp (DW)
+  /** \brief This function gets called inside closeDatabase_nl(), which checks if Cray Datawarp (DW)
    * is in use, if so, we want to call a stageout before actual close of this file.
    */
   void DatabaseIO::close_dw() const
@@ -545,9 +571,9 @@ namespace Ioss {
     }
   }
 
-  void DatabaseIO::openDatabase__() const { open_dw(get_filename()); }
+  void DatabaseIO::openDatabase_nl() const { open_dw(get_filename()); }
 
-  void DatabaseIO::closeDatabase__() const { close_dw(); }
+  void DatabaseIO::closeDatabase_nl() const { close_dw(); }
 
   IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
   {
@@ -642,12 +668,12 @@ namespace Ioss {
     if (m_timeStateInOut) {
       m_stateStart = std::chrono::steady_clock::now();
     }
-    return begin_state__(state, time);
+    return begin_state_nl(state, time);
   }
   bool DatabaseIO::end_state(int state, double time)
   {
     IOSS_FUNC_ENTER(m_);
-    bool res = end_state__(state, time);
+    bool res = end_state_nl(state, time);
     if (m_timeStateInOut) {
       auto finish = std::chrono::steady_clock::now();
       log_time(m_stateStart, finish, state, time, is_input(), singleProcOnly, util_);
@@ -657,9 +683,9 @@ namespace Ioss {
   }
 
   // Default versions do nothing...
-  bool DatabaseIO::begin_state__(int /* state */, double /* time */) { return true; }
+  bool DatabaseIO::begin_state_nl(int /* state */, double /* time */) { return true; }
 
-  bool DatabaseIO::end_state__(int /* state */, double /* time */) { return true; }
+  bool DatabaseIO::end_state_nl(int /* state */, double /* time */) { return true; }
 
   void DatabaseIO::handle_groups()
   {
@@ -693,10 +719,10 @@ namespace Ioss {
       return;
     }
 
-    std::string              prop   = properties.get(property_name).get_string();
-    std::vector<std::string> groups = tokenize(prop, ":");
+    std::string    prop   = properties.get(property_name).get_string();
+    Ioss::NameList groups = tokenize(prop, ":");
     for (auto &group : groups) {
-      std::vector<std::string> group_spec = tokenize(group, ",");
+      Ioss::NameList group_spec = tokenize(group, ",");
 
       // group_spec should contain the name of the new group as
       // the first location and the members of the group as subsequent
@@ -717,7 +743,7 @@ namespace Ioss {
 
   template <typename T>
   void DatabaseIO::create_group(EntityType /*type*/, const std::string &type_name,
-                                const std::vector<std::string> &group_spec, const T * /*set_type*/)
+                                const Ioss::NameList &group_spec, const T * /*set_type*/)
   {
     fmt::print(Ioss::WarnOut(),
                "Grouping of {0} sets is not yet implemented.\n"
@@ -726,9 +752,8 @@ namespace Ioss {
   }
 
   template <>
-  void DatabaseIO::create_group(EntityType type, const std::string & /*type_name*/,
-                                const std::vector<std::string> &group_spec,
-                                const SideSet * /*set_type*/)
+  void DatabaseIO::create_group(EntityType            type, const std::string            &/*type_name*/,
+                                const Ioss::NameList &group_spec, const SideSet * /*set_type*/)
   {
     // Not generalized yet... This only works for T == SideSet
     if (type != SIDESET) {
@@ -744,8 +769,8 @@ namespace Ioss {
     get_region()->add(new_set);
 
     // Find the member SideSets...
-    for (size_t i = 1; i < group_spec.size(); i++) {
-      SideSet *set = get_region()->get_sideset(group_spec[i]);
+    for (const auto &spec : group_spec) {
+      SideSet *set = get_region()->get_sideset(spec);
       if (set != nullptr) {
         const SideBlockContainer &side_blocks = set->get_side_blocks();
         for (const auto &sbold : side_blocks) {
@@ -777,7 +802,7 @@ namespace Ioss {
         fmt::print(Ioss::WarnOut(),
                    "While creating the grouped surface '{}', the surface '{}' does not exist. "
                    "This surface will skipped and not added to the group.\n\n",
-                   group_spec[0], group_spec[i]);
+                   group_spec[0], spec);
       }
     }
   }
@@ -816,7 +841,7 @@ namespace Ioss {
    *
    *  \param[in] info The strings to add.
    */
-  void DatabaseIO::add_information_records(const std::vector<std::string> &info)
+  void DatabaseIO::add_information_records(const Ioss::NameList &info)
   {
     informationRecords.reserve(informationRecords.size() + info.size());
     informationRecords.insert(informationRecords.end(), info.begin(), info.end());
@@ -850,9 +875,37 @@ namespace Ioss {
     qaRecords.push_back(time);
   }
 
-  void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions,
-                                       const std::vector<std::string> &inclusions)
+  void DatabaseIO::set_block_omissions(const Ioss::NameList &omissions,
+                                       const Ioss::NameList &inclusions)
   {
+    if (!omissions.empty() && !inclusions.empty()) {
+      // Only one can be non-empty
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Only one of element block omission or inclusion can be non-empty"
+                 "       [{}]\n",
+                 get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    if (!assemblyOmissions.empty() && !inclusions.empty()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Only one of element block inclusion or assembly omission can be non-empty"
+                 "       [{}]\n",
+                 get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    if (!assemblyInclusions.empty() && !omissions.empty()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Only one of element block omission or assembly inclusion can be non-empty"
+                 "       [{}]\n",
+                 get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
     if (!omissions.empty()) {
       blockOmissions.assign(omissions.cbegin(), omissions.cend());
       Ioss::sort(blockOmissions.begin(), blockOmissions.end());
@@ -863,14 +916,32 @@ namespace Ioss {
     }
   }
 
-  void DatabaseIO::set_assembly_omissions(const std::vector<std::string> &omissions,
-                                          const std::vector<std::string> &inclusions)
+  void DatabaseIO::set_assembly_omissions(const Ioss::NameList &omissions,
+                                          const Ioss::NameList &inclusions)
   {
     if (!omissions.empty() && !inclusions.empty()) {
       // Only one can be non-empty
       std::ostringstream errmsg;
       fmt::print(errmsg,
                  "ERROR: Only one of assembly omission or inclusion can be non-empty"
+                 "       [{}]\n",
+                 get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    if (!blockOmissions.empty() && !inclusions.empty()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Only one of element block omission or assembly inclusion can be non-empty"
+                 "       [{}]\n",
+                 get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    if (!blockInclusions.empty() && !omissions.empty()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Only one of element block inclusion or assembly omission can be non-empty"
                  "       [{}]\n",
                  get_filename());
       IOSS_ERROR(errmsg);
@@ -949,8 +1020,8 @@ namespace Ioss {
     assert(!sideTopology.empty());
   }
 
-  void DatabaseIO::get_block_adjacencies__(const Ioss::ElementBlock *eb,
-                                           std::vector<std::string> &block_adjacency) const
+  void DatabaseIO::get_block_adjacencies_nl(const Ioss::ElementBlock *eb,
+                                            Ioss::NameList           &block_adjacency) const
   {
     if (!blockAdjacenciesCalculated) {
       compute_block_adjacencies();
@@ -1016,7 +1087,7 @@ namespace Ioss {
     std::vector<std::vector<int>> inv_con(nodeCount);
 
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
       int               blk_position = -1;
       for (Ioss::ElementBlock *eb : element_blocks) {
         if (eb->property_exists("original_block_order")) {
@@ -1166,7 +1237,7 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
 
-      result = MPI_Waitall(req_cnt, request.data(), status.data());
+      result = MPI_Waitall(req_cnt, Data(request), Data(status));
 
       if (result != MPI_SUCCESS) {
         std::ostringstream errmsg;
@@ -1230,8 +1301,8 @@ namespace Ioss {
       }
 
       std::vector<unsigned> out_data(element_blocks.size() * bits_size);
-      MPI_Allreduce((void *)data.data(), out_data.data(), static_cast<int>(data.size()),
-                    MPI_UNSIGNED, MPI_BOR, util().communicator());
+      MPI_Allreduce((void *)Data(data), Data(out_data), static_cast<int>(data.size()), MPI_UNSIGNED,
+                    MPI_BOR, util().communicator());
 
       offset = 0;
       for (size_t jblk = 0; jblk < element_blocks.size(); jblk++) {
@@ -1297,9 +1368,8 @@ namespace Ioss {
 
       util().global_array_minmax(minmax, Ioss::ParallelUtils::DO_MIN);
 
-      for (size_t i = 0; i < element_blocks.size(); i++) {
-        Ioss::ElementBlock    *block = element_blocks[i];
-        const std::string     &name  = block->name();
+      for (auto [i, block] : enumerate(element_blocks)) {
+        const std::string     &name = block->name();
         AxisAlignedBoundingBox bbox(minmax[6 * i + 0], minmax[6 * i + 1], minmax[6 * i + 2],
                                     -minmax[6 * i + 3], -minmax[6 * i + 4], -minmax[6 * i + 5]);
         elementBlockBoundingBoxes[name] = bbox;
@@ -1362,18 +1432,22 @@ namespace Ioss {
     return {xx.first, yy.first, zz.first, xx.second, yy.second, zz.second};
   }
 
-  std::vector<size_t> DatabaseIO::get_all_block_field_data(const std::string &field_name,
-                                                           void *data, size_t data_size) const
+#ifndef DOXYGEN_SKIP_THIS
+  template std::vector<size_t>
+  DatabaseIO::get_entity_field_data_internal(const std::string                       &field_name,
+                                             const std::vector<Ioss::ElementBlock *> &elem_blocks,
+                                             void *data, size_t data_size) const;
+#endif
+
+  template <typename T>
+  std::vector<size_t>
+  DatabaseIO::get_entity_field_data_internal(const std::string      &field_name,
+                                             const std::vector<T *> &entity_container, void *data,
+                                             size_t data_size) const
   {
-    const Ioss::ElementBlockContainer &elem_blocks = get_region()->get_element_blocks();
-    size_t                             num_blocks  = elem_blocks.size();
+    std::vector<size_t> offset = get_entity_offsets(field_name, entity_container);
 
-    std::vector<size_t> offset = get_all_block_offsets(field_name, elem_blocks);
-
-    for (size_t i = 0; i < num_blocks; i++) {
-
-      Ioss::ElementBlock *entity = elem_blocks[i];
-
+    for (const auto [i, entity] : enumerate(entity_container)) {
       if (entity->field_exists(field_name)) {
         auto        num_to_get_for_block = offset[i + 1] - offset[i];
         Ioss::Field field                = entity->get_field(field_name);
@@ -1390,6 +1464,7 @@ namespace Ioss {
         }
 
         size_t expected_data_size = offset[i + 1] * field_byte_size;
+
         if (data_size < expected_data_size) {
           std::ostringstream errmsg;
           fmt::print(
@@ -1400,7 +1475,8 @@ namespace Ioss {
         }
 
         size_t block_data_offset = offset[i] * field_byte_size;
-        auto   retval =
+
+        auto retval =
             get_field_internal(entity, field, (char *)data + block_data_offset, block_data_size);
 
         size_t block_component_count = field.raw_storage()->component_count();
@@ -1420,6 +1496,14 @@ namespace Ioss {
     }
 
     return offset;
+  }
+
+  std::vector<size_t>
+  DatabaseIO::get_entity_field_data(const std::string                       &field_name,
+                                    const std::vector<Ioss::ElementBlock *> &elem_blocks,
+                                    void *data, size_t data_size) const
+  {
+    return get_entity_field_data_internal(field_name, elem_blocks, data, data_size);
   }
 
   int64_t DatabaseIO::get_zc_field_internal(const Ioss::Region *reg, const Ioss::Field &field,
@@ -1551,7 +1635,7 @@ namespace {
       else {
         char sep = (util.parallel_size() > 1) ? ':' : ' ';
         for (auto &p_time : all_times) {
-          fmt::print(strm, "{:8d}{}", p_time, sep);
+          fmt::print(strm, "{:8}{}", p_time, sep);
         }
       }
       if (util.parallel_size() > 1) {

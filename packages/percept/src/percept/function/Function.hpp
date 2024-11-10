@@ -22,8 +22,6 @@
 
 #include <Teuchos_RCP.hpp>
 
-using namespace Intrepid;
-
   namespace percept
   {
 
@@ -210,7 +208,7 @@ using namespace Intrepid;
 
     protected:
 
-      static int last_dimension(MDArray& arr) { return arr.dimension(arr.rank()-1); }
+      static int last_dimension(MDArray& arr) { return arr.extent_int(arr.rank()-1); }
       static NameToFunctionMap& getNameToFunctionMap();
 
       std::string m_name;

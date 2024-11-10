@@ -130,7 +130,7 @@ TEST( UnitTestChangeEntityId, change_id_large )
   const unsigned NZ = 20;
   const unsigned num_elems = NX * NY * NZ;
 
-  fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
 
   Field<int> & simple_nodal_field = hf.m_meta.declare_field<int>(stk::topology::NODE_RANK, "simple_nodal_field");
 

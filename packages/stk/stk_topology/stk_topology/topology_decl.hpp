@@ -83,9 +83,15 @@ struct topology
     SHELL_TRI_3, SHELL_TRIANGLE_3 = SHELL_TRI_3,
     SHELL_TRI_4, SHELL_TRIANGLE_4 = SHELL_TRI_4,
     SHELL_TRI_6, SHELL_TRIANGLE_6 = SHELL_TRI_6,
+    SHELL_TRI_3_ALL_FACE_SIDES, SHELL_TRIANGLE_3_ALL_FACE_SIDES = SHELL_TRI_3_ALL_FACE_SIDES,
+    SHELL_TRI_4_ALL_FACE_SIDES, SHELL_TRIANGLE_4_ALL_FACE_SIDES = SHELL_TRI_4_ALL_FACE_SIDES,
+    SHELL_TRI_6_ALL_FACE_SIDES, SHELL_TRIANGLE_6_ALL_FACE_SIDES = SHELL_TRI_6_ALL_FACE_SIDES,
     SHELL_QUAD_4, SHELL_QUADRILATERAL_4 = SHELL_QUAD_4,
     SHELL_QUAD_8, SHELL_QUADRILATERAL_8 = SHELL_QUAD_8,
     SHELL_QUAD_9, SHELL_QUADRILATERAL_9 = SHELL_QUAD_9,
+    SHELL_QUAD_4_ALL_FACE_SIDES, SHELL_QUADRILATERAL_4_ALL_FACE_SIDES = SHELL_QUAD_4_ALL_FACE_SIDES,
+    SHELL_QUAD_8_ALL_FACE_SIDES, SHELL_QUADRILATERAL_8_ALL_FACE_SIDES = SHELL_QUAD_8_ALL_FACE_SIDES,
+    SHELL_QUAD_9_ALL_FACE_SIDES, SHELL_QUADRILATERAL_9_ALL_FACE_SIDES = SHELL_QUAD_9_ALL_FACE_SIDES,
     TET_4,  TETRAHEDRON_4  = TET_4,
     TET_8,  TETRAHEDRON_8  = TET_8,
     TET_10, TETRAHEDRON_10 = TET_10,
@@ -131,6 +137,10 @@ struct topology
   STK_INLINE_FUNCTION
   bool has_homogeneous_faces() const;
 
+  /// does this topology use edge and face ranked topologies for sides
+  STK_INLINE_FUNCTION
+  bool has_mixed_rank_sides() const;
+
   /// is this topology a shell topology (i.e. an element with only two sides)
   STK_INLINE_FUNCTION
   bool is_shell() const;
@@ -147,7 +157,7 @@ struct topology
 
   /// what is the side rank of this topology
   STK_INLINE_FUNCTION
-  rank_t side_rank() const;
+  rank_t side_rank(unsigned ord = 0) const;
 
   /// what is the topological dimension of this topology
   STK_INLINE_FUNCTION
@@ -413,14 +423,14 @@ struct topology
 //***************************************************************************
 //increment and decrement rank_t
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator++(stk::topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r+1);
   return r;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator++(stk::topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
@@ -428,14 +438,14 @@ topology::rank_t operator++(stk::topology::rank_t &r,int)
   return tmp;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator--(stk::topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r-1);
   return r;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator--(stk::topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
@@ -446,14 +456,14 @@ topology::rank_t operator--(stk::topology::rank_t &r,int)
 //***************************************************************************
 //increment and decrement topology_t
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator++(stk::topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t+1);
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator++(stk::topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
@@ -461,14 +471,14 @@ topology::topology_t operator++(stk::topology::topology_t &t,int)
   return tmp;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator--(stk::topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t-1);
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator--(stk::topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
@@ -479,14 +489,14 @@ topology::topology_t operator--(stk::topology::topology_t &t,int)
 //***************************************************************************
 //increment and decrement topology
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology operator++(topology &t)
 {
   ++t.m_value;
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology operator++(topology &t,int)
 {
   topology tmp = t;
@@ -494,14 +504,14 @@ topology operator++(topology &t,int)
   return tmp;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology operator--(topology &t)
 {
   --t.m_value;
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology operator--(topology &t,int)
 {
   topology tmp = t;
@@ -512,42 +522,42 @@ topology operator--(topology &t,int)
 //***************************************************************************
 //create superelement
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology create_superedge_topology(unsigned num_nodes)
 {
   if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPEREDGE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superedge_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPEREDGE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superface_topology(unsigned num_nodes)
 {
   if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPERFACE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superface_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPERFACE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superelement_topology(unsigned num_nodes)
 {
   if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPERELEMENT_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superelement_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;

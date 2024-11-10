@@ -39,6 +39,7 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
+#include <fstream>
 
 namespace stk
 {
@@ -59,70 +60,6 @@ inline void print_output_for_graph_generation(double duration, const stk::diag::
     bool printTimingsOnlySinceLastPrint = false;
     stk::diag::printTimersTable(out, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint, communicator);
     stk::parallel_print_time_without_output_and_hwm(communicator, duration, out);
-}
-
-class PerformanceTester
-{
-public:
-    void run_performance_test()
-    {
-        time_algorithm();
-        generate_output();
-    }
-
-protected:
-    PerformanceTester(MPI_Comm comm) :
-            duration(0.0),
-            enabledTimerSet(CHILDMASK1),
-            rootTimer(createRootTimer("totalTestRuntime", enabledTimerSet)),
-            childTimer("timed algorithm", CHILDMASK1, rootTimer),
-            communicator(comm)
-    {
-        rootTimer.start();
-    }
-
-    virtual ~PerformanceTester()
-    {
-        stk::diag::deleteRootTimer(rootTimer);
-    }
-
-    virtual void run_algorithm_to_time() = 0;
-    virtual size_t get_value_to_output_as_iteration_count() = 0;
-
-    double duration;
-
-private:
-    const int CHILDMASK1 = 1;
-    stk::diag::TimerSet enabledTimerSet;
-    stk::diag::Timer rootTimer;
-    stk::diag::Timer childTimer;
-    MPI_Comm communicator;
-
-    void time_algorithm()
-    {
-        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(childTimer, communicator);
-        double startTime = stk::wall_time();
-        run_algorithm_to_time();
-        duration += stk::wall_time() - startTime;
-    }
-
-    void generate_output()
-    {
-        print_output_for_pass_fail_test(duration, get_value_to_output_as_iteration_count(), communicator);
-        print_output_for_graph_generation(duration, rootTimer, communicator);
-    }
-};
-
-namespace simple_fields {
-
-inline void print_output_for_pass_fail_test(double duration, unsigned iterCount, MPI_Comm communicator)
-{
-  stk::unit_test_util::print_output_for_pass_fail_test(duration, iterCount, communicator);
-}
-
-inline void print_output_for_graph_generation(double duration, const stk::diag::Timer &rootTimer, MPI_Comm communicator)
-{
-  stk::unit_test_util::print_output_for_graph_generation(duration, rootTimer, communicator);
 }
 
 class PerformanceTester
@@ -174,6 +111,67 @@ private:
   {
     print_output_for_pass_fail_test(duration, get_value_to_output_as_iteration_count(), communicator);
     print_output_for_graph_generation(duration, rootTimer, communicator);
+  }
+};
+
+namespace simple_fields {
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void print_output_for_pass_fail_test(double duration, unsigned iterCount, MPI_Comm communicator);
+
+STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
+void print_output_for_graph_generation(double duration, const stk::diag::Timer &rootTimer, MPI_Comm communicator);
+
+class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
+PerformanceTester
+{
+public:
+  void run_performance_test()
+  {
+    time_algorithm();
+    generate_output();
+  }
+
+protected:
+  PerformanceTester(MPI_Comm comm)
+    : duration(0.0),
+      enabledTimerSet(CHILDMASK1),
+      rootTimer(createRootTimer("totalTestRuntime", enabledTimerSet)),
+      childTimer("timed algorithm", CHILDMASK1, rootTimer),
+      communicator(comm)
+  {
+    rootTimer.start();
+  }
+
+  virtual ~PerformanceTester()
+  {
+    stk::diag::deleteRootTimer(rootTimer);
+  }
+
+  virtual void run_algorithm_to_time() = 0;
+  virtual size_t get_value_to_output_as_iteration_count() = 0;
+
+  double duration;
+
+private:
+  const int CHILDMASK1 = 1;
+  stk::diag::TimerSet enabledTimerSet;
+  stk::diag::Timer rootTimer;
+  stk::diag::Timer childTimer;
+  MPI_Comm communicator;
+
+  void time_algorithm()
+  {
+    stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(childTimer, communicator);
+    double startTime = stk::wall_time();
+    run_algorithm_to_time();
+    duration += stk::wall_time() - startTime;
+  }
+
+  void generate_output()
+  {
+    stk::unit_test_util::print_output_for_pass_fail_test(duration, get_value_to_output_as_iteration_count(), communicator);
+    stk::unit_test_util::print_output_for_graph_generation(duration, rootTimer, communicator);
   }
 };
 

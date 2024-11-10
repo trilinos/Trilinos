@@ -48,7 +48,8 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_math-root-inc)
   : usage-requirements
     <include>$(stk_math-root-inc)
@@ -72,8 +73,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -155,7 +156,7 @@ exe stk_math_utest
     /sierra/stk_math//stk_math
     /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos//kokkoscore
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
 
   : <tag>@sierra-exec-tag
   ;

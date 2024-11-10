@@ -42,6 +42,12 @@
 
 #ifndef IFPACK_GRAPH_H
 #define IFPACK_GRAPH_H
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
 class Epetra_Comm;
 
 //! Ifpack_Graph: a pure virtual class that defines graphs for IFPACK.

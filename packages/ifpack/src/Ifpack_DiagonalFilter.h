@@ -43,6 +43,12 @@
 #ifndef IFPACK_DIAGONALFILTER_H
 #define IFPACK_DIAGONALFILTER_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"

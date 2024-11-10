@@ -39,13 +39,13 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
   const char *vattrbname;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Determine index of obj_id in vobjids array */
   if (obj_type != EX_NODAL) {
-    obj_id_ndx = ex__id_lkup(exoid, obj_type, obj_id);
+    obj_id_ndx = exi_id_lkup(exoid, obj_type, obj_id);
     if (obj_id_ndx <= 0) {
       ex_get_err(NULL, NULL, &status);
 
@@ -138,7 +138,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
 
   if (status == NC_NOERR) {
     /* read the names */
-    status = ex__get_names(exoid, varid, num_attr, names, obj_type, __func__);
+    status = exi_get_names(exoid, varid, num_attr, names, obj_type, __func__);
     if (status != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }

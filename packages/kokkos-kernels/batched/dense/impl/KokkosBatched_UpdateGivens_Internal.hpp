@@ -30,9 +30,8 @@ namespace KokkosBatched {
 ///
 struct SerialUpdateGivensInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const Kokkos::pair<ValueType, ValueType> &S,
-      /* */ Kokkos::pair<ValueType, ValueType> &G) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const Kokkos::pair<ValueType, ValueType> &S,
+                                           /* */ Kokkos::pair<ValueType, ValueType> &G) {
     const ValueType tmp = S.first * G.first - S.second * G.second;
     G.second            = S.first * G.second + S.second * G.first;
     G.first             = tmp;

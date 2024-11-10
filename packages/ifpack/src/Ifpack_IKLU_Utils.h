@@ -43,6 +43,12 @@
 #ifndef IFPACK_IKLU_UTILS_H
 #define IFPACK_IKLU_UTILS_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>

@@ -47,9 +47,6 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class FieldBase; } }
 
-
-
-
 namespace stk { namespace mesh {
 
 // Specify what can be in the expression tree of a selector

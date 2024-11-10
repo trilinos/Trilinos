@@ -1,47 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef MUELU_HIERARCHY_DEF_HPP
@@ -129,6 +92,9 @@ Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix
   setObjectLabel(label);
   Levels_[0]->setObjectLabel(label);
 }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~Hierarchy() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddLevel(const RCP<Level>& level) {
@@ -601,6 +567,8 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupRe() {
   ResetDescription();
 
   describe(GetOStream(Statistics0), GetVerbLevel());
+
+  CheckForEmptySmoothersAndCoarseSolve();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -673,6 +641,17 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const FactoryMa
   manager.Clean();
 
   describe(GetOStream(Statistics0), GetVerbLevel());
+
+  CheckForEmptySmoothersAndCoarseSolve();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckForEmptySmoothersAndCoarseSolve() {
+  for (LO levelNo = 0; levelNo < as<LO>(Levels_.size()); ++levelNo) {
+    auto level = Levels_[levelNo];
+    if ((!level->IsAvailable("PreSmoother")) && (!level->IsAvailable("PostSmoother")))
+      GetOStream(Warnings1) << "No " << (levelNo == as<LO>(Levels_.size()) - 1 ? "coarse grid solver" : "smoother") << " on level " << level->GetLevelID() << std::endl;
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -834,7 +813,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
     emptyFineSolve = false;
   }
   if (emptyFineSolve == true) {
-    GetOStream(Warnings1) << "No fine grid smoother" << std::endl;
     // Fine grid smoother is identity
     fineX->update(one, B, zero);
   }
@@ -854,7 +832,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       emptyCoarseSolve = false;
     }
     if (emptyCoarseSolve == true) {
-      GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
       // Coarse operator is identity
       coarseX->update(one, *coarseRhs, zero);
     }
@@ -1003,7 +980,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
         zeroGuess  = false;
       }
       if (emptySolve == true) {
-        GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
         // Coarse operator is identity
         X.update(one, B, zero);
       }

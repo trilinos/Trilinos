@@ -165,8 +165,6 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
   }
 }
 
-
-
 FieldRef AnalyticSurfaceInterfaceGeometry::get_coordinates_field(const stk::mesh::BulkData & mesh) const
 {
   FieldRef coordsField = myCdfemSupport.get_coords_field();
@@ -217,6 +215,12 @@ void AnalyticSurfaceInterfaceGeometry::prepare_to_decompose_elements(const stk::
 
   const std::vector<stk::mesh::Selector> selectAllPerSurfaceElementSelector(mySurfaces.size(), mesh.mesh_meta_data().universal_part());
   set_element_signs(mesh, selectAllPerSurfaceElementSelector);
+}
+
+void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh) const
+{
+  const NodeToCapturedDomainsMap emptyNodesToCapturedDomains;
+  prepare_to_intersect_elements(mesh, emptyNodesToCapturedDomains);
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
@@ -271,8 +275,7 @@ static bool element_has_possibly_cut_edge(stk::topology elemTopology, const std:
 
 std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const
 {
-  NodeToCapturedDomainsMap nodesToSnappedDomains;
-  prepare_to_intersect_elements(mesh, nodesToSnappedDomains);
+  prepare_to_intersect_elements(mesh);
 
   std::vector<stk::mesh::Entity> possibleCutElements;
   std::vector<stk::math::Vector3d> elementNodeCoords;
@@ -294,42 +297,38 @@ std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_possibly_cu
   return possibleCutElements;
 }
 
-static bool element_intersects_interval(const std::vector<const Surface*> surfaces, const std::vector<stk::math::Vector3d> & elemNodeCoords, const std::array<double,2> & loAndHi, std::vector<double> & elemNodeDistWorkspace)
+static bool element_intersects_distance_interval(const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodeCoords, const std::array<double,2> & loAndHi, std::vector<double> & elemNodeDistWorkspace)
 {
-  for (auto && surface : surfaces)
-  {
-    fill_point_distances(*surface, elemNodeCoords, elemNodeDistWorkspace);
-    if (InterfaceGeometry::element_with_nodal_distance_intersects_interval(elemNodeDistWorkspace, loAndHi))
-      return true;
-  }
-  return false;
+  fill_point_distances(surface, elemNodeCoords, elemNodeDistWorkspace);
+  return InterfaceGeometry::element_with_nodal_distance_intersects_distance_interval(elemNodeDistWorkspace, loAndHi);
 }
 
-std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const
+const Surface & AnalyticSurfaceInterfaceGeometry::get_surface_with_identifer(const Surface_Identifier surfaceIdentifier) const
 {
-  NodeToCapturedDomainsMap nodesToSnappedDomains;
-  prepare_to_intersect_elements(mesh, nodesToSnappedDomains);
+  auto iter = std::find(mySurfaceIdentifiers.begin(), mySurfaceIdentifiers.end(), surfaceIdentifier);
+  STK_ThrowRequire(iter != mySurfaceIdentifiers.end());
+  return *mySurfaces[std::distance(mySurfaceIdentifiers.begin(), iter)];
+}
 
-  std::vector<stk::mesh::Entity> elementsThaIntersectInterval;
+void AnalyticSurfaceInterfaceGeometry::fill_elements_that_intersect_distance_interval(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval) const
+{
   std::vector<stk::math::Vector3d> elementNodeCoords;
   std::vector<double> elementNodeDist;
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
 
   const stk::mesh::Selector activeLocallyOwned = myActivePart & (mesh.mesh_meta_data().locally_owned_part());
 
+  elementsThaIntersectInterval.clear();
   for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeLocallyOwned))
   {
     for(const auto & elem : *bucketPtr)
     {
       fill_element_node_coordinates(mesh, elem, coordsField, elementNodeCoords);
-      if (element_intersects_interval(mySurfaces, elementNodeCoords, loAndHi, elementNodeDist))
+      if (element_intersects_distance_interval(get_surface_with_identifer(surfaceIdentifier), elementNodeCoords, loAndHi, elementNodeDist))
         elementsThaIntersectInterval.push_back(elem);
     }
   }
-
-  return elementsThaIntersectInterval;
 }
-
 
 static bool all_nodes_of_element_will_be_snapped(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,

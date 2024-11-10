@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,22 @@ namespace {
 
 Excn::SystemInterface::SystemInterface(int rank) : myRank_(rank) { enroll_options(); }
 
-Excn::SystemInterface::~SystemInterface() = default;
+bool Excn::SystemInterface::remove_file_per_rank_files() const
+{
+  if (removeFilePerRankFiles_) {
+    if (partCount_ <= 0 && startPart_ == 0 && subcycle_ == -1 && cycle_ == -1) {
+      return true;
+    }
+    else {
+      fmt::print("\nNot removing the file-per-rank input files due to presence of "
+                 "start/part/subcycle options.\n\n");
+      return false;
+    }
+  }
+  else {
+    return false;
+  }
+}
 
 void Excn::SystemInterface::enroll_options()
 {
@@ -107,6 +122,10 @@ void Excn::SystemInterface::enroll_options()
                   "\t\tthey are automatically deleted unless -keep_temporary is specified.",
                   nullptr);
 
+  options_.enroll("remove_file_per_rank_files", GetLongOption::NoValue,
+                  "Remove the input file-per-rank files after they have successfully been joined.",
+                  nullptr);
+
   options_.enroll(
       "verify_valid_file", GetLongOption::NoValue,
       "Reopen the output file right after closing it to verify that the file is valid.\n"
@@ -156,6 +175,9 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
+                  "\t\tIf the 'beg' or 'end' is < 0, then it is the \"-Nth\" step...\n"
+                  "\t\t-1 is \"first last\" or last, -3 is \"third last\"\n"
+                  "\t\tTo copy just the last 3 steps, do: `-steps -3:-1`\n"
                   "\t\tEnter LAST for last step",
                   "1:", nullptr, true);
 
@@ -266,7 +288,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
           "\t{}\n\n",
           options);
     }
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, GetLongOption::basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
@@ -376,11 +398,12 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   sumSharedNodes_ = options_.retrieve("sum_shared_nodes") != nullptr;
   append_         = options_.retrieve("append") != nullptr;
 
-  subcycle_        = options_.get_option_value("subcycle", subcycle_);
-  cycle_           = options_.get_option_value("cycle", cycle_);
-  subcycleJoin_    = options_.retrieve("join_subcycles") != nullptr;
-  keepTemporary_   = options_.retrieve("keep_temporary") != nullptr;
-  verifyValidFile_ = options_.retrieve("verify_valid_file") != nullptr;
+  subcycle_               = options_.get_option_value("subcycle", subcycle_);
+  cycle_                  = options_.get_option_value("cycle", cycle_);
+  subcycleJoin_           = options_.retrieve("join_subcycles") != nullptr;
+  keepTemporary_          = options_.retrieve("keep_temporary") != nullptr;
+  removeFilePerRankFiles_ = options_.retrieve("remove_file_per_rank_files") != nullptr;
+  verifyValidFile_        = options_.retrieve("verify_valid_file") != nullptr;
 
   if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;
@@ -525,7 +548,11 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
   //:    <li>":Y"                 -- 1 to Y by 1</li>
   //:    <li>"::Z"                -- 1 to oo by Z</li>
   //:  </ul>
-  //: The count and step must always be >= 0
+  //: The step must always be > 0
+  //: If the 'from' or 'to' is < 0, then it is the "-Nth" step...
+  //: -1 is "first last" or last
+  //: -4 is "fourth last step"
+  //: To copy just the last 3 steps, do: `-steps -3:-1`
 
   // Break into tokens separated by ":"
 
@@ -535,34 +562,30 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
     if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
-      int vals[3];
-      vals[0] = stepMin_;
-      vals[1] = stepMax_;
-      vals[2] = stepInterval_;
+      std::array<int, 3> vals{stepMin_, stepMax_, stepInterval_};
 
       int j = 0;
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        ;
-        int k = 0;
 
+        int k = 0;
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
         }
 
         tmp_str[k] = '\0';
         if (strlen(tmp_str) > 0) {
-          val = strtoul(tmp_str, nullptr, 0);
+          val = strtol(tmp_str, nullptr, 0);
         }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
         }
       }
-      stepMin_      = abs(vals[0]);
-      stepMax_      = abs(vals[1]);
-      stepInterval_ = abs(vals[2]);
+      stepMin_      = vals[0];
+      stepMax_      = vals[1];
+      stepInterval_ = abs(vals[2]); // step is always positive...
     }
     else if (str_equal("LAST", tokens)) {
       stepMin_ = stepMax_ = -1;
@@ -637,10 +660,6 @@ namespace {
   }
 
   using StringVector = std::vector<std::string>;
-  bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
-  {
-    return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
-  }
 
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list)
   {
@@ -663,19 +682,17 @@ namespace {
         StringVector name_id  = SLIB::tokenize(*I, ":");
         std::string  var_name = LowerCase(name_id[0]);
         if (name_id.size() == 1) {
-          (*variable_list).push_back(std::make_pair(var_name, 0));
+          (*variable_list).emplace_back(var_name, 0);
         }
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
             int id = std::stoi(name_id[i]);
-            (*variable_list).push_back(std::make_pair(var_name, id));
+            (*variable_list).emplace_back(var_name, id);
           }
         }
         ++I;
       }
-      // Sort the list...
-      std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
 

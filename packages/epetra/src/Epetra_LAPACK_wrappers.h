@@ -44,6 +44,14 @@
 #ifndef EPETRA_LAPACK_WRAPPERS_H
 #define EPETRA_LAPACK_WRAPPERS_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
 

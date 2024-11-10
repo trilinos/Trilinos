@@ -44,6 +44,14 @@
 #ifndef EPETRA_LINEARPROBLEMREDISTOR_H
 #define EPETRA_LINEARPROBLEMREDISTOR_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 class Epetra_Map;
 class Epetra_Export;
 class Epetra_LinearProblem;

@@ -33,7 +33,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 #include <exodusII.h>     // for ex_err, etc
-#include <exodusII_int.h> // for EX_FATAL, ex__leavedef, etc
+#include <exodusII_int.h> // for EX_FATAL, exi_leavedef, etc
 
 int ex_put_cmap_params_cc(int exoid, const void_int *node_cmap_ids,
                           const void_int *node_cmap_node_cnts, const void_int *node_proc_ptrs,
@@ -59,7 +59,7 @@ int ex_put_cmap_params_cc(int exoid, const void_int *node_cmap_ids,
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -215,7 +215,7 @@ file ID %d",
   } /* "if (num_e_comm_maps >0)" */
 
   /* Put NetCDF file into define mode */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file ID %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -233,7 +233,7 @@ file ID %d",
                VAR_N_COMM_DATA_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -263,7 +263,7 @@ file ID %d",
                ncnt_cmap, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -274,22 +274,22 @@ file ID %d",
                VAR_N_COMM_NIDS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    ex__compress_variable(exoid, varid, 1);
+    exi_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_N_COMM_PROC, NC_INT, 1, n_dimid, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
                VAR_N_COMM_PROC, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    ex__compress_variable(exoid, varid, 1);
+    exi_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_n_comm_maps > 0)" */
 
@@ -305,7 +305,7 @@ file ID %d",
                VAR_E_COMM_DATA_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -335,7 +335,7 @@ file ID %d",
                DIM_ECNT_CMAP, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -346,38 +346,38 @@ file ID %d",
                VAR_E_COMM_EIDS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    ex__compress_variable(exoid, varid, 1);
+    exi_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_PROC, NC_INT, 1, e_dimid, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
                VAR_E_COMM_PROC, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    ex__compress_variable(exoid, varid, 1);
+    exi_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_SIDS, bulk_type, 1, e_dimid, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
                VAR_E_COMM_SIDS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
-      ex__leavedef(exoid, __func__);
+      exi_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    ex__compress_variable(exoid, varid, 1);
+    exi_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_e_comm_maps > 0)" */
 
   /* Exit define mode */
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
 
   /* Set the status of the nodal communication maps */
   if (num_n_comm_maps > 0) {

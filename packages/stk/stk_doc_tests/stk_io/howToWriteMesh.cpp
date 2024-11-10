@@ -19,8 +19,6 @@ TEST(StkIoHowTo, WriteMesh)
   std::string filename = "output.exo";
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
     stk::io::fill_mesh("generated:1x1x4", *bulk);
 
     stk::io::StkMeshIoBroker stkIo;
@@ -32,8 +30,6 @@ TEST(StkIoHowTo, WriteMesh)
 
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
     stk::io::fill_mesh(filename, *bulk);
 
     std::vector<size_t> entityCounts;
@@ -44,19 +40,18 @@ TEST(StkIoHowTo, WriteMesh)
   unlink(filename.c_str());
 }
 
-TEST(StkIoHowTo, generateHugeMesh)
+TEST(StkIoHowTo, generateMeshWith64BitIds)
 {
-  std::string meshSpec = stk::unit_test_util::simple_fields::get_option("-i", "1x1x4");
+  std::string meshSpec = stk::unit_test_util::get_option("-i", "1x1x4");
   std::string fullMeshSpec = "generated:"+meshSpec;
 
   std::string filename = "output.exo";
   stk::io::StkMeshIoBroker inputBroker;
-  inputBroker.use_simple_fields();
+
+  //+ Set properties to ensure that 64-bit integers will be used
   inputBroker.property_add(Ioss::Property("INTEGER_SIZE_API" , 8));
   inputBroker.property_add(Ioss::Property("INTEGER_SIZE_DB" , 8));
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::fill_mesh_preexisting(inputBroker, fullMeshSpec, *bulk);
 
   stk::io::write_mesh_with_large_ids_and_fields(filename, *bulk);

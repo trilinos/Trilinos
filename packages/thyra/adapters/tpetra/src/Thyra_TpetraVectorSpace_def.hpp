@@ -1,44 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Thyra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #ifndef THYRA_TPETRA_VECTOR_SPACE_HPP
 #define THYRA_TPETRA_VECTOR_SPACE_HPP
@@ -155,7 +122,8 @@ private:
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP< MultiVectorBase<Scalar> >
 TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersView(
-  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
+                                                                                   const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+                                                                                   const bool initialize) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
@@ -189,14 +157,16 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersVi
     RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv = Teuchos::rcp_dynamic_cast<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(mv,true)->getTpetraMultiVector();
     Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tmv));
   }
-  // Copy initial values in raw_mv into multi-vector
-  RTOpPack::SubMultiVectorView<Scalar> smv;
-  mv->acquireDetachedView(Range1D(),Range1D(),&smv);
-  RTOpPack::assign_entries<Scalar>(
-    Ptr<const RTOpPack::SubMultiVectorView<Scalar> >(Teuchos::outArg(smv)),
-    raw_mv
-    );
-  mv->commitDetachedView(&smv);
+  if (initialize) {
+    // Copy initial values in raw_mv into multi-vector
+    RTOpPack::SubMultiVectorView<Scalar> smv;
+    mv->acquireDetachedView(Range1D(),Range1D(),&smv);
+    RTOpPack::assign_entries<Scalar>(
+                                     Ptr<const RTOpPack::SubMultiVectorView<Scalar> >(Teuchos::outArg(smv)),
+                                     raw_mv
+                                     );
+    mv->commitDetachedView(&smv);
+  }
   // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
   Teuchos::set_extra_data(
     // We create a duplicate of the RCP, otherwise the ref count does not go to zero.

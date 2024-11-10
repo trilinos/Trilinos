@@ -42,6 +42,12 @@
 #ifndef TRILINOS_UTIL_VERSION_H
 #define TRILINOS_UTIL_VERSION_H
 
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+
 #include "Trilinos_Util.h"
 #include "Trilinos_version.h"
 
@@ -50,4 +56,3 @@
 	}
 
 #endif // TRILINOS_UTIL_VERSION_H
-

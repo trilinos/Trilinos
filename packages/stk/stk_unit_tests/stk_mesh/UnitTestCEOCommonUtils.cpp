@@ -15,7 +15,6 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityId, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace CEOUtils
@@ -608,7 +607,7 @@ void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::unit_test_util::BulkDataTester &me
     nodes.push_back(mesh.get_entity(NODE_RANK, 13 ));
     mesh.declare_relation(edge, nodes[0], 0);
     mesh.declare_relation(edge, nodes[1], 1);
-    stk::mesh::impl::connectUpwardEntityToEntity(mesh, elem, edge, &nodes[0]);
+    stk::mesh::impl::connectUpwardEntityToEntity(mesh, elem, edge, nodes.data());
   }
 
   for(int proc = 0; proc < numSharedNodeTriples; ++proc)

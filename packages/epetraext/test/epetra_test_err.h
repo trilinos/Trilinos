@@ -49,6 +49,12 @@ error the way that an assert command does. */
 
 #ifndef _EPETRA_TEST_ERR_H_
 #define _EPETRA_TEST_ERR_H_
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
 #include <iostream>
 using namespace std;
 // This function is to be used when first identifying an error.

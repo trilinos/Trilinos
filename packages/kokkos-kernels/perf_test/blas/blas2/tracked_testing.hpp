@@ -28,15 +28,13 @@ namespace test {
 namespace blas2 {
 
 // Register kernels for a specific test
-void build_gemv_executor(rajaperf::Executor& exec, int argc, char* argv[],
-                         const rajaperf::RunParams& params) {
+void build_gemv_executor(rajaperf::Executor& exec, int argc, char* argv[], const rajaperf::RunParams& params) {
   for (auto* kernel : construct_gemv_kernel_base(params)) {
     exec.registerKernel("BLAS2", kernel);
   }
 }
 
-void build_blas2_executor(rajaperf::Executor& exec, int argc, char* argv[],
-                          const rajaperf::RunParams& params) {
+void build_blas2_executor(rajaperf::Executor& exec, int argc, char* argv[], const rajaperf::RunParams& params) {
   exec.registerGroup("BLAS2");
   build_gemv_executor(exec, argc, argv, params);
 }

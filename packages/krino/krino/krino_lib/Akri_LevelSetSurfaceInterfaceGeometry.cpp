@@ -12,7 +12,8 @@
 
 namespace krino {
 
-LevelSetSurfaceInterfaceGeometry::LevelSetSurfaceInterfaceGeometry(const stk::mesh::Part & activePart,
+LevelSetSurfaceInterfaceGeometry::LevelSetSurfaceInterfaceGeometry(const int dim,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields)
@@ -22,11 +23,11 @@ LevelSetSurfaceInterfaceGeometry::LevelSetSurfaceInterfaceGeometry(const stk::me
   for (auto && lsField : myLSFields)
   {
     mySurfaceIdentifiers.push_back(lsField.identifier);
-    myLSSurfaces.emplace_back("My Facets");
+    myLSSurfaces.emplace_back(FacetedSurfaceBase::build(dim));
   }
 
   for (size_t i=0; i<mySurfaceIdentifiers.size(); ++i)
-    add_surface(mySurfaceIdentifiers[i], myLSSurfaces[i]);
+    add_surface(mySurfaceIdentifiers[i], *myLSSurfaces[i]);
 }
 
 std::vector<stk::mesh::Selector> LevelSetSurfaceInterfaceGeometry::get_levelset_element_selectors() const
@@ -101,7 +102,7 @@ void LevelSetSurfaceInterfaceGeometry::build_levelset_facets(const stk::mesh::Bu
     const stk::mesh::Selector elemFieldSelector = elementSelector & levelsetElementSelectors[i];
     stk::mesh::get_selected_entities( elemFieldSelector, mesh.buckets(stk::topology::ELEMENT_RANK), elementsToIntersect, false );
 
-    LevelSet::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, myLSSurfaces[i]);
+    LevelSet::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, *myLSSurfaces[i]);
   }
 }
 
@@ -109,12 +110,6 @@ std::vector<stk::mesh::Entity> LevelSetSurfaceInterfaceGeometry::get_possibly_cu
 {
   // NOTE: Uses levelset field directly, not facetted interface, because it needs the analog, not discrete version
   return LevelSetInterfaceGeometry::get_active_elements_that_may_be_cut_by_levelsets(mesh, get_active_part(), myLSFields);
-}
-
-std::vector<stk::mesh::Entity> LevelSetSurfaceInterfaceGeometry::get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const
-{
-  // NOTE: Uses levelset field directly, not facetted interface, because it needs the analog, not discrete version
-  return LevelSetInterfaceGeometry::get_active_elements_that_intersect_levelset_interval(mesh, get_active_part(), myLSFields, loAndHi);
 }
 
 

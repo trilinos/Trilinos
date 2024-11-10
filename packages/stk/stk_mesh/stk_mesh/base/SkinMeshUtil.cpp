@@ -110,7 +110,7 @@ bool SkinMeshUtil::is_element_selected_and_can_have_side(const stk::mesh::Select
 }
 
 void SkinMeshUtil::mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
-                                           std::vector<bool> &isOnlyConnectedRemotely)
+                                          std::vector<int> &isOnlyConnectedRemotely)
 {
     if(impl::is_local_element(graphEdge.elem2()))
     {
@@ -121,7 +121,7 @@ void SkinMeshUtil::mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
 }
 
 void SkinMeshUtil::mark_remote_connections(const stk::mesh::GraphEdge &graphEdge,
-                                           std::vector<bool> &isConnectedToRemoteElementInBodyToSkin)
+                                           std::vector<int> &isConnectedToRemoteElementInBodyToSkin)
 {
     if(!impl::is_local_element(graphEdge.elem2()))
     {
@@ -132,8 +132,8 @@ void SkinMeshUtil::mark_remote_connections(const stk::mesh::GraphEdge &graphEdge
 }
 
 void SkinMeshUtil::mark_sides_exposed_on_other_procs(const stk::mesh::GraphEdge &graphEdge,
-                                                     std::vector<bool> &isConnectedToRemoteElementInBodyToSkin,
-                                                     std::vector<bool> &isOnlyConnectedRemotely)
+                                                     std::vector<int> &isConnectedToRemoteElementInBodyToSkin,
+                                                     std::vector<int> &isOnlyConnectedRemotely)
 {
     mark_local_connections(graphEdge, isOnlyConnectedRemotely);
     mark_remote_connections(graphEdge, isConnectedToRemoteElementInBodyToSkin);
@@ -143,18 +143,18 @@ void SkinMeshUtil::get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId loc
                                                     int numElemSides,
                                                     std::vector<int>& exposedSides)
 {
-    std::vector<bool> isConnectedToRemoteElementInBodyToSkin(numElemSides, false);
-    std::vector<bool> isOnlyConnectedRemotely(numElemSides, true);
+    m_isConnectedToRemoteElem.assign(numElemSides, false);
+    m_isOnlyConnectedRemotely.assign(numElemSides, true);
     for(const stk::mesh::GraphEdge &graphEdge : eeGraph.get_edges_for_element(localId))
-        mark_sides_exposed_on_other_procs(graphEdge, isConnectedToRemoteElementInBodyToSkin, isOnlyConnectedRemotely);
+        mark_sides_exposed_on_other_procs(graphEdge, m_isConnectedToRemoteElem, m_isOnlyConnectedRemotely);
 
     for(const stk::mesh::GraphEdge& graphEdge : eeGraph.get_coincident_edges_for_element(localId))
-        mark_local_connections(graphEdge, isOnlyConnectedRemotely);
+        mark_local_connections(graphEdge, m_isOnlyConnectedRemotely);
 
     exposedSides.clear();
     for(int side = 0; side < numElemSides; side++)
     {
-        if(isConnectedToRemoteElementInBodyToSkin[side] && isOnlyConnectedRemotely[side])
+        if(m_isConnectedToRemoteElem[side] && m_isOnlyConnectedRemotely[side])
         {
             exposedSides.push_back(side);
         }
@@ -199,6 +199,11 @@ bool checkIfSideIsNotCollapsed(stk::mesh::EntityVector& sideNodes, const stk::me
 {
     unsigned dim = bulkData.mesh_meta_data().spatial_dimension();
     if(dim==1) return true;
+
+    stk::topology sideTopo = bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal);
+    if (sideTopo.num_vertices() < dim) {
+      return false; //side is "collapsed", possibly because this is an edge-side of a 3D shell...
+    }
 
     sideNodes.resize(bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal).num_nodes());
     bucket.topology().side_nodes(bulkData.begin_nodes(element), sideOrdinal, sideNodes.data());
@@ -248,7 +253,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
     stk::mesh::impl::ParallelPartInfo parallelPartInfo;
     stk::mesh::impl::populate_part_ordinals_for_remote_edges(bulkData, eeGraph, parallelPartInfo);
     stk::mesh::EntityVector sideNodes;
-    std::vector<stk::mesh::PartOrdinal> scratchOrdinals1, scratchOrdinals2;
+    std::vector<stk::mesh::PartOrdinal> elemPartOrdinals, scratchOrdinals2;
 
     stk::mesh::Selector ownedSkinSelector = bulkData.mesh_meta_data().locally_owned_part() & skinSelector;
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, ownedSkinSelector);
@@ -257,6 +262,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
         for(stk::mesh::Entity element : *bucket)
         {
             impl::LocalId elementId = eeGraph.get_local_element_id(element);
+            stk::mesh::impl::get_element_block_part_ordinals(element, bulkData, elemPartOrdinals);
 
             for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId))
             {
@@ -271,16 +277,15 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                 {
                     isElement2InSelector = remoteSkinSelector[graphEdge.elem2()];
                     if(!isElement2InSelector) continue;
-                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()].elementPartOrdinals, scratchOrdinals1);
+                    should_add_side = !(elemPartOrdinals == parallelPartInfo[graphEdge.elem2()].elementPartOrdinals);
                 }
                 else
                 {
                     otherElement = eeGraph.get_entity(graphEdge.elem2());
                     otherEntityId = bulkData.identifier(otherElement);
-                    isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
-                    if(!isElement2InSelector) continue;
-                    if(!isParallelEdge && bulkData.identifier(element) < otherEntityId)
-                        should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement, scratchOrdinals1, scratchOrdinals2);
+                    if(bulkData.identifier(element) < otherEntityId && skinSelector(bulkData.bucket(otherElement))) {
+                        should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, otherElement, elemPartOrdinals, scratchOrdinals2);
+                    }
                 }
 
                 if(should_add_side && checkIfSideIsNotCollapsed(sideNodes, *bucket, bulkData, element, graphEdge.side1()))

@@ -44,6 +44,12 @@
 #ifndef __PERM1H__
 #define __PERM1H__
 
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
 #include "defines.h"
 
 #ifdef __cplusplus

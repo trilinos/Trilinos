@@ -13,8 +13,8 @@ struct refine_edata *
 find_edge_mesh(int                  vertex,    /* vertex in comm_graph */
                int                  dim,       /* direction of edge from node */
                struct refine_edata *edata,     /* data structure for edge preferences */
-               int *                mesh_dims, /* dimensions of mesh */
-               int *                vtx2node   /* maps comm_graph vtxs to processors */
+               int                 *mesh_dims, /* dimensions of mesh */
+               int                 *vtx2node   /* maps comm_graph vtxs to processors */
 )
 {
   struct refine_edata *eguy;      /* returned pointer to edge info */

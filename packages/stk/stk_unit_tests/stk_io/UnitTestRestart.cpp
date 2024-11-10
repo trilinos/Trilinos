@@ -34,16 +34,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stddef.h>                     // for size_t
-#include <unistd.h>                     // for unlink
+#include <gtest/gtest.h>
 #include <stk_util/diag/StringUtil.hpp> // for make_lower
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string
-#include <algorithm>
-#include <cctype>
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL, etc
 #include "Ioss_ElementTopology.h"       // for NameList
 #include "Ioss_Field.h"                 // for Field, etc
@@ -52,9 +47,17 @@
 #include "Ioss_Region.h"                // for Region, NodeBlockContainer
 #include "Ioss_Utils.h"                 // for Utils
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_io/WriteMesh.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/BuildMesh.hpp"
 #include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/TextMesh.hpp>
+#include <stddef.h>
+#include <unistd.h>
+#include <string>
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 
 namespace {
 
@@ -126,6 +129,7 @@ void create_corrupt_restart(MPI_Comm communicator,
 
   stkIo.populate_bulk_data();
 
+  stkIo.property_add(Ioss::Property("FLUSH_INTERVAL", 1));
   size_t fileIndex = stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
   stkIo.add_field(fileIndex, field0);
 
@@ -174,6 +178,36 @@ TEST(StkIO, CorruptRestart)
   double expectedMaxTime = std::min(nSteps, skipStep);
   double restartTime = double(skipStep);
   test_read_corrupt_restart(communicator, restartFilename, internalClientFieldName, expectedMaxTime, restartTime);
+}
+
+TEST(StkIo, EmptyLocalBlock_beam2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+
+  const std::string meshDesc =
+       "0,1,SHELL_QUAD_4, 1,4,5,2, block_1\n\
+        1,2,SHELL_QUAD_4, 2,5,6,3, block_1\n\
+        1,3,BEAM_2, 6,7, block_nodes";
+  std::vector<double> coords = {0,0,0,  0,1,0,  0,2,0,
+                                1,0,0,  1,1,0, 1,2,0,
+                                0,3,0};
+
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::io::write_mesh("shellq4_beam.g", *bulk, stk::io::WRITE_RESTART);
+  stk::parallel_machine_barrier(MPI_COMM_WORLD);
+
+  stk::io::StkMeshIoBroker ioBroker(MPI_COMM_SELF);
+  ioBroker.set_mesh_builder(std::make_shared<stk::mesh::MeshBuilder>());
+  std::string pllFileName = "shellq4_beam.g.2." + std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD));
+
+  ioBroker.add_mesh_database(pllFileName, stk::io::READ_MESH);
+  EXPECT_NO_THROW(ioBroker.create_input_mesh());
+  ioBroker.populate_bulk_data();
+
+  std::remove(pllFileName.c_str());
 }
 
 }

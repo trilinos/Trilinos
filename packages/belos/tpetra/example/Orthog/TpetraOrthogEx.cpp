@@ -1,48 +1,16 @@
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //                 Belos: Block Linear Solvers Package
-//                  Copyright 2004 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Jennifer A. Loe (jloe@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
-//
-// This driver reads a matrix from a file, uses the corresponding map to 
-// create a set of random multivectors, and then orthogonalizes the 
+// This driver reads a matrix from a file, uses the corresponding map to
+// create a set of random multivectors, and then orthogonalizes the
 // multivectors. The orthogonalization function at the end of this file
-// can be included in other codes to orthogonalize an arbitrary 
+// can be included in other codes to orthogonalize an arbitrary
 // Tpetra::MultiVector.
 //
 //
@@ -74,7 +42,7 @@ int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::Seri
 int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
   {
-  typedef double                            ScalarType; 
+  typedef double                            ScalarType;
   typedef int                               OT;
   typedef Tpetra::MultiVector<ScalarType>   MV;
   typedef Tpetra::MultiVector<ScalarType>::mag_type   MT;
@@ -85,16 +53,16 @@ int main(int argc, char *argv[]) {
   int MyPID = Teuchos::rank(*comm);
 
   bool verbose = true;
-  int blockSize = 4; 
-  int numVecs = 10; 
+  int blockSize = 4;
+  int numVecs = 10;
   int vecLength = 100;
   std::string orthoType("ICGS");
-  bool use_stacked_timer = false;              
+  bool use_stacked_timer = false;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("ortho", &orthoType, "Type of orthogonalization: ICGS, IMGS, DGKS.");
-  cmdp.setOption("blkSize",&blockSize,"Number of vectors to orthogonalize at each step. "); 
+  cmdp.setOption("blkSize",&blockSize,"Number of vectors to orthogonalize at each step. ");
   cmdp.setOption("numVecs",&numVecs,"Total number of vectors for tester to orthogonalize.");
   cmdp.setOption("vecLength",&vecLength,"Length of vectors to be orthogonalized (num elements).");
   cmdp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "Run with or without stacked timer output");
@@ -122,10 +90,10 @@ int main(int argc, char *argv[]) {
     stacked_timer = rcp(new Teuchos::StackedTimer("Main"));
   }
   Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
-  
-  // Create map and random multivec to orthogonalize. 
+
+  // Create map and random multivec to orthogonalize.
   RCP<const Tpetra::Map<> > map = rcp (new Tpetra::Map<> (vecLength,0,comm));
-  
+
   RCP<Tpetra::MultiVector<ScalarType>> X1 = rcp( new Tpetra::MultiVector<ScalarType>(map, numVecs) );
   X1->randomize();
   RCP<Tpetra::MultiVector<ScalarType>> XCopy = rcp(new Tpetra::MultiVector<ScalarType>(*X1, Teuchos::Copy)); //Deep copy of X1.
@@ -153,8 +121,8 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
   }
 
-  //Verify coefficients: 
-  MV coeffs_mv = makeStaticLocalMultiVector (*X1, numVecs, numVecs);
+  //Verify coefficients:
+  MV coeffs_mv = impl::makeStaticLocalMultiVector (*X1, numVecs, numVecs);
   Tpetra::deep_copy(coeffs_mv, *coeffMat);
   XCopy->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *X1, coeffs_mv, -1.0);
   std::vector<MT> norms(numVecs);
@@ -212,21 +180,21 @@ int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::Seri
   // Create the orthogonalization manager:
   Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
   Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
-  const Teuchos::RCP<Belos::OrthoManager<ScalarType,MV>> orthoMgr = 
-                    factory.makeOrthoManager (orthogType, Teuchos::null, myOutputMgr, "Tpetra OrthoMgr", paramsOrtho); 
-  
+  const Teuchos::RCP<Belos::OrthoManager<ScalarType,MV>> orthoMgr =
+                    factory.makeOrthoManager (orthogType, Teuchos::null, myOutputMgr, "Tpetra OrthoMgr", paramsOrtho);
+
   // Get a view of the first block and normalize: (also orthogonalizes these vecs wrt themselves)
   RCP<MV> vecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(0,blkSize-1));
   RCP<MAT> coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, blkSize, blkSize));
   RCP<MV> pastVecBlock;
   int rank = orthoMgr->normalize(*vecBlock, coeffNorm);
   pastVecArray.push_back(vecBlock);
-  
+
   // Loop over remaining blocks:
   for(int k=1; k<numLoops; k++){
     pastVecArrayView = arrayViewFromVector(pastVecArray);
     vecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(k*blkSize,k*blkSize + blkSize - 1));
-    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, blkSize, blkSize, k*blkSize, k*blkSize)); 
+    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, blkSize, blkSize, k*blkSize, k*blkSize));
     coeffDot = Teuchos::rcp(new MAT(Teuchos::View, *coeffs, k*blkSize, blkSize, 0, k*blkSize));
     Array<RCP<MAT>> dotArray; //Tuechos::Array of Matrices for coeffs from dot products
     dotArray.append(coeffDot);
@@ -237,7 +205,7 @@ int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::Seri
   if( remainder > 0){
     pastVecArrayView = arrayViewFromVector(pastVecArray);
     vecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(numVecs-remainder, numVecs-1));
-    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, remainder, remainder, numLoops*blkSize, numLoops*blkSize)); 
+    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, remainder, remainder, numLoops*blkSize, numLoops*blkSize));
     coeffDot = Teuchos::rcp(new MAT(Teuchos::View, *coeffs, numLoops*blkSize, remainder, 0, numLoops*blkSize));
     Array<RCP<MAT>> dotArray; //Tuechos::Array of Matrices for coeffs from dot products
     dotArray.append(coeffDot);

@@ -14,3 +14,9 @@ int TestOtherClasses( const char* AmesosClass,
 		      double &maxrelresidual,
 		      int &NumTests ) ;
 
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif

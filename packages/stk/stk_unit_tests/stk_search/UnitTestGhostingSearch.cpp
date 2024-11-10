@@ -63,7 +63,7 @@ namespace {
 const double TestSphereSpacing = 1.0;
 const double TestSphereRadius  = 0.85;
 
-typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
+typedef std::vector< std::pair<Sphere,IdentProc> > SphereVector;
 
 
 void checkTile3DExpected(const stk::search::experimental::SuperTile3D &tile, double xLen, double yLen, double zLen,
@@ -117,12 +117,12 @@ void testGhostingSearchLinearAdjacentCase(stk::search::SearchMethod searchMethod
     double radius = 0.6;
     Sphere node(coords, radius);
     uint64_t global_id = 1000 + p_rank;
-    Ident id = Ident(global_id, p_rank);
+    IdentProc id = IdentProc(global_id, p_rank);
 
     source_bbox_vector.push_back(std::make_pair(node, id));
 
     std::vector<Sphere> rangeBoxes( source_bbox_vector.size() );
-    std::vector<Ident> rangeGhostIdentifiers;
+    std::vector<IdentProc> rangeGhostIdentifiers;
 
     stk::search::SplitTimer timer;
     stk::search::instrumented::GhostingSearchTimeBreakdown timeBreakdown;
@@ -181,11 +181,9 @@ bool myIsPow2(int num) {
   if (num < 1) {
     return false;
   }
-  int whatLg = 0;
   int product = 1;
   while (product >= 0 && product < num) {
     product *= 2;
-    ++ whatLg;
   }
   return (num == product);
 }
@@ -345,7 +343,7 @@ void setupProblemForSinglePlateGhostingSearchScalingTest(int xDim, int yDim,
       double y = j * spacing + myFirstY;
       Point coords(x, y, 10.0);
       Sphere node(coords, sphereRadius);
-      Ident id = Ident(global_id, p_rank);
+      IdentProc id = IdentProc(global_id, p_rank);
 
       source_bbox_vector.push_back(std::make_pair(node, id));
       ++global_id;
@@ -446,7 +444,7 @@ void setupProblemForTwoPlateGhostingSearchScalingTest(int xDim, int yDim,
       double y = j * spacing + myFirstY;
       Point coords(x, y, myZ);
       Sphere node(coords, sphereRadius);
-      Ident id = Ident(global_id, p_rank);
+      IdentProc id = IdentProc(global_id, p_rank);
 
       source_bbox_vector.push_back(std::make_pair(node, id));
       ++global_id;
@@ -481,7 +479,7 @@ void testGhostingSearchFindRangeStrongScalable(GhostingSearchScalableTestType te
     }
 
     std::vector<Sphere> rangeBoxes( source_bbox_vector.size() );
-    std::vector<Ident> rangeGhostIdentifiers;
+    std::vector<IdentProc> rangeGhostIdentifiers;
 
     stk::search::SplitTimer timer;
     stk::search::instrumented::GhostingSearchTimeBreakdown timeBreakdown;
@@ -557,13 +555,13 @@ void testPrototypeGhostingSearchFindRangeStrongScalable(GhostingSearchScalableTe
     }
 
     std::vector<Sphere> rangeBoxes( source_bbox_vector.size() );
-    std::vector<Ident> rangeGhostIdentifiers;
+    std::vector<IdentProc> rangeGhostIdentifiers;
 
     stk::search::SplitTimer timer;
     stk::search::experimental::GhostingSearchTimeBreakdown timeBreakdown;
     timeBreakdown.reset();
 
-    stk::search::experimental::GhostingSearcher<Ident, Ident, Sphere, Sphere>
+    stk::search::experimental::GhostingSearcher<IdentProc, IdentProc, Sphere, Sphere>
       ghostSearcher(source_bbox_vector, source_bbox_vector,
                     rangeBoxes, rangeGhostIdentifiers, comm, timeBreakdown);
 
@@ -672,13 +670,13 @@ void testPrototypeGhostingSearchFindRangeDecompRobust(GhostingSearchScalableTest
     }
 
     std::vector<Sphere> rangeBoxes( source_bbox_vector.size() );
-    std::vector<Ident> rangeGhostIdentifiers;
+    std::vector<IdentProc> rangeGhostIdentifiers;
 
     stk::search::SplitTimer timer;
     stk::search::experimental::GhostingSearchTimeBreakdown timeBreakdown;
     timeBreakdown.reset();
 
-    stk::search::experimental::GhostingSearcher<Ident, Ident, Sphere, Sphere>
+    stk::search::experimental::GhostingSearcher<IdentProc, IdentProc, Sphere, Sphere>
       ghostSearcher(source_bbox_vector, source_bbox_vector,
                     rangeBoxes, rangeGhostIdentifiers, comm, timeBreakdown);
 

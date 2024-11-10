@@ -44,7 +44,7 @@ namespace sierra {
 
 namespace {
 
-static const char arraylower_t[] = {
+static constexpr char arraylower_t[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
     0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
     0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23,
@@ -57,31 +57,39 @@ static const char arraylower_t[] = {
     'l',  'm',  'n',  'o',  'p',  'q',  'r',  's',  't',  'u',  'v',  'w',
     'x',  'y',  'z',  0x7B, 0x7C, 0x7D, 0x7E, 0x7F};
 
-inline int arraylower(unsigned char c) {
+constexpr int arraylower(unsigned char c) noexcept {
   c = c > 127 ? 127 : c;
   return arraylower_t[c];
 }
 
-} // namespace <unnamed>
 
 int to_label( int c )
 {
   return isspace(c) ? '_' : c;
 }
+} // namespace <unnamed>
 
-int char_simple_traits::compare( const char * c1 , const char * c2 )
+
+int char_simple_traits::compare( const char * c1 , const char * c2, size_t len ) noexcept
 {
-  if(c1 == nullptr) {
-    return (c2 == nullptr) ? 0 : -1;
-  } 
-  if (c2 == nullptr) {
-    return 1;
+  if (len == 0) return 0;
+  size_t i = 0;
+  while (i < len - 1 && arraylower(c1[i]) == arraylower(c2[i]))
+  {
+    ++i;
   }
+  return arraylower(c1[i]) - arraylower(c2[i]);
+}
 
-  for (; *c1 && arraylower(*c1) == arraylower(*c2); c1++, c2++)
-    ;
-
-  return arraylower(*c1) - arraylower(*c2);
+int char_label_traits::compare( const char * c1 , const char * c2, size_t len) noexcept
+{
+  if (len == 0) return 0;
+  size_t i = 0;
+  while (i < len - 1 && arraylower(to_label(c1[i])) == arraylower(to_label(c2[i])))
+  {
+    ++i;
+  }
+  return arraylower(to_label(c1[i])) - arraylower(to_label(c2[i]));
 }
 
 void char_label_traits::convert( char * c , size_t n )
@@ -89,23 +97,6 @@ void char_label_traits::convert( char * c , size_t n )
   if(c==nullptr) return;
   for ( char * const e = c + n ; c != e ; ++c )
     *c = to_label(*c);
-}
-
-int char_label_traits::compare( const char * c1 , const char * c2 )
-{
-  if(c1 == nullptr) {
-    return (c2 == nullptr) ? 0 : -1;
-  } 
-  
-  if (c2 == nullptr) {
-    return 1;
-  }
-
-  for (; *c1 && arraylower(to_label(*c1)) == arraylower(to_label(*c2));
-       c1++, c2++)
-    ;
-
-  return arraylower(to_label(*c1)) - arraylower(to_label(*c2));
 }
 
 } // namespace sierra

@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
-//                    Nate Roberts  (nvrober@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   Intrepid2_TensorBasis.hpp
@@ -714,7 +680,7 @@ struct OperatorTensorDecomposition
       }
       
       // set cell topology
-      this->basisCellTopology_ = tensorComponents_[0]->getBaseCellTopology();
+      this->basisCellTopologyKey_ = tensorComponents_[0]->getBaseCellTopology().getKey();
       this->numTensorialExtrusions_ = tensorComponents_.size() - 1;
       
       this->basisType_         = basis1_->getBasisType();
@@ -782,7 +748,7 @@ struct OperatorTensorDecomposition
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
   
         // we assume that basis2_ is defined on a line, and that basis1_ is defined on a domain that is once-extruded in by that line.
-        auto cellTopo = CellTopology::cellTopology(this->basisCellTopology_, numTensorialExtrusions_);
+        auto cellTopo = CellTopology::cellTopology(tensorComponents_[0]->getBaseCellTopology(), numTensorialExtrusions_);
         auto basis1Topo = cellTopo->getTensorialComponent();
         
         const ordinal_type spaceDim = spaceDim1 + spaceDim2;
@@ -859,25 +825,25 @@ struct OperatorTensorDecomposition
       const int numTensorialExtrusions = basis1_->getNumTensorialExtrusions() + basis2_->getNumTensorialExtrusions();
       if ((cellKey1 == shards::Line<2>::key) && (cellKey2 == shards::Line<2>::key) && (numTensorialExtrusions == 0))
       {
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+        this->basisCellTopologyKey_ = shards::Quadrilateral<4>::key;
       }
       else if (   ((cellKey1 == shards::Quadrilateral<4>::key) && (cellKey2 == shards::Line<2>::key))
                || ((cellKey2 == shards::Quadrilateral<4>::key) && (cellKey1 == shards::Line<2>::key))
                || ((cellKey1 == shards::Line<2>::key) && (cellKey2 == shards::Line<2>::key) && (numTensorialExtrusions == 1))
               )
       {
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+        this->basisCellTopologyKey_ = shards::Hexahedron<8>::key;
       }
       else if ((cellKey1 == shards::Triangle<3>::key) && (cellKey2 == shards::Line<2>::key))
       {
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
+        this->basisCellTopologyKey_ = shards::Wedge<6>::key;
       }
       else
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cell topology combination not yet supported");
       }
       
-      // numTensorialExtrusions_ is relative to the basisCellTopology_; what we've just done is found a cell topology of the same spatial dimension as the extruded topology, so now numTensorialExtrusions_ should be 0.
+      // numTensorialExtrusions_ is relative to the baseCellTopology; what we've just done is found a cell topology of the same spatial dimension as the extruded topology, so now numTensorialExtrusions_ should be 0.
       numTensorialExtrusions_ = 0;
       
       // initialize tags
@@ -892,7 +858,7 @@ struct OperatorTensorDecomposition
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
         
-        shards::CellTopology cellTopo = this->basisCellTopology_;
+        shards::CellTopology cellTopo = this->getBaseCellTopology();
         
         ordinal_type tensorSpaceDim  = cellTopo.getDimension();
         ordinal_type spaceDim1       = cellTopo1.getDimension();

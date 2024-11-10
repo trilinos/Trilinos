@@ -124,6 +124,8 @@
 
 #cmakedefine HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
 
+#cmakedefine HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION
+
 #cmakedefine HAVE_TEUCHOS_DEMANGLE
 
 #cmakedefine HAVE_TEUCHOS_EXPAT
@@ -151,6 +153,8 @@
 #cmakedefine HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
 
 #cmakedefine HAVE_TEUCHOS_KOKKOS_PROFILING
+
+#cmakedefine HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
 
 /* template qualifier required for calling template methods from non-template
    code */

@@ -47,7 +47,8 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <define>STK_SHOW_DEPRECATED_WARNINGS
     <define>STK_HIDE_DEPRECATED_CODE
     <define>SIERRA_MIGRATION
@@ -79,8 +80,8 @@ local installed-developer-files =
 local xml-files =
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -160,7 +161,7 @@ lib stk_ngp_test
     # builds only and will not be present for user builds.
         [ glob $(stk_ngp_test-root)/stk_ngp_test/*.cpp ]
     ]
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
     /tpl/trilinos//kokkoscore
     /mpi//mpi
     /sierra/stk_util//stk_util_ngp
@@ -186,7 +187,7 @@ lib stk_ngp_test_main
     # builds only and will not be present for user builds.
         [ glob $(stk_ngp_test-root)/stk_ngp_test/main/main.cpp ]
     ]
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
     /tpl/trilinos//kokkoscore
     /mpi//mpi
     /sierra/stk_util//stk_util_ngp

@@ -108,7 +108,7 @@ void checkNodeOrderingAndOffsetsForFaces(const stk::topology &element, const uns
     element.face_node_ordinals(index, offsets);
     element.face_nodes(elementNodes, index, nodeIds);
 
-    checkForValidOffsets(numNodesPerFace, offsets, &expectedNodeOffsets[numNodesPerFace*index]);
+    checkForValidOffsets(numNodesPerFace, offsets, expectedNodeOffsets + numNodesPerFace * index);
     checkPermutedNodeIds(numNodesPerFace, offsets, nodeIds, elementNodes);
   }
 
@@ -128,7 +128,7 @@ void checkNodeOrderingAndOffsetsForEdges(const stk::topology &element, const uns
     element.edge_node_ordinals(index, offsets.data());
     element.edge_nodes(elementNodes, index, nodeIds.data());
 
-    checkForValidOffsets(numNodesPerEdge, offsets.data(), &expectedNodeOffsets[numNodesPerEdge*index]);
+    checkForValidOffsets(numNodesPerEdge, offsets.data(), expectedNodeOffsets + numNodesPerEdge * index);
     checkPermutedNodeIds(numNodesPerEdge, offsets.data(), nodeIds.data(), elementNodes);
   }
 }
@@ -144,7 +144,7 @@ void checkNodeOrderingAndOffsetsForPermutations(const stk::topology &element, co
     element.permutation_node_ordinals(index, offsets);
     element.permutation_nodes(elementNodes, index, nodeIds);
 
-    checkForValidOffsets(numNodes, offsets, &expectedNodeOffsets[numNodes*index]);
+    checkForValidOffsets(numNodes, offsets, expectedNodeOffsets + numNodes * index);
     checkPermutedNodeIds(numNodes, offsets, nodeIds, elementNodes);
   }
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,45 +7,39 @@
 // Make asserts active even in non-debug build
 #undef NDEBUG
 
-#include <Ionit_Initializer.h>
-
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_GetLongOpt.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
-#include <Ioss_ScopeGuard.h>
-#include <Ioss_SmartAssert.h>
-#include <Ioss_Utils.h>
-#include <Ioss_ZoneConnectivity.h>
-
-#include <cgns/Iocgns_StructuredZoneData.h>
-#include <cgns/Iocgns_Utils.h>
-
-#include <algorithm>
+#include "Ionit_Initializer.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_GetLongOpt.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SmartAssert.h"
+#include "Ioss_Utils.h"
+#include "Ioss_ZoneConnectivity.h"
+#include "cgns/Iocgns_StructuredZoneData.h"
+#include "cgns/Iocgns_Utils.h"
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iomanip>
+#include <fmt/core.h>
 #include <iostream>
 #include <map>
 #include <numeric>
 #include <set>
-#include <stdexcept>
+#include <stdint.h>
 #include <string>
-#if !defined(__IOSS_WINDOWS__)
-#include <sys/ioctl.h>
-#endif
-#include <unistd.h>
-#include <utility>
 #include <vector>
 
+#include "Ioss_DBUsage.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_ScopeGuard.h"
+#include "Ioss_StructuredBlock.h"
+
+#if !defined __NVCC__
 #include <fmt/color.h>
+#endif
 #include <fmt/format.h>
 
 namespace {
@@ -68,11 +62,11 @@ namespace {
 
       if (options_.retrieve("output") != nullptr) {
         const std::string temp = options_.retrieve("output");
-        histogram              = temp.find("h") != std::string::npos;
-        work_per_processor     = temp.find("w") != std::string::npos;
-        zone_proc_assignment   = temp.find("z") != std::string::npos;
-        verbose                = temp.find("v") != std::string::npos || verbose;
-        communication_map      = temp.find("c") != std::string::npos;
+        histogram              = temp.find('h') != std::string::npos;
+        work_per_processor     = temp.find('w') != std::string::npos;
+        zone_proc_assignment   = temp.find('z') != std::string::npos;
+        verbose                = temp.find('v') != std::string::npos || verbose;
+        communication_map      = temp.find('c') != std::string::npos;
       }
 
       if (options_.retrieve("version") != nullptr) {
@@ -185,7 +179,7 @@ namespace {
       return true;
     }
 
-    explicit Interface(const std::string &app_version) : version(app_version)
+    explicit Interface(std::string app_version) : version(std::move(app_version))
     {
       options_.usage("[options] input_file");
       options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
@@ -242,8 +236,9 @@ namespace {
   double surface_ratio(const Iocgns::StructuredZoneData *zone)
   {
     size_t surf =
-        2 * (zone->m_ordinal[0] * zone->m_ordinal[1] + zone->m_ordinal[0] * zone->m_ordinal[2] +
-             zone->m_ordinal[1] * zone->m_ordinal[2]);
+        (zone->m_ordinal[0] * zone->m_ordinal[1] + zone->m_ordinal[0] * zone->m_ordinal[2] +
+         zone->m_ordinal[1] * zone->m_ordinal[2]) *
+        static_cast<size_t>(2);
     size_t vol = zone->cell_count();
 
     // If a 'perfect' cube, then would be pl=cbrt(vol) on a side and surf would be 6*pl*pl
@@ -321,7 +316,7 @@ namespace {
       }
     }
 
-    // In Iocgns::Utils::common_write_meta_data, there is code to make
+    // In Iocgns::Utils::common_write_metadata, there is code to make
     // sure that the zgc.m_connectionName  is unique for all zgc instances on
     // a zone / processor pair (if !parallel_io which is file-per-processor)
     // The uniquification appends a letter from 'A' to 'Z' to the name
@@ -390,7 +385,10 @@ namespace {
       auto        search = comms.find(std::make_pair(value, key));
       if (search == comms.end()) {
         valid = false;
-        fmt::print(stderr, fg(fmt::color::red),
+        fmt::print(stderr,
+#if !defined __NVCC__
+                   fg(fmt::color::red),
+#endif
                    "ERROR: Could not find matching ZGC for {}, proc {} -> {}, proc {}\n", key.first,
                    key.second, value.first, value.second);
       }
@@ -441,8 +439,11 @@ namespace {
         for (const auto &proc : comms) {
           if (proc.second < 0) {
             // From decomposition
-            fmt::print(fg(fmt::color::yellow), "[{:{}}->{:{}}]  ", proc.first, pw, -proc.second,
-                       pw);
+            fmt::print(
+#if !defined __NVCC__
+                fg(fmt::color::yellow),
+#endif
+                "[{:{}}->{:{}}]  ", proc.first, pw, -proc.second, pw);
           }
           else {
             // Zone to Zone
@@ -632,17 +633,25 @@ namespace {
           int star_cnt =
               (double)(proc_work[i] - min_work) / (max_work - min_work) * delta + min_star;
           std::string stars(star_cnt, '*');
-          std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
+          const std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
           if (proc_work[i] == max_work) {
-            fmt::print(fg(fmt::color::red), format, i, proc_width, fmt::group_digits(proc_work[i]),
-                       work_width, proc_work[i] / avg_work, stars);
+            fmt::print(
+#if !defined __NVCC__
+                fg(fmt::color::red),
+#endif
+                fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                proc_work[i] / avg_work, stars);
           }
           else if (proc_work[i] == min_work) {
-            fmt::print(fg(fmt::color::green), format, i, proc_width,
-                       fmt::group_digits(proc_work[i]), work_width, proc_work[i] / avg_work, stars);
+            fmt::print(
+#if !defined __NVCC__
+                fg(fmt::color::green),
+#endif
+                fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                proc_work[i] / avg_work, stars);
           }
           else {
-            fmt::print(format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+            fmt::print(fmt::runtime(format), i, proc_width, fmt::group_digits(proc_work[i]), work_width,
                        proc_work[i] / avg_work, stars);
           }
           if (verbose) {
@@ -787,7 +796,10 @@ int main(int argc, char *argv[])
 
   auto valid = validate_symmetric_communications(zones);
   if (!valid) {
-    fmt::print(stderr, fg(fmt::color::red),
+    fmt::print(stderr,
+#if !defined __NVCC__
+               fg(fmt::color::red),
+#endif
                "\nERROR: Zone Grid Communication interfaces are not symmetric.  There is an error "
                "in the decomposition.\n");
   }

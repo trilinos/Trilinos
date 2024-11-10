@@ -23,9 +23,8 @@ namespace KokkosBlas {
 namespace Experimental {
 
 template <class TeamType, class RVector, class XVector>
-void KOKKOS_INLINE_FUNCTION
-scal(const TeamType& team, const RVector& r,
-     const typename XVector::non_const_value_type& a, const XVector& x) {
+void KOKKOS_INLINE_FUNCTION scal(const TeamType& team, const RVector& r,
+                                 const typename XVector::non_const_value_type& a, const XVector& x) {
   return Impl::TeamScal<TeamType, RVector, XVector>::team_scal(team, r, a, x);
 }
 

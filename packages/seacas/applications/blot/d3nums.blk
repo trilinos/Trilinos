@@ -4,7 +4,7 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
+      COMMON /D3NUMS/ NNPSUR, NUMNPF, LLNSET, IS3DIM
       LOGICAL IS3DIM
 C      --IS3DIM - true if and only if 3D versus 2D mesh
 C      --NNPSUR - the number of nodes in the surface faces

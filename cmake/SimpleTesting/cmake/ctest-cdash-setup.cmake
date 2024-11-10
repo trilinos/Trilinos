@@ -120,9 +120,18 @@ string(SUBSTRING ${build_stamp_tmp} 1 1024 build_stamp)
 generate_build_url1(build_url1 ${CTEST_DROP_SITE} ${URL_location} ${CTEST_PROJECT_NAME} ${CTEST_BUILD_NAME} ${build_stamp} ${machine_name})
 generate_build_url2(build_url2 ${CTEST_DROP_SITE} ${URL_location} ${CTEST_PROJECT_NAME} ${CTEST_BUILD_NAME} ${build_stamp})
 generate_build_url3(build_url3 ${CTEST_DROP_SITE} ${URL_location} ${CTEST_PROJECT_NAME} ${CTEST_BUILD_NAME} ${build_stamp})
+generate_build_url4(build_url4 ${CTEST_DROP_SITE} ${URL_location} ${CTEST_PROJECT_NAME} ${PULLREQUESTNUM})
 message(">>> CDash URL1 = ${build_url1}")
 message(">>> CDash URL2 = ${build_url2}")
 message(">>> CDash URL3 = ${build_url3}")
+message(">>> CDash URL4 = ${build_url4}")
+
+if (EXISTS /home/runner/)
+    # Write the URL into the filesystem so AT2 can read it later
+    message(">>> Writing URLs to /home/runner/AT2_URL.txt and AT2_ALL_BUILDS.txt")
+    file(WRITE /home/runner/AT2_URL.txt ${build_url3})
+    file(WRITE /home/runner/AT2_ALL_BUILDS.txt ${build_url4})
+endif()
 
 # -----------------------------------------------------------
 # -- Optionally update the repository

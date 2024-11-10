@@ -83,7 +83,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -92,7 +92,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   num_props = ex_get_num_props(exoid, obj_type);
 
   /* inquire id of previously defined dimension (number of objects) */
-  status = ex__get_dimension(exoid, ex__dim_num_objects(obj_type), ex_name_of_object(obj_type),
+  status = exi_get_dimension(exoid, exi_dim_num_objects(obj_type), ex_name_of_object(obj_type),
                              &num_obj, &dimid, __func__);
   if (status != NC_NOERR) {
     EX_FUNC_LEAVE(status);
@@ -144,7 +144,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   if (!found) {
 
     /* put netcdf file into define mode  */
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -199,7 +199,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
     /* leave define mode  */
 
-    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -225,6 +225,6 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 /* Fatal error: exit definition mode and return */
 error_ret:
   nc_set_fill(exoid, oldfill, &temp); /* default: nofill */
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

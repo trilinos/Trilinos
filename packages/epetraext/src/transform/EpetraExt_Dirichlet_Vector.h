@@ -42,6 +42,12 @@
 #ifndef EpetraExt_VECTOR_DIRICHLET_H
 #define EpetraExt_VECTOR_DIRICHLET_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_Transform.h>
 
 #include <Epetra_IntVector.h>
@@ -91,4 +97,3 @@ class Vector_Dirichlet : public InPlaceTransform<Epetra_Vector>
 } //namespace EpetraExt
 
 #endif //EpetraExt_VECTOR_DIRICHLET_H
-

@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
-//                    Nate Roberts  (nvrober@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 
@@ -97,8 +64,8 @@ namespace
 
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 void testStandardVersusStructuredIntegration(const int &meshWidth, const int &worksetSize,
-                                             const EFunctionSpace &fs1, const EOperator &op1, const int &p1,
-                                             const EFunctionSpace &fs2, const EOperator &op2, const int &p2,
+                                             const EFunctionSpace &fs1, const EOperator &op1, const int &p1, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > vectorWeight1,
+                                             const EFunctionSpace &fs2, const EOperator &op2, const int &p2, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > vectorWeight2,
                                              const double &relTol, const double &absTol,
                                              Teuchos::FancyOStream &out, bool &success)
 {
@@ -117,17 +84,30 @@ void testStandardVersusStructuredIntegration(const int &meshWidth, const int &wo
   
   double flopCountIntegration = 0, flopCountJacobian = 0;
   auto structuredIntegrals = performStructuredAssembly<Scalar,BasisFamily>(geometry, worksetSize,
-                                                                           p1, fs1, op1,
-                                                                           p2, fs2, op2,
+                                                                           p1, fs1, op1, vectorWeight1,
+                                                                           p2, fs2, op2, vectorWeight2,
                                                                            flopCountIntegration, flopCountJacobian);
   
   auto standardIntegrals = performStandardAssembly<Scalar,BasisFamily>(geometry, worksetSize,
-                                                                       p1, fs1, op1,
-                                                                       p2, fs2, op2,
+                                                                       p1, fs1, op1, vectorWeight1,
+                                                                       p2, fs2, op2, vectorWeight2,
                                                                        flopCountIntegration, flopCountJacobian);
     
   out << "Comparing general standard assembly to structured integration path…\n";
   testFloatingEquality3(standardIntegrals, structuredIntegrals, relTol, absTol, out, success, "standard integral", "structured formulation integral");
+}
+
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+void testStandardVersusStructuredIntegration(const int &meshWidth, const int &worksetSize,
+                                             const EFunctionSpace &fs1, const EOperator &op1, const int &p1,
+                                             const EFunctionSpace &fs2, const EOperator &op2, const int &p2,
+                                             const double &relTol, const double &absTol,
+                                             Teuchos::FancyOStream &out, bool &success)
+{
+  testStandardVersusStructuredIntegration<Scalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, worksetSize,
+                                                                                                  fs1, op1, p1, Teuchos::null,
+                                                                                                  fs2, op2, p2, Teuchos::null,
+                                                                                                  relTol, absTol, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D1_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
@@ -355,6 +335,381 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandar
     (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorWeighted_D1_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 1;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  
+  weight = 0.5;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight *= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  
+  weight = 0.5;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight *= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 2;
+  const int p1 = 2;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  
+  weight = 0.5;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight *= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D1_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 1;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  Teuchos::RCP<Kokkos::Array<double,spaceDim> > vectorWeight1; // no vector weight on scalar term
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight /= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D2_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  Teuchos::RCP<Kokkos::Array<double,spaceDim> > vectorWeight1; // no vector weight on scalar term
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight /= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D3_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 3;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  Teuchos::RCP<Kokkos::Array<double,spaceDim> > vectorWeight1; // no vector weight on scalar term
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight /= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D1_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 1;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  Teuchos::RCP<Kokkos::Array<double,spaceDim> > vectorWeight2; // no vector weight on scalar term
+  
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D2_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  Teuchos::RCP<Kokkos::Array<double,spaceDim> > vectorWeight2; // no vector weight on scalar term
+  
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 3;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  Teuchos::RCP<Kokkos::Array<double,spaceDim> > vectorWeight2; // no vector weight on scalar term
+  
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorWeighted_D3_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 3;
+  const int p1 = 2;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  
+  weight = 0.5;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight *= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
 // asymmetric tests (mostly -- a couple symmetric ones tossed in as sanity checks on the test itself)
 
 // 1D tests: H(grad) and H(vol) bases defined
@@ -370,6 +725,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStan
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, HGRAD, VALUE, HGRAD, VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, HVOL,  VALUE, HGRAD, VALUE)
+
+// 1D vector-weighted test
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D1_P1_P1, HGRAD, GRAD, HGRAD, GRAD)
+
+// 1D scalar against vector-weighted tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D1_P1_P1, HVOL, VALUE, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D1_P1_P1, HGRAD, VALUE, HGRAD, GRAD)
+
+// 1D vector-weighted against scalar tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D1_P1_P1, HGRAD, GRAD, HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D1_P1_P1, HGRAD, GRAD, HGRAD, VALUE)
 
 // 2D tests: curls of H(curl) are scalars.
 // p1, p1:
@@ -400,6 +766,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStan
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HCURL, CURL,  HVOL,  VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HVOL,  VALUE, HGRAD, VALUE)
 
+// 2D vector-weighted tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P1_P1, HGRAD, GRAD, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P2_P1, HGRAD, GRAD, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P1_P1, HCURL, VALUE, HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P2_P1, HCURL, VALUE, HDIV,  VALUE)
+
+// 2D scalar against vector-weighted tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D2_P1_P1, HVOL, VALUE, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D2_P1_P1, HGRAD, VALUE, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D2_P1_P1, HGRAD, VALUE, HDIV, VALUE)
+
+// 2D vector-weighted against scalar tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D2_P1_P1, HGRAD, GRAD, HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D2_P1_P1, HGRAD, GRAD, HGRAD, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D2_P1_P1, HDIV, VALUE, HGRAD, VALUE)
+
 // 3D tests: curls of H(curl) are vectors
 // p1, p1:
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D3_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
@@ -429,5 +811,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStan
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D3_P1_P2, HCURL, CURL,  HDIV,  VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D3_P1_P2, HVOL,  VALUE, HGRAD, VALUE)
 
+// 3D vector-weighted tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D3_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D3_P2_P1, HCURL, VALUE, HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D3_P2_P1, HCURL, CURL,  HGRAD, GRAD)
+
+// 3D scalar against vector-weighted tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D3_P1_P1, HVOL, VALUE, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D3_P1_P1, HGRAD, VALUE, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardScalarAgainstVectorDotVector_D3_P1_P1, HGRAD, VALUE, HDIV, VALUE)
+
+// 3D vector-weighted against scalar tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, HGRAD, GRAD, HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, HGRAD, GRAD, HGRAD, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, HDIV, VALUE, HGRAD, VALUE)
 
 } // anonymous namespace

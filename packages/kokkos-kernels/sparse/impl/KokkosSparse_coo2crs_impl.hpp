@@ -15,11 +15,6 @@
 //@HEADER
 #ifndef KOKKOSSPARSE_COO2CRS_IMPL_HPP
 #define KOKKOSSPARSE_COO2CRS_IMPL_HPP
-// The unorderedmap changes necessary for this to work
-// have not made it into Kokkos 4.0.00 pr 4.0.01 will
-// need to see if it happens in 4.1.00 to have a final
-// version check here.
-#if KOKKOS_VERSION >= 40099
 
 #include <Kokkos_StdAlgorithms.hpp>
 #include "Kokkos_UnorderedMap.hpp"
@@ -27,8 +22,7 @@
 
 namespace KokkosSparse {
 namespace Impl {
-template <class DimType, class RowViewType, class ColViewType,
-          class DataViewType, bool InsertMode = false>
+template <class DimType, class RowViewType, class ColViewType, class DataViewType, bool InsertMode = false>
 class Coo2Crs {
  private:
   using RowViewScalarType  = typename RowViewType::value_type;
@@ -45,16 +39,14 @@ class Coo2Crs {
   using CrsColIdViewType   = typename CrsType::index_type;
 
   using UmapValueViewType = Kokkos::View<CrsST *, CrsET>;
-  using UmapOpTypes =
-      Kokkos::UnorderedMapInsertOpTypes<UmapValueViewType, CrsOT>;
-  using UmapOpType = typename UmapOpTypes::AtomicAdd;
+  using UmapOpTypes       = Kokkos::UnorderedMapInsertOpTypes<UmapValueViewType, CrsOT>;
+  using UmapOpType        = typename UmapOpTypes::AtomicAdd;
 
   // Make public for Kokkos::View
  public:
   using UmapHasherType  = typename Kokkos::pod_hash<CrsOT>;
   using UmapEqualToType = typename Kokkos::pod_equal_to<CrsOT>;
-  using UmapType = Kokkos::UnorderedMap<CrsOT, CrsST, CrsET, UmapHasherType,
-                                        UmapEqualToType>;
+  using UmapType        = Kokkos::UnorderedMap<CrsOT, CrsST, CrsET, UmapHasherType, UmapEqualToType>;
   using UmapMemorySpace = typename UmapType::device_type::memory_space;
 
   // Public for kokkos policies
@@ -67,16 +59,14 @@ class Coo2Crs {
   using copyTp1MemberType = typename copyTp1Pt::member_type;
 
  private:
-  using CrsRowMapView = Kokkos::View<CrsOT *, CrsET>;
-  using CrsRowMapAtomicView =
-      Kokkos::View<CrsOT *, CrsET, Kokkos::MemoryTraits<Kokkos::Atomic>>;
-  using CrsValuesView = Kokkos::View<CrsST *, CrsET>;
-  using CrsColIdsView = Kokkos::View<CrsSzT *, CrsET>;
+  using CrsRowMapView       = Kokkos::View<CrsOT *, CrsET>;
+  using CrsRowMapAtomicView = Kokkos::View<CrsOT *, CrsET, Kokkos::MemoryTraits<Kokkos::Atomic>>;
+  using CrsValuesView       = Kokkos::View<CrsST *, CrsET>;
+  using CrsColIdsView       = Kokkos::View<CrsSzT *, CrsET>;
 
   // Needed since Kokkos::Bitset cannot be accessed on the host
-  using BmapViewType =
-      Kokkos::View<bool *, CrsET, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
-  using Bitset = Kokkos::Bitset<CrsET>;
+  using BmapViewType = Kokkos::View<bool *, CrsET, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+  using Bitset       = Kokkos::Bitset<CrsET>;
 
   CrsRowMapView m_crs_row_map;
   CrsRowMapAtomicView m_crs_row_map_tmp;
@@ -135,16 +125,14 @@ class Coo2Crs {
     auto cpy_end = m_crs_row_map(row_idx + 1);
     auto cpy_len = cpy_end - cpy_beg;
 
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, cpy_len),
-                         [&](const CrsOT &i) {
-                           auto offset           = i + cpy_beg;
-                           m_crs_vals(offset)    = m_umaps[i].value_at(i);
-                           m_crs_col_ids(offset) = m_umaps[i].key_at(i);
-                         });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, cpy_len), [&](const CrsOT &i) {
+      auto offset           = i + cpy_beg;
+      m_crs_vals(offset)    = m_umaps[i].value_at(i);
+      m_crs_col_ids(offset) = m_umaps[i].key_at(i);
+    });
   }
 
-  Coo2Crs(DimType m, DimType n, RowViewType row, ColViewType col,
-          DataViewType data) {
+  Coo2Crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data) {
     m_n_tuples = data.extent(0);
     m_nrows    = m;
     m_ncols    = n;
@@ -152,23 +140,19 @@ class Coo2Crs {
     m_col      = col;
     m_data     = data;
 
-    typename UmapType::size_type arg_capacity_hint =
-        m_nrows > 0 ? (m_n_tuples / m_nrows / 4) : 16;
+    typename UmapType::size_type arg_capacity_hint = m_nrows > 0 ? (m_n_tuples / m_nrows / 4) : 16;
     typename UmapType::hasher_type arg_hasher;
     typename UmapType::equal_to_type arg_equal_to;
     arg_capacity_hint = arg_capacity_hint < 16 ? 16 : arg_capacity_hint;
 
     // Record of whether capacity was reached in any unordered map
-    m_capacity_bmap = BmapViewType("m_capacity_bmap", m_nrows);
-    typename BmapViewType::HostMirror m_capacity_bmap_mirror =
-        Kokkos::create_mirror_view(m_capacity_bmap);
+    m_capacity_bmap                                          = BmapViewType("m_capacity_bmap", m_nrows);
+    typename BmapViewType::HostMirror m_capacity_bmap_mirror = Kokkos::create_mirror_view(m_capacity_bmap);
 
     // Track which tuples have been processed
     m_tuple_bmap = Bitset(m_n_tuples);
 
-    m_crs_row_map = CrsRowMapView(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_row_map"),
-        m_nrows + 1);
+    m_crs_row_map = CrsRowMapView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_row_map"), m_nrows + 1);
 
     // Memory management notes for `umap_ptrs` and `m_umaps`:
     //   `umap_ptrs` is a two dimensional array. The first dimension contains
@@ -193,11 +177,13 @@ class Coo2Crs {
 
     // Setup a nrows length array of Unordered Maps
     m_umaps =
-        reinterpret_cast<UmapType *>(Kokkos::kokkos_malloc<UmapMemorySpace>(
-            "m_umaps", m_nrows * sizeof(UmapType)));
+        reinterpret_cast<UmapType *>(Kokkos::kokkos_malloc<UmapMemorySpace>("m_umaps", m_nrows * sizeof(UmapType)));
 
-    using shallow_copy_to_device =
-        Kokkos::Impl::DeepCopy<UmapMemorySpace, typename Kokkos::HostSpace>;
+    auto shallow_copy_to_device = [](UmapType *dst, UmapType const *src, std::size_t cnt) {
+      std::size_t nn = cnt / sizeof(UmapType);
+      Kokkos::deep_copy(Kokkos::View<UmapType *, UmapMemorySpace>(dst, nn),
+                        Kokkos::View<UmapType const *, Kokkos::HostSpace>(src, nn));
+    };
 
     UmapType **umap_ptrs = new UmapType *[m_nrows];
     // TODO: use host-level parallel_for with tag rowmapRp1
@@ -229,8 +215,7 @@ class Coo2Crs {
       CrsET().fence();
     }
 
-    typename CrsRowMapView::HostMirror m_crs_row_map_h =
-        Kokkos::create_mirror_view(m_crs_row_map);
+    typename CrsRowMapView::HostMirror m_crs_row_map_h = Kokkos::create_mirror_view(m_crs_row_map);
 
     // TODO: convert to host-level parallel_for / prefix sum
     m_crs_row_map_h(0) = 0;
@@ -240,20 +225,16 @@ class Coo2Crs {
       m_crs_row_map_h(i) = m_crs_row_map_h(adj_i) + sz;
     }
 
-    m_crs_row_map_tmp = CrsRowMapAtomicView(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_row_map_tmp"),
-        m_nrows + 1);
+    m_crs_row_map_tmp =
+        CrsRowMapAtomicView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_row_map_tmp"), m_nrows + 1);
     Kokkos::deep_copy(m_crs_row_map, m_crs_row_map_h);
     Kokkos::deep_copy(m_crs_row_map_tmp, m_crs_row_map_h);
     CrsET().fence();
 
     m_nnz = m_crs_row_map_h(m_nrows);
 
-    m_crs_vals = CrsValuesView(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_vals"), m_nnz);
-    m_crs_col_ids = CrsColIdsView(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_col_ids"),
-        m_nnz);
+    m_crs_vals    = CrsValuesView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_vals"), m_nnz);
+    m_crs_col_ids = CrsColIdsView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_col_ids"), m_nnz);
 
     using copyRp1Pt = Kokkos::RangePolicy<copyRp1, CrsET>;
     Kokkos::parallel_for("copyRp1", copyRp1Pt(0, m_nrows), *this);
@@ -267,14 +248,9 @@ class Coo2Crs {
     Kokkos::kokkos_free<UmapMemorySpace>(m_umaps);
   }
 
-  CrsType get_crsMat() {
-    return CrsType("coo2crs", m_nrows, m_ncols, m_nnz, m_crs_vals,
-                   m_crs_row_map, m_crs_col_ids);
-  }
+  CrsType get_crsMat() { return CrsType("coo2crs", m_nrows, m_ncols, m_nnz, m_crs_vals, m_crs_row_map, m_crs_col_ids); }
 };
 }  // namespace Impl
 }  // namespace KokkosSparse
-
-#endif  // KOKKOS_VERSION >= 40099
 
 #endif  // KOKKOSSPARSE_COO2CRS_IMPL_HPP

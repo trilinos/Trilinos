@@ -43,6 +43,12 @@
 #ifndef _IFPACK_CRSRICK_H_
 #define _IFPACK_CRSRICK_H_
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_IlukGraph.h"
 #include "Epetra_CompObject.h"

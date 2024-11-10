@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -35,7 +35,7 @@ C   --
 C...8-node Hexes
         IF ((NUMLNK .EQ. 8) .AND. (NDIM .EQ. 3) .AND.
      *    NAME(:3) .EQ. 'HEX') THEN
-          DO 10 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(4,NE)
             LINK(4,NE) = ILTMP
@@ -43,12 +43,12 @@ C...8-node Hexes
             ILTMP = LINK (6,NE)
             LINK(6,NE) = LINK(8,NE)
             LINK(8,NE) = ILTMP
- 10       CONTINUE
+         END DO
 
 C...20-node Hexes
         ELSE IF ((NUMLNK .EQ. 20) .AND. (NDIM .EQ. 3) .AND.
      *    NAME(:3) .EQ. 'HEX') THEN
-          DO 15 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(4,NE)
             LINK(4,NE) = ILTMP
@@ -76,57 +76,75 @@ C...20-node Hexes
             ILTMP = LINK (18,NE)
             LINK(18,NE) = LINK(19,NE)
             LINK(19,NE) = ILTMP
- 15       CONTINUE
+         END DO
 
 C...Quads/Shells
         ELSE IF ((NUMLNK .EQ. 4) .AND.
      *      (NAME(:4) .EQ. 'QUAD' .OR. NAME(:5) .EQ. 'SHELL')) THEN
           if (name(:5) .eq. 'SHELL') NONQUD = .TRUE.
-          DO 20 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(4,NE)
             LINK(4,NE) = ILTMP
- 20       CONTINUE
+         END DO
 
 C...four-node tets...
         ELSE IF ((NUMLNK .EQ. 4) .AND.
      *      (NAME(:3) .EQ. 'TET')) THEN
           NONQUD = .TRUE.
-          DO 25 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(3,NE)
             LINK(3,NE) = ILTMP
- 25       CONTINUE
+         END DO
+
+C...ten-node tets...
+        ELSE IF ((NUMLNK .EQ. 10) .AND.
+     *      (NAME(:3) .EQ. 'TET')) THEN
+          NONQUD = .TRUE.
+          DO NE = 1, NUMELB
+            ILTMP = LINK (2,NE)
+            LINK(2,NE) = LINK(3,NE)
+            LINK(3,NE) = ILTMP
+
+            ILTMP = LINK (5,NE)
+            LINK(5,NE) = LINK(7,NE)
+            LINK(7,NE) = ILTMP
+
+            ILTMP = LINK (9,NE)
+            LINK(9,NE) = LINK(10,NE)
+            LINK(10,NE) = ILTMP
+          END DO
 
 C...Bars
         ELSE IF (NUMLNK .EQ. 2) THEN
           NONQUD = .TRUE.
-          DO 30 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(1,NE)
             LINK(1,NE) = ILTMP
- 30       CONTINUE
+         END DO
 
 C...Triangles
         ELSE IF (NUMLNK .EQ. 3) THEN
           NONQUD = .TRUE.
-          DO 40 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(3,NE)
             LINK(3,NE) = ILTMP
- 40       CONTINUE
+         END DO
 
 C...6-node Triangles
         ELSE IF (NUMLNK .EQ. 6) THEN
           NONQUD = .TRUE.
-          DO 50 NE = 1, NUMELB
+          DO NE = 1, NUMELB
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(3,NE)
             LINK(3,NE) = ILTMP
             ILTMP = LINK (4,NE)
             LINK(4,NE) = LINK(6,NE)
             LINK(6,NE) = ILTMP
- 50       CONTINUE
+         END DO
         ELSE
           NONQUD = .TRUE.
           WRITE (STRING, 100) IELB, NUMLNK, NAME

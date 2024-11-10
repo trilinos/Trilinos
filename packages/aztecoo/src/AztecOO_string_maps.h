@@ -45,6 +45,12 @@
 #ifndef _AztecOO_string_maps_h_
 #define _AztecOO_string_maps_h_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #include <AztecOO.h>
 
 #ifdef HAVE_AZTECOO_TEUCHOS
@@ -56,4 +62,3 @@ void AztecOO_initialize_maps();
 #endif
 
 #endif
-

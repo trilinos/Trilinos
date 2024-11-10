@@ -38,11 +38,11 @@
 
 #cmakedefine STK_DISABLE_MPI_NEIGHBOR_COMM
 
-#cmakedefine STK_USE_SIMPLE_FIELDS
-
 #cmakedefine STK_HAVE_BOOST
 
 #cmakedefine STK_HAVE_KOKKOS
+
+#cmakedefine STK_HAVE_INTREPID2
 
 #cmakedefine STK_HAVE_STKMESH
 
@@ -52,7 +52,15 @@
 
 #cmakedefine STK_HAS_MPI
 
+#cmakedefine STK_HAS_ARBORX
+
 #cmakedefine STK_VOLATILE_SIMD
+
+#cmakedefine STK_HAS_SEACAS_IOSS
+
+#cmakedefine STK_HAS_SEACAS_EXODUS
+
+#cmakedefine STK_HAS_SEACAS_NEMESIS
 
 /* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See
  * STK #17354) */
@@ -72,4 +80,8 @@
 #cmakedefine FORTRAN_TWO_UNDERSCORES
 #endif
 
-#define SIERRA_MIGRATION
+#cmakedefine SIERRA_MIGRATION
+
+#cmakedefine STK_16BIT_UPWARDCONN_INDEX_TYPE
+
+#cmakedefine STK_BUILT_FOR_SIERRA

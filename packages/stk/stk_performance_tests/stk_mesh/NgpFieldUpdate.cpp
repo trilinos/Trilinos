@@ -51,10 +51,10 @@
 #include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
-class NgpFieldSyncTest : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpFieldSyncTest : public stk::unit_test_util::MeshFixture
 {
 public:
-  NgpFieldSyncTest() : stk::unit_test_util::simple_fields::MeshFixture()
+  NgpFieldSyncTest() : stk::unit_test_util::MeshFixture()
   {}
 
   void setup_mesh_with_many_blocks_many_elements(unsigned numBlocks, unsigned numElemPerDim)
@@ -124,11 +124,11 @@ public:
   }
 };
 
-class NgpFieldUpdateFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpFieldUpdateFixture : public stk::unit_test_util::MeshFixture
 {
 public:
  NgpFieldUpdateFixture()
-   : stk::unit_test_util::simple_fields::MeshFixture(),
+   : stk::unit_test_util::MeshFixture(),
       tensorField(nullptr),
       vectorField(nullptr),
       tensorFieldSizePerElem(72),
@@ -181,7 +181,7 @@ public:
 
     stk::mesh::FieldBase* field = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "FieldA");
     stk::mesh::put_field_on_mesh(*field, get_meta().universal_part(), &init);
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_mesh_with_fields(const std::string &meshSpecification)
@@ -324,7 +324,7 @@ TEST_F( NgpMeshChangeElementPartMembershipWithFields, Timing )
   if (get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  #ifdef STK_ENABLE_GPU
   const int NUM_ITERS = 50;
   #else
   const int NUM_ITERS = 2500;
@@ -353,7 +353,7 @@ TEST_F( NgpMeshCreateEntityWithFields, Timing )
   if (get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  #ifdef STK_ENABLE_GPU
   const int numModCycles = 50;
   #else
   const int numModCycles = 4000;
@@ -406,15 +406,15 @@ TEST_F(NgpFieldSyncTest, PartialSyncTiming)
   if(get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 20000000);
-  unsigned numComponents = stk::unit_test_util::simple_fields::get_command_line_option("-c", 1);
-  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 20);
-  unsigned numBlocksToSync = stk::unit_test_util::simple_fields::get_command_line_option("-s", 5);
-  unsigned numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 100);
-  unsigned tensorFieldSizePerElem = stk::unit_test_util::simple_fields::get_command_line_option("--tensorField", 72);
-  unsigned vectorFieldSizePerElem = stk::unit_test_util::simple_fields::get_command_line_option("-vectorField", 8);
-  bool justSyncAll = stk::unit_test_util::simple_fields::get_command_line_option("-a", false);
-  bool contiguousBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-t", true);
+  const unsigned NUM_ITERS = stk::unit_test_util::get_command_line_option("-r", 20000000);
+  unsigned numComponents = stk::unit_test_util::get_command_line_option("-c", 1);
+  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 20);
+  unsigned numBlocksToSync = stk::unit_test_util::get_command_line_option("-s", 5);
+  unsigned numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 100);
+  unsigned tensorFieldSizePerElem = stk::unit_test_util::get_command_line_option("--tensorField", 72);
+  unsigned vectorFieldSizePerElem = stk::unit_test_util::get_command_line_option("-vectorField", 8);
+  bool justSyncAll = stk::unit_test_util::get_command_line_option("-a", false);
+  bool contiguousBlocks = stk::unit_test_util::get_command_line_option("-t", true);
   numBlocksToSync = std::min(numBlocks, numBlocksToSync);
   stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   

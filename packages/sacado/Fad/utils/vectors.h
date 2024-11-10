@@ -1,5 +1,13 @@
 // Emacs will be in -*- Mode: c++ -*-
+// @HEADER
+// *****************************************************************************
+//                           Sacado Package
 //
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 // ***************** DO NOT REMOVE THIS BANNER *****************
 //
 // SUMMARY: Templatized Oriented Object Finte Element Method
@@ -454,10 +462,3 @@ template< class T > Vector< T >& Vector< T >::operator = (const T& val)
 } // Namespace FAD
 
 #endif
-
-
-
-
-
-
-

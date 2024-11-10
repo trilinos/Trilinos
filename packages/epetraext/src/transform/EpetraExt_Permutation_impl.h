@@ -41,6 +41,12 @@
 #ifndef EpetraExt_PERMUTATION_IMPL_H
 #define EpetraExt_PERMUTATION_IMPL_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include <EpetraExt_ConfigDefs.h>
 
 #include <EpetraExt_Permutation.h>

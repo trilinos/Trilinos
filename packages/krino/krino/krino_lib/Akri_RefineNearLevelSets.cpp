@@ -15,53 +15,51 @@
 
 namespace krino {
 
-std::vector<LS_Field> build_levelset_fields(const std::vector<stk::mesh::Field<double>*> & stkLevelSetFields)
+std::vector<LS_Field> build_levelset_fields(const stk::mesh::Field<double> & stkLevelSetField)
 {
   unsigned lsId = 0;
   std::vector<LS_Field> lsFields;
-  for (auto stkLevelSetField : stkLevelSetFields)
-    lsFields.emplace_back(stkLevelSetField->name(),Surface_Identifier(lsId++),FieldRef(stkLevelSetField),0.,nullptr);
+  lsFields.emplace_back(stkLevelSetField.name(),Surface_Identifier(lsId++),FieldRef(stkLevelSetField),0.,nullptr);
   return lsFields;
 }
 
-void refine_elements_that_intersect_distance_interval_from_levelsets(stk::mesh::BulkData & mesh,
+void refine_elements_that_intersect_distance_interval_from_levelset(stk::mesh::BulkData & mesh,
     const stk::mesh::Part & activePart,
-    const std::vector<stk::mesh::Field<double>*> & stkLevelSetFields,
-    const std::function<void()> & initialize_levelsets,
+    const stk::mesh::Field<double> & stkLevelSetField,
+    const std::function<void()> & initialize_levelset,
     const std::array<double,2> & refinementDistanceInterval,
     const unsigned numRefinementLevels)
 {
-  RefinementSupport & refinementSupport = RefinementSupport::get(mesh.mesh_meta_data());
-  refinementSupport.activate_nonconformal_adaptivity(numRefinementLevels);
-  refinementSupport.set_refinement_interval(refinementDistanceInterval);
-  RefinementInterface & refinement = krino::KrinoRefinement::create(mesh.mesh_meta_data());
-  refinementSupport.set_non_interface_conforming_refinement(refinement);
+  RefinementInterface & refinement = krino::KrinoRefinement::get_or_create(mesh.mesh_meta_data());
 
   const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
   const Phase_Support & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
-  const auto lsFields = build_levelset_fields(stkLevelSetFields);
-  const LevelSetSurfaceInterfaceGeometry interfaceGeom(activePart, cdfemSupport, phaseSupport, lsFields);
+  const auto lsFields = build_levelset_fields(stkLevelSetField);
+  const LevelSetSurfaceInterfaceGeometry interfaceGeom(mesh.mesh_meta_data().spatial_dimension(), activePart, cdfemSupport, phaseSupport, lsFields);
 
-  const int numRefinementSteps = 2*refinementSupport.get_interface_maximum_refinement_level(); // Make sure refinement completes so that elements touching interval are fully refined
+  const int numRefinementSteps = 2*numRefinementLevels; // Make sure refinement completes so that elements touching interval are fully refined
+  constexpr bool isDefaultCoarsen = false; // Refinement here will be "cumulative"
 
-  std::function<void(int)> initialize_levelsets_and_compute_distance_and_mark_elements_that_intersect_interval =
-    [&mesh, &interfaceGeom, &refinementSupport, &initialize_levelsets, numRefinementSteps](int refinementIterCount)
+  std::function<void(int)> initialize_levelset_and_compute_distance_and_mark_elements_that_intersect_interval =
+    [&mesh, &initialize_levelset, &refinement, &interfaceGeom, &refinementDistanceInterval, numRefinementSteps, numRefinementLevels](int refinementIterCount)
     {
-      initialize_levelsets();
+      initialize_levelset();
       if (refinementIterCount < numRefinementSteps)
       {
         krino::mark_elements_that_intersect_interval(mesh,
-            refinementSupport.get_non_interface_conforming_refinement(),
+            refinement,
             interfaceGeom,
-            refinementSupport,
-            refinementIterCount);
+            refinementDistanceInterval,
+            numRefinementLevels,
+            isDefaultCoarsen);
       }
     };
 
-  perform_multilevel_adaptivity(refinementSupport.get_non_interface_conforming_refinement(),
+  stk::mesh::Selector emptySelector;
+  perform_multilevel_adaptivity(refinement,
       mesh,
-      initialize_levelsets_and_compute_distance_and_mark_elements_that_intersect_interval,
-      refinementSupport.get_do_not_refine_or_unrefine_selector());
+      initialize_levelset_and_compute_distance_and_mark_elements_that_intersect_interval,
+      emptySelector);
 }
 
 }

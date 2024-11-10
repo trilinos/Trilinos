@@ -63,6 +63,7 @@ public:
   static AuxMetaData & get(const stk::mesh::MetaData & stk_meta);
   static bool has(const stk::mesh::MetaData & stk_meta);
   static AuxMetaData & create(stk::mesh::MetaData & stk_meta); // must be called before calling get
+  static AuxMetaData & get_or_create(stk::mesh::MetaData & stk_meta);
 
   AuxMetaData ( const AuxMetaData & ) = delete;
   AuxMetaData & operator= ( const AuxMetaData & ) = delete;

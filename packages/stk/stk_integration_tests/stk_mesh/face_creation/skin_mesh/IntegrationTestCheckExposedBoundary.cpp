@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <init/Ionit_Initializer.h>     // for Initializer
+#include <Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <string>                       // for string
@@ -24,13 +24,13 @@
 namespace
 {
 
-class SkinnedMeshWithModifiedSkinPart : public stk::unit_test_util::simple_fields::MeshTestFixture
+class SkinnedMeshWithModifiedSkinPart : public stk::unit_test_util::MeshTestFixture
 {
 protected:
   virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
     setup_empty_mesh(auraOption);
-    stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose("ARA.e", get_bulk(), "cyclic");
+    stk::unit_test_util::read_from_serial_file_and_decompose("ARA.e", get_bulk(), "cyclic");
     stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_mesh(get_bulk(), get_things_to_skin(get_bulk()));
 
     run_modification(skinnedPart);

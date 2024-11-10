@@ -43,6 +43,12 @@
 #ifndef NUMBERING_DH_H
 #define NUMBERING_DH_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 
 /* code and algorithms in this class adopted from Edmond Chow's
    ParaSails

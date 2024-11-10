@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,9 +12,14 @@ namespace Ioad {
 
   AdiosWrapper::AdiosWrapper(Ioss_MPI_Comm comm, const std::string &filename, bool is_input,
                              unsigned long rank, const Ioss::PropertyManager &properties)
-      : adios2::ADIOS(comm), adios2::IO(IOInit(properties, is_input)), adios2::Engine(EngineInit(
-                                                                           filename, is_input)),
-        m_Rank(rank), m_Communicator(comm), m_OpenStep(false)
+#if ADIOS2_USE_MPI
+    : adios2::ADIOS(comm),
+#else
+    : adios2::ADIOS(),
+#endif
+    adios2::IO(IOInit(properties, is_input)),
+    adios2::Engine(EngineInit(filename, is_input)), m_Rank(rank), m_Communicator(comm),
+    m_OpenStep(false)
   {
   }
 

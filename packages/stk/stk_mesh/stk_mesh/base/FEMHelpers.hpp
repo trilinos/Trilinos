@@ -120,15 +120,14 @@ EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh
 EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes);
 
 /**
- * Given an entity, subcell_rank, and subcell_id, return the nodes
- * that make up the subcell in a correct order for the given polarity.
+ * Given an entity, subcell_rank, and subcell_ordinal, return the nodes
+ * that make up the subcell
  */
 stk::topology get_subcell_nodes(const BulkData& mesh,
     const Entity entity ,
     EntityRank         subcell_rank ,
-    unsigned           subcell_identifier ,
-    EntityVector     & subcell_nodes
-    );
+    unsigned           subcell_ordinal ,
+    EntityVector     & subcell_nodes);
 
 /** \brief  Given an entity and collection of nodes, return the
  *          local id of the subcell that contains those nodes in the
@@ -139,32 +138,10 @@ int get_entity_subcell_id( const BulkData& mesh, const Entity entity ,
                            stk::topology side_topology,
                            const EntityVector      & side_nodes );
 
-inline
 void get_parts_with_topology(stk::topology topology,
                              stk::mesh::BulkData& mesh,
                              stk::mesh::PartVector& parts,
-                             bool skip_topology_root_parts=false)
-{
-  parts.clear();
-
-  const stk::mesh::MetaData & fem_meta = mesh.mesh_meta_data();
-
-  const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
-
-  stk::mesh::PartVector::const_iterator
-    iter = all_parts.begin(),
-    iter_end = all_parts.end();
-
-  for(; iter!=iter_end; ++iter) {
-    stk::mesh::Part* part =  *iter;
-    if (fem_meta.get_topology(*part) == topology) {
-      if (skip_topology_root_parts && stk::mesh::is_topology_root_part(*part)) {
-        continue;
-      }
-      parts.push_back(part);
-    }
-  }
-}
+                             bool skip_topology_root_parts=false);
 
 stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank);
 stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal);

@@ -1,6 +1,12 @@
 #ifndef ML_FILTERTYPE_H
 #define ML_FILTERTYPE_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* \file ml_FilterType.h
  *
  * \brief Enum for filtering.

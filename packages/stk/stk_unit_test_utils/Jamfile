@@ -64,8 +64,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.
@@ -149,8 +149,8 @@ lib stk_unit_test_utils
       /sierra/stk_topology//stk_topology
       /sierra/stk_mesh//stk_mesh_base
       /sierra/stk_balance//stk_balance_lib
-      /tpl/gtest//gtest
-      /tpl/gtest//gmock
+      /tpl/googletest//gtest
+      /tpl/googletest//gmock
     ]
   : 
     [ ifuserbuild

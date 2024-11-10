@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_NFACTOR_BLK_HPP
 #define SHYLUBASKER_NFACTOR_BLK_HPP
 
@@ -140,7 +149,7 @@ namespace BaskerNS
     const Mag normA     = BTF_A.gnorm;
     const Mag normA_blk = BTF_A.anorm;
 
-    Int b = S[0][kid]; //Which blk from schedule
+    Int b = S(0)(kid); //Which blk from schedule
     BASKER_MATRIX &L   = LL(b)(0);
     BASKER_MATRIX &U   = LU(b)(LU_size(b)-1);
     BASKER_MATRIX &M   = ALM(b)(0); //A->blk
@@ -150,9 +159,9 @@ namespace BaskerNS
     ENTRY_1DARRAY X    = LL(b)(0).ews;
     Int        ws_size = LL(b)(0).iws_size;
 #else  //else if BASKER_2DL
-    INT_1DARRAY   ws   = thread_array[kid].iws;
-    ENTRY_1DARRAY X    = thread_array[kid].ews;
-    Int       ws_size  = thread_array[kid].iws_size;
+    INT_1DARRAY   ws   = thread_array(kid).iws;
+    ENTRY_1DARRAY X    = thread_array(kid).ews;
+    Int       ws_size  = thread_array(kid).iws_size;
 #endif
     //Int          bcol  = L.scol;  //begining col //NOT UD
     Int          scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
@@ -1277,8 +1286,8 @@ namespace BaskerNS
     INT_1DARRAY    ws  = LL(wsb)(l).iws;
     const Int  ws_size = LL(wsb)(l).iws_size;
     #else
-    INT_1DARRAY    ws  = thread_array[kid].iws;
-    Int        ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY    ws  = thread_array(kid).iws;
+    Int        ws_size = thread_array(kid).iws_size;
     #endif
 
     const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
@@ -1451,9 +1460,9 @@ namespace BaskerNS
     ENTRY_1DARRAY X  = LL(wsb)(l).ews;
     Int      ws_size = LL(wsb)(l).iws_size;
     #else
-    INT_1DARRAY   ws = thread_array[kid].iws;
-    ENTRY_1DARRAY  X = thread_array[kid].ews;
-    Int      ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY   ws = thread_array(kid).iws;
+    ENTRY_1DARRAY  X = thread_array(kid).ews;
+    Int      ws_size = thread_array(kid).iws_size;
     #endif
     
     const Entry zero (0.0);
@@ -1598,7 +1607,7 @@ namespace BaskerNS
     if (blkcol == 2 && blkrow == 1) printf( " L.colptr(%d) = %d\n",k+1,lnnz );
     #endif
 
-    //LL[X_col][X_row].p_size = 0;
+    //LL(X_col)(X_row).p_size = 0;
     LL(X_col)(X_row).p_size = 0;
 
     return 0;
@@ -1822,7 +1831,7 @@ namespace BaskerNS
     }//over all nonzero in left
 
     #ifdef BASKER_2DL
-    //LL[X_col][X_row].p_size = nnz;
+    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 
@@ -2047,7 +2056,7 @@ namespace BaskerNS
            nnz, kid, X_col, X_row);
     printf("kid %d Ending nnz: %d \n",kid, nnz);
     #endif
-    //LL[X_col][X_row].p_size = nnz;
+    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 
