@@ -158,7 +158,7 @@ private:
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
   /// Storage for the tangent data
-  PHX::ViewOfViews<1,PHX::View<RealT*>> dfdpFieldsVoV_;
+  PHX::ViewOfViews<1,Kokkos::View<RealT**,Kokkos::LayoutLeft,PHX::Device>> dfdpFieldsVoV_;
 
   PHX::View<int**> scratch_lids_;
   std::vector<PHX::View<int*> > scratch_offsets_;

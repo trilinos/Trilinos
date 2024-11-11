@@ -24,7 +24,6 @@
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_Scratch_Utilities.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -211,14 +210,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
       rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
     auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-    // TODO BWR not sure this will be checked by tests... Always true??
-    TEUCHOS_ASSERT(dfdp_view.extent_int(1)==1);
-    dfdpFieldsVoV_.addView(Kokkos::subview(dfdp_view,Kokkos::ALL(),0),i);
+    dfdpFieldsVoV_.addView(dfdp_view,i);
   }
 
   dfdpFieldsVoV_.syncHostToDevice();
 
-  // TODO BWR DO WE WANT TO BE ABLE TO FILL RESIDUAL TOO?
   // extract linear object container
   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
@@ -412,7 +408,7 @@ public:
   FieldType field;
   double num_params;
 
-  Kokkos::View<PHX::View<double*>*>  dfdp_fields; // tangent fields
+  Kokkos::View<Kokkos::View<double**,Kokkos::LayoutLeft,PHX::Device>*>  dfdp_fields; // tangent fields
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -430,7 +426,7 @@ public:
 
        // loop over the tangents
        for(int i_param=0; i_param<num_params; i_param++)
-          dfdp_fields(i_param)(lid) += scatterField.fastAccessDx(i_param);
+          dfdp_fields(i_param)(lid,0) += scatterField.fastAccessDx(i_param);
 
     } // end basis
   }
@@ -529,14 +525,13 @@ evaluateFields(typename TRAITS::EvalData workset)
   ScatterResidual_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
   functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
   functor.lids = scratch_lids_;
+  functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
   // for each field, do a parallel for loop
   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
     functor.offsets = scratch_offsets_[fieldIndex];
     functor.field = scatterFields_[fieldIndex];
-    functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
-    // TODO BWR is there a better way? Is this correct?
-    functor.num_params = PHX::getFadSize(scatterFields_[fieldIndex].get_static_view())-1;
+    functor.num_params = Kokkos::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
 
     Kokkos::parallel_for(workset.num_cells,functor);
   }
