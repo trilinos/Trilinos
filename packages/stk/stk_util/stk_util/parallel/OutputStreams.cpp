@@ -105,7 +105,9 @@ void output_flush()
 
 void set_outputP0(std::ostream* ostreamPtr, ParallelMachine comm)
 {
-  reset_default_output_streams(comm);
+  if (comm != OutputStreams::instance().m_comm) {
+    reset_default_output_streams(comm);
+  }
   if (stk::parallel_machine_rank(comm) == 0) {
     OutputStreams::instance().m_outputP0 = ostreamPtr;
   }

@@ -62,15 +62,11 @@
 #include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"
 #include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
-#include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/util/GetEnv.hpp"
 #include <algorithm>                    // for sort, lower_bound, unique, etc
-#include <fstream>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for set, set<>::iterator, etc
@@ -437,20 +433,6 @@ BulkData::register_device_mesh() const
 {
   STK_ThrowRequireMsg(m_isDeviceMeshRegistered==false, "Cannot register more than one DeviceMesh against a BulkData");
   m_isDeviceMeshRegistered = true;
-}
-
-void
-BulkData::unregister_device_mesh() const
-{
-  m_isDeviceMeshRegistered = false;
-
-  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(mesh_meta_data().entity_rank_count());
-  for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < endRank; ++rank) {
-    const stk::mesh::BucketVector & stkBuckets = buckets(rank);
-    for (Bucket * bucket : stkBuckets) {
-      bucket->set_ngp_bucket_id(INVALID_BUCKET_ID);
-    }
-  }
 }
 
 void BulkData::set_automatic_aura_option(AutomaticAuraOption auraOption, bool applyImmediately)
@@ -1026,17 +1008,15 @@ void BulkData::internal_verify_and_change_entity_parts( const EntityVector& enti
     OrdinalVector removePartsAndSubsetsMinusPartsInAddPartsList;
     OrdinalVector scratchOrdinalVec, scratchSpace;
 
-    for(Entity entity : entities) {
-      addPartsAndSupersets.clear();
-      impl::fill_add_parts_and_supersets(add_parts, addPartsAndSupersets);
+    impl::fill_add_parts_and_supersets(add_parts, addPartsAndSupersets);
 
+    for(Entity entity : entities) {
       impl::fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(remove_parts,
                                                         addPartsAndSupersets,
                                                         bucket_ptr(entity),
                                                         removePartsAndSubsetsMinusPartsInAddPartsList);
 
-      internal_change_entity_parts(entity,
-                                   addPartsAndSupersets,
+      internal_change_entity_parts(entity, addPartsAndSupersets,
                                    removePartsAndSubsetsMinusPartsInAddPartsList,
                                    scratchOrdinalVec, scratchSpace);
     }
@@ -1739,6 +1719,7 @@ void BulkData::comm_shared_procs(Entity entity, std::vector<int> & procs ) const
 
 void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   procs.clear();
   int num = keys.size();
   std::vector<int> procs_tmp;
@@ -1768,6 +1749,7 @@ void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, st
 void BulkData::shared_procs_intersection(const EntityVector& entities,
                                          std::vector<int> & procs ) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   procs.clear();
   int num = entities.size();
   for (int i = 0; i < num; ++i) {
@@ -2070,6 +2052,7 @@ void BulkData::update_field_data_states(bool rotateNgpFieldViews)
 
 const_entity_iterator BulkData::begin_entities(EntityRank ent_rank) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   return m_entityKeyMapping->begin_rank(ent_rank);
 }
 
@@ -2080,6 +2063,7 @@ const_entity_iterator BulkData::end_entities(EntityRank ent_rank) const
 
 Entity BulkData::get_entity( EntityRank ent_rank , EntityId entity_id ) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   if (!impl::is_good_rank_and_id(mesh_meta_data(), ent_rank, entity_id)) {
       return Entity();
   }
@@ -2088,6 +2072,7 @@ Entity BulkData::get_entity( EntityRank ent_rank , EntityId entity_id ) const
 
 Entity BulkData::get_entity( const EntityKey key ) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   return m_entityKeyMapping->get_entity(key);
 }
 
@@ -2137,6 +2122,8 @@ void BulkData::erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr)
 
 BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selector) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
+
   if (rank == stk::topology::INVALID_RANK) {
     static BucketVector empty;
     return empty;
@@ -2168,6 +2155,7 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
 }
 
 void BulkData::get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const {
+  confirm_host_mesh_is_synchronized_from_device();
   output_entities.clear();
   const stk::mesh::BucketVector &bucket_ptrs = get_buckets(rank, selector);
   for(size_t ib=0, ib_end=bucket_ptrs.size(); ib<ib_end; ++ib) {
@@ -4521,6 +4509,7 @@ void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, BucketIndices& 
 
 const std::vector<int>& BulkData::all_sharing_procs(stk::mesh::EntityRank rank) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   internal_update_all_sharing_procs();
   return m_all_sharing_procs[rank];
 }
@@ -5185,9 +5174,9 @@ void BulkData::internal_insert_all_parts_induced_from_higher_rank_entities_to_ve
         int num_upward_rels = num_connectivity(e_to, to_rel_rank_i);
         Entity const* upward_rel_entities = begin(e_to, to_rel_rank_i);
 
+        const Bucket* prevBucketPtr = nullptr;
         for (int k = 0; k < num_upward_rels; ++k)
         {
-            const Bucket* prevBucketPtr = nullptr;
             if (entity != upward_rel_entities[k])  // Already did this entity
             {
               const Bucket* curBucketPtr = bucket_ptr(upward_rel_entities[k]);
@@ -5823,6 +5812,14 @@ std::vector<const SideSet *> BulkData::get_sidesets() const
 EntityRank BulkData::get_entity_rank_count() const
 {
   return mesh_meta_data().entity_rank_count();
+}
+
+void BulkData::confirm_host_mesh_is_synchronized_from_device(const char * fileName, int lineNumber) const
+{
+  STK_ThrowRequireMsg((not get_ngp_mesh()) || (not get_ngp_mesh()->need_sync_to_host()),
+                      std::string(fileName) + ":" + std::to_string(lineNumber) +
+                      " Accessing host-side BulkData or Field data after a device-side mesh modification without "
+                      "calling NgpMesh::sync_to_host()");
 }
 
 } // namespace mesh

@@ -113,17 +113,23 @@ void calculate_centroid(const stk::mesh::NgpMesh &ngpMesh, const CoordFieldType 
                                      return;
                                    }
 
-                                   for (unsigned dim = 0; dim < numComponents; dim++) {
-                                     double elemDimValue = 0.0;
+                                   stk::mesh::EntityFieldData<double> elemCentroid = ngpCentroid(elem);
+                                   elemCentroid[0] = 0.0;
+                                   elemCentroid[1] = 0.0;
+                                   elemCentroid[2] = 0.0;
 
-                                     for (size_t i = 0; i < nodes.size(); i++) {
-                                       stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
-                                       elemDimValue += ngpCoords(nodeIndex, dim);
-                                     }
-
-                                     elemDimValue /= nodes.size();
-                                     ngpCentroid(elem, dim) = elemDimValue;
+                                   for (size_t i = 0; i < nodes.size(); i++) {
+                                     stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
+                                     const stk::mesh::EntityFieldData<double> nodeCoords = ngpCoords(nodeIndex);
+ 
+                                     elemCentroid[0] += nodeCoords[0];
+                                     elemCentroid[1] += nodeCoords[1];
+                                     elemCentroid[2] += nodeCoords[2];
                                    }
+
+                                   elemCentroid[0] /= nodes.size();
+                                   elemCentroid[1] /= nodes.size();
+                                   elemCentroid[2] /= nodes.size();
                                  });
   ngpCentroid.modify_on_device();
 }

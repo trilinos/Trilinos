@@ -46,7 +46,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <string>
-#include <memory>
 
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
@@ -182,16 +181,17 @@ public:
       bulk(nullptr),
       spatial_dimension(0),
       synchronizedCount(0),
+      m_needSyncToHost(false),
       deviceMeshHostData(nullptr)
   {}
 
   explicit DeviceMeshT(const stk::mesh::BulkData& b)
     : NgpMeshBase(),
-      bulk(&b),
+      bulk(&const_cast<stk::mesh::BulkData&>(b)),
       spatial_dimension(b.mesh_meta_data().spatial_dimension()),
       synchronizedCount(0),
+      m_needSyncToHost(false),
       endRank(static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count())),
-      copyCounter("copy_counter"),
       deviceMeshHostData(nullptr)
   {
     bulk->register_device_mesh();
@@ -206,6 +206,7 @@ public:
 
   KOKKOS_FUNCTION
   virtual ~DeviceMeshT() override {
+    m_needSyncToHost = false;
     clear_buckets_and_views();
   }
 
@@ -422,6 +423,12 @@ public:
       buckets[rank] = BucketView();
   }
 
+  stk::mesh::BulkData &get_bulk_on_host()
+  {
+    STK_ThrowRequireMsg(bulk != nullptr, "DeviceMesh::get_bulk_on_host, bulk==nullptr");
+    return *bulk;
+  }
+
   const stk::mesh::BulkData &get_bulk_on_host() const
   {
     STK_ThrowRequireMsg(bulk != nullptr, "DeviceMeshT::get_bulk_on_host, bulk==nullptr");
@@ -433,18 +440,94 @@ public:
     return synchronizedCount == bulk->synchronized_count();
   }
 
+  // This is an initial crude implementation that brings the device-side Views back to
+  // the host and then kicks off a host-side mesh modification.  The modified host mesh
+  // is then synchronized back to device.  This will not perform well and the semantics
+  // are a little different from the final device-side capability (because the host mesh
+  // will not be left in an unsynchronized state), but it can serve as a stand-in for
+  // the final device-side mesh modification capability in the meantime.
+  //
+  template <typename... EntitiesParams, typename... AddPartParams, typename... RemovePartParams>
+  void batch_change_entity_parts(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
+                                 const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
+                                 const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
+  {
+    using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
+    using AddPartOrdinalsMemorySpace = typename std::remove_reference<decltype(addPartOrdinals)>::type::memory_space;
+    using RemovePartOrdinalsMemorySpace = typename std::remove_reference<decltype(removePartOrdinals)>::type::memory_space;
+
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
+                  "The memory space of the 'entities' View is inaccessible from the DeviceMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, AddPartOrdinalsMemorySpace>::accessible,
+                  "The memory space of the 'addPartOrdinals' View is inaccessible from the DeviceMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
+                  "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
+
+    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::HostMirror;
+    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::HostMirror;
+    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::HostMirror;
+
+    HostEntitiesType copiedEntities = Kokkos::create_mirror_view(entities);
+    HostAddPartOrdinalsType copiedAddPartOrdinals = Kokkos::create_mirror_view(addPartOrdinals);
+    HostRemovePartOrdinalsType copiedRemovePartOrdinals = Kokkos::create_mirror_view(removePartOrdinals);
+
+    Kokkos::deep_copy(copiedEntities, entities);
+    Kokkos::deep_copy(copiedAddPartOrdinals, addPartOrdinals);
+    Kokkos::deep_copy(copiedRemovePartOrdinals, removePartOrdinals);
+
+    std::vector<stk::mesh::Entity> hostEntities;
+    std::vector<stk::mesh::Part*> hostAddParts;
+    std::vector<stk::mesh::Part*> hostRemoveParts;
+
+    hostEntities.reserve(copiedEntities.extent(0));
+    for (size_t i = 0; i < copiedEntities.extent(0); ++i) {
+      hostEntities.push_back(copiedEntities[i]);
+    }
+
+    const stk::mesh::PartVector& parts = bulk->mesh_meta_data().get_parts();
+
+    hostAddParts.reserve(copiedAddPartOrdinals.extent(0));
+    for (size_t i = 0; i < copiedAddPartOrdinals.extent(0); ++i) {
+      const size_t partOrdinal = copiedAddPartOrdinals[i];
+      STK_ThrowRequire(partOrdinal < parts.size());
+      hostAddParts.push_back(parts[partOrdinal]);
+    }
+
+    hostRemoveParts.reserve(copiedRemovePartOrdinals.extent(0));
+    for (size_t i = 0; i < copiedRemovePartOrdinals.extent(0); ++i) {
+      const size_t partOrdinal = copiedRemovePartOrdinals[i];
+      STK_ThrowRequire(partOrdinal < parts.size());
+      hostRemoveParts.push_back(parts[partOrdinal]);
+    }
+
+    m_needSyncToHost = false;
+    bulk->batch_change_entity_parts(hostEntities, hostAddParts, hostRemoveParts);
+
+    update_mesh();
+    m_needSyncToHost = true;
+  }
+
+  // This function should be called before doing any host-side mesh operations after a
+  // device-side mesh modification, to avoid accessing stale data.  Accessing the host
+  // mesh without syncing it first should result in a throw.
+  //
+  void sync_to_host() {
+    m_needSyncToHost = false;
+  }
+
+  // This can be used to check if the device-side mesh has been modified without
+  // synchronizing it to the host.
+  //
+  bool need_sync_to_host() const override {
+    return m_needSyncToHost;
+  }
+
 private:
   void set_entity_keys(const stk::mesh::BulkData& bulk_in);
 
   void set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in);
 
   void fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in);
-
-  KOKKOS_FUNCTION
-  bool is_last_mesh_copy() const
-  {
-    return (copyCounter.use_count() == 1);
-  }
 
   KOKKOS_FUNCTION
   bool is_last_bucket_reference(unsigned rank = stk::topology::NODE_RANK) const
@@ -456,10 +539,6 @@ private:
   void clear_buckets_and_views()
   {
     KOKKOS_IF_ON_HOST((
-      if (is_last_mesh_copy()) {
-        bulk->unregister_device_mesh();
-      }
-    
       if (is_last_bucket_reference()) {
         for (stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++) {
           for (unsigned iBucket = 0; iBucket < buckets[rank].size(); ++iBucket) {
@@ -486,11 +565,11 @@ private:
 
 
   using BucketView = Kokkos::View<DeviceBucketT<NgpMemSpace>*, stk::ngp::UVMMemSpace>;
-  const stk::mesh::BulkData *bulk;
+  stk::mesh::BulkData* bulk;
   unsigned spatial_dimension;
   unsigned synchronizedCount;
+  bool m_needSyncToHost;
   stk::mesh::EntityRank endRank;
-  Kokkos::View<int[1], Kokkos::HostSpace> copyCounter;
   impl::NgpMeshHostData<NgpMemSpace>* deviceMeshHostData;
 
   EntityKeyViewType entityKeys;

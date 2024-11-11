@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include "stk_mesh/base/NgpForEachEntity.hpp"
 
 namespace ngp_field_test_utils {
 

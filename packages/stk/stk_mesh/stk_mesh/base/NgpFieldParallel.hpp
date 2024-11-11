@@ -187,7 +187,7 @@ public:
     for (stk::mesh::NgpField<T>* field : m_ngpFields)
     {
       stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
-      stk::mesh::HostCommMapIndices  commMapIndices = m_ngpMesh.get_bulk_on_host().volatile_fast_shared_comm_map<HostCommMapIndicesMemSpace>(field->get_rank(), proc);
+      stk::mesh::HostCommMapIndices  commMapIndices = m_ngpMesh.get_bulk_on_host().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(field->get_rank(), proc);
       for (size_t i = 0; i < commMapIndices.extent(0); ++i) {
         const unsigned bucketId = commMapIndices(i).bucket_id;
         const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
