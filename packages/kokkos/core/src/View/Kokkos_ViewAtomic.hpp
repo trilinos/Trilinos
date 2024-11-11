@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_ATOMIC_VIEW_HPP
-#define KOKKOS_ATOMIC_VIEW_HPP
+#ifndef KOKKOS_VIEWATOMIC_HPP
+#define KOKKOS_VIEWATOMIC_HPP
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_Atomic.hpp>
@@ -44,10 +44,10 @@ class AtomicDataElement {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void inc() const { Kokkos::atomic_increment(ptr); }
+  void inc() const { Kokkos::atomic_inc(ptr); }
 
   KOKKOS_INLINE_FUNCTION
-  void dec() const { Kokkos::atomic_decrement(ptr); }
+  void dec() const { Kokkos::atomic_dec(ptr); }
 
   KOKKOS_INLINE_FUNCTION
   const_value_type operator++() const {
@@ -215,7 +215,7 @@ class AtomicViewDataHandle {
   }
 
   KOKKOS_INLINE_FUNCTION
-  operator typename ViewTraits::value_type*() const { return ptr; }
+  operator typename ViewTraits::value_type *() const { return ptr; }
 };
 
 }  // namespace Impl
