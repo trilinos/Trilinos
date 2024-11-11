@@ -84,7 +84,8 @@ public:
              size_t ny,
              size_t nz,
              size_t nid_start,
-             size_t eid_start);
+             size_t eid_start,
+             const std::string& elemPartAlias = std::string(""));
 
   HexFixture(stk::ParallelMachine pm,
              size_t nx,
@@ -102,6 +103,12 @@ public:
              size_t ny,
              size_t nz,
              bool auraOn);
+
+  static void fill_mesh(size_t nx,
+                        size_t ny,
+                        size_t nz,
+                        BulkData& bulk,
+                        const std::string& elemPartAlias = std::string(""));
 
   const int                     m_spatial_dimension;
   const size_t                  m_nx;

@@ -46,6 +46,7 @@ Eval::Eval(VariableMap::Resolver & resolver, const std::string & expression, Var
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
+    m_fpErrorBehavior(FPErrorBehavior::Warn),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
@@ -58,6 +59,7 @@ Eval::Eval(const std::string & expression, Variable::ArrayOffset arrayOffsetType
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
+    m_fpErrorBehavior(FPErrorBehavior::Warn),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)

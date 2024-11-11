@@ -322,12 +322,6 @@ public:
 
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
-private:
-  bool select_part_impl(Part const& part, impl::SelectorNode const* root) const;
-  bool select_bucket_impl(Bucket const& bucket, impl::SelectorNode const* root) const;
-
-  const BulkData* find_mesh() const;
-
   bool is_null() const {
     if(m_expr.size() > 1) return false;
     if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().part()  == InvalidPartOrdinal) {
@@ -337,6 +331,12 @@ private:
     }
     return false;
   }
+
+private:
+  bool select_part_impl(Part const& part, impl::SelectorNode const* root) const;
+  bool select_bucket_impl(Bucket const& bucket, impl::SelectorNode const* root) const;
+
+  const BulkData* find_mesh() const;
 
   Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs);
 

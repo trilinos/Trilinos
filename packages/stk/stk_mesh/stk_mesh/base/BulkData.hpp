@@ -39,7 +39,6 @@
 //----------------------------------------------------------------------
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint16_t
-#include <algorithm>                    // for max
 #include <stk_mesh/base/EntityIterator.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
@@ -56,6 +55,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
+#include "stk_mesh/base/FieldSyncDebugging.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
@@ -232,6 +232,7 @@ public:
   bool modification_begin(const std::string description = std::string("UNSPECIFIED"))
   {
       ProfilingBlock block("mod begin:" + description);
+      confirm_host_mesh_is_synchronized_from_device();
       if(m_meshModification.in_modifiable_state()) {
         return false;
       }
@@ -324,7 +325,10 @@ public:
   /** \brief  Query all buckets of a given entity rank
    *  Don't call inside BucketRepository member functions!
    */
-  const BucketVector & buckets( EntityRank rank ) const { return m_bucket_repository.buckets(rank); }
+  const BucketVector & buckets( EntityRank rank ) const {
+    confirm_host_mesh_is_synchronized_from_device();
+    return m_bucket_repository.buckets(rank);
+  }
 
   //iterator that traverses entities of the specified rank, in order of ascending global identifier
   const_entity_iterator begin_entities(EntityRank ent_rank) const;
@@ -591,8 +595,14 @@ public:
    *          Is likely to be stale if ownership or sharing has changed
    *          and the 'modification_end' has not been called.
    */
-  Ghosting & aura_ghosting() const { return *m_ghosting[AURA] ; }
-  Ghosting & shared_ghosting() const { return *m_ghosting[SHARED] ; }
+  Ghosting & aura_ghosting() const {
+    confirm_host_mesh_is_synchronized_from_device();
+    return *m_ghosting[AURA];
+  }
+  Ghosting & shared_ghosting() const {
+    confirm_host_mesh_is_synchronized_from_device();
+    return *m_ghosting[SHARED];
+  }
 
   /** Return the part corresponding to the specified ghosting.
    */
@@ -637,7 +647,10 @@ public:
   void destroy_all_ghosting(); // Mod Mark
 
   /** \brief  Vector of all ghostings */
-  const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
+  const std::vector<Ghosting*> & ghostings() const {
+    confirm_host_mesh_is_synchronized_from_device();
+    return m_ghosting;
+  }
 
   size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
 
@@ -888,6 +901,9 @@ public:
   }
 
   bool is_mesh_consistency_check_on() const { return m_runConsistencyCheck; }
+
+  void confirm_host_mesh_is_synchronized_from_device(const char * fileName = HOST_DEBUG_FILE_NAME,
+                                      int lineNumber = HOST_DEBUG_LINE_NUMBER) const;
 
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
@@ -2080,6 +2096,7 @@ template <typename NgpMemSpace>
 inline NgpCommMapIndicesHostMirrorT<NgpMemSpace>
 BulkData::volatile_fast_shared_comm_map(EntityRank rank, int proc) const
 {
+  confirm_host_mesh_is_synchronized_from_device();
   STK_ThrowAssert(this->in_synchronized_state());
   STK_ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot share entities of rank: " << rank);
   if (m_ngpMeshHostDataBase == nullptr ||

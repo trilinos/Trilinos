@@ -57,6 +57,12 @@ class Eval
 public:
   typedef std::set<std::string> UndefinedFunctionSet;
 
+  enum class FPErrorBehavior {
+    Ignore,
+    Warn,
+    Error
+  };
+
   Eval(VariableMap::Resolver &resolver = VariableMap::getDefaultResolver(),
        const std::string &expr = "",
        const Variable::ArrayOffset arrayOffsetType = Variable::ZERO_BASED_INDEX);
@@ -112,6 +118,10 @@ public:
   int get_num_variables() const { return m_variableMap.size(); }
 
   UndefinedFunctionSet &getUndefinedFunctionSet() { return m_undefinedFunctionSet; }
+
+  void set_fp_error_behavior(FPErrorBehavior flag) { m_fpErrorBehavior = flag; }
+
+  FPErrorBehavior get_fp_error_behavior() const { return m_fpErrorBehavior; }
 
   bool getSyntaxStatus() const { return m_syntaxStatus; }
 
@@ -198,6 +208,7 @@ private:
   std::string m_expression;
   bool m_syntaxStatus;
   bool m_parseStatus;
+  FPErrorBehavior m_fpErrorBehavior;
 
   Node* m_headNode;
   std::vector<std::shared_ptr<Node>> m_nodes;

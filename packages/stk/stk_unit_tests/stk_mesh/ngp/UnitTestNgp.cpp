@@ -52,6 +52,16 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
 
   EXPECT_EQ(1, result.h_view(0));
   EXPECT_EQ(1, result.h_view(1));
+
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+  for (unsigned i = 0; i < 2; ++i) {
+#ifdef STK_USE_DEVICE_MESH  // Compiler can't resolve destructor type through NgpField using statement
+    fields(i).~DeviceField();
+#else
+    fields(i).~HostField();
+#endif
+  }
+#endif
 }
 
 TEST(UnitTestNgp, viewOfFields)
