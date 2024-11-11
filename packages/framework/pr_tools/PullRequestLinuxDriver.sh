@@ -52,6 +52,8 @@ function bootstrap_modules() {
         module unload sems-python
         module load sems-git/2.37.0
         module load sems-python/3.9.0
+        execute_command_checked "module load sems-ccache"
+        configure_ccache
 
         module list
     else
