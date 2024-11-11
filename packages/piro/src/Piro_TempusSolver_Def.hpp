@@ -650,8 +650,12 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 setObserver() const
 {
-  Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
-  if (Teuchos::nonnull(piroObserver_)) {
+  // Do not create the tempus observer adapter if the user-provided Piro observer is already a tempus observer
+  Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer;
+  observer = Teuchos::rcp_dynamic_cast<Tempus::IntegratorObserver<Scalar>>(piroObserver_);
+  if (Teuchos::is_null(observer) and Teuchos::nonnull(piroObserver_)) {
+    // The user did not provide a Tempus observer, so create an adapter one
+
     //Get solutionHistory from integrator
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = piroTempusIntegrator_->getSolutionHistory();
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = piroTempusIntegrator_->getTimeStepControl();
@@ -659,6 +663,7 @@ setObserver() const
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
                                 timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_, sens_method_));
   }
+
   if (Teuchos::nonnull(observer)) {
     //Set observer in integrator
     piroTempusIntegrator_->clearObservers();
