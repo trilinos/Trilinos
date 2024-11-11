@@ -200,8 +200,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, multistateField_rotateDeviceStates_syncStates
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
-  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueNew, get_field_new());
+  stk::mesh::field_fill(valueOld, get_field_old());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
@@ -230,8 +230,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, multistateField_copyHasCorrectDataAfterStateR
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
-  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueNew, get_field_new());
+  stk::mesh::field_fill(valueOld, get_field_old());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
@@ -260,8 +260,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, multistateField_copyHasWrongDataAfterDeviceSt
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
-  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueNew, get_field_new());
+  stk::mesh::field_fill(valueOld, get_field_old());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
@@ -293,8 +293,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasCorrectDataAfterStat
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
-  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueNew, get_field_new());
+  stk::mesh::field_fill(valueOld, get_field_old());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
@@ -322,8 +322,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasWrongDataAfterDevice
 
   const double valueNew = 44.4;
   const double valueOld = 22.2;
-  stk::mesh::field_fill(valueNew, get_field_new(), stk::ngp::HostExecSpace());
-  stk::mesh::field_fill(valueOld, get_field_old(), stk::ngp::HostExecSpace());
+  stk::mesh::field_fill(valueNew, get_field_new());
+  stk::mesh::field_fill(valueOld, get_field_old());
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());

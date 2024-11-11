@@ -187,20 +187,9 @@ void STKIORequire(bool cond)
 
 namespace {
 
-  static const std::string invalid("invalid");
   static const std::string scalar("scalar");
   static const std::string vector_2d("vector_2d");
   static const std::string vector_3d("vector_3d");
-  static const std::string full_tensor_36("full_tensor_36");
-  static const std::string full_tensor_32("full_tensor_32");
-  static const std::string full_tensor_22("full_tensor_22");
-  static const std::string full_tensor_16("full_tensor_16");
-  static const std::string full_tensor_12("full_tensor_12");
-  static const std::string sym_tensor_33("sym_tensor_33");
-  static const std::string sym_tensor_31("sym_tensor_31");
-  static const std::string sym_tensor_21("sym_tensor_21");
-  static const std::string matrix_22("matrix_22");
-  static const std::string matrix_33("matrix_33");
 
   const std::string base_stk_part_name = "_base_stk_part_name";
 
@@ -2211,8 +2200,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       stk::mesh::EntityRank rank = get_output_rank(params);
       //--------------------------------
       // Create the special universal node block:
-      mesh::Selector sharedSelector = params.has_shared_selector() ? *(params.get_shared_selector())
-                                                                   : meta.globally_shared_part();
 
       mesh::Selector allSelector = meta.globally_shared_part() | meta.locally_owned_part();
       if (params.get_subset_selector(    )) allSelector &= *params.get_subset_selector();
@@ -2254,9 +2241,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       mesh::EntityRank rank = get_output_rank(params);
       mesh::MetaData & meta = mesh::MetaData::get(part);
       Ioss::Region & ioRegion = params.io_region();
-
-      mesh::Selector sharedSelector = params.has_shared_selector() ? *(params.get_shared_selector())
-                                                                   : meta.globally_shared_part();
 
       mesh::Selector allSelector = (meta.globally_shared_part() | meta.locally_owned_part()) & part;
       if (params.get_subset_selector(    )) allSelector &= *params.get_subset_selector();

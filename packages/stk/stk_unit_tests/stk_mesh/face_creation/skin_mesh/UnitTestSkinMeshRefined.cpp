@@ -22,7 +22,6 @@ TEST(ElementGraph, RefinedQuad)
     stk::mesh::Part &quad_part = meta.declare_part_with_topology("Quads", stk::topology::QUADRILATERAL_4_2D);
     stk::mesh::Part &skin = meta.declare_part_with_topology("Edges", stk::topology::LINE_2);
     stk::io::put_io_part_attribute(skin);
-    stk::mesh::PartVector skin_parts = {&skin};
     stk::mesh::Part &active = meta.declare_part("active");
 
     stk::mesh::Field<double> & node_coord = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");

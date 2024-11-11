@@ -113,14 +113,12 @@ TEST ( UnitTestCreateFaces, Hex_2x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
-
-  fixture.m_meta.commit();
-  fixture.generate_mesh();
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::HexFixture::fill_mesh(NX, NY, NZ, *bulkPtr);
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::comm_mesh_counts( *bulkPtr , counts);
 
     EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
     EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
@@ -128,11 +126,11 @@ TEST ( UnitTestCreateFaces, Hex_2x1x1 )
     EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
-  stk::mesh::create_faces(fixture.m_bulk_data);
+  stk::mesh::create_faces(*bulkPtr);
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::comm_mesh_counts( *bulkPtr , counts);
 
     EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
     EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges

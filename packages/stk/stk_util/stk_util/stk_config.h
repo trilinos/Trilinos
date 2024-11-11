@@ -49,6 +49,8 @@
 #define STK_HAS_SEACAS_IOSS
 #define STK_HAS_SEACAS_EXODUS
 #define STK_HAS_SEACAS_NEMESIS
+#define STK_HAVE_FP_EXCEPT
+#define STK_HAVE_FP_ERRNO
 
 #else
 // This file gets created by cmake during a Trilinos build

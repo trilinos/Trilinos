@@ -99,6 +99,16 @@ void mark_field_modified(const mesh::FieldBase& field, EXEC_SPACE execSpace, boo
   }
 }
 
+template<typename FieldViewType>
+void construct_device_fields(FieldViewType& ngpFields)
+{
+  using NgpFieldType = typename FieldViewType::value_type;
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, ngpFields.size()),
+                       KOKKOS_LAMBDA(const unsigned& i) {
+                         new (&ngpFields(i)) NgpFieldType();
+                       });
+}
+
 template<class Scalar, class NGP_FIELD_TYPE, typename ExecSpace>
 class FieldFill {
 public:
@@ -113,8 +123,18 @@ public:
       }
     } else
     {
-      Kokkos::resize(ngpFieldsDynamic, nfields);
+      constexpr bool accessible = Kokkos::SpaceAccessibility<stk::ngp::HostExecSpace, MemorySpace>::accessible;
+  
+      if (accessible) {
+        Kokkos::resize(ngpFieldsDynamic, nfields);
+      }
+      else {
+        Kokkos::resize(Kokkos::WithoutInitializing, ngpFieldsDynamic, nfields);
+        construct_device_fields(ngpFieldsDynamic);
+      }
+
       auto ngpFieldsDynamicHost = Kokkos::create_mirror_view(ngpFieldsDynamic);
+
       for (int i=0; i < nfields; ++i)
       {
         ngpFieldsDynamicHost[i] = fields[i];
@@ -122,6 +142,8 @@ public:
       Kokkos::deep_copy(ngpFieldsDynamic, ngpFieldsDynamicHost);
     }
   }
+
+  KOKKOS_FUNCTION ~FieldFill() { }
 
   KOKKOS_FUNCTION
   void operator()(const stk::mesh::FastMeshIndex& entityIndex) const
@@ -152,6 +174,7 @@ public:
 
   using FieldView = Kokkos::View<NGP_FIELD_TYPE*, ExecSpace>;
   using FieldHostView = typename FieldView::HostMirror;
+  using MemorySpace = typename FieldView::traits::memory_space;
   static constexpr int STATIC_FIELD_LIMIT = 4;
   NGP_FIELD_TYPE ngpFieldsStatic[STATIC_FIELD_LIMIT];
   FieldView ngpFieldsDynamic;
@@ -175,8 +198,18 @@ public:
       }
     } else
     {
-      Kokkos::resize(ngpFieldsDynamic, nfields);
+      constexpr bool accessible = Kokkos::SpaceAccessibility<stk::ngp::HostExecSpace, MemorySpace>::accessible;
+  
+      if constexpr (accessible) {
+        Kokkos::resize(ngpFieldsDynamic, nfields);
+      }
+      else {
+        Kokkos::resize(Kokkos::WithoutInitializing, ngpFieldsDynamic, nfields);
+        construct_device_fields(ngpFieldsDynamic);
+      }
+
       auto ngpFieldsDynamicHost = Kokkos::create_mirror_view(ngpFieldsDynamic);
+
       for (int i=0; i < nfields; ++i)
       {
         ngpFieldsDynamicHost(i) = fields[i];
@@ -217,6 +250,7 @@ public:
 
   using FieldView = Kokkos::View<NGP_FIELD_TYPE*, ExecSpace>;
   using FieldHostView = typename FieldView::HostMirror;
+  using MemorySpace = typename FieldView::traits::memory_space;
   static constexpr int STATIC_FIELD_LIMIT = 4;
   NGP_FIELD_TYPE ngpFieldsStatic[STATIC_FIELD_LIMIT];
   FieldView ngpFieldsDynamic;
@@ -237,10 +271,12 @@ void field_fill_for_each_entity(const NGP_MESH_TYPE& ngpMesh,
   if (component == -1) {
     FieldFill<Scalar, NGP_FIELD_TYPE, EXEC_SPACE> fieldFill(ngpFields, nfields, alpha);
     stk::mesh::for_each_entity_run(ngpMesh, ngpFields[0].get_rank(), selector, fieldFill, execSpace);
+    Kokkos::fence();
   }
   else {
     FieldFillComponent<Scalar, NGP_FIELD_TYPE, EXEC_SPACE> fieldFill(ngpFields, nfields, alpha, component);
     stk::mesh::for_each_entity_run(ngpMesh, ngpFields[0].get_rank(), selector, fieldFill, execSpace);
+    Kokkos::fence();
   }
 }
 
@@ -334,6 +370,8 @@ template <class Scalar, class EXEC_SPACE>
 Scalar field_amax_no_mark_t(
     const stk::mesh::FieldBase& xField, const stk::mesh::Selector& selector, const EXEC_SPACE& execSpace)
 {
+  Scalar amaxOut = 0;
+
   if constexpr (operate_on_ngp_mesh<EXEC_SPACE>()) {
     xField.sync_to_device();
     stk::mesh::NgpField<Scalar>& ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
@@ -342,16 +380,16 @@ Scalar field_amax_no_mark_t(
     stk::mesh::for_each_entity_run(ngpMesh, xField.entity_rank(), selector, fieldAMax);
 
     Scalar localAmax = fieldAMax.get_amax_val();
-    Scalar globalAmax = localAmax;
     auto comm = xField.get_mesh().parallel();
-    stk::all_reduce_max(comm, &localAmax, &globalAmax, 1u);
-    return globalAmax;
+    stk::all_reduce_max(comm, &localAmax, &amaxOut, 1u);
   } else {
     xField.sync_to_host();
-    double amaxOut{0.0};
-    stk::mesh::field_amax(amaxOut, xField, selector);
-    return amaxOut;
+    double tmpAmax = 0.0;
+    stk::mesh::field_amax(tmpAmax, xField, selector);
+    amaxOut = tmpAmax;
   }
+
+  return amaxOut;
 }
 
 template <class Scalar, class EXEC_SPACE>

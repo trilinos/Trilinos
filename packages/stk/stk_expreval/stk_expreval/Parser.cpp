@@ -571,7 +571,10 @@ parseFunction(Eval & eval,
       function->m_data.function.functionType = functionType;
       std::strncpy(function->m_data.function.functionName,
                    function_name.c_str(),
-                   function_name.length() < Node::MAXIMUM_FUNCTION_NAME_LENGTH-1 ? function_name.length() : Node::MAXIMUM_FUNCTION_NAME_LENGTH-1);
+                   std::min(function_name.length()+1, std::string::size_type(Node::MAXIMUM_FUNCTION_NAME_LENGTH))
+                  );
+      function->m_data.function.functionName[Node::MAXIMUM_FUNCTION_NAME_LENGTH-1] = '\0';
+
       break;
     }
   }

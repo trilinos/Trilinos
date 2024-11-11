@@ -79,6 +79,7 @@ namespace Ioss { class DatabaseIO; }
 namespace {
 
 const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
+using ngp_unit_test_utils::check_bucket_layout;
 using stk::unit_test_util::build_mesh;
 
 TEST(UnitTestField, testFieldMaxSize)
@@ -1562,7 +1563,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity1)
     check_num_buckets(*m_bulk, 1);
     check_bucket_sizes(*m_bulk, {1});
     check_bucket_capacities(*m_bulk, {1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Create Node 2");
@@ -1571,7 +1572,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity1)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {1, 1});
     check_bucket_capacities(*m_bulk, {1, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1}}, {"block_1", {2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1}}, {{"block_1"}, {2}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Create Node 3");
@@ -1580,7 +1581,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity1)
     check_num_buckets(*m_bulk, 3);
     check_bucket_sizes(*m_bulk, {1, 1, 1});
     check_bucket_capacities(*m_bulk, {1, 1, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1}}, {"block_1", {2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1}}, {{"block_1"}, {2}}, {{"block_1"}, {3}}}, bucketRank);
   }
 }
 
@@ -1599,7 +1600,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 1);
     check_bucket_sizes(*m_bulk, {1});
     check_bucket_capacities(*m_bulk, {2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Create Node 2");
@@ -1608,7 +1609,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 1);
     check_bucket_sizes(*m_bulk, {2});
     check_bucket_capacities(*m_bulk, {2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Create Node 3");
@@ -1617,7 +1618,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
   }
 }
 
@@ -1636,7 +1637,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 1);
     check_bucket_sizes(*m_bulk, {1});
     check_bucket_capacities(*m_bulk, {1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Create Node 2");
@@ -1645,7 +1646,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 1);
     check_bucket_sizes(*m_bulk, {2});
     check_bucket_capacities(*m_bulk, {2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Create Node 3");
@@ -1654,7 +1655,7 @@ TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
   }
 }
 
@@ -1676,7 +1677,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Change parts for Node 1");
@@ -1685,7 +1686,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {2, 3}}, {"block_2", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {2, 3}}, {{"block_2"}, {1}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Change parts for Node 2");
@@ -1694,7 +1695,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {1, 2});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {3}}, {"block_2", {1, 2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {3}}, {{"block_2"}, {1, 2}}}, bucketRank);
   }
   {
     SCOPED_TRACE("Change parts for Node 3");
@@ -1703,7 +1704,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_2", {1, 2}}, {"block_2", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_2"}, {1, 2}}, {{"block_2"}, {3}}}, bucketRank);
   }
 }
 
@@ -1725,7 +1726,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
   }
 
   {
@@ -1735,7 +1736,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {2, 3}}, {"block_2", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {2, 3}}, {{"block_2"}, {1}}}, bucketRank);
   }
 
   {
@@ -1745,7 +1746,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {1, 2});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {3}}, {"block_2", {1, 2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {3}}, {{"block_2"}, {1, 2}}}, bucketRank);
   }
 
   {
@@ -1755,7 +1756,7 @@ TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_2", {1, 2}}, {"block_2", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_2"}, {1, 2}}, {{"block_2"}, {3}}}, bucketRank);
   }
 }
 
@@ -1772,12 +1773,12 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity2_maxCapa
     stk::mesh::EntityVector newNodes;
     m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
+    m_bulk->modification_end();
 
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
-    m_bulk->modification_end();
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
   }
 }
 
@@ -1794,12 +1795,12 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity1_maxCapa
     stk::mesh::EntityVector newNodes;
     m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
+    m_bulk->modification_end();
 
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
-    m_bulk->modification_end();
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
   }
 }
 
@@ -1860,7 +1861,7 @@ public:
       fieldDataManager = std::make_unique<stk::mesh::DefaultFieldDataManager>(numRanks, alignment);
     }
     else if (GetParam() == FieldDataManagerType::CONTIGUOUS) {
-      const unsigned extraCapacity = 0;
+      const unsigned extraCapacity = 4;  // Room for 1 extra int, for occasional in-place sorting
       const unsigned alignment = 4;
       fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>(extraCapacity, alignment);
     }
@@ -2203,7 +2204,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2215,7 +2216,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {2, 3}}, {"block_2", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {2, 3}}, {{"block_2"}, {1}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2227,7 +2228,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {1, 2});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {3}}, {"block_2", {1, 2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {3}}, {{"block_2"}, {1, 2}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2238,7 +2239,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_2", {1, 2}}, {"block_2", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_2"}, {1, 2}}, {{"block_2"}, {3}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2265,7 +2266,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {1, 2}}, {"block_1", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2277,7 +2278,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {2, 3}}, {"block_2", {1}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {2, 3}}, {{"block_2"}, {1}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2289,7 +2290,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {1, 2});
     check_bucket_capacities(*m_bulk, {2, 2});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_1", {3}}, {"block_2", {1, 2}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {3}}, {{"block_2"}, {1, 2}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2300,7 +2301,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
     check_num_buckets(*m_bulk, 2);
     check_bucket_sizes(*m_bulk, {2, 1});
     check_bucket_capacities(*m_bulk, {2, 1});
-    ngp_unit_test_utils::check_bucket_layout(*m_bulk, {{"block_2", {1, 2}}, {"block_2", {3}}}, bucketRank);
+    check_bucket_layout(*m_bulk, {{{"block_2"}, {1, 2}}, {{"block_2"}, {3}}}, bucketRank);
     check_expected_bytes_allocated(*m_bulk, field);
     check_field_values(*m_bulk, field);
   }
@@ -2325,10 +2326,10 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCa
     m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
     m_bulk->allocate_field_data();
+    m_bulk->modification_end();
 
     check_num_buckets(*m_bulk, 2);
     check_expected_bytes_allocated(*m_bulk, field);
-    m_bulk->modification_end();
   }
 }
 
@@ -2351,10 +2352,10 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCa
     m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
     m_bulk->allocate_field_data();
+    m_bulk->modification_end();
 
     check_num_buckets(*m_bulk, 2);
     check_expected_bytes_allocated(*m_bulk, field);
-    m_bulk->modification_end();
   }
 }
 

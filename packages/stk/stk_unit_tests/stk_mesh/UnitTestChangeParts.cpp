@@ -96,14 +96,78 @@ TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
   EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 }
 
+void do_simple_batch_part_change_test(stk::mesh::BulkData& bulkData)
+{
+  stk::mesh::MetaData& metaData = bulkData.mesh_meta_data();
+  stk::mesh::Part& bluePart = metaData.declare_part("blue_part");
+  stk::mesh::Part& redPart = metaData.declare_part("red_part");
+
+  stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
+  EXPECT_TRUE(bulkData.is_valid(elem1));
+
+  stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
+  EXPECT_EQ(8u, nodes.size());
+
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_FALSE(bulkData.bucket(node).member(bluePart));
+    EXPECT_FALSE(bulkData.bucket(node).member(redPart));
+  }
+
+  stk::mesh::PartVector blue_parts(1, &bluePart);
+  stk::mesh::PartVector red_parts(1, &redPart);
+  bulkData.batch_change_entity_parts(nodes, blue_parts, {});
+  nodes.resize(4);
+  bulkData.batch_change_entity_parts(nodes, red_parts, blue_parts);
+
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_TRUE(bulkData.bucket(node).member(redPart));
+    EXPECT_FALSE(bulkData.bucket(node).member(bluePart));
+  }
+
+  nodes.resize(1);
+  bulkData.batch_change_entity_parts(nodes, blue_parts, red_parts);
+
+  EXPECT_TRUE(bulkData.bucket(nodes[0]).member(bluePart));
+  EXPECT_FALSE(bulkData.bucket(nodes[0]).member(redPart));
+}
+
+TEST(UnitTestChangeParts, genmesh_test_batch_part_change_1_node)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 1) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::io::fill_mesh("generated:1x1x1", *bulkPtr);
+
+  do_simple_batch_part_change_test(*bulkPtr);
+}
+
+TEST(UnitTestChangeParts, test_batch_part_change_1_node)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 1) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1";
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, meshDesc);
+
+  do_simple_batch_part_change_test(*bulkPtr);
+}
+
 TEST(UnitTestChangeParts, test_batch_part_change)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int p_size = stk::parallel_machine_size( pm );
 
-  if (p_size != 1) {
-    return;
-  }
+  if (p_size != 1) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
