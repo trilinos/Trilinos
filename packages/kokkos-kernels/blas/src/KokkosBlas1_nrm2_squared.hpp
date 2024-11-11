@@ -55,7 +55,8 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVector_Internal;
 
-  typedef Kokkos::View<mag_type, default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<mag_type, KokkosKernels::default_layout, Kokkos::HostSpace,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RVector_Internal;
 
   mag_type result;

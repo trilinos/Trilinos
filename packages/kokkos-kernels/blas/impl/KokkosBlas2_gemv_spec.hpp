@@ -121,6 +121,8 @@ struct GEMV {
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosBlas2_gemv_eti_spec_decl.hpp>
+
 #define KOKKOSBLAS2_GEMV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
   template struct GEMV<                                                                                               \
       EXEC_SPACE,                                                                                                     \

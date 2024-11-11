@@ -526,7 +526,7 @@ bsrMat_t transpose_bsr_matrix(const bsrMat_t &A) {
   rowmap_t AT_rowmap("Transpose rowmap", A.numCols() + 1);
   entries_t AT_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose entries"), A.nnz());
   values_t AT_values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose values"),
-                     A.nnz() * A.blockDim() * A.blockDim());
+                     A.nnz() * static_cast<typename values_t::size_type>(A.blockDim()) * A.blockDim());
   transpose_bsr_matrix<c_rowmap_t, c_entries_t, c_values_t, rowmap_t, entries_t, values_t,
                        typename bsrMat_t::execution_space>(A.numRows(), A.numCols(), A.blockDim(), A.graph.row_map,
                                                            A.graph.entries, A.values, AT_rowmap, AT_entries, AT_values);
@@ -983,7 +983,7 @@ struct LowerTriangularMatrix {
 
                            // TODO: Write GPU (vector-level) version here:
                            /*
-                           if(kk_is_gpu_exec_space<ExecutionSpace>())
+                           if(is_gpu_exec_space_v<ExecutionSpace>)
                            {
                              Kokkos::parallel_for(
                                  Kokkos::ThreadVectorRange(teamMember, read_left_work),

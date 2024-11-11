@@ -80,7 +80,7 @@ inline void rocsparse_internal_safe_call(rocsparse_status rocsparseStatus, const
 
 // The macro below defines is the public interface for the safe cusparse calls.
 // The functions themselves are protected by impl namespace.
-#define KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(call) \
+#define KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(call) \
   KokkosSparse::Impl::rocsparse_internal_safe_call(call, #call, __FILE__, __LINE__)
 
 inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
@@ -169,10 +169,10 @@ struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
 // destructed.
 struct TemporarySetRocsparseStream {
   TemporarySetRocsparseStream(rocsparse_handle handle_, const Kokkos::HIP& exec_) : handle(handle_) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(handle, exec_.hip_stream()));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_stream(handle, exec_.hip_stream()));
   }
 
-  ~TemporarySetRocsparseStream() { KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(handle, NULL)); }
+  ~TemporarySetRocsparseStream() { KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_stream(handle, NULL)); }
 
   rocsparse_handle handle;
 };

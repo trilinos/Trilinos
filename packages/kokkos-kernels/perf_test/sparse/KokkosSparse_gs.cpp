@@ -14,10 +14,17 @@
 //
 //@HEADER
 
+#include <iostream>
+#include <random>
+#include <vector>
+#include <string>
+#include <unordered_set>
+
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
+
 #include <KokkosKernels_Handle.hpp>
-#include <KokkosKernels_TestUtils.hpp>
+#include <KokkosKernels_TestStringUtils.hpp>
 #include <KokkosSparse_gauss_seidel.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_IOUtils.hpp>
@@ -25,11 +32,7 @@
 #include <KokkosKernels_config.h>
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosSparse_IOUtils.hpp"
-#include <iostream>
-#include <random>
-#include <vector>
-#include <string>
-#include <unordered_set>
+#include "KokkosKernels_TestMatrixUtils.hpp"
 
 using std::cout;
 using std::string;
@@ -151,9 +154,9 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
 
 template <typename device_t>
 void runGS(const GS_Parameters& params) {
-  typedef default_scalar scalar_t;
-  typedef default_lno_t lno_t;
-  typedef default_size_type size_type;
+  using scalar_t  = KokkosKernels::default_scalar;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using size_type = KokkosKernels::default_size_type;
   typedef typename device_t::execution_space exec_space;
   typedef typename device_t::memory_space mem_space;
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space>

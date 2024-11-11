@@ -120,5 +120,6 @@ struct Swap<ExecutionSpace, XVector, YVector, false, KOKKOSKERNELS_IMPL_COMPILE_
       false, true>;
 
 #include <KokkosBlas1_swap_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_swap_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_SWAP_SPEC_HPP_

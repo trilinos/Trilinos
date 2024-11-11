@@ -545,7 +545,7 @@ void update_D(const int order, const scalar_type factor, const mat_type& coeffs,
 template <class device_type, class scalar_type>
 void test_Nordsieck() {
   using execution_space = Kokkos::HostSpace;
-  StiffChemistry mySys{};
+  [[maybe_unused]] StiffChemistry mySys{};
 
   Kokkos::View<scalar_type**, execution_space> R("coeffs", 6, 6), U("coeffs", 6, 6);
   Kokkos::View<scalar_type**, execution_space> D("D", 8, mySys.neqs), tempD("tmp", 8, mySys.neqs);

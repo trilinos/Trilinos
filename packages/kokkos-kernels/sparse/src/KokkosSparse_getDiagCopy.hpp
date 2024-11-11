@@ -17,8 +17,8 @@
 /// \file KokkosSparse_getDiagCopy.hpp
 /// \brief Get a copy of the diagonal entries of a KokkosSparse::CrsMatrix.
 
-#ifndef KOKKOS_SPARSE_GETDIAGCOPY_HPP_
-#define KOKKOS_SPARSE_GETDIAGCOPY_HPP_
+#ifndef KOKKOSSPARSE_GETDIAGCOPY_HPP_
+#define KOKKOSSPARSE_GETDIAGCOPY_HPP_
 
 #include "KokkosSparse_getDiagCopyWithOffsets_impl.hpp"
 #include <type_traits>
@@ -55,4 +55,4 @@ void getDiagCopy(const DiagType& D, const OffsetsType& offsets, const CrsMatrixT
 
 }  // namespace KokkosSparse
 
-#endif  // KOKKOS_SPARSE_GETDIAGCOPY_HPP_
+#endif  // KOKOS_SPARSE_GETDIAGCOPY_HPP_

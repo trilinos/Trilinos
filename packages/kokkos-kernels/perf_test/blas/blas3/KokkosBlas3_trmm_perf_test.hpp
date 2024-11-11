@@ -64,8 +64,9 @@ static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int /*a_m*
     flops = (b_n * (b_n + 1)) * b_m;
   }
 
-  if (std::is_same<double, default_scalar>::value || std::is_same<float, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+  if (std::is_same<double, KokkosKernels::default_scalar>::value ||
+      std::is_same<float, KokkosKernels::default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, KokkosKernels::default_scalar>::value)
     return flops;
 
   // Account for 6 additional flops when complex numbers are used.
@@ -86,8 +87,9 @@ static inline double __trmm_flop_count(char side, double b_m, double b_n, double
     flops = b_n * b_n * b_m;
   }
 
-  if (std::is_same<double, default_scalar>::value || std::is_same<float, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+  if (std::is_same<double, KokkosKernels::default_scalar>::value ||
+      std::is_same<float, KokkosKernels::default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, KokkosKernels::default_scalar>::value)
     return flops;
 
   // Account for 6 additional flops when complex numbers are used.
@@ -97,10 +99,11 @@ static inline double __trmm_flop_count(char side, double b_m, double b_n, double
   return flops * 4;
 }
 
-using view_type_3d = Kokkos::View<default_scalar***, default_layout, default_device>;
+using view_type_3d =
+    Kokkos::View<KokkosKernels::default_scalar***, KokkosKernels::default_layout, KokkosKernels::default_device>;
 struct trmm_args {
   char side, uplo, trans, diag;
-  default_scalar alpha;
+  KokkosKernels::default_scalar alpha;
   view_type_3d A, B;
 };
 typedef struct trmm_args trmm_args_t;
@@ -117,7 +120,8 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args, doub
   double gflops       = flops / 1e9;
   double average_time = time_in_seconds / options.n;
   double gbytes_in_matrix =
-      (trmm_args.B.extent(0) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * sizeof(default_scalar)) / 1e9;
+      (trmm_args.B.extent(0) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * sizeof(KokkosKernels::default_scalar)) /
+      1e9;
   double min_memory_transactions, max_memory_transactions;
 
   // Assuming infinite cache size
@@ -157,9 +161,9 @@ static void __print_trmm_perf_test_options(options_t options) {
   printf("options.n         = %d\n", options.n);
   printf("options.blas_args.trmm.trmm_args = %s\n", options.blas_args.trmm.trmm_args.c_str());
   printf("options.out_file  = %s\n", options.out_file.c_str());
-  if (std::is_same<double, default_scalar>::value)
+  if (std::is_same<double, KokkosKernels::default_scalar>::value)
     printf("options.alpha     = %lf\n", options.blas_args.trmm.alpha);
-  else if (std::is_same<float, default_scalar>::value)
+  else if (std::is_same<float, KokkosKernels::default_scalar>::value)
     printf("options.alpha     = %f\n", options.blas_args.trmm.alpha);
   return;
 }
@@ -551,8 +555,8 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   host_A          = Kokkos::create_mirror_view(trmm_args.A);
 
   {
-    Kokkos::View<double***, default_layout, default_device> tmp("tmp", trmm_args.A.extent(0), trmm_args.A.extent(1),
-                                                                trmm_args.A.extent(2));
+    Kokkos::View<double***, KokkosKernels::default_layout, KokkosKernels::default_device> tmp(
+        "tmp", trmm_args.A.extent(0), trmm_args.A.extent(1), trmm_args.A.extent(2));
     Kokkos::fill_random(tmp, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, double>::max());
     Kokkos::deep_copy(host_A, tmp);
   }
@@ -592,8 +596,8 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   Kokkos::deep_copy(trmm_args.A, host_A);
 
   {
-    Kokkos::View<double***, default_layout, default_device> tmp("tmp", trmm_args.B.extent(0), trmm_args.B.extent(1),
-                                                                trmm_args.B.extent(2));
+    Kokkos::View<double***, KokkosKernels::default_layout, KokkosKernels::default_device> tmp(
+        "tmp", trmm_args.B.extent(0), trmm_args.B.extent(1), trmm_args.B.extent(2));
     Kokkos::fill_random(tmp, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, double>::max());
     Kokkos::deep_copy(trmm_args.B, tmp);
   }
@@ -608,8 +612,9 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t))
   STATUS;
 
   __print_trmm_perf_test_options(options);
-  std::cout << "SCALAR:" << typeid(default_scalar).name() << ", LAYOUT:" << typeid(default_layout).name()
-            << ", DEVICE:" << typeid(default_device).name() << std::endl;
+  std::cout << "SCALAR:" << typeid(KokkosKernels::default_scalar).name()
+            << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name()
+            << ", DEVICE:" << typeid(KokkosKernels::default_device).name() << std::endl;
 
   options.out[0] << trmm_csv_header_str << std::endl;
 
@@ -617,7 +622,8 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t))
                                  cur_dims.b.m <= options.stop.b.m && cur_dims.b.n <= options.stop.b.n;
        cur_dims.a.m += options.step, cur_dims.a.n += options.step, cur_dims.b.m += options.step,
       cur_dims.b.n += options.step) {
-    trmm_args = __do_setup<default_scalar, view_type_3d, view_type_3d, default_device>(options, cur_dims);
+    trmm_args = __do_setup<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>(
+        options, cur_dims);
     fn(options, trmm_args);
   }
   return;
@@ -626,25 +632,30 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t))
 /*************************** External fns **************************/
 void do_trmm_serial_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_serial_blas<default_scalar, view_type_3d, view_type_3d, default_device>);
+  __do_loop_and_invoke(
+      options,
+      __do_trmm_serial_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trmm_serial_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_serial_batched<default_scalar, view_type_3d, view_type_3d, default_device>);
+  __do_loop_and_invoke(options, __do_trmm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
+                                                         KokkosKernels::default_device>);
   return;
 }
 
 void do_trmm_parallel_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_parallel_blas<default_scalar, view_type_3d, view_type_3d, default_device>);
+  __do_loop_and_invoke(options, __do_trmm_parallel_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
+                                                        KokkosKernels::default_device>);
   return;
 }
 
 void do_trmm_parallel_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_parallel_batched<default_scalar, view_type_3d, view_type_3d, default_device>);
+  __do_loop_and_invoke(options, __do_trmm_parallel_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
+                                                           KokkosKernels::default_device>);
   return;
 }
 

@@ -143,7 +143,7 @@ void impl_test_batched_inverselu(const int N, const int BlkSize) {
   /// randomized input testing views
   AViewType a0("a0", N, BlkSize, BlkSize);
   AViewType a1("a1", N, BlkSize, BlkSize);
-  WViewType w("w", N, BlkSize * BlkSize);
+  WViewType w("w", N, BlkSize * static_cast<size_t>(BlkSize));
   AViewType c0("c0", N, BlkSize, BlkSize);
 
   Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);

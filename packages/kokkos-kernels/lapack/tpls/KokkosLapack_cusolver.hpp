@@ -32,6 +32,11 @@ struct CudaLapackSingleton {
   CudaLapackSingleton();
 
   static CudaLapackSingleton& singleton();
+
+  static bool is_initialized();
+
+ private:
+  static std::unique_ptr<CudaLapackSingleton>& get_instance();
 };
 
 inline void cusolver_internal_error_throw(cusolverStatus_t cusolverStatus, const char* name, const char* file,
@@ -69,7 +74,7 @@ inline void cusolver_internal_safe_call(cusolverStatus_t cusolverStatus, const c
 
 // The macro below defines is the public interface for the safe cusolver calls.
 // The functions themselves are protected by impl namespace.
-#define KOKKOS_CUSOLVER_SAFE_CALL_IMPL(call) \
+#define KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(call) \
   KokkosLapack::Impl::cusolver_internal_safe_call(call, #call, __FILE__, __LINE__)
 
 }  // namespace Impl

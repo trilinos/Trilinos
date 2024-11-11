@@ -78,29 +78,21 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename ExecutionSpace>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space() {
-  return false;
-}
+constexpr inline bool is_gpu_exec_space_v = false;
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
-  return true;
-}
+constexpr inline bool is_gpu_exec_space_v<Kokkos::Cuda> = true;
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::HIP>() {
-  return true;
-}
+constexpr inline bool is_gpu_exec_space_v<Kokkos::HIP> = true;
 #endif
 
 #ifdef KOKKOS_ENABLE_SYCL
 template <>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
-  return true;
-}
+constexpr inline bool is_gpu_exec_space_v<Kokkos::Experimental::SYCL> = true;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

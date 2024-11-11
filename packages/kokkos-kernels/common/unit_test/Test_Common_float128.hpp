@@ -131,8 +131,8 @@ void testfloat128() {
   }
 
   // Assign to the first entry, atomically.
-  Kokkos::atomic_assign(&view(0), z);
-  cout << "view(0) after atomic_assign (z) = " << view(0) << endl;
+  Kokkos::atomic_store(&view(0), z);
+  cout << "view(0) after atomic_store (z) = " << view(0) << endl;
   if (view(0) != z) {
     success = false;
   }

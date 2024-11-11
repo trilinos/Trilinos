@@ -131,6 +131,8 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType, LEn
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spiluk_symbolic_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,          \
                                                    EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                              \
   template struct SPILUK_SYMBOLIC<                                                                               \

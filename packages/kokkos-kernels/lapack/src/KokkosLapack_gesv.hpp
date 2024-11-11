@@ -63,9 +63,15 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B, const IP
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible);
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename BXMV::memory_space>::accessible);
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+#if defined(KOKKOS_ENABLE_CUDA)
   if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
     static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename IPIVV::memory_space>::accessible);
   }
+#elif defined(KOKKOS_ENABLE_HIP)
+  if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::HIP>) {
+    static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename IPIVV::memory_space>::accessible);
+  }
+#endif
 #else
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename IPIVV::memory_space>::accessible);
 #endif
@@ -96,6 +102,7 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B, const IP
   // Check for no pivoting case. Only MAGMA supports no pivoting interface
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
+#if defined(KOKKOS_ENABLE_CUDA)
   if ((!std::is_same<typename AMatrix::device_type::memory_space, Kokkos::CudaSpace>::value) && (IPIV0 == 0) &&
       (IPIV.data() == nullptr)) {
     std::ostringstream os;
@@ -103,6 +110,15 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B, const IP
        << "LAPACK TPL does not support no pivoting.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
+#elif defined(KOKKOS_ENABLE_HIP)
+  if ((!std::is_same<typename AMatrix::device_type::memory_space, Kokkos::HIPSpace>::value) && (IPIV0 == 0) &&
+      (IPIV.data() == nullptr)) {
+    std::ostringstream os;
+    os << "KokkosLapack::gesv: IPIV: " << IPIV0 << ". "
+       << "LAPACK TPL does not support no pivoting.";
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+#endif
 #endif
 #else                                   // not have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL

@@ -174,6 +174,8 @@ struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false, K
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_trsv_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_TRSV_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,         \
                                         MEM_SPACE_TYPE)                                                               \
   template struct TRSV<                                                                                               \

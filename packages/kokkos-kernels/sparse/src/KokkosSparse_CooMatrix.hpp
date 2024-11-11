@@ -21,8 +21,8 @@
 /// local (no MPI) sparse matrix stored in coordinate ("Coo") format
 /// which is also known as ivj or triplet format.
 
-#ifndef KOKKOS_SPARSE_COOMATRIX_HPP_
-#define KOKKOS_SPARSE_COOMATRIX_HPP_
+#ifndef KOKKOSSPARSE_COOMATRIX_HPP_
+#define KOKKOSSPARSE_COOMATRIX_HPP_
 
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_Error.hpp"
@@ -147,4 +147,4 @@ template <typename... P>
 struct is_coo_matrix<const CooMatrix<P...>> : public std::true_type {};
 
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_COOMATRIX_HPP_

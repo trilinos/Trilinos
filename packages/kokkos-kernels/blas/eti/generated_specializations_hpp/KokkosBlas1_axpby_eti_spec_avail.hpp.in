@@ -19,6 +19,6 @@
 namespace KokkosBlas {
 namespace Impl {
 @BLAS1_AXPBY_ETI_AVAIL_BLOCK@
-  } //IMPL 
+} //IMPL 
 } //Kokkos
 #endif

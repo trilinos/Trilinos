@@ -20,6 +20,8 @@
 #ifdef KOKKOS_ENABLE_OPENMP
 
 #include <omp.h>
+#include <sstream>
+#include <stdexcept>
 
 #define OMP_BENCH_RESTRICT __restrict__
 
@@ -33,8 +35,16 @@ void establishSmartSchedule(AType A) {
 
   // Generate a schedule
   Ordinal* rowSizes = NULL;
-  posix_memalign((void**)&rowSizes, 64, sizeof(int) * A.numRows());
-  posix_memalign((void**)&threadStarts, 128, sizeof(int) * (omp_get_max_threads() + 1));
+  if (posix_memalign((void**)&rowSizes, 64, sizeof(int) * A.numRows())) {
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " posix_memalign failed";
+    throw std::runtime_error(ss.str());
+  }
+  if (posix_memalign((void**)&threadStarts, 128, sizeof(int) * (omp_get_max_threads() + 1))) {
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " posix_memalign failed";
+    throw std::runtime_error(ss.str());
+  }
 
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     threadStarts[i] = A.numRows();

@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP__
-#define __KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP__
+#ifndef KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP
+#define KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -115,7 +115,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, mq * nq), [&](const int &ij) {
         int i, j;
         // note: the condition is constexpr
-        if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename MemberType::execution_space>()) {
+        if (KokkosKernels::Impl::is_gpu_exec_space_v<typename MemberType::execution_space>) {
           i = ij % mq * mb;
           j = ij / mq * nb;
         } else {

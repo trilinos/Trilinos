@@ -16,7 +16,7 @@
 
 #include "KokkosBlas3_gemm.hpp"
 #include <Kokkos_Random.hpp>
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 #include "Benchmark_Context.hpp"
 #include <benchmark/benchmark.h>

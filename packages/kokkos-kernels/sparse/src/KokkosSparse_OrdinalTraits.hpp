@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SPARSE_ORDINALTRAITS_HPP_
-#define KOKKOS_SPARSE_ORDINALTRAITS_HPP_
+#ifndef KOKKOSSPARSE_ORDINALTRAITS_HPP_
+#define KOKKOSSPARSE_ORDINALTRAITS_HPP_
 
 /// \file KokkosSparse_OrdinalTraits.hpp
 /// \brief Declaration and definition of KokkosSparse::OrdinalTraits,
@@ -95,4 +95,4 @@ struct OrdinalTraits<unsigned long long> {
 
 }  // namespace KokkosSparse
 
-#endif  // KOKKOS_SPARSE_ORDINALTRAITS_HPP_
+#endif  // KOKKOSSPARSE_ORDINALTRAITS_HPP_

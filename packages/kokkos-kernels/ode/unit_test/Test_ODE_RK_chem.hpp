@@ -92,6 +92,7 @@ void test_chem() {
   using mv_type         = Kokkos::View<double**, Device>;
   using RK_type         = KokkosODE::Experimental::RK_type;
   using solver_type     = KokkosODE::Experimental::RungeKutta<RK_type::RKCK>;
+  using count_type      = Kokkos::View<int*, execution_space>;
 
   {
     chem_model_1 chem_model;
@@ -101,6 +102,7 @@ void test_chem() {
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
     mv_type kstack("k stack", solver_type::num_stages(), neqs);
+    count_type count("time steps count", 1);
 
     // Set initial conditions
     vec_type y_new("solution", neqs);
@@ -112,8 +114,8 @@ void test_chem() {
     Kokkos::deep_copy(y_new, y_old_h);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    RKSolve_wrapper<chem_model_1, RK_type::RKCK, vec_type, mv_type, double> solve_wrapper(
-        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack);
+    RKSolve_wrapper<chem_model_1, RK_type::RKCK, vec_type, mv_type, double, count_type> solve_wrapper(
+        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack, count);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     auto y_new_h = Kokkos::create_mirror(y_new);
@@ -137,6 +139,7 @@ void test_chem() {
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
     mv_type kstack("k stack", solver_type::num_stages(), neqs);
+    count_type count("time steps count", 1);
 
     // Set initial conditions
     vec_type y_new("solution", neqs);
@@ -153,8 +156,8 @@ void test_chem() {
     Kokkos::deep_copy(y_new, y_old_h);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    RKSolve_wrapper<chem_model_2, RK_type::RKCK, vec_type, mv_type, double> solve_wrapper(
-        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack);
+    RKSolve_wrapper<chem_model_2, RK_type::RKCK, vec_type, mv_type, double, count_type> solve_wrapper(
+        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack, count);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     auto y_new_h = Kokkos::create_mirror(y_new);
