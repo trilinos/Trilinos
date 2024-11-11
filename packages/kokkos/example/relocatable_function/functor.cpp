@@ -14,5 +14,8 @@
 //
 //@HEADER
 
-#include <TestSYCL_Category.hpp>
-#include <TestTaskScheduler.hpp>
+#include <Kokkos_Macros.hpp>
+
+KOKKOS_RELOCATABLE_FUNCTION void count_even(const long i, long& lcount) {
+  lcount += (i % 2) == 0;
+}
