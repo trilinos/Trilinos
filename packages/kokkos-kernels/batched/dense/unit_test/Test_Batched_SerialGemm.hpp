@@ -25,6 +25,7 @@
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestVanilla.hpp"
 
 using namespace KokkosBatched;
 

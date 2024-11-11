@@ -167,12 +167,12 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,double]");                                           \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                 \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                          \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                      \
       cublasPointerMode_t pointer_mode;                                                                              \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                           \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));              \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                       \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));          \
       cublasDrot(singleton.handle, X.extent_int(0), X.data(), 1, Y.data(), 1, c.data(), s.data());                   \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                        \
       Kokkos::Profiling::popRegion();                                                                                \
     }                                                                                                                \
   };
@@ -193,12 +193,12 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,float]");                                              \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                   \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();               \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                        \
       cublasPointerMode_t pointer_mode;                                                                                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));                \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));            \
       cublasSrot(singleton.handle, X.extent_int(0), X.data(), 1, Y.data(), 1, c.data(), s.data());                     \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                              \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                          \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -220,13 +220,13 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,complex<double>]");                                 \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();            \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                     \
       cublasPointerMode_t pointer_mode;                                                                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                          \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));             \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));         \
       cublasZdrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuDoubleComplex*>(X.data()), 1,               \
                   reinterpret_cast<cuDoubleComplex*>(Y.data()), 1, c.data(), s.data());                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                           \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
   };
@@ -248,13 +248,13 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,complex<float>]");                                     \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                   \
       KokkosBlas::Impl::CudaBlasSingleton& singleton = KokkosBlas::Impl::CudaBlasSingleton::singleton();               \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(singleton.handle, space.cuda_stream()));                            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(singleton.handle, space.cuda_stream()));                        \
       cublasPointerMode_t pointer_mode;                                                                                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(singleton.handle, &pointer_mode));                             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));                \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                         \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));            \
       cublasCsrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuComplex*>(X.data()), 1,                        \
                   reinterpret_cast<cuComplex*>(Y.data()), 1, c.data(), s.data());                                      \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(singleton.handle, pointer_mode));                              \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                          \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

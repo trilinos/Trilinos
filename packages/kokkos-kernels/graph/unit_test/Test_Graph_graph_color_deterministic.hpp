@@ -222,30 +222,30 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   }
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                                      \
-  TEST_F(TestCategory, graph##_##graph_color_deterministic##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_coloring_deterministic<SCALAR, ORDINAL, OFFSET, DEVICE>(18, 74);                                  \
-    test_coloring_deterministic<SCALAR, ORDINAL, OFFSET, DEVICE>(18, 74);                                  \
+#define EXECUTE_TEST(ORDINAL, OFFSET, DEVICE)                                                                  \
+  TEST_F(TestCategory, graph##_##graph_color_deterministic##_default_scalar_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_coloring_deterministic<KokkosKernels::default_scalar, ORDINAL, OFFSET, DEVICE>(18, 74);               \
+    test_coloring_deterministic<KokkosKernels::default_scalar, ORDINAL, OFFSET, DEVICE>(18, 74);               \
   }
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int, int, TestDevice)
+EXECUTE_TEST(int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int64_t, int, TestDevice)
+EXECUTE_TEST(int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int, size_t, TestDevice)
+EXECUTE_TEST(int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int64_t, size_t, TestDevice)
+EXECUTE_TEST(int64_t, size_t, TestDevice)
 #endif
 
 #undef EXECUTE_TEST

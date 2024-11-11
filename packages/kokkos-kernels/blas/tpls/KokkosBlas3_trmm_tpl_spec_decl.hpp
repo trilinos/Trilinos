@@ -199,19 +199,19 @@ namespace Impl {
         diag_ = CUBLAS_DIAG_NON_UNIT;                                                                                  \
                                                                                                                        \
       KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                       \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, space.cuda_stream()));                                    \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                                \
       if (A_is_layout_left) {                                                                                          \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                                                                        \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(CUBLAS_FN(                                                                    \
             s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),            \
             reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()),   \
             LDB, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB));                                                 \
       } else {                                                                                                         \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                                                                        \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(CUBLAS_FN(                                                                    \
             s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),            \
             reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()),   \
             LDB, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB));                                                 \
       }                                                                                                                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));                                                   \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                               \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

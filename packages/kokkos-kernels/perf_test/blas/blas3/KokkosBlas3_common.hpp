@@ -42,14 +42,14 @@
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
   std::string trmm_args;
-  default_scalar alpha;
+  KokkosKernels::default_scalar alpha;
 };
 typedef struct perf_test_trmm_args pt_trmm_args_t;
 
 struct perf_test_gemm_args {
   std::string gemm_args;  //[N,T,C][N,T,C] for transA and transB
-  default_scalar alpha;
-  default_scalar beta;
+  KokkosKernels::default_scalar alpha;
+  KokkosKernels::default_scalar beta;
 };
 typedef struct perf_test_gemm_args pt_gemm_args_t;
 // ADD MORE BLAS3 ROUTINE ARG STRUCTS HERE.

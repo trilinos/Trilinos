@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP
 
 #include "KokkosBatched_Kernel_Handle.hpp"
 
@@ -151,4 +151,4 @@ class BatchedGemmHandle : public BatchedKernelHandle {
 
 }  // namespace KokkosBatched
 
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP

@@ -160,15 +160,15 @@ KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(false)
       OFFSET_TYPE nnzB  = colidxB.extent(0);                                                                           \
       OFFSET_TYPE nnzC  = 0;                                                                                           \
                                                                                                                        \
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(rocspHandle, exec.hip_stream()));                           \
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&rocData.descrA));                                    \
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&rocData.descrB));                                    \
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&rocData.descrC));                                    \
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_csrgeam_nnz(rocspHandle, m, n, rocData.descrA, nnzA, rowmapA.data(),   \
-                                                            colidxA.data(), rocData.descrB, nnzB, rowmapB.data(),      \
-                                                            colidxB.data(), rocData.descrC, rowmapC.data(), &nnzC));   \
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_stream(rocspHandle, exec.hip_stream()));                     \
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&rocData.descrA));                              \
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&rocData.descrB));                              \
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&rocData.descrC));                              \
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_csrgeam_nnz(                                                     \
+          rocspHandle, m, n, rocData.descrA, nnzA, rowmapA.data(), colidxA.data(), rocData.descrB, nnzB,               \
+          rowmapB.data(), colidxB.data(), rocData.descrC, rowmapC.data(), &nnzC));                                     \
       addHandle->set_c_nnz(nnzC);                                                                                      \
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(rocspHandle, NULL));                                        \
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_stream(rocspHandle, NULL));                                  \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

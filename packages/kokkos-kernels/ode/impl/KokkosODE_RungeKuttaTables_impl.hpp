@@ -257,6 +257,59 @@ struct ButcherTableau<4, 6>  // Referred to as DOPRI5 or RKDP
                                     11.0 / 84.0 - 187.0 / 2100.0, -1.0 / 40.0}};
 };
 
+// Coefficients obtained from:
+// J. H. Verner
+// "Explicit Runge-Kutta methods with estimates of the local truncation error",
+// Journal of Numerical Analysis, Volume 15, Issue 4, 1978,
+// https://doi.org/10.1137/0715051.
+template <>
+struct ButcherTableau<5, 7>  // Referred to as Verner 5-6 or VER56
+{
+  static constexpr int order   = 6;
+  static constexpr int nstages = 8;
+  Kokkos::Array<double, (nstages * nstages + nstages) / 2> a{{0.0,
+                                                              1.0 / 6.0,
+                                                              0.0,
+                                                              4.0 / 75.0,
+                                                              16.0 / 75.0,
+                                                              0.0,
+                                                              5.0 / 6.0,
+                                                              -8.0 / 3.0,
+                                                              5.0 / 2.0,
+                                                              0.0,
+                                                              -165.0 / 64.0,
+                                                              55.0 / 6.0,
+                                                              -425.0 / 64.0,
+                                                              85.0 / 96.0,
+                                                              0.0,
+                                                              12.0 / 5.0,
+                                                              -8.0,
+                                                              4015.0 / 612.0,
+                                                              -11.0 / 36.0,
+                                                              88.0 / 255.0,
+                                                              0.0,
+                                                              -8263.0 / 15000.0,
+                                                              124.0 / 75.0,
+                                                              -643.0 / 680.0,
+                                                              -81.0 / 250.0,
+                                                              2484.0 / 10625.0,
+                                                              0.0,
+                                                              0.0,
+                                                              3501.0 / 1720.0,
+                                                              -300.0 / 43.0,
+                                                              297275.0 / 52632.0,
+                                                              -319.0 / 2322.0,
+                                                              24068.0 / 84065.0,
+                                                              3850.0 / 26703.0,
+                                                              0.0}};
+  Kokkos::Array<double, nstages> b{
+      {3.0 / 4.0, 0.0, 875.0 / 2244.0, 23.0 / 72.0, 264.0 / 1955.0, 0.0, 125.0 / 11592.0, 43.0 / 616.0}};
+  Kokkos::Array<double, nstages> c{{0.0, 1.0 / 6.0, 4.0 / 15.0, 2.0 / 3.0, 5.0 / 6.0, 1.0, 1.0 / 15.0, 1.0}};
+  Kokkos::Array<double, nstages> e{{3.0 / 4.0 - 13.0 / 160.0, 0.0, 875.0 / 2244.0 - 2375.0 / 5984.0,
+                                    23.0 / 72.0 - 5.0 / 16.0, 264.0 / 1955.0 - 12.0 / 85.0, -3.0 / 44.0,
+                                    125.0 / 11592.0, 43.0 / 616.0}};
+};
+
 }  // namespace Impl
 }  // namespace KokkosODE
 

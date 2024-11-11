@@ -135,11 +135,11 @@ class SPGEMMHandle {
 
       bufferSize = 0;
       buffer     = nullptr;
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_A));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_B));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_C));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_D));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_info(&info_C));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_A));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_B));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_C));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_D));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_info(&info_C));
       rocsparseHandle = kkControls.getRocsparseHandle();
     }
 
@@ -671,7 +671,7 @@ class SPGEMMHandle {
     // them in the handle
     suggested_vector_size_ = KokkosKernels::Impl::kk_get_suggested_vector_size(
         nr, nnz, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>)
       suggested_team_size_ = max_allowed_team_size / suggested_vector_size_;
     else
       suggested_team_size = max_allowed_team_size;

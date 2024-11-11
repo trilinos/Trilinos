@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_LU_SERIAL_IMPL_HPP__
-#define __KOKKOSBATCHED_LU_SERIAL_IMPL_HPP__
+#ifndef KOKKOSBATCHED_LU_SERIAL_IMPL_HPP
+#define KOKKOSBATCHED_LU_SERIAL_IMPL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -31,7 +31,7 @@ namespace KokkosBatched {
 /// SerialLU no piv
 ///
 
-#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
 template <typename AViewType>

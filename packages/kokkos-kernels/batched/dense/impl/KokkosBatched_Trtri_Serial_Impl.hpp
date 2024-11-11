@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP__
-#define __KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP__
+#ifndef KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP
+#define KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trtri_Serial_Internal.hpp"
@@ -39,4 +39,4 @@ struct SerialTrtri<Uplo::Upper, ArgDiag, Algo::Trtri::Unblocked> {
 };
 }  // namespace KokkosBatched
 
-#endif  // __KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP__
+#endif  // KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP

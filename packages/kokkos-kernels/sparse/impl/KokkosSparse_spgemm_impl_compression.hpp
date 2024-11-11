@@ -523,7 +523,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
             Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
             break;
           } else if (result_keys[new_hash] == r) {
-            if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, n_set_index)) {
+            if (r == Kokkos::atomic_compare_exchange(result_keys + new_hash, r, n_set_index)) {
               // MD 4/4/18: on these architectures there can be divergence in
               // the warp. once the keys are set, some other vector lane might
               // be doing a fetch_or before we set with n_set. Therefore it is
@@ -652,7 +652,7 @@ bool KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
                                                                            bool compress_in_single_step) {
   // get the execution space type.
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
-  constexpr bool exec_gpu                              = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu                              = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
   // get the suggested vectorlane size based on the execution space, and average
   // number of nnzs per row.
   int suggested_vector_size = this->handle->get_suggested_vector_size(n, nnz);
@@ -723,7 +723,7 @@ bool KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 
   timer1.reset();
   // bool compression_applied = false;
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>) {
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
     KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);

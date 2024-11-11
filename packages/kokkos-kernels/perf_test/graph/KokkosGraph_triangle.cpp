@@ -18,7 +18,7 @@
 #include "KokkosGraph_Triangle.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_IOUtils.hpp"  //for read_kokkos_crst_graph
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
@@ -230,13 +230,13 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
   using namespace KokkosSparse;
   using mem_space = typename exec_space::memory_space;
   using device_t  = Kokkos::Device<exec_space, mem_space>;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
-  using graph_t   = Kokkos::StaticCrsGraph<lno_t, default_layout, device_t, void, size_type>;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using size_type = KokkosKernels::default_size_type;
+  using graph_t   = Kokkos::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device_t, void, size_type>;
   using KernelHandle =
       KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, lno_t, exec_space, mem_space, mem_space>;
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<exec_space>) {
     std::cerr << "** Triangle counting is currently not supported on GPU backends.\n";
     return;
   }

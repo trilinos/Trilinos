@@ -33,7 +33,7 @@ struct ExplicitGraphCoarsening {
   struct ClusterSizeFunctor {
     ClusterSizeFunctor(const ordinal_view_t& counts_, const labels_t& vertClusters_)
         : counts(counts_), vertClusters(vertClusters_) {}
-    KOKKOS_INLINE_FUNCTION void operator()(const lno_t i) const { Kokkos::atomic_increment(&counts(vertClusters(i))); }
+    KOKKOS_INLINE_FUNCTION void operator()(const lno_t i) const { Kokkos::atomic_inc(&counts(vertClusters(i))); }
     ordinal_view_t counts;
     labels_t vertClusters;
   };
@@ -98,7 +98,7 @@ struct ExplicitGraphCoarsening {
     KOKKOS_INLINE_FUNCTION bool insert(lno_t cluster, lno_t nei, int* table) const {
       unsigned h = xorshiftHash(nei);
       for (unsigned i = h; i < h + 2; i++) {
-        if (Kokkos::atomic_compare_exchange_strong<int>(&table[i % tableSize()], cluster, nei)) return true;
+        if (cluster == Kokkos::atomic_compare_exchange(&table[i % tableSize()], cluster, nei)) return true;
       }
       return false;
     }

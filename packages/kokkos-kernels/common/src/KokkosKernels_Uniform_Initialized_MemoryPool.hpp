@@ -294,7 +294,7 @@ class UniformMemoryPool {
   data_type *get_arbitrary_free_chunk(const size_t &thread_index, const size_t max_tries) const {
     size_t chunk_index = thread_index & modular_num_chunks;
     size_t num_try     = 0;
-    while (!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index, 0, 1)) {
+    while (0 != Kokkos::atomic_compare_exchange(pchunk_locks + chunk_index, 0, 1)) {
       chunk_index = (chunk_index + 1) & modular_num_chunks;
       ++num_try;
       if (num_try > max_tries) {

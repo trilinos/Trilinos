@@ -147,6 +147,8 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LR
                    Kokkos::MemoryTraits<Kokkos::RandomAccess> >,                                                 \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_par_ilut_numeric_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_PAR_ILUT_NUMERIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,         \
                                                     EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                             \
   template struct PAR_ILUT_NUMERIC<                                                                              \

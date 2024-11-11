@@ -26,7 +26,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 
 void print_options(std::ostream &os, const char *app_name, unsigned int indent = 0) {

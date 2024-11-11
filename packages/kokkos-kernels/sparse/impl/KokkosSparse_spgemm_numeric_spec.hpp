@@ -173,6 +173,8 @@ struct SPGEMM_NUMERIC<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,           \
                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                               \
   template struct SPGEMM_NUMERIC<                                                                                \

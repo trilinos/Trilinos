@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_GEMM_DECL_HPP__
-#define __KOKKOSBATCHED_GEMM_DECL_HPP__
+#ifndef KOKKOSBATCHED_GEMM_DECL_HPP
+#define KOKKOSBATCHED_GEMM_DECL_HPP
 
 #include "KokkosBatched_Vector.hpp"
 
@@ -75,4 +75,4 @@ struct Gemm {
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 
-#endif  // __KOKKOSBATCHED_GEMM_DECL_HPP__
+#endif  // KOKKOSBATCHED_GEMM_DECL_HPP

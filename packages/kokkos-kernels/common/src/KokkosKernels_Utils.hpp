@@ -58,7 +58,7 @@ void get_suggested_vector_size(int &suggested_vector_size_, idx nr, idx nnz) {
 template <typename team_policy_t, typename Functor, typename ParallelTag = Kokkos::ParallelForTag>
 int get_suggested_team_size(Functor &f, int vector_size) {
   using execution_space = typename team_policy_t::traits::execution_space;
-  if (kk_is_gpu_exec_space<execution_space>()) {
+  if (is_gpu_exec_space_v<execution_space>) {
     team_policy_t temp(1, 1, vector_size);
     return temp.team_size_recommended(f, ParallelTag());
   } else
@@ -68,7 +68,7 @@ int get_suggested_team_size(Functor &f, int vector_size) {
 template <typename team_policy_t, typename Functor, typename ParallelTag = Kokkos::ParallelForTag>
 int get_suggested_team_size(Functor &f, int vector_size, size_t sharedPerTeam, size_t sharedPerThread) {
   using execution_space = typename team_policy_t::traits::execution_space;
-  if (kk_is_gpu_exec_space<execution_space>()) {
+  if (is_gpu_exec_space_v<execution_space>) {
     team_policy_t temp = team_policy_t(1, 1, vector_size)
                              .set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam), Kokkos::PerThread(sharedPerThread));
     return temp.team_size_recommended(f, ParallelTag());

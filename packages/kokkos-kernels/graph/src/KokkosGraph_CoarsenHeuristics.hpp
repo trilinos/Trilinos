@@ -86,7 +86,7 @@ class coarsen_heuristics {
             if (bucket >= t_buckets) bucket -= t_buckets;
             if (buckets(bucket) == ORD_MAX) {
               // attempt to insert into bucket
-              if (Kokkos::atomic_compare_exchange_strong(&buckets(bucket), ORD_MAX, i)) {
+              if (ORD_MAX == Kokkos::atomic_compare_exchange(&buckets(bucket), ORD_MAX, i)) {
                 break;
               }
             }
@@ -140,8 +140,8 @@ class coarsen_heuristics {
             // need to enforce an ordering condition to allow hard-stall
             // conditions to be broken
             if (condition ^ swap) {
-              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
-                if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+              if (ORD_MAX == Kokkos::atomic_compare_exchange(&match(u), ORD_MAX, v)) {
+                if (u == v || ORD_MAX == Kokkos::atomic_compare_exchange(&match(v), ORD_MAX, u)) {
                   ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
                   vcmap(u)     = cv;
                   vcmap(v)     = cv;
@@ -201,8 +201,8 @@ class coarsen_heuristics {
             // need to enforce an ordering condition to allow hard-stall
             // conditions to be broken
             if (condition ^ swap) {
-              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
-                if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+              if (ORD_MAX == Kokkos::atomic_compare_exchange(&match(u), ORD_MAX, v)) {
+                if (u == v || ORD_MAX == Kokkos::atomic_compare_exchange(&match(v), ORD_MAX, u)) {
                   ordinal_t cv = u;
                   if (v < u) {
                     cv = v;
@@ -859,8 +859,8 @@ class coarsen_heuristics {
             // need to enforce an ordering condition to allow hard-stall
             // conditions to be broken
             if (condition ^ swap) {
-              if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
-                if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+              if (ORD_MAX == Kokkos::atomic_compare_exchange(&match(u), ORD_MAX, v)) {
+                if (u == v || ORD_MAX == Kokkos::atomic_compare_exchange(&match(v), ORD_MAX, u)) {
                   // u == v avoids problems if there is a self-loop edge
                   ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
                   vcmap(u)     = cv;
@@ -1084,8 +1084,8 @@ class coarsen_heuristics {
                   // need to enforce an ordering condition to allow hard-stall
                   // conditions to be broken
                   if (condition ^ swap) {
-                    if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
-                      if (Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+                    if (ORD_MAX == Kokkos::atomic_compare_exchange(&match(u), ORD_MAX, v)) {
+                      if (ORD_MAX == Kokkos::atomic_compare_exchange(&match(v), ORD_MAX, u)) {
                         ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
                         vcmap(u)     = cv;
                         vcmap(v)     = cv;

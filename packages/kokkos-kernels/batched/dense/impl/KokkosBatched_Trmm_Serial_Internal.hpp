@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
+#ifndef KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP
 
 #include "KokkosBatched_Util.hpp"
 
@@ -359,4 +359,4 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::
   return 0;
 }
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
+#endif  // KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP

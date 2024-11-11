@@ -37,7 +37,7 @@
 #include "KokkosSparse_spadd.hpp"
 #include "KokkosGraph_MIS2.hpp"
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosGraph;
@@ -202,14 +202,15 @@ int parse_inputs(MIS2Parameters& params, int argc, char** argv) {
 
 template <typename device_t>
 void run_mis2(const MIS2Parameters& params) {
-  using size_type  = default_size_type;
-  using lno_t      = default_lno_t;
-  using exec_space = typename device_t::execution_space;
-  using mem_space  = typename device_t::memory_space;
-  using crsMat_t   = typename KokkosSparse::CrsMatrix<default_scalar, lno_t, device_t, void, size_type>;
-  using lno_view_t = typename crsMat_t::index_type::non_const_type;
-  using KKH = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, default_scalar, exec_space, mem_space,
-                                                               mem_space>;
+  using size_type   = KokkosKernels::default_size_type;
+  using lno_t       = KokkosKernels::default_lno_t;
+  using scalar_type = KokkosKernels::default_scalar;
+  using exec_space  = typename device_t::execution_space;
+  using mem_space   = typename device_t::memory_space;
+  using crsMat_t    = typename KokkosSparse::CrsMatrix<scalar_type, lno_t, device_t, void, size_type>;
+  using lno_view_t  = typename crsMat_t::index_type::non_const_type;
+  using KKH =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_type, exec_space, mem_space, mem_space>;
 
   Kokkos::Timer t;
   crsMat_t A_in = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
@@ -219,7 +220,7 @@ void run_mis2(const MIS2Parameters& params) {
   crsMat_t At_in = KokkosSparse::Impl::transpose_matrix(A_in);
   crsMat_t A;
   KKH kkh;
-  const default_scalar one = Kokkos::ArithTraits<default_scalar>::one();
+  const scalar_type one = Kokkos::ArithTraits<scalar_type>::one();
   kkh.create_spadd_handle(false);
   KokkosSparse::spadd_symbolic(&kkh, A_in, At_in, A);
   KokkosSparse::spadd_numeric(&kkh, one, A_in, one, At_in, A);
