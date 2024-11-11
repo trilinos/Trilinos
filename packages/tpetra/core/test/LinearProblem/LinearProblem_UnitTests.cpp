@@ -140,7 +140,8 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( LinearProblem, basic, LO, GO, Scalar, Node )
   {
     using map_type = Tpetra::Map<LO, GO, Node>;
-    //using mag_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using ST       = typename Teuchos::ScalarTraits<Scalar>;
+    using mag_type = typename ST::magnitudeType;
     
     using MAT = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
     using VT = Tpetra::Vector<Scalar,LO,GO,Node>;
@@ -223,31 +224,31 @@ namespace { // (anonymous)
     Display_Vector("Scaling Vector", S, comm, myOut);
 #endif
 
-    Scalar eps = Teuchos::as<Scalar>(Teuchos::as<double>(100)*Teuchos::ScalarTraits<double>::eps());
-    // Original LinearProblem
     GST N = globalNumElements;
-    double normF = std::sqrt(6*N - 2);
-    TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
-                           Teuchos::as<Scalar>(normF), eps);
+    mag_type eps = ST::magnitude(Teuchos::as<double>(100)*Teuchos::ScalarTraits<double>::eps());
+    // Original LinearProblem
+    mag_type normF = ST::magnitude(std::sqrt(6*N - 2));
+    mag_type matrix_normF = ST::magnitude(linearProblem->getMatrix()->getFrobeniusNorm());
+    TEST_FLOATING_EQUALITY(matrix_normF, normF, eps);
 
+    mag_type vector_sum = ST::magnitude(N*(N+1)/2);
     Array<Scalar> norms(numVecs);
     linearProblem->getLHS()->norm1(norms());
-    size_t vector_sum = N*(N+1)/2;
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
+    TEST_FLOATING_EQUALITY(ST::magnitude(norms[0]), vector_sum, eps);
     linearProblem->getRHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
+    TEST_FLOATING_EQUALITY(ST::magnitude(norms[0]), vector_sum, eps);
     
     // Left Scaling
     linearProblem->leftScale(S);
 
-    size_t vector_sum_squared = N*(N+1)*(2*N+1)/6;
-    normF = std::sqrt(6*vector_sum_squared - N*N - 1);
-    TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
-                           Teuchos::as<Scalar>(normF), eps);
+    mag_type vector_sum_squared = ST::magnitude(N*(N+1)*(2*N+1)/6);
+    normF = ST::magnitude(std::sqrt(6*vector_sum_squared - N*N - 1));
+    matrix_normF = ST::magnitude(linearProblem->getMatrix()->getFrobeniusNorm());
+    TEST_FLOATING_EQUALITY(matrix_normF, normF, eps);
     linearProblem->getLHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum), eps);
+    TEST_FLOATING_EQUALITY(ST::magnitude(norms[0]), vector_sum, eps);
     linearProblem->getRHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum_squared), eps);
+    TEST_FLOATING_EQUALITY(ST::magnitude(norms[0]), vector_sum_squared, eps);
     
 #ifdef DEBUG_TEST
     if (myImageID==0) myOut << "After Left Scaling" << endl;
@@ -261,18 +262,18 @@ namespace { // (anonymous)
     linearProblem->rightScale(S);
 
     N = N-1;
-    size_t off_diags = 2.0*((N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 30.0
+    mag_type off_diags = ST::magnitude(2.0*((N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 30.0
                             + (N * N * (N + 1) * (N + 1)) / 2.0
-                            + (N * (N + 1) * (2 * N + 1)) / 6.0);
+                            + (N * (N + 1) * (2 * N + 1)) / 6.0));
     N = N+1;
-    size_t diag = (2.0 * N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 15.0;
-    normF = std::sqrt(diag + off_diags);
-    TEST_FLOATING_EQUALITY(linearProblem->getMatrix()->getFrobeniusNorm(),
-                           Teuchos::as<Scalar>(normF), eps);
+    mag_type diag = ST::magnitude((2.0 * N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 15.0);
+    normF = ST::magnitude(std::sqrt(diag + off_diags));
+    matrix_normF = ST::magnitude(linearProblem->getMatrix()->getFrobeniusNorm());
+    TEST_FLOATING_EQUALITY(matrix_normF, normF, eps);
     linearProblem->getLHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(N), eps);
+    TEST_FLOATING_EQUALITY(ST::magnitude(norms[0]), ST::magnitude(N), eps);
     linearProblem->getRHS()->norm1(norms());
-    TEST_FLOATING_EQUALITY(norms[0], Teuchos::as<Scalar>(vector_sum_squared), eps);
+    TEST_FLOATING_EQUALITY(ST::magnitude(norms[0]), vector_sum_squared, eps);
     
 #ifdef DEBUG_TEST
     if (myImageID==0) myOut << "After Right Scaling" << endl;
