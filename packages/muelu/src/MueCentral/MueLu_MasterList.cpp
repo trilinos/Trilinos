@@ -219,6 +219,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: aggregate qualities\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"strength-of-connection: params\"/>"
   "<Parameter name=\"aggregation: mesh layout\" type=\"string\" value=\"Global Lexicographic\"/>"
@@ -702,6 +703,8 @@ namespace MueLu {
          ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
       
          ("aggregation: output file: build colormap","aggregation: output file: build colormap")
+      
+         ("aggregation: output file: aggregate qualities","aggregation: output file: aggregate qualities")
       
          ("aggregation: params","aggregation: params")
       
