@@ -255,7 +255,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     std::string matrixType = galeriParameters.GetMatrixType();
     std::string aggVizType = paramList.get<std::string>("aggregation: output file: agg style");
     std::string aggQuality = "";
-    if(paramList.isParameter("aggregation: output file: aggregate qualities"))
+    if (paramList.isParameter("aggregation: output file: aggregate qualities"))
       aggQuality = paramList.get<bool>("aggregation: output file: aggregate qualities") ? "-AggregateQuality" : "";
     aggVizType.erase(std::remove_if(aggVizType.begin(), aggVizType.end(), ::isspace), aggVizType.end());
     if (ndims == 2)
