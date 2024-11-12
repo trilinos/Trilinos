@@ -34,8 +34,6 @@ namespace ROL {
 
 namespace details {
 
-using namespace std;
-
   // Try to get type of an object
   // FIXME: sometimes failing for std::string
   template <typename T> struct value_type

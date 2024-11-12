@@ -1,0 +1,9 @@
+[tool.poetry]
+name = "rol_parameters"
+version = "0.1.0"
+description = "ROL Parameters - and automated parameter scraper and database maintainer"
+authors = ["Greg von Winckel <gvonwin@sandia.gov>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+

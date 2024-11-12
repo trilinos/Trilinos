@@ -81,8 +81,10 @@ public:
   LineSearch_U( ParameterList &parlist ) {
     Real one(1), p9(0.9), p6(0.6), p4(0.4), oem4(1.e-4), zero(0);
     // Enumerations
-    edesc_ = StringToEDescentU(parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method"));
-    econd_ = StringToECurvatureConditionU(parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
+    std::string descentType = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method");
+    edesc_ = StringToEDescentU(descentType);
+    std::string condType = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Type","Strong Wolfe Conditions");
+    econd_ = StringToECurvatureConditionU(condType);
     // Linesearch Parameters
     alpha0_       = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",one);
     alpha0bnd_    = parlist.sublist("Step").sublist("Line Search").get("Lower Bound for Initial Step Size",one);

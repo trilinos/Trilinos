@@ -106,7 +106,8 @@ public:
     Real omega        = parlist.sublist("Step").sublist("Bundle").get("Locality Measure Coefficient",   two);
     unsigned maxSize  = parlist.sublist("Step").sublist("Bundle").get("Maximum Bundle Size",            200);
     unsigned remSize  = parlist.sublist("Step").sublist("Bundle").get("Removal Size for Bundle Update", 2);
-    if ( parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Solver",0) == 1 ) {
+    int cps =  parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Solver",0);
+    if (cps) {
       bundle_ = ROL::makePtr<Bundle_TT<Real>>(maxSize,coeff,omega,remSize);
       //bundle_ = ROL::makePtr<Bundle_AS<Real>>(maxSize,coeff,omega,remSize);
     }
