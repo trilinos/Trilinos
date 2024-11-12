@@ -5382,8 +5382,12 @@ namespace {
     const bool is_gpu = Spaces::is_gpu_exec_space<typename Node::execution_space>();
     size_t global_count, instance_count;
 
+    // NOTE: Global fences (aka Kokkos::fence()) fence both the host and device execution space,
+    // so our counts there get doubled.
+
     /***********************************************************************/
     // Device-then-replace (impl_scalar_type)
+    out<<"*** Device-then-replace impl_scalar_type ***"<<std::endl;
     {
       {
         auto x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
@@ -5394,12 +5398,13 @@ namespace {
       Tpetra::Details::FenceCounter::stop();
       global_count = Tpetra::Details::FenceCounter::get_count_global(space);
       instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
-      TEST_EQUALITY(global_count,is_gpu);
+      TEST_EQUALITY(global_count,2*is_gpu);
       TEST_EQUALITY(instance_count,0);
     }
 
     /***********************************************************************/
     // Host-then-replace (impl_scalar_type)
+    out<<"*** Host-then-replace impl_scalar_type ***"<<std::endl;
     {
       {
         auto x_h = x.getLocalViewHost(Tpetra::Access::ReadWrite);
@@ -5417,6 +5422,7 @@ namespace {
 
     /***********************************************************************/
     // Device-then-replace (Scalar)
+    out<<"*** Device-then-replace Scalar ***"<<std::endl;
     {
       {
         auto x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
@@ -5428,12 +5434,13 @@ namespace {
       Tpetra::Details::FenceCounter::stop();
       global_count = Tpetra::Details::FenceCounter::get_count_global(space);
       instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
-      TEST_EQUALITY(global_count,is_gpu);
+      TEST_EQUALITY(global_count,2*is_gpu);
       TEST_EQUALITY(instance_count,0);
     }
 
     /***********************************************************************/
     // Host-then-replace (Scalar)
+    out<<"*** Host-then-replace Scalar ***"<<std::endl;
     {
       {
         auto x_h = x.getLocalViewHost(Tpetra::Access::ReadWrite);
@@ -5448,6 +5455,7 @@ namespace {
       TEST_EQUALITY(global_count,0);
       TEST_EQUALITY(instance_count,0);
     }
+
   }
 
 
