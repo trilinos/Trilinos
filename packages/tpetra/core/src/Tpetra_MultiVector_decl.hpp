@@ -562,7 +562,7 @@ namespace Tpetra {
     /// around with multiple memory spaces.
     MultiVector (const Teuchos::RCP<const map_type>& map,
                  const typename dual_view_type::t_dev& d_view);
-   
+
     /// \brief Expert mode constructor, that takes a Kokkos::DualView
     ///   of the MultiVector's data and the "original"
     ///   Kokkos::DualView of the data, and returns a MultiVector that
@@ -841,6 +841,9 @@ namespace Tpetra {
     /// that one thread might win; it's that the value might get
     /// messed up.)
     ///
+    /// GPU synchronization semantics: Will sync if last access was on device.
+    /// Will not sync if last access was on host.
+    ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
     ///   process with respect to the MultiVector's Map.
@@ -877,6 +880,9 @@ namespace Tpetra {
     /// the same entry/ies have undefined results.  (It's not just
     /// that one thread might win; it's that the value might get
     /// messed up.)
+    ///
+    /// GPU synchronization semantics: Will sync if last access was on device.
+    /// Will not sync if last access was on host.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
