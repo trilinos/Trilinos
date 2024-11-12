@@ -81,7 +81,7 @@ RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOr
   validParamList->set<bool>("aggregation: output file: fine graph edges", false, "Whether to draw all fine node connections along with the aggregates.");
   validParamList->set<bool>("aggregation: output file: coarse graph edges", false, "Whether to draw all coarse node connections along with the aggregates.");
   validParamList->set<bool>("aggregation: output file: build colormap", false, "Whether to output a random colormap for ParaView in a separate XML file.");
-  validParamList->set<bool>("aggregation: output file: aggregate qualities", false, "Wheater to plot the aggregate quality.");
+  validParamList->set<bool>("aggregation: output file: aggregate qualities", false, "Whether to plot the aggregate quality.");
   return validParamList;
 }
 
@@ -146,8 +146,8 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
   Teuchos::RCP<CoordinateMultiVector> coordsCoarse = Teuchos::null;
   if (doAggQuality_)
     qualities_ = Get<Teuchos::RCP<MultiVector> >(coarseLevel, "AggregateQualities");
-  Teuchos::RCP<LWGraph> fineGraph                  = Teuchos::null;
-  Teuchos::RCP<LWGraph> coarseGraph                = Teuchos::null;
+  Teuchos::RCP<LWGraph> fineGraph   = Teuchos::null;
+  Teuchos::RCP<LWGraph> coarseGraph = Teuchos::null;
   if (doFineGraphEdges_)
     fineGraph = Get<RCP<LWGraph> >(fineLevel, "Graph");
   if (doCoarseGraphEdges_)

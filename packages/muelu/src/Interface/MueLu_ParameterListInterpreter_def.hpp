@@ -1301,7 +1301,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Aggregate qualities
   bool useAggregateQualities = false;
   if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
-    useAggregateQualities = true;
+    useAggregateQualities       = true;
     RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
     ParameterList aggQualityParams;
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double, aggQualityParams);
@@ -1339,7 +1339,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
     aggExport->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     aggExport->SetFactory("Graph", manager.GetFactory("Graph"));
-
 
     if (!RAP.is_null())
       RAP->AddTransferFactory(aggExport);
