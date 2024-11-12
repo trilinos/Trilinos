@@ -473,5 +473,87 @@ evaluateFields(typename TRAITS::EvalData workset)
 }
 
 // **********************************************************************
+// Specialization: Tangent 
+// **********************************************************************
+
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
+                              const Teuchos::ParameterList& p)
+  : globalIndexer_(indexer)
+  , globalDataKey_("Residual Scatter Container")
+{
+  std::string scatterName = p.get<std::string>("Scatter Name");
+  scatterHolder_ =
+    Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
+
+  // get names to be evaluated
+  const std::vector<std::string>& names =
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
+
+  // grab map from evaluated names to field names
+  fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
+
+  Teuchos::RCP<PHX::DataLayout> dl =
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
+
+  // build the vector of fields that this is dependent on
+  scatterFields_.resize(names.size());
+  for (std::size_t eq = 0; eq < names.size(); ++eq) {
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
+
+    // tell the field manager that we depend on this field
+    this->addDependentField(scatterFields_[eq]);
+  }
+
+  // this is what this evaluator provides
+  this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  this->setName(scatterName+" Scatter Residual (Tangent)");
+}
+
+// **********************************************************************
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& /* fm */)
+{
+  const Workset & workset_0 = (*d.worksets_)[0];
+  const std::string blockId = this->wda(workset_0).block_id;
+
+  fieldIds_.resize(scatterFields_.size());
+  fieldOffsets_.resize(scatterFields_.size());
+  fieldGlobalIndexers_.resize(scatterFields_.size());
+  productVectorBlockIndex_.resize(scatterFields_.size());
+  int maxElementBlockGIDCount = -1;
+  for(std::size_t fd=0; fd < scatterFields_.size(); ++fd) {
+    const std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
+    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+    fieldGlobalIndexers_[fd] = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+    fieldIds_[fd] = fieldGlobalIndexers_[fd]->getFieldNum(fieldName); // Field number in the sub-global-indexer
+
+    const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+    fieldOffsets_[fd] = PHX::View<int*>("ScatterResidual_BlockedTpetra(Tangent):fieldOffsets",offsets.size());
+    auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+    for (std::size_t i=0; i < offsets.size(); ++i)
+      hostOffsets(i) = offsets[i];
+    Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+
+    maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+  }
+
+  // We will use one workset lid view for all fields, but has to be
+  // sized big enough to hold the largest elementBlockGIDCount in the
+  // ProductVector.
+  worksetLIDs_ = PHX::View<LO**>("ScatterResidual_BlockedTpetra(Tangent):worksetLIDs",
+                                                scatterFields_[0].extent(0),
+						maxElementBlockGIDCount);
+}
+
+// **********************************************************************
 
 #endif

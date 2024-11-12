@@ -205,7 +205,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
   dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
 
   for(std::size_t i=0;i<activeParameters.size();i++) {
-    // TODO BWR DO NOT UNDERSTAND THIS... Why is param->f dfdp?
     RCP<typename LOC::VectorType> vec =
       rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
     auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
