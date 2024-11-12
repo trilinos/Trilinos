@@ -24,6 +24,7 @@
 #include "MueLu_AggregationExportFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
@@ -64,6 +65,7 @@ RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOr
   validParamList->set<RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory for Coordinates.");
   validParamList->set<RCP<const FactoryBase> >("Graph", Teuchos::null, "Factory for Graph.");
   validParamList->set<RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Factory for Aggregates.");
+  validParamList->set<RCP<const FactoryBase> >("AggregateQualities", Teuchos::null, "Factory for AggregateQualities.");
   validParamList->set<RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Factory for UnAmalgamationInfo.");
   validParamList->set<RCP<const FactoryBase> >("DofsPerNode", Teuchos::null, "Factory for DofsPerNode.");
   // CMS/BMK: Old style factory-only options.  Deprecate me.
@@ -79,6 +81,7 @@ RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOr
   validParamList->set<bool>("aggregation: output file: fine graph edges", false, "Whether to draw all fine node connections along with the aggregates.");
   validParamList->set<bool>("aggregation: output file: coarse graph edges", false, "Whether to draw all coarse node connections along with the aggregates.");
   validParamList->set<bool>("aggregation: output file: build colormap", false, "Whether to output a random colormap for ParaView in a separate XML file.");
+  validParamList->set<bool>("aggregation: output file: aggregate qualities", false, "Wheater to plot the aggregate quality.");
   return validParamList;
 }
 
@@ -100,6 +103,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Declar
       Input(coarseLevel, "Graph");
     }
   }
+
+  if (pL.get<bool>("aggregation: output file: aggregate qualities")) {
+    Input(coarseLevel, "AggregateQualities");
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -119,6 +126,7 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
   bool useVTK         = false;
   doCoarseGraphEdges_ = pL.get<bool>("aggregation: output file: coarse graph edges");
   doFineGraphEdges_   = pL.get<bool>("aggregation: output file: fine graph edges");
+  doAggQuality_       = pL.get<bool>("aggregation: output file: aggregate qualities");
   if (masterFilename.length()) {
     useVTK          = true;
     filenameToWrite = masterFilename;
@@ -136,6 +144,8 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     Ac = Get<RCP<Matrix> >(coarseLevel, "A");
   Teuchos::RCP<CoordinateMultiVector> coords       = Teuchos::null;
   Teuchos::RCP<CoordinateMultiVector> coordsCoarse = Teuchos::null;
+  if (doAggQuality_)
+    qualities_ = Get<Teuchos::RCP<MultiVector> >(coarseLevel, "AggregateQualities");
   Teuchos::RCP<LWGraph> fineGraph                  = Teuchos::null;
   Teuchos::RCP<LWGraph> coarseGraph                = Teuchos::null;
   if (doFineGraphEdges_)
@@ -573,6 +583,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
 
   auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
 
+  Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> qualities;
+  if (doAggQuality_)
+    qualities = qualities_->getData(0);
+
   vector<int> uniqueFine = this->makeUnique(vertices);
   string indent          = "      ";
   fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
@@ -618,6 +632,18 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
   }
   fout << endl;
   fout << "        </DataArray>" << endl;
+  if (doAggQuality_) {
+    fout << "        <DataArray type=\"Float64\" Name=\"Quality\" format=\"ascii\">" << endl;
+    fout << indent;
+    for (size_t i = 0; i < uniqueFine.size(); i++) {
+      fout << qualities[vertex2AggIds[uniqueFine[i]]] << " ";
+      if (i % 10 == 9)
+        fout << endl
+             << indent;
+    }
+    fout << endl;
+    fout << "        </DataArray>" << endl;
+  }
   fout << "      </PointData>" << endl;
   fout << "      <Points>" << endl;
   fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;

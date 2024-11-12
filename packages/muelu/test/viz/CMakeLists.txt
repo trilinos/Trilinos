@@ -52,6 +52,14 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
   MUELU_ADD_SERIAL_AND_MPI_TEST(
     AggExport
+    NAME "VizLaplace3DPointCloudAggregateQualityTpetra"
+    ARGS "--matrixType=Laplace3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizLaplace3DPointCloudAggregateQuality.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+  )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    AggExport
     NAME "VizElasticity3DConvexHullsTpetra"
     ARGS "--matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizElasticity3DConvexHulls.xml"
     NUM_MPI_PROCS 4
@@ -65,6 +73,14 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    AggExport
+    NAME "VizLaplace3DConvexHullsAggregateQualityTpetra"
+    ARGS "--matrixType=Laplace3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizLaplace3DConvexHullsAggregateQuality.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+  )
 
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_AztecOO)
@@ -116,28 +132,43 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 ENDIF()
 
-
-
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Viz_cp
-    SOURCE_FILES viztest.xml vizElasticity3DPointCloud.xml vizLaplace3DPointCloud.xml vizElasticity3DConvexHulls.xml vizLaplace3DConvexHulls.xml
-    MPI-Viz-Output-Laplace3D-PointCloud-Level0.gold
-    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc0.gold
-    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc1.gold
-    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc2.gold
-    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc3.gold
-    MPI-Viz-Output-Elasticity3D-PointCloud-Level0.gold
-    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc0.gold
-    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc1.gold
-    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc2.gold
-    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc3.gold
-    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0.gold
-    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc0.gold
-    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc1.gold
-    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc2.gold
-    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc3.gold
-    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0.gold
-    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc0.gold
-    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc1.gold
-    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc2.gold
-    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc3.gold
+    SOURCE_FILES
+        viztest.xml
+        vizElasticity3DPointCloud.xml
+        vizLaplace3DPointCloud.xml
+        vizElasticity3DConvexHulls.xml
+        vizLaplace3DConvexHulls.xml
+        vizLaplace3DConvexHullsAggregateQuality.xml
+        vizLaplace3DPointCloudAggregateQuality.xml
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-Level0.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc0.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc1.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc2.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc3.gold
+        Output/MPI-Viz-Output-Elasticity3D-PointCloud-Level0.gold
+        Output/MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc0.gold
+        Output/MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc1.gold
+        Output/MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc2.gold
+        Output/MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc3.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-Level0.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc0.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc1.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc2.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc3.gold
+        Output/MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0.gold
+        Output/MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc0.gold
+        Output/MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc1.gold
+        Output/MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc2.gold
+        Output/MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc3.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-AggregateQuality-Level0.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-AggregateQuality-Level0-Proc0.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-AggregateQuality-Level0-Proc1.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-AggregateQuality-Level0-Proc2.gold
+        Output/MPI-Viz-Output-Laplace3D-ConvexHulls-AggregateQuality-Level0-Proc3.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-AggregateQuality-Level0.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-AggregateQuality-Level0-Proc0.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-AggregateQuality-Level0-Proc1.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-AggregateQuality-Level0-Proc2.gold
+        Output/MPI-Viz-Output-Laplace3D-PointCloud-AggregateQuality-Level0-Proc3.gold
     )
