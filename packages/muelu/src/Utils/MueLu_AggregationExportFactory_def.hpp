@@ -583,7 +583,7 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
 
   auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
 
-  Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> qualities;
+  Teuchos::ArrayRCP<const Scalar> qualities;
   if (doAggQuality_)
     qualities = qualities_->getData(0);
 
