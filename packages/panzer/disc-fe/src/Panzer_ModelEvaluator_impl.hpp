@@ -47,6 +47,10 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+extern bool in_eval_J;
+extern double timer_evalJ;
+extern double timer_capsg;
+
 // Constructors/Initializers/Accessors
 
 template<typename Scalar>
@@ -1569,7 +1573,8 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(J)");
-
+    double time_ = Teuchos::Time::wallTime();
+    in_eval_J = true;
     // only add auxiliary global data if Jacobian is being formed
     ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
 
@@ -1582,6 +1587,8 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     thGhostedContainer->initializeMatrix(0.0);
 
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    in_eval_J = false;
+    timer_evalJ += -time_ + Teuchos::Time::wallTime();
   }
 
   // HACK: set A to null before calling responses to avoid touching the

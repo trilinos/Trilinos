@@ -41,6 +41,22 @@
 #include <utility>
 #include <vector>
 
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 1
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+extern bool panzer_impl_new, panzer_impl_old;
+extern bool in_eval_J;
+extern double timer_evalJ;
+extern double timer_capsg;
+#else
+namespace {
+bool panzer_impl_new = true;
+bool panzer_impl_old = !panzer_impl_new;
+bool in_eval_J = false;
+double timer_evalJ=0.0;
+double timer_capsg=0.0;
+}
+#endif
+
 namespace Tpetra {
   namespace Details {
     namespace Impl {
@@ -964,6 +980,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalNumEntries () const
   {
+    Details::ProfilingRegion regionGLNE("Tpetra::CrsGraph::getLocalNumEntries");
+
     const char tfecfFuncName[] = "getLocalNumEntries: ";
     typedef LocalOrdinal LO;
 
@@ -1185,7 +1203,6 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   allocateIndices (const ELocalGlobal lg, const bool verbose)
   {
-    using Details::ProfilingRegion;
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -1196,7 +1213,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "allocateIndices: ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-    ProfilingRegion profRegion("Tpetra::CrsGraph::allocateIndices");
+    Details::ProfilingRegion profRegion("Tpetra::CrsGraph::allocateIndices");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -1593,6 +1610,8 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "insertIndices: ";
 
+    Details::ProfilingRegion regionII("Tpetra::CrsGraph::insertIndices");
+
     size_t oldNumEnt = 0;
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1714,6 +1733,8 @@ namespace Tpetra {
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
+    Details::ProfilingRegion regionIGII("Tpetra::CrsGraph::insertGlobalIndicesImpl");
+
     auto numEntries = rowInfo.numEntries;
     using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
     inp_view_type inputInds(inputGblColInds, numInputInds);
@@ -1776,6 +1797,8 @@ namespace Tpetra {
     using LO = LocalOrdinal;
     const char tfecfFuncName[] = "insertLocallIndicesImpl: ";
 
+    Details::ProfilingRegion regionILII("Tpetra::CrsGraph::insertLocallIndicesImpl");
+
     const RowInfo rowInfo = this->getRowInfo(myRow);
 
     size_t numNewInds = 0;
@@ -1837,6 +1860,8 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     auto invalidCount = Teuchos::OrdinalTraits<size_t>::invalid();
 
+    Details::ProfilingRegion regionFGI("Tpetra::CrsGraph::findGlobalIndices");
+
     using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
@@ -1847,10 +1872,25 @@ namespace Tpetra {
       if (this->colMap_.is_null())
         return invalidCount;
       const auto& colMap = *(this->colMap_);
+
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
-      numFound = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
-        rowInfo.numEntries,
-        lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+
+      if (panzer_impl_new) {
+        if (this->isSorted()) {
+          numFound = Details::findCrsIndicesSorted(lclRow, this->getRowPtrsUnpackedHost(),
+                                                   rowInfo.numEntries,
+                                                   lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+        } else {
+          numFound = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
+                                             rowInfo.numEntries,
+                                             lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+        }
+      }
+      if (panzer_impl_old) {
+        numFound = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
+                                           rowInfo.numEntries,
+                                           lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+      }
     }
     else if (this->isGloballyIndexed())
     {
@@ -1860,7 +1900,6 @@ namespace Tpetra {
     }
     return numFound;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
@@ -2313,6 +2352,8 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     const char tfecfFuncName[] = "getGlobalRowCopy: ";
 
+    Details::ProfilingRegion regionGGRC("Tpetra::CrsGraph::getGlobalRowCopy");
+
     // This does the right thing (reports an empty row) if the input
     // row is invalid.
     const RowInfo rowinfo = getRowInfoFromGlobalRowIndex (globalRow);
@@ -2324,16 +2365,31 @@ namespace Tpetra {
     numEntries = theNumEntries; // first side effect
 
     if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+
       if (isLocallyIndexed ()) {
         auto lclInds = getLocalIndsViewHost(rowinfo);
-        for (size_t j = 0; j < theNumEntries; ++j) {
-          indices[j] = colMap_->getGlobalElement (lclInds(j));
+        if (panzer_impl_new) {
+          bool err = colMap_->getGlobalElements(lclInds.data(), theNumEntries, indices.data());
+          if (err) {
+            std::cout << "[srk] error:" << std::endl;
+            std::terminate();
+          }
+        }
+        if (panzer_impl_old) {
+          for (size_t j = 0; j < theNumEntries; ++j) {
+            indices[j] = colMap_->getGlobalElement (lclInds(j));
+          }
         }
       }
       else if (isGloballyIndexed ()) {
         auto gblInds = getGlobalIndsViewHost(rowinfo);
-        for (size_t j = 0; j < theNumEntries; ++j) {
-          indices[j] = gblInds(j);
+        if (panzer_impl_new) {
+          std::memcpy((void*)indices.data(), (const void*) gblInds.data(), theNumEntries*sizeof(*indices.data()));
+        }
+        if (panzer_impl_old) {
+          for (size_t j = 0; j < theNumEntries; ++j) {
+            indices[j] = gblInds(j);
+          }
         }
       }
     }
@@ -2912,6 +2968,8 @@ namespace Tpetra {
     using size_type = typename Teuchos::Array<GO>::size_type;
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
 
+    Details::ProfilingRegion regionGA("Tpetra::CrsGraph::globalAssemble");
+
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
       prefix = this->createPrefix("CrsGraph", "globalAssemble");
@@ -3162,6 +3220,8 @@ namespace Tpetra {
     using std::endl;
     const char tfecfFuncName[] = "fillComplete: ";
     const bool verbose = verbose_;
+
+    Details::ProfilingRegion regionFC("Tpetra::CrsGraph::fillComplete");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -3530,6 +3590,8 @@ namespace Tpetra {
     const char tfecfFuncName[] = "fillLocalGraph (called from fillComplete or "
       "expertStaticFillComplete): ";
     const size_t lclNumRows = this->getLocalNumRows ();
+
+    Details::ProfilingRegion regionFLG("Tpetra::CrsGraph::fillLocalGraph");
 
     // This method's goal is to fill in the two arrays (compressed
     // sparse row format) that define the sparse graph's structure.
@@ -4804,6 +4866,8 @@ namespace Tpetra {
     using this_CRS_type = CrsGraph<LO, GO, node_type>;
     const char tfecfFuncName[] = "copyAndPermute: ";
     const bool verbose = verbose_;
+
+    Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermute");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {

@@ -3,7 +3,7 @@
   <ParameterList name="Mesh">
     <Parameter name="Source" type="string" value="Inline Mesh" />
     <ParameterList name="Inline Mesh">
-      <Parameter name="final time" type="double" value="5e-9"/>
+      <Parameter name="final time" type="double" value="5.0e-9"/>
       <Parameter name="Mesh Dimension" type="int" value="3"/>
       <Parameter name="Mesh Type" type="string" value="quad"/>
       <Parameter name="CFL" type="double" value="4.0"/>

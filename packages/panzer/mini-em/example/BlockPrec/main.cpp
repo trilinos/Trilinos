@@ -60,7 +60,12 @@
 
 #include <string>
 #include <iostream>
-
+#include <set>
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
+#include <chrono>
+#include <thread>
 
 template <class Scalar>
 void writeToExodus(double time_stamp,
@@ -93,6 +98,26 @@ using mini_em::physicsType, mini_em::MAXWELL, mini_em::DARCY;
 using mini_em::solverType, mini_em::AUGMENTATION, mini_em::MUELU, mini_em::ML, mini_em::CG, mini_em::GMRES;
 using mini_em::linearAlgebraType, mini_em::linAlgTpetra, mini_em::linAlgEpetra;
 
+bool panzer_impl_old = true;
+bool panzer_impl_new = false;
+
+int panzer_impl_inp = 0;  // 0, 1, 2=both
+
+double timer_MV=0.0;
+double timer_ICI=0.0;
+bool in_eval_MV = false;
+bool in_eval_J = false;
+double timer_evalJ=0.0;
+double timer_capsg=0.0;
+
+
+template<class T>
+static T parallel_reduce(Teuchos::RCP<const Teuchos::MpiComm<int> > comm, T& localVal, Teuchos::EReductionType red) {
+  T globalVal;
+  Teuchos::reduceAll<int, T> (*comm, red,
+                              localVal, Teuchos::outArg (globalVal));
+  return globalVal;
+}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLinObjFactory, bool useTpetra>
 int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
@@ -108,9 +133,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   if (comm->getSize() > 1) {
     out->setOutputToRootOnly(0);
   }
-
+  
   Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
-  bool use_stacked_timer;
+  Teuchos::RCP<Teuchos::TimeMonitor> timer;
+  bool use_stacked_timer, use_timer;
   std::string test_name = "MiniEM 3D RefMaxwell";
 
   // Figure of merit data for acceptance testing
@@ -138,12 +164,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool resetSolver = false;
     bool doSolveTimings = false;
     bool matrixFree = false;
+    bool use_timer_test = false;
     int numReps = 0;
     linearAlgebraType linAlgebraValues[2] = {linAlgTpetra, linAlgEpetra};
     const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
     linearAlgebraType linAlgebra = linAlgTpetra;
     clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-    use_stacked_timer = true;
+    use_stacked_timer = false;
+    use_timer = true;
     print_fom = true;
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
@@ -166,6 +194,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
+    clp.setOption("timer","no-timer",&use_timer,"Run with or without timer output");
+    clp.setOption("new-impl",&panzer_impl_inp,"Run without (0) or with (1) new tpetra code, or both old & new (2)");
     clp.setOption("test-name", &test_name, "Name of test (for Watchr output)");
     clp.setOption("print-fom","no-print-fom",&print_fom,"print the figure of merit for acceptance testing");
 #ifdef HAVE_TEUCHOS_STACKTRACE
@@ -184,11 +214,30 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
+    switch (panzer_impl_inp) {
+    case 0:
+      panzer_impl_new = false;
+      panzer_impl_old = true;
+      break;
+    case 1:
+      panzer_impl_new = true;
+      panzer_impl_old = false;
+      break;
+    case 2:
+      panzer_impl_new = true;
+      panzer_impl_old = true;
+      break;
+    default:
+      return EXIT_FAILURE;
+    }
+    
+    std::cout << "P" << comm->getRank() << ": [dbg] panzer_impl_old= " << panzer_impl_old << " panzer_impl_new= " << panzer_impl_new << std::endl;
+      
+
 #ifdef HAVE_TEUCHOS_STACKTRACE
     if (stacktrace)
       Teuchos::print_stack_on_segfault();
 #endif
-
 
     if (use_stacked_timer) {
       stacked_timer = rcp(new Teuchos::StackedTimer("Mini-EM"));
@@ -199,6 +248,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
+    Teuchos::Time mainTimer("mainTimer", true);
+
+    std::cout << "panzer_impl_new= " << panzer_impl_new << std::endl;
+    std::cout << "panzer_impl_old= " << panzer_impl_old << std::endl;
 
     if (doSolveTimings) {
       numReps = numTimeSteps;
@@ -589,7 +642,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       auxOutArgs.set_W_op(aux_W_op);
       auxPhysicsME->evalModel(auxInArgs, auxOutArgs);
     }
-
+    
     // setup a response library to write to the mesh
     RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
       = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
@@ -726,6 +779,26 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     // Collect FOM data before everything goes out of scope
     fom_num_cells = mesh->getEntityCounts(dim);
+
+    mainTimer.stop();
+    if (comm->getRank() == 0) {
+      std::cout << "mainTimer= " << mainTimer.totalElapsedTime() << std::endl;
+    }
+    
+    if (use_timer) {
+      if (comm->getRank() == 0) std::cout << "summarize...\n";
+      tM.summarize();
+      if (comm->getRank() == 0) std::cout << "report...\n";
+      auto params = rcp(new Teuchos::ParameterList());
+      params->set("Report format", "Table"); //  (default), "YAML" </li>
+      params->set("YAML style", "spacious"); //  (default), "compact" </li>
+      params->set("How to merge timer sets", "Union"); // "Intersection"); //  (default), "Union" </li>
+      params->set("alwaysWriteLocal", true); // , false (default) </li>
+      params->set("writeGlobalStats", true); //   (default), false </li>
+      params->set("writeZeroTimers", true); // : true (default), false </li>
+    
+      tM.report(std::cout, "panzer", params);
+    }
   }
 
   // Output timer data
@@ -733,6 +806,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     stacked_timer->stop("Mini-EM");
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
+    //    options.output_fraction = options.output_minmax = options.align_columns = true;
     stacked_timer->report(*out, comm, options);
     auto xmlOut = stacked_timer->reportWatchrXML(test_name + ' ' + std::to_string(comm->getSize()) + " ranks", comm);
     if(xmlOut.length())
@@ -756,10 +830,15 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       *out << "=================================\n\n";
     }
 
-  } else {
+  } else if (use_timer) {
     Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
   }
-
+  timer_evalJ = parallel_reduce(comm, timer_evalJ, Teuchos::REDUCE_MAX);
+  timer_capsg = parallel_reduce(comm, timer_capsg, Teuchos::REDUCE_MAX);
+  if (!comm->getRank()) {
+    std::cout << "[dbg] timer_evalJ= " << timer_evalJ << std::endl;
+    std::cout << "[dbg] timer_capsg= " << timer_capsg << std::endl;
+  }
   return EXIT_SUCCESS;
 }
 
@@ -794,6 +873,7 @@ int main(int argc,char * argv[]){
 
   int retVal;
   if (linAlgebra == linAlgTpetra) {
+
     // if (useComplex) {
 // #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
 //       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
@@ -816,6 +896,7 @@ int main(int argc,char * argv[]){
 #endif
   } else
     TEUCHOS_ASSERT(false);
+
 
   Kokkos::finalize();
 
