@@ -60,20 +60,17 @@
 #include <utility>
 #include <vector>
 
-#define EXP_INCLUDED_FROM_PANXER_MINI_EM 1
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
 extern bool panzer_impl_new, panzer_impl_old;
 extern bool in_eval_J;
 extern double timer_evalJ;
 extern double timer_capsg;
+#define PANZER_IMPL_NEW panzer_impl_new
+#define PANZER_IMPL_OLD panzer_impl_old
 #else
-namespace {
-bool panzer_impl_new = true;
-bool panzer_impl_old = !panzer_impl_new;
-bool in_eval_J = false;
-double timer_evalJ=0.0;
-double timer_capsg=0.0;
-}
+#define PANZER_IMPL_NEW true
+#define PANZER_IMPL_OLD false
 #endif
 
 namespace Tpetra {
@@ -2450,7 +2447,7 @@ namespace Tpetra {
 
     [[maybe_unused]] LocalOrdinal niv=0;
     
-    if (panzer_impl_old) { 
+    if (PANZER_IMPL_OLD) { 
       Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
         auto fun =
           [&](size_t const k, size_t const /*start*/, size_t const offset) {
@@ -2460,7 +2457,7 @@ namespace Tpetra {
         niv = graph.findGlobalIndices(rowInfo, indsT, cb);
     }
 
-    if (panzer_impl_new) { // new
+    if (PANZER_IMPL_NEW) { // new
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -3360,14 +3357,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         const map_type& colMap = * (staticGraph_->colMap_);
         auto curLclInds = staticGraph_->getLocalIndsViewHost(rowinfo);
         auto curVals = getValuesViewHost(rowinfo);
-        if (panzer_impl_old) {
+        if (PANZER_IMPL_OLD) {
           for (size_t j = 0; j < theNumEntries; ++j) {
             values[j] = curVals[j];
             auto g = colMap.getGlobalElement (curLclInds(j));
             indices[j] = g;
           }
         }
-        if (panzer_impl_new) {
+        if (PANZER_IMPL_NEW) {
           bool err = colMap.getGlobalElements(curLclInds.data(), numEntries, indices.data());
           if (err) {
             std::cout << "[srk] error:" << std::endl;
@@ -5925,7 +5922,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         // they have to be converted from LIDs).
         size_t checkRowLength = 0;
 
-        if (panzer_impl_old)
+        if (PANZER_IMPL_OLD)
         {
           rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
           rowIndsConstView = Teuchos::ArrayView<const GO> (rowIndsView.data(), rowIndsView.extent(0),
@@ -5938,7 +5935,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           srcMat.getGlobalRowCopy (sourceGID, rowIndsView,
                                    rowValsView, checkRowLength);
         }
-        if (panzer_impl_new) {
+        if (PANZER_IMPL_NEW) {
           using crs_matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
           const crs_matrix_type *srcMatCrsPtr = dynamic_cast<const crs_matrix_type *>(&srcMat);
           if (!srcMatCrsPtr) {
@@ -6366,7 +6363,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using RMT = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
     if (isStaticGraph ()) {
-      if (panzer_impl_new) {
+      if (PANZER_IMPL_NEW) {
         double time_ = Teuchos::Time::wallTime();
         TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_device () );
         auto permuteToLIDs_d = permuteToLIDs.view_device ();
@@ -6378,13 +6375,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                       permuteToLIDs_d.data(),
                                       permuteFromLIDs_d.data(),
                                       numPermute);
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
         if (in_eval_J) {
           timer_capsg += -time_ + Teuchos::Time::wallTime();
         }
-        
+#endif        
 
       }
-      if (panzer_impl_old) {
+      if (PANZER_IMPL_OLD) {
         double time_ = Teuchos::Time::wallTime();
         TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
         auto permuteToLIDs_h = permuteToLIDs.view_host ();
@@ -6395,10 +6393,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                   permuteToLIDs_h.data(),
                                   permuteFromLIDs_h.data(),
                                   numPermute);
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
         if (in_eval_J) {
           timer_capsg += -time_ + Teuchos::Time::wallTime();
         }
-
+#endif
       }
     }
     else {

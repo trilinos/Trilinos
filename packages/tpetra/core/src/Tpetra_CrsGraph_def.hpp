@@ -41,20 +41,17 @@
 #include <utility>
 #include <vector>
 
-#define EXP_INCLUDED_FROM_PANXER_MINI_EM 1
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
 extern bool panzer_impl_new, panzer_impl_old;
 extern bool in_eval_J;
 extern double timer_evalJ;
 extern double timer_capsg;
+#define PANZER_IMPL_NEW panzer_impl_new
+#define PANZER_IMPL_OLD panzer_impl_old
 #else
-namespace {
-bool panzer_impl_new = true;
-bool panzer_impl_old = !panzer_impl_new;
-bool in_eval_J = false;
-double timer_evalJ=0.0;
-double timer_capsg=0.0;
-}
+#define PANZER_IMPL_NEW true
+#define PANZER_IMPL_OLD false
 #endif
 
 namespace Tpetra {
@@ -1875,7 +1872,7 @@ namespace Tpetra {
 
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
 
-      if (panzer_impl_new) {
+      if (PANZER_IMPL_NEW) {
         if (this->isSorted()) {
           numFound = Details::findCrsIndicesSorted(lclRow, this->getRowPtrsUnpackedHost(),
                                                    rowInfo.numEntries,
@@ -1886,7 +1883,7 @@ namespace Tpetra {
                                              lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
         }
       }
-      if (panzer_impl_old) {
+      if (PANZER_IMPL_OLD) {
         numFound = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
                                            rowInfo.numEntries,
                                            lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
@@ -2368,14 +2365,14 @@ namespace Tpetra {
 
       if (isLocallyIndexed ()) {
         auto lclInds = getLocalIndsViewHost(rowinfo);
-        if (panzer_impl_new) {
+        if (PANZER_IMPL_NEW) {
           bool err = colMap_->getGlobalElements(lclInds.data(), theNumEntries, indices.data());
           if (err) {
             std::cout << "[srk] error:" << std::endl;
             std::terminate();
           }
         }
-        if (panzer_impl_old) {
+        if (PANZER_IMPL_OLD) {
           for (size_t j = 0; j < theNumEntries; ++j) {
             indices[j] = colMap_->getGlobalElement (lclInds(j));
           }
@@ -2383,10 +2380,10 @@ namespace Tpetra {
       }
       else if (isGloballyIndexed ()) {
         auto gblInds = getGlobalIndsViewHost(rowinfo);
-        if (panzer_impl_new) {
+        if (PANZER_IMPL_NEW) {
           std::memcpy((void*)indices.data(), (const void*) gblInds.data(), theNumEntries*sizeof(*indices.data()));
         }
-        if (panzer_impl_old) {
+        if (PANZER_IMPL_OLD) {
           for (size_t j = 0; j < theNumEntries; ++j) {
             indices[j] = gblInds(j);
           }
