@@ -143,6 +143,8 @@ public:
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
+    void update_graph_edges(const stk::mesh::EntityVector &elements);
+
     size_t size() const {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
@@ -262,7 +264,7 @@ protected:
     void pack_shell_connectivity(stk::CommSparse & comm, const std::vector<impl::ShellConnectivityData> & shellConnectivityList,
                                  const std::vector<impl::ElementSidePair> &deletedShells);
 
-    void pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase);
+    void pack_remote_edge_across_shell(stk::CommSparse &comm, const stk::mesh::EntityVector &addedShells, int phase);
 
     void communicate_remote_edges_for_pre_existing_graph_nodes(const std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
                                                           std::vector<impl::SharedEdgeInfo> &receivedSharedEdges);
@@ -341,6 +343,7 @@ private:
                                                            const impl::ShellConnectivityData& shellConnectivityData);
     bool are_connectivities_for_same_graph_edge(const impl::ShellConnectivityData& shellConn,
                                                       const impl::ShellConnectivityData& shellConnectivityData);
+    void handle_remote_edges_across_shells(stk::mesh::EntityVector& addedShellsVector);
     bool is_connected_to_shell_on_side(stk::mesh::impl::LocalId localElemLocalId, int side);
     void insert_edge_between_elements(impl::LocalId local_elem_id,
                                       int side_index,
@@ -348,15 +351,20 @@ private:
                                       std::vector<stk::mesh::GraphEdge>& coincidentGraphEdges) const;
 
     std::string print_edge(const GraphEdge& graphEdge);
-};
 
-bool process_killed_elements(stk::mesh::BulkData& bulkData,
-                             const stk::mesh::EntityVector& killedElements,
-                             stk::mesh::Part& active,
-                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
-                             const stk::mesh::PartVector& side_parts,
-                             const stk::mesh::PartVector* boundary_mesh_parts = nullptr,
-                             stk::mesh::ModEndOptimizationFlag modEndOpt = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT);
+    void pack_remote_edges_to_send(stk::CommSparse& comm,
+                                   bool sendElem1Side1Nodes,
+                                   const std::vector<GraphEdge>& edgesToSend,
+                                   bool deletePllInfo);
+
+    void unpack_remote_edges_to_delete(stk::CommSparse& comm,
+                             bool unpackSideNodesToCheckEdgeValidity,
+                             std::vector<GraphEdge>& edgesToDelete,
+                             bool deletePllInfo);
+
+    void delete_remote_graph_edges(const std::vector<GraphEdge>& sendEdgesToDelete,
+                                   std::vector<GraphEdge>& recvdEdgesToDelete);
+};
 
 namespace impl
 {
@@ -389,6 +397,11 @@ impl::ElemSideProcVector gather_element_side_ids_to_send(const stk::mesh::BulkDa
 
 stk::mesh::EntityVector gather_solid_elements_connected_to_shell(const stk::mesh::BulkData& bulkData, stk::mesh::Entity shellElement);
 
+void get_solid_elements_connected_to_shells_on_proc_boundaries(
+                              const stk::mesh::BulkData& bulk,
+                              const stk::mesh::EntityVector& addedShellsVector,
+                              const stk::mesh::EntityVector& allElementsNotAlreadyInGraph,
+                              impl::ElemSideProcVector& only_added_elements);
 } // end impl
 
 }} // end stk mesh namespaces

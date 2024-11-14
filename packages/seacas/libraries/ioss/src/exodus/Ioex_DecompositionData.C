@@ -289,6 +289,15 @@ namespace Ioex {
         Ioss::PropertyManager properties;
         Ioss::DatabaseIO     *dbi = Ioss::IOFactory::create(
             "exodus", filename, Ioss::READ_RESTART, Ioss::ParallelUtils::comm_self(), properties);
+
+        // Set integer size to match what the caller is using
+        if (sizeof(INT) == 8) {
+          dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
+        }
+        else {
+          dbi->set_int_byte_size_api(Ioss::USE_INT32_API);
+        }
+
         Ioss::Region region(dbi, "line_decomp_region");
 
         Ioss::DecompUtils::line_decompose(

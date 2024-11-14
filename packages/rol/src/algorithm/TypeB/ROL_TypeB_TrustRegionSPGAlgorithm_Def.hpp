@@ -61,7 +61,9 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
   useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
   useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
-  useSimpleSPG_ = !lmlist.sublist("Solver").get("Compute Cauchy Point",            true);
+
+  bool useCachyPoint = lmlist.sublist("Solver").get("Compute Cauchy Point", true);
+  useSimpleSPG_ = !useCachyPoint;
   // Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
@@ -91,7 +93,8 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   // Initialize trust region model
   model_ = makePtr<TrustRegionModel_U<Real>>(list,secant,mode);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
   }
 }
 

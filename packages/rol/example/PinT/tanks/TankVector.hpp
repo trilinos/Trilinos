@@ -18,7 +18,11 @@
 #include <iostream>
 namespace details {
 
-using namespace std;
+using std::vector;
+using std::string;
+using std::ostream;
+using std::endl;
+using std::setw
 
 template<typename> class TankControlVector;
 

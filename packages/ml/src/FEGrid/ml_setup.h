@@ -5,6 +5,12 @@
 #ifndef __MLSETUP__
 #define __MLSETUP__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 
 /* ******************************************************************** */
 /* variable to pass to the local compute_basis_coefficients function    */
@@ -71,10 +77,3 @@ void ML_construct_RP1(           void           *fgrid,
 #endif
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

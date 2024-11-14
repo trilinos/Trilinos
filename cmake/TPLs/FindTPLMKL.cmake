@@ -15,10 +15,32 @@
 # pseudorandom number generators.  That's why we require a header
 # file, to access the function declarations.
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
-  REQUIRED_HEADERS mkl.h
-  REQUIRED_LIBS_NAMES mkl_rt
-  )
+IF(Kokkos_ENABLE_SYCL)
+  # For OneAPI MKL on GPU, use the CMake target
+  # Temporarily change CMAKE_CXX_COMPILER to icpx to convince MKL to add the DPCPP target
+  # If it sees that CMAKE_CXX_COMPILER is just ".../mpicxx", it won't do this.
+  set(CMAKE_CXX_COMPILER_PREVIOUS "${CMAKE_CXX_COMPILER}")
+  set(CMAKE_CXX_COMPILER "icpx")
+  # Use the BLAS95 and LAPACK95 interfaces (int32_t for dimensions and indices)
+  set(MKL_INTERFACE lp64)
+  find_package(MKL REQUIRED COMPONENTS MKL::MKL MKL::MKL_SYCL)
+  IF (NOT MKL_FOUND)
+    MESSAGE(FATAL_ERROR "MKL (as CMake package) was not found! This is required for SYCL+MKL")
+  ENDIF()
+  set(CMAKE_CXX_COMPILER "${CMAKE_CXX_COMPILER_PREVIOUS}")
+
+  tribits_extpkg_create_imported_all_libs_target_and_config_file( MKL
+    INNER_FIND_PACKAGE_NAME MKL
+    IMPORTED_TARGETS_FOR_ALL_LIBS MKL::MKL MKL::MKL_SYCL
+    )
+ELSE ()
+  # For host MKL, the single library libmkl_rt is sufficient.
+  # This works for older versions of MKL that don't provide MKLConfig.cmake.
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
+    REQUIRED_HEADERS mkl.h
+    REQUIRED_LIBS_NAMES mkl_rt
+    )
+ENDIF()
 
 # In the past, MKL users had to link with a long list of libraries.
 # The choice of libraries enables specific functionality.  Intel
@@ -68,8 +90,4 @@ TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
 # 
 # where the MKLROOT environment variable points to my MKL install
 # directory.
-
-
-
-
 

@@ -1,23 +1,19 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
-#
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
-#
-name: "CodeQL: Linear Solvers"
+name: "CodeQL Security Scan"
 
 on:
-  #push:
-  #  branches: [ "muelu-sync-workflow" ]
   pull_request:
-    branches: [ "develop" ]
+    branches:
+      - develop
+    types:
+      - opened
+      - synchronize
   schedule:
     - cron: '41 23 * * 2'
+
+# Cancels any in progress workflows associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -25,44 +21,31 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
+    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' }}
+
     permissions:
       # required for all workflows
       security-events: write
-
       # only required for workflows in private repositories
       actions: read
       contents: read
-
     strategy:
       fail-fast: false
       matrix:
         include:
         - language: c-cpp
           build-mode: manual
-        #- language: python
-        #  build-mode: none
-        # CodeQL supports the following values keywords for 'language': 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift'
-        # Use `c-cpp` to analyze code written in C, C++ or both
-        # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
-        # To learn more about changing the languages that are analyzed or customizing the build mode for your analysis,
-        # see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning.
-        # If you are analyzing a compiled language, you can modify the 'build-mode' for that language to customize how
-        # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+    defaults:
+      run:
+        shell: bash -l {0}
+
     steps:
     - name: Checkout repository
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@8214744c546c1e5c8f03dde8fab3a7353211988d # v3.26.7
+      uses: github/codeql-action/init@4f3212b61783c3c68e8309a0f18a699764811cda # v3.27.1
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
@@ -70,21 +53,61 @@ jobs:
           query-filters:
           - exclude:
              tags: cpp/integer-multiplication-cast-to-long
-           
-    - if: matrix.build-mode == 'manual'
-      name: Configure Trilinos            
+
+    - name: Print environment
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
       run: |
-          mkdir -p trilinos_build
-          cd trilinos_build 
-          cmake -G 'Unix Makefiles' -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Epetra=OFF -DTrilinos_ENABLE_AztecOO=OFF -DTrilinos_ENABLE_Ifpack=OFF -DTrilinos_ENABLE_ML=OFF -D Trilinos_ENABLE_Triutils=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_MueLu=ON -DTrilinos_ENABLE_Krino=OFF ..
-      
-    - if: matrix.build-mode == 'manual'
-      name: Build Trilinos
+        env
+
+    - name: Module list
       run: |
-          cd trilinos_build 
-          make -j 2
-      
+        module list
+        printenv PATH
+
+    - if: matrix.build-mode == 'manual'
+      name: Get dependencies
+      working-directory: ./packages/framework
+      run: |
+          ./get_dependencies.sh --container
+
+    - if: matrix.build-mode == 'manual'
+      name: Generate CMake fragments
+      run: |
+          git fetch origin ${GITHUB_BASE_REF}
+
+          mkdir -p trilinos_build && cd trilinos_build
+
+          source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
+          ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake
+
+    - if: matrix.build-mode == 'manual'
+      name: Configure and build Trilinos
+      working-directory: ./trilinos_build
+      run: |
+          cmake -C genconfig_fragment.cmake -C package_enables.cmake \
+            -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=OFF \
+            -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+            -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF \
+            -DTrilinos_ENABLE_Amesos=OFF \
+            -DTrilinos_ENABLE_AztecOO=OFF \
+            -DTrilinos_ENABLE_Epetra=OFF \
+            -DTrilinos_ENABLE_EpetraExt=OFF \
+            -DTrilinos_ENABLE_Ifpack=OFF \
+            -DTrilinos_ENABLE_Intrepid=OFF \
+            -DTrilinos_ENABLE_Isorropia=OFF \
+            -DTrilinos_ENABLE_ML=OFF \
+            -DTrilinos_ENABLE_NewPackage=OFF \
+            -DTrilinos_ENABLE_Pliris=OFF \
+            -DTrilinos_ENABLE_PyTrilinos=OFF \
+            -DTrilinos_ENABLE_ShyLU_DDCore=OFF \
+            -DTrilinos_ENABLE_ThyraEpetraAdapters=OFF \
+            -DTrilinos_ENABLE_ThyraEpetraExtAdapters=OFF \
+            -DTrilinos_ENABLE_Triutils=OFF ..
+
+          ninja -j 16
+
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@8214744c546c1e5c8f03dde8fab3a7353211988d # v3.26.7
+      uses: github/codeql-action/analyze@4f3212b61783c3c68e8309a0f18a699764811cda # v3.27.1
       with:
         category: "/language:${{matrix.language}}"

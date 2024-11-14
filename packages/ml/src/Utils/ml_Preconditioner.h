@@ -16,6 +16,12 @@
 
 #ifndef ML_PRECONDITIONER_H
 #define ML_PRECONDITIONER_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -165,10 +171,3 @@ namespace ML_Epetra
 #endif
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

@@ -221,8 +221,8 @@ public:
 
           if ( result.success() ) {
             // First time this pair was inserted
-            if ( row_node < row_count.extent(0) ) { atomic_increment( & row_count( row_node ) ); }
-            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_increment( & row_count( col_node ) ); }
+            if ( row_node < row_count.extent(0) ) { Kokkos::atomic_inc( & row_count( row_node ) ); }
+            if ( col_node < row_count.extent(0) && col_node != row_node ) { Kokkos::atomic_inc( & row_count( col_node ) ); }
           }
           else if ( result.failed() ) {
             // Ran out of memory for insertion.
@@ -244,12 +244,12 @@ public:
       using atomic_incr_type = typename std::remove_reference< decltype( row_count(0) ) >::type;
 
       if ( row_node < row_count.extent(0) ) {
-        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
+        const unsigned offset = graph.row_map( row_node ) + Kokkos::atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = col_node ;
       }
 
       if ( col_node < row_count.extent(0) && col_node != row_node ) {
-        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
+        const unsigned offset = graph.row_map( col_node ) + Kokkos::atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = row_node ;
       }
     }

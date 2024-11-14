@@ -49,8 +49,6 @@
 #include <utility>
 #include <vector>
 
-namespace stk { namespace mesh { class BulkData; } }
-
 namespace stk {
 namespace tools {
 namespace impl {

@@ -95,7 +95,7 @@ namespace BaskerNS
             Int blkcol = thread_array(ti).error_blk;
             Int blkUrow = LU_size(blkcol)-1;
             if(LL(blkcol)(0).nnz >=
-                LU(blkcol)(blkUrow).nnz)
+               LU(blkcol)(blkUrow).nnz)
             {
               resize_U = thread_array(ti).error_info;
             }

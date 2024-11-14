@@ -89,4 +89,3 @@ namespace RBGen {
 } // namespace RBGen
 
 #endif // BURKARDT_FILE_IO_HANDLER_H
-

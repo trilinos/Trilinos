@@ -198,7 +198,7 @@ void BucketRepository::fill_key_ptr(const OrdinalVector& parts, PartOrdinal** ke
 {
   const size_t part_count = parts.size();
 
-  const size_t keyLen = 2 + part_count;
+  const size_t keyLen = 1 + part_count;
 
   *keyPtr = keyTmpBuffer;
   *keyEnd = *keyPtr+keyLen;
@@ -211,16 +211,12 @@ void BucketRepository::fill_key_ptr(const OrdinalVector& parts, PartOrdinal** ke
 
   //----------------------------------
   // Key layout:
-  // { part_count + 1 , { part_ordinals } , partition_count }
-  // Thus partition_count = key[ key[0] ]
+  // { part_count , { part_ordinals } }
   //
-  // for upper bound search use the maximum key for a bucket in the partition.
-  const unsigned max = static_cast<unsigned>(-1);
-  (*keyPtr)[0] = part_count+1;
-  (*keyPtr)[ (*keyPtr)[0] ] = max ;
+  (*keyPtr)[0] = part_count;
 
-  {
-    for ( unsigned i = 0 ; i < part_count ; ++i ) { (*keyPtr)[i+1] = parts[i] ; }
+  for ( unsigned i = 0 ; i < part_count ; ++i ) {
+    (*keyPtr)[i+1] = parts[i];
   }
 }
 
@@ -246,22 +242,19 @@ Partition *BucketRepository::get_partition(
   PartOrdinal* keyPtr,
   PartOrdinal* keyEnd)
 {
-  STK_ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank), "Entity rank " << arg_entity_rank
-                      << " is invalid");
+  STK_ThrowAssertMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
+                     "Entity rank " << arg_entity_rank << " is invalid");
 
   ensure_data_structures_sized();
 
   std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
 
-  // If the partition is found, the iterator will be right after it, thanks to the
-  // trickiness above.
   ik = lower_bound( partitions , keyPtr );
-  const bool partition_exists =
-    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , keyPtr );
+  const bool partition_exists = (ik != partitions.end()) && raw_part_equal( (*ik)->key() , keyPtr );
 
   if (partition_exists)
   {
-    return ik[-1];
+    return *ik;
   }
 
   return nullptr;
@@ -274,8 +267,6 @@ Partition* BucketRepository::create_partition(
   PartOrdinal* keyPtr,
   PartOrdinal* keyEnd)
 {
-  keyPtr[keyPtr[0]] = 0;
-
   Partition *partition = new Partition(m_mesh, this, arg_entity_rank, keyPtr, keyEnd);
   STK_ThrowRequire(partition != nullptr);
 
@@ -420,7 +411,8 @@ Bucket *BucketRepository::allocate_bucket(EntityRank entityRank,
                                           unsigned initialCapacity,
                                           unsigned maximumCapacity)
 {
-  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(std::vector<unsigned>(key.begin()+1,key.end()-1),std::less<unsigned>()),
+  std::vector<unsigned> tmp(key.begin()+1,key.end());
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(tmp,std::less<unsigned>()),
                      "bucket created with 'key' vector that's not sorted and unique");
   BucketVector &bucket_vec = m_buckets[entityRank];
   const unsigned bucket_id = bucket_vec.size();
@@ -465,15 +457,9 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
   m_mesh.reorder_buckets_callback(entity_rank, id_map);
 }
 
-std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
+const std::vector<Partition *>& BucketRepository::get_partitions(EntityRank rank) const
 {
-  std::vector<Partition *> retval;
-  std::vector<Partition *> const& bf_vec = m_partitions[rank];
-  for (size_t i = 0; i < bf_vec.size(); ++i)
-  {
-    retval.push_back(bf_vec[i]);
-  }
-  return retval;
+  return m_partitions[rank];
 }
 
 void BucketRepository::delete_bucket(Bucket * bucket)

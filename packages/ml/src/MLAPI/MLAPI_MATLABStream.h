@@ -1,6 +1,12 @@
 #ifndef MLAPI_MATLABSTREAM_H
 #define MLAPI_MATLABSTREAM_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*!
 \file MLAPI_MATLABStream.h
 
@@ -273,10 +279,3 @@ private:
 } // namespace MLAPI
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

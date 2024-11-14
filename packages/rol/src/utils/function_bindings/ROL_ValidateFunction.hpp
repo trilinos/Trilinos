@@ -27,6 +27,20 @@ namespace ROL {
 
 namespace details {
 
+
+using std::cout;
+using std::ostream;
+using std::string;
+using std::vector;
+using std::setw;
+using std::setprecision;
+using std::scientific;
+using std::abs;
+using std::right;
+using std::max;
+using std::endl;
+
+
 template<typename Real>
 class ValidateFunction {
 public:

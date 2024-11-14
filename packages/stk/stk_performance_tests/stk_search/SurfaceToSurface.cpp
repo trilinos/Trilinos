@@ -653,12 +653,14 @@ void run_imported_surface_to_surface_test_pll_local_with_views(const std::string
   Kokkos::deep_copy(diceBoxes, diceBoxesHost);
   Kokkos::deep_copy(toolBoxes, toolBoxesHost);
 
+  std::shared_ptr<stk::search::SearchData> searchData;
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
 
     batchTimer.start_batch_timer();
     for (int i = 0; i < numIterations; ++i) {
       Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
-      stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults, ExecSpace{});
+      constexpr bool sortResults = false;
+      searchData = stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults, ExecSpace{}, sortResults, searchData);
     }
     batchTimer.stop_batch_timer();
   }

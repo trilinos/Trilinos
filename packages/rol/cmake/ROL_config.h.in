@@ -11,3 +11,6 @@
 
 /* Define for python interface support. */
 #cmakedefine ENABLE_PYBIND11_PYROL
+
+/* Define support for automated ParameterList validation. */
+#cmakedefine ENABLE_PARAMETERLIST_VALIDATION

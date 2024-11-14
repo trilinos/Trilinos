@@ -34,9 +34,10 @@
 #ifndef STK_MESH_NGPPARALLELCOMM_HPP
 #define STK_MESH_NGPPARALLELCOMM_HPP
 
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-#include "stk_util/ngp/NgpSpaces.hpp"
-#include "Kokkos_Core.hpp"
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/MPI.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace stk {
 namespace mesh {
@@ -58,7 +59,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   const int pRank = stk::parallel_machine_rank(mpi_communicator);
   const int msgTag = 10242;
   size_t num_comm_procs = comm_procs.size();
-  int dataTypeSize = sizeof(T);
 
   CommProcsViewType deviceCommProcs("DeviceCommProcs", num_comm_procs);
   CommProcsViewType::HostMirror hostCommProcs = Kokkos::create_mirror_view(deviceCommProcs);
@@ -98,14 +98,15 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
                          BufferViewType<T> buffer =  Kokkos::subview( deviceSendData, Kokkos::pair<size_t, size_t>(dataBegin, dataEnd));
                          exchangeHandler.devicePackMessage(pRank, deviceCommProcs(iproc), buffer);
                        });
+  Kokkos::fence();
 
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     int iproc = comm_procs[proc];
     const size_t dataBegin = hostBufferOffsets[proc];
     const size_t dataEnd   = hostBufferOffsets[proc+1];
-    int bufSize = (dataEnd-dataBegin) * dataTypeSize;
-    MPI_Irecv((deviceRecvData.data()+dataBegin), bufSize, MPI_CHAR, iproc, msgTag, mpi_communicator, &recvRequests[proc]);
-    MPI_Isend((deviceSendData.data()+dataBegin), bufSize, MPI_CHAR, iproc, msgTag, mpi_communicator, &sendRequests[proc]);
+    int bufSize = (dataEnd-dataBegin);
+    MPI_Irecv((deviceRecvData.data()+dataBegin), bufSize, sierra::MPI::Datatype<T>::type(), iproc, msgTag, mpi_communicator, &recvRequests[proc]);
+    MPI_Isend((deviceSendData.data()+dataBegin), bufSize, sierra::MPI::Datatype<T>::type(), iproc, msgTag, mpi_communicator, &sendRequests[proc]);
   }
 
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {

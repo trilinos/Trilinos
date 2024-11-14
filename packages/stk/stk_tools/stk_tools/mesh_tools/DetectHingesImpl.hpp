@@ -35,12 +35,12 @@
 #ifndef _DetectHingesImpl_hpp_
 #define _DetectHingesImpl_hpp_
 
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <vector>
 
 namespace stk {
+namespace mesh { class BulkData; }
 namespace tools {
 namespace impl {
 

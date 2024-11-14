@@ -52,6 +52,8 @@ function bootstrap_modules() {
         module unload sems-python
         module load sems-git/2.37.0
         module load sems-python/3.9.0
+        execute_command_checked "module load sems-ccache"
+        configure_ccache
 
         module list
     else
@@ -170,7 +172,7 @@ sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReques
 if [[ ${on_kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop and pointing at them"
     "${SCRIPTPATH}"/SetKokkosDevelop.sh
-    extra_configure_args="\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\"${extra_configure_args:+;${extra_configure_args}}"
+    extra_configure_args="-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels${extra_configure_args:+;${extra_configure_args}}"
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"

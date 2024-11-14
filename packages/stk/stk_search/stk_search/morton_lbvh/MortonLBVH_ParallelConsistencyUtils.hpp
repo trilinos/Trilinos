@@ -132,24 +132,30 @@ morton_extend_local_range_with_remote_boxes_that_might_intersect(
     ExecutionSpace const& execSpace)
 {
   using DomainValueType = typename DomainBoxType::value_type;
+  using RangeValueType = typename RangeBoxType::value_type;
 
   const int numProcs = stk::parallel_machine_size(comm);
   const int procId = stk::parallel_machine_rank(comm);
 
-  const auto globalSupersetBoxes = gather_all_processor_superset_domain_boxes(localDomain, comm);
+  using StkDomainBoxType = stk::search::Box<DomainValueType>;
+  using StkRangeBoxType = stk::search::Box<RangeValueType>;
+  const std::vector<StkDomainBoxType> globalSupersetBoxes = gather_all_processor_superset_domain_boxes(localDomain, comm);
 
-  stk::search::MortonAabbTree<DomainValueType, ExecutionSpace> domainTree("Proc Domain Tree",
-                                                                                        localRange.size());
-  stk::search::MortonAabbTree<DomainValueType, ExecutionSpace> rangeTree("Proc Range Tree",
-                                                                                       globalSupersetBoxes.size());
+  using DomainViewType = Kokkos::View<BoxIdent<StkDomainBoxType,DomainIdentProcType>*,ExecutionSpace>;
+  using RangeViewType = Kokkos::View<BoxIdent<StkRangeBoxType,RangeIdentProcType>*,ExecutionSpace>;
+  using DomainTreeType = stk::search::MortonAabbTree<DomainViewType,ExecutionSpace>;
+  using RangeTreeType = stk::search::MortonAabbTree<RangeViewType,ExecutionSpace>;
 
-  export_from_box_ident_proc_vec_to_morton_tree(localRange, domainTree);
-  export_from_box_vec_to_morton_tree(globalSupersetBoxes, rangeTree);
+  DomainTreeType domainTree("Proc Domain Tree", localRange.size());
+  RangeTreeType rangeTree("Proc Range Tree", globalSupersetBoxes.size());
+
+  export_from_box_ident_proc_vec_to_morton_tree<DomainTreeType,RangeBoxType,RangeIdentProcType>(localRange, domainTree);
+  export_from_box_vec_to_morton_tree<RangeTreeType,ExecutionSpace,StkDomainBoxType>(globalSupersetBoxes, rangeTree);
   domainTree.sync_to_device();
   rangeTree.sync_to_device();
 
   stk::search::CollisionList<ExecutionSpace> collisionList("Proc Collision List");
-  stk::search::morton_lbvh_search<DomainValueType, ExecutionSpace>(domainTree, rangeTree, collisionList, execSpace);
+  stk::search::morton_lbvh_search<DomainTreeType, RangeTreeType, ExecutionSpace>(domainTree, rangeTree, collisionList, execSpace);
   collisionList.sync_from_device();
 
   using GlobalIdType = typename RangeIdentProcType::ident_type;
@@ -260,11 +266,17 @@ morton_extend_local_range_with_remote_boxes_that_might_intersect(
 {
   check_domain_or_range_view_parallel<DomainView, ExecutionSpace>();
   check_domain_or_range_view_parallel<RangeView, ExecutionSpace>();
-  using Real               = typename DomainView::value_type::box_type::value_type;
+  using DomainRealType               = typename DomainView::value_type::box_type::value_type;
+  using RangeRealType               = typename RangeView::value_type::box_type::value_type;
   using RangeBoxType       = typename RangeView::value_type::box_type;
   using RangeIdentProcType = typename RangeView::value_type::ident_proc_type;
-  using ViewType = Kokkos::View<Box<Real>*, ExecutionSpace>;
+  using ViewType = Kokkos::View<Box<DomainRealType>*, ExecutionSpace>;
+  using BoxIdentViewType = Kokkos::View<BoxIdent<Box<DomainRealType>,int>*,ExecutionSpace>;
 
+  using MRangeBoxType = stk::search::Box<RangeRealType>;
+  using MRangeViewType = Kokkos::View<BoxIdentProc<MRangeBoxType,RangeIdentProcType>*,ExecutionSpace>;
+  using DomainTreeType = stk::search::MortonAabbTree<MRangeViewType, ExecutionSpace>;
+  using RangeTreeType = stk::search::MortonAabbTree<BoxIdentViewType, ExecutionSpace>;
 
   using FillMPIBuffersType = impl::FillGhostBoxBuffers<RangeView, ExecutionSpace>;
   using DeviceBuffers = typename FillMPIBuffersType::DeviceBuffers;
@@ -272,19 +284,17 @@ morton_extend_local_range_with_remote_boxes_that_might_intersect(
   ViewType globalSupersetBoxes = gather_all_processor_superset_domain_boxes(localDomain, execSpace, comm);
 
   const bool setBoxesOnHost = false;
-  stk::search::MortonAabbTree<Real, ExecutionSpace> domainTree("Proc Domain Tree",
-                                                                          localRange.size(), setBoxesOnHost);
-  stk::search::MortonAabbTree<Real, ExecutionSpace> rangeTree("Proc Range Tree",
-                                                                          globalSupersetBoxes.size(), setBoxesOnHost);
+  DomainTreeType domainTree("Proc Domain Tree", localRange.size(), setBoxesOnHost);
+  RangeTreeType rangeTree("Proc Range Tree", globalSupersetBoxes.size(), setBoxesOnHost);
 
-  export_box_ident_view_to_morton_tree(localRange, domainTree, execSpace);
-  export_box_view_to_morton_tree(globalSupersetBoxes, rangeTree, execSpace);
+  export_box_ident_view_to_morton_tree<RangeView,DomainTreeType,ExecutionSpace>(localRange, domainTree, execSpace);
+  export_box_view_to_morton_tree<RangeTreeType,ExecutionSpace,ViewType>(globalSupersetBoxes, rangeTree, execSpace);
   execSpace.fence();
   domainTree.sync_to_device();
   rangeTree.sync_to_device();
 
   stk::search::CollisionList<ExecutionSpace> collisionList("Proc Collision List");
-  stk::search::morton_lbvh_search<Real, ExecutionSpace>(domainTree, rangeTree, collisionList);
+  stk::search::morton_lbvh_search<DomainTreeType, RangeTreeType, ExecutionSpace>(domainTree, rangeTree, collisionList, execSpace);
 
   FillMPIBuffersType fill_buffers(collisionList, localRange, execSpace, comm);
   DeviceBuffers deviceSendBuffers = fill_buffers.run();

@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "BalanceMesh.hpp"
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace balance {

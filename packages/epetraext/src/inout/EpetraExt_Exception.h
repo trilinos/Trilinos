@@ -44,6 +44,12 @@
 #ifndef EPETRAEXT_EXCEPTION
 #define EPETRAEXT_EXCEPTION
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 #include "EpetraExt_ConfigDefs.h"
 #include <string>
 
@@ -99,10 +105,3 @@ private:
 } // namespace EpetraExt
 
 #endif
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

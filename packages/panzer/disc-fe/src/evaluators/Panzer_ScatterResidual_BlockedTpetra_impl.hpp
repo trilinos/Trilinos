@@ -472,6 +472,4 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 }
 
-// **********************************************************************
-
 #endif

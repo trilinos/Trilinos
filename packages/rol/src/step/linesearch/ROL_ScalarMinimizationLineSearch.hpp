@@ -184,9 +184,10 @@ public:
 
     sf_ = sf;
 
-
+    
     // Status test for line search
-    econd_ = StringToECurvatureCondition(list0.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
+    std::string condName = list0.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions");
+    econd_ = StringToECurvatureCondition(condName);
     max_nfval_ = list0.get("Function Evaluation Limit",20);
     c1_        = list0.get("Sufficient Decrease Tolerance",oem4);
     c2_        = list0.sublist("Curvature Condition").get("General Parameter",p9);
@@ -199,7 +200,8 @@ public:
       c1_ = oem4;
       c2_ = p9;
     }
-    EDescent edesc = StringToEDescent(list0.sublist("Descent Method").get("Type","Quasi-Newton Method"));
+    std::string descentName = list0.sublist("Descent Method").get("Type","Quasi-Newton Method");
+    EDescent edesc = StringToEDescent(descentName);
     if ( edesc == DESCENT_NONLINEARCG ) {
       c2_ = p4;
       c3_ = std::min(one-c2_,c3_);

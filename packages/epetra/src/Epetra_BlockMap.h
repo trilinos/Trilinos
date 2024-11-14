@@ -44,6 +44,14 @@
 #ifndef EPETRA_BLOCKMAP_H
 #define EPETRA_BLOCKMAP_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_BlockMapData.h"
@@ -933,10 +941,3 @@ template<> inline int  Epetra_BlockMap::SizeMyGlobalElement<int>      (int n) { 
 #endif
 
 #endif /* EPETRA_BLOCKMAP_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

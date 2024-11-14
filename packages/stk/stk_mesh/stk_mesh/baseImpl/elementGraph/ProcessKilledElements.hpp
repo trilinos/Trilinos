@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -31,35 +31,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_DEVICEMESH_HOST_DATA_HPP
-#define STK_DEVICEMESH_HOST_DATA_HPP
+#ifndef STK_PROCESS_KILLED_ELEMENTS_HPP
+#define STK_PROCESS_KILLED_ELEMENTS_HPP
 
-#include <Kokkos_Core.hpp>
-#include "stk_mesh/base/NgpTypes.hpp"
-#include "stk_util/ngp/NgpSpaces.hpp"
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/baseImpl/elementGraph/GraphTypes.hpp>
+#include <stk_mesh/baseImpl/MeshModification.hpp>
 
-namespace stk
-{
-namespace mesh
-{
-namespace impl
-{
+namespace stk { namespace mesh {
+class Part;
+class BulkData;
 
-struct DeviceMeshHostData {
+bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                             const stk::mesh::EntityVector& killedElements,
+                             stk::mesh::Part& active,
+                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                             const stk::mesh::PartVector& side_parts,
+                             const stk::mesh::PartVector* boundary_mesh_parts = nullptr,
+                             stk::mesh::impl::MeshModification::modification_optimization modEndOpt = stk::mesh::impl::MeshModification::modification_optimization::MOD_END_SORT);
 
-  EntityKeyViewType::HostMirror hostEntityKeys;
-  BucketEntityOffsetsViewType::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
-  UnsignedViewType::HostMirror hostEntityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  EntityViewType::HostMirror hostSparseConnectivity[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  OrdinalViewType::HostMirror hostSparseConnectivityOrdinals[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  PermutationViewType::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  UnsignedViewType::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
-  FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
-  unsigned volatileFastSharedCommMapSyncCount = 0;
-};
-
-}  // namespace impl
-}  // namespace mesh
-}  // namespace stk
+}} // end stk mesh namespaces
 
 #endif

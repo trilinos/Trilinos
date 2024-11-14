@@ -1098,7 +1098,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase3 avoid singletons", bool, aggParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, aggParams);
     aggFactory->SetParameterList(aggParams);
     // make sure that the aggregation factory has all necessary data
     aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
@@ -1180,7 +1179,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: tie threshold", double, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold", double, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering", std::string, aggParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, aggParams);
     aggFactory->SetParameterList(aggParams);
     aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
     aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
@@ -1199,25 +1197,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<Factory> coarseMap = rcp(new CoarseMapFactory());
   coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
   manager.SetFactory("CoarseMap", coarseMap);
-
-  // Aggregate qualities
-  if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
-    RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
-    ParameterList aggQualityParams;
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file output", bool, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file base", std::string, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry", bool, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: algorithm", std::string, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: zero threshold", double, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: percentiles", Teuchos::Array<double>, aggQualityParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: mode", std::string, aggQualityParams);
-    aggQualityFact->SetParameterList(aggQualityParams);
-    manager.SetFactory("AggregateQualities", aggQualityFact);
-
-    assert(aggType == "uncoupled");
-    aggFactory->SetFactory("AggregateQualities", aggQualityFact);
-  }
 
   // Tentative P
   MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
@@ -1319,6 +1298,31 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RAPs->SetFactory("R", manager.GetFactory("R"));
   }
 
+  // Aggregate qualities
+  bool useAggregateQualities = false;
+  if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
+    useAggregateQualities       = true;
+    RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
+    ParameterList aggQualityParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file output", bool, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file base", std::string, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry", bool, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: algorithm", std::string, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: zero threshold", double, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: percentiles", Teuchos::Array<double>, aggQualityParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: mode", std::string, aggQualityParams);
+    aggQualityFact->SetParameterList(aggQualityParams);
+    aggQualityFact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    aggQualityFact->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
+    manager.SetFactory("AggregateQualities", aggQualityFact);
+
+    if (!RAP.is_null())
+      RAP->AddTransferFactory(aggQualityFact);
+    else
+      RAPs->AddTransferFactory(aggQualityFact);
+  }
+
   if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
     RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
     ParameterList aggExportParams;
@@ -1329,8 +1333,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: fine graph edges", bool, aggExportParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges", bool, aggExportParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap", bool, aggExportParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: aggregate qualities", bool, aggExportParams);
     aggExport->SetParameterList(aggExportParams);
+    aggExport->SetFactory("AggregateQualities", manager.GetFactory("AggregateQualities"));
     aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
+    aggExport->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    aggExport->SetFactory("Graph", manager.GetFactory("Graph"));
 
     if (!RAP.is_null())
       RAP->AddTransferFactory(aggExport);

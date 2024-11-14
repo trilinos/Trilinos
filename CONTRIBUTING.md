@@ -78,3 +78,17 @@ When your changes are ready to be integrated into Trilinos' `develop` branch:
 ### Feedback
 
 At this point you'll enter into a stage where you and various Trilinos developers will iterate back and forth until your changes are in an acceptable state and can be merged in.  If you need to make changes to your pull request, make additional commits on your `<branchName>` branch and push them up to your fork.  Make sure you don't delete your remote feature branch or your fork of Trilinos before your pull request has been merged.
+
+
+## Sign-off Your Work
+
+The Developer Certificate of Origin ([DCO](https://developercertificate.org)) is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing to the project. Contributors must sign-off that they adhere to these requirements by adding a Signed-off-by line to commit messages.
+
+Example:
+```
+This is a commit message
+
+Signed-off-by: John A. Doe <random@example.org>
+```
+
+See [`git commit --signoff`](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff)

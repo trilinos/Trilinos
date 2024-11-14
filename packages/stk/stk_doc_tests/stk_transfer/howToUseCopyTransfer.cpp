@@ -72,14 +72,14 @@ void change_mesh_decomposition(stk::mesh::BulkData& mesh)
   int myProc = mesh.parallel_rank();
   int otherProc = 1-myProc;
 
-  stk::mesh::for_each_entity_run(mesh, stk::topology::ELEM_RANK,
-                                 mesh.mesh_meta_data().locally_owned_part(),
-                                 [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& elem)
+  stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::ELEM_RANK,
+                                            mesh.mesh_meta_data().locally_owned_part(),
+                                            [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& elem)
   {
     entityProcPairs.emplace_back(elem, otherProc);
   });
 
-  stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK,
+  stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::NODE_RANK,
                                  mesh.mesh_meta_data().locally_owned_part(),
                                  [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& node)
   {

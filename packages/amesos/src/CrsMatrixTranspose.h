@@ -30,10 +30,6 @@
 
 #ifndef CRSMATRIXTRANSPOSE
 #define CRSMATRIXTRANSPOSE
-#include "Epetra_CrsMatrix.h" 
-int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) ;
-#endif
-
 
 #if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
 #ifdef __GNUC__
@@ -41,3 +37,6 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) ;
 #endif
 #endif
 
+#include "Epetra_CrsMatrix.h" 
+int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) ;
+#endif

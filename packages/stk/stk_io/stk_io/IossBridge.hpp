@@ -52,7 +52,6 @@
 #include "Ioss_GroupingEntity.h"            // for GroupingEntity
 #include "SidesetTranslator.hpp"            // for fill_element_and_side_ids
 #include "stk_io/OutputParams.hpp"          // for OutputParams
-#include "stk_mesh/base/BulkData.hpp"       // for BulkData
 #include "stk_mesh/base/FieldState.hpp"     // for FieldState
 #include "stk_mesh/base/Part.hpp"           // for Part
 #include "stk_topology/topology.hpp"        // for topology
@@ -172,6 +171,8 @@ bool include_entity(const Ioss::GroupingEntity *entity);
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
+
+void declare_stk_aliases(Ioss::Region& region, stk::mesh::MetaData& meta);
 
 /** This is the primary function used by an application to define
  *	the stk::mesh which corresponds to the Ioss mesh read from the
@@ -333,7 +334,7 @@ void define_io_fields(Ioss::GroupingEntity *entity,
  *  stk::topology. If a corresponding topology is not found, a
  *  runtime error exception will be thrown.
  */
-stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology, unsigned mesh_spatial_dimension);
+stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology, unsigned mesh_spatial_dimension, bool useShellAllFaceSides = false);
 
 /** Given a stk::topology, return the
  *	corresponding Ioss::ElementTopology string. If a corresponding
@@ -642,6 +643,11 @@ const stk::mesh::Part* get_parent_element_block(const stk::mesh::BulkData &bulk,
                                                 const Ioss::Region &ioRegion,
                                                 const std::string& name);
 
+int64_t get_side_offset(const Ioss::ElementTopology* sideTopo,
+                        const Ioss::ElementTopology* parentTopo);
+
+int64_t get_side_offset(const Ioss::SideBlock* sb);
+
 template <typename INT>
 void fill_data_for_side_block( OutputParams &params,
                                Ioss::GroupingEntity & io ,
@@ -652,7 +658,8 @@ void fill_data_for_side_block( OutputParams &params,
 {
     STK_ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
 
-    stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension());
+    bool useShellAllFaceSides = io.get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+    stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension(), useShellAllFaceSides);
 
     const stk::mesh::Part *parentElementBlock = get_parent_element_block(params.bulk_data(), params.io_region(), part->name());
 
@@ -661,7 +668,12 @@ void fill_data_for_side_block( OutputParams &params,
     }
 
     // An offset required to translate Ioss's interpretation of shell ordinals 
-    INT sideOrdOffset = (io.type() == Ioss::SIDEBLOCK) ? Ioss::Utils::get_side_offset(dynamic_cast<Ioss::SideBlock*>(&io)) : 0;
+    INT sideOrdOffset = 0;
+    if(io.type() == Ioss::SIDEBLOCK) {
+      Ioss::SideBlock* sb = dynamic_cast<Ioss::SideBlock*>(&io);
+      sideOrdOffset = get_side_offset(sb);
+    }
+    
     fill_element_and_side_ids(params, part, parentElementBlock, stk_elem_topology, sides, elem_side_ids, sideOrdOffset);
 }
 

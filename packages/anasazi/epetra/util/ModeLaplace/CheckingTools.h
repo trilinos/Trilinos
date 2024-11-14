@@ -70,4 +70,3 @@ class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT CheckingTools {
 
 
 #endif
-

@@ -27,8 +27,10 @@ TachoSolver<Matrix,Vector>::TachoSolver(
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::TachoSolver,Matrix,Vector>(A, X, B)
 {
-  data_.method  = 1; // Cholesky
-  data_.variant = 2; // solver variant
+  data_.method  = 1;     // Cholesky
+  data_.variant = 2;     // solver variant
+  data_.streams = 1;     // # of streams
+  data_.verbose = false; // verbose
 }
 
 
@@ -74,7 +76,8 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
     data_.solver.setSolutionMethod(data_.method);
     data_.solver.setLevelSetOptionAlgorithmVariant(data_.variant);
     data_.solver.setSmallProblemThresholdsize(data_.small_problem_threshold_size);
-
+    data_.solver.setVerbose(data_.verbose);
+    data_.solver.setLevelSetOptionNumStreams(data_.streams);
     // TODO: Confirm param options
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
 
@@ -216,6 +219,10 @@ TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   data_.variant = parameterList->get<int> ("variant", 2);
   // small problem threshold
   data_.small_problem_threshold_size = parameterList->get<int> ("small problem threshold size", 1024);
+  // verbosity
+  data_.verbose = parameterList->get<bool> ("verbose", false);
+  // # of streams
+  data_.streams = parameterList->get<int> ("num-streams", 1);
   // TODO: Confirm param options
   // data_.num_kokkos_threads = parameterList->get<int>("kokkos-threads", 1);
   // data_.max_num_superblocks = parameterList->get<int>("max-num-superblocks", 4);
@@ -234,6 +241,8 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
     pl->set("method", "chol", "Type of factorization, chol, ldl, or lu");
     pl->set("variant", 2, "Type of solver variant, 0, 1, or 2");
     pl->set("small problem threshold size", 1024, "Problem size threshold below with Tacho uses LAPACK.");
+    pl->set("verbose", false, "Verbosity");
+    pl->set("num-streams", 1, "Number of GPU streams");
 
     // TODO: Confirm param options
     // pl->set("kokkos-threads", 1, "Number of threads");

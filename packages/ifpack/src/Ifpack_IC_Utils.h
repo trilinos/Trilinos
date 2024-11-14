@@ -43,6 +43,12 @@
 #ifndef IFPACK_IC_UTILS_H
 #define IFPACK_IC_UTILS_H
 
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
 typedef struct {
     double *val;  /* also known as A  */
     int    *col;  /* also known as JA; first column is column 0 */
@@ -73,10 +79,3 @@ void crout_ict(
 
 
 #endif
-
-#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Ifpack package is deprecated"
-#endif
-#endif
-

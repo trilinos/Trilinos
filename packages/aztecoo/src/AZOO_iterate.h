@@ -45,6 +45,12 @@
 #ifndef _AZOO_ITERATE_H_
 #define _AZOO_ITERATE_H_
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 #ifndef __cplusplus
 #define __cplusplus
 #endif
@@ -107,10 +113,3 @@ extern "C" void AZOO_iterate(double * xsolve, double * b,
 			     AZ_PRECOND *precond, struct AZ_SCALING *scaling);
 #endif
 #endif /* _AZOO_ITERATE_H_ */
-
-#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The AztecOO package is deprecated"
-#endif
-#endif
-
