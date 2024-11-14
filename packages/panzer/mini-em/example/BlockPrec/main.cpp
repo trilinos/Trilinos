@@ -109,7 +109,10 @@ bool in_eval_MV = false;
 bool in_eval_J = false;
 double timer_evalJ=0.0;
 double timer_capsg=0.0;
+double timer_main=0.0;
 
+int numRepeatRuns = 1;
+int repeat = 0;
 
 template<class T>
 static T parallel_reduce(Teuchos::RCP<const Teuchos::MpiComm<int> > comm, T& localVal, Teuchos::EReductionType red) {
@@ -144,6 +147,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   size_t fom_num_cells;
 
   {
+
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
     int workset_size=2000;
@@ -304,7 +308,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     physicsEqSet.set("Integration Order", 2*basis_order);
 
     RCP<panzer_stk::STK_Interface> mesh;
-    int dim;
+    int dim=3;
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
     {
       Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
@@ -781,8 +785,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     fom_num_cells = mesh->getEntityCounts(dim);
 
     mainTimer.stop();
+    timer_main = mainTimer.totalElapsedTime();
     if (comm->getRank() == 0) {
-      std::cout << "mainTimer= " << mainTimer.totalElapsedTime() << std::endl;
+      std::cout << "mainTimer(run: " << repeat << "/" << numRepeatRuns << ") = " << timer_main << std::endl;
     }
     
     if (use_timer) {
@@ -833,12 +838,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   } else if (use_timer) {
     Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
   }
-  timer_evalJ = parallel_reduce(comm, timer_evalJ, Teuchos::REDUCE_MAX);
-  timer_capsg = parallel_reduce(comm, timer_capsg, Teuchos::REDUCE_MAX);
-  if (!comm->getRank()) {
-    std::cout << "[dbg] timer_evalJ= " << timer_evalJ << std::endl;
-    std::cout << "[dbg] timer_capsg= " << timer_capsg << std::endl;
-  }
   return EXIT_SUCCESS;
 }
 
@@ -856,6 +855,8 @@ int main(int argc,char * argv[]){
   const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
   solverType solver = MUELU;
   clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+  clp.setOption("num-repeat-runs",&numRepeatRuns);
+
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);
@@ -871,32 +872,89 @@ int main(int argc,char * argv[]){
     // TEUCHOS_ASSERT(!useComplex);
   }
 
-  int retVal;
+  Teuchos::RCP<const Teuchos::MpiComm<int> > comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
+
+  int retVal=0;
+  std::vector<double> timer_evalJ_vec(numRepeatRuns),  timer_capsg_vec(numRepeatRuns), timer_main_vec(numRepeatRuns);
+  // ==========================================================================================================================
+  for (repeat=0; repeat < numRepeatRuns; ++repeat) {
+    // ==========================================================================================================================
+
+  in_eval_J = false;
+  timer_main = 0.0;
+  timer_evalJ = 0.0;
+  timer_capsg = 0.0;
+
   if (linAlgebra == linAlgTpetra) {
 
     // if (useComplex) {
-// #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
-//       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
-//       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
-// #else
-//       std::cout << std::endl
-//                 << "WARNING" << std::endl
-//                 << "Tpetra was compiled without Scalar=std::complex<double>." << std::endl << std::endl;
-//       return EXIT_FAILURE;
-// #endif
-//     } else {
-      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
-      retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
-//    }
+    // #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
+    //       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
+    //       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
+    // #else
+    //       std::cout << std::endl
+    //                 << "WARNING" << std::endl
+    //                 << "Tpetra was compiled without Scalar=std::complex<double>." << std::endl << std::endl;
+    //       return EXIT_FAILURE;
+    // #endif
+    //     } else {
+    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
+    retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
+    //    }
 #ifdef PANZER_HAVE_EPETRA_STACK
   } else if (linAlgebra == linAlgEpetra) {
     // TEUCHOS_ASSERT(!useComplex);
     typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> blockedLinObjFactory;
     retVal = main_<double,int,int,blockedLinObjFactory,false>(clp, argc, argv);
 #endif
-  } else
+  } else {
     TEUCHOS_ASSERT(false);
+  }
 
+    if (1) {
+      timer_main = parallel_reduce(comm, timer_main, Teuchos::REDUCE_MAX);
+      timer_evalJ = parallel_reduce(comm, timer_evalJ, Teuchos::REDUCE_MAX);
+      timer_capsg = parallel_reduce(comm, timer_capsg, Teuchos::REDUCE_MAX);
+      if (!comm->getRank()) {
+        std::cout << "[TIMER] repeat= " << repeat << " timer_evalJ= " << timer_evalJ << std::endl;
+        std::cout << "[TIMER] repeat= " << repeat << " timer_capsg= " << timer_capsg << std::endl;
+        timer_main_vec[repeat] = timer_main;
+        timer_evalJ_vec[repeat] = timer_evalJ;
+        timer_capsg_vec[repeat] = timer_capsg;
+      }
+    }
+    
+
+  // ==========================================================================================================================
+  }    //for (int repeat=0; repeat < numRepeatRuns; ++repeat) {
+  // ==========================================================================================================================
+
+  auto minMaxAve = [&] (const std::vector<double>& vec, double MinMaxAve[3]) {
+                     MinMaxAve[0] = std::numeric_limits<double>::max();
+                     MinMaxAve[1] = -MinMaxAve[0];
+                     MinMaxAve[2] = 0.0;
+                     for (auto v : vec) {
+                       MinMaxAve[0] = std::min(MinMaxAve[0], v);
+                       MinMaxAve[1] = std::max(MinMaxAve[1], v);
+                       MinMaxAve[2] += v / double(vec.size());
+                     }
+                   };
+
+  if (!comm->getRank()) {
+    double MinMaxAve[3][3];
+    minMaxAve(timer_main_vec, MinMaxAve[0]);
+    minMaxAve(timer_evalJ_vec, MinMaxAve[1]);
+    minMaxAve(timer_capsg_vec, MinMaxAve[2]);
+    auto pr = [&](int j, const std::string& name) {
+                std::cout << "[TIMER] " << name << " AVE(" << numRepeatRuns << " runs):  " << MinMaxAve[j][2]
+                          << " MIN: " << MinMaxAve[j][0] << " MAX: " << MinMaxAve[j][1]
+                          << " PAR-IMB: " << MinMaxAve[j][1]/(MinMaxAve[j][0] == 0.0 ? 1.0 : MinMaxAve[j][0]) << std::endl;
+              };
+    pr(0, "timer_main");
+    pr(1, "timer_evalJ");
+    pr(2, "timer_capsg");
+  }
 
   Kokkos::finalize();
 
