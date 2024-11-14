@@ -270,7 +270,6 @@ int main(int argc, char *argv[])
         } else {
             assert(false);
         }
-        writeMM("Laplace.mtx",KMonolithic);
 
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
