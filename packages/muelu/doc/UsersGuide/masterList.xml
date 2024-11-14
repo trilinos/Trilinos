@@ -893,6 +893,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: output file: material</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to plot the material.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: params</name>
       <type>\parameterlist</type>
       <visible>false</visible>
