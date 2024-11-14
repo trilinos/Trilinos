@@ -163,3 +163,7 @@ rsync.*
 
 # pycharm ide
 .idea
+
+# clangd server stuff
+.cache/
+compile_commands.json
