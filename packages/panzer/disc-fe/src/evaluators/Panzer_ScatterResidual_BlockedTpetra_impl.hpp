@@ -576,7 +576,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     RCP<ContainerType> paramBlockedContainer = rcp_dynamic_cast<ContainerType>(d.gedc->getDataObject(activeParameters[i]),true);
     RCP<ProductVectorBase<double>> productVector =
       rcp_dynamic_cast<ProductVectorBase<double>>(paramBlockedContainer->get_f(),true);
-    for(std::size_t j=0;j<numBlocks;j++) {
+    for(int j=0;j<numBlocks;j++) {
       auto& tpetraBlock = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(productVector->getNonconstVectorBlock(j),true))->getTpetraVector());
       const auto& dfdp_view = tpetraBlock.getLocalViewDevice(Tpetra::Access::ReadWrite);
       dfdpFieldsVoV_.addView(dfdp_view,i,j);
