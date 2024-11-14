@@ -797,7 +797,7 @@ namespace panzer
 
       fm = Teuchos::null;
 
-      // test Residual fields
+      // test Tangent fields
       Teuchos::ArrayRCP<const double> data;
       Teuchos::RCP<const Thyra::ProductVectorBase<double>> f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_f());
 
@@ -826,6 +826,34 @@ namespace panzer
       {
          double target = 789.0 + myRank;
          TEST_ASSERT(data[i] == target || data[i] == 2.0 * target);
+      }
+
+      for (std::size_t i=0; i<numParams; ++i) {
+         Teuchos::RCP<const Thyra::ProductVectorBase<double>> param_f_vec = 
+            Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(
+               Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(paramContainers[i]->getGhostedLOC())->get_f());
+
+         Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(param_f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
+         TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(0)->getLocalNumElements());
+         for (size_type j = 0; j < data.size(); j++)
+         {
+            double target = .123 + myRank + i;
+            TEST_ASSERT(data[j] == target || data[j] == 2.0 * target);
+         }
+         Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(param_f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
+         TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(1)->getLocalNumElements());
+         for (size_type j = 0; j < data.size(); j++)
+         {
+            double target = .456 + myRank + i;
+            TEST_ASSERT(data[j] == target || data[j] == 2.0 * target);
+         }
+         Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(param_f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
+         TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(2)->getLocalNumElements());
+         for (size_type j = 0; j < data.size(); j++)
+         {
+            double target = .789 + myRank + i;
+            TEST_ASSERT(data[j] == target || data[j] == 2.0 * target);
+         }
       }
    }
 
