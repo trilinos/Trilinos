@@ -1422,11 +1422,15 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (useMaterial_) {
     if (have_userMaterial) {
       manager.SetFactory("Material", NoFactory::getRCP());
-
     } else {
-      RCP<Factory> material = rcp(new MultiVectorTransferFactory("Material"));
-      material->SetFactory("R", manager.GetFactory("R"));
-      manager.SetFactory("Material", material);
+      RCP<Factory> materialTransfer = rcp(new MultiVectorTransferFactory());
+      ParameterList materialTransferParameters;
+      materialTransferParameters.set("Vector name", "Material");
+      materialTransferParameters.set("Transfer name", "P");
+      materialTransferParameters.set("Normalize", true);
+      materialTransfer->SetParameterList(materialTransferParameters);
+      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Ptent"));
+      manager.SetFactory("Material", materialTransfer);
 
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
       if (!RAP.is_null()) {
