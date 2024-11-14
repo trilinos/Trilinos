@@ -175,6 +175,9 @@ namespace BaskerNS
       //printf("\n");
     }//if verbose
 
+    //printf( "P=[\n" );
+    //for(Int j = 0; j < M.ncol; j++) printf( "%d\n",order_btf_array[j] );
+    //printf( "];\n" );
     /*printf(" A = [\n" );
     for(Int j = 0; j < M.ncol; j++) {
       for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
@@ -189,6 +192,13 @@ namespace BaskerNS
     permute_row(M, order_btf_array);
 
     permute_inv(vals_perm_composition, vals_order_btf_array, M.nnz);
+    /*printf(" B = [\n" );
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      }
+    }
+    printf("];\n");*/
 
 
     //================================================================
@@ -637,6 +647,7 @@ namespace BaskerNS
     //Short circuit, 
     //If nblks  == 1, than only BTF_A exists
     // NDE: In this case, vals_block_map_perm_pair is not allocated nor used - A is assigned to BTF_A directly
+    bool replace_zero_pivot_in = Options.replace_zero_pivot;
     if(nblks == 1)
     {
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -760,6 +771,12 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             printf("Basker: blk=%d break due to size (work: %d > %d, size: %d > %d)\n",(int)blk_idx-1, (int)blk_work,(int)break_work_size, (int)blk_size,(int)break_block_size);
           }
+          if (nblks == 1) {
+            if(Options.verbose == BASKER_TRUE && replace_zero_pivot_in == BASKER_TRUE) {
+              printf("Basker: turning back replace-zero-pivot back because one block is big\n");
+              Options.replace_zero_pivot = BASKER_TRUE;
+            }
+          }
           move_fwd = BASKER_FALSE;
         }
         //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
@@ -771,7 +788,7 @@ namespace BaskerNS
           //printf("break last blk\n");
           blk_idx = 0;
           t_size = t_size + blk_size;
-          scol = _btf_tabs[blk_idx];	
+          scol = _btf_tabs[blk_idx];
           move_fwd = BASKER_FALSE;
         }
         //should not be called
@@ -945,9 +962,9 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE) {
       printf( "\n > btf_tabs_offset = %d, btf_top_tabs_offset = %d\n", (int)btf_tabs_offset, (int)btf_top_tabs_offset );
-      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d (%d)\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]),(int)btf_blk_work(blk_idx) );
-      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d (%d)\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]),(int)btf_blk_work(blk_idx) );
-      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d (%d)\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]),(int)btf_blk_work(blk_idx) );
+      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d (%d, %d)\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]),(int)btf_tabs[blk_idx],(int)btf_blk_work(blk_idx) );
+      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d (%d, %d)\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]),(int)btf_tabs[blk_idx],(int)btf_blk_work(blk_idx) );
+      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d (%d, %d)\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]),(int)btf_tabs[blk_idx],(int)btf_blk_work(blk_idx) );
       printf( "\n" );
     }
 
