@@ -163,3 +163,6 @@ rsync.*
 
 # pycharm ide
 .idea
+
+# compile commands
+compile_commands.json
