@@ -164,5 +164,5 @@ rsync.*
 # pycharm ide
 .idea
 
-# compile commands
+# Compile commands for clangd
 compile_commands.json
