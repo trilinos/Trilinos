@@ -1432,6 +1432,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               isBoundary = pointBoundaryNodes[row];
             } else {
               // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
+              isBoundary = true;
               for (LO j = 0; j < blkSize; j++) {
                 if (!pointBoundaryNodes[row * blkSize + j]) {
                   isBoundary = false;
@@ -1695,7 +1696,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       }
     }
 
-    if ((GetVerbLevel() & Statistics1) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
+    if (GetVerbLevel() & Statistics1) {
       RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
       GO numGlobalTotal, numGlobalDropped;
       MueLu_sumAll(comm, numTotal, numGlobalTotal);
