@@ -257,12 +257,16 @@ test_cmd_options=(
     --build-dir=${TRILINOS_BUILD_DIR:?}
     --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
-    --dashboard-build-name=${DASHBOARD_BUILD_NAME}
 )
+
+if [[ ${DASHBOARD_BUILD_NAME:-} ]]
+then
+    test_cmd_options+=( "--dashboard-build-name=${DASHBOARD_BUILD_NAME} ")
+fi
 
 if [[ ${extra_configure_args} ]]
 then
-    test_cmd_options+=( "--extra-configure-args=\"${extra_configure_args}\"")
+    test_cmd_options+=( "--extra-configure-args=\"${extra_configure_args}\" ")
 fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
