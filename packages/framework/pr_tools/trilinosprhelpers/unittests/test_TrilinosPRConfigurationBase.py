@@ -348,7 +348,8 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
 
-    def test_TrilinosPRConfigurationBaseBuildNameContainsPullRequest(self):
+
+    def test_TrilinosPRConfigurationBaseBuildGroupContainsPullRequest(self):
         """Test that a group containing 'Pull Request' causes the build name to reflect a PR build."""
         args = self.dummy_args_gcc_720()
         args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
@@ -358,11 +359,11 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
 
+
     def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
+        """Test that the default (non-PR) dashboard name is the GenConfig build ID."""
         args = self.dummy_args_non_pr_track()
-
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-
         build_name = pr_config.pullrequest_build_name
         expected_build_name = args.dashboard_build_name
         self.assertEqual(build_name, expected_build_name)
