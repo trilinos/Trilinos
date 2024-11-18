@@ -496,12 +496,12 @@ class TrilinosPRConfigurationBase(object):
         """
         if "Pull Request" in self.arg_pullrequest_cdash_track:
             output = f"PR-{self.arg_pullrequest_number}-test-{self.arg_pr_genconfig_job_name}"
-            if not self.arg_jenkins_job_number or "UNKNOWN" not in str(self.arg_jenkins_job_number):
+            if self.arg_jenkins_job_number:
                 output = f"{output}-{self.arg_jenkins_job_number}"
-        elif self.arg_dashboard_build_name != "__UNKNOWN__":
+        elif self.arg_dashboard_build_name:
             output = self.arg_dashboard_build_name
         else:
-            output = self.arg_pr_genconfig_job_name            
+            output = self.arg_pr_genconfig_job_name
         return output
 
 
