@@ -92,7 +92,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -116,7 +116,7 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -185,7 +185,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -209,7 +209,7 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -277,7 +277,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -301,7 +301,7 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -369,7 +369,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -391,7 +391,7 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
