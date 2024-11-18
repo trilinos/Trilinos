@@ -123,9 +123,11 @@ class AggregationExportFactory : public TwoLevelFactoryBase, public Visualizatio
   // Data that the different styles need to have available when building geometry
   mutable Teuchos::RCP<CoordinateMultiVector> coords_;        // fine local coordinates
   mutable Teuchos::RCP<CoordinateMultiVector> coordsCoarse_;  // coarse local coordinates
-  mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
+  mutable Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId_;
+  mutable Teuchos::RCP<MultiVector> qualities_;
   mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
   mutable std::vector<bool> isRoot_;
+  mutable bool doAggQuality_;
   mutable bool doFineGraphEdges_;
   mutable bool doCoarseGraphEdges_;
   mutable int numNodes_;

@@ -46,6 +46,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
@@ -276,5 +277,45 @@ TEST(NgpHostMesh, FieldForEachEntityReduceOnHost_fromTylerVoskuilen)
 
   auto maxZ = reduce_on_host(fixture.m_bulk_data);
   EXPECT_EQ(1.0, maxZ);
+}
+
+void add_elements(std::unique_ptr<stk::mesh::BulkData>& bulk)
+{
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  stk::mesh::Part& part_1 = meta.declare_part_with_topology("part_1", stk::topology::HEX_8);
+
+  const int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const stk::mesh::EntityId elemId = rank + 1;
+  const stk::mesh::EntityId firstNodeId = rank * 8 + 1;
+
+  stk::mesh::EntityIdVector nodeIds(8, 0);
+  for (unsigned i = 0; i < nodeIds.size(); ++i) {
+    nodeIds[i] = firstNodeId + i;
+  }
+
+  bulk->modification_begin();
+  stk::mesh::declare_element(*bulk, part_1, elemId, nodeIds);
+  bulk->modification_end();
+}
+
+TEST(NgpTeardownOrdering, BulkDataOutlivesNgpMesh)
+{
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  add_elements(bulk);
+
+  [[maybe_unused]] stk::mesh::NgpMesh ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
+
+  // The "expect" for this test is a clean Valgrind run and no seg-faults
+}
+
+TEST(NgpTeardownOrdering, NgpMeshOutlivesBulkData)
+{
+  stk::mesh::NgpMesh ngpMesh;
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  add_elements(bulk);
+
+  ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
+
+  // The "expect" for this test is a clean Valgrind run and no seg-faults
 }
 

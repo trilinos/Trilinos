@@ -68,8 +68,8 @@ using HostPartOrdinalViewType     = Kokkos::View<const PartOrdinal*, stk::ngp::H
 using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
 template <typename NgpMemSpace> using PermutationViewTypeT = Kokkos::View<Permutation*, NgpMemSpace>;
 using FastSharedCommMapViewType   = DeviceCommMapIndices;
-using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
 using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+using HostMeshIndexType           = MeshIndexType::HostMirror;
 
 
 using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;

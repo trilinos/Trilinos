@@ -96,8 +96,7 @@ protected:
 
 TEST_F(StkBalanceDecomposition, 4Elem1ProcMesh_EntireDomain)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) return;
-
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
   setup_initial_mesh("generated:1x1x4");
   balance_mesh({get_meta().universal_part()});
 

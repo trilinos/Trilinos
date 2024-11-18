@@ -110,17 +110,16 @@ inline EAlgorithmB StringToEAlgorithmB(std::string s) {
 
 template<typename Real>
 inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
-  EAlgorithmB ealg = StringToEAlgorithmB(parlist.sublist("Step").get("Type","Trust Region"));
+  std::string stepType = parlist.sublist("Step").get("Type","Trust Region");
+  EAlgorithmB ealg = StringToEAlgorithmB(stepType);
   switch(ealg) {
     case ALGORITHM_B_LINESEARCH:
     {
-      std::string desc
-        = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
+      std::string desc = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
       if (desc=="Newton-Krylov" || desc=="Newton")
         return makePtr<NewtonKrylovAlgorithm<Real>>(parlist,secant);
       else if (desc=="Quasi-Newton Method" || desc=="Quasi-Newton") {
-        std::string method
-          = parlist.sublist("Step").sublist("Line Search").sublist("Quasi-Newton").get("Method","L-Secant-B");
+        std::string method = parlist.sublist("Step").sublist("Line Search").sublist("Quasi-Newton").get("Method","L-Secant-B");
         if (method == "L-Secant-B")
           return makePtr<LSecantBAlgorithm<Real>>(parlist,secant);    // Similar to L-BFGS-B
         else
@@ -132,8 +131,7 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<S
     }
     case ALGORITHM_B_TRUSTREGION:
     {
-      std::string trmod
-        = parlist.sublist("Step").sublist("Trust Region").get("Subproblem Model","Lin-More");
+      std::string trmod = parlist.sublist("Step").sublist("Trust Region").get("Subproblem Model","Lin-More");
       if (trmod=="Kelley-Sachs")
         return makePtr<KelleySachsAlgorithm<Real>>(parlist,secant);
       else if (trmod=="SPG")

@@ -38,36 +38,23 @@ public:
 
   Real value( const std::vector<Real> &x, Real &tol ) {
     checkSize(x);
-    // Parse Input Vector
-    std::vector<Real> c; c.assign(x.begin()+1,x.end());
-    Real c0 = x[0];
-    // Parse Data
     const std::vector<Real> data = Objective<Real>::getParameter();
-    std::vector<Real> X; X.assign(data.begin()+1,data.end());
-    Real Y = data[0];
-    // Build Error
-    int Xdim = X.size();
-    Real val = Y-c0;
-    for (int i = 0; i < Xdim; ++i) {
-      val -= c[i]*X[i];
-    }
+    const unsigned dim = x.size();
+    Real val = data[0] - x[0];
+    for (unsigned i = 1; i < dim; ++i) val -= data[i] * x[i];
     return val;
   }
 
   void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
-    checkSize(x); checkSize(g);
-    // Parse Data
+    checkSize(g);
     const std::vector<Real> data = Objective<Real>::getParameter();
-    std::vector<Real> X; X.assign(data.begin()+1,data.end());
-    // Build Error
-    int Xdim = X.size();
+    const unsigned dim = g.size();
     g[0] = static_cast<Real>(-1);
-    for (int i = 0; i < Xdim; ++i) {
-      g[i+1] = -X[i];
-    }
+    for (unsigned i = 1; i < dim; ++i) g[i] = -data[i];
   }
 
   void hessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
+    checkSize(hv);
     hv.assign(hv.size(),static_cast<Real>(0));
   }
 }; // class RegressionError
