@@ -522,7 +522,9 @@ evaluateFields(typename TRAITS::EvalData workset)
   globalIndexer_->getElementLIDs(this->wda(workset).getLocalCellIDs(),scratch_lids_);
 
   ScatterResidual_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
-  functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  functor.fillResidual = (r!=Teuchos::null);
+  if(functor.fillResidual)
+    functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
   functor.lids = scratch_lids_;
   functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
