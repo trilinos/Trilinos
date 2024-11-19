@@ -103,6 +103,28 @@ bool panzer_impl_new = false;
 
 int panzer_impl_inp = 0;  // 0, 1, 2=both
 
+using TimersValType = std::pair<double, std::vector<double>>;
+std::unordered_map<std::string, TimersValType > TimersBase =
+  {
+   {"evalJ", {0.0, {}}},
+   {"capsg", {0.0, {}}},
+   {"capsg_G", {0.0, {}}},
+   {"capsg_G_1", {0.0, {}}},
+   {"capsg_G_2", {0.0, {}}},
+   {"capsg_G_3", {0.0, {}}},
+   {"capsg_G_4", {0.0, {}}},
+   {"capsg_M", {0.0, {}}},
+   {"capsg_G_pad", {0.0, {}}},
+   {"capsg_G_apad", {0.0, {}}},
+   {"main", {0.0, {}}},
+   {"eval_scatter", {0.0, {}}},
+   {"gedc-g2g", {0.0, {}}},
+   {"lof-g2gc", {0.0, {}}},
+  };
+
+std::unordered_map<std::string, TimersValType >& Timers  = TimersBase;
+std::unordered_map<std::string, TimersValType > *TimersPtr = &TimersBase;
+
 double timer_MV=0.0;
 double timer_ICI=0.0;
 bool in_eval_MV = false;
@@ -785,9 +807,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     fom_num_cells = mesh->getEntityCounts(dim);
 
     mainTimer.stop();
-    timer_main = mainTimer.totalElapsedTime();
+    Timers["main"].first = mainTimer.totalElapsedTime();
     if (comm->getRank() == 0) {
-      std::cout << "mainTimer(run: " << repeat << "/" << numRepeatRuns << ") = " << timer_main << std::endl;
+      std::cout << "mainTimer(run: " << repeat << "/" << numRepeatRuns << ") = " << Timers["main"].first << std::endl;
     }
     
     if (use_timer) {
@@ -876,15 +898,16 @@ int main(int argc,char * argv[]){
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
 
   int retVal=0;
-  std::vector<double> timer_evalJ_vec(numRepeatRuns),  timer_capsg_vec(numRepeatRuns), timer_main_vec(numRepeatRuns);
+
+  for (auto& t : Timers) {
+    t.second.second.resize(numRepeatRuns);
+  }
   // ==========================================================================================================================
   for (repeat=0; repeat < numRepeatRuns; ++repeat) {
     // ==========================================================================================================================
 
   in_eval_J = false;
-  timer_main = 0.0;
-  timer_evalJ = 0.0;
-  timer_capsg = 0.0;
+  for (auto& t : Timers) t.second.first = 0.0;
 
   if (linAlgebra == linAlgTpetra) {
 
@@ -913,15 +936,14 @@ int main(int argc,char * argv[]){
   }
 
     if (1) {
-      timer_main = parallel_reduce(comm, timer_main, Teuchos::REDUCE_MAX);
-      timer_evalJ = parallel_reduce(comm, timer_evalJ, Teuchos::REDUCE_MAX);
-      timer_capsg = parallel_reduce(comm, timer_capsg, Teuchos::REDUCE_MAX);
+      for (auto& t : Timers) {
+        t.second.first = parallel_reduce(comm, t.second.first, Teuchos::REDUCE_MAX);
+      }
       if (!comm->getRank()) {
-        std::cout << "[TIMER] repeat= " << repeat << " timer_evalJ= " << timer_evalJ << std::endl;
-        std::cout << "[TIMER] repeat= " << repeat << " timer_capsg= " << timer_capsg << std::endl;
-        timer_main_vec[repeat] = timer_main;
-        timer_evalJ_vec[repeat] = timer_evalJ;
-        timer_capsg_vec[repeat] = timer_capsg;
+        for (auto& t : Timers) {
+          std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
+          t.second.second[repeat] = t.second.first;
+        }
       }
     }
 
@@ -942,18 +964,26 @@ int main(int argc,char * argv[]){
                    };
 
   if (!comm->getRank()) {
-    double MinMaxAve[3][3];
-    minMaxAve(timer_main_vec, MinMaxAve[0]);
-    minMaxAve(timer_evalJ_vec, MinMaxAve[1]);
-    minMaxAve(timer_capsg_vec, MinMaxAve[2]);
-    auto pr = [&](int j, const std::string& name) {
-                std::cout << "[TIMER] " << name << " AVE(" << numRepeatRuns << " runs):  " << MinMaxAve[j][2]
-                          << " MIN: " << MinMaxAve[j][0] << " MAX: " << MinMaxAve[j][1]
-                          << " PAR-IMB: " << MinMaxAve[j][1]/(MinMaxAve[j][0] == 0.0 ? 1.0 : MinMaxAve[j][0]) << std::endl;
+    double MinMaxAve[3];
+    auto pr = [&](const std::string& name, double mma[]) {
+                printf("[TIMER] %25s %20.3f %20.3f %20.3f %20.3f\n",
+                       name.c_str(), mma[2], mma[1], mma[0], mma[1]/(mma[0] == 0.0 ? 1.0 : mma[0]) );
               };
-    pr(0, "timer_main");
-    pr(1, "timer_evalJ");
-    pr(2, "timer_capsg");
+    auto title = [&]() {
+                   printf("[TIMER] %d runs:\n"
+                          "[TIMER] %25s %20s %20s %20s %20s\n",
+                          numRepeatRuns, "Name", "AVE:", "MAX:", "MIN:", "MAX/MIN:");
+              };
+    
+    using TimersDataType = std::pair<std::string, TimersValType> ;
+    std::vector<TimersDataType> vt(Timers.begin(), Timers.end());
+    std::sort(vt.begin(), vt.end(), [](const TimersDataType& a, const TimersDataType& b) { return a.second.first >= b.second.first; });
+    title();
+    for (const auto& t : vt) {
+      minMaxAve(t.second.second, MinMaxAve);
+      pr(t.first, MinMaxAve);
+    }
+
   }
 
   Kokkos::finalize();

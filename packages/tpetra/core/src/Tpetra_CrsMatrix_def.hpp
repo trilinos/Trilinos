@@ -63,16 +63,13 @@
 #define EXP_INCLUDED_FROM_PANXER_MINI_EM 1
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
 extern bool panzer_impl_new, panzer_impl_old;
+extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
 extern bool in_eval_J;
-extern double timer_evalJ;
-extern double timer_capsg;
 #else
 namespace {
 bool panzer_impl_new = true;
 bool panzer_impl_old = !panzer_impl_new;
 bool in_eval_J = false;
-double timer_evalJ=0.0;
-double timer_capsg=0.0;
 }
 #endif
 
@@ -6379,7 +6376,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                       permuteFromLIDs_d.data(),
                                       numPermute);
         if (in_eval_J) {
-          timer_capsg += -time_ + Teuchos::Time::wallTime();
+          Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime();
         }
         
 
@@ -6396,7 +6393,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                   permuteFromLIDs_h.data(),
                                   numPermute);
         if (in_eval_J) {
-          timer_capsg += -time_ + Teuchos::Time::wallTime();
+          Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime();
         }
 
       }
