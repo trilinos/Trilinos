@@ -47,6 +47,7 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+extern bool use_eval_J;
 extern bool in_eval_J;
 extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
 
@@ -1589,7 +1590,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     thGhostedContainer->initializeMatrix(0.0);
 
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
-    in_eval_J = false;
+    in_eval_J = !use_eval_J;
     Timers["evalJ"].first += -time_ + Teuchos::Time::wallTime();
   }
 

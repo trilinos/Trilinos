@@ -128,6 +128,7 @@ std::unordered_map<std::string, TimersValType > *TimersPtr = &TimersBase;
 double timer_MV=0.0;
 double timer_ICI=0.0;
 bool in_eval_MV = false;
+bool use_eval_J = false;  // override for the next value
 bool in_eval_J = false;
 double timer_evalJ=0.0;
 double timer_capsg=0.0;
@@ -257,7 +258,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       return EXIT_FAILURE;
     }
     
-    std::cout << "P" << comm->getRank() << ": [dbg] panzer_impl_old= " << panzer_impl_old << " panzer_impl_new= " << panzer_impl_new << std::endl;
+    std::cout << "P" << comm->getRank() << ": [dbg] panzer_impl_old= " << panzer_impl_old << " panzer_impl_new= " << panzer_impl_new
+              << " use_eval_J= " << use_eval_J
+              << std::endl;
       
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
@@ -878,6 +881,7 @@ int main(int argc,char * argv[]){
   solverType solver = MUELU;
   clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
   clp.setOption("num-repeat-runs",&numRepeatRuns);
+  clp.setOption("use-evalJ","no-use-evalJ", &use_eval_J,"Run with sub-timers only active if evalModel(J) is active.");
 
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
@@ -906,7 +910,9 @@ int main(int argc,char * argv[]){
   for (repeat=0; repeat < numRepeatRuns; ++repeat) {
     // ==========================================================================================================================
 
-  in_eval_J = false;
+  in_eval_J = !use_eval_J;
+  std::cout << "P" << comm->getRank() << ": [dbg] use_eval_J= " << use_eval_J << std::endl;
+
   for (auto& t : Timers) t.second.first = 0.0;
 
   if (linAlgebra == linAlgTpetra) {
@@ -935,17 +941,17 @@ int main(int argc,char * argv[]){
     TEUCHOS_ASSERT(false);
   }
 
-    if (1) {
+  if (1) {
+    for (auto& t : Timers) {
+      t.second.first = parallel_reduce(comm, t.second.first, Teuchos::REDUCE_MAX);
+    }
+    if (!comm->getRank()) {
       for (auto& t : Timers) {
-        t.second.first = parallel_reduce(comm, t.second.first, Teuchos::REDUCE_MAX);
-      }
-      if (!comm->getRank()) {
-        for (auto& t : Timers) {
-          std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
-          t.second.second[repeat] = t.second.first;
-        }
+        std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
+        t.second.second[repeat] = t.second.first;
       }
     }
+  }
 
     
   // ==========================================================================================================================

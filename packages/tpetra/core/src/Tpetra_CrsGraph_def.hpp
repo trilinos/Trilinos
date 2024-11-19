@@ -4897,10 +4897,10 @@ namespace Tpetra {
     double padTime = Teuchos::Time::wallTime();
     auto padding = computeCrsPadding(srcRowGraph, numSameIDs,
       permuteToLIDs, permuteFromLIDs, verbose);
-    Timers["capsg_G_pad"].first += -padTime + Teuchos::Time::wallTime();
+    if (in_eval_J) Timers["capsg_G_pad"].first += -padTime + Teuchos::Time::wallTime();
     double apadTime = Teuchos::Time::wallTime();
     applyCrsPadding(*padding, verbose);
-    Timers["capsg_G_apad"].first += -apadTime + Teuchos::Time::wallTime();
+    if (in_eval_J) Timers["capsg_G_apad"].first += -apadTime + Teuchos::Time::wallTime();
 
     // If the source object is actually a CrsGraph, we can use view
     // mode instead of copy mode to access the entries in each row,
@@ -4990,7 +4990,9 @@ namespace Tpetra {
       os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
-    if (in_eval_J) Timers["capsg_G"].first += -capTime + Teuchos::Time::wallTime();
+    if (in_eval_J) {
+      Timers["capsg_G"].first += -capTime + Teuchos::Time::wallTime();
+    }
 
   }
 
