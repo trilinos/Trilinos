@@ -107,7 +107,6 @@ using TimersValType = std::pair<double, std::vector<double>>;
 std::unordered_map<std::string, TimersValType > TimersBase =
   {
    {"evalJ", {0.0, {}}},
-   {"capsg", {0.0, {}}},
    {"capsg_G", {0.0, {}}},
    {"capsg_G_1", {0.0, {}}},
    {"capsg_G_2", {0.0, {}}},
@@ -976,9 +975,11 @@ int main(int argc,char * argv[]){
                        name.c_str(), mma[2], mma[1], mma[0], mma[1]/(mma[0] == 0.0 ? 1.0 : mma[0]) );
               };
     auto title = [&]() {
+                   std::ostringstream oss;
+                   oss << "AVE (of " <<  numRepeatRuns << " runs):";
                    printf("[TIMER] %d runs:\n"
                           "[TIMER] %25s %20s %20s %20s %20s\n",
-                          numRepeatRuns, "Name", "AVE:", "MAX:", "MIN:", "MAX/MIN:");
+                          numRepeatRuns, "Name", oss.str().c_str(), "MAX:", "MIN:", "MAX/MIN:");
               };
     
     using TimersDataType = std::pair<std::string, TimersValType> ;
