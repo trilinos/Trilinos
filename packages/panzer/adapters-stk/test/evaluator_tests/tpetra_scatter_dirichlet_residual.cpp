@@ -20,14 +20,13 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_BlockedDOFManager.hpp"
-#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#include "Panzer_DOFManager.hpp"
+#include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_GatherOrientation.hpp"
-#include "Panzer_ScatterResidual_BlockedTpetra.hpp"
-#include "Panzer_GatherSolution_BlockedTpetra.hpp"
+#include "Panzer_ScatterDirichletResidual_Tpetra.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
@@ -43,7 +42,6 @@ using Teuchos::rcp;
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
-//#include "Thyra_get_Epetra_Operator.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
@@ -59,8 +57,8 @@ using Teuchos::rcp;
 namespace panzer
 {
 
-   using TpetraBlockedLinObjFactoryType = panzer::BlockedTpetraLinearObjFactory<panzer::Traits, double, panzer::LocalOrdinal, panzer::GlobalOrdinal>;
-   using TpetraBlockedLinObjContainerType = panzer::BlockedTpetraLinearObjContainer<double, panzer::LocalOrdinal, panzer::GlobalOrdinal>;
+   using TpetraLinObjFactoryType = panzer::TpetraLinearObjFactory<panzer::Traits, double, panzer::LocalOrdinal, panzer::GlobalOrdinal>;
+   using TpetraLinObjContainerType = panzer::TpetraLinearObjContainer<double, panzer::LocalOrdinal, panzer::GlobalOrdinal>;
    using Tpetra_CrsMatrix = Tpetra::CrsMatrix<double, panzer::LocalOrdinal, panzer::GlobalOrdinal>;
    using Thyra_TpetraLinearOp = Thyra::TpetraLinearOp<double, LocalOrdinal, GlobalOrdinal>;
 
@@ -68,7 +66,7 @@ namespace panzer
    void testInitialization(const Teuchos::RCP<Teuchos::ParameterList> &ipb);
    Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX, int elemY);
 
-   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_residual)
+   TEUCHOS_UNIT_TEST(assembly, scatter_dirichlet_residual)
    {
 
 #ifdef HAVE_MPI
@@ -107,40 +105,38 @@ namespace panzer
 
       // build connection manager and field manager
       const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-      RCP<panzer::BlockedDOFManager> dofManager = Teuchos::rcp(new panzer::BlockedDOFManager(conn_manager, MPI_COMM_WORLD));
+      RCP<panzer::DOFManager> dofManager = Teuchos::rcp(new panzer::DOFManager(conn_manager, MPI_COMM_WORLD));
 
       dofManager->addField(fieldName1_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
       dofManager->addField(fieldName2_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
       dofManager->addField(fieldName_qedge1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
 
-      std::vector<std::vector<std::string>> fieldOrder(3);
-      fieldOrder[0].push_back(fieldName1_q1);
-      fieldOrder[1].push_back(fieldName_qedge1);
-      fieldOrder[2].push_back(fieldName2_q1);
+      std::vector<std::string> fieldOrder;
+      fieldOrder.push_back(fieldName1_q1);
+      fieldOrder.push_back(fieldName_qedge1);
+      fieldOrder.push_back(fieldName2_q1);
       dofManager->setFieldOrder(fieldOrder);
 
-      // dofManager->setOrientationsRequired(true);
       dofManager->buildGlobalUnknowns();
 
       // setup linear object factory
       /////////////////////////////////////////////////////////////
+      Teuchos::RCP<TpetraLinObjFactoryType> t_lof = Teuchos::rcp(new TpetraLinObjFactoryType(tComm.getConst(), dofManager));
+      Teuchos::RCP<LinearObjFactory<panzer::Traits>> lof = t_lof;
+      Teuchos::RCP<LinearObjContainer> loc = t_lof->buildGhostedLinearObjContainer();
+      Teuchos::RCP<LinearObjContainer> dc_loc = t_lof->buildGhostedLinearObjContainer();
 
-      Teuchos::RCP<TpetraBlockedLinObjFactoryType> bt_lof = Teuchos::rcp(new TpetraBlockedLinObjFactoryType(tComm.getConst(), dofManager));
-      Teuchos::RCP<LinearObjFactory<panzer::Traits>> lof = bt_lof;
-      Teuchos::RCP<LinearObjContainer> dd_loc = bt_lof->buildGhostedLinearObjContainer();
-      Teuchos::RCP<LinearObjContainer> loc = bt_lof->buildGhostedLinearObjContainer();
-      bt_lof->initializeGhostedContainer(LinearObjContainer::F, *dd_loc);
-      dd_loc->initialize();
-
-      bt_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F, *loc);
+      t_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F, *loc);
       loc->initialize();
 
-      Teuchos::RCP<TpetraBlockedLinObjContainerType> b_dd_loc = Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(dd_loc);
-      Teuchos::RCP<TpetraBlockedLinObjContainerType> b_loc = Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(loc);
-      Teuchos::RCP<Thyra::ProductVectorBase<double>> p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_x());
-      Thyra::assign(p_vec->getNonconstVectorBlock(0).ptr(), 123.0 + myRank);
-      Thyra::assign(p_vec->getNonconstVectorBlock(1).ptr(), 456.0 + myRank);
-      Thyra::assign(p_vec->getNonconstVectorBlock(2).ptr(), 789.0 + myRank);
+      t_lof->initializeGhostedContainer(LinearObjContainer::F, *dc_loc);
+      dc_loc->initialize();
+      Teuchos::RCP<TpetraLinObjContainerType> t_dc_loc = Teuchos::rcp_dynamic_cast<TpetraLinObjContainerType>(dc_loc);
+
+      Teuchos::RCP<TpetraLinObjContainerType> t_loc = Teuchos::rcp_dynamic_cast<TpetraLinObjContainerType>(loc);
+
+      Teuchos::RCP<Thyra::VectorBase<double>> x_vec = t_loc->get_x_th();
+      Thyra::assign(x_vec.ptr(), 123.0 + myRank);
 
       // setup field manager, add evaluator under test
       /////////////////////////////////////////////////////////////
@@ -234,20 +230,13 @@ namespace panzer
          fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
       }
 
-      std::vector<PHX::index_size_type> derivative_dimensions;
-      derivative_dimensions.push_back(12);
-      fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
-
       panzer::Traits::SD sd;
       sd.worksets_ = work_sets;
 
       fm.postRegistrationSetup(sd);
 
-      // panzer::Traits::PED ped;
-      // ped.dirichletData.ghostedCounter = dd_loc;
-      // fm.preEvaluate<panzer::Traits::Residual>(ped);
       panzer::Traits::PED ped;
-      ped.gedc->addDataObject("Dirichlet Counter", dd_loc);
+      ped.gedc->addDataObject("Dirichlet Counter", dc_loc);
       ped.gedc->addDataObject("Solution Gather Container", loc);
       ped.gedc->addDataObject("Residual Scatter Container", loc);
       fm.preEvaluate<panzer::Traits::Residual>(ped);
@@ -262,358 +251,316 @@ namespace panzer
       workset.evaluate_transient_terms = false;
 
       fm.evaluateFields<panzer::Traits::Residual>(workset);
+      fm.postEvaluate<panzer::Traits::Residual>(0);
 
       // test Residual fields
-      panzer::index_t dd_count(0);
-      Teuchos::ArrayRCP<const double> data, dd_data;
-      Teuchos::RCP<const Thyra::ProductVectorBase<double>> f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_f());
-      Teuchos::RCP<const Thyra::ProductVectorBase<double>> dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_dd_loc->get_f());
+      panzer::index_t dc_count(0);
+      Teuchos::ArrayRCP<const double> data, dc_data;
+      Teuchos::RCP<const Thyra::VectorBase<double>> f_vec = t_loc->get_f_th();
+      Teuchos::RCP<const Thyra::VectorBase<double>> dc_vec = t_dc_loc->get_f_th();
 
-      // check all the residual values. This is kind of crappy test since it simply checks twice the target
-      // value and the target. Its this way because you add two entries across elements.
+      // check all the residual values and the count
 
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(dd_data));
-      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(0)->getLocalNumElements());
-      TEST_EQUALITY(data.size(), dd_data.size());
-      dd_count = 0;
+      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec)->getLocalData(Teuchos::ptrFromRef(data));
+      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dc_vec)->getLocalData(Teuchos::ptrFromRef(dc_data));
+      TEST_EQUALITY(static_cast<size_t>(data.size()), t_lof->getMap()->getLocalNumElements());
+      TEST_EQUALITY(data.size(), dc_data.size());
+      dc_count = 0;
       for (int i = 0; i < data.size(); i++)
       {
 
          double target = 123.0 + myRank;
-         if (dd_data[i] == 0.0)
+         if (dc_data[i] == 0.0)
          {
             TEST_EQUALITY(data[i], 0.0);
          }
          else
          {
             TEST_EQUALITY(data[i], target);
-            dd_count++;
+            dc_count++;
          }
       }
-      TEST_EQUALITY(dd_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
-
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(dd_data));
-      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(1)->getLocalNumElements());
-      TEST_EQUALITY(data.size(), dd_data.size());
-      dd_count = 0;
-      for (int i = 0; i < data.size(); i++)
-      {
-
-         double target = 456.0 + myRank;
-         if (dd_data[i] == 0.0)
-         {
-            TEST_EQUALITY(data[i], 0.0);
-         }
-         else
-         {
-            TEST_EQUALITY(data[i], target);
-            dd_count++;
-         }
-      }
-      TEST_EQUALITY(dd_count, workset.num_cells); // there are 2 nodes on the side and the sides are not shared
-
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(dd_data));
-      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(2)->getLocalNumElements());
-      TEST_EQUALITY(data.size(), dd_data.size());
-      dd_count = 0;
-      for (int i = 0; i < data.size(); i++)
-      {
-
-         double target = 789.0 + myRank;
-         if (dd_data[i] == 0.0)
-         {
-            TEST_EQUALITY(data[i], 0.0);
-         }
-         else
-         {
-            TEST_EQUALITY(data[i], target);
-            dd_count++;
-         }
-      }
-      TEST_EQUALITY(dd_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+      TEST_EQUALITY(dc_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
    }
 
-   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_jacobian)
-   {
-
-#ifdef HAVE_MPI
-      Teuchos::RCP<Teuchos::MpiComm<int>> tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-#else
-      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
-#endif
-
-      int myRank = tComm->getRank();
-
-      const std::size_t workset_size = 4;
-      const std::string fieldName1_q1 = "U";
-      const std::string fieldName2_q1 = "V";
-      const std::string fieldName_qedge1 = "B";
-
-      Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2, 2);
-
-      // build input physics block
-      Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size, "Q1");
-      Teuchos::RCP<panzer::PureBasis> basis_qedge1 = buildBasis(workset_size, "QEdge1");
-
-      Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
-      testInitialization(ipb);
-
-      const int default_int_order = 1;
-      std::string eBlockID = "eblock-0_0";
-      Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-      panzer::CellData cellData(workset_size, mesh->getCellTopology("eblock-0_0"));
-      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-      Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
-          Teuchos::rcp(new PhysicsBlock(ipb, eBlockID, default_int_order, cellData, eqset_factory, gd, false));
-
-      Teuchos::RCP<std::vector<panzer::Workset>> work_sets = panzer_stk::buildWorksets(*mesh, physicsBlock->elementBlockID(),
-                                                                                       physicsBlock->getWorksetNeeds());
-      TEST_EQUALITY(work_sets->size(), 1);
-
-      // build connection manager and field manager
-      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-      RCP<panzer::BlockedDOFManager> dofManager = Teuchos::rcp(new panzer::BlockedDOFManager(conn_manager, MPI_COMM_WORLD));
-
-      dofManager->addField(fieldName1_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
-      dofManager->addField(fieldName2_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
-      dofManager->addField(fieldName_qedge1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
-
-      std::vector<std::vector<std::string>> fieldOrder(3);
-      fieldOrder[0].push_back(fieldName1_q1);
-      fieldOrder[1].push_back(fieldName_qedge1);
-      fieldOrder[2].push_back(fieldName2_q1);
-      dofManager->setFieldOrder(fieldOrder);
-
-      // dofManager->setOrientationsRequired(true);
-      dofManager->buildGlobalUnknowns();
-
-      // setup linear object factory
-      /////////////////////////////////////////////////////////////
-
-      Teuchos::RCP<TpetraBlockedLinObjFactoryType> bt_lof = Teuchos::rcp(new TpetraBlockedLinObjFactoryType(tComm.getConst(), dofManager));
-      Teuchos::RCP<LinearObjFactory<panzer::Traits>> lof = bt_lof;
-      Teuchos::RCP<LinearObjContainer> dd_loc = bt_lof->buildGhostedLinearObjContainer();
-      Teuchos::RCP<LinearObjContainer> loc = bt_lof->buildGhostedLinearObjContainer();
-      bt_lof->initializeGhostedContainer(LinearObjContainer::F, *dd_loc);
-      dd_loc->initialize();
-
-      bt_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat, *loc);
-      loc->initialize();
-
-      Teuchos::RCP<TpetraBlockedLinObjContainerType> b_dd_loc = Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(dd_loc);
-      Teuchos::RCP<TpetraBlockedLinObjContainerType> b_loc = Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(loc);
-      Teuchos::RCP<Thyra::ProductVectorBase<double>> p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_x());
-      Thyra::assign(p_vec->getNonconstVectorBlock(0).ptr(), 123.0 + myRank);
-      Thyra::assign(p_vec->getNonconstVectorBlock(1).ptr(), 456.0 + myRank);
-      Thyra::assign(p_vec->getNonconstVectorBlock(2).ptr(), 789.0 + myRank);
-
-      auto blk_A = Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double>>(b_loc->get_A());
-      double values[] = {123.0 + myRank, 456.0 + myRank, 789.0 + myRank};
-
-      for (int i = 0; i < 3; i++)
-         for (int j = 0; j < 3; j++)
-         {
-            auto thyraOp = Teuchos::rcp_dynamic_cast<Thyra_TpetraLinearOp>(blk_A->getNonconstBlock(i, j), false);
-            auto tpetraCrsMatrix = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(thyraOp->getTpetraOperator(), true);
-            tpetraCrsMatrix->setAllToScalar(values[i] * values[j]);
-         }
-
-      // setup field manager, add evaluator under test
-      /////////////////////////////////////////////////////////////
-
-      PHX::FieldManager<panzer::Traits> fm;
-
-      std::string resName = "";
-      Teuchos::RCP<std::map<std::string, std::string>> names_map =
-          Teuchos::rcp(new std::map<std::string, std::string>);
-      names_map->insert(std::make_pair(fieldName1_q1, resName + fieldName1_q1));
-      names_map->insert(std::make_pair(fieldName2_q1, resName + fieldName2_q1));
-      names_map->insert(std::make_pair(fieldName_qedge1, resName + fieldName_qedge1));
-
-      // evaluators under test
-      {
-         using Teuchos::RCP;
-         using Teuchos::rcp;
-         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
-         names->push_back(resName + fieldName1_q1);
-         names->push_back(resName + fieldName2_q1);
-
-         Teuchos::ParameterList pl;
-         pl.set("Scatter Name", "ScatterQ1");
-         pl.set("Basis", basis_q1);
-         pl.set("Dependent Names", names);
-         pl.set("Dependent Map", names_map);
-         pl.set("Side Subcell Dimension", 1);
-         pl.set("Local Side ID", 2);
-         pl.set("Check Apply BC", false);
-
-         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
-
-         TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
-
-         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
-         fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
-      }
-      {
-         using Teuchos::RCP;
-         using Teuchos::rcp;
-         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
-         names->push_back(resName + fieldName_qedge1);
-
-         Teuchos::ParameterList pl;
-         pl.set("Scatter Name", "ScatterQEdge1");
-         pl.set("Basis", basis_qedge1);
-         pl.set("Dependent Names", names);
-         pl.set("Dependent Map", names_map);
-         pl.set("Side Subcell Dimension", 1);
-         pl.set("Local Side ID", 2);
-         pl.set("Check Apply BC", false);
-
-         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
-
-         TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
-
-         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
-         fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
-      }
-
-      // support evaluators
-      {
-         using Teuchos::RCP;
-         using Teuchos::rcp;
-         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
-         names->push_back(fieldName1_q1);
-         names->push_back(fieldName2_q1);
-
-         Teuchos::ParameterList pl;
-         pl.set("Basis", basis_q1);
-         pl.set("DOF Names", names);
-         pl.set("Indexer Names", names);
-
-         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
-
-         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
-      }
-      {
-         using Teuchos::RCP;
-         using Teuchos::rcp;
-         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
-         names->push_back(fieldName_qedge1);
-
-         Teuchos::ParameterList pl;
-         pl.set("Basis", basis_qedge1);
-         pl.set("DOF Names", names);
-         pl.set("Indexer Names", names);
-
-         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
-
-         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
-      }
-
-      std::vector<PHX::index_size_type> derivative_dimensions;
-      derivative_dimensions.push_back(12);
-      fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
-
-      panzer::Traits::SD sd;
-      sd.worksets_ = work_sets;
-
-      fm.postRegistrationSetup(sd);
-
-      // panzer::Traits::PED ped;
-      // ped.dirichletData.ghostedCounter = dd_loc;
-      // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
-      panzer::Traits::PED ped;
-      ped.gedc->addDataObject("Dirichlet Counter", dd_loc);
-      ped.gedc->addDataObject("Solution Gather Container", loc);
-      ped.gedc->addDataObject("Residual Scatter Container", loc);
-      fm.preEvaluate<panzer::Traits::Jacobian>(ped);
-
-      // run tests
-      /////////////////////////////////////////////////////////////
-
-      panzer::Workset &workset = (*work_sets)[0];
-      workset.alpha = 0.0;
-      workset.beta = 2.0; // derivatives multiplied by 2
-      workset.time = 0.0;
-      workset.evaluate_transient_terms = false;
-
-      fm.evaluateFields<panzer::Traits::Jacobian>(workset);
-
-      // test Residual fields
-      panzer::index_t dd_count(0);
-      Teuchos::ArrayRCP<const double> data, dd_data;
-      Teuchos::RCP<const Thyra::ProductVectorBase<double>> f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_f());
-      Teuchos::RCP<const Thyra::ProductVectorBase<double>> dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_dd_loc->get_f());
-
-      // check all the residual values. This is kind of crappy test since it simply checks twice the target
-      // value and the target. Its this way because you add two entries across elements.
-
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(dd_data));
-      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(0)->getLocalNumElements());
-      TEST_EQUALITY(data.size(), dd_data.size());
-      dd_count = 0;
-      for (int i = 0; i < data.size(); i++)
-      {
-
-         double target = 123.0 + myRank;
-         if (dd_data[i] == 0.0)
-         {
-            TEST_EQUALITY(data[i], 0.0);
-         }
-         else
-         {
-            TEST_EQUALITY(data[i], target);
-            dd_count++;
-         }
-      }
-      TEST_EQUALITY(dd_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
-
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(dd_data));
-      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(1)->getLocalNumElements());
-      TEST_EQUALITY(data.size(), dd_data.size());
-      dd_count = 0;
-      for (int i = 0; i < data.size(); i++)
-      {
-
-         double target = 456.0 + myRank;
-         if (dd_data[i] == 0.0)
-         {
-            TEST_EQUALITY(data[i], 0.0);
-         }
-         else
-         {
-            TEST_EQUALITY(data[i], target);
-            dd_count++;
-         }
-      }
-      TEST_EQUALITY(dd_count, workset.num_cells); // there are 2 nodes on the side and the sides are not shared
-
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
-      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(dd_data));
-      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(2)->getLocalNumElements());
-      TEST_EQUALITY(data.size(), dd_data.size());
-      dd_count = 0;
-      for (int i = 0; i < data.size(); i++)
-      {
-
-         double target = 789.0 + myRank;
-         if (dd_data[i] == 0.0)
-         {
-            TEST_EQUALITY(data[i], 0.0);
-         }
-         else
-         {
-            TEST_EQUALITY(data[i], target);
-            dd_count++;
-         }
-      }
-      TEST_EQUALITY(dd_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
-   }
+//   TEUCHOS_UNIT_TEST(assembly, scatter_dirichlet_jacobian)
+//   {
+//
+//#ifdef HAVE_MPI
+//      Teuchos::RCP<Teuchos::MpiComm<int>> tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+//#else
+//      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+//#endif
+//
+//      int myRank = tComm->getRank();
+//
+//      const std::size_t workset_size = 4;
+//      const std::string fieldName1_q1 = "U";
+//      const std::string fieldName2_q1 = "V";
+//      const std::string fieldName_qedge1 = "B";
+//
+//      Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2, 2);
+//
+//      // build input physics block
+//      Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size, "Q1");
+//      Teuchos::RCP<panzer::PureBasis> basis_qedge1 = buildBasis(workset_size, "QEdge1");
+//
+//      Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
+//      testInitialization(ipb);
+//
+//      const int default_int_order = 1;
+//      std::string eBlockID = "eblock-0_0";
+//      Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+//      panzer::CellData cellData(workset_size, mesh->getCellTopology("eblock-0_0"));
+//      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+//      Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
+//          Teuchos::rcp(new PhysicsBlock(ipb, eBlockID, default_int_order, cellData, eqset_factory, gd, false));
+//
+//      Teuchos::RCP<std::vector<panzer::Workset>> work_sets = panzer_stk::buildWorksets(*mesh, physicsBlock->elementBlockID(),
+//                                                                                       physicsBlock->getWorksetNeeds());
+//      TEST_EQUALITY(work_sets->size(), 1);
+//
+//      // build connection manager and field manager
+//      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+//      RCP<panzer::BlockedDOFManager> dofManager = Teuchos::rcp(new panzer::BlockedDOFManager(conn_manager, MPI_COMM_WORLD));
+//
+//      dofManager->addField(fieldName1_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
+//      dofManager->addField(fieldName2_q1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
+//      dofManager->addField(fieldName_qedge1, Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
+//
+//      std::vector<std::vector<std::string>> fieldOrder(3);
+//      fieldOrder[0].push_back(fieldName1_q1);
+//      fieldOrder[1].push_back(fieldName_qedge1);
+//      fieldOrder[2].push_back(fieldName2_q1);
+//      dofManager->setFieldOrder(fieldOrder);
+//
+//      // dofManager->setOrientationsRequired(true);
+//      dofManager->buildGlobalUnknowns();
+//
+//      // setup linear object factory
+//      /////////////////////////////////////////////////////////////
+//
+//      Teuchos::RCP<TpetraBlockedLinObjFactoryType> bt_lof = Teuchos::rcp(new TpetraBlockedLinObjFactoryType(tComm.getConst(), dofManager));
+//      Teuchos::RCP<LinearObjFactory<panzer::Traits>> lof = bt_lof;
+//      Teuchos::RCP<LinearObjContainer> dd_loc = bt_lof->buildGhostedLinearObjContainer();
+//      Teuchos::RCP<LinearObjContainer> loc = bt_lof->buildGhostedLinearObjContainer();
+//      bt_lof->initializeGhostedContainer(LinearObjContainer::F, *dd_loc);
+//      dd_loc->initialize();
+//
+//      bt_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat, *loc);
+//      loc->initialize();
+//
+//      Teuchos::RCP<TpetraBlockedLinObjContainerType> b_dd_loc = Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(dd_loc);
+//      Teuchos::RCP<TpetraBlockedLinObjContainerType> b_loc = Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(loc);
+//      Teuchos::RCP<Thyra::ProductVectorBase<double>> p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_x());
+//      Thyra::assign(p_vec->getNonconstVectorBlock(0).ptr(), 123.0 + myRank);
+//      Thyra::assign(p_vec->getNonconstVectorBlock(1).ptr(), 456.0 + myRank);
+//      Thyra::assign(p_vec->getNonconstVectorBlock(2).ptr(), 789.0 + myRank);
+//
+//      auto blk_A = Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double>>(b_loc->get_A());
+//      double values[] = {123.0 + myRank, 456.0 + myRank, 789.0 + myRank};
+//
+//      for (int i = 0; i < 3; i++)
+//         for (int j = 0; j < 3; j++)
+//         {
+//            auto thyraOp = Teuchos::rcp_dynamic_cast<Thyra_TpetraLinearOp>(blk_A->getNonconstBlock(i, j), false);
+//            auto tpetraCrsMatrix = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(thyraOp->getTpetraOperator(), true);
+//            tpetraCrsMatrix->setAllToScalar(values[i] * values[j]);
+//         }
+//
+//      // setup field manager, add evaluator under test
+//      /////////////////////////////////////////////////////////////
+//
+//      PHX::FieldManager<panzer::Traits> fm;
+//
+//      std::string resName = "";
+//      Teuchos::RCP<std::map<std::string, std::string>> names_map =
+//          Teuchos::rcp(new std::map<std::string, std::string>);
+//      names_map->insert(std::make_pair(fieldName1_q1, resName + fieldName1_q1));
+//      names_map->insert(std::make_pair(fieldName2_q1, resName + fieldName2_q1));
+//      names_map->insert(std::make_pair(fieldName_qedge1, resName + fieldName_qedge1));
+//
+//      // evaluators under test
+//      {
+//         using Teuchos::RCP;
+//         using Teuchos::rcp;
+//         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+//         names->push_back(resName + fieldName1_q1);
+//         names->push_back(resName + fieldName2_q1);
+//
+//         Teuchos::ParameterList pl;
+//         pl.set("Scatter Name", "ScatterQ1");
+//         pl.set("Basis", basis_q1);
+//         pl.set("Dependent Names", names);
+//         pl.set("Dependent Map", names_map);
+//         pl.set("Side Subcell Dimension", 1);
+//         pl.set("Local Side ID", 2);
+//         pl.set("Check Apply BC", false);
+//
+//         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
+//
+//         TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
+//
+//         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+//         fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
+//      }
+//      {
+//         using Teuchos::RCP;
+//         using Teuchos::rcp;
+//         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+//         names->push_back(resName + fieldName_qedge1);
+//
+//         Teuchos::ParameterList pl;
+//         pl.set("Scatter Name", "ScatterQEdge1");
+//         pl.set("Basis", basis_qedge1);
+//         pl.set("Dependent Names", names);
+//         pl.set("Dependent Map", names_map);
+//         pl.set("Side Subcell Dimension", 1);
+//         pl.set("Local Side ID", 2);
+//         pl.set("Check Apply BC", false);
+//
+//         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
+//
+//         TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
+//
+//         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+//         fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
+//      }
+//
+//      // support evaluators
+//      {
+//         using Teuchos::RCP;
+//         using Teuchos::rcp;
+//         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+//         names->push_back(fieldName1_q1);
+//         names->push_back(fieldName2_q1);
+//
+//         Teuchos::ParameterList pl;
+//         pl.set("Basis", basis_q1);
+//         pl.set("DOF Names", names);
+//         pl.set("Indexer Names", names);
+//
+//         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
+//
+//         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+//      }
+//      {
+//         using Teuchos::RCP;
+//         using Teuchos::rcp;
+//         RCP<std::vector<std::string>> names = rcp(new std::vector<std::string>);
+//         names->push_back(fieldName_qedge1);
+//
+//         Teuchos::ParameterList pl;
+//         pl.set("Basis", basis_qedge1);
+//         pl.set("DOF Names", names);
+//         pl.set("Indexer Names", names);
+//
+//         Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
+//
+//         fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+//      }
+//
+//      std::vector<PHX::index_size_type> derivative_dimensions;
+//      derivative_dimensions.push_back(12);
+//      fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+//
+//      panzer::Traits::SD sd;
+//      sd.worksets_ = work_sets;
+//
+//      fm.postRegistrationSetup(sd);
+//
+//      // panzer::Traits::PED ped;
+//      // ped.dirichletData.ghostedCounter = dd_loc;
+//      // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
+//      panzer::Traits::PED ped;
+//      ped.gedc->addDataObject("Dirichlet Counter", dd_loc);
+//      ped.gedc->addDataObject("Solution Gather Container", loc);
+//      ped.gedc->addDataObject("Residual Scatter Container", loc);
+//      fm.preEvaluate<panzer::Traits::Jacobian>(ped);
+//
+//      // run tests
+//      /////////////////////////////////////////////////////////////
+//
+//      panzer::Workset &workset = (*work_sets)[0];
+//      workset.alpha = 0.0;
+//      workset.beta = 2.0; // derivatives multiplied by 2
+//      workset.time = 0.0;
+//      workset.evaluate_transient_terms = false;
+//
+//      fm.evaluateFields<panzer::Traits::Jacobian>(workset);
+//
+//      // test Residual fields
+//      panzer::index_t dd_count(0);
+//      Teuchos::ArrayRCP<const double> data, dd_data;
+//      Teuchos::RCP<const Thyra::ProductVectorBase<double>> f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_loc->get_f());
+//      Teuchos::RCP<const Thyra::ProductVectorBase<double>> dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(b_dd_loc->get_f());
+//
+//      // check all the residual values. This is kind of crappy test since it simply checks twice the target
+//      // value and the target. Its this way because you add two entries across elements.
+//
+//      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
+//      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(dd_data));
+//      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(0)->getLocalNumElements());
+//      TEST_EQUALITY(data.size(), dd_data.size());
+//      dd_count = 0;
+//      for (int i = 0; i < data.size(); i++)
+//      {
+//
+//         double target = 123.0 + myRank;
+//         if (dd_data[i] == 0.0)
+//         {
+//            TEST_EQUALITY(data[i], 0.0);
+//         }
+//         else
+//         {
+//            TEST_EQUALITY(data[i], target);
+//            dd_count++;
+//         }
+//      }
+//      TEST_EQUALITY(dd_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+//
+//      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
+//      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(dd_data));
+//      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(1)->getLocalNumElements());
+//      TEST_EQUALITY(data.size(), dd_data.size());
+//      dd_count = 0;
+//      for (int i = 0; i < data.size(); i++)
+//      {
+//
+//         double target = 456.0 + myRank;
+//         if (dd_data[i] == 0.0)
+//         {
+//            TEST_EQUALITY(data[i], 0.0);
+//         }
+//         else
+//         {
+//            TEST_EQUALITY(data[i], target);
+//            dd_count++;
+//         }
+//      }
+//      TEST_EQUALITY(dd_count, workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+//
+//      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
+//      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(dd_data));
+//      TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(2)->getLocalNumElements());
+//      TEST_EQUALITY(data.size(), dd_data.size());
+//      dd_count = 0;
+//      for (int i = 0; i < data.size(); i++)
+//      {
+//
+//         double target = 789.0 + myRank;
+//         if (dd_data[i] == 0.0)
+//         {
+//            TEST_EQUALITY(data[i], 0.0);
+//         }
+//         else
+//         {
+//            TEST_EQUALITY(data[i], target);
+//            dd_count++;
+//         }
+//      }
+//      TEST_EQUALITY(dd_count, 2 * workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+//   }
 
    Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize, const std::string &basisName)
    {

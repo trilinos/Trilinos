@@ -59,6 +59,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexe
   if (!scatterIC_) {
     side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
     local_side_id_ = p.get<int>("Local Side ID");
+    scratch_basisIds_.resize(names.size());
   }
   
   // build the vector of fields that this is dependent on
@@ -183,11 +184,13 @@ public:
     for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
        int offset = offsets(basis);
        LO lid    = lids(cell,offset);
+       // TODO BWR ask about continues 
        if (lid<0) continue; // not on this processor
 
-       int basisId = basisIds(basis);
-
-       if (checkApplyBC && !applyBC(cell,basisId)) continue;
+       if (checkApplyBC) {
+        int basisId = basisIds(basis);
+        if(!applyBC(cell,basisId)) continue;
+       }
 
        r_data(lid,0) = field(cell,basis);
 
@@ -272,8 +275,9 @@ evaluateFields(typename TRAITS::EvalData workset)
     for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
       functor.offsets = scratch_offsets_[fieldIndex];
       functor.field = scatterFields_[fieldIndex];
-      functor.applyBC = applyBC_[fieldIndex];
+      if (checkApplyBC_) functor.applyBC = applyBC_[fieldIndex];
       functor.checkApplyBC = checkApplyBC_;
+      functor.basisIds = scratch_basisIds_[fieldIndex];
 
       Kokkos::parallel_for(workset.num_cells,functor);
     }
@@ -384,6 +388,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexe
   if (!scatterIC_) {
     side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
     local_side_id_ = p.get<int>("Local Side ID");
+    scratch_basisIds_.resize(names.size());
   }
   
   // build the vector of fields that this is dependent on
@@ -421,7 +426,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
-
   const Workset & workset_0 = (*d.worksets_)[0];
   std::string blockId = this->wda(workset_0).block_id;
 
@@ -537,9 +541,10 @@ public:
        LO lid    = lids(cell,offset);
        if (lid<0) continue; // not on this processor
 
-       int basisId = basisIds(basis);
-
-       if (checkApplyBC && !applyBC(cell,basisId)) continue;
+       if (checkApplyBC) {
+        int basisId = basisIds(basis);
+        if(!applyBC(cell,basisId)) continue;
+       }
 
        r_data(lid,0) = field(cell,basis).val();
 
@@ -637,8 +642,9 @@ evaluateFields(typename TRAITS::EvalData workset)
     for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
       functor.offsets = scratch_offsets_[fieldIndex];
       functor.field = scatterFields_[fieldIndex];
-      functor.applyBC = applyBC_[fieldIndex];
+      if (checkApplyBC_) functor.applyBC = applyBC_[fieldIndex];
       functor.checkApplyBC = checkApplyBC_;
+      functor.basisIds = scratch_basisIds_[fieldIndex];
       functor.num_params = Kokkos::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
 
       Kokkos::parallel_for(workset.num_cells,functor);
