@@ -187,12 +187,12 @@ public:
        // TODO BWR ask about continues 
        if (lid<0) continue; // not on this processor
 
-       if (checkApplyBC) {
-        int basisId = basisIds(basis);
-        if(!applyBC(cell,basisId)) continue;
-       }
+       int basisId = basisIds(basis);
+       if (checkApplyBC)
+         if(!applyBC(cell,basisId)) continue;
 
-       r_data(lid,0) = field(cell,basis);
+       // TODO BWR should this be summed into?
+       r_data(lid,0) = field(cell,basisId);
 
        // record that you set a dirichlet condition
        dirichlet_counter(lid,0) = 1.0;
@@ -486,8 +486,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
   // this is the list of parameters and their names that this scatter has to account for
   std::vector<std::string> activeParameters =
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc->getDataObject("PARAMETER_NAMES"))->getActiveParameters();
@@ -541,16 +539,15 @@ public:
        LO lid    = lids(cell,offset);
        if (lid<0) continue; // not on this processor
 
-       if (checkApplyBC) {
-        int basisId = basisIds(basis);
-        if(!applyBC(cell,basisId)) continue;
-       }
+       int basisId = basisIds(basis);
+       if (checkApplyBC)
+         if(!applyBC(cell,basisId)) continue;
 
-       r_data(lid,0) = field(cell,basis).val();
+       r_data(lid,0) = field(cell,basisId).val();
 
        // loop over the tangents
        for(int i_param=0; i_param<num_params; i_param++)
-         dfdp_fields(i_param)(lid,0) += field(cell,basis).fastAccessDx(i_param);
+         dfdp_fields(i_param)(lid,0) += field(cell,basisId).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition
        dirichlet_counter(lid,0) = 1.0;
@@ -611,7 +608,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+     
+  globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
    Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ?
      tpetraContainer_->get_f() :
