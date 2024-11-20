@@ -464,9 +464,9 @@ namespace BaskerNS
 
         for(Int row = 0; row < LL_size(b); row++)
         {
-          #ifdef BASKER_DEBUG_INIT
-          printf("L Factor Init: %d %d , kid: %d, nnz: %ld \n",
-              b, row, kid, LL(b)(row).nnz);
+          #ifdef BASKER_TIMER
+          printf("L Factor Init: L(%d %d) , kid: %d, nnz = %ld (%d x %d)\n",
+              b, row, kid, LL(b)(row).nnz, LL(b)(row).nrow,LL(b)(row).ncol);
           #endif
 
           #ifdef BASKER_TIMER

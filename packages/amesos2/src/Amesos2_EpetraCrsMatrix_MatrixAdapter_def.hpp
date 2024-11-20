@@ -36,7 +36,8 @@ namespace Amesos2 {
       o_map = rcpFromRef(this->mat_->RowMap());
       t_map = Util::tpetra_map_to_epetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*map);
 
-      RCP<Epetra_CrsMatrix> t_mat = rcp(new Epetra_CrsMatrix(Copy, *t_map, this->getMaxRowNNZ()));
+      int maxRowNNZ = 0; // this->getMaxRowNNZ();
+      RCP<Epetra_CrsMatrix> t_mat = rcp(new Epetra_CrsMatrix(Copy, *t_map, maxRowNNZ));
 
       Epetra_Import importer(*t_map, *o_map);
       t_mat->Import(*(this->mat_), importer, Insert);

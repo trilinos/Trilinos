@@ -529,25 +529,6 @@ namespace BaskerNS
     );
 
     BASKER_INLINE
-    void L_blk_sfactor
-    (
-     BASKER_MATRIX &MV,
-     BASKER_SYMBOLIC_TREE &ST, 
-     INT_1DARRAY gcol, 
-     INT_1DARRAY grow
-    );
-
-    //old
-    BASKER_INLINE
-    void L_blk_sfactor
-    (
-     BASKER_MATRIX_VIEW &MV,
-     BASKER_SYMBOLIC_TREE &ST, 
-     INT_1DARRAY gcol, 
-     INT_1DARRAY grow
-    );
-
-    BASKER_INLINE
     void S_sfactor_reduce
     (
      BASKER_MATRIX &MV,
