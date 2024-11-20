@@ -267,7 +267,7 @@ class PointwiseFillReuseFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const local_ordinal_type rlid) const {
     auto rowA                       = A.row(rlid);
-    size_t K                        = A.graph.row_map(rlid);
+    size_t row_start                = A.graph.row_map(rlid);
     auto rowFilteredA               = filteredA.row(rlid);
     local_ordinal_type j            = 0;
     local_ordinal_type jj           = 0;
@@ -281,7 +281,7 @@ class PointwiseFillReuseFunctor {
           diagOffset = j;
         }
       }
-      if (results(K + k) == KEEP) {
+      if (results(row_start + k) == KEEP) {
         rowFilteredA.colidx(j) = rowA.colidx(k);
         rowFilteredA.value(j)  = rowA.value(k);
         ++j;
@@ -742,7 +742,7 @@ class VectorFillFunctor {
   void operator()(const local_ordinal_type brlid) const {
     for (local_ordinal_type rlid = blockSize * brlid; rlid < blockSize * (brlid + 1); ++rlid) {
       auto rowA                     = A.row(rlid);
-      size_t K                      = A.graph.row_map(rlid);
+      size_t row_start              = A.graph.row_map(rlid);
       auto rowFilteredA             = filteredA.row(rlid);
       local_ordinal_type j          = 0;
       scalar_type diagCorrection    = zero;
@@ -754,7 +754,7 @@ class VectorFillFunctor {
             diagOffset = j;
           }
         }
-        if (results(K + k) == KEEP) {
+        if (results(row_start + k) == KEEP) {
           rowFilteredA.colidx(j) = rowA.colidx(k);
           rowFilteredA.value(j)  = rowA.value(k);
           ++j;
