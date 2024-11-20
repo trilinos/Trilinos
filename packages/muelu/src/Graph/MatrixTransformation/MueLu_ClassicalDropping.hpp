@@ -19,8 +19,8 @@
 namespace MueLu::ClassicalDropping {
 
 /*!
-  @class AbsDropFunctor
-  @brief Classical dropping criterion
+  @class SAFunctor
+  @brief Classical smoothed aggregation dropping criterion
 
   Evaluates the dropping criterion
   \f[
@@ -28,7 +28,7 @@ namespace MueLu::ClassicalDropping {
   \f]
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class AbsDropFunctor {
+class SAFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -51,7 +51,7 @@ class AbsDropFunctor {
   results_view results;
 
  public:
-  AbsDropFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
+  SAFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , results(results_) {
@@ -78,7 +78,7 @@ class AbsDropFunctor {
 };
 
 /*!
-  @class SignedClassicalRSDropFunctor
+  @class SignedRSFunctor
   @brief Signed classical Ruge-Stueben dropping criterion
 
   Evaluates the dropping criterion
@@ -87,7 +87,7 @@ class AbsDropFunctor {
   \f]
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SignedClassicalRSDropFunctor {
+class SignedRSFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using local_matrix_type  = typename matrix_type::local_matrix_type;
@@ -111,7 +111,7 @@ class SignedClassicalRSDropFunctor {
   results_view results;
 
  public:
-  SignedClassicalRSDropFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
+  SignedRSFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , results(results_) {
@@ -135,7 +135,7 @@ class SignedClassicalRSDropFunctor {
 };
 
 /*!
-  @class SignedClassicalSADropFunctor
+  @class SignedSAFunctor
   @brief Signed classical smoothed aggregation dropping criterion
 
   Evaluates the dropping criterion
@@ -144,7 +144,7 @@ class SignedClassicalRSDropFunctor {
   \f]
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SignedClassicalSADropFunctor {
+class SignedSAFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -168,7 +168,7 @@ class SignedClassicalSADropFunctor {
   results_view results;
 
  public:
-  SignedClassicalSADropFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
+  SignedSAFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , results(results_) {

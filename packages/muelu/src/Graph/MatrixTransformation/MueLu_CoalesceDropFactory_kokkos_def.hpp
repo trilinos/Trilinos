@@ -286,11 +286,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //   Drop all rows that have been marked as Dirichlet
   // - Misc::DropOffRankFunctor
   //   Drop all entries that are off-rank
-  // - ClassicalDropping::AbsDropFunctor
+  // - ClassicalDropping::SAFunctor
   //   Classical dropping
-  // - ClassicalDropping::SignedClassicalRSDropFunctor
+  // - ClassicalDropping::SignedRSFunctor
   //   Classical RS dropping
-  // - ClassicalDropping::SignedClassicalSADropFunctor
+  // - ClassicalDropping::SignedSAFunctor
   //   Classical signed SA dropping
   // - DistanceLaplacian::DropFunctor
   //   Distance Laplacian dropping
@@ -342,7 +342,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
 
           if (classicalAlgoStr == "default") {
-            auto classical_dropping = ClassicalDropping::AbsDropFunctor(*A, threshold, results);
+            auto classical_dropping = ClassicalDropping::SAFunctor(*A, threshold, results);
 
             if (aggregationMayCreateDirichlet) {
               runCountingFunctor(block_diagonalize,
@@ -390,7 +390,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           }
         } else {
           if (classicalAlgoStr == "default") {
-            auto classical_dropping = ClassicalDropping::AbsDropFunctor(*A, threshold, results);
+            auto classical_dropping = ClassicalDropping::SAFunctor(*A, threshold, results);
 
             if (aggregationMayCreateDirichlet) {
               runCountingFunctor(classical_dropping,
@@ -433,7 +433,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           }
         }
       } else if (algo == "signed classical" || algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-        auto signed_classical_rs_dropping = ClassicalDropping::SignedClassicalRSDropFunctor(*A, threshold, results);
+        auto signed_classical_rs_dropping = ClassicalDropping::SignedRSFunctor(*A, threshold, results);
 
         if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
           auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
@@ -475,7 +475,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         }
       } else if (algo == "signed classical sa") {
         if (classicalAlgoStr == "default") {
-          auto signed_classical_sa_dropping = ClassicalDropping::SignedClassicalSADropFunctor(*A, threshold, results);
+          auto signed_classical_sa_dropping = ClassicalDropping::SignedSAFunctor(*A, threshold, results);
 
           if (aggregationMayCreateDirichlet) {
             runCountingFunctor(signed_classical_sa_dropping,
@@ -868,11 +868,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //   Drop all rows that have been marked as Dirichlet
   // - Misc::DropOffRankFunctor
   //   Drop all entries that are off-rank
-  // - ClassicalDropping::AbsDropFunctor
+  // - ClassicalDropping::SAFunctor
   //   Classical dropping
-  // - ClassicalDropping::SignedClassicalRSDropFunctor
+  // - ClassicalDropping::SignedRSFunctor
   //   Classical RS dropping
-  // - ClassicalDropping::SignedClassicalSADropFunctor
+  // - ClassicalDropping::SignedSAFunctor
   //   Classical signed SA dropping
   // - DistanceLaplacian::DropFunctor
   //   Distance Laplacian dropping
@@ -917,7 +917,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
       if (algo == "classical") {
         if (classicalAlgoStr == "default") {
-          auto classical_dropping = ClassicalDropping::AbsDropFunctor(*A, threshold, results);
+          auto classical_dropping = ClassicalDropping::SAFunctor(*A, threshold, results);
 
           if (aggregationMayCreateDirichlet) {
             runCountingFunctor(classical_dropping,
@@ -939,7 +939,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\"");
         }
       } else if (algo == "signed classical" || algo == "block diagonal colored signed classical" || algo == "block diagonal signed classical") {
-        auto signed_classical_rs_dropping = ClassicalDropping::SignedClassicalRSDropFunctor(*A, threshold, results);
+        auto signed_classical_rs_dropping = ClassicalDropping::SignedRSFunctor(*A, threshold, results);
 
         if (aggregationMayCreateDirichlet) {
           runCountingFunctor(signed_classical_rs_dropping,
@@ -953,7 +953,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
                              preserve_diagonals);
         }
       } else if (algo == "signed classical sa") {
-        auto signed_classical_sa_dropping = ClassicalDropping::SignedClassicalSADropFunctor(*A, threshold, results);
+        auto signed_classical_sa_dropping = ClassicalDropping::SignedSAFunctor(*A, threshold, results);
 
         if (aggregationMayCreateDirichlet) {
           runCountingFunctor(signed_classical_sa_dropping,
