@@ -257,7 +257,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     SubFactoryMonitor mBoundary(*this, "Boundary detection", currentLevel);
 
     // macro that applies boundary detection functors
-#define runBoundaryFunctor(...)                                                 \
+#define MueLu_runBoundaryFunctors(...)                                          \
   {                                                                             \
     auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, __VA_ARGS__);    \
     Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries); \
@@ -266,13 +266,13 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     auto dirichlet_detection = BoundaryDetection::PointDirichletFunctor(lclA, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
 
     if (rowSumTol <= 0.) {
-      runBoundaryFunctor(dirichlet_detection);
+      MueLu_runBoundaryFunctors(dirichlet_detection);
     } else {
       auto apply_rowsum = BoundaryDetection::RowSumFunctor(lclA, boundaryNodes, rowSumTol);
-      runBoundaryFunctor(dirichlet_detection,
-                         apply_rowsum);
+      MueLu_runBoundaryFunctors(dirichlet_detection,
+                                apply_rowsum);
     }
-#undef runBoundaryFunctor
+#undef MueLu_runBoundaryFunctors
   }
   // In what follows, boundaryNodes can still still get modified if aggregationMayCreateDirichlet == true.
   // Otherwise we're now done with it now.
@@ -316,13 +316,13 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
     // macro that applied dropping functors
 #if !defined(HAVE_MUELU_DEBUG)
-#define runCountingFunctor(...)                                                                                       \
+#define MueLu_runDroppingFunctors(...)                                                                                \
   {                                                                                                                   \
     auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__); \
     Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);                                        \
   }
 #else
-#define runCountingFunctor(...)                                                                                              \
+#define MueLu_runDroppingFunctors(...)                                                                                       \
   {                                                                                                                          \
     auto debug           = Misc::DebugFunctor(lclA, results);                                                                \
     auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__, debug); \
@@ -345,45 +345,45 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
             auto classical_dropping = ClassicalDropping::SAFunctor(*A, threshold, results);
 
             if (aggregationMayCreateDirichlet) {
-              runCountingFunctor(block_diagonalize,
-                                 classical_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals,
-                                 mark_singletons_as_boundary);
+              MueLu_runDroppingFunctors(block_diagonalize,
+                                        classical_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
             } else {
-              runCountingFunctor(block_diagonalize,
-                                 classical_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals);
+              MueLu_runDroppingFunctors(block_diagonalize,
+                                        classical_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals);
             }
           } else if (classicalAlgoStr == "unscaled cut") {
             auto comparison = CutDrop::UnscaledComparison(*A, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(block_diagonalize,
-                               drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(block_diagonalize,
+                                      drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (classicalAlgoStr == "scaled cut") {
             auto comparison = CutDrop::ScaledComparison(*A, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(block_diagonalize,
-                               drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(block_diagonalize,
+                                      drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (classicalAlgoStr == "scaled cut symmetric") {
             auto comparison = CutDrop::ScaledComparison(*A, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(block_diagonalize,
-                               drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(block_diagonalize,
+                                      drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
 
             auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
 
-            runCountingFunctor(symmetrize);
+            MueLu_runDroppingFunctors(symmetrize);
 
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\"");
@@ -393,40 +393,40 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
             auto classical_dropping = ClassicalDropping::SAFunctor(*A, threshold, results);
 
             if (aggregationMayCreateDirichlet) {
-              runCountingFunctor(classical_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals,
-                                 mark_singletons_as_boundary);
+              MueLu_runDroppingFunctors(classical_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
             } else {
-              runCountingFunctor(classical_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals);
+              MueLu_runDroppingFunctors(classical_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals);
             }
           } else if (classicalAlgoStr == "unscaled cut") {
             auto comparison = CutDrop::UnscaledComparison(*A, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (classicalAlgoStr == "scaled cut") {
             auto comparison = CutDrop::ScaledComparison(*A, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (classicalAlgoStr == "scaled cut symmetric") {
             auto comparison = CutDrop::ScaledComparison(*A, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
 
             auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
 
-            runCountingFunctor(symmetrize);
+            MueLu_runDroppingFunctors(symmetrize);
 
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\"");
@@ -441,17 +441,17 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
           if (classicalAlgoStr == "default") {
             if (aggregationMayCreateDirichlet) {
-              runCountingFunctor(block_diagonalize,
-                                 signed_classical_rs_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals,
-                                 mark_singletons_as_boundary);
+              MueLu_runDroppingFunctors(block_diagonalize,
+                                        signed_classical_rs_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
 
             } else {
-              runCountingFunctor(block_diagonalize,
-                                 signed_classical_rs_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals);
+              MueLu_runDroppingFunctors(block_diagonalize,
+                                        signed_classical_rs_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals);
             }
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be default, not \"" << classicalAlgoStr << "\"");
@@ -459,15 +459,15 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         } else {
           if (classicalAlgoStr == "default") {
             if (aggregationMayCreateDirichlet) {
-              runCountingFunctor(signed_classical_rs_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals,
-                                 mark_singletons_as_boundary);
+              MueLu_runDroppingFunctors(signed_classical_rs_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
 
             } else {
-              runCountingFunctor(signed_classical_rs_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals);
+              MueLu_runDroppingFunctors(signed_classical_rs_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals);
             }
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be default, not \"" << classicalAlgoStr << "\"");
@@ -478,15 +478,15 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           auto signed_classical_sa_dropping = ClassicalDropping::SignedSAFunctor(*A, threshold, results);
 
           if (aggregationMayCreateDirichlet) {
-            runCountingFunctor(signed_classical_sa_dropping,
-                               drop_boundaries,
-                               preserve_diagonals,
-                               mark_singletons_as_boundary);
+            MueLu_runDroppingFunctors(signed_classical_sa_dropping,
+                                      drop_boundaries,
+                                      preserve_diagonals,
+                                      mark_singletons_as_boundary);
 
           } else {
-            runCountingFunctor(signed_classical_sa_dropping,
-                               drop_boundaries,
-                               preserve_diagonals);
+            MueLu_runDroppingFunctors(signed_classical_sa_dropping,
+                                      drop_boundaries,
+                                      preserve_diagonals);
           }
         } else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be default, not \"" << classicalAlgoStr << "\"");
@@ -505,45 +505,45 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
             auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(*A, threshold, dist2, results);
 
             if (aggregationMayCreateDirichlet) {
-              runCountingFunctor(block_diagonalize,
-                                 dist_laplacian_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals,
-                                 mark_singletons_as_boundary);
+              MueLu_runDroppingFunctors(block_diagonalize,
+                                        dist_laplacian_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
             } else {
-              runCountingFunctor(block_diagonalize,
-                                 dist_laplacian_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals);
+              MueLu_runDroppingFunctors(block_diagonalize,
+                                        dist_laplacian_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals);
             }
           } else if (distanceLaplacianAlgoStr == "unscaled cut") {
             auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(block_diagonalize,
-                               drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(block_diagonalize,
+                                      drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (distanceLaplacianAlgoStr == "scaled cut") {
             auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(block_diagonalize,
-                               drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(block_diagonalize,
+                                      drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
             auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(block_diagonalize,
-                               drop_boundaries,
-                               cut_drop,
-                               preserve_diagonals);
+            MueLu_runDroppingFunctors(block_diagonalize,
+                                      drop_boundaries,
+                                      cut_drop,
+                                      preserve_diagonals);
 
             auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
 
-            runCountingFunctor(symmetrize);
+            MueLu_runDroppingFunctors(symmetrize);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
           }
@@ -552,40 +552,40 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
             auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(*A, threshold, dist2, results);
 
             if (aggregationMayCreateDirichlet) {
-              runCountingFunctor(dist_laplacian_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals,
-                                 mark_singletons_as_boundary);
+              MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
             } else {
-              runCountingFunctor(dist_laplacian_dropping,
-                                 drop_boundaries,
-                                 preserve_diagonals);
+              MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                        drop_boundaries,
+                                        preserve_diagonals);
             }
           } else if (distanceLaplacianAlgoStr == "unscaled cut") {
             auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (distanceLaplacianAlgoStr == "scaled cut") {
             auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
           } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
             auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
             auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-            runCountingFunctor(drop_boundaries,
-                               preserve_diagonals,
-                               cut_drop);
+            MueLu_runDroppingFunctors(drop_boundaries,
+                                      preserve_diagonals,
+                                      cut_drop);
 
             auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
 
-            runCountingFunctor(symmetrize);
+            MueLu_runDroppingFunctors(symmetrize);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
           }
@@ -594,18 +594,18 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
         auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
 
-        runCountingFunctor(block_diagonalize);
+        MueLu_runDroppingFunctors(block_diagonalize);
       } else {
         TEUCHOS_ASSERT(false);
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
       // FIXME: This seems inconsistent
-      // runCountingFunctor(drop_boundaries);
+      // MueLu_runDroppingFunctors(drop_boundaries);
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      runCountingFunctor(no_op);
+      MueLu_runDroppingFunctors(no_op);
     }
-#undef runCountingFunctor
+#undef MueLu_runDroppingFunctors
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
   // We now know the number of entries of filtered A and have the final rowptr.
@@ -841,7 +841,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   {
     SubFactoryMonitor mBoundary(*this, "Boundary detection", currentLevel);
 
-#define runBoundaryFunctor(...)                                                 \
+#define MueLu_runBoundaryFunctors(...)                                          \
   {                                                                             \
     auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, __VA_ARGS__);    \
     Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries); \
@@ -849,12 +849,12 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
     if (useGreedyDirichlet) {
       auto dirichlet_detection = BoundaryDetection::VectorDirichletFunctor<local_matrix_type, true>(lclA, blkPartSize, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
-      runBoundaryFunctor(dirichlet_detection);
+      MueLu_runBoundaryFunctors(dirichlet_detection);
     } else {
       auto dirichlet_detection = BoundaryDetection::VectorDirichletFunctor<local_matrix_type, false>(lclA, blkPartSize, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
-      runBoundaryFunctor(dirichlet_detection);
+      MueLu_runBoundaryFunctors(dirichlet_detection);
     }
-#undef runBoundaryFunctor
+#undef MueLu_runBoundaryFunctors
   }
   // In what follows, boundaryNodes can still still get modified if aggregationMayCreateDirichlet == true.
   // Otherwise we're now done with it now.
@@ -895,13 +895,13 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     std::string functorLabel = "MueLu::CoalesceDrop::CountEntries";
 
 #if !defined(HAVE_MUELU_DEBUG)
-#define runCountingFunctor(...)                                                                                                                               \
+#define MueLu_runDroppingFunctors(...)                                                                                                                        \
   {                                                                                                                                                           \
     auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, __VA_ARGS__); \
     Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz);                                                                                         \
   }
 #else
-#define runCountingFunctor(...)                                                                                                                                      \
+#define MueLu_runDroppingFunctors(...)                                                                                                                               \
   {                                                                                                                                                                  \
     auto debug           = Misc::DebugFunctor(lclA, results);                                                                                                        \
     auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, __VA_ARGS__, debug); \
@@ -920,14 +920,14 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           auto classical_dropping = ClassicalDropping::SAFunctor(*A, threshold, results);
 
           if (aggregationMayCreateDirichlet) {
-            runCountingFunctor(classical_dropping,
-                               // drop_boundaries,
-                               preserve_diagonals,
-                               mark_singletons_as_boundary);
+            MueLu_runDroppingFunctors(classical_dropping,
+                                      // drop_boundaries,
+                                      preserve_diagonals,
+                                      mark_singletons_as_boundary);
           } else {
-            runCountingFunctor(classical_dropping,
-                               // drop_boundaries,
-                               preserve_diagonals);
+            MueLu_runDroppingFunctors(classical_dropping,
+                                      // drop_boundaries,
+                                      preserve_diagonals);
           }
         } else if (classicalAlgoStr == "unscaled cut") {
           TEUCHOS_ASSERT(false);
@@ -942,29 +942,29 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto signed_classical_rs_dropping = ClassicalDropping::SignedRSFunctor(*A, threshold, results);
 
         if (aggregationMayCreateDirichlet) {
-          runCountingFunctor(signed_classical_rs_dropping,
-                             // drop_boundaries,
-                             preserve_diagonals,
-                             mark_singletons_as_boundary);
+          MueLu_runDroppingFunctors(signed_classical_rs_dropping,
+                                    // drop_boundaries,
+                                    preserve_diagonals,
+                                    mark_singletons_as_boundary);
 
         } else {
-          runCountingFunctor(signed_classical_rs_dropping,
-                             // drop_boundaries,
-                             preserve_diagonals);
+          MueLu_runDroppingFunctors(signed_classical_rs_dropping,
+                                    // drop_boundaries,
+                                    preserve_diagonals);
         }
       } else if (algo == "signed classical sa") {
         auto signed_classical_sa_dropping = ClassicalDropping::SignedSAFunctor(*A, threshold, results);
 
         if (aggregationMayCreateDirichlet) {
-          runCountingFunctor(signed_classical_sa_dropping,
-                             // drop_boundaries,
-                             preserve_diagonals,
-                             mark_singletons_as_boundary);
+          MueLu_runDroppingFunctors(signed_classical_sa_dropping,
+                                    // drop_boundaries,
+                                    preserve_diagonals,
+                                    mark_singletons_as_boundary);
 
         } else {
-          runCountingFunctor(signed_classical_sa_dropping,
-                             // drop_boundaries,
-                             preserve_diagonals);
+          MueLu_runDroppingFunctors(signed_classical_sa_dropping,
+                                    // drop_boundaries,
+                                    preserve_diagonals);
         }
       } else if (algo == "distance laplacian") {
         using doubleMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>;
@@ -976,14 +976,14 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(*A, threshold, dist2, results);
 
           if (aggregationMayCreateDirichlet) {
-            runCountingFunctor(dist_laplacian_dropping,
-                               // drop_boundaries,
-                               preserve_diagonals,
-                               mark_singletons_as_boundary);
+            MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                      // drop_boundaries,
+                                      preserve_diagonals,
+                                      mark_singletons_as_boundary);
           } else {
-            runCountingFunctor(dist_laplacian_dropping,
-                               // drop_boundaries,
-                               preserve_diagonals);
+            MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                      // drop_boundaries,
+                                      preserve_diagonals);
           }
         } else if (distanceLaplacianAlgoStr == "unscaled cut") {
           TEUCHOS_ASSERT(false);
@@ -999,11 +999,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
-      // runCountingFunctor(drop_boundaries);
+      // MueLu_runDroppingFunctors(drop_boundaries);
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      runCountingFunctor(no_op);
+      MueLu_runDroppingFunctors(no_op);
     }
-#undef runCountingFunctor
+#undef MueLu_runDroppingFunctors
   }
   LocalOrdinal nnz_filtered = nnz.first;
   LocalOrdinal nnz_graph    = nnz.second;
