@@ -410,7 +410,7 @@ public:
   /// initialization / release
   ///
   inline void initialize(const ordinal_type device_level_cut, const ordinal_type device_factorize_thres,
-                         const ordinal_type device_solve_thres, const int nstreams = 1, const ordinal_type verbose = 0) {
+                         const ordinal_type device_solve_thres, const int nstreams_in = 1, const ordinal_type verbose = 0) {
     stat_level.n_device_factorize = 0;
     stat_level.n_device_solve = 0;
     stat_level.n_team_factorize = 0;
@@ -419,6 +419,8 @@ public:
     Kokkos::Timer timer;
 
     timer.reset();
+    // # of streams needs to be at least 1
+    const int nstreams = max(1, nstreams_in);
 
     ///
     /// level data structure
@@ -792,6 +794,8 @@ public:
   }
 
   inline void createStream(const ordinal_type nstreams, const ordinal_type verbose = 0) {
+    // # of streams needs to be at least 1
+    if (nstreams <= 0) return;
 #if defined(KOKKOS_ENABLE_CUDA)
     _nstreams = nstreams;
     if (_streams.size() == size_t(nstreams)) return;
