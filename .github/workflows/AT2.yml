@@ -293,8 +293,9 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
-            --max-cores-allowed=48 \
-            --num-concurrent-tests=48
+            --max-cores-allowed=56 \
+            --num-concurrent-tests=112 \
+            --slots-per-gpu=8
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
