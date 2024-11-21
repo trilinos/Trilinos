@@ -83,6 +83,18 @@ class TrilinosPRConfigurationBase(object):
     # --------------------
 
     @property
+    def arg_slots_per_gpu(self):
+        """
+        This attribute stores the number of resource slots to be used per GPU
+        inside of the CTest resource file (e.g. 4 slots per GPU allows for 4
+        MPI ranks to talk to the each GPU).
+        """
+        if hasattr(self.args, "slots_per_gpu"):
+            return self.args.slots_per_gpu
+        else:
+            return 2
+
+    @property
     def arg_extra_configure_args(self):
         """
         Argument Wrapper: This property wraps the value provided in self.args
@@ -98,11 +110,10 @@ class TrilinosPRConfigurationBase(object):
         if not self._arg_extra_configure_args:
             if gpu_utils.has_nvidia_gpus():
                 self.message("-- REMARK: I see that I am running on a machine that has NVidia GPUs; I will feed TriBITS some data enabling GPU resource management")
-                slots_per_gpu = 2
                 gpu_indices = gpu_utils.list_nvidia_gpus()
-                self.message(f"-- REMARK: Using {slots_per_gpu} slots per GPU")
+                self.message(f"-- REMARK: Using {self.arg_slots_per_gpu} slots per GPU")
                 self.message(f"-- REMARK: Using GPUs {gpu_indices}")
-                self._arg_extra_configure_args = f"-DTrilinos_AUTOGENERATE_TEST_RESOURCE_FILE:BOOL=ON;-DTrilinos_CUDA_NUM_GPUS:STRING={len(gpu_indices)};-DTrilinos_CUDA_SLOTS_PER_GPU:STRING={slots_per_gpu}" + (";" + self.args.extra_configure_args if self.args.extra_configure_args else "")
+                self._arg_extra_configure_args = f"-DTrilinos_AUTOGENERATE_TEST_RESOURCE_FILE:BOOL=ON;-DTrilinos_CUDA_NUM_GPUS:STRING={len(gpu_indices)};-DTrilinos_CUDA_SLOTS_PER_GPU:STRING={self.arg_slots_per_gpu}" + (";" + self.args.extra_configure_args if self.args.extra_configure_args else "")
             else:
                 self._arg_extra_configure_args = self.args.extra_configure_args
         return self._arg_extra_configure_args

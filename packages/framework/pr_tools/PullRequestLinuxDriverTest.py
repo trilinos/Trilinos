@@ -231,10 +231,19 @@ def parse_args():
                           dest='num_concurrent_tests',
                           action='store',
                           default=-1,
-                          help="Set the number of concurrent tests allowd in CTest. " + \
+                          help="Set the number of concurrent tests allowed in CTest. " + \
                                "This is equivalent to `ctest -j <num-concurrent-tests>`. "
                                "If > 0 then this value is used, otherwise the value is calculated " + \
                                "based on number_of_available_cores / max_test_parallelism" + \
+                               " Default = %(default)s")
+
+    optional.add_argument('--slots-per-gpu',
+                          dest='slots_per_gpu',
+                          action='store',
+                          default=2,
+                          help="If the machine has GPUs, this value will be the number " + \
+                               "of resource slots allowed per GPU (e.g. 4 would allow 4 MPI " + \
+                               "ranks to talk to each GPU)" + \
                                " Default = %(default)s")
 
     optional.add_argument("--enable-ccache",
