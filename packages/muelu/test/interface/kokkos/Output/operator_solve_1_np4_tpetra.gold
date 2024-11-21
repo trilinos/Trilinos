@@ -120,14 +120,14 @@ Cycle type          = V
 level  rows   nnz    nnz/row  c ratio  procs
   0  10000  49600  4.96                  4  
   1  1700   15318  9.01     5.88         4  
-  2  216    2158   9.99     7.87         4  
-  3  32     446    13.94    6.75         4  
+  2  216    2150   9.95     7.87         4  
+  3  32     434    13.56    6.75         4  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [10000, 10000], Global nnz: 49600}
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [1700, 1700], Global nnz: 15318}
 
-Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [216, 216], Global nnz: 2158}
+Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [216, 216], Global nnz: 2150}
 
 Smoother (level 3) pre  : <Direct> solver interface
 Smoother (level 3) post : no smoother

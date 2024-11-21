@@ -102,6 +102,7 @@ void gimmeUncoupledAggregates(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrd
   params.set<bool>("aggregation: deterministic", false);
 
   params.set<bool>("aggregation: match ML phase2a", true);
+  params.set<bool>("aggregation: match ML phase2b", false);
   params.set<bool>("aggregation: error on nodes with no on-rank neighbors", false);
   params.set<bool>("aggregation: phase3 avoid singletons", false);
 
