@@ -123,7 +123,7 @@ operator()( OriginalTypeRef orig )
   std::vector<int> perm(n);
   std::vector<double> info(AMD_INFO);
 
-  amd_order( n, &iat[0], &jat[0], &perm[0], NULL, &info[0] ); 
+  amd_order( n, iat.data(), jat.data(), perm.data(), NULL, &info[0] ); 
 
   if( info[AMD_STATUS] == AMD_INVALID )
     std::cout << "AMD ORDERING: Invalid!!!!\n";
@@ -150,13 +150,30 @@ operator()( OriginalTypeRef orig )
   //Generate New Domain and Range Maps
   //for now, assume they start out as identical
   const Epetra_BlockMap & OldMap = orig.RowMap();
-  int nG = orig.NumGlobalRows();
 
-  std::vector<int> newElements( n );
-  for( int i = 0; i < n; ++i )
-    newElements[i] = OldMap.GID( perm[i] );
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    if(OldMap.GlobalIndicesInt()) {
+      int nG = orig.NumGlobalRows();
+      std::vector<int> newElements( n );
+      for( int i = 0; i < n; ++i )
+        newElements[i] = OldMap.GID( perm[i] );
 
-  NewMap_ = new Epetra_Map( nG, n, &newElements[0], OldMap.IndexBase(), OldMap.Comm() );
+      NewMap_ = new Epetra_Map( nG, n, newElements.data(), OldMap.IndexBase(), OldMap.Comm() );
+    }
+    else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(OldMap.GlobalIndicesLongLong()) {
+      long long nG = orig.NumGlobalRows64();
+      std::vector<long long> newElements( nG );
+      for( int i = 0; i < n; ++i )
+        newElements[i] = OldMap.GID64( perm[i] );
+
+      NewMap_ = new Epetra_Map( nG, n, newElements.data(), OldMap.IndexBase64(), OldMap.Comm() );
+    }
+    else
+#endif
+      throw "CrsGraph_AMD::operator(): GlobalIndices type unknown for OldMap";
 
   if( verbose_ )
   {
