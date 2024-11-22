@@ -283,77 +283,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
   }
 
-   //Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
-   //Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
-
-   //// NOTE: A reordering of these loops will likely improve performance
-   ////       The "getGIDFieldOffsets may be expensive.  However the
-   ////       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   ////       may be more expensive!
-
-
-
-   //// loop over each field to be scattered
-   //for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-   //  int fieldNum = fieldIds_[fieldIndex];
-   //  auto scatterFields_h = Kokkos::create_mirror_view(scatterFields_[fieldIndex].get_static_view());
-   //  Kokkos::deep_copy(scatterFields_h, scatterFields_[fieldIndex].get_static_view());
-
-   //  // scatter operation for each cell in workset
-   //  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-   //    std::size_t cellLocalId = localCellIds[worksetCellIndex];
-   //    
-   //    globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-
-   //    // caculate the local IDs for this element
-   //    LIDs.resize(GIDs.size());
-   //    for(std::size_t i=0;i<GIDs.size();i++)
-   //      LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
-
-   //    if (!scatterIC_) {
-   //        // this call "should" get the right ordering according to the Intrepid2 basis
-   //        const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-   //          = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-   //        const std::vector<int> & elmtOffset = indicePair.first;
-   //        const std::vector<int> & basisIdMap = indicePair.second;
-   //        
-   //        // loop over basis functions
-   //        for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-   //          int offset = elmtOffset[basis];
-   //          LO lid = LIDs[offset];
-   //          if(lid<0) // not on this processor!
-   //            continue;
-
-   //          int basisId = basisIdMap[basis];
-
-   //          if (checkApplyBC_)
-   //            if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-   //              continue;
-
-   //          r_array[lid] = scatterFields_h(worksetCellIndex,basisId);
-
-   //          // record that you set a dirichlet condition
-   //          dc_array[lid] = 1.0;
-   //        }
-   //      } else {
-   //        // this call "should" get the right ordering according to the Intrepid2 basis
-   //        const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-   
-   //        // loop over basis functions
-   //        for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-   //          int offset = elmtOffset[basis];
-   //          LO lid = LIDs[offset];
-   //          if(lid<0) // not on this processor!
-   //            continue;
-
-   //          r_array[lid] = scatterFields_h(worksetCellIndex,basis);
-
-   //          // record that you set a dirichlet condition
-   //          dc_array[lid] = 1.0;
-   //        }
-   //      }
-   //   }
-   //}
 }
 
 // **********************************************************************
@@ -545,6 +474,7 @@ public:
 
        r_data(lid,0) = field(cell,basisId).val();
 
+       // TODO BWR Should be summed or no? ASK!
        // loop over the tangents
        for(int i_param=0; i_param<num_params; i_param++)
          dfdp_fields(i_param)(lid,0) += field(cell,basisId).fastAccessDx(i_param);
@@ -620,6 +550,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.lids = scratch_lids_;
     functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
       // for each field, do a parallel for loop
     for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -649,94 +580,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
   }
 
-   //Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
-   //Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
-
-   //// NOTE: A reordering of these loops will likely improve performance
-   ////       The "getGIDFieldOffsets may be expensive.  However the
-   ////       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   ////       may be more expensive!
-
-
-   //// scatter operation for each cell in workset
-   //for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-   //   std::size_t cellLocalId = localCellIds[worksetCellIndex];
-
-   //   globalIndexer_->getElementGIDs(cellLocalId,GIDs);
-
-   //   // caculate the local IDs for this element
-   //   LIDs.resize(GIDs.size());
-   //   for(std::size_t i=0;i<GIDs.size();i++)
-   //      LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
-
-   //   // loop over each field to be scattered
-   //   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-   //      int fieldNum = fieldIds_[fieldIndex];
-
-   //      if (!scatterIC_) {
-   //        // this call "should" get the right ordering according to the Intrepid2 basis
-   //        const std::pair<std::vector<int>,std::vector<int> > & indicePair
-   //          = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-   //        const std::vector<int> & elmtOffset = indicePair.first;
-   //        const std::vector<int> & basisIdMap = indicePair.second;
-
-   //        // loop over basis functions
-   //        for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-   //          int offset = elmtOffset[basis];
-   //          LO lid = LIDs[offset];
-   //          if(lid<0) // not on this processor!
-   //            continue;
-
-   //          int basisId = basisIdMap[basis];
-
-   //          if (checkApplyBC_)
-   //            if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-   //              continue;
-
-   //          ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
-   //          //r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
-
-   //          // then scatter the sensitivity vectors
-   //          if(value.size()==0)
-   //            for(std::size_t d=0;d<dfdp_vectors_.size();d++)
-   //              dfdp_vectors_[d][lid] = 0.0;
-   //          else
-   //            for(int d=0;d<value.size();d++) {
-   //              dfdp_vectors_[d][lid] = value.fastAccessDx(d);
-   //            }
-
-   //          // record that you set a dirichlet condition
-   //          dc_array[lid] = 1.0;
-   //        }
-   //      } else {
-   //        // this call "should" get the right ordering according to the Intrepid2 basis
-   //        const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-   //        // loop over basis functions
-   //        for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-   //          int offset = elmtOffset[basis];
-   //          LO lid = LIDs[offset];
-   //          if(lid<0) // not on this processor!
-   //            continue;
-
-   //          ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-   //          //r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
-
-   //          // then scatter the sensitivity vectors
-   //          if(value.size()==0)
-   //            for(std::size_t d=0;d<dfdp_vectors_.size();d++)
-   //              dfdp_vectors_[d][lid] = 0.0;
-   //          else
-   //            for(int d=0;d<value.size();d++) {
-   //              dfdp_vectors_[d][lid] = value.fastAccessDx(d);
-   //            }
-
-   //          // record that you set a dirichlet condition
-   //          dc_array[lid] = 1.0;
-   //        }
-   //      }
-   //   }
-   //}
 }
 
 // **********************************************************************
