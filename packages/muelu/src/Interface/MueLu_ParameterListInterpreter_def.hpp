@@ -44,6 +44,7 @@
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
+#include "MueLu_MatrixAnalysisFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
@@ -1308,6 +1309,16 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RAP->SetFactory("R", manager.GetFactory("R"));
     else
       RAPs->SetFactory("R", manager.GetFactory("R"));
+  }
+
+  // Matrix analysis
+  if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "matrix: compute analysis", bool, true)) {
+    RCP<Factory> matrixAnalysisFact = rcp(new MatrixAnalysisFactory());
+
+    if (!RAP.is_null())
+      RAP->AddTransferFactory(matrixAnalysisFact);
+    else
+      RAPs->AddTransferFactory(matrixAnalysisFact);
   }
 
   // Aggregate qualities
