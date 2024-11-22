@@ -289,6 +289,7 @@ namespace MueLu {
   "<Parameter name=\"filtered matrix: Dirichlet threshold\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"matrix: compute analysis\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"emin: iterative method\" type=\"string\" value=\"cg\"/>"
   "<Parameter name=\"emin: num iterations\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"emin: num reuse iterations\" type=\"int\" value=\"1\"/>"
@@ -845,6 +846,8 @@ namespace MueLu {
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
       
          ("filtered matrix: reuse graph","filtered matrix: reuse graph")
+      
+         ("matrix: compute analysis","matrix: compute analysis")
       
          ("emin: iterative method","emin: iterative method")
       
