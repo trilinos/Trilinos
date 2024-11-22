@@ -14,6 +14,7 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Phalanx_KokkosViewOfViews.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -235,6 +236,84 @@ private:
 
   //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel.
   PHX::View<LO*> blockOffsets_;
+
+  ScatterResidual_BlockedTpetra();
+};
+
+// **************************************************************
+// Tangent 
+// **************************************************************
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+class ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
+    public panzer::CloneableEvaluator {
+  
+public:
+  ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
+     : globalIndexer_(indexer) {}
+  
+  ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
+                                const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
+
+  void preEvaluate(typename TRAITS::PreEvalData d);
+  
+  void evaluateFields(typename TRAITS::EvalData workset);
+  
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
+
+private:
+  typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  typedef typename TRAITS::RealType RealType;
+
+  typedef BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> ContainerType;
+  typedef Tpetra::Vector<RealType,LO,GO,NodeT> VectorType;
+  typedef Tpetra::CrsMatrix<RealType,LO,GO,NodeT> CrsMatrixType;
+  typedef Tpetra::CrsGraph<LO,GO,NodeT> CrsGraphType;
+  typedef Tpetra::Map<LO,GO,NodeT> MapType;
+  typedef Tpetra::Import<LO,GO,NodeT> ImportType;
+  typedef Tpetra::Export<LO,GO,NodeT> ExportType;
+
+  //! Dummy evalauted field so that the evaluator will have something to do
+  Teuchos::RCP<PHX::FieldTag> scatterHolder_;
+
+  //! Fields that need to be scattered will be put in this vector
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
+
+  //! Maps the local (field,element,basis) triplet to a global ID for scattering
+  Teuchos::RCP<const BlockedDOFManager> globalIndexer_;
+
+  //! Vector of global indexers, one for each scattered field respectively
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
+
+  //! Field IDs in the local product vector block (not global field id)
+  std::vector<int> fieldIds_;
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
+
+  // This maps the scattered field names to the DOF manager field
+  // For instance a Navier-Stokes map might look like
+  //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
+  //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
+  Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> > blockedContainer_;
+
+  /// Storage for the tangent data
+  PHX::ViewOfViews<2,Kokkos::View<RealType**,Kokkos::LayoutLeft,PHX::Device>> dfdpFieldsVoV_;
+
+  //! Local indices for unknowns
+  PHX::View<LO**> worksetLIDs_;
+
+  //! Offset into the cell lids for each field
+  std::vector<PHX::View<int*>> fieldOffsets_;
 
   ScatterResidual_BlockedTpetra();
 };
