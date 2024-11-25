@@ -61,6 +61,7 @@ RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOr
   validParamList->set<RCP<const FactoryBase> >("R", null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
   validParamList->set<RCP<const FactoryBase> >("Nullspace", null, "Factory of the nullspace that need to be rebalanced (only used if type=Interpolation)");
   validParamList->set<RCP<const FactoryBase> >("Coordinates", null, "Factory of the coordinates that need to be rebalanced (only used if type=Interpolation)");
+  validParamList->set<RCP<const FactoryBase> >("Material", null, "Factory of the material that need to be rebalanced (only used if type=Interpolation)");
   validParamList->set<RCP<const FactoryBase> >("BlockNumber", null, "Factory of the block ids that need to be rebalanced (only used if type=Interpolation)");
   validParamList->set<RCP<const FactoryBase> >("Importer", null, "Factory of the importer object used for the rebalancing");
   validParamList->set<int>("write start", -1, "First level at which coordinates should be written to file");
@@ -83,6 +84,8 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Declar
       Input(coarseLevel, "Nullspace");
     if (pL.get<RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
       Input(coarseLevel, "Coordinates");
+    if (pL.get<RCP<const FactoryBase> >("Material") != Teuchos::null)
+      Input(coarseLevel, "Material");
     if (pL.get<RCP<const FactoryBase> >("BlockNumber") != Teuchos::null)
       Input(coarseLevel, "BlockNumber");
 
@@ -238,6 +241,10 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
         if (IsAvailable(coarseLevel, "Coordinates"))
           Set(coarseLevel, "Coordinates", Get<RCP<xdMV> >(coarseLevel, "Coordinates"));
 
+      if (pL.isParameter("Material") && pL.get<RCP<const FactoryBase> >("Material") != Teuchos::null)
+        if (IsAvailable(coarseLevel, "Material"))
+          Set(coarseLevel, "Material", Get<RCP<MultiVector> >(coarseLevel, "Material"));
+
       if (pL.isParameter("BlockNumber") && pL.get<RCP<const FactoryBase> >("BlockNumber") != Teuchos::null)
         if (IsAvailable(coarseLevel, "BlockNumber"))
           Set(coarseLevel, "BlockNumber", Get<RCP<LocalOrdinalVector> >(coarseLevel, "BlockNumber"));
@@ -296,6 +303,24 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
       if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
         Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Write(fileName, *permutedCoords);
+    }
+
+    if (IsAvailable(coarseLevel, "Material")) {
+      RCP<MultiVector> material = Get<RCP<MultiVector> >(coarseLevel, "Material");
+
+      // This line must be after the Get call
+      SubFactoryMonitor subM(*this, "Rebalancing material", coarseLevel);
+
+      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(importer->getTargetMap(), material->getNumVectors());
+      permutedMaterial->doImport(*material, *importer, Xpetra::INSERT);
+
+      if (pL.get<bool>("repartition: use subcommunicators") == true)
+        permutedMaterial->replaceMap(permutedMaterial->getMap()->removeEmptyProcesses());
+
+      if (permutedMaterial->getMap() == Teuchos::null)
+        permutedMaterial = Teuchos::null;
+
+      Set(coarseLevel, "Material", permutedMaterial);
     }
 
     if (pL.isParameter("BlockNumber") &&
