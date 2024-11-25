@@ -119,22 +119,22 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
   constexpr int one                      = 1;
   KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();
 
-  KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, space.cuda_stream()));
+  KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));
   if constexpr (std::is_same_v<XScalar, float>) {
-    KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSasum(s.handle, N, X.data(), one, R.data()));
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSasum(s.handle, N, X.data(), one, R.data()));
   }
   if constexpr (std::is_same_v<XScalar, double>) {
-    KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDasum(s.handle, N, X.data(), one, R.data()));
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasDasum(s.handle, N, X.data(), one, R.data()));
   }
   if constexpr (std::is_same_v<XScalar, Kokkos::complex<float>>) {
-    KOKKOS_CUBLAS_SAFE_CALL_IMPL(
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(
         cublasScasum(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, R.data()));
   }
   if constexpr (std::is_same_v<XScalar, Kokkos::complex<double>>) {
-    KOKKOS_CUBLAS_SAFE_CALL_IMPL(
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(
         cublasDzasum(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, R.data()));
   }
-  KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));
+  KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));
 }
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)                                               \
@@ -201,22 +201,22 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTy
   constexpr int one                     = 1;
   KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
 
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));
   if constexpr (std::is_same_v<XScalar, float>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_sasum(s.handle, N, X.data(), one, R.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_sasum(s.handle, N, X.data(), one, R.data()));
   }
   if constexpr (std::is_same_v<XScalar, double>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dasum(s.handle, N, X.data(), one, R.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_dasum(s.handle, N, X.data(), one, R.data()));
   }
   if constexpr (std::is_same_v<XScalar, Kokkos::complex<float>>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
         rocblas_scasum(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(X.data()), one, R.data()));
   }
   if constexpr (std::is_same_v<XScalar, Kokkos::complex<double>>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
         rocblas_dzasum(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(X.data()), one, R.data()));
   }
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
 }
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE)                                         \

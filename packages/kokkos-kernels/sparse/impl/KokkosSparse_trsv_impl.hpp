@@ -261,10 +261,8 @@ struct TrsvWrap {
       return;
     }
 
-    // Don't use r >= 0 as the test, because that fails if
-    // lno_t is unsigned.  We do r == 0 (last
-    // iteration) below.
-    for (lno_t r = numRows - 1; r != 0; --r) {
+    // Iterate backwards with care due to potentially unsigned type
+    for (lno_t r = numRows - 1; r != static_cast<lno_t>(-1); --r) {
       const offset_type beg = ptr(r);
       const offset_type end = ptr(r + 1);
       for (offset_type k = beg; k < end; ++k) {
@@ -275,20 +273,6 @@ struct TrsvWrap {
         }
       }  // for each entry A_rc in the current row r
     }    // for each row r
-
-    // Last iteration: r = 0.
-    {
-      const lno_t r         = 0;
-      const offset_type beg = ptr(r);
-      const offset_type end = ptr(r + 1);
-      for (offset_type k = beg; k < end; ++k) {
-        const scalar_t A_rc = val(k);
-        const lno_t c       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
-        }
-      }  // for each entry A_rc in the current row r
-    }    // last iteration: r = 0
   }
 
   static void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
@@ -312,10 +296,8 @@ struct TrsvWrap {
       return;
     }
 
-    // Don't use r >= 0 as the test, because that fails if
-    // lno_t is unsigned.  We do r == 0 (last
-    // iteration) below.
-    for (lno_t r = numRows - 1; r != 0; --r) {
+    // Iterate backwards with care due to potentially unsigned type
+    for (lno_t r = numRows - 1; r != static_cast<lno_t>(-1); --r) {
       const offset_type beg = ptr(r);
       const offset_type end = ptr(r + 1);
       auto A_rr             = co.zero();
@@ -334,28 +316,6 @@ struct TrsvWrap {
         co.template divide<false>(X, A_rr, r, j);
       }
     }  // for each row r
-
-    // Last iteration: r = 0.
-    {
-      const lno_t r         = 0;
-      const offset_type beg = ptr(r);
-      const offset_type end = ptr(r + 1);
-      auto A_rr             = co.zero();
-      for (offset_type k = beg; k < end; ++k) {
-        const auto A_rc = co.get(val, k);
-        const lno_t c   = ind(k);
-        if (r == c) {
-          co.pluseq(A_rr, A_rc);
-        } else {
-          for (lno_t j = 0; j < numVecs; ++j) {
-            co.gemv(X, A_rc, r, c, j);
-          }
-        }
-      }  // for each entry A_rc in the current row r
-      for (lno_t j = 0; j < numVecs; ++j) {
-        co.template divide<false>(X, A_rr, r, j);
-      }
-    }  // last iteration: r = 0
   }
 
   static void upperTriSolveCscUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
@@ -380,10 +340,8 @@ struct TrsvWrap {
       return;
     }
 
-    // Don't use c >= 0 as the test, because that fails if
-    // lno_t is unsigned.  We do c == 0 (last
-    // iteration) below.
-    for (lno_t c = numCols - 1; c != 0; --c) {
+    // Iterate backwards with care due to potentially unsigned type
+    for (lno_t c = numCols - 1; c != static_cast<lno_t>(-1); --c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
       for (offset_type k = beg; k < end; ++k) {
@@ -394,20 +352,6 @@ struct TrsvWrap {
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
-
-    // Last iteration: c = 0.
-    {
-      const lno_t c         = 0;
-      const offset_type beg = ptr(c);
-      const offset_type end = ptr(c + 1);
-      for (offset_type k = beg; k < end; ++k) {
-        const scalar_t A_rc = val(k);
-        const lno_t r       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
-        }
-      }  // for each entry A_rc in the current column c
-    }
   }
 
   static void upperTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
@@ -432,13 +376,11 @@ struct TrsvWrap {
       return;
     }
 
-    // Don't use c >= 0 as the test, because that fails if
-    // lno_t is unsigned.  We do c == 0 (last
-    // iteration) below.
-    for (lno_t c = numCols - 1; c != 0; --c) {
+    // Iterate backwards with care due to potentially unsigned type
+    for (lno_t c = numCols - 1; c != static_cast<lno_t>(-1); --c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
-      for (offset_type k = end - 1; k >= beg; --k) {
+      for (offset_type k = end - 1; k != beg - 1; --k) {
         const lno_t r   = ind(k);
         const auto A_rc = val(k);
         /*(vqd 20 Jul 2020) This assumes that the diagonal entry
@@ -454,19 +396,6 @@ struct TrsvWrap {
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
-
-    // Last iteration: c = 0.
-    {
-      const offset_type beg = ptr(0);
-      const auto A_rc       = val(beg);
-      /*(vqd 20 Jul 2020) This assumes that the diagonal entry
-        has equal local row and column indices.  That may not
-        necessarily hold, depending on the row and column Maps.  See
-        note above.*/
-      for (lno_t j = 0; j < numVecs; ++j) {
-        X(0, j) = X(0, j) / A_rc;
-      }
-    }
   }
 
   static void lowerTriSolveCscUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
@@ -520,10 +449,8 @@ struct TrsvWrap {
       return;
     }
 
-    // Don't use c >= 0 as the test, because that fails if
-    // lno_t is unsigned.  We do c == 0 (last
-    // iteration) below.
-    for (lno_t c = numCols - 1; c != 0; --c) {
+    // Iterate backwards with care due to potentially unsigned type
+    for (lno_t c = numCols - 1; c != static_cast<lno_t>(-1); --c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
       for (offset_type k = beg; k < end; ++k) {
@@ -534,20 +461,6 @@ struct TrsvWrap {
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
-
-    // Last iteration: c = 0.
-    {
-      const lno_t c         = 0;
-      const offset_type beg = ptr(c);
-      const offset_type end = ptr(c + 1);
-      for (offset_type k = beg; k < end; ++k) {
-        const lno_t r       = ind(k);
-        const scalar_t A_rc = STS::conj(val(k));
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
-        }
-      }  // for each entry A_rc in the current column c
-    }
   }
 
   static void upperTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {
@@ -572,13 +485,11 @@ struct TrsvWrap {
       return;
     }
 
-    // Don't use c >= 0 as the test, because that fails if
-    // lno_t is unsigned.  We do c == 0 (last
-    // iteration) below.
-    for (lno_t c = numCols - 1; c != 0; --c) {
+    // Iterate backwards with care due to potentially unsigned type
+    for (lno_t c = numCols - 1; c != static_cast<lno_t>(-1); --c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
-      for (offset_type k = end - 1; k >= beg; --k) {
+      for (offset_type k = end - 1; k != beg - 1; --k) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = STS::conj(val(k));
         /*(vqd 20 Jul 2020) This assumes that the diagonal entry
@@ -594,19 +505,6 @@ struct TrsvWrap {
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
-
-    // Last iteration: c = 0.
-    {
-      const offset_type beg = ptr(0);
-      const scalar_t A_rc   = STS::conj(val(beg));
-      /*(vqd 20 Jul 2020) This assumes that the diagonal entry
-        has equal local row and column indices.  That may not
-        necessarily hold, depending on the row and column Maps.  See
-        note above.*/
-      for (lno_t j = 0; j < numVecs; ++j) {
-        X(0, j) = X(0, j) / A_rc;
-      }
-    }
   }
 
   static void lowerTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A, DomainMultiVectorType Y) {

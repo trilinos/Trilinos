@@ -1281,7 +1281,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
                                                                    b_nnz_view_t entriesb_, c_row_view_t rowmapC,
                                                                    nnz_lno_t maxNumRoughNonzeros) {
   SPGEMMAlgorithm current_spgemm_algorithm             = this->spgemm_algorithm;
-  constexpr bool exec_gpu                              = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu                              = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
   if (exec_gpu) {
     current_spgemm_algorithm = SPGEMM_KK_MEMORY;
@@ -1523,7 +1523,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
                                                                        c_row_view_t rowmapC,
                                                                        nnz_lno_t maxNumRoughNonzeros) {
   SPGEMMAlgorithm current_spgemm_algorithm = this->spgemm_algorithm;
-  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>();
+  constexpr bool exec_gpu = KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>;
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
   if (exec_gpu) {
     current_spgemm_algorithm = SPGEMM_KK_MEMORY;

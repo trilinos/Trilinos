@@ -59,8 +59,9 @@ static inline double __trtri_impl_flop_count(double a_m, double /*a_n*/) {
   double flop_count = 0;
   double flops_per_div, flops_per_mul, flops_per_add;
 
-  if (std::is_same<double, default_scalar>::value || std::is_same<float, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+  if (std::is_same<double, KokkosKernels::default_scalar>::value ||
+      std::is_same<float, KokkosKernels::default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, KokkosKernels::default_scalar>::value) {
     flops_per_div = 1;
     flops_per_mul = 1;
     flops_per_add = 1;
@@ -93,8 +94,9 @@ static inline double __trtri_flop_count(double a_m, double a_n) {
     exit(255);
   }
 
-  if (std::is_same<double, default_scalar>::value || std::is_same<float, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+  if (std::is_same<double, KokkosKernels::default_scalar>::value ||
+      std::is_same<float, KokkosKernels::default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, KokkosKernels::default_scalar>::value) {
     flops_per_mul = 1;
     flops_per_add = 1;
   } else {
@@ -110,7 +112,8 @@ static inline double __trtri_flop_count(double a_m, double a_n) {
   return flops;
 }
 
-using view_type_3d = Kokkos::View<default_scalar***, default_layout, default_device>;
+using view_type_3d =
+    Kokkos::View<KokkosKernels::default_scalar***, KokkosKernels::default_layout, KokkosKernels::default_device>;
 struct trtri_args {
   char uplo, diag;
   view_type_3d A;
@@ -145,8 +148,9 @@ static void __print_trtri_perf_test_options(options_t options) {
   printf("options.n         = %d\n", options.n);
   printf("options.blas_args.trtri.trtri_args = %s\n", options.blas_args.trtri.trtri_args.c_str());
   printf("options.out_file  = %s\n", options.out_file.c_str());
-  std::cout << "SCALAR:" << typeid(default_scalar).name() << ", LAYOUT:" << typeid(default_layout).name()
-            << ", DEVICE:." << typeid(default_device).name() << std::endl;
+  std::cout << "SCALAR:" << typeid(KokkosKernels::default_scalar).name()
+            << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name() << ", DEVICE:."
+            << typeid(KokkosKernels::default_device).name() << std::endl;
 #else
 static void __print_trtri_perf_test_options(options_t) {
 #endif  // TRTRI_PERF_TEST_DEBUG
@@ -456,8 +460,9 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)
   STATUS;
 
   __print_trtri_perf_test_options(options);
-  std::cout << "SCALAR:" << typeid(default_scalar).name() << ", LAYOUT:" << typeid(default_layout).name()
-            << ", DEVICE:." << typeid(default_device).name() << std::endl;
+  std::cout << "SCALAR:" << typeid(KokkosKernels::default_scalar).name()
+            << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name() << ", DEVICE:."
+            << typeid(KokkosKernels::default_device).name() << std::endl;
 
   options.out[0] << trtri_csv_header_str << std::endl;
 
@@ -465,7 +470,8 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)
                                  cur_dims.b.m <= options.stop.b.m && cur_dims.b.n <= options.stop.b.n;
        cur_dims.a.m += options.step, cur_dims.a.n += options.step, cur_dims.b.m += options.step,
       cur_dims.b.n += options.step) {
-    trtri_args = __do_setup<default_scalar, view_type_3d, default_device>(options, cur_dims);
+    trtri_args =
+        __do_setup<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>(options, cur_dims);
     fn(options, trtri_args);
   }
   return;
@@ -474,25 +480,29 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)
 /*************************** External fns **************************/
 void do_trtri_serial_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trtri_serial_blas<default_scalar, view_type_3d, default_device>);
+  __do_loop_and_invoke(
+      options, __do_trtri_serial_blas<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trtri_serial_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trtri_serial_batched<default_scalar, view_type_3d, default_device>);
+  __do_loop_and_invoke(
+      options, __do_trtri_serial_batched<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trtri_parallel_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trtri_parallel_blas<default_scalar, view_type_3d, default_device>);
+  __do_loop_and_invoke(
+      options, __do_trtri_parallel_blas<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trtri_parallel_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trtri_parallel_batched<default_scalar, view_type_3d, default_device>);
+  __do_loop_and_invoke(
+      options, __do_trtri_parallel_batched<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 

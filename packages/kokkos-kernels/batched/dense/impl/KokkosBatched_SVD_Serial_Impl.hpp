@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_SVD_SERIAL_IMPL_HPP__
-#define __KOKKOSBATCHED_SVD_SERIAL_IMPL_HPP__
+#ifndef KOKKOSBATCHED_SVD_SERIAL_IMPL_HPP
+#define KOKKOSBATCHED_SVD_SERIAL_IMPL_HPP
 
 /// \author Brian Kelley (bmkelle@sandia.gov)
 

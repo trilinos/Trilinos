@@ -208,7 +208,7 @@ class PointGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, scal
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-  typedef typename Kokkos::View<nnz_scalar_t **, default_layout, HandlePersistentMemorySpace>
+  typedef typename Kokkos::View<nnz_scalar_t **, KokkosKernels::default_layout, HandlePersistentMemorySpace>
       scalar_persistent_work_view2d_t;
   typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t;  // Host view type
 
@@ -283,7 +283,7 @@ class PointGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, scal
   nnz_lno_t get_block_size() const { return this->block_size; }
 
   void choose_default_algorithm() {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>)
       this->algorithm_type = GS_TEAM;
     else
       this->algorithm_type = GS_PERMUTED;
@@ -492,7 +492,7 @@ class ClusterGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, sc
     return inverse_diagonal;
   }
 
-  bool use_teams() const { return KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>(); }
+  bool use_teams() const { return KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>; }
 
   ~ClusterGaussSeidelHandle() = default;
 
@@ -532,7 +532,7 @@ class TwoStageGaussSeidelHandle
   using const_ordinal_t = typename const_entries_view_t::value_type;
   using const_scalar_t  = typename const_values_view_t::value_type;
 
-  using vector_view_t = Kokkos::View<scalar_t **, default_layout, device_t>;
+  using vector_view_t = Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t>;
 
   using GSHandle = GaussSeidelHandle<input_size_t, input_ordinal_t, input_scalar_t, ExecutionSpace,
                                      TemporaryMemorySpace, PersistentMemorySpace>;

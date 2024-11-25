@@ -16,7 +16,7 @@
 
 #include "KokkosBlas3_gemm.hpp"
 #include <Kokkos_Random.hpp>
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 struct Params {
   int use_cuda    = 0;
@@ -103,7 +103,8 @@ template <typename ExecSpace>
 void run(int m, int n, int k, int repeat) {
   using LL = Kokkos::LayoutLeft;
   using LR = Kokkos::LayoutRight;
-  std::cout << "** Running GEMM experiments (" << ExecSpace::name() << ") **\n";
+  std::cout << "** Running GEMM experiments (" << ExecSpace::name() << " m=" << m << " n=" << n << " k=" << k
+            << ") **\n";
   std::cout << "Running: A LayoutLeft, B LayoutLeft  : ";
   runImpl<ExecSpace, LL, LL>(m, n, k, repeat);
   std::cout << "Running: A LayoutLeft, B LayoutRight : ";

@@ -226,7 +226,7 @@ class GraphColoringHandle {
 #ifdef VERBOSE
       std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_VBBIT\n";
 #endif
-    } else if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()) {
+    } else if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>) {
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
       std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_EB\n";
@@ -402,7 +402,7 @@ class GraphColoringHandle {
       size_type_temp_work_view_t lower_count("LowerXADJ", nv + 1);
       size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-      if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()) {
+      if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>) {
         int teamSizeMax = 0;
         int vector_size = 0;
 

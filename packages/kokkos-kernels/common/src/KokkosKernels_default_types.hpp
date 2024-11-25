@@ -20,57 +20,77 @@
 #include "Kokkos_Core.hpp"         //for LayoutLeft/LayoutRight
 #include <KokkosKernels_config.h>  //for all the ETI #cmakedefine macros
 
+// define a deprecated symbol = type in the global namespace
+// and a non-deprecated version in Kokkos Kernels
+// these deprecations were done in 4.4.
+// Intel 19 doesn't seem to like deprecating a type alias
+#if defined(KOKKOS_COMPILER_INTEL) && (KOKKOS_COMPILER_INTEL < 2000)
+#define KK_IMPL_MAKE_TYPE_ALIAS(symbol, type) \
+  using symbol = type;                        \
+  namespace KokkosKernels {                   \
+  using symbol = type;                        \
+  }
+#else
+#define KK_IMPL_MAKE_TYPE_ALIAS(symbol, type)                            \
+  using symbol [[deprecated("use KokkosKernels::" #symbol ".")]] = type; \
+  namespace KokkosKernels {                                              \
+  using symbol = type;                                                   \
+  }
+#endif
+
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-using default_lno_t = int;
+KK_IMPL_MAKE_TYPE_ALIAS(default_lno_t, int)
 #elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-using default_lno_t     = int64_t;
+KK_IMPL_MAKE_TYPE_ALIAS(default_lno_t, int64_t)
 #else
 // Non-ETI build: default to int
-using default_lno_t = int;
+KK_IMPL_MAKE_TYPE_ALIAS(default_lno_t, int)
 #endif
 // Prefer int as the default offset type, because cuSPARSE doesn't support
 // size_t for rowptrs.
 #if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-using default_size_type = int;
+KK_IMPL_MAKE_TYPE_ALIAS(default_size_type, int)
 #elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-using default_size_type = size_t;
+KK_IMPL_MAKE_TYPE_ALIAS(default_size_type, size_t)
 #else
 // Non-ETI build: default to int
-using default_size_type = int;
+KK_IMPL_MAKE_TYPE_ALIAS(default_size_type, int)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-using default_layout = Kokkos::LayoutLeft;
+KK_IMPL_MAKE_TYPE_ALIAS(default_layout, Kokkos::LayoutLeft)
 #elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-using default_layout    = Kokkos::LayoutRight;
+KK_IMPL_MAKE_TYPE_ALIAS(default_layout, Kokkos::LayoutRight)
 #else
-using default_layout    = Kokkos::LayoutLeft;
+KK_IMPL_MAKE_TYPE_ALIAS(default_layout, Kokkos::LayoutLeft)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-using default_scalar = double;
+KK_IMPL_MAKE_TYPE_ALIAS(default_scalar, double)
 #elif defined(KOKKOSKERNELS_INST_FLOAT)
-using default_scalar    = float;
+KK_IMPL_MAKE_TYPE_ALIAS(default_scalar, float)
 #elif defined(KOKKOSKERNELS_INST_HALF)
-using default_scalar    = Kokkos::Experimental::half_t;
+KK_IMPL_MAKE_TYPE_ALIAS(default_scalar, Kokkos::Experimental::half_t)
 #elif defined(KOKKOSKERNELS_INST_BHALF)
-using default_scalar = Kokkos::Experimental::bhalf_t;
+KK_IMPL_MAKE_TYPE_ALIAS(default_scalar, Kokkos::Experimental::bhalf_t)
 #else
-using default_scalar = double;
+KK_IMPL_MAKE_TYPE_ALIAS(default_scalar, double)
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
-using default_device = Kokkos::Cuda;
+KK_IMPL_MAKE_TYPE_ALIAS(default_device, Kokkos::Cuda)
 #elif defined(KOKKOS_ENABLE_HIP)
-using default_device    = Kokkos::HIP;
+KK_IMPL_MAKE_TYPE_ALIAS(default_device, Kokkos::HIP)
 #elif defined(KOKKOS_ENABLE_OPENMPTARGET)
-using default_device    = Kokkos::Experimental::OpenMPTarget;
+KK_IMPL_MAKE_TYPE_ALIAS(default_device, Kokkos::Experimental::OpenMPTarget)
 #elif defined(KOKKOS_ENABLE_OPENMP)
-using default_device = Kokkos::OpenMP;
+KK_IMPL_MAKE_TYPE_ALIAS(default_device, Kokkos::OpenMP)
 #elif defined(KOKKOS_ENABLE_THREADS)
-using default_device = Kokkos::Threads;
+KK_IMPL_MAKE_TYPE_ALIAS(default_device, Kokkos::Threads)
 #else
-using default_device = Kokkos::Serial;
+KK_IMPL_MAKE_TYPE_ALIAS(default_device, Kokkos::Serial)
 #endif
+
+#undef KK_IMPL_MAKE_TYPE_ALIAS
 
 #endif  // KOKKOSKERNELS_DEFAULT_TYPES_H

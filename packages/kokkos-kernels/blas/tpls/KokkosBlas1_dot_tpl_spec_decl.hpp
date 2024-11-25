@@ -117,11 +117,11 @@ namespace Impl {
         dot_print_specialization<RV, XV, XV>();                                                                      \
         const int N                            = static_cast<int>(numElems);                                         \
         KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                   \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, space.cuda_stream()));                                \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(TPL_DOT(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,            \
-                                             reinterpret_cast<const TPL_TYPE*>(Y.data()), 1,                         \
-                                             reinterpret_cast<TPL_TYPE*>(&R())));                                    \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));                                               \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                            \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(TPL_DOT(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,        \
+                                                 reinterpret_cast<const TPL_TYPE*>(Y.data()), 1,                     \
+                                                 reinterpret_cast<TPL_TYPE*>(&R())));                                \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                           \
       } else {                                                                                                       \
         Dot<EXECSPACE, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(space, R, X, Y);                                \
       }                                                                                                              \
@@ -175,11 +175,11 @@ namespace Impl {
         dot_print_specialization<RV, XV, XV>();                                                                       \
         const rocblas_int N                   = static_cast<rocblas_int>(numElems);                                   \
         KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                              \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(TPL_DOT(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,            \
-                                              reinterpret_cast<const TPL_TYPE*>(Y.data()), 1,                         \
-                                              reinterpret_cast<TPL_TYPE*>(&R())));                                    \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                            \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                          \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(TPL_DOT(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,        \
+                                                  reinterpret_cast<const TPL_TYPE*>(Y.data()), 1,                     \
+                                                  reinterpret_cast<TPL_TYPE*>(&R())));                                \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));                                        \
       } else {                                                                                                        \
         Dot<EXECSPACE, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(space, R, X, Y);                                 \
       }                                                                                                               \

@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_ABS_HPP_
-#define KOKKOS_BLAS1_IMPL_ABS_HPP_
+#ifndef KOKKOSBLAS1_IMPL_ABS_HPP_
+#define KOKKOSBLAS1_IMPL_ABS_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -201,4 +201,4 @@ void V_Abs_Generic(const execution_space& space, const RV& R, const XV& X) {
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif  // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_
+#endif  // KOKKOSBLAS1_IMPL_ABS_HPP_

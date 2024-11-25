@@ -32,9 +32,9 @@
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
 
-using Scalar  = default_scalar;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
+using Scalar  = KokkosKernels::default_scalar;
+using Ordinal = KokkosKernels::default_lno_t;
+using Offset  = KokkosKernels::default_size_type;
 using KAT     = Kokkos::ArithTraits<Scalar>;
 
 struct SPMVBenchmarking {
@@ -200,7 +200,7 @@ void print_help() {
 int main(int argc, char** argv) {
   SPMVBenchmarking sb;
   char layout;
-  if (std::is_same<default_layout, Kokkos::LayoutLeft>::value)
+  if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutLeft>::value)
     layout = 'L';
   else
     layout = 'R';

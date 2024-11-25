@@ -30,7 +30,11 @@ struct CusparseSingleton {
 
   CusparseSingleton();
 
+  static bool is_initialized();
   static CusparseSingleton& singleton();
+
+ private:
+  static std::unique_ptr<CusparseSingleton>& get_instance();
 };
 
 }  // namespace Impl
@@ -48,7 +52,11 @@ struct RocsparseSingleton {
 
   RocsparseSingleton();
 
+  static bool is_initialized();
   static RocsparseSingleton& singleton();
+
+ private:
+  static std::unique_ptr<RocsparseSingleton>& get_instance();
 };
 
 }  // namespace Impl

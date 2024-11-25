@@ -60,7 +60,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 
     bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
     // compress in single step if it is GPU.
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) compress_in_single_step = true;
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) compress_in_single_step = true;
 
     // compressed B fields.
     row_lno_temp_work_view_t new_row_mapB(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new row map"), n + 1);

@@ -292,7 +292,7 @@ void teamParallelSyr2(const ExecutionSpace& space, const typename AViewType::con
 
 template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
           bool tJustUp,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalSyr2Impl(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha, const XViewType& x,
                      const YViewType& y, const AViewType& A) {
   threadParallelSyr2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType, tJustTranspose, tJustUp>(space, alpha,
@@ -301,7 +301,7 @@ void generalSyr2Impl(const ExecutionSpace& space, const typename AViewType::cons
 
 template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType, bool tJustTranspose,
           bool tJustUp,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalSyr2Impl(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha, const XViewType& x,
                      const YViewType& y, const AViewType& A) {
   teamParallelSyr2<ExecutionSpace, XViewType, YViewType, AViewType, IndexType, tJustTranspose, tJustUp>(space, alpha, x,

@@ -54,7 +54,7 @@ enum { DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1 /*, LVLSCHED_TP2*/ };
 
 int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int team_size, int /*vector_length*/,
                      /*int idx_offset,*/ int loop) {
-  typedef default_scalar scalar_t;
+  using scalar_t = KokkosKernels::default_scalar;
   typedef int lno_t;
   typedef int size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;

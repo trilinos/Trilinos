@@ -128,6 +128,14 @@ FOREACH(I RANGE ${ETI_DEVICE_COUNT})
     LIST(GET Intrepid2_TEST_ETI_SACADO         ${J} ETI_SACADO)
     FOREACH(ETI_FILE IN LISTS Intrepid2_TEST_ETI_FILE)
       SET(ETI_NAME "${ETI_FILE}_${ETI_DEVICE_NAME}_${ETI_VALUETYPE_NAME}")
+
+      IF(${ETI_NAME} STREQUAL "test_02_CUDA_DFAD_DFAD")
+        IF(${CUDAToolkit_VERSION_MAJOR} LESS "12")
+          MESSAGE(STATUS "Skipping TEST: HGRAD_PYR_C1_FEM ${ETI_NAME}.cpp for CUDA <12 (known compile issue)")
+          CONTINUE()
+        ENDIF()
+      ENDIF()
+
       MESSAGE(STATUS "Generating TEST: HGRAD_PYR_C1_FEM ${ETI_NAME}.cpp")
       CONFIGURE_FILE(eti/${ETI_FILE}_ETI.in ${ETI_NAME}.cpp)
 
