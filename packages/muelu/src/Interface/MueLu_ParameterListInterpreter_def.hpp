@@ -1743,15 +1743,19 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       newP->SetParameterList(newPparams);
       newP->SetFactory("Importer", manager.GetFactory("Importer"));
       newP->SetFactory("P", manager.GetFactory("P"));
+      manager.SetFactory("P", newP);
       if (!paramList.isParameter("semicoarsen: number of levels"))
         newP->SetFactory("Nullspace", manager.GetFactory("Ptent"));
       else
         newP->SetFactory("Nullspace", manager.GetFactory("P"));  // TogglePFactory
-      if (useCoordinates_)
+      if (useCoordinates_) {
         newP->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("P", newP);
-      if (useCoordinates_)
         manager.SetFactory("Coordinates", newP);
+      }
+      if (useMaterial_) {
+        newP->SetFactory("Material", manager.GetFactory("Material"));
+        manager.SetFactory("Material", newP);
+      }
       if (useBlockNumber_ && (levelID > 0)) {
         newP->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
         manager.SetFactory("BlockNumber", newP);
