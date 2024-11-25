@@ -149,8 +149,8 @@ class ExpansionFunctor {
     , colors(colors_)
     , lclLWGraph(lclLWGraph_)
     , aggPenalties(aggPenalties_)
-    , connectWeight(connectWeight_)
     , aggPenaltyUpdates(aggPenaltyUpdates_)
+    , connectWeight(connectWeight_)
     , penaltyConnectWeight(penaltyConnectWeight_)
     , color(color_)
     , myRank(rank_) {}
