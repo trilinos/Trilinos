@@ -129,14 +129,11 @@ class VectorDirichletFunctor {
         }
       } else {
         if (!rowIsDirichlet) {
-          boundaryNodes(rblid) = false;
           return;
         }
       }
     }
-    if constexpr (useGreedyDirichlet)
-      boundaryNodes(rblid) = false;
-    else
+    if constexpr (!useGreedyDirichlet)
       boundaryNodes(rblid) = true;
   }
 };
