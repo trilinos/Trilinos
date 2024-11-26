@@ -225,6 +225,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             ctest_drop_site="testing.sandia.gov",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
+            skip_create_packageenables=False,
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,
@@ -680,6 +681,22 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                            side_effect=mock_subprocess_check_output) as m_output:
                     ret = pr_config.prepare_test()
                     self.assertEqual(ret, 0)
+
+
+    def test_TrilinosPRConfigurationBase_prepare_test_skip_create_package_enables_file(self):
+        """
+        Test that the prepare_test method does not call the member function create_package_enables_file
+        when skip_create_packageenables is True
+        """
+        args = self.dummy_args()
+        args.skip_create_packageenables = True
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        with patch('trilinosprhelpers.TrilinosPRConfigurationBase.create_package_enables_file') as m_call:
+            pr_config.prepare_test()
+
+        expected_call_count = 0
+        self.assertEqual(m_call.call_count, expected_call_count)
 
 
     def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):
