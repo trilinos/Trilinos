@@ -43,7 +43,7 @@ IF (KokkosEnable)
 ENDIF()
 
 set(upcoming_warnings shadow ${Trilinos_ADDITIONAL_WARNINGS})
-set(promoted_warnings parentheses sign-compare unused-variable reorder)
+set(promoted_warnings parentheses sign-compare unused-variable reorder uninitialized)
 
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
     enable_warnings("${upcoming_warnings}")
