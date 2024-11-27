@@ -104,25 +104,37 @@ bool panzer_impl_new = false;
 int panzer_impl_inp = 0;  // 0, 1, 2=both
 
 using TimersValType = std::pair<double, std::vector<double>>;
-std::unordered_map<std::string, TimersValType > TimersBase =
+using TimersDataType = std::pair<std::string, TimersValType> ;
+using TimersType = std::unordered_map<std::string, TimersValType >;
+
+TimersType TimersBase =
   {
-   {"evalJ", {0.0, {}}},
-   {"capsg_G", {0.0, {}}},
-   {"capsg_G_1", {0.0, {}}},
-   {"capsg_G_2", {0.0, {}}},
-   {"capsg_G_3", {0.0, {}}},
-   {"capsg_G_4", {0.0, {}}},
-   {"capsg_M", {0.0, {}}},
-   {"capsg_G_pad", {0.0, {}}},
-   {"capsg_G_apad", {0.0, {}}},
-   {"main", {0.0, {}}},
-   {"eval_scatter", {0.0, {}}},
-   {"gedc-g2g", {0.0, {}}},
-   {"lof-g2gc", {0.0, {}}},
+   {"test", {0,{}}},
+   {"capsg_G", {0,{}}},
+   {"capsg_G_1", {0,{}}},
+   {"capsg_G_2", {0,{}}},
+   {"capsg_G_3", {0,{}}},
+   {"capsg_G_4", {0,{}}},
+   {"capsg_G_apad", {0,{}}},
+   {"capsg_G_pad", {0,{}}},
+   {"capsg_G_pad_merge", {0,{}}},
+   {"capsg_G_pad_perm", {0,{}}},
+   {"capsg_G_pad_same", {0,{}}},
+   {"capsg_G_pad_sort", {0,{}}},
+   {"capsg_M", {0,{}}},
+   {"capsg_M_apad", {0,{}}},
+   {"capsg_M_pad", {0,{}}},
+   {"capsg_M_ucmac", {0,{}}},
+   {"evalJ", {0,{}}},
+   {"eval_scatter", {0,{}}},
+   {"gedc-g2g", {0,{}}},
+   {"lof-g2gc", {0,{}}},
+   {"main", {0,{}}}
   };
 
-std::unordered_map<std::string, TimersValType >& Timers  = TimersBase;
-std::unordered_map<std::string, TimersValType > *TimersPtr = &TimersBase;
+const size_t TimersBaseSize = TimersBase.size();
+auto TimersVal = TimersBase;
+std::unordered_map<std::string, TimersValType >& Timers  = TimersVal;
 
 double timer_MV=0.0;
 double timer_ICI=0.0;
@@ -133,8 +145,8 @@ double timer_evalJ=0.0;
 double timer_capsg=0.0;
 double timer_main=0.0;
 
-int numRepeatRuns = 1;
-int repeat = 0;
+size_t numRepeatRuns = 1;
+size_t repeat = 0;
 
 template<class T>
 static T parallel_reduce(Teuchos::RCP<const Teuchos::MpiComm<int> > comm, T& localVal, Teuchos::EReductionType red) {
@@ -878,9 +890,11 @@ int main(int argc,char * argv[]){
   solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
   const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
   solverType solver = MUELU;
+  bool use_stable_sort=true;
   clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
   clp.setOption("num-repeat-runs",&numRepeatRuns);
   clp.setOption("use-evalJ","no-use-evalJ", &use_eval_J,"Run with sub-timers only active if evalModel(J) is active.");
+  clp.setOption("stable-sort","no-stable-sort",&use_stable_sort,"use std::stable_sort in timers output.");
 
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
@@ -941,12 +955,22 @@ int main(int argc,char * argv[]){
   }
 
   if (1) {
+    if (!comm->getRank()) {
+      std::cout << "[srk] TimersBaseSize= " << TimersBaseSize << " TimersBase.size= " << TimersBase.size()
+                << " Timers.size= " << Timers.size() << std::endl;
+    
+      TEUCHOS_TEST_FOR_EXCEPTION(TimersBaseSize != Timers.size(),
+                                 std::runtime_error,
+                                 "Timers not consistent, check TimersBase has all timers.");
+    }
+
     for (auto& t : Timers) {
       t.second.first = parallel_reduce(comm, t.second.first, Teuchos::REDUCE_MAX);
     }
     if (!comm->getRank()) {
       for (auto& t : Timers) {
         std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
+        if (t.second.second.size() != numRepeatRuns) t.second.second.resize(numRepeatRuns);
         t.second.second[repeat] = t.second.first;
       }
     }
@@ -977,14 +1001,20 @@ int main(int argc,char * argv[]){
     auto title = [&]() {
                    std::ostringstream oss;
                    oss << "AVE (of " <<  numRepeatRuns << " runs):";
-                   printf("[TIMER] %d runs:\n"
+                   printf("[TIMER] %zu runs:\n"
                           "[TIMER] %25s %20s %20s %20s %20s\n",
                           numRepeatRuns, "Name", oss.str().c_str(), "MAX:", "MIN:", "MAX/MIN:");
               };
     
-    using TimersDataType = std::pair<std::string, TimersValType> ;
+
     std::vector<TimersDataType> vt(Timers.begin(), Timers.end());
-    std::sort(vt.begin(), vt.end(), [](const TimersDataType& a, const TimersDataType& b) { return a.second.first >= b.second.first; });
+    // std::sort hits a segfault, stable_sort doesn't, go figure
+    auto lam = [](const TimersDataType& a, const TimersDataType& b) { return a.second.first >= b.second.first; };
+    if (use_stable_sort) {
+      std::stable_sort(vt.begin(), vt.end(), lam);
+    } else {
+      std::sort(vt.begin(), vt.end(), lam);
+    }
     title();
     for (const auto& t : vt) {
       minMaxAve(t.second.second, MinMaxAve);
@@ -997,7 +1027,6 @@ int main(int argc,char * argv[]){
 
   return retVal;
 }
-
 
 template <class Scalar>
 void writeToExodus(double time_stamp,

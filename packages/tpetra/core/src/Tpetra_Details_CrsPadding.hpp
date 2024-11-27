@@ -12,11 +12,16 @@
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Util.hpp"
+#include "Teuchos_Time.hpp"
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
+#include <utility>
+
+extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
 
 namespace Tpetra {
   namespace Details {
@@ -170,6 +175,7 @@ namespace Tpetra {
 
         // FIXME (08 Feb 2020) We only need to sort and unique
         // tgtGblColInds if we haven't already seen it before.
+        double time_ = Teuchos::Time::wallTime();
         size_t newNumTgtEnt = origNumTgtEnt;
         auto tgtEnd = tgtGblColInds + origNumTgtEnt;
         std::sort(tgtGblColInds, tgtEnd);
@@ -193,10 +199,13 @@ namespace Tpetra {
           newNumSrcEnt = size_t(srcEnd - srcGblColInds);
           TEUCHOS_ASSERT( newNumSrcEnt <= origNumSrcEnt );
         }
+        Timers["capsg_G_pad_sort"].first += -time_ + Teuchos::Time::wallTime();
 
+        time_ = Teuchos::Time::wallTime();
         merge_with_current_state(phase, whichImport, targetLocalIndex,
                                  tgtGblColInds, newNumTgtEnt,
                                  srcGblColInds, newNumSrcEnt);
+        Timers["capsg_G_pad_merge"].first += -time_ + Teuchos::Time::wallTime();
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "Done" << endl;

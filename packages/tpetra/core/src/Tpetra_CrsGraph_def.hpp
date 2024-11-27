@@ -5172,10 +5172,15 @@ namespace Tpetra {
       new padding_type(myRank, numSameIDs,
                        permuteFromLIDs.extent(0)));
 
+    double sameTime = Teuchos::Time::wallTime();
     computeCrsPaddingForSameIDs(*padding, source,
                                 static_cast<LO>(numSameIDs));
+    Timers["capsg_G_pad_same"].first += -sameTime + Teuchos::Time::wallTime();
+
+    double permTime = Teuchos::Time::wallTime();
     computeCrsPaddingForPermutedIDs(*padding, source, permuteToLIDs,
                                     permuteFromLIDs);
+    Timers["capsg_G_pad_perm"].first += -permTime + Teuchos::Time::wallTime();
     return padding;
   }
 
