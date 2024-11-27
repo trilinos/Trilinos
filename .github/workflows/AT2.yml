@@ -221,7 +221,7 @@ jobs:
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
-  cuda11-uvm-EXPERIMENTAL:
+  cuda11-EXPERIMENTAL:
     needs: pre-checks
     runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
@@ -281,7 +281,7 @@ jobs:
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name rhel8_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables \
+            --genconfig-build-name rhel8_cuda-11-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
@@ -293,8 +293,9 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
-            --max-cores-allowed=96 \
-            --num-concurrent-tests=96
+            --max-cores-allowed=56 \
+            --num-concurrent-tests=112 \
+            --slots-per-gpu=8
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
@@ -402,4 +403,3 @@ jobs:
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
-
