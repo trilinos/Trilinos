@@ -316,8 +316,8 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a, const bool nans = fals
   using execution_space = typename Bsr::execution_space;
   using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
-  size_t nx = a.numCols() * a.blockDim();
-  size_t ny = a.numRows() * a.blockDim();
+  size_t nx = static_cast<size_t>(a.numCols()) * a.blockDim();
+  size_t ny = static_cast<size_t>(a.numRows()) * a.blockDim();
   if (mode_is_transpose(mode)) {
     std::swap(nx, ny);
   }
@@ -366,7 +366,7 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs, size_t ma
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
-  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+  if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
 #if defined(KOKKOS_ENABLE_CUDA)
     if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
@@ -557,8 +557,8 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a, const size_t nu
   using execution_space = typename Bsr::execution_space;
   using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
-  size_t nx = a.numCols() * a.blockDim();
-  size_t ny = a.numRows() * a.blockDim();
+  size_t nx = static_cast<size_t>(a.numCols()) * a.blockDim();
+  size_t ny = static_cast<size_t>(a.numRows()) * a.blockDim();
   if (mode_is_transpose(mode)) {
     std::swap(nx, ny);
   }
@@ -607,7 +607,7 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs, size_t 
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
-  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+  if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
 #if defined(KOKKOS_ENABLE_CUDA)
     if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)

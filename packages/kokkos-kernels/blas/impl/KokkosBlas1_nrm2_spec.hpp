@@ -199,6 +199,8 @@ struct Nrm2<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
                                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \
                               1, false, true>;
 
+#include <generated_specializations_hpp/KokkosBlas1_nrm2_eti_spec_decl.hpp>
+
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Nrm2 for rank == 2.  This is NOT for users!!!  We
@@ -228,6 +230,8 @@ struct Nrm2<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                 \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
       2, false, true>;
+
+#include <generated_specializations_hpp/KokkosBlas1_nrm2_mv_eti_spec_decl.hpp>
 
 //
 // Macro for definition of full specialization of

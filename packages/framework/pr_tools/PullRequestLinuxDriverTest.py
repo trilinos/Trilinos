@@ -70,14 +70,12 @@ def parse_args():
     required.add_argument('--source-repo-url',
                           dest="source_repo_url",
                           action='store',
-                          default="UNKNOWN",
                           help='Repo with the new changes',
                           required=False)
 
     required.add_argument('--target-repo-url',
                           dest="target_repo_url",
                           action='store',
-                          default="UNKNOWN",
                           help='Repo to merge into',
                           required=False)
 
@@ -90,7 +88,6 @@ def parse_args():
     required.add_argument('--pullrequest-build-name',
                           dest="pullrequest_build_name",
                           action='store',
-                          default="UNKNOWN",
                           help='The Jenkins job base name',
                           required=False)
 
@@ -109,28 +106,24 @@ def parse_args():
     required.add_argument('--jenkins-job-number',
                           dest="jenkins_job_number",
                           action='store',
-                          default="UNKNOWN",
                           help='The Jenkins build number',
                           required=False)
 
     optional.add_argument('--dashboard-build-name',
                           dest="dashboard_build_name",
                           action='store',
-                          default="UNKNOWN",
                           help='The build name posted by ctest to a dashboard',
                           required=False)
 
     optional.add_argument('--source-dir',
                           dest="source_dir",
                           action='store',
-                          default="UNKNOWN",
                           help="Directory containing the source code to compile/test.",
                           required=False)
 
     optional.add_argument('--build-dir',
                           dest="build_dir",
                           action='store',
-                          default="UNKNOWN",
                           help="Path to the build directory.",
                           required=False)
 
@@ -144,7 +137,6 @@ def parse_args():
     optional.add_argument('--ctest-driver',
                           dest="ctest_driver",
                           action='store',
-                          default="UNKNOWN",
                           help="Location of the CTest driver script to load via `-S`.",
                           required=False)
 
@@ -231,10 +223,19 @@ def parse_args():
                           dest='num_concurrent_tests',
                           action='store',
                           default=-1,
-                          help="Set the number of concurrent tests allowd in CTest. " + \
+                          help="Set the number of concurrent tests allowed in CTest. " + \
                                "This is equivalent to `ctest -j <num-concurrent-tests>`. "
                                "If > 0 then this value is used, otherwise the value is calculated " + \
                                "based on number_of_available_cores / max_test_parallelism" + \
+                               " Default = %(default)s")
+
+    optional.add_argument('--slots-per-gpu',
+                          dest='slots_per_gpu',
+                          action='store',
+                          default=2,
+                          help="If the machine has GPUs, this value will be the number " + \
+                               "of resource slots allowed per GPU (e.g. 4 would allow 4 MPI " + \
+                               "ranks to talk to each GPU)" + \
                                " Default = %(default)s")
 
     optional.add_argument("--enable-ccache",

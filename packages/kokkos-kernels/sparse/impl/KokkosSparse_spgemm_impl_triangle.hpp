@@ -1165,7 +1165,7 @@ void KokkosSPGEMM<
                                              nnz_lno_t *entriesC,  // null if it is symbolic, otherwise not null!
                                              struct_visit_t visit_applier) {
   bool apply_compression  = this->handle->get_spgemm_handle()->get_compression();
-  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
 
   const nnz_lno_t *min_result_row_for_each_row = this->handle->get_spgemm_handle()->get_min_col_of_row().data();
   nnz_lno_t max_row_size                       = this->handle->get_spgemm_handle()->get_max_result_nnz(
@@ -1468,7 +1468,7 @@ template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
                   b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::KokkosSPGEMM_symbolic_triangle_setup() {
-  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
   nnz_lno_t n             = this->row_mapB.extent(0) - 1;
   size_type nnz           = this->entriesB.extent(0);
 

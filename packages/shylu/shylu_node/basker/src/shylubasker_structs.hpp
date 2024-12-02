@@ -117,7 +117,7 @@ namespace BaskerNS
   //Used to store information about the tree
   template <class Int, class Entry, class Exe_Space >
   struct  basker_tree
-  {  
+  {
     BASKER_INLINE
     basker_tree()
     {
@@ -235,6 +235,7 @@ namespace BaskerNS
     INT_1DARRAY  rowptr;
     INT_1DARRAY  child;
     INT_1DARRAY  sibling;
+    INT_1DARRAY  leaf_nnz;
   };//end basker_tree
 
 

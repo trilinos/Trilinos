@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
+#ifndef KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trmm_Serial_Internal.hpp"
@@ -130,4 +130,4 @@ KOKKOS_INLINE_FUNCTION int SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::inv
   return 0;
 }
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
+#endif  // KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP

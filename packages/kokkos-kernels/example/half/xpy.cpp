@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   using LayoutType = Kokkos::LayoutLeft;
-  using DeviceType = default_device;
+  using DeviceType = KokkosKernels::default_device;
   size_t n         = atoi(argv[1]);
   bool time_only   = static_cast<bool>(atoi(argv[2]));
   do_xpy<float, DeviceType, LayoutType>(n, time_only);

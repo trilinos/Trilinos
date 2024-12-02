@@ -103,7 +103,6 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_gs
         SOURCES KokkosSparse_gs.cpp
-        TESTONLYLIBS kokkoskernelsperf_gtest
 )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(

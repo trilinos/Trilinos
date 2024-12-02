@@ -108,12 +108,12 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotm[TPL_CUBLAS,double]");                                            \
       rotm_print_specialization<double>();                                                                             \
       KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                       \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, space.cuda_stream()));                                    \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                                \
       cublasPointerMode_t pointer_mode;                                                                                \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(s.handle, &pointer_mode));                                     \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));                        \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDrotm(s.handle, X.extent(0), X.data(), 1, Y.data(), 1, param.data()));        \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(s.handle, pointer_mode));                                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &pointer_mode));                                 \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));                    \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasDrotm(s.handle, X.extent(0), X.data(), 1, Y.data(), 1, param.data()));    \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, pointer_mode));                                  \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -140,12 +140,12 @@ KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda, Kokkos
       Kokkos::Profiling::pushRegion("KokkosBlas::rotm[TPL_CUBLAS,float]");                                            \
       rotm_print_specialization<float>();                                                                             \
       KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                      \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, space.cuda_stream()));                                   \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                               \
       cublasPointerMode_t pointer_mode;                                                                               \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasGetPointerMode(s.handle, &pointer_mode));                                    \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));                       \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotm(s.handle, X.extent(0), X.data(), 1, Y.data(), 1, param.data()));       \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetPointerMode(s.handle, pointer_mode));                                     \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &pointer_mode));                                \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));                   \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSrotm(s.handle, X.extent(0), X.data(), 1, Y.data(), 1, param.data()));   \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, pointer_mode));                                 \
       Kokkos::Profiling::popRegion();                                                                                 \
     }                                                                                                                 \
   };
@@ -184,13 +184,13 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::rotm[TPL_ROCBLAS,double]");                                           \
       rotm_print_specialization<double>();                                                                             \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                         \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                                 \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                             \
       rocblas_pointer_mode pointer_mode;                                                                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                                \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));                  \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                                                                   \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                            \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));              \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                               \
           rocblas_drotm(s.handle, static_cast<int>(X.extent(0)), X.data(), 1, Y.data(), 1, param.data()));             \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(s.handle, pointer_mode));                                 \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, pointer_mode));                             \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -217,13 +217,13 @@ KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos
       Kokkos::Profiling::pushRegion("KokkosBlas::rotm[TPL_ROCBLAS,float]");                                           \
       rotm_print_specialization<float>();                                                                             \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                                \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                            \
       rocblas_pointer_mode pointer_mode;                                                                              \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                               \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));                 \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                                                                  \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                           \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));             \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                              \
           rocblas_srotm(s.handle, static_cast<int>(X.extent(0)), X.data(), 1, Y.data(), 1, param.data()));            \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(s.handle, pointer_mode));                                \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, pointer_mode));                            \
       Kokkos::Profiling::popRegion();                                                                                 \
     }                                                                                                                 \
   };

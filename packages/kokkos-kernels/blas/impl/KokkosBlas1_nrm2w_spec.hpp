@@ -97,15 +97,15 @@ struct Nrm2w<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
   static void nrm2w(const execution_space& space, const RMV& R, const XMV& X, const XMV& W, const bool& take_sqrt) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
-                  "Nrm2w<1-D>: RMV is not a Kokkos::View.");
+                  "Nrm2w: RMV is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
-                  "Nrm2w<1-D>: XMV is not a Kokkos::View.");
+                  "Nrm2w: XMV is not a Kokkos::View.");
     static_assert(RMV::rank == 0,
-                  "KokkosBlas::Impl::Nrm2w<1-D>: "
+                  "KokkosBlas::Impl::Nrm2w: "
                   "RMV is not rank 0.");
     static_assert(XMV::rank == 1,
-                  "KokkosBlas::Impl::Nrm2w<1-D>: "
+                  "KokkosBlas::Impl::Nrm2w: "
                   "XMV is not rank 1.");
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::nrm2w[ETI]"
                                                                      : "KokkosBlas::nrm2w[noETI]");
@@ -135,15 +135,15 @@ struct Nrm2w<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
   static void nrm2w(const execution_space& space, const RV& R, const XMV& X, const XMV& W, const bool& take_sqrt) {
     static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
-                  "Nrm2w<2-D>: RV is not a Kokkos::View.");
+                  "Nrm2w_mv: RV is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
-                  "Nrm2w<2-D>: XMV is not a Kokkos::View.");
+                  "Nrm2w_mv: XMV is not a Kokkos::View.");
     static_assert(RV::rank == 1,
-                  "KokkosBlas::Impl::Nrm2w<2-D>: "
+                  "KokkosBlas::Impl::Nrm2w_mv: "
                   "RV is not rank 1.");
     static_assert(XMV::rank == 2,
-                  "KokkosBlas::Impl::Nrm2w<2-D>: "
+                  "KokkosBlas::Impl::Nrm2w_mv: "
                   "XMV is not rank 2.");
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::nrm2w[ETI]"
                                                                      : "KokkosBlas::nrm2w[noETI]");
@@ -191,7 +191,8 @@ struct Nrm2w<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
 // more .cpp files.
 //
 #define KOKKOSBLAS1_NRM2W_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
-  extern template struct Nrm2w<Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
+  extern template struct Nrm2w<EXEC_SPACE,                                                                        \
+                               Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
                                             LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                                Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,         \
                                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \
@@ -240,5 +241,7 @@ struct Nrm2w<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
                         2, false, true>;
 
 #include <KokkosBlas1_nrm2w_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_nrm2w_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_nrm2w_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_NRM2W_SPEC_HPP_

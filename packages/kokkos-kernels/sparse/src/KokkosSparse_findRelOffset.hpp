@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SPARSE_FINDRELOFFSET_HPP
-#define KOKKOS_SPARSE_FINDRELOFFSET_HPP
+#ifndef KOKKOSSPARSE_FINDRELOFFSET_HPP
+#define KOKKOSSPARSE_FINDRELOFFSET_HPP
 
 /// \file KokkosSparse_findRelOffset.hpp
 /// \brief Find the relative offset of a column index in a sparse
@@ -147,4 +147,4 @@ KOKKOS_FUNCTION OffsetType findRelOffset(const IndexViewType& indsToSearch, cons
 
 }  // namespace KokkosSparse
 
-#endif  // KOKKOS_SPARSE_FINDRELOFFSET_HPP
+#endif  // KOKKOSSPARSE_FINDRELOFFSET_HPP

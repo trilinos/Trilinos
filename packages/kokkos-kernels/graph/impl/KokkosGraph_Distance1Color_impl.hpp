@@ -2529,7 +2529,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
         if (src_col_set == dest_col_set) {
           // atomic or, as no threads owns 'dst' (neither src)
           nnz_lno_t uncolored_vertex = dst_col ? src_id : dst_id;
-          Kokkos::atomic_fetch_or<color_t>(&(color_ban(uncolored_vertex)), src_col | dst_col);
+          Kokkos::atomic_fetch_or(&(color_ban(uncolored_vertex)), src_col | dst_col);
           edge_conflict_marker(work_index) = 0;
         }
       }
@@ -2616,7 +2616,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
                 // idx smaller_index = src_id;
                 // then both have been colored tentavitely. propoagate the color
                 // of src to dst.
-                Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(smaller_index)), -src_col);
+                Kokkos::atomic_fetch_or(&(tentative_color_ban(smaller_index)), -src_col);
                 nnz_lno_t banned_colors  = ~(color_ban(smaller_index) | tentative_color_ban(smaller_index));
                 nnz_lno_t larger_col     = banned_colors & (-banned_colors);
                 kokcolors(smaller_index) = -(larger_col);
@@ -2625,16 +2625,14 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
               // if src is tentavily colored, and dst is not colored,
               // then we send the color information to dst's tentative_ban.
 
-              // Kokkos::atomic_fetch_or<color_type>(&(color_ban(dst_id)),
-              // -src_col);
-              Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(dst_id)), -src_col);
+              // Kokkos::atomic_fetch_or(&(color_ban(dst_id)), -src_col);
+              Kokkos::atomic_fetch_or(&(tentative_color_ban(dst_id)), -src_col);
             } else if (dst_col != 0) {
               // if it is dst tentatively colors, but src is not colored,
               // then we send the dst color info to src's tentative_ban
 
-              // Kokkos::atomic_fetch_or<color_type>(&(color_ban(src_id)),
-              // -dst_col);
-              Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(src_id)), -dst_col);
+              // Kokkos::atomic_fetch_or(&(color_ban(src_id)), -dst_col);
+              Kokkos::atomic_fetch_or(&(tentative_color_ban(src_id)), -dst_col);
             } else {
               // idx smaller_index = src_id < dst_id > 0 ? src_id: dst_id;
               // idx larger_index = src_id < dst_id > 0 ? dst_id : src_id;
@@ -2660,9 +2658,8 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
               // set it to minus of the color, as it is tentative coloring.
               kokcolors(smaller_index) = -(src_col);
               // send the color information to dst's tentative color ban.
-              Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(larger_index)), src_col);
-              // Kokkos::atomic_fetch_or<color_type>(&(color_ban(dst_id)),
-              // src_col);
+              Kokkos::atomic_fetch_or(&(tentative_color_ban(larger_index)), src_col);
+              // Kokkos::atomic_fetch_or(&(color_ban(dst_id)), src_col);
             }
           }
         }

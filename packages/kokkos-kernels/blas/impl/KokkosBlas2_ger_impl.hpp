@@ -208,14 +208,14 @@ void teamParallelGer(const ExecutionSpace& space, const char trans[], const type
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
 template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalGerImpl(const ExecutionSpace& space, const char trans[], const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const YViewType& y, const AViewType& A) {
   threadParallelGer(space, trans, alpha, x, y, A);
 }
 
 template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalGerImpl(const ExecutionSpace& space, const char trans[], const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const YViewType& y, const AViewType& A) {
   teamParallelGer(space, trans, alpha, x, y, A);

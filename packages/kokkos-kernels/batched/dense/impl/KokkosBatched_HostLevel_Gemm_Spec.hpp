@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP
 
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -166,6 +166,72 @@ struct BatchedGemmSpec {
 }  // namespace KokkosBatched
 
 // ETI instantiation macros, consumed by *.cpp.in files
+#define KOKKOSBATCHED_GEMM_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT, EXEC_SPACE, \
+                                               MEM_SPACE)                                                              \
+  extern template struct BatchedGemmSpec<ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, BatchedGemmHandle, SCALAR,        \
+                                         Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,       \
+                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                        \
+                                         Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,       \
+                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                        \
+                                         Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,       \
+                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                        \
+                                         false, true>;
+
+#if defined(KOKKOSKERNELS_DECL_LAYOUTRIGHT)
+#define KOKKOSBATCHED_GEMM_BLL_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT,    \
+                                                   EXEC_SPACE, MEM_SPACE)                                         \
+  KOKKOSBATCHED_GEMM_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, Kokkos::LayoutRight, \
+                                         EXEC_SPACE, MEM_SPACE)
+#else
+#define KOKKOSBATCHED_GEMM_BLL_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT, \
+                                                   EXEC_SPACE, MEM_SPACE)
+#endif
+
+#if defined(KOKKOSKERNELS_DECL_LAYOUTLEFT)
+#define KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT,   \
+                                                   EXEC_SPACE, MEM_SPACE)                                        \
+  KOKKOSBATCHED_GEMM_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, Kokkos::LayoutLeft, \
+                                         EXEC_SPACE, MEM_SPACE)
+#else
+#define KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT, \
+                                                   EXEC_SPACE, MEM_SPACE)
+#endif
+
+///////////////// BatchLayout::Left Permutations /////////////////
+#define KOKKOSBATCHED_GEMM_NT_NT_BLL_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                       \
+  KOKKOSBATCHED_GEMM_BLL_ETI_SPEC_DECL_INNER(Trans::NoTranspose, Trans::NoTranspose, BatchLayout::Left, SCALAR, \
+                                             LAYOUT, EXEC_SPACE, MEM_SPACE)
+
+#define KOKKOSBATCHED_GEMM_NT_T_BLL_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                              \
+  KOKKOSBATCHED_GEMM_BLL_ETI_SPEC_DECL_INNER(Trans::NoTranspose, Trans::Transpose, BatchLayout::Left, SCALAR, LAYOUT, \
+                                             EXEC_SPACE, MEM_SPACE)
+
+#define KOKKOSBATCHED_GEMM_T_NT_BLL_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                              \
+  KOKKOSBATCHED_GEMM_BLL_ETI_SPEC_DECL_INNER(Trans::Transpose, Trans::NoTranspose, BatchLayout::Left, SCALAR, LAYOUT, \
+                                             EXEC_SPACE, MEM_SPACE)
+
+#define KOKKOSBATCHED_GEMM_T_T_BLL_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                             \
+  KOKKOSBATCHED_GEMM_BLL_ETI_SPEC_DECL_INNER(Trans::Transpose, Trans::Transpose, BatchLayout::Left, SCALAR, LAYOUT, \
+                                             EXEC_SPACE, MEM_SPACE)
+
+///////////////// BatchLayout::Right Permutations /////////////////
+#define KOKKOSBATCHED_GEMM_NT_NT_BLR_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                        \
+  KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_DECL_INNER(Trans::NoTranspose, Trans::NoTranspose, BatchLayout::Right, SCALAR, \
+                                             LAYOUT, EXEC_SPACE, MEM_SPACE)
+
+#define KOKKOSBATCHED_GEMM_NT_T_BLR_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                               \
+  KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_DECL_INNER(Trans::NoTranspose, Trans::Transpose, BatchLayout::Right, SCALAR, LAYOUT, \
+                                             EXEC_SPACE, MEM_SPACE)
+
+#define KOKKOSBATCHED_GEMM_T_NT_BLR_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                               \
+  KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_DECL_INNER(Trans::Transpose, Trans::NoTranspose, BatchLayout::Right, SCALAR, LAYOUT, \
+                                             EXEC_SPACE, MEM_SPACE)
+
+#define KOKKOSBATCHED_GEMM_T_T_BLR_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                              \
+  KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_DECL_INNER(Trans::Transpose, Trans::Transpose, BatchLayout::Right, SCALAR, LAYOUT, \
+                                             EXEC_SPACE, MEM_SPACE)
+
+// ETI instantiation macros, consumed by *.cpp.in files
 #define KOKKOSBATCHED_GEMM_ETI_SPEC_INST_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT, EXEC_SPACE, \
                                                MEM_SPACE)                                                              \
   template struct BatchedGemmSpec<ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, BatchedGemmHandle, SCALAR,               \
@@ -230,4 +296,15 @@ struct BatchedGemmSpec {
 #define KOKKOSBATCHED_GEMM_T_T_BLR_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                              \
   KOKKOSBATCHED_GEMM_BLR_ETI_SPEC_INST_INNER(Trans::Transpose, Trans::Transpose, BatchLayout::Right, SCALAR, LAYOUT, \
                                              EXEC_SPACE, MEM_SPACE)
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
+
+#include <generated_specializations_hpp/KokkosBatched_Gemm_nt_nt_bll_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBatched_Gemm_nt_t_bll_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBatched_Gemm_t_nt_bll_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBatched_Gemm_t_t_bll_eti_spec_avail.hpp>
+
+#include <generated_specializations_hpp/KokkosBatched_Gemm_nt_nt_blr_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBatched_Gemm_nt_t_blr_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBatched_Gemm_t_nt_blr_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBatched_Gemm_t_t_blr_eti_spec_avail.hpp>
+
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP

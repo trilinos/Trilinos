@@ -19,6 +19,7 @@
 // Explicit integrators
 #include "Test_ODE_RK.hpp"
 #include "Test_ODE_RK_chem.hpp"
+#include "Test_ODE_RK_counts.hpp"
 
 // Implicit integrators
 #include "Test_ODE_Newton.hpp"

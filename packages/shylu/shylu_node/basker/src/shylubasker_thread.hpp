@@ -127,6 +127,12 @@ namespace BaskerNS
       Int ltask = (l*ntasks) + task;
       //printf("Enter Domain Barrier. leader=%d, lsize=%d (%d:%d), my_id=%d, task=%d, k=%d, l=%d -> ltask=%d\n",
       //        my_leader, lsize, my_leader,my_leader+lsize-1, my_id, task, k, l, ltask); fflush(stdout);
+      #if 0 // debug
+      if (token[my_id][ltask] == k) {
+        printf( "\n BarrierDomain already k ??\n " );
+        exit(0);
+      }
+      #endif
       token[my_id][ltask] = k;
       for(Int dp = (my_leader+lsize)-1; dp >= my_leader; dp--)
       {
@@ -179,7 +185,7 @@ namespace BaskerNS
 
     //Atomic
     BaskerBarrier(volatile Int &value_in, volatile Int &value_out,
-		  const Int l_size )
+                  const Int l_size )
     {
       //jdb value ->value_in
       atomic_barrier(value_in,l_size);
@@ -278,7 +284,6 @@ namespace BaskerNS
         BASKER_NO_OP;
       }
     }
-			       
   }; //end BaskerBarrier
 
 

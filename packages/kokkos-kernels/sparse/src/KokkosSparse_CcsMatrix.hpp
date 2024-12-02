@@ -21,8 +21,8 @@
 /// local (no MPI) sparse matrix stored in compressed column sparse
 /// ("Ccs") format.
 
-#ifndef KOKKOS_SPARSE_CCSMATRIX_HPP_
-#define KOKKOS_SPARSE_CCSMATRIX_HPP_
+#ifndef KOKKOSSPARSE_CCSMATRIX_HPP_
+#define KOKKOSSPARSE_CCSMATRIX_HPP_
 
 #include "Kokkos_Core.hpp"
 #include <sstream>
@@ -142,7 +142,7 @@ class CcsMatrix {
   //! Type of each (column) index in the matrix.
   typedef OrdinalType ordinal_type;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCcsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
+  typedef Kokkos::StaticCcsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       staticccsgraph_type;
   //! Type of the "column map" (which contains the offset for each column's
   //! data).
@@ -236,4 +236,4 @@ template <typename... P>
 struct is_ccs_matrix<const CcsMatrix<P...>> : public std::true_type {};
 
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_CCSMATRIX_HPP_

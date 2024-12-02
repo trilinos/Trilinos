@@ -217,7 +217,8 @@ void getTestInput(int test, Matrix& A, Matrix& Afiltered_ref) {
 
 void testRemoveCrsMatrixZeros(int testCase) {
   using namespace TestRemoveCrsMatrixZeros;
-  using Matrix = KokkosSparse::CrsMatrix<default_scalar, default_lno_t, TestDevice, void, default_size_type>;
+  using Matrix = KokkosSparse::CrsMatrix<KokkosKernels::default_scalar, KokkosKernels::default_lno_t, TestDevice, void,
+                                         KokkosKernels::default_size_type>;
   Matrix A, Afiltered_ref;
   getTestInput<Matrix>(testCase, A, Afiltered_ref);
   Matrix Afiltered_actual = KokkosSparse::removeCrsMatrixZeros(A);

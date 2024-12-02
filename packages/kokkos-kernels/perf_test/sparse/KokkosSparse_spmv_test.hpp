@@ -54,10 +54,10 @@ void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data);
 enum { KOKKOS, MKL, ARMPL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP };
 enum { AUTO, DYNAMIC, STATIC };
 
-using Scalar  = default_scalar;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
-using Layout  = default_layout;
+using Scalar  = KokkosKernels::default_scalar;
+using Ordinal = KokkosKernels::default_lno_t;
+using Offset  = KokkosKernels::default_size_type;
+using Layout  = KokkosKernels::default_layout;
 
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(const rajaperf::RunParams& params);

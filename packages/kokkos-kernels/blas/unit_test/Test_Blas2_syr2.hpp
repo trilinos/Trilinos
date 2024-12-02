@@ -164,7 +164,7 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::Syr
                     std::is_same<ScalarA, Kokkos::complex<double>>::value),
       _A_is_lr(std::is_same<tLayoutA, Kokkos::LayoutRight>::value),
       _A_is_ll(std::is_same<tLayoutA, Kokkos::LayoutLeft>::value),
-      _testIsGpu(KokkosKernels::Impl::kk_is_gpu_exec_space<typename Device::execution_space>())
+      _testIsGpu(KokkosKernels::Impl::is_gpu_exec_space_v<typename Device::execution_space>)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
       ,
       _vanillaUsesDifferentOrderOfOps(_A_is_lr)

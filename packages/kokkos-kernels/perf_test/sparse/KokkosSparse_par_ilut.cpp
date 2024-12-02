@@ -54,9 +54,9 @@ using KokkosSparse::Experimental::spiluk_symbolic;
 using KokkosSparse::Experimental::SPILUKAlgorithm;
 
 // Build up useful types
-using scalar_t  = default_scalar;
-using lno_t     = default_lno_t;
-using size_type = default_size_type;
+using scalar_t  = KokkosKernels::default_scalar;
+using lno_t     = KokkosKernels::default_lno_t;
+using size_type = KokkosKernels::default_size_type;
 using exe_space = Kokkos::DefaultExecutionSpace;
 using mem_space = typename exe_space::memory_space;
 using device    = Kokkos::Device<exe_space, mem_space>;
@@ -126,7 +126,7 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh, const sp_matri
 
 #ifdef USE_GINKGO
 ///////////////////////////////////////////////////////////////////////////////
-static constexpr bool IS_GPU = KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>();
+static constexpr bool IS_GPU = KokkosKernels::Impl::is_gpu_exec_space_v<exe_space>;
 
 using ginkgo_exec = std::conditional_t<IS_GPU, gko::CudaExecutor, gko::OmpExecutor>;
 
@@ -277,7 +277,7 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows, int nnz_per_row
 
   // Now that we have A, we can set team_size
   if (team_size == -1) {
-    team_size = KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>() ? nnz_per_row : 1;
+    team_size = KokkosKernels::Impl::is_gpu_exec_space_v<exe_space> ? nnz_per_row : 1;
   }
 
   KokkosSparse::sort_crs_matrix(A);
