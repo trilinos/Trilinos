@@ -19,6 +19,7 @@
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
 #include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "KokkosKernels_EagerInitialize.hpp"
 
 namespace Tpetra {
 
@@ -129,6 +130,9 @@ namespace Tpetra {
         (! kokkosIsInitialized, std::logic_error, "At the end of "
          "initKokkosIfNeeded, Kokkos is not initialized.  "
          "Please report this bug to the Tpetra developers.");
+      // Now that the Kokkos backend(s) are initialized,
+      // initialize all KokkosKernels TPLs.
+      KokkosKernels::eager_initialize();
     }
 
 #ifdef HAVE_TPETRACORE_MPI
