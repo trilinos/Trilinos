@@ -15,7 +15,13 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Teuchos_Time.hpp"
 #include <sstream>
+#include <unordered_map>
+#include <vector>
+
+extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
+extern bool in_eval_J;
 
 //===========================================================================
 //===========================================================================
@@ -87,18 +93,24 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
   }
 
   if ( flags.getValue() & EvaluationFlags::Scatter) {
+    double time = Teuchos::Time::wallTime();
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_scatter("+PHX::print<EvalT>()+")",eval_scatter);
     {
+      double time1 = Teuchos::Time::wallTime();
       PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::lof->ghostToGlobalContainer("+PHX::print<EvalT>()+")",lof_gtgc);
       m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
+      if (in_eval_J) Timers["lof-g2gc"].first += -time1 + Teuchos::Time::wallTime();
     }
     {
+      double time1 = Teuchos::Time::wallTime();
       PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::gedc.ghostToGlobal("+PHX::print<EvalT>()+")",gedc_gtg);
       m_lin_obj_factory->beginFill(*in.container_);
       gedc.ghostToGlobal(LOC::F | LOC::Mat);
       m_lin_obj_factory->endFill(*in.container_);
+      if (in_eval_J) Timers["gedc-g2g"].first += -time1 + Teuchos::Time::wallTime();
     }
     m_lin_obj_factory->endFill(*in.ghostedContainer_);
+    if (in_eval_J) Timers["eval_scatter"].first += -time + Teuchos::Time::wallTime();
   }
 
   return;

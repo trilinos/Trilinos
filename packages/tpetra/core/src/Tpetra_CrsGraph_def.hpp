@@ -43,6 +43,7 @@
 
 #define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
+extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
 extern bool panzer_impl_new, panzer_impl_old;
 extern bool in_eval_J;
 extern double timer_evalJ;
@@ -1738,6 +1739,7 @@ namespace Tpetra {
     size_t numInserted;
     {
       auto gblIndsHostView = this->gblInds_wdv.getHostView(Access::ReadWrite);
+      // FIXME - device
       numInserted = Details::insertCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
                                               gblIndsHostView,
                                               numEntries, inputInds, fun);
@@ -4865,6 +4867,7 @@ namespace Tpetra {
     const bool verbose = verbose_;
 
     Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermute");
+    double capTime = Teuchos::Time::wallTime();
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -4890,9 +4893,13 @@ namespace Tpetra {
       os << *prefix << "Compute padding" << endl;
       std::cerr << os.str ();
     }
+    double padTime = Teuchos::Time::wallTime();
     auto padding = computeCrsPadding(srcRowGraph, numSameIDs,
       permuteToLIDs, permuteFromLIDs, verbose);
+    if (in_eval_J) Timers["capsg_G_pad"].first += -padTime + Teuchos::Time::wallTime();
+    double apadTime = Teuchos::Time::wallTime();
     applyCrsPadding(*padding, verbose);
+    if (in_eval_J) Timers["capsg_G_apad"].first += -apadTime + Teuchos::Time::wallTime();
 
     // If the source object is actually a CrsGraph, we can use view
     // mode instead of copy mode to access the entries in each row,
@@ -4920,6 +4927,8 @@ namespace Tpetra {
       // compatible with the expectations of view mode.  Also, if the
       // source graph is not a CrsGraph, we can't use view mode,
       // because RowGraph only provides copy mode access to the data.
+      double time = Teuchos::Time::wallTime();
+
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
         const GO gid = srcRowMap.getGlobalElement (myid);
         size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (gid);
@@ -4928,7 +4937,9 @@ namespace Tpetra {
         srcRowGraph.getGlobalRowCopy (gid, row_copy, check_row_length);
         this->insertGlobalIndices (gid, row_length, row_copy.data());
       }
+      if (in_eval_J) Timers["capsg_G_1"].first += -time + Teuchos::Time::wallTime();
     } else {
+      double time = Teuchos::Time::wallTime();
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "! src_filled && srcCrsGraph != nullptr" << endl;
@@ -4940,6 +4951,7 @@ namespace Tpetra {
         srcCrsGraph->getGlobalRowView (gid, row);
         this->insertGlobalIndices (gid, row.extent(0), row.data());
       }
+      if (in_eval_J) Timers["capsg_G_2"].first += -time + Teuchos::Time::wallTime();
     }
 
     //
@@ -4949,6 +4961,7 @@ namespace Tpetra {
     auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
 
     if (src_filled || srcCrsGraph == nullptr) {
+      double time = Teuchos::Time::wallTime();
       for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
         const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
         const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
@@ -4958,7 +4971,9 @@ namespace Tpetra {
         srcRowGraph.getGlobalRowCopy (srcgid, row_copy, check_row_length);
         this->insertGlobalIndices (mygid, row_length, row_copy.data());
       }
+      if (in_eval_J) Timers["capsg_G_3"].first += -time + Teuchos::Time::wallTime();
     } else {
+      double time = Teuchos::Time::wallTime();
       for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
         const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
         const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
@@ -4966,6 +4981,7 @@ namespace Tpetra {
         srcCrsGraph->getGlobalRowView (srcgid, row);
         this->insertGlobalIndices (mygid, row.extent(0), row.data());
       }
+      if (in_eval_J) Timers["capsg_G_4"].first += -time + Teuchos::Time::wallTime();
     }
 
     if (verbose) {
@@ -4973,6 +4989,10 @@ namespace Tpetra {
       os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
+    if (in_eval_J) {
+      Timers["capsg_G"].first += -capTime + Teuchos::Time::wallTime();
+    }
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5151,10 +5171,15 @@ namespace Tpetra {
       new padding_type(myRank, numSameIDs,
                        permuteFromLIDs.extent(0)));
 
+    double sameTime = Teuchos::Time::wallTime();
     computeCrsPaddingForSameIDs(*padding, source,
                                 static_cast<LO>(numSameIDs));
+    Timers["capsg_G_pad_same"].first += -sameTime + Teuchos::Time::wallTime();
+
+    double permTime = Teuchos::Time::wallTime();
     computeCrsPaddingForPermutedIDs(*padding, source, permuteToLIDs,
                                     permuteFromLIDs);
+    Timers["capsg_G_pad_perm"].first += -permTime + Teuchos::Time::wallTime();
     return padding;
   }
 

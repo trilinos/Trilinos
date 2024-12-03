@@ -103,13 +103,50 @@ bool panzer_impl_new = false;
 
 int panzer_impl_inp = 0;  // 0, 1, 2=both
 
+using TimersValType = std::pair<double, std::vector<double>>;
+using TimersDataType = std::pair<std::string, TimersValType> ;
+using TimersType = std::unordered_map<std::string, TimersValType >;
+
+TimersType TimersBase =
+  {
+   {"test", {0,{}}},
+   {"capsg_G", {0,{}}},
+   {"capsg_G_1", {0,{}}},
+   {"capsg_G_2", {0,{}}},
+   {"capsg_G_3", {0,{}}},
+   {"capsg_G_4", {0,{}}},
+   {"capsg_G_apad", {0,{}}},
+   {"capsg_G_pad", {0,{}}},
+   {"capsg_G_pad_merge", {0,{}}},
+   {"capsg_G_pad_perm", {0,{}}},
+   {"capsg_G_pad_same", {0,{}}},
+   {"capsg_G_pad_sort", {0,{}}},
+   {"capsg_M", {0,{}}},
+   {"capsg_M_apad", {0,{}}},
+   {"capsg_M_pad", {0,{}}},
+   {"capsg_M_ucmac", {0,{}}},
+   {"evalJ", {0,{}}},
+   {"eval_scatter", {0,{}}},
+   {"gedc-g2g", {0,{}}},
+   {"lof-g2gc", {0,{}}},
+   {"main", {0,{}}}
+  };
+
+const size_t TimersBaseSize = TimersBase.size();
+auto TimersVal = TimersBase;
+std::unordered_map<std::string, TimersValType >& Timers  = TimersVal;
+
 double timer_MV=0.0;
 double timer_ICI=0.0;
 bool in_eval_MV = false;
+bool use_eval_J = false;  // override for the next value
 bool in_eval_J = false;
 double timer_evalJ=0.0;
 double timer_capsg=0.0;
+double timer_main=0.0;
 
+size_t numRepeatRuns = 1;
+size_t repeat = 0;
 
 template<class T>
 static T parallel_reduce(Teuchos::RCP<const Teuchos::MpiComm<int> > comm, T& localVal, Teuchos::EReductionType red) {
@@ -144,6 +181,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   size_t fom_num_cells;
 
   {
+
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
     int workset_size=2000;
@@ -231,7 +269,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       return EXIT_FAILURE;
     }
     
-    std::cout << "P" << comm->getRank() << ": [dbg] panzer_impl_old= " << panzer_impl_old << " panzer_impl_new= " << panzer_impl_new << std::endl;
+    std::cout << "P" << comm->getRank() << ": [dbg] panzer_impl_old= " << panzer_impl_old << " panzer_impl_new= " << panzer_impl_new
+              << " use_eval_J= " << use_eval_J
+              << std::endl;
       
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
@@ -304,7 +344,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     physicsEqSet.set("Integration Order", 2*basis_order);
 
     RCP<panzer_stk::STK_Interface> mesh;
-    int dim;
+    int dim=3;
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
     {
       Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
@@ -781,8 +821,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     fom_num_cells = mesh->getEntityCounts(dim);
 
     mainTimer.stop();
+    Timers["main"].first = mainTimer.totalElapsedTime();
     if (comm->getRank() == 0) {
-      std::cout << "mainTimer= " << mainTimer.totalElapsedTime() << std::endl;
+      std::cout << "mainTimer(run: " << repeat << "/" << numRepeatRuns << ") = " << Timers["main"].first << std::endl;
     }
     
     if (use_timer) {
@@ -833,12 +874,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   } else if (use_timer) {
     Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
   }
-  timer_evalJ = parallel_reduce(comm, timer_evalJ, Teuchos::REDUCE_MAX);
-  timer_capsg = parallel_reduce(comm, timer_capsg, Teuchos::REDUCE_MAX);
-  if (!comm->getRank()) {
-    std::cout << "[dbg] timer_evalJ= " << timer_evalJ << std::endl;
-    std::cout << "[dbg] timer_capsg= " << timer_capsg << std::endl;
-  }
   return EXIT_SUCCESS;
 }
 
@@ -855,7 +890,12 @@ int main(int argc,char * argv[]){
   solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
   const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
   solverType solver = MUELU;
+  bool use_stable_sort=true;
   clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+  clp.setOption("num-repeat-runs",&numRepeatRuns);
+  clp.setOption("use-evalJ","no-use-evalJ", &use_eval_J,"Run with sub-timers only active if evalModel(J) is active.");
+  clp.setOption("stable-sort","no-stable-sort",&use_stable_sort,"use std::stable_sort in timers output.");
+
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);
@@ -871,38 +911,122 @@ int main(int argc,char * argv[]){
     // TEUCHOS_ASSERT(!useComplex);
   }
 
-  int retVal;
+  Teuchos::RCP<const Teuchos::MpiComm<int> > comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
+
+  int retVal=0;
+
+  for (auto& t : Timers) {
+    t.second.second.resize(numRepeatRuns);
+  }
+  // ==========================================================================================================================
+  for (repeat=0; repeat < numRepeatRuns; ++repeat) {
+    // ==========================================================================================================================
+
+  in_eval_J = !use_eval_J;
+  std::cout << "P" << comm->getRank() << ": [dbg] use_eval_J= " << use_eval_J << std::endl;
+
+  for (auto& t : Timers) t.second.first = 0.0;
+
   if (linAlgebra == linAlgTpetra) {
 
     // if (useComplex) {
-// #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
-//       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
-//       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
-// #else
-//       std::cout << std::endl
-//                 << "WARNING" << std::endl
-//                 << "Tpetra was compiled without Scalar=std::complex<double>." << std::endl << std::endl;
-//       return EXIT_FAILURE;
-// #endif
-//     } else {
-      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
-      retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
-//    }
+    // #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
+    //       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
+    //       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
+    // #else
+    //       std::cout << std::endl
+    //                 << "WARNING" << std::endl
+    //                 << "Tpetra was compiled without Scalar=std::complex<double>." << std::endl << std::endl;
+    //       return EXIT_FAILURE;
+    // #endif
+    //     } else {
+    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
+    retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
+    //    }
 #ifdef PANZER_HAVE_EPETRA_STACK
   } else if (linAlgebra == linAlgEpetra) {
     // TEUCHOS_ASSERT(!useComplex);
     typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> blockedLinObjFactory;
     retVal = main_<double,int,int,blockedLinObjFactory,false>(clp, argc, argv);
 #endif
-  } else
+  } else {
     TEUCHOS_ASSERT(false);
+  }
 
+  if (1) {
+    if (!comm->getRank()) {
+      std::cout << "[srk] TimersBaseSize= " << TimersBaseSize << " TimersBase.size= " << TimersBase.size()
+                << " Timers.size= " << Timers.size() << std::endl;
+    
+      TEUCHOS_TEST_FOR_EXCEPTION(TimersBaseSize != Timers.size(),
+                                 std::runtime_error,
+                                 "Timers not consistent, check TimersBase has all timers.");
+    }
+
+    for (auto& t : Timers) {
+      t.second.first = parallel_reduce(comm, t.second.first, Teuchos::REDUCE_MAX);
+    }
+    if (!comm->getRank()) {
+      for (auto& t : Timers) {
+        std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
+        if (t.second.second.size() != numRepeatRuns) t.second.second.resize(numRepeatRuns);
+        t.second.second[repeat] = t.second.first;
+      }
+    }
+  }
+
+    
+  // ==========================================================================================================================
+  }    //for (int repeat=0; repeat < numRepeatRuns; ++repeat) {
+  // ==========================================================================================================================
+
+  auto minMaxAve = [&] (const std::vector<double>& vec, double MinMaxAve[3]) {
+                     MinMaxAve[0] = std::numeric_limits<double>::max();
+                     MinMaxAve[1] = -MinMaxAve[0];
+                     MinMaxAve[2] = 0.0;
+                     for (auto v : vec) {
+                       MinMaxAve[0] = std::min(MinMaxAve[0], v);
+                       MinMaxAve[1] = std::max(MinMaxAve[1], v);
+                       MinMaxAve[2] += v / double(vec.size());
+                     }
+                   };
+
+  if (!comm->getRank()) {
+    double MinMaxAve[3];
+    auto pr = [&](const std::string& name, double mma[]) {
+                printf("[TIMER] %25s %20.3f %20.3f %20.3f %20.3f\n",
+                       name.c_str(), mma[2], mma[1], mma[0], mma[1]/(mma[0] == 0.0 ? 1.0 : mma[0]) );
+              };
+    auto title = [&]() {
+                   std::ostringstream oss;
+                   oss << "AVE (of " <<  numRepeatRuns << " runs):";
+                   printf("[TIMER] %zu runs:\n"
+                          "[TIMER] %25s %20s %20s %20s %20s\n",
+                          numRepeatRuns, "Name", oss.str().c_str(), "MAX:", "MIN:", "MAX/MIN:");
+              };
+    
+
+    std::vector<TimersDataType> vt(Timers.begin(), Timers.end());
+    // std::sort hits a segfault, stable_sort doesn't, go figure
+    auto lam = [](const TimersDataType& a, const TimersDataType& b) { return a.second.first >= b.second.first; };
+    if (use_stable_sort) {
+      std::stable_sort(vt.begin(), vt.end(), lam);
+    } else {
+      std::sort(vt.begin(), vt.end(), lam);
+    }
+    title();
+    for (const auto& t : vt) {
+      minMaxAve(t.second.second, MinMaxAve);
+      pr(t.first, MinMaxAve);
+    }
+
+  }
 
   Kokkos::finalize();
 
   return retVal;
 }
-
 
 template <class Scalar>
 void writeToExodus(double time_stamp,

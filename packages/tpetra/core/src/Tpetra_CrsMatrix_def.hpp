@@ -63,6 +63,7 @@
 #define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
 extern bool panzer_impl_new, panzer_impl_old;
+extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
 extern bool in_eval_J;
 extern double timer_evalJ;
 extern double timer_capsg;
@@ -6377,7 +6378,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                       numPermute);
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
         if (in_eval_J) {
-          timer_capsg += -time_ + Teuchos::Time::wallTime();
+          Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime();
         }
 #endif        
 
@@ -6395,7 +6396,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                   numPermute);
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
         if (in_eval_J) {
-          timer_capsg += -time_ + Teuchos::Time::wallTime();
+          Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime();
         }
 #endif
       }
@@ -7351,18 +7352,24 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if (isStaticGraph ()) {
+      double padTime = Teuchos::Time::wallTime();
+
       using Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
                                    importLIDs, constantNumPackets,
                                    combineMode);
+      Timers["capsg_M_ucmac"].first += -padTime + Teuchos::Time::wallTime();
+
     }
     else {
       {
         using padding_type = typename crs_graph_type::padding_type;
         std::unique_ptr<padding_type> padding;
         try {
+          double padTime = Teuchos::Time::wallTime();
           padding = myGraph_->computePaddingForCrsMatrixUnpack(
             importLIDs, imports, numPacketsPerLID, verbose);
+          Timers["capsg_M_pad"].first += -padTime + Teuchos::Time::wallTime();
         }
         catch (std::exception& e) {
           const auto rowMap = getRowMap();
@@ -7379,7 +7386,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           os << *prefix << "Call applyCrsPadding" << endl;
           std::cerr << os.str();
         }
+        double padTime = Teuchos::Time::wallTime();
         applyCrsPadding(*padding, verbose);
+        Timers["capsg_M_apad"].first += -padTime + Teuchos::Time::wallTime();
       }
       if (verbose) {
         std::ostringstream os;
