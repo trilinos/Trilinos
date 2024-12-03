@@ -331,10 +331,10 @@ void spmv_mv_rocsparse(const Kokkos::HIP &exec, Handle *handle, const char mode[
   }
 
   rocsparse_dnmat_descr vecX, vecY;
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
       rocsparse_create_dnmat_descr(&vecX, x.extent(0), x.extent(1), x_ld, x_data,
                                    rocsparse_compute_type<typename XVector::non_const_value_type>(), x_order));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
       rocsparse_create_dnmat_descr(&vecY, y.extent(0), y.extent(1), y_ld, y_data,
                                    rocsparse_compute_type<typename YVector::non_const_value_type>(), y_order));
 
@@ -359,30 +359,30 @@ void spmv_mv_rocsparse(const Kokkos::HIP &exec, Handle *handle, const char mode[
     void *csr_col_ind = static_cast<void *>(const_cast<entry_type *>(A.graph.entries.data()));
     void *csr_val     = static_cast<void *>(const_cast<value_type *>(A.values.data()));
 
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_csr_descr(
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_csr_descr(
         &subhandle->mat, A.numRows(), A.numCols(), A.nnz(), csr_row_ptr, csr_col_ind, csr_val, offset_index_type,
         entry_index_type, rocsparse_index_base_zero, compute_type));
 
     // Size and allocate buffer, and analyze the matrix
 
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmm(rocsparseHandle, rocsparseOperation, rocsparse_operation_none,
-                                                   &alpha, subhandle->mat, vecX, &beta, vecY, compute_type, alg,
-                                                   rocsparse_spmm_stage_buffer_size, &subhandle->bufferSize, nullptr));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_spmm(
+        rocsparseHandle, rocsparseOperation, rocsparse_operation_none, &alpha, subhandle->mat, vecX, &beta, vecY,
+        compute_type, alg, rocsparse_spmm_stage_buffer_size, &subhandle->bufferSize, nullptr));
 
     KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&subhandle->buffer, subhandle->bufferSize));
 
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmm(
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_spmm(
         rocsparseHandle, rocsparseOperation, rocsparse_operation_none, &alpha, subhandle->mat, vecX, &beta, vecY,
         compute_type, alg, rocsparse_spmm_stage_preprocess, &subhandle->bufferSize, subhandle->buffer));
   }
 
   // Perform the actual computation
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
       rocsparse_spmm(rocsparseHandle, rocsparseOperation, rocsparse_operation_none, &alpha, subhandle->mat, vecX, &beta,
                      vecY, compute_type, alg, rocsparse_spmm_stage_compute, &subhandle->bufferSize, subhandle->buffer));
 
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnmat_descr(vecY));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnmat_descr(vecX));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_dnmat_descr(vecY));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_dnmat_descr(vecX));
 }
 
 #define KOKKOSSPARSE_SPMV_MV_ROCSPARSE(SCALAR, XL, YL, MEMSPACE)                                                       \

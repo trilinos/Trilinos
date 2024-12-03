@@ -71,9 +71,12 @@ getValues(       OutputViewType output,
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
     Serial<OpType>::getValues(phis, input, workView, order);
 
-    for (ordinal_type i=0;i<card;++i)
-      for (ordinal_type j=0;j<npts;++j)
-        for (ordinal_type k=0;k<spaceDim;++k) {
+    // loop order interchanged to workaround nvcc compiler issues with sems-cuda/11.4.2
+    // nvcc error   : 'ptxas' died due to signal 11 (Invalid memory reference)
+    for (ordinal_type j=0;j<npts;++j)
+      for (ordinal_type k=0;k<spaceDim;++k)
+        for (ordinal_type i=0;i<card;++i)
+        {
           output.access(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
             output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);

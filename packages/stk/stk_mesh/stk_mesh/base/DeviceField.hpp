@@ -247,23 +247,21 @@ private:
   KOKKOS_FUNCTION
   unsigned get_component_stride() const
   {
-    unsigned stride = 1;
 #ifdef STK_USE_DEVICE_MESH
-    stride = bucketCapacity;
+    return bucketCapacity;
+#else
+    return 1;
 #endif
-    return stride;
   }
 
   KOKKOS_FUNCTION
   unsigned get_num_components_per_entity(const FastMeshIndex& entityIndex) const {
-    const unsigned bucketId = entityIndex.bucket_id;
-    return deviceAllFieldsBucketsLayoutPerEntity(bucketId, NUM_COMPONENTS_INDEX);
+    return deviceAllFieldsBucketsLayoutPerEntity(entityIndex.bucket_id, NUM_COMPONENTS_INDEX);
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent0_per_entity(const FastMeshIndex& entityIndex) const {
-    const unsigned bucketId = entityIndex.bucket_id;
-    return deviceAllFieldsBucketsLayoutPerEntity(bucketId, FIRST_DIMENSION_INDEX);
+    return deviceAllFieldsBucketsLayoutPerEntity(entityIndex.bucket_id, FIRST_DIMENSION_INDEX);
   }
 
   KOKKOS_FUNCTION
@@ -325,8 +323,7 @@ private:
   {
     fieldSyncDebugger.device_stale_access_check(this, index, fileName, lineNumber);
     T* dataPtr = &deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, 0));
-    const unsigned numScalars = get_num_components_per_entity(index);
-    return EntityFieldData<T>(dataPtr, numScalars, get_component_stride());
+    return EntityFieldData<T>(dataPtr, get_num_components_per_entity(index), get_component_stride());
   }
 
   template <typename Mesh>

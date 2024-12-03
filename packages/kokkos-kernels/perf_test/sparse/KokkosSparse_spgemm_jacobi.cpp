@@ -18,7 +18,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_run_spgemm_jacobi.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 void print_options() {
   std::cerr << "Options\n" << std::endl;
@@ -201,9 +201,9 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc, char**
 }
 
 int main(int argc, char** argv) {
-  using size_type = default_size_type;
-  using lno_t     = default_lno_t;
-  using scalar_t  = default_scalar;
+  using size_type = KokkosKernels::default_size_type;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using scalar_t  = KokkosKernels::default_scalar;
 
   KokkosKernels::Experiment::Parameters params;
 

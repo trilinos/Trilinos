@@ -63,6 +63,8 @@
 
 namespace ngp_field_test {
 
+using ngp_unit_test_utils::check_bucket_layout;
+
 class NgpFieldFixture : public stk::unit_test_util::MeshFixture
 {
 public:
@@ -656,7 +658,7 @@ public:
   void modify_mesh_add_and_delete_bucket(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
     stk::mesh::PartVector addParts{get_meta().get_part("block_3")};
@@ -664,7 +666,7 @@ public:
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 1), addParts, removeParts);
     get_bulk().modification_end();
     ngpMesh.update_mesh();
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_3", {1}}, {"block_2", {2}}});
+    check_bucket_layout(get_bulk(), {{{"block_3"}, {1}}, {{"block_2"}, {2}}});
   }
 
   void fill_nodes(const stk::mesh::Entity element, unsigned numNodes, stk::mesh::EntityVector& nodes)
@@ -727,19 +729,19 @@ public:
   void modify_mesh_add_and_delete_bucket3(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
     replace_element_and_place_in_block("block_3");
     get_bulk().modification_end();
     ngpMesh.update_mesh();
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_3", {4}}, {"block_2", {2}}});
+    check_bucket_layout(get_bulk(), {{{"block_3"}, {4}}, {{"block_2"}, {2}}});
   }
 
   void modify_mesh_add_and_delete_bucket2(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
     stk::mesh::PartVector addParts{get_meta().get_part("block_2")};
@@ -750,13 +752,13 @@ public:
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 2), addParts, removeParts);
     get_bulk().modification_end();
     ngpMesh.update_mesh();
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_3", {2}}, {"block_2", {1}}});
+    check_bucket_layout(get_bulk(), {{{"block_3"}, {2}}, {{"block_2"}, {1}}});
   }
 
   void modify_mesh_delete_bucket_in_middle(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}, {{"block_3"}, {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
     stk::mesh::PartVector addParts{get_meta().get_part("block_1")};
@@ -764,13 +766,13 @@ public:
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 2), addParts, removeParts);
     get_bulk().modification_end();
     ngpMesh.update_mesh();
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1,2}}, {"block_3", {3}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1,2}}, {{"block_3"}, {3}}});
   }
 
   void modify_mesh_add_bucket_in_middle(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}, {{"block_3"}, {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
     stk::mesh::PartVector addParts{get_meta().get_part("block_1")};
@@ -778,13 +780,13 @@ public:
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 3), addParts, removeParts);
     get_bulk().modification_end();
     ngpMesh.update_mesh();
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_1", {3}}, {"block_2", {2}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_1"}, {3}}, {{"block_2"}, {2}}});
   }
 
   void modify_mesh_add_element(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField, unsigned bucketCapacity)
   {
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}, {{"block_3"}, {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
 
     get_bulk().modification_begin();
@@ -796,17 +798,17 @@ public:
     ngpMesh.update_mesh();
 
     if(bucketCapacity == 1) {
-      ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}, {"block_3", {4}}});
+      check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}, {{"block_3"}, {3}}, {{"block_3"}, {4}}});
     }
     else if(bucketCapacity == 2) {
-      ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3,4}}});
+      check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}, {{"block_3"}, {3,4}}});
     }
   }
 
   void modify_mesh_change_bucket_content(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), { {"block_1", {1, 2}}, {"block_3", {3}}});
+    check_bucket_layout(get_bulk(), {{{"block_1"}, {1, 2}}, {{"block_3"}, {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
     stk::mesh::PartVector addParts {get_meta().get_part("block_3")};
@@ -814,7 +816,7 @@ public:
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 2), addParts, removeParts);
     get_bulk().modification_end();
     ngpMesh.update_mesh();
-    ngp_unit_test_utils::check_bucket_layout(get_bulk(), { {"block_1", {1}}, {"block_3", {2, 3}}});
+    check_bucket_layout(get_bulk(), { {{"block_1"}, {1}}, {{"block_3"}, {2, 3}}});
   }
 };
 
@@ -2630,4 +2632,4 @@ TEST_F(NgpFieldUpdate, MoveBackwardForwardBackward)
   check_field_values();
 }
 
-}
+}  // namespace ngp_field_test

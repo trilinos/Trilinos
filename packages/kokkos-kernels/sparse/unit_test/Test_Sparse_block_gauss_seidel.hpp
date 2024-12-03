@@ -220,7 +220,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
-  typedef Kokkos::View<scalar_t**, default_layout, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
   typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;

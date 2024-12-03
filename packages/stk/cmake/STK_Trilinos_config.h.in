@@ -80,6 +80,9 @@
 #cmakedefine FORTRAN_TWO_UNDERSCORES
 #endif
 
+#cmakedefine STK_HAVE_FP_EXCEPT
+#cmakedefine STK_HAVE_FP_ERRNO
+
 #cmakedefine SIERRA_MIGRATION
 
 #cmakedefine STK_16BIT_UPWARDCONN_INDEX_TYPE

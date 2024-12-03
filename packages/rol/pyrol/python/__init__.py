@@ -1,6 +1,8 @@
 import importlib
 
 from . getTypeName import getTypeName, getDefaultScalarType, ROL_classes, ROL_members
+from pyrol.pyrol.Teuchos import ParameterList
+
 
 __version__ = '0.1.0'
 def version():

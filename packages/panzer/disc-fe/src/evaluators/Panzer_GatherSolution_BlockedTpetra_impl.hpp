@@ -305,9 +305,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                                                 maxElementBlockGIDCount);
 
   // Set up storage for tangentFields using view of views
-  // We also need storage for the number of tangent fields associated with
-  // each gatherField
-
   if (has_tangent_fields_) {
 
     size_t inner_vector_max_size = 0;

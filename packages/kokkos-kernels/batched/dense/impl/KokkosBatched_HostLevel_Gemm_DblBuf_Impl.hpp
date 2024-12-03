@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_DBLBUF_IMPL_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_DBLBUF_IMPL_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_DBLBUF_IMPL_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_DBLBUF_IMPL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_Error.hpp"
@@ -249,8 +249,7 @@ class BatchedDblBufGemm {
     CViewType __C;
     ScalarType __alpha, __beta;
     int __k;
-    size_t __n_sub_tiles;
-    unsigned __tiles_per_col, __tiles_per_row;
+    size_t __n_sub_tiles, __tiles_per_col, __tiles_per_row;
 
    public:
     size_t get_n_sub_tiles() { return __n_sub_tiles; }
@@ -283,8 +282,8 @@ class BatchedDblBufGemm {
       // with '!!'. This extra tile will hang off the edge of the 2-rank matrix.
       // For cases where tiles hang off the edge, we over-compute 0s within
       // registers via a conditional bounds check selected at compile-time.
-      __tiles_per_row = ei.__c_m / TILE_M + !!((unsigned)ei.__c_m % TILE_M);
-      __tiles_per_col = ei.__c_n / TILE_N + !!((unsigned)ei.__c_n % TILE_N);
+      __tiles_per_row = ei.__c_m / TILE_M + !!((size_t)ei.__c_m % TILE_M);
+      __tiles_per_col = ei.__c_n / TILE_N + !!((size_t)ei.__c_n % TILE_N);
 
       __n_sub_tiles = __tiles_per_row * __tiles_per_col;
     }

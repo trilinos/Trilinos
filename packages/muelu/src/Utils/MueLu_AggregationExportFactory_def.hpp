@@ -24,6 +24,7 @@
 #include "MueLu_AggregationExportFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
@@ -64,6 +65,7 @@ RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOr
   validParamList->set<RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory for Coordinates.");
   validParamList->set<RCP<const FactoryBase> >("Graph", Teuchos::null, "Factory for Graph.");
   validParamList->set<RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Factory for Aggregates.");
+  validParamList->set<RCP<const FactoryBase> >("AggregateQualities", Teuchos::null, "Factory for AggregateQualities.");
   validParamList->set<RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Factory for UnAmalgamationInfo.");
   validParamList->set<RCP<const FactoryBase> >("DofsPerNode", Teuchos::null, "Factory for DofsPerNode.");
   // CMS/BMK: Old style factory-only options.  Deprecate me.
@@ -79,6 +81,7 @@ RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOr
   validParamList->set<bool>("aggregation: output file: fine graph edges", false, "Whether to draw all fine node connections along with the aggregates.");
   validParamList->set<bool>("aggregation: output file: coarse graph edges", false, "Whether to draw all coarse node connections along with the aggregates.");
   validParamList->set<bool>("aggregation: output file: build colormap", false, "Whether to output a random colormap for ParaView in a separate XML file.");
+  validParamList->set<bool>("aggregation: output file: aggregate qualities", false, "Whether to plot the aggregate quality.");
   return validParamList;
 }
 
@@ -100,6 +103,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Declar
       Input(coarseLevel, "Graph");
     }
   }
+
+  if (pL.get<bool>("aggregation: output file: aggregate qualities")) {
+    Input(coarseLevel, "AggregateQualities");
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -119,6 +126,7 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
   bool useVTK         = false;
   doCoarseGraphEdges_ = pL.get<bool>("aggregation: output file: coarse graph edges");
   doFineGraphEdges_   = pL.get<bool>("aggregation: output file: fine graph edges");
+  doAggQuality_       = pL.get<bool>("aggregation: output file: aggregate qualities");
   if (masterFilename.length()) {
     useVTK          = true;
     filenameToWrite = masterFilename;
@@ -136,8 +144,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     Ac = Get<RCP<Matrix> >(coarseLevel, "A");
   Teuchos::RCP<CoordinateMultiVector> coords       = Teuchos::null;
   Teuchos::RCP<CoordinateMultiVector> coordsCoarse = Teuchos::null;
-  Teuchos::RCP<LWGraph> fineGraph                  = Teuchos::null;
-  Teuchos::RCP<LWGraph> coarseGraph                = Teuchos::null;
+  if (doAggQuality_)
+    qualities_ = Get<Teuchos::RCP<MultiVector> >(coarseLevel, "AggregateQualities");
+  Teuchos::RCP<LWGraph> fineGraph   = Teuchos::null;
+  Teuchos::RCP<LWGraph> coarseGraph = Teuchos::null;
   if (doFineGraphEdges_)
     fineGraph = Get<RCP<LWGraph> >(fineLevel, "Graph");
   if (doCoarseGraphEdges_)
@@ -167,12 +177,9 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     }
   }
   GetOStream(Runtime0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
-  Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
-  Teuchos::RCP<LocalOrdinalVector> procWinner_vector        = aggregates->GetProcWinner();
-  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId              = aggregates->GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LocalOrdinal> procWinner                = aggregates->GetProcWinner()->getDataNonConst(0);
 
-  vertex2AggId_ = vertex2AggId;
+  Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
+  vertex2AggId_                                      = vertex2AggId;
 
   // prepare for calculating global aggregate ids
   std::vector<GlobalOrdinal> numAggsGlobal(numProcs, 0);
@@ -263,9 +270,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     }
     if (aggStyle == "Point Cloud")
       this->doPointCloud(vertices, geomSizes, numAggs_, numNodes_);
-    else if (aggStyle == "Jacks")
-      this->doJacks(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_);
-    else if (aggStyle == "Jacks++")  // Not actually implemented
+    else if (aggStyle == "Jacks") {
+      auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
+      this->doJacks(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggIds);
+    } else if (aggStyle == "Jacks++")  // Not actually implemented
       doJacksPlus_(vertices, geomSizes);
     else if (aggStyle == "Convex Hulls")
       doConvexHulls(vertices, geomSizes);
@@ -305,11 +313,13 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConv
   Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
   Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
 
+  auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
+
   if (dims_ == 2) {
-    this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords);
+    this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggIds, xCoords, yCoords);
   } else {
     zCoords = coords_->getData(2);
-    this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords, zCoords);
+    this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggIds, xCoords, yCoords, zCoords);
   }
 }
 
@@ -571,6 +581,12 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
   if (dims_ == 3)
     zCoords = coords_->getData(2);
 
+  auto vertex2AggIds = vertex2AggId_->getDataNonConst(0);
+
+  Teuchos::ArrayRCP<const Scalar> qualities;
+  if (doAggQuality_)
+    qualities = qualities_->getData(0);
+
   vector<int> uniqueFine = this->makeUnique(vertices);
   string indent          = "      ";
   fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
@@ -596,10 +612,10 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
   fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\">" << endl;
   fout << indent;
   for (size_t i = 0; i < uniqueFine.size(); i++) {
-    if (vertex2AggId_[uniqueFine[i]] == -1)
-      fout << vertex2AggId_[uniqueFine[i]] << " ";
+    if (vertex2AggIds[uniqueFine[i]] == -1)
+      fout << vertex2AggIds[uniqueFine[i]] << " ";
     else
-      fout << aggsOffset_ + vertex2AggId_[uniqueFine[i]] << " ";
+      fout << aggsOffset_ + vertex2AggIds[uniqueFine[i]] << " ";
     if (i % 10 == 9)
       fout << endl
            << indent;
@@ -616,6 +632,18 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
   }
   fout << endl;
   fout << "        </DataArray>" << endl;
+  if (doAggQuality_) {
+    fout << "        <DataArray type=\"Float64\" Name=\"Quality\" format=\"ascii\">" << endl;
+    fout << indent;
+    for (size_t i = 0; i < uniqueFine.size(); i++) {
+      fout << qualities[vertex2AggIds[uniqueFine[i]]] << " ";
+      if (i % 10 == 9)
+        fout << endl
+             << indent;
+    }
+    fout << endl;
+    fout << "        </DataArray>" << endl;
+  }
   fout << "      </PointData>" << endl;
   fout << "      <Points>" << endl;
   fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;

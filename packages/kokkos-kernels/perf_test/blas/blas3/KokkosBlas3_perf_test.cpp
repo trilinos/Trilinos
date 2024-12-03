@@ -301,12 +301,12 @@ int main(int argc, char **argv) {
         double alpha, beta;
         if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2) __blas3_perf_test_input_error(argv, ret, optarg);
 
-        options.blas_args.gemm.alpha = static_cast<default_scalar>(alpha);
-        options.blas_args.gemm.beta  = static_cast<default_scalar>(beta);
+        options.blas_args.gemm.alpha = static_cast<KokkosKernels::default_scalar>(alpha);
+        options.blas_args.gemm.beta  = static_cast<KokkosKernels::default_scalar>(beta);
         break;
       case 'a':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        options.blas_args.trmm.alpha = (default_scalar)atof(optarg);
+        options.blas_args.trmm.alpha = (KokkosKernels::default_scalar)atof(optarg);
         break;
       case 'l':
         for (i = 0; i < LOOP_N; i++) {

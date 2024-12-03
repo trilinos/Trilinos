@@ -1313,6 +1313,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     aggQualityFact->SetParameterList(aggQualityParams);
     aggQualityFact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     aggQualityFact->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
+    manager.SetFactory("AggregateQualities", aggQualityFact);
 
     if (!RAP.is_null())
       RAP->AddTransferFactory(aggQualityFact);
@@ -1330,8 +1331,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: fine graph edges", bool, aggExportParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges", bool, aggExportParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap", bool, aggExportParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: aggregate qualities", bool, aggExportParams);
     aggExport->SetParameterList(aggExportParams);
+    aggExport->SetFactory("AggregateQualities", manager.GetFactory("AggregateQualities"));
     aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
+    aggExport->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    aggExport->SetFactory("Graph", manager.GetFactory("Graph"));
 
     if (!RAP.is_null())
       RAP->AddTransferFactory(aggExport);

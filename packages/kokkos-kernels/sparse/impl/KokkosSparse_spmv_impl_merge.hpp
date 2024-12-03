@@ -291,7 +291,7 @@ struct SpmvMergeHierarchical {
     const A_size_type pathLength = A.numRows() + A.nnz();
     A_size_type pathLengthThreadChunk;
     int teamSize;
-    if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()) {
+    if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>) {
       pathLengthThreadChunk = 4;
       teamSize              = 128;
     } else {
@@ -315,7 +315,7 @@ struct SpmvMergeHierarchical {
       using GpuOp         = SpmvMergeImplFunctor<true, true, false, CONJ>;
       using CpuOp         = SpmvMergeImplFunctor<false, false, false, CONJ>;
       using Op =
-          typename std::conditional<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>(), GpuOp, CpuOp>::type;
+          typename std::conditional<KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>, GpuOp, CpuOp>::type;
       Op op(alpha, A, x, y, pathLengthThreadChunk);
       Kokkos::parallel_for("SpmvMergeHierarchical::spmv", policy, op);
     } else if (KokkosSparse::Conjugate[0] == mode[0]) {
@@ -323,7 +323,7 @@ struct SpmvMergeHierarchical {
       using GpuOp         = SpmvMergeImplFunctor<true, true, false, CONJ>;
       using CpuOp         = SpmvMergeImplFunctor<false, false, false, CONJ>;
       using Op =
-          typename std::conditional<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>(), GpuOp, CpuOp>::type;
+          typename std::conditional<KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>, GpuOp, CpuOp>::type;
       Op op(alpha, A, x, y, pathLengthThreadChunk);
       Kokkos::parallel_for("SpmvMergeHierarchical::spmv", policy, op);
     } else {

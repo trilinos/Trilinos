@@ -73,7 +73,7 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nn
   }
   // Sample each value from uniform (-50, 50) for real types, or (-50 - 50i, 50
   // + 50i) for complex types.
-  Kokkos::View<ScalarType *, Kokkos::HostSpace> valuesView(values, nnz * block_elem_count);
+  Kokkos::View<ScalarType *, Kokkos::HostSpace> valuesView(values, nnz * static_cast<size_t>(block_elem_count));
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
   Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> pool(13718);
@@ -888,7 +888,7 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne, si
   if (mtx_format == COORDINATE)
     ss >> nnz;
   else
-    nnz = nr * nc;
+    nnz = static_cast<size_type>(nr) * nc;
   size_type numEdges = nnz;
   symmetrize         = symmetrize || mtx_sym != GENERAL;
   if (symmetrize && nr != nc) {

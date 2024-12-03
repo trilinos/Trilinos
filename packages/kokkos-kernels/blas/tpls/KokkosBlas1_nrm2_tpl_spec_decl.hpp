@@ -175,37 +175,37 @@ KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, fals
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, MEMSPACE, TPL_NRM2,           \
-                                              ETI_SPEC_AVAIL)                                                         \
-  template <>                                                                                                         \
-  struct Nrm2<EXECSPACE,                                                                                              \
-              Kokkos::View<Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                     \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
-              Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                           \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
-              1, true, ETI_SPEC_AVAIL> {                                                                              \
-    using RT        = Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type;                                                     \
-    using RV        = Kokkos::View<RT, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;          \
-    using XV        = Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                   \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                                         \
-    using size_type = typename XV::size_type;                                                                         \
-                                                                                                                      \
-    static void nrm2(const EXECSPACE& space, RV& R, const XV& X, const bool& take_sqrt) {                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
-      const size_type numElems = X.extent(0);                                                                         \
-      if (numElems <= static_cast<size_type>(std::numeric_limits<int>::max())) {                                      \
-        nrm2_print_specialization<RV, XV>();                                                                          \
-        const int N                            = static_cast<int>(numElems);                                          \
-        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, space.cuda_stream()));                                 \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(TPL_NRM2(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1, &R()));    \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));                                                \
-        if (!take_sqrt) R() = R() * R();                                                                              \
-      } else {                                                                                                        \
-        Nrm2<EXECSPACE, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                              \
-      }                                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
+#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, MEMSPACE, TPL_NRM2,            \
+                                              ETI_SPEC_AVAIL)                                                          \
+  template <>                                                                                                          \
+  struct Nrm2<EXECSPACE,                                                                                               \
+              Kokkos::View<Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                      \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              1, true, ETI_SPEC_AVAIL> {                                                                               \
+    using RT        = Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type;                                                      \
+    using RV        = Kokkos::View<RT, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;           \
+    using XV        = Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                                          \
+    using size_type = typename XV::size_type;                                                                          \
+                                                                                                                       \
+    static void nrm2(const EXECSPACE& space, RV& R, const XV& X, const bool& take_sqrt) {                              \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]");  \
+      const size_type numElems = X.extent(0);                                                                          \
+      if (numElems <= static_cast<size_type>(std::numeric_limits<int>::max())) {                                       \
+        nrm2_print_specialization<RV, XV>();                                                                           \
+        const int N                            = static_cast<int>(numElems);                                           \
+        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                     \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                              \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(TPL_NRM2(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1, &R())); \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                             \
+        if (!take_sqrt) R() = R() * R();                                                                               \
+      } else {                                                                                                         \
+        Nrm2<EXECSPACE, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                               \
+      }                                                                                                                \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
   };
 
 #define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS_EXT(ETI_SPEC_AVAIL)                                                   \
@@ -254,9 +254,10 @@ namespace Impl {
         nrm2_print_specialization<RV, XV>();                                                                           \
         const rocblas_int N                   = static_cast<rocblas_int>(numElems);                                    \
         KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                       \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));                               \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(TPL_NRM2(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1, &R()));    \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                             \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                           \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                             \
+            TPL_NRM2(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1, &R()));                              \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));                                         \
         if (!take_sqrt) R() = R() * R();                                                                               \
       } else {                                                                                                         \
         Nrm2<EXECSPACE, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                               \

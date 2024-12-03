@@ -209,34 +209,30 @@ private:
 
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);
 
-struct PartitionLess {
-  bool operator()( const Partition * lhs_Partition , const unsigned * rhs ) const ;
-  bool operator()( const unsigned * lhs , const Partition * rhs_Partition ) const ;
-};
-
 inline
 bool partition_key_less( const unsigned * lhs , const unsigned * rhs )
 {
-//  const unsigned * const last_lhs = lhs + ( *lhs < *rhs ? *lhs : *rhs );
-//  while ( last_lhs != lhs && *lhs == *rhs ) { ++lhs ; ++rhs ; }
+// The following (very old) code is clever... So I'm adding some comments.
+//
+// A partition key is an array of unsigned, laid out like this:
+// key[num-part-ordinals, first-part-ordinal, ..., last-part-ordinal]
 
-  if (*lhs == *rhs) {
+  if (*lhs == *rhs) { //num-part-ordinals is equal for lhs and rhs...
     const unsigned * const last_lhs = lhs + *lhs;
     do {
       ++lhs ; ++rhs ;
     } while ( last_lhs != lhs && *lhs == *rhs );
   }
-  return *lhs < *rhs ;
+  return *lhs < *rhs;
 }
 
-// The part count and part ordinals are less
-inline bool PartitionLess::operator()( const Partition * lhs_partition ,
-                                       const unsigned * rhs ) const
-{ return partition_key_less( lhs_partition->key() , rhs ); }
+struct PartitionLess {
+  bool operator()( const Partition * lhs_Partition , const unsigned * rhs ) const
+  { return partition_key_less( lhs_Partition->key() , rhs ); }
 
-inline bool PartitionLess::operator()( const unsigned * lhs ,
-                                       const Partition * rhs_partition ) const
-{ return partition_key_less( lhs , rhs_partition->key() ); }
+  bool operator()( const unsigned * lhs , const Partition * rhs_Partition ) const
+  { return partition_key_less( lhs , rhs_Partition->key() ); }
+};
 
 inline
 std::vector<Partition*>::iterator
@@ -247,4 +243,5 @@ lower_bound( std::vector<Partition*> & v , const unsigned * key )
 } // mesh
 } // stk
 
-#endif /* PartitionFAMILY_HPP_ */
+#endif /* STK_MESH_IMPL_PARTITION_HPP_ */
+

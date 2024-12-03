@@ -127,18 +127,32 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[], con
     is_extent_invalid = true;
     os << "KokkosLapack::svd: S has extent " << S.extent(0) << ", instead of " << rankA << ".\n";
   }
-  if ((jobu[0] == 'A') || (jobu[0] == 'a') || (jobu[0] == 'S') || (jobu[0] == 's')) {
+  if ((jobu[0] == 'A') || (jobu[0] == 'a')) {
     if (U.extent_int(0) != m || U.extent_int(1) != m) {
       is_extent_invalid = true;
       os << "KokkosLapack::svd: U has extents (" << U.extent(0) << ", " << U.extent(1) << ") instead of (" << m << ", "
          << m << ").\n";
     }
   }
-  if ((jobvt[0] == 'A') || (jobvt[0] == 'a') || (jobvt[0] == 'S') || (jobvt[0] == 's')) {
+  if ((jobu[0] == 'S') || (jobu[0] == 's')) {
+    if (U.extent_int(0) != m || U.extent_int(1) != std::min(m, n)) {
+      is_extent_invalid = true;
+      os << "KokkosLapack::svd: U has extents (" << U.extent(0) << ", " << U.extent(1) << ") instead of (" << m << ", "
+         << std::min(m, n) << ").\n";
+    }
+  }
+  if ((jobvt[0] == 'A') || (jobvt[0] == 'a')) {
     if (Vt.extent_int(0) != n || Vt.extent_int(1) != n) {
       is_extent_invalid = true;
       os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", " << Vt.extent(1) << ") instead of (" << n
          << ", " << n << ").\n";
+    }
+  }
+  if ((jobvt[0] == 'S') || (jobvt[0] == 's')) {
+    if (Vt.extent_int(0) != std::min(m, n) || Vt.extent_int(1) != n) {
+      is_extent_invalid = true;
+      os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", " << Vt.extent(1) << ") instead of ("
+         << std::min(m, n) << ", " << n << ").\n";
     }
   }
   if (is_extent_invalid) {

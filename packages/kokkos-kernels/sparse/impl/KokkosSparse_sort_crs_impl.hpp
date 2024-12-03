@@ -340,7 +340,7 @@ bool useBulkSortHeuristic(Ordinal avgDeg, Ordinal maxDeg) {
   // * GPU execution space, HIP is enabled, but no ROCTHRUST
   // * GPU execution space, HIP is enabled, and GPU is GFX942
   // (Kokkos seems to require thrust when CUDA is enabled)
-  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecSpace>()) {
+  if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<ExecSpace>) {
 #if (defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ONEDPL_HAS_SORT_BY_KEY)) || \
     (defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_ROCTHRUST)) ||        \
     (defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ARCH_AMD_GFX942))

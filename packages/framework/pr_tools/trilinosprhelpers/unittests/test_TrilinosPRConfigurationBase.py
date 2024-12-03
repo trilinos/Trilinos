@@ -212,7 +212,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc",
             genconfig_build_name="rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
-            dashboard_build_name="gnu-openmpi_release_static",
+            dashboard_build_name=None,
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_cdash_track="Pull Request",
@@ -331,56 +331,41 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(cdash_track, "Pull Request")
 
 
-    def test_TrilinosPRConfigurationBuildNamePython2(self):
-        args = self.dummy_args_python3()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
-        self.assertEqual(build_name, expected_build_name)
-
-
     def test_TrilinosPRConfigurationBaseBuildNameGCC720(self):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
+        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
-    def test_TrilinosPRConfigurationBaseBuildNameContainsPullRequest(self):
+
+    def test_TrilinosPRConfigurationBaseBuildGroupContainsPullRequest(self):
         """Test that a group containing 'Pull Request' causes the build name to reflect a PR build."""
         args = self.dummy_args_gcc_720()
         args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
+        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
+
     def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
+        """Test that the default (non-PR) dashboard name is the GenConfig build ID."""
         args = self.dummy_args_non_pr_track()
-
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = args.genconfig_build_name
+        self.assertEqual(build_name, expected_build_name)
 
+
+    def test_TrilinosPRConfigurationBaseBuildNamePassed(self):
+        """Test that a passed build name is used."""
+        args = self.dummy_args()
+        args.dashboard_build_name = "some-dashboard-build-name"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
         expected_build_name = args.dashboard_build_name
         self.assertEqual(build_name, expected_build_name)
-
-
-    def test_TrilinosPRConfigurationBaseBuildNameDefaultDashboardName(self):
-        """
-        Test the build name output when dashboard_build_name contains
-        the default Jenkins parameter value, '__UNKNOWN__'.
-        """
-        args = self.dummy_args_non_pr_track()
-        args.dashboard_build_name = "__UNKNOWN__"
-
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-
-        result_build_name = pr_config.pullrequest_build_name
-        expected_build_name = args.genconfig_build_name
-        self.assertEqual(expected_build_name, result_build_name)
 
 
     def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):

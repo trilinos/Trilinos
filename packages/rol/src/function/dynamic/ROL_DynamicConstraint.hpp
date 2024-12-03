@@ -89,7 +89,9 @@ public:
 
   virtual ~DynamicConstraint() {}
 
-  DynamicConstraint( std::initializer_list<std::string> zero_deriv_terms={} ):
+  DynamicConstraint() : DynamicConstraint<Real>( {} ) {}
+
+  DynamicConstraint( std::initializer_list<std::string> zero_deriv_terms ):
       DynamicFunction<Real>(zero_deriv_terms),
       unew_               (                             nullPtr ),
       jv_                 (                             nullPtr ),

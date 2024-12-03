@@ -335,5 +335,7 @@ struct Update<execution_space, XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_
       2, false, true>;
 
 #include <KokkosBlas1_update_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_update_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_update_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_UPDATE_SPEC_HPP_

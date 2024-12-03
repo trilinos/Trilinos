@@ -25,16 +25,16 @@
 #include <cmath>
 #include <sstream>
 
-using Ordinal     = default_lno_t;
-using Offset      = default_size_type;
-using Layout      = default_layout;
+using Ordinal     = KokkosKernels::default_lno_t;
+using Offset      = KokkosKernels::default_size_type;
+using Layout      = KokkosKernels::default_layout;
 using ExecSpace   = Kokkos::DefaultExecutionSpace;
 using DeviceSpace = typename ExecSpace::memory_space;
 using Kokkos::HostSpace;
 using RowmapType  = Kokkos::View<Offset*, DeviceSpace>;
 using ColindsType = Kokkos::View<Ordinal*, DeviceSpace>;
-using Handle = KokkosKernels::Experimental::KokkosKernelsHandle<Offset, Ordinal, default_scalar, ExecSpace, DeviceSpace,
-                                                                DeviceSpace>;
+using Handle      = KokkosKernels::Experimental::KokkosKernelsHandle<Offset, Ordinal, KokkosKernels::default_scalar,
+                                                                ExecSpace, DeviceSpace, DeviceSpace>;
 
 namespace GraphDemo {
 Ordinal gridX       = 15;

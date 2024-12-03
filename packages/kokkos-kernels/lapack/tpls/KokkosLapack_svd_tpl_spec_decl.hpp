@@ -324,42 +324,42 @@ void cusolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const ch
   Kokkos::View<Magnitude*, memory_space> rwork("svd rwork buffer", Kokkos::min(m, n) - 1);
 
   CudaLapackSingleton& s = CudaLapackSingleton::singleton();
-  KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSetStream(s.handle, space.cuda_stream()));
+  KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, space.cuda_stream()));
   if constexpr (std::is_same_v<Scalar, float>) {
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSgesvd_bufferSize(s.handle, m, n, &lwork));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSgesvd_bufferSize(s.handle, m, n, &lwork));
     Kokkos::View<Scalar*, memory_space> work("svd work buffer", lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSgesvd(s.handle, jobu[0], jobvt[0], m, n, A.data(), lda, S.data(),
-                                                    U.data(), ldu, Vt.data(), ldvt, work.data(), lwork, rwork.data(),
-                                                    info.data()));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSgesvd(s.handle, jobu[0], jobvt[0], m, n, A.data(), lda, S.data(),
+                                                          U.data(), ldu, Vt.data(), ldvt, work.data(), lwork,
+                                                          rwork.data(), info.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDgesvd_bufferSize(s.handle, m, n, &lwork));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnDgesvd_bufferSize(s.handle, m, n, &lwork));
     Kokkos::View<Scalar*, memory_space> work("svd work buffer", lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDgesvd(s.handle, jobu[0], jobvt[0], m, n, A.data(), lda, S.data(),
-                                                    U.data(), ldu, Vt.data(), ldvt, work.data(), lwork, rwork.data(),
-                                                    info.data()));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnDgesvd(s.handle, jobu[0], jobvt[0], m, n, A.data(), lda, S.data(),
+                                                          U.data(), ldu, Vt.data(), ldvt, work.data(), lwork,
+                                                          rwork.data(), info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCgesvd_bufferSize(s.handle, m, n, &lwork));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnCgesvd_bufferSize(s.handle, m, n, &lwork));
     Kokkos::View<Scalar*, memory_space> work("svd work buffer", lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
         cusolverDnCgesvd(s.handle, jobu[0], jobvt[0], m, n, reinterpret_cast<cuComplex*>(A.data()), lda, S.data(),
                          reinterpret_cast<cuComplex*>(U.data()), ldu, reinterpret_cast<cuComplex*>(Vt.data()), ldvt,
                          reinterpret_cast<cuComplex*>(work.data()), lwork, rwork.data(), info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgesvd_bufferSize(s.handle, m, n, &lwork));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnZgesvd_bufferSize(s.handle, m, n, &lwork));
     Kokkos::View<Scalar*, memory_space> work("svd work buffer", lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgesvd(
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnZgesvd(
         s.handle, jobu[0], jobvt[0], m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda, S.data(),
         reinterpret_cast<cuDoubleComplex*>(U.data()), ldu, reinterpret_cast<cuDoubleComplex*>(Vt.data()), ldvt,
         reinterpret_cast<cuDoubleComplex*>(work.data()), lwork, rwork.data(), info.data()));
   }
-  KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSetStream(s.handle, NULL));
+  KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, NULL));
 }
 
 #define KOKKOSLAPACK_SVD_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                           \
@@ -473,30 +473,30 @@ void rocsolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const c
   Kokkos::View<Magnitude*, memory_space> rwork("svd rwork buffer", Kokkos::min(m, n) - 1);
 
   KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream()));
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));
   if constexpr (std::is_same_v<Scalar, float>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_sgesvd(s.handle, UVecMode, VVecMode, m, n, A.data(), lda, S.data(),
-                                                   U.data(), ldu, Vt.data(), ldvt, rwork.data(), WorkMode,
-                                                   info.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_sgesvd(s.handle, UVecMode, VVecMode, m, n, A.data(), lda, S.data(),
+                                                       U.data(), ldu, Vt.data(), ldvt, rwork.data(), WorkMode,
+                                                       info.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_dgesvd(s.handle, UVecMode, VVecMode, m, n, A.data(), lda, S.data(),
-                                                   U.data(), ldu, Vt.data(), ldvt, rwork.data(), WorkMode,
-                                                   info.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_dgesvd(s.handle, UVecMode, VVecMode, m, n, A.data(), lda, S.data(),
+                                                       U.data(), ldu, Vt.data(), ldvt, rwork.data(), WorkMode,
+                                                       info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_cgesvd(
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_cgesvd(
         s.handle, UVecMode, VVecMode, m, n, reinterpret_cast<rocblas_float_complex*>(A.data()), lda, S.data(),
         reinterpret_cast<rocblas_float_complex*>(U.data()), ldu, reinterpret_cast<rocblas_float_complex*>(Vt.data()),
         ldvt, rwork.data(), WorkMode, info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_zgesvd(
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_zgesvd(
         s.handle, UVecMode, VVecMode, m, n, reinterpret_cast<rocblas_double_complex*>(A.data()), lda, S.data(),
         reinterpret_cast<rocblas_double_complex*>(U.data()), ldu, reinterpret_cast<rocblas_double_complex*>(Vt.data()),
         ldvt, rwork.data(), WorkMode, info.data()));
   }
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
 }
 
 #define KOKKOSLAPACK_SVD_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                          \

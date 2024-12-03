@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBLAS_GEMV_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBLAS_GEMV_SERIAL_INTERNAL_HPP__
+#ifndef KOKKOSBLAS_GEMV_SERIAL_INTERNAL_HPP
+#define KOKKOSBLAS_GEMV_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

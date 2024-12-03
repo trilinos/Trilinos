@@ -864,9 +864,9 @@ void test_github_issue_101() {
   // vectors.  Include a little extra in case the implementers decide
   // to strip-mine that.
   constexpr int numVecs = 22;
-  Kokkos::View<double **, default_layout, DeviceType> X("X", numCols, numVecs);
+  Kokkos::View<double **, KokkosKernels::default_layout, DeviceType> X("X", numCols, numVecs);
   Kokkos::deep_copy(X, static_cast<double>(1.0));
-  Kokkos::View<double **, default_layout, DeviceType> Y("Y", numRows, numVecs);
+  Kokkos::View<double **, KokkosKernels::default_layout, DeviceType> Y("Y", numRows, numVecs);
   auto Y_h = Kokkos::create_mirror_view(Y);  // we'll want this later
 
   // Start with the easy test case, where the matrix and the vectors

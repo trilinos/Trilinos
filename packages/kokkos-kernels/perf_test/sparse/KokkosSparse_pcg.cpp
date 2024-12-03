@@ -20,21 +20,22 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 #include <iostream>
 
 #define MAXVAL 1
 
 template <typename scalar_view_t>
-scalar_view_t create_x_vector(default_lno_t nv, default_scalar max_value = 1.0) {
+scalar_view_t create_x_vector(KokkosKernels::default_lno_t nv, KokkosKernels::default_scalar max_value = 1.0) {
   scalar_view_t kok_x("X", nv);
 
   typename scalar_view_t::HostMirror h_x = Kokkos::create_mirror_view(kok_x);
 
-  for (default_lno_t i = 0; i < nv; ++i) {
-    default_scalar r = static_cast<default_scalar>(rand()) / static_cast<default_scalar>(RAND_MAX / max_value);
-    h_x(i)           = r;
+  for (KokkosKernels::default_lno_t i = 0; i < nv; ++i) {
+    KokkosKernels::default_scalar r = static_cast<KokkosKernels::default_scalar>(rand()) /
+                                      static_cast<KokkosKernels::default_scalar>(RAND_MAX / max_value);
+    h_x(i) = r;
   }
   Kokkos::deep_copy(kok_x, h_x);
   return kok_x;
@@ -57,9 +58,9 @@ void run_experiment(crsMat_t crsmat, int clusterSize, bool useSequential) {
   typedef typename lno_view_t::value_type size_type;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  default_lno_t nv             = crsmat.numRows();
-  scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
-  scalar_view_t kok_b_vector   = create_y_vector(crsmat, kok_x_original);
+  KokkosKernels::default_lno_t nv = crsmat.numRows();
+  scalar_view_t kok_x_original    = create_x_vector<scalar_view_t>(nv, MAXVAL);
+  scalar_view_t kok_b_vector      = create_y_vector(crsmat, kok_x_original);
 
   // create X vector
   scalar_view_t kok_x_vector("kok_x_vector", nv);
@@ -220,13 +221,15 @@ enum {
 
 template <typename execution_space>
 void run_pcg(int *cmdline, const char *mtx_file) {
-  default_lno_t nv = 0, ne = 0;
-  default_lno_t *xadj, *adj;
-  default_scalar *ew;
+  using lno_t = KokkosKernels::default_lno_t;
+  lno_t nv = 0, ne = 0;
+  lno_t *xadj, *adj;
+  KokkosKernels::default_scalar *ew;
 
-  KokkosSparse::Impl::read_matrix<default_lno_t, default_lno_t, default_scalar>(&nv, &ne, &xadj, &adj, &ew, mtx_file);
+  KokkosSparse::Impl::read_matrix<lno_t, lno_t, KokkosKernels::default_scalar>(&nv, &ne, &xadj, &adj, &ew, mtx_file);
 
-  typedef typename KokkosSparse::CrsMatrix<default_scalar, default_lno_t, execution_space, void, default_size_type>
+  typedef typename KokkosSparse::CrsMatrix<KokkosKernels::default_scalar, lno_t, execution_space, void,
+                                           KokkosKernels::default_size_type>
       crsMat_t;
 
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -243,11 +246,11 @@ void run_pcg(int *cmdline, const char *mtx_file) {
     typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
     typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
 
-    for (default_lno_t i = 0; i <= nv; ++i) {
+    for (lno_t i = 0; i <= nv; ++i) {
       hr(i) = xadj[i];
     }
 
-    for (default_lno_t i = 0; i < ne; ++i) {
+    for (lno_t i = 0; i < ne; ++i) {
       hc(i) = adj[i];
       hv(i) = ew[i];
     }

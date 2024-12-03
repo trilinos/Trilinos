@@ -59,7 +59,8 @@ HexFixture::HexFixture(MetaData& meta,
                        size_t ny,
                        size_t nz,
                        size_t nid_start,
-                       size_t eid_start)
+                       size_t eid_start,
+                       const std::string& elemPartAlias)
   : m_spatial_dimension(3),
     m_nx(nx),
     m_ny(ny),
@@ -73,6 +74,9 @@ HexFixture::HexFixture(MetaData& meta,
     m_coord_field( &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates") ),
     owns_mesh(false)
 {
+  if (!elemPartAlias.empty()) {
+    m_meta.add_part_alias(*m_elem_parts[0], elemPartAlias);
+  }
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 }
@@ -149,6 +153,24 @@ HexFixture::HexFixture(stk::ParallelMachine pm,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
+}
+
+void HexFixture::fill_mesh(size_t nx,
+                           size_t ny,
+                           size_t nz,
+                           BulkData& bulk,
+                           const std::string& elemPartAlias)
+{
+  size_t nidStart = 1;
+  size_t eidStart = 1;
+  if (!bulk.mesh_meta_data().is_initialized()) {
+    const size_t spatialDim = 3;
+    const std::string coordFieldName("Coordinates");
+    bulk.mesh_meta_data().initialize(spatialDim, stk::mesh::entity_rank_names(), coordFieldName);
+  }
+  HexFixture hexFixture(bulk.mesh_meta_data(), bulk, nx, ny, nz, nidStart, eidStart, elemPartAlias);
+  hexFixture.m_meta.commit();
+  hexFixture.generate_mesh();
 }
 
 HexFixture::~HexFixture()

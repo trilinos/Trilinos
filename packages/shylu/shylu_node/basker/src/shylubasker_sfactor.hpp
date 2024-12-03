@@ -39,7 +39,7 @@ using namespace std;
 #endif
 #include "Teuchos_OrdinalTraits.hpp"
 
-//#define BASKER_TIMER 
+//#define BASKER_TIMER
 //#define BASKER_DEBUG_SFACTOR
 
 //Functor for Kokkos
@@ -76,7 +76,7 @@ namespace BaskerNS
     {
       #ifdef BASKER_KOKKOS
       //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //	      thread.team_rank());
+      //           thread.team_rank());
       Int kid = basker->t_get_kid(thread);
       #endif
 
@@ -114,7 +114,7 @@ namespace BaskerNS
     {
       #ifdef BASKER_KOKKOS
       //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //	      thread.team_rank());
+      //           thread.team_rank());
       Int kid = basker->t_get_kid(thread);
       #endif
       printf( " * kokkos_sfactor_init_factor(%d) *\n",kid ); fflush(stdout);
@@ -172,8 +172,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   //Allocate Factorspace
   #ifdef BASKER_TIMER 
-  printf(" >> kokkos_sfactor_init_factor( btf_tabs_offset = %d, allocate_nd_workspace = %d ) <<\n",
-         btf_tabs_offset,allocate_nd_workspace); fflush(stdout);
+  printf(" >> kokkos_sfactor_init_factor( btf_tabs_offset = %d, allocate_nd_workspace = %d, num_threads= %d ) <<\n",
+         btf_tabs_offset,allocate_nd_workspace,num_threads); fflush(stdout);
   #endif
   if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
@@ -316,8 +316,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     timer2.reset();
     #endif
 
-    //split_num = num_threads/2;
-    //for(Int p =0; p < 1; ++p)
     if(Options.verbose == BASKER_TRUE)
     {
       printf("\n");
@@ -378,21 +376,35 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //Assign nnz here
       //leaf_assign_nnz(LL(blk)(0), stree, 0);
       //leaf_assign_nnz(LU(blk)(LU_size[blk]-1), stree, 0);
-      if(Options.verbose == BASKER_TRUE)
-      {
-        printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,0);
-        printf( " >> leaf_assign_nnz(LU(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
-      }
       #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
-      #ifdef SHYLU_BASKER_STREE_LIST
-      leaf_assign_nnz(LL(blk)(0),              stree_p, 0);
-      leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree_p, 0);
-      #else
-      leaf_assign_nnz(LL(blk)(0),              stree, 0);
-      leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
-      #endif
+      if (!Options.run_nd_on_leaves && Options.run_amd_on_leaves) {
+        double fill_factor = 1.0 + BASKER_DOM_NNZ_OVER+Options.user_fill; 
+        if(Options.verbose == BASKER_TRUE)
+        {
+          printf( " >> leaf_assign_nnz(LL(%d)(%d)) = (1.0 + %.1f + %.1f) + leaf_nnz[%d] = %d from AMD\n",(int)blk,0, 
+                  BASKER_DOM_NNZ_OVER,Options.user_fill,p,part_tree.leaf_nnz[p] );
+          printf( " >> leaf_assign_nnz(LU(%d)(%d)) = (1.0 + %.1f + %.1f) + leaf_nnz[%d] = %d from AMD\n",(int)blk,(int)LU_size(blk)-1,
+                  BASKER_DOM_NNZ_OVER,Options.user_fill,p,part_tree.leaf_nnz[p] );
+        }
+        LL(blk)(0).nnz = part_tree.leaf_nnz[p] * fill_factor;
+        LU(blk)(LU_size(blk)-1).nnz = part_tree.leaf_nnz[p] * fill_factor;
+        global_nnz += (LL(blk)(0).nnz + LU(blk)(LU_size(blk)-1).nnz);
+      } else {
+        if(Options.verbose == BASKER_TRUE)
+        {
+          printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,0);
+          printf( " >> leaf_assign_nnz(LU(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
+        }
+        #ifdef SHYLU_BASKER_STREE_LIST
+        leaf_assign_nnz(LL(blk)(0),              stree_p, 0);
+        leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree_p, 0);
+        #else
+        leaf_assign_nnz(LL(blk)(0),              stree, 0);
+        leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
+        #endif
+      }
       #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
       time2 += timer1.seconds();
       #endif
@@ -406,8 +418,18 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     std::cout << " DOMAIN BLKs done : " << dom_time << std::endl << std::endl;
     #endif
 
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("\n");
+      printf("\n --------------- OVER OFF-DIAGS ---------------\n");
+      printf("\n");
+    }
     for(Int p = 0; p < num_threads; ++p)
     {
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf(" ============= OFF-DIAG BLK (p=%d) ============\n",(int)p);
+      }
       //Do off diag
       Int blk = S(0)(p);
       #ifdef SHYLU_BASKER_STREE_LIST
@@ -436,7 +458,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int off_diag = 1;
         //printf( " U_blk_sfactor(AVM(%d,%d))\n",U_col,U_row );
         //U_blk_sfactor(AV[U_col][U_row], stree,
-        //		  gScol(l), gSrow(glvl),0);
+        //            gScol(l), gSrow(glvl),0);
         #ifdef BASKER_TIMER 
         timer1.reset();
         #endif
@@ -457,7 +479,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
         //Reduce all into global (don't need in serial)
         //S_sfactor_reduce(AV[U_col][U_row],
-        //		     stree, gScol, gSrow);
+        //               stree, gScol, gSrow);
 
         //Assign nnz counts for leaf off-diag
         //U_assign_nnz(LU(U_col)(U_row), stree, 0);
@@ -493,7 +515,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     timer.reset();
     #endif
 
-
     //do all the sep
     if(Options.verbose == BASKER_TRUE)
     {
@@ -503,6 +524,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }
     for(Int lvl=0; lvl < tree.nlvls; lvl++)
     {
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf(" ============= SEPARATOR BLK (level=%d) ============\n",(int)lvl);
+      }
       //Number of seps in the level
       Int p = pow(tree.nparts, tree.nlvls-lvl-1);
 
@@ -554,7 +579,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         printf( " >>> -> nnz = %d\n",ALM(U_col)(U_row).nnz ); fflush(stdout);
         #endif
 
-        //S_assign_nnz(LL(U_col)(U_row), stree, 0);
         if(Options.verbose == BASKER_TRUE)
         {
           printf( "   >>  S_assign_nnz( LL(%d,%d) )\n",(int)U_col,(int)U_row ); fflush(stdout);
@@ -612,7 +636,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           printf("BLK: %d %d Col: %d Row: %d \n", U_col, U_row, l, pp);
           #endif
 
-          Int off_diag = 1;
+          Int off_diag = -1; // dense
           #ifdef SHYLU_BASKER_STREE_LIST
           U_blk_sfactor(AVM(U_col)(U_row), stree_p,
               gScol(l), gSrow(pp), off_diag);
@@ -626,7 +650,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
           //Don't need in serial
           //S_sfactor_reduce(AV[U_col][U_row],
-          //		     stree, gScol, gSrow);
+          //               stree, gScol, gSrow);
 
 
           //Assign nnz
@@ -635,7 +659,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           {
             printf( "   ++ leaf_assign_nnz(LU(%d, %d)) fill-factor x(%d+%f = %f)\n",(int)U_col,(int)U_row, (int)BASKER_SEP_NNZ_OVER,Options.user_fill,fill_factor);
             printf( "   ++ leaf_assign_nnz(LL(%d, %d)) fill-factor x(%d+%f = %f)\n",(int)inner_blk,(int)(l-lvl), (int)BASKER_SEP_NNZ_OVER,Options.user_fill,fill_factor);
-	    fflush(stdout);
+            fflush(stdout);
           }
           #ifdef SHYLU_BASKER_STREE_LIST
           U_assign_nnz(LU(U_col)(U_row), stree_p, fill_factor, 0);
@@ -1470,8 +1494,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("\n\n");
     printf("BLK: %d %d \n", brow, bcol);
     printf("row: %d %d col: %d %d \n",
-	   MV.srow, MV.nrow+MV.srow, 
-	   MV.scol, MV.ncol+MV.scol);
+           MV.srow, MV.nrow+MV.srow,
+           MV.scol, MV.ncol+MV.scol);
     printf("\n\n");
     #endif
 
@@ -1720,6 +1744,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       {
         ST.L_row_counts(j) = 0;
         ST.U_col_counts(j) = 0;
+      }
+      // diagonal => square
+      for(Int j = 0; j < MV.ncol; j++)
+      {
         for(Int k = MV.col_ptr(j); k < MV.col_ptr(j+1); ++k) {
           Int i = MV.row_idx(k);
           if (i < j) {
@@ -1732,26 +1760,59 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           }
         }
       }
+      #ifdef BASKER_TIMER 
+      std::cout << " >> U_blk_sfactor(diag): " << timer.seconds() << " seconds" << std::endl;
+      timer.reset();
+      #endif
     }
-    #ifdef BASKER_TIMER 
-    std::cout << " >> U_blk_sfactor::loop-columns               : " << timer.seconds() << " seconds" << std::endl;
-    #endif
 #endif
-
-    //Temp Patch fix
-    //Note Comebaske
     if(off_diag == 1)
     {
-      for(Int i = 0; i < MV.ncol; i++)
+      Int tot_nnz = 0;
+      for(Int j = 0; j < MV.ncol; j++)
       {
-        ST.U_col_counts(i) = MV.nrow;
-        ST.L_row_counts(i) = MV.nrow;
+        #if 1
+        /*{ // original
+          Int nnz = MV.col_ptr(j+1) - MV.col_ptr(j);
+          ST.L_row_counts(j) = nnz;
+          ST.U_col_counts(j) = nnz;
+        } */
+        // dense after first nz in each column
+        Int min_i = MV.nrow;
+        for(Int k = MV.col_ptr(j); k < MV.col_ptr(j+1); ++k) {
+          Int i = MV.row_idx(k);
+          min_i = min(i, min_i);
+        }
+        ST.L_row_counts(j) = MV.nrow - min_i;
+        ST.U_col_counts(j) = MV.nrow - min_i;
+        #else // fully dense
+        ST.U_col_counts(j) = MV.nrow;
+        ST.L_row_counts(j) = MV.nrow;
+        #endif
+        tot_nnz += ST.L_row_counts(j);
       }
+      #ifdef BASKER_TIMER 
+      std::cout << " >> U_blk_sfactor::off-diag ("<< MV.nrow << " x " << MV.ncol << "): with nnz = " << tot_nnz << " => "
+                << double(tot_nnz) / double (MV.ncol*MV.nrow) << ", " << double(tot_nnz) / double (MV.nnz)
+                << ": " << timer.seconds() << " seconds" << std::endl;
+      timer.reset();
+      #endif
     }
-    #ifdef BASKER_TIMER 
-    std::cout << " >> U_blk_sfactor::copy : " << timer.seconds() << " seconds" << std::endl;
-    timer.reset();
-    #endif
+    if(off_diag == -1)
+    {
+      Int tot_nnz = 0;
+      for(Int j = 0; j < MV.ncol; j++)
+      {
+        ST.U_col_counts(j) = MV.nrow;
+        ST.L_row_counts(j) = MV.nrow;
+        tot_nnz += ST.L_row_counts(j);
+      }
+      #ifdef BASKER_TIMER 
+      std::cout << " >> U_blk_sfactor::dense ("<< MV.nrow << " x " << MV.ncol << "): with nnz = " << tot_nnz << " => " << double(tot_nnz) / double (MV.ncol*MV.nrow)
+                << ": " << timer.seconds() << " seconds" << std::endl;
+      timer.reset();
+      #endif
+    }
 
     FREE(U_col_count);
     FREE(color);
@@ -1994,8 +2055,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     //Temp Patch fix
     //Note Comebaske
-    if(off_diag ==1)
+    if(off_diag == 1)
     {
+      printf( " U_blk_sfactor(off-diag: %d x %d)\n",MV.nrow,MV.ncol );
       for(Int i = 0; i < MV.ncol; i++)
       {
         ST.U_col_counts[i] = MV.nrow;
@@ -2011,43 +2073,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     FREE(first_color);
     FREE(first_row);
   }//end U_blk_sfactor()
-
-
-  template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::L_blk_sfactor
-  (
-   BASKER_MATRIX &MV,
-   BASKER_SYMBOLIC_TREE &ST,
-   INT_1DARRAY gcol,
-   INT_1DARRAY grow
-  )
-  {
-    printf("Basker: This L_blk_sfactor algorithm is not implemented\n");
-    //Algorithm
-    //You can either use the Row-count method or
-    //Assume same as U_blk for symmtric case.
-    //Note, Very unsymmtric and HUND will most likely not 
-    //Need this called as we will use the QR on nxns 
-  }//end L_blk_sfactor()
-
-
-  template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::L_blk_sfactor
-  (
-   BASKER_MATRIX_VIEW &MV,
-   BASKER_SYMBOLIC_TREE &ST,
-   INT_1DARRAY gcol,
-   INT_1DARRAY grow
-  )
-  {
-    printf("Basker: This L_blk_sfactor algorithm is not implemented\n");
-    //Algorithm
-    //You can either use the Row-count method or
-    //Assume same as U_blk for symmtric case.
-    //Note, Very unsymmtric and HUND will most likely not 
-    //Need this called as we will use the QR on nxns 
-  }//end L_blk_sfactor()
-
 
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int, Entry, Exe_Space>::S_sfactor_reduce
@@ -2095,9 +2120,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Give a = nnz(L(:,1)) and b = nnz(U(1,:))
     //If a*b == (size-size)^2 .... adjust padding
 
-    //Int brow = MV.srow; //Not used
-    //Int bcol = MV.scol; //Not used
-    
+    #if 0
     //Find nnz L(:,1)
     Int nnz_c = 0;
     for(Int i = MV.srow; i < (MV.srow+MV.nrow); i++)
@@ -2108,7 +2131,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }
     }
     nnz_c += 1;
-
+    #endif
     #ifdef BASKER_DEBUG_SFACTOR
     printf("S - nnz(L(:,1)): %d \n", nnz_c);
     #endif
@@ -2141,8 +2164,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       nnz_S = Teuchos::OrdinalTraits<Int>::max()/2;
     }
 
-    #ifdef BASKER_DEBUG_SFACTOR
-    printf("Snnz: %d \n", nnz_S);
+    #ifdef BASKER_TIMER
+    printf(" > Snnz: %d \n", nnz_S);
     #endif
 
     ST.init_S_col_counts(1);
@@ -2276,11 +2299,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           t_nnz += ST.col_counts[i];
         } else {
           // let's just hope it is enough, if overflow
+          t_nnz = Int_MAX;
+          #ifdef BASKER_TIMER
+          printf( " - overflow nnz = %ld (%d/%d)\n",t_nnz,i,M.ncol );
+          for (Int ii = 0; ii <= i; ii++) printf( "  * col_counts[%d] = %ld\n",ii,ST.col_counts[ii] );
+          #endif
           break;
         }
       }
       #ifdef BASKER_TIMER
-      printf(" > leaf nnz: (%ld + %ld) / 2 = %ld\n", (long)t_nnz,(long)M.ncol,(long)(t_nnz+M.ncol)/2);
+      printf(" > leaf nnz: (t_nnz = %ld + ncol = %ld) / 2 = %ld\n", (long)t_nnz,(long)M.ncol,(long)(t_nnz+M.ncol)/2);
       #endif
       t_nnz = long(t_nnz+M.ncol)/2;
 
@@ -2321,35 +2349,48 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    Int option
   )
   {
-    if(option == 0)
+    if(option == 0 || option == 1)
     {
       const Int Int_MAX = std::numeric_limits<Int>::max();
 
-      Int t_nnz = 0; 
-      for(Int i = 0; i < M.ncol; i++)
-      {
-        if (t_nnz <= Int_MAX-ST.U_col_counts[i]) {
-          t_nnz += ST.U_col_counts[i];
-        } else {
-          // let's just hope it is enough, if overflow
-          break;
-        }
-      }
-
-      #ifdef BASKER_TIMER
-      printf("U_assing_nnz: %ld \n", t_nnz);
-      #endif
-
-      //double fill_factor = 1.05;
-      Int temp = min(M.nrow*M.ncol, Int(fill_factor*t_nnz));
-      if (temp >= t_nnz) {
-        M.nnz = temp;
+      Int t_nnz = 0;
+      if (option == 1) {
+        // dense
+        t_nnz = (M.nrow*M.ncol);
       } else {
+        Int k_nnz = 0;
+        for(Int i = 0; i < M.ncol; i++)
+        {
+          if (k_nnz <= Int_MAX-ST.U_col_counts[i]) {
+            k_nnz += ST.U_col_counts[i];
+          } else {
+            // let's just hope it is enough, if overflow
+            k_nnz = Int_MAX;
+            #ifdef BASKER_TIMER
+            printf( " - overflow U_nnz = %ld (%d/%d)\n",k_nnz,i,M.ncol );
+            for (Int ii = 0; ii <= i; ii++) printf( "  * U_col_counts[%d] = %ld\n",ii,ST.U_col_counts[ii] );
+            #endif
+            break;
+          }
+        }
+        t_nnz = Int(fill_factor*double(k_nnz));
+        if (fill_factor > 1.0 && k_nnz > t_nnz) {
+          t_nnz = k_nnz;
+        }
+        Int mn = max(0,M.nrow*M.ncol);
+        if (mn > 0 && mn < t_nnz) {
+          t_nnz = mn;
+        }
         M.nnz = t_nnz;
+        #ifdef BASKER_TIMER
+        printf("U_assing_nnz: %ld min(%d, %d)-> %ld\n", k_nnz,M.nrow*M.ncol, Int(fill_factor*double(k_nnz)), M.nnz);
+        #endif
       }
       if (global_nnz <= Int_MAX-t_nnz) {
         // let's just hope it is enough, if overflow
         global_nnz += t_nnz;
+      } else {
+        global_nnz = Int_MAX;
       }
       #if 0
       printf( " debug: set U.nnz = 0 to force realloc\n" );
@@ -2358,8 +2399,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #endif
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f), M.nnz = %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz, fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol);
+        printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f), M.nnz = %ld (%ld x %ld) -> %.2f\n",
+               (long)global_nnz,(long)t_nnz, fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol, ((double)M.nnz)/((double)(M.nrow*M.ncol)));
       }
     }
   }//end assign_upper_nnz
@@ -2386,6 +2427,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           t_nnz += ST.L_row_counts[i];
         } else {
           // let's just hope it is enough, if overflow
+          t_nnz = Int_MAX;
+          #ifdef BASKER_TIMER
+          printf( " - overflow L_nnz = %ld (%d/%d)\n",t_nnz,i,M.ncol );
+          for (Int ii = 0; ii <= i; ii++) printf( "  * L_col_counts[%d] = %ld\n",ii,ST.L_row_counts[ii] );
+          #endif
           break;
         }
       }
@@ -2394,9 +2440,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("L_assign_nnz: %ld \n", t_nnz);
       #endif
 
-      // double fill_factor = 2.05;
       double old_nnz = M.nnz;
-      Int temp = min(M.nrow*M.ncol, Int(fill_factor*t_nnz));
+      Int temp = min(M.nrow*M.ncol, Int(fill_factor*double(t_nnz)));
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {
@@ -2432,7 +2477,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(option == 0)
     {
       M.nnz = ST.S_col_counts(0);
-      #ifdef BASKER_DEBUG_SFACTOR
+      #ifdef BASKER_TIMER
       printf("S_assign_nnz: %ld  \n", M.nnz);
       #endif
 
@@ -2443,7 +2488,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("S_assign elbow global_nnz = %ld, M.nnz = %ld + 2\n", (long)global_nnz, (long)M.nnz);
+        printf("S_assign elbow global_nnz = %ld, M.nnz = %ld + 2 (%d x %d)\n", (long)global_nnz, (long)M.nnz, (int)M.nrow,(int)M.ncol);
       }
       if (M.nnz <= Int_MAX - 2) {
         M.nnz += 2;
@@ -2461,9 +2506,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     #ifdef BASKER_DEBUG_SFACTOR
     //printf("Test btf_last_dense \n");
     //printf("btf_tabs_offset: %d col: %d \n",
-    //	   btf_tabs_offset, btf_tabs[btf_tabs_offset]);
+    //        btf_tabs_offset, btf_tabs[btf_tabs_offset]);
     //printf("number of blks: %d \n",
-    //	   btf_nblks-btf_tabs_offset);
+    //        btf_nblks-btf_tabs_offset);
     #endif
     #ifdef BASKER_TIMER
     printf( " > btf_last_dense(%s) <\n",(flag ? "true" : "false") ); fflush(stdout);
@@ -2520,7 +2565,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Malloc L and U
     #ifdef BASKER_DEBUG_SFACTOR
     printf("btf_nblks %d btf_tabs_offset %d \n",
-	   btf_nblks, btf_tabs_offset);
+           btf_nblks, btf_tabs_offset);
     #endif
     
     Int nblks_left = btf_nblks - btf_tabs_offset;

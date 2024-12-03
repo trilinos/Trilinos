@@ -19,6 +19,7 @@ public:
   KOKKOS_DEFAULTED_FUNCTION NgpMeshBase& operator=(NgpMeshBase&&) = default;
 
   virtual void update_mesh() = 0;
+  virtual bool need_sync_to_host() const = 0;
 };
 
 }}

@@ -14,12 +14,14 @@
 //
 //@HEADER
 
+#include <iostream>
+
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
 // For RPS implementation
 #include "KokkosBlas_dot_perf_test.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 struct Params {
   int use_cuda    = 0;
@@ -110,7 +112,7 @@ void run(int m, int repeat) {
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment (" << ExecSpace::name() << ")\n";
+  std::cout << "Running BLAS Level 1 DOT performance experiment (" << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
 

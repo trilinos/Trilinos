@@ -20,10 +20,10 @@
 
 #include "KokkosKernels_Test_Structured_Matrix.hpp"
 
-using Scalar  = default_scalar;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
-using Layout  = default_layout;
+using Scalar  = KokkosKernels::default_scalar;
+using Ordinal = KokkosKernels::default_lno_t;
+using Offset  = KokkosKernels::default_size_type;
+using Layout  = KokkosKernels::default_layout;
 
 int main() {
   Kokkos::initialize();

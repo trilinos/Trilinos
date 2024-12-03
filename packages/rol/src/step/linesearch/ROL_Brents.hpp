@@ -36,8 +36,7 @@ public:
   // Constructor
   Brents( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) {
     Real oem10(1.e-10);
-    ROL::ParameterList &list
-      = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Brent's");
+    ROL::ParameterList &list = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Brent's");
     tol_ = list.get("Tolerance",oem10);
     niter_ = list.get("Iteration Limit",1000);
     test_ = list.get("Run Test Upon Initialization",true);

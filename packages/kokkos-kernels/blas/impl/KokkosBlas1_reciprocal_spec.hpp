@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_RECIPROCAL_SPEC_HPP_
-#define KOKKOS_BLAS1_IMPL_RECIPROCAL_SPEC_HPP_
+#ifndef KOKKOSBLAS1_IMPL_RECIPROCAL_SPEC_HPP_
+#define KOKKOSBLAS1_IMPL_RECIPROCAL_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -230,5 +230,7 @@ struct Reciprocal<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPIL
       2, false, true>;
 
 #include <KokkosBlas1_reciprocal_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_reciprocal_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_reciprocal_mv_eti_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_RECIPROCAL_HPP_
+#endif  // KOKKOSBLAS1_IMPL_RECIPROCAL_SPEC_HPP_

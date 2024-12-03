@@ -119,8 +119,8 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
     m = A.numRows();
     n = A.numCols();
   } else {
-    m = A.numRows() * A.blockDim();
-    n = A.numCols() * A.blockDim();
+    m = static_cast<size_t>(A.numRows()) * A.blockDim();
+    n = static_cast<size_t>(A.numCols()) * A.blockDim();
   }
 
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {

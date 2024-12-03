@@ -183,7 +183,7 @@ Group::computeF()
   if(status == false) {
     std::cout << "ERROR: Petsc::Group::computeF() - fill failed!!!"
          << std::endl;
-    throw std::runtime_error("NOX Error:) RHS Fill Failed";
+    throw std::runtime_error("NOX Error: RHS Fill Failed");
   }
 
   normRHS = RHSVector.norm();
@@ -214,7 +214,7 @@ Group::computeJacobian()
     if (status == false) {
       std::cout << "ERROR: Petsc::Group::computeJacobian() - fill failed!!!"
            << std::endl;
-      throw std::runtime_error("NOX Error:) Jacobian Fill Failed";
+      throw std::runtime_error("NOX Error: Jacobian Fill Failed");
     }
   }
   else if(jacType == "Finite Difference") {

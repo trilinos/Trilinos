@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBLAS_SET_IMPL_HPP__
-#define __KOKKOSBLAS_SET_IMPL_HPP__
+#ifndef KOKKOSBLAS_SET_IMPL_HPP
+#define KOKKOSBLAS_SET_IMPL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

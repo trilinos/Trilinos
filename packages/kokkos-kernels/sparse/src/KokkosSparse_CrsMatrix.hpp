@@ -21,8 +21,8 @@
 /// local (no MPI) sparse matrix stored in compressed row sparse
 /// ("Crs") format.
 
-#ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
-#define KOKKOS_SPARSE_CRSMATRIX_HPP_
+#ifndef KOKKOSSPARSE_CRSMATRIX_HPP_
+#define KOKKOSSPARSE_CRSMATRIX_HPP_
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
@@ -315,7 +315,7 @@ struct SparseRowViewConst {
 /// storage for sparse matrices, as described, for example, in Saad
 /// (2nd ed.).
 template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
-          class SizeType = default_size_type>
+          class SizeType = KokkosKernels::default_size_type>
 class CrsMatrix {
   static_assert(std::is_signed<OrdinalType>::value, "CrsMatrix requires that OrdinalType is a signed integer type.");
 
@@ -344,10 +344,10 @@ class CrsMatrix {
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
+  typedef Kokkos::StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
+  typedef Kokkos::StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;
@@ -611,7 +611,7 @@ class CrsMatrix {
       const ordinal_type offset = findRelOffset(&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
       if (offset != length) {
         if (force_atomic) {
-          Kokkos::atomic_assign(&(row_view.value(offset)), vals[i]);
+          Kokkos::atomic_store(&(row_view.value(offset)), vals[i]);
         } else {
           row_view.value(offset) = vals[i];
         }
@@ -787,4 +787,4 @@ template <typename T>
 inline constexpr bool is_crs_matrix_v = is_crs_matrix<T>::value;
 
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_CRSMATRIX_HPP_

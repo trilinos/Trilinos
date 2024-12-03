@@ -451,7 +451,7 @@ void KokkosBSPGEMM<
 
   Kokkos::Timer numeric_speed_timer_with_free;
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>) {
     // allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C keys"), valuesC_.extent(0));
     nnz_lno_temp_work_view_t nextsC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C nexts"), valuesC_.extent(0));

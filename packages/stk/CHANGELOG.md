@@ -1,5 +1,8 @@
 # CHANGELOG
 
+5.21.6-1 (STK_VERSION 5210601) 10/31/2024
+  stk_mesh, stk_search: more fixes for HIP unified and Cuda no-uvm builds
+
 5.21.6 (STK_VERSION 5210600) 10/25/2024
   stk_search: fix build-error (instantiation error for morton_lbvh_search) for gcc 13.2
   stk_util: added parallel/OutputStreams.hpp

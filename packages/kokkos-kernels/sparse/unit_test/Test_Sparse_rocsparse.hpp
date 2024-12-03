@@ -47,11 +47,11 @@ void test_rocsparse_safe_call() {
   bool caught_exception = false;
 
   rocsparse_status myStatus = rocsparse_status_success;
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(myStatus);
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(myStatus);
 
   try {
     myStatus = rocsparse_status_internal_error;
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(myStatus);
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(myStatus);
   } catch (std::runtime_error& e) {
     caught_exception = true;
   }

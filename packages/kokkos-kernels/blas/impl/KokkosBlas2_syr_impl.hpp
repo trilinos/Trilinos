@@ -206,14 +206,14 @@ void teamParallelSyr(const ExecutionSpace& space, const typename AViewType::cons
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
 template <class ExecutionSpace, class XViewType, class AViewType, class IndexType, bool tJustTranspose, bool tJustUp,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalSyrImpl(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha, const XViewType& x,
                     const AViewType& A) {
   threadParallelSyr<ExecutionSpace, XViewType, AViewType, IndexType, tJustTranspose, tJustUp>(space, alpha, x, A);
 }
 
 template <class ExecutionSpace, class XViewType, class AViewType, class IndexType, bool tJustTranspose, bool tJustUp,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalSyrImpl(const ExecutionSpace& space, const typename AViewType::const_value_type& alpha, const XViewType& x,
                     const AViewType& A) {
   teamParallelSyr<ExecutionSpace, XViewType, AViewType, IndexType, tJustTranspose, tJustUp>(space, alpha, x, A);

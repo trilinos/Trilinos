@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_TRTRI_DECL_HPP__
-#define __KOKKOSBATCHED_TRTRI_DECL_HPP__
+#ifndef KOKKOSBATCHED_TRTRI_DECL_HPP
+#define KOKKOSBATCHED_TRTRI_DECL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
@@ -28,4 +28,4 @@ struct SerialTrtri {
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A);
 };
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_TRTRI_DECL_HPP__
+#endif  // KOKKOSBATCHED_TRTRI_DECL_HPP

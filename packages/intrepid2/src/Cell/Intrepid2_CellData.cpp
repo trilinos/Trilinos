@@ -21,6 +21,9 @@ const CellTopologyData*
 Intrepid2::getCellTopologyData(const unsigned& cellTopologyKey){
     const CellTopologyData* cellTopologyData;
     switch (cellTopologyKey) {
+      case shards::Node::key:
+      cellTopologyData = shards::getCellTopologyData<shards::Node>();
+      break;
       case shards::Line<2>::key:
       cellTopologyData = shards::getCellTopologyData<shards::Line<2>>();
       break;

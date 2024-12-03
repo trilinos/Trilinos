@@ -19,6 +19,7 @@ Solver<Real>::Solver( const Ptr<Problem<Real>> &opt,
   : opt_(opt), problemType_(opt_->getProblemType()) {
   switch (problemType_) {
     case TYPE_U:  algoU_ = TypeU::AlgorithmFactory<Real>(parlist,secant); break;
+    case TYPE_P:  algoP_ = TypeP::AlgorithmFactory<Real>(parlist,secant); break;
     case TYPE_B:  algoB_ = TypeB::AlgorithmFactory<Real>(parlist,secant); break;
     case TYPE_E:  algoE_ = TypeE::AlgorithmFactory<Real>(parlist,secant); break;
     case TYPE_EB: algoG_ = TypeG::AlgorithmFactory<Real>(parlist,secant); break;
@@ -44,6 +45,10 @@ int Solver<Real>::solve( std::ostream &outStream,
       if (status != nullPtr) algoU_->setStatusTest(status,combineStatus);
       algoU_->run(*opt_,outStream);
       break;
+    case TYPE_P:
+      if (status != nullPtr) algoP_->setStatusTest(status,combineStatus);
+      algoP_->run(*opt_,outStream);
+      break; 
     case TYPE_B:
       if (status != nullPtr) algoB_->setStatusTest(status,combineStatus);
       algoB_->run(*opt_,outStream);
@@ -72,6 +77,7 @@ Ptr<const AlgorithmState<Real>> Solver<Real>::getAlgorithmState() const {
 //Ptr<const AlgorithmState<Real>>& Solver<Real>::getAlgorithmState() const {
   switch (problemType_) {
     case TYPE_U:  return algoU_->getState();
+    case TYPE_P:  return algoP_->getState(); 
     case TYPE_B:  return algoB_->getState();
     case TYPE_E:  return algoE_->getState();
     case TYPE_EB: return algoG_->getState();
@@ -86,6 +92,7 @@ template<typename Real>
 void Solver<Real>::reset() {
   switch (problemType_) {
     case TYPE_U:  algoU_->reset(); break;
+    case TYPE_P:  algoP_->reset(); break; 
     case TYPE_B:  algoB_->reset(); break;
     case TYPE_E:  algoE_->reset(); break;
     case TYPE_EB: algoG_->reset(); break;
