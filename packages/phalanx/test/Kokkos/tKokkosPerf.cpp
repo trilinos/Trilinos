@@ -82,7 +82,7 @@ namespace phalanx_test {
     {
       const int i = thread.league_rank();
       const int num_qp = rho_.extent(1);
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(thread,0,num_qp), [=] (const int& ip) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(thread,0,num_qp), [&] (const int& ip) {
 	rho_(i,ip) = k_(0) * P_(i,ip) / T_(i,ip);
       });
     }

@@ -204,7 +204,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeJac_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [&] (const int& qp) {
       for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
         for (int i=0; i < 3; ++i) {
           for (int j=0; j < 3; ++j) {
@@ -220,7 +220,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeInvJac_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [&] (const int& qp) {
       inv_jac_(cell,qp,0,0) = jac_(cell,qp,1,1) * jac_(cell,qp,2,2) - jac_(cell,qp,1,2) * jac_(cell,qp,2,1);
       inv_jac_(cell,qp,1,1) = jac_(cell,qp,2,2) * jac_(cell,qp,0,0) - jac_(cell,qp,2,0) * jac_(cell,qp,0,2);
       inv_jac_(cell,qp,2,2) = jac_(cell,qp,0,0) * jac_(cell,qp,1,1) - jac_(cell,qp,0,1) * jac_(cell,qp,1,0);
@@ -246,7 +246,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeCoords_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [&] (const int& qp) {
       for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
         qp_coords_(cell,qp,0) += basis_(qp,basis) * coords_(cell,basis,0);
         qp_coords_(cell,qp,1) += basis_(qp,basis) * coords_(cell,basis,1);
@@ -260,7 +260,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeGradBasisReal_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis_real_.extent(1)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis_real_.extent(1)), [&] (const int& qp) {
       const int num_basis = static_cast<int>(grad_basis_real_.extent(2)); 
       for (int basis=0; basis < num_basis; ++basis)
         for (int dim1=0; dim1 < 3; ++dim1)

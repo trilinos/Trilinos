@@ -34,9 +34,9 @@ public:
   {
     const int cell = team.league_rank();
     const int num_pts = a_.extent(1);
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_pts), [=] (const int& pt) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_pts), [&] (const int& pt) {
       const int num_eq = a_.extent(2);
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_eq), [=] (const int& eq) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_eq), [&] (const int& eq) {
   	c_(cell,pt,eq) = a_(cell,pt,eq) + b_(cell,pt,eq);
       });
     });
