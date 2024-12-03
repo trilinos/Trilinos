@@ -843,7 +843,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
            kokkosScatterTarget(lid,0) = fieldValues(cell,basisIndex).val();
            for(int i_param=0; i_param<num_params; i_param++)
-             kokkosTangents(i_param)(lid,0) = fieldValues(cell,basis).fastAccessDx(i_param);
+             kokkosTangents(i_param)(lid,0) = fieldValues(cell,basisIndex).fastAccessDx(i_param);
+
            kokkosDirichletCounter(lid,0) = 1.0;
          }
        });

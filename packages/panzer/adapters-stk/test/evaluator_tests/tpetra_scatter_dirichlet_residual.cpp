@@ -422,7 +422,7 @@ namespace panzer
          // setup field manager, add evaluator under test
          /////////////////////////////////////////////////////////////
 
-         PHX::FieldManager<panzer::Traits> fm;
+         auto fm = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
          std::string resName = "";
          Teuchos::RCP<std::map<std::string, std::string>> names_map =
@@ -433,7 +433,7 @@ namespace panzer
 
          std::vector<PHX::index_size_type> derivative_dimensions;
          derivative_dimensions.push_back(numParams);
-         fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
+         fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
 
          // evaluators under test
          {
@@ -461,8 +461,8 @@ namespace panzer
 
             TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
-            fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
          }
          {
             using Teuchos::RCP;
@@ -488,8 +488,8 @@ namespace panzer
 
             TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
-            fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
          }
 
          // support evaluators
@@ -518,7 +518,7 @@ namespace panzer
 
             Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
          for (std::size_t i = 0; i < numParams; ++i) {
            using Teuchos::RCP;
@@ -547,7 +547,7 @@ namespace panzer
            Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator =
                lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
 
-           fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+           fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
          {
             using Teuchos::RCP;
@@ -571,7 +571,7 @@ namespace panzer
 
             Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
          for (std::size_t i = 0; i < numParams; ++i) {
            using Teuchos::RCP;
@@ -597,13 +597,13 @@ namespace panzer
            Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator =
                lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
 
-           fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+           fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
 
          panzer::Traits::SD sd;
          sd.worksets_ = work_sets;
 
-         fm.postRegistrationSetup(sd);
+         fm->postRegistrationSetup(sd);
 
          panzer::Traits::PED ped;
          ped.gedc->addDataObject("Dirichlet Counter", dc_loc);
@@ -627,7 +627,7 @@ namespace panzer
          Teuchos::RCP<panzer::GlobalEvaluationData> activeParams =
             Teuchos::rcp(new panzer::ParameterList_GlobalEvaluationData(params));
          ped.gedc->addDataObject("PARAMETER_NAMES",activeParams);
-         fm.preEvaluate<panzer::Traits::Tangent>(ped);
+         fm->preEvaluate<panzer::Traits::Tangent>(ped);
 
          // run tests
          /////////////////////////////////////////////////////////////
@@ -638,8 +638,10 @@ namespace panzer
          workset.time = 0.0;
          workset.evaluate_transient_terms = false;
 
-         fm.evaluateFields<panzer::Traits::Tangent>(workset);
-         fm.postEvaluate<panzer::Traits::Tangent>(0);
+         fm->evaluateFields<panzer::Traits::Tangent>(workset);
+         fm->postEvaluate<panzer::Traits::Tangent>(0);
+
+         fm = Teuchos::null;
 
          // test Tangent fields
          panzer::index_t dc_count(0);

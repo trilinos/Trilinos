@@ -722,11 +722,11 @@ namespace panzer
          // setup field manager, add evaluator under test
          /////////////////////////////////////////////////////////////
 
-         PHX::FieldManager<panzer::Traits> fm;
+         auto fm = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
          std::vector<PHX::index_size_type> derivative_dimensions;
          derivative_dimensions.push_back(numParams);
-         fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
+         fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
 
          std::string resName = "";
          Teuchos::RCP<std::map<std::string, std::string>> names_map =
@@ -761,8 +761,8 @@ namespace panzer
 
             TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
-            fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
          }
          {
             using Teuchos::RCP;
@@ -788,8 +788,8 @@ namespace panzer
 
             TEST_EQUALITY(evaluator->evaluatedFields().size(), 1);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
-            fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
          }
 
          // support evaluators
@@ -818,7 +818,7 @@ namespace panzer
 
             Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
          for (std::size_t i = 0; i < numParams; ++i) {
            using Teuchos::RCP;
@@ -847,7 +847,7 @@ namespace panzer
            Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator =
                lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
 
-           fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+           fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
          {
             using Teuchos::RCP;
@@ -871,7 +871,7 @@ namespace panzer
 
             Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
 
-            fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+            fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
          for (std::size_t i = 0; i < numParams; ++i) {
            using Teuchos::RCP;
@@ -897,13 +897,13 @@ namespace panzer
            Teuchos::RCP<PHX::Evaluator<panzer::Traits>> evaluator =
                lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
 
-           fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+           fm->registerEvaluator<panzer::Traits::Tangent>(evaluator);
          }
 
          panzer::Traits::SD sd;
          sd.worksets_ = work_sets;
 
-         fm.postRegistrationSetup(sd);
+         fm->postRegistrationSetup(sd);
 
          panzer::Traits::PED ped;
          ped.gedc->addDataObject("Dirichlet Counter", dd_loc);
@@ -928,7 +928,7 @@ namespace panzer
             Teuchos::rcp(new panzer::ParameterList_GlobalEvaluationData(params));
          ped.gedc->addDataObject("PARAMETER_NAMES",activeParams);      
 
-         fm.preEvaluate<panzer::Traits::Tangent>(ped);
+         fm->preEvaluate<panzer::Traits::Tangent>(ped);
 
          // run tests
          /////////////////////////////////////////////////////////////
@@ -939,7 +939,9 @@ namespace panzer
          workset.time = 0.0;
          workset.evaluate_transient_terms = false;
 
-         fm.evaluateFields<panzer::Traits::Tangent>(workset);
+         fm->evaluateFields<panzer::Traits::Tangent>(workset);
+
+         fm = Teuchos::null;
 
          // test Residual fields
          panzer::index_t dd_count(0);
@@ -1044,25 +1046,49 @@ namespace panzer
                   Teuchos::rcp_dynamic_cast<TpetraBlockedLinObjContainerType>(paramContainers[i]->getGhostedLOC())->get_f());
 
             Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(param_f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
+            Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(dd_data));
             TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(0)->getLocalNumElements());
             for (size_type j = 0; j < data.size(); j++)
             {
                double target = .123 + myRank + i;
-               TEST_EQUALITY(data[j],target);
+               if (dd_data[j] == 0.0)
+               {
+                  TEST_EQUALITY(data[j],0.0);
+               }
+               else
+               {
+                  TEST_EQUALITY(data[j],target);                  
+               }
             }
             Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(param_f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
+            Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(dd_data));
             TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(1)->getLocalNumElements());
             for (size_type j = 0; j < data.size(); j++)
             {
                double target = .456 + myRank + i;
-               TEST_EQUALITY(data[j],target);
+               if (dd_data[j] == 0.0)
+               {
+                  TEST_EQUALITY(data[j],0.0);
+               }
+               else
+               {
+                  TEST_EQUALITY(data[j],target);                  
+               }
             }
             Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(param_f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
+            Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(dd_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(dd_data));
             TEST_EQUALITY(static_cast<size_t>(data.size()), b_loc->getMapForBlock(2)->getLocalNumElements());
             for (size_type j = 0; j < data.size(); j++)
             {
                double target = .789 + myRank + i;
-               TEST_EQUALITY(data[j],target);
+               if (dd_data[j] == 0.0)
+               {
+                  TEST_EQUALITY(data[j],0.0);
+               }
+               else
+               {
+                  TEST_EQUALITY(data[j],target);                  
+               }
             }
          }
       }
