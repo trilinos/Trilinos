@@ -47,12 +47,15 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
 extern bool use_eval_J;
 extern bool in_eval_J;
 extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
-
 extern double timer_evalJ;
 extern double timer_capsg;
+#endif
 
 // Constructors/Initializers/Accessors
 
@@ -1576,8 +1579,10 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(J)");
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
     double time_ = Teuchos::Time::wallTime();
     in_eval_J = true;
+#endif
     // only add auxiliary global data if Jacobian is being formed
     ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
 
@@ -1590,8 +1595,10 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     thGhostedContainer->initializeMatrix(0.0);
 
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
     in_eval_J = !use_eval_J;
     Timers["evalJ"].first += -time_ + Teuchos::Time::wallTime();
+#endif
   }
 
   // HACK: set A to null before calling responses to avoid touching the
