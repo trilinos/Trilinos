@@ -50,9 +50,11 @@ extern double timer_evalJ;
 extern double timer_capsg;
 #define PANZER_IMPL_NEW panzer_impl_new
 #define PANZER_IMPL_OLD panzer_impl_old
+#define IN_EVAL_J in_eval_J
 #else
 #define PANZER_IMPL_NEW true
 #define PANZER_IMPL_OLD false
+#define IN_EVAL_J true
 #endif
 
 namespace Tpetra {
@@ -4896,10 +4898,14 @@ namespace Tpetra {
     double padTime = Teuchos::Time::wallTime();
     auto padding = computeCrsPadding(srcRowGraph, numSameIDs,
       permuteToLIDs, permuteFromLIDs, verbose);
-    if (in_eval_J) Timers["capsg_G_pad"].first += -padTime + Teuchos::Time::wallTime();
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+    if (IN_EVAL_J) Timers["capsg_G_pad"].first += -padTime + Teuchos::Time::wallTime();
+#endif
     double apadTime = Teuchos::Time::wallTime();
     applyCrsPadding(*padding, verbose);
-    if (in_eval_J) Timers["capsg_G_apad"].first += -apadTime + Teuchos::Time::wallTime();
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+    if (IN_EVAL_J) Timers["capsg_G_apad"].first += -apadTime + Teuchos::Time::wallTime();
+#endif
 
     // If the source object is actually a CrsGraph, we can use view
     // mode instead of copy mode to access the entries in each row,
@@ -4937,7 +4943,9 @@ namespace Tpetra {
         srcRowGraph.getGlobalRowCopy (gid, row_copy, check_row_length);
         this->insertGlobalIndices (gid, row_length, row_copy.data());
       }
-      if (in_eval_J) Timers["capsg_G_1"].first += -time + Teuchos::Time::wallTime();
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+      if (IN_EVAL_J) Timers["capsg_G_1"].first += -time + Teuchos::Time::wallTime();
+#endif
     } else {
       double time = Teuchos::Time::wallTime();
       if (verbose) {
@@ -4951,7 +4959,9 @@ namespace Tpetra {
         srcCrsGraph->getGlobalRowView (gid, row);
         this->insertGlobalIndices (gid, row.extent(0), row.data());
       }
-      if (in_eval_J) Timers["capsg_G_2"].first += -time + Teuchos::Time::wallTime();
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+      if (IN_EVAL_J) Timers["capsg_G_2"].first += -time + Teuchos::Time::wallTime();
+#endif
     }
 
     //
@@ -4971,7 +4981,9 @@ namespace Tpetra {
         srcRowGraph.getGlobalRowCopy (srcgid, row_copy, check_row_length);
         this->insertGlobalIndices (mygid, row_length, row_copy.data());
       }
-      if (in_eval_J) Timers["capsg_G_3"].first += -time + Teuchos::Time::wallTime();
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+      if (IN_EVAL_J) Timers["capsg_G_3"].first += -time + Teuchos::Time::wallTime();
+#endif
     } else {
       double time = Teuchos::Time::wallTime();
       for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
@@ -4981,7 +4993,9 @@ namespace Tpetra {
         srcCrsGraph->getGlobalRowView (srcgid, row);
         this->insertGlobalIndices (mygid, row.extent(0), row.data());
       }
-      if (in_eval_J) Timers["capsg_G_4"].first += -time + Teuchos::Time::wallTime();
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+      if (IN_EVAL_J) Timers["capsg_G_4"].first += -time + Teuchos::Time::wallTime();
+#endif
     }
 
     if (verbose) {
@@ -4989,9 +5003,11 @@ namespace Tpetra {
       os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
-    if (in_eval_J) {
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+    if (IN_EVAL_J) {
       Timers["capsg_G"].first += -capTime + Teuchos::Time::wallTime();
     }
+#endif
 
   }
 

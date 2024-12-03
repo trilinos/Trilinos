@@ -7358,8 +7358,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
                                    importLIDs, constantNumPackets,
                                    combineMode);
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
       Timers["capsg_M_ucmac"].first += -padTime + Teuchos::Time::wallTime();
-
+#endif
     }
     else {
       {
@@ -7369,7 +7370,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           double padTime = Teuchos::Time::wallTime();
           padding = myGraph_->computePaddingForCrsMatrixUnpack(
             importLIDs, imports, numPacketsPerLID, verbose);
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
           Timers["capsg_M_pad"].first += -padTime + Teuchos::Time::wallTime();
+#endif
         }
         catch (std::exception& e) {
           const auto rowMap = getRowMap();
@@ -7388,7 +7391,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         }
         double padTime = Teuchos::Time::wallTime();
         applyCrsPadding(*padding, verbose);
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
         Timers["capsg_M_apad"].first += -padTime + Teuchos::Time::wallTime();
+#endif
       }
       if (verbose) {
         std::ostringstream os;
