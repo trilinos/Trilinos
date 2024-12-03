@@ -300,8 +300,6 @@ namespace panzer
             TEST_EQUALITY(dc_count, data.size()); 
          } else {
             Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec)->getLocalData(Teuchos::ptrFromRef(data));
-            //TEST_EQUALITY(static_cast<size_t>(data.size()), t_lof->getMap()->getLocalNumElements());
-            // TODO BWR OK?
             TEST_EQUALITY(static_cast<size_t>(data.size()), t_lof->getGhostedMap()->getLocalNumElements());
             TEST_EQUALITY(data.size(), dc_data.size());
             dc_count = 0;
@@ -675,8 +673,6 @@ namespace panzer
             TEST_EQUALITY(dc_count, data.size()); 
          } else {
             Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double>>(f_vec)->getLocalData(Teuchos::ptrFromRef(data));
-            //TEST_EQUALITY(static_cast<size_t>(data.size()), t_lof->getMap()->getLocalNumElements());
-            // TODO BWR OK?
             TEST_EQUALITY(static_cast<size_t>(data.size()), t_lof->getGhostedMap()->getLocalNumElements());
             TEST_EQUALITY(data.size(), dc_data.size());
             dc_count = 0;

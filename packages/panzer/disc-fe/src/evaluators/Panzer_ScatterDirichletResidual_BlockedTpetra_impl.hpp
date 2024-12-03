@@ -842,9 +842,8 @@ evaluateFields(typename TRAITS::EvalData workset)
                continue;
 
            kokkosScatterTarget(lid,0) = fieldValues(cell,basisIndex).val();
-           // TODO BWR Same question here
            for(int i_param=0; i_param<num_params; i_param++)
-             kokkosTangents(i_param)(lid,0) += fieldValues(cell,basis).fastAccessDx(i_param);
+             kokkosTangents(i_param)(lid,0) = fieldValues(cell,basis).fastAccessDx(i_param);
            kokkosDirichletCounter(lid,0) = 1.0;
          }
        });
@@ -857,9 +856,8 @@ evaluateFields(typename TRAITS::EvalData workset)
            if (lid < 0) // not on this processor!
              continue;
            kokkosScatterTarget(lid,0) = fieldValues(cell,basis).val();
-           // TODO BWR Same question here
            for(int i_param=0; i_param<num_params; i_param++)
-             kokkosTangents(i_param)(lid,0) += fieldValues(cell,basis).fastAccessDx(i_param);
+             kokkosTangents(i_param)(lid,0) = fieldValues(cell,basis).fastAccessDx(i_param);
            kokkosDirichletCounter(lid,0) = 1.0;
          }
        });

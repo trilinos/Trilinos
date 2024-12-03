@@ -184,14 +184,12 @@ public:
     for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
        int offset = offsets(basis);
        LO lid    = lids(cell,offset);
-       // TODO BWR ask about continues 
        if (lid<0) continue; // not on this processor
 
        int basisId = basisIds(basis);
        if (checkApplyBC)
          if(!applyBC(cell,basisId)) continue;
 
-       // TODO BWR should this be summed into?
        r_data(lid,0) = field(cell,basisId);
 
        // record that you set a dirichlet condition
@@ -474,10 +472,9 @@ public:
 
        r_data(lid,0) = field(cell,basisId).val();
 
-       // TODO BWR Should be summed or no? ASK!
        // loop over the tangents
        for(int i_param=0; i_param<num_params; i_param++)
-         dfdp_fields(i_param)(lid,0) += field(cell,basisId).fastAccessDx(i_param);
+         dfdp_fields(i_param)(lid,0) = field(cell,basisId).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition
        dirichlet_counter(lid,0) = 1.0;
@@ -514,10 +511,9 @@ public:
 
        r_data(lid,0) = field(cell,basis).val();
 
-       // TODO BWR CORRECT? 
        // loop over the tangents
        for(int i_param=0; i_param<num_params; i_param++)
-          dfdp_fields(i_param)(lid,0) += field(cell,basis).fastAccessDx(i_param);
+          dfdp_fields(i_param)(lid,0) = field(cell,basis).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition
        dirichlet_counter(lid,0) = 1.0;
