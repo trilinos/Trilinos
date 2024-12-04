@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList amesos2_params("Amesos2");
   if ( make_contiguous ) {
-    if( myRank == 0 ) { *fos << "  set IsContigous==false in solver parameter list" << endl; }
+    if( myRank == 0 ) { *fos << "  set IsContigous==false in solver parameter list" << std::endl; }
     amesos2_params.sublist(solver->name()).set("IsContiguous", false, "Are GIDs Contiguous");
   }
   #ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
