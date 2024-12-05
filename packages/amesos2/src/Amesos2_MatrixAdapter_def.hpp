@@ -177,7 +177,7 @@ namespace Amesos2 {
   MatrixAdapter<Matrix>::describe(Teuchos::FancyOStream &out,
                                   const Teuchos::EVerbosityLevel verbLevel) const
   {
-    // TODO : Make sure to implement in all specialization (Only in Tpetra::CrsMatrix)
+    // (implemented for Epetra::CrsMatrix & Tpetra::CrsMatrix)
     return static_cast<const adapter_t*>(this)->describe(out, verbLevel);
   }
 
