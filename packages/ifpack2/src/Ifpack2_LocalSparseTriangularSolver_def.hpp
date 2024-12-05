@@ -10,6 +10,9 @@
 #ifndef IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 #define IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 
+#include <sstream> // ostringstream
+#include <stdexcept> // runtime_error
+
 #include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -24,6 +27,53 @@
 namespace Ifpack2 {
 
 namespace Details {
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+
+inline void cusparse_error_throw(cusparseStatus_t cusparseStatus, const char* name, 
+                                 const char* file, const int line) {
+  std::ostringstream out;
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+  out << name << " error( " << cusparseGetErrorName(cusparseStatus) << "): " << cusparseGetErrorString(cusparseStatus);
+#else
+  out << name << " error( ";
+  switch (cusparseStatus) {
+    case CUSPARSE_STATUS_NOT_INITIALIZED:
+      out << "CUSPARSE_STATUS_NOT_INITIALIZED): cusparse handle was not "
+             "created correctly.";
+      break;
+    case CUSPARSE_STATUS_ALLOC_FAILED:
+      out << "CUSPARSE_STATUS_ALLOC_FAILED): you might tried to allocate too "
+             "much memory";
+      break;
+    case CUSPARSE_STATUS_INVALID_VALUE: out << "CUSPARSE_STATUS_INVALID_VALUE)"; break;
+    case CUSPARSE_STATUS_ARCH_MISMATCH: out << "CUSPARSE_STATUS_ARCH_MISMATCH)"; break;
+    case CUSPARSE_STATUS_MAPPING_ERROR: out << "CUSPARSE_STATUS_MAPPING_ERROR)"; break;
+    case CUSPARSE_STATUS_EXECUTION_FAILED: out << "CUSPARSE_STATUS_EXECUTION_FAILED)"; break;
+    case CUSPARSE_STATUS_INTERNAL_ERROR: out << "CUSPARSE_STATUS_INTERNAL_ERROR)"; break;
+    case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED: out << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED)"; break;
+    case CUSPARSE_STATUS_ZERO_PIVOT: out << "CUSPARSE_STATUS_ZERO_PIVOT)"; break;
+    default: out << "unrecognized error code): this is bad!"; break;
+  }
+#endif  // CUSPARSE_VERSION
+  if (file) {
+    out << " " << file << ":" << line;
+  }
+  throw std::runtime_error(out.str());
+}
+
+inline void cusparse_safe_call(cusparseStatus_t cusparseStatus, const char* name, const char* file = nullptr,
+                                        const int line = 0) {
+  if (CUSPARSE_STATUS_SUCCESS != cusparseStatus) {
+    cusparse_error_throw(cusparseStatus, name, file, line);
+  }
+}
+
+#define IFPACK2_DETAILS_CUSPARSE_SAFE_CALL(call) \
+  Ifpack2::Details::cusparse_safe_call(call, #call, __FILE__, __LINE__)
+
+#endif // defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+
 struct TrisolverType {
   enum Enum {
     Internal, //!< Tpetra::CrsMatrix::localSolve
@@ -675,7 +725,7 @@ compute ()
   #if (CUSPARSE_VERSION >= 12100)
           auto *sptrsv_handle = kh_v_[i]->get_sptrsv_handle();
           auto cusparse_handle = sptrsv_handle->get_cuSparseHandle();
-          KOKKOS_CUSPARSE_SAFE_CALL(
+          IFPACK2_DETAILS_CUSPARSE_SAFE_CALL(
               cusparseSetStream(cusparse_handle->handle, exec_space_instances_[i].cuda_stream()));
           cusparseSpSV_updateMatrix(cusparse_handle->handle,
                             cusparse_handle->spsvDescr,
