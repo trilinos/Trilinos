@@ -641,7 +641,6 @@ class TrilinosPRConfigurationBase(object):
         job_name = self.arg_pr_jenkins_job_name
 
         enable_map_entry = self.get_multi_property_from_config("ENABLE_MAP", job_name, delimeter=" ")
-
         # Generate files using ATDM/TriBiTS Scripts
         if enable_map_entry is None:
             cmd = [os.path.join( self.arg_workspace_dir,
@@ -752,6 +751,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_ctest_driver            = {}".format(self.arg_ctest_driver))
         self.message("--- arg_ctest_drop_site         = {}".format(self.arg_ctest_drop_site))
         self.message("--- arg_ccache_enable           = {}".format(self.arg_ccache_enable))
+        self.message("--- arg_skip_create_packageenables = {}".format(self.arg_skip_create_packageenables))
         self.message("")
         self.message("--- concurrency_build           = {}".format(self.concurrency_build))
         self.message("--- concurrency_test            = {}".format(self.concurrency_test))

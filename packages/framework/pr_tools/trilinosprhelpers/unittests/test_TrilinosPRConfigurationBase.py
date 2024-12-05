@@ -692,7 +692,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args.skip_create_packageenables = True
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
-        trilinosprhelpers.TrilinosPRConfigurationBase.create_package_enables_file = Mock()
+        pr_config.create_package_enables_file = Mock()
         pr_config.prepare_test()
 
         pr_config.create_package_enables_file.assert_not_called()
