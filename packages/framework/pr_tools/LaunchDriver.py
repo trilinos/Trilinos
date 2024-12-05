@@ -116,8 +116,11 @@ def main(argv):
   if args.kokkos_develop:
      cmd += " --kokkos-develop"
 
+  # extra-configure-args flag currently takes precedence over the env. var.
   if args.extra_configure_args:
      cmd += f" --extra-configure-args=\"{args.extra_configure_args}\""
+  elif os.getenv("EXTRA_CONFIGURE_ARGS"):
+     cmd += f" --extra-configure-args=\"{os.getenv('EXTRA_CONFIGURE_ARGS')}\""
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 
