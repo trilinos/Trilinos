@@ -692,11 +692,10 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args.skip_create_packageenables = True
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
-        with patch('trilinosprhelpers.TrilinosPRConfigurationBase.create_package_enables_file') as m_call:
-            pr_config.prepare_test()
+        trilinosprhelpers.TrilinosPRConfigurationBase.create_package_enables_file = Mock()
+        pr_config.prepare_test()
 
-        expected_call_count = 0
-        self.assertEqual(m_call.call_count, expected_call_count)
+        pr_config.create_package_enables_file.assert_not_called()
 
 
     def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):
