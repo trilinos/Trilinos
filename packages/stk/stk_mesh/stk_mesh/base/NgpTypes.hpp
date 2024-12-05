@@ -44,21 +44,36 @@ namespace mesh {
 
 using DeviceCommMapIndices        = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
 using HostCommMapIndices          = DeviceCommMapIndices::HostMirror;
+using HostCommMapIndicesMemSpace  = HostCommMapIndices::traits::memory_space;
+template <typename NgpMemSpace> using NgpCommMapIndicesT = Kokkos::View<FastMeshIndex*, NgpMemSpace>;
+template <typename NgpMemSpace> using NgpCommMapIndicesHostMirrorT = typename NgpCommMapIndicesT<NgpMemSpace>::HostMirror;
+
 using EntityKeyViewType           = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
 using EntityViewType              = Kokkos::View<Entity*, stk::ngp::MemSpace>;
 using HostEntityViewType          = Kokkos::View<const Entity*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+template <typename NgpMemSpace> using EntityKeyViewTypeT = Kokkos::View<EntityKey*, NgpMemSpace>; 
+template <typename NgpMemSpace> using EntityViewTypeT = Kokkos::View<Entity*, NgpMemSpace>; 
+
+
 using BucketConnectivityType      = Kokkos::View<Entity*, stk::ngp::MemSpace>;
 using UnsignedViewType            = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
+template <typename NgpMemSpace> using UnsignedViewTypeT  = Kokkos::View<unsigned*, NgpMemSpace>;
 using Unsigned2dViewType          = Kokkos::View<unsigned**, stk::ngp::MemSpace>;
 using BoolViewType                = Kokkos::View<bool*, stk::ngp::MemSpace>;
 using OrdinalViewType             = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
+template <typename NgpMemSpace> using OrdinalViewTypeT = Kokkos::View<ConnectivityOrdinal*, NgpMemSpace>;
 using PartOrdinalViewType         = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
 using HostPartOrdinalViewType     = Kokkos::View<const PartOrdinal*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
+template <typename NgpMemSpace> using PermutationViewTypeT = Kokkos::View<Permutation*, NgpMemSpace>;
 using FastSharedCommMapViewType   = DeviceCommMapIndices;
-using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
 using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+using HostMeshIndexType           = MeshIndexType::HostMirror;
+
+
 using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
+template <typename NgpMemSpace> using BucketEntityOffsetsViewTypeT = Kokkos::View<int*, NgpMemSpace>;
 
 template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;

@@ -21,6 +21,12 @@
 #ifndef ML_MULTILEVELPRECONDITIONER_H
 #define ML_MULTILEVELPRECONDITIONER_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 #include "ml_include.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
@@ -1350,10 +1356,3 @@ extern int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
 #endif /* defined HAVE_ML_EPETRA and HAVE_ML_TEUCHOS */
 
 #endif /* define ML_MULTILEVELPRECONDITIONER_H */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

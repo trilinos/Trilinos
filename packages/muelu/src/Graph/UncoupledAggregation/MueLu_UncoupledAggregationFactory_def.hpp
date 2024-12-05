@@ -75,14 +75,12 @@ RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal
   SET_VALID_ENTRY("aggregation: use interface aggregation");
   SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
   SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
-  SET_VALID_ENTRY("aggregation: compute aggregate qualities");
   SET_VALID_ENTRY("aggregation: phase 1 algorithm");
 #undef SET_VALID_ENTRY
 
   // general variables needed in AggregationFactory
   validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
   validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase>>("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
   // special variables necessary for OnePtAggregationAlgorithm
   validParamList->set<std::string>("OnePt aggregate map name", "", "Name of input map for single node aggregates. (default='')");
@@ -130,10 +128,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInpu
     } else {
       Input(currentLevel, "nodeOnInterface");
     }
-  }
-
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    Input(currentLevel, "AggregateQualities");
   }
 }
 
@@ -196,9 +190,8 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     runOnHost    = false;
 
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: use interface aggregation"), std::invalid_argument, "Option: 'aggregation: use interface aggregation' is not supported in the Kokkos version of uncoupled aggregation");
-    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 or Phase 2b, but is in 2a
+    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 , but it is in 2a and 2b
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase1"), std::invalid_argument, "Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
-    TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase2b"), std::invalid_argument, "Option: 'aggregation: match ML phase2b' is not supported in the Kokkos version of uncoupled aggregation");
   }
 
   // Build
@@ -375,10 +368,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   aggregates->ComputeAggregateSizes(true /*forceRecompute*/);
 
   Set(currentLevel, "Aggregates", aggregates);
-
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    RCP<Xpetra::MultiVector<DefaultScalar, LO, GO, Node>> aggQualities = Get<RCP<Xpetra::MultiVector<DefaultScalar, LO, GO, Node>>>(currentLevel, "AggregateQualities");
-  }
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>

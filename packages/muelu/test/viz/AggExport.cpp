@@ -254,14 +254,17 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
     std::string matrixType = galeriParameters.GetMatrixType();
     std::string aggVizType = paramList.get<std::string>("aggregation: output file: agg style");
+    std::string aggQuality = "";
+    if (paramList.isParameter("aggregation: output file: aggregate qualities"))
+      aggQuality = paramList.get<bool>("aggregation: output file: aggregate qualities") ? "-AggregateQuality" : "";
     aggVizType.erase(std::remove_if(aggVizType.begin(), aggVizType.end(), ::isspace), aggVizType.end());
     if (ndims == 2)
-      paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-2D-Level%LEVELID-Proc%PROCID");
+      paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-2D-Level%LEVELID-Proc%PROCID");
     else if (ndims == 3) {
       if (comm->getSize() > 1)
-        paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-" + matrixType + "-" + aggVizType + "-Level%LEVELID-Proc%PROCID");
+        paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-" + matrixType + "-" + aggVizType + aggQuality + "-Level%LEVELID-Proc%PROCID");
       else
-        paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-" + matrixType + "-" + aggVizType + "-Level%LEVELID");
+        paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-" + matrixType + "-" + aggVizType + aggQuality + "-Level%LEVELID");
     }
 
     if (nullspace.is_null()) {
@@ -330,9 +333,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     std::string filenameToWrite;
     if (comm->getSize() > 1)
-      filenameToWrite = "MPI-Viz-Output-" + matrixType + "-" + aggVizType + "-Level0-Proc%PROCID";
+      filenameToWrite = "Output/MPI-Viz-Output-" + matrixType + "-" + aggVizType + aggQuality + "-Level0-Proc%PROCID";
     else
-      filenameToWrite = "MPI-Viz-Output-" + matrixType + "-" + aggVizType + "-Level0";
+      filenameToWrite = "Output/MPI-Viz-Output-" + matrixType + "-" + aggVizType + aggQuality + "-Level0";
     std::string outfileName = replaceAll(filenameToWrite, "%PROCID", MueLu::toString(comm->getRank()));
     aggMatch                = compare_to_gold_all_ranks(comm->getRank(), outfileName);
 

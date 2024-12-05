@@ -11,13 +11,10 @@
 #ifndef ROL_FINITEDIFFERENCEDEF_HPP
 #define ROL_FINITEDIFFERENCEDEF_HPP
 
-#include <iomanip>
-
 namespace ROL {
 
 namespace details {
 
-using namespace std;
 using ::ROL::Finite_Difference_Arrays::shifts;
 using ::ROL::Finite_Difference_Arrays::weights;
 

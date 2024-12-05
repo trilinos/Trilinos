@@ -1780,8 +1780,11 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
         RCP<panzer::ResponseMESupportBase<panzer::Traits::Tangent> > resp =
           rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Tangent> >(
             responseLibrary_->getResponse<panzer::Traits::Tangent>(responseName));
-        resp->setVector(vec);
-        is_active = true;
+
+        if (nonnull(resp)) {
+          resp->setVector(vec);
+          is_active = true;
+        }
       }
     }
 

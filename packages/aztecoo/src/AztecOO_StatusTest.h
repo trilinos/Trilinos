@@ -45,6 +45,12 @@
 #ifndef AZTECOO_STATUSTEST_H
 #define AZTECOO_STATUSTEST_H
 
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
 class Epetra_MultiVector;
 #include "AztecOO_StatusType.h"
 #include "Epetra_ConfigDefs.h"
@@ -149,10 +155,3 @@ class AztecOO_StatusTest {
 
 
 #endif /* AZTECOO_STATUSTEST_H */
-
-#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The AztecOO package is deprecated"
-#endif
-#endif
-

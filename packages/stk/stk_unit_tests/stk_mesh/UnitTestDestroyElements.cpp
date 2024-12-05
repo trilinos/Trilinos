@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
@@ -660,7 +661,7 @@ TEST(DestroyElements, destroyAll)
   builder.set_maximum_bucket_capacity(2);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
 
-  stk::io::fill_mesh("generated:1x1x4", *bulkPtr);
+  stk::mesh::fixtures::HexFixture::fill_mesh(1,1,4, *bulkPtr, "block_1");
   stk::mesh::Part* block1 = bulkPtr->mesh_meta_data().get_part("block_1");
   stk::mesh::Part& block2 = bulkPtr->mesh_meta_data().declare_part("block_2", stk::topology::ELEM_RANK);
   stk::mesh::EntityVector elemsToMove = {

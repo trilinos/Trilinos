@@ -156,7 +156,8 @@ class SearchResultsInserter
 template <typename DomainBoxType, typename DomainIdentType, typename RangeBoxType, typename RangeIdentType>
 inline void local_coarse_search_arborx(const std::vector<std::pair<DomainBoxType, DomainIdentType>>& localDomain,
     const std::vector<std::pair<RangeBoxType, RangeIdentType>>& localRange,
-    std::vector<std::pair<DomainIdentType, RangeIdentType>>& searchResults)
+    std::vector<std::pair<DomainIdentType, RangeIdentType>>& searchResults,
+    bool sortSearchResults = false)
 {
   using ExecSpace  = Kokkos::DefaultHostExecutionSpace;
   using MemSpace   = typename ExecSpace::memory_space;
@@ -196,6 +197,12 @@ inline void local_coarse_search_arborx(const std::vector<std::pair<DomainBoxType
   ArborX::BVH<MemSpace> bvh(execSpace, localRangeViewWrapped);
   bvh.query(execSpace, localDomainViewWrapped, callback);
   execSpace.fence();
+  
+  if (sortSearchResults) {
+    Kokkos::Profiling::pushRegion("Sort searchResults");
+    std::sort(searchResults.begin(), searchResults.end());
+    Kokkos::Profiling::popRegion();
+  }
 }
 
 template <typename DomainView,
@@ -206,7 +213,8 @@ inline void local_coarse_search_arborx(
     const DomainView& localDomain,
     const RangeView& localRange,
     ResultView& searchResults,
-    ExecutionSpace const& execSpace = ExecutionSpace{})
+    ExecutionSpace const& execSpace = ExecutionSpace{},
+    bool sortSearchResults = false)
 {
   check_coarse_search_types_local<DomainView, RangeView, ResultView, ExecutionSpace>();
   using MemSpace        = typename ExecutionSpace::memory_space;
@@ -258,6 +266,13 @@ inline void local_coarse_search_arborx(
 
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
+
+  if (sortSearchResults) {
+    Kokkos::Profiling::pushRegion("Sort searchResults");
+    Kokkos::sort(searchResults, Comparator<typename ResultView::value_type>());
+    Kokkos::Profiling::popRegion();
+  }
+
 }
 
 }  // namespace stk::search

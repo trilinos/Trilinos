@@ -13,6 +13,6 @@ export TRILINOS_BUILD_STATS_BASE_DIR="@BASE_BUILD_DIR_FOR_PYTHON@"
 if [ "${CMAKE_IS_IN_CONFIGURE_MODE}" == "1" ]; then
   ${TRILINOS_BUILD_STATS_INNER_OP} "$@"
 else
-  "@PYTHON_EXECUTABLE@" \
+  "@Python3_EXECUTABLE@" \
     "@BUILD_STATS_SRC_DIR@/wrapper/magic_wrapper.py" "$@"
 fi

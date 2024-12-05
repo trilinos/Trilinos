@@ -557,7 +557,7 @@ bool
 ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
-  if(current_phase == SOLVE) return (false);
+  if(current_phase == SOLVE || current_phase == PREORDERING ) return( false );
 
   #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
@@ -573,7 +573,8 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   {
 
     // Only the root image needs storage allocated
-    if( this->root_ ){
+    if( this->root_ && current_phase == SYMBFACT )
+    {
       Kokkos::resize(nzvals_view_, this->globalNumNonZeros_);
       Kokkos::resize(rowind_view_, this->globalNumNonZeros_);
       Kokkos::resize(colptr_view_, this->globalNumCols_ + 1); //this will be wrong for case of gapped col ids, e.g. 0,2,4,9; num_cols = 10 ([0,10)) but num GIDs = 4...

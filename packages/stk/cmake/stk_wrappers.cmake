@@ -17,6 +17,35 @@ macro(STK_CONFIGURE_FILE filename)
   endif()
 endmacro()
 
+function(stk_check_fp_handling)
+#
+# The following try_run commands use syntax that is supposed to work for
+# cmake versions older than 3.25, as stated in cmake documentation
+# here: https://cmake.org/cmake/help/latest/command/try_run.html
+# As of Nov 8, 2024, trilinos and stk require cmake 3.23
+#
+  message("calling try_run with bindir=${CMAKE_CURRENT_BINARY_DIR}/fpexcept, srcfile=${${PACKAGE_NAME}_SOURCE_DIR}/cmake/fpexcept/fpexcept_test.cpp")
+  try_run(RUN_RESULT COMPILE_RESULT
+          ${CMAKE_CURRENT_BINARY_DIR}/fpexcept
+          ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/fpexcept/fpexcept_test.cpp
+          RUN_OUTPUT_VARIABLE FP_RESULT)
+  
+  message("FP-EXCEPT-CHECK COMPILE_RESULT: ${COMPILE_RESULT}")
+  message("FP-EXCEPT-CHECK RUN_RESULT: ${RUN_RESULT}")
+  set(STK_HAVE_FP_EXCEPT ${FP_RESULT} CACHE BOOL "")
+  message("STK_HAVE_FP_EXCEPT: ${STK_HAVE_FP_EXCEPT}")
+
+  try_run(RUN_RESULT COMPILE_RESULT
+          ${CMAKE_CURRENT_BINARY_DIR}/fperrno
+          ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/fperrno/fperrno_test.cpp
+          RUN_OUTPUT_VARIABLE FP_RESULT)
+  
+  message("FP-ERRNO-CHECK COMPILE_RESULT: ${COMPILE_RESULT}")
+  message("FP-ERRNO-CHECK RUN_RESULT: ${RUN_RESULT}")
+  set(STK_HAVE_FP_ERRNO ${FP_RESULT} CACHE BOOL "")
+  message("STK_HAVE_FP_ERRNO: ${STK_HAVE_FP_ERRNO}")
+endfunction()
+
 function(stk_process_enables)
   message("******** Begin stk_process_enables ******")
   if(STK_ENABLE_ALL)

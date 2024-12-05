@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Verify coefficients:
-  MV coeffs_mv = makeStaticLocalMultiVector (*X1, numVecs, numVecs);
+  MV coeffs_mv = impl::makeStaticLocalMultiVector (*X1, numVecs, numVecs);
   Tpetra::deep_copy(coeffs_mv, *coeffMat);
   XCopy->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *X1, coeffs_mv, -1.0);
   std::vector<MT> norms(numVecs);

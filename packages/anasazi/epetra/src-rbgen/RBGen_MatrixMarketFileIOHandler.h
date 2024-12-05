@@ -84,4 +84,3 @@ namespace RBGen {
 } // namespace RBGen
 
 #endif // MATRIX_MARKET_FILE_IO_HANDLER_H
-

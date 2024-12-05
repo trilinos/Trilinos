@@ -38,7 +38,6 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_util/util/SortAndUnique.hpp>

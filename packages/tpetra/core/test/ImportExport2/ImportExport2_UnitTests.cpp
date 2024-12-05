@@ -504,7 +504,7 @@ namespace {
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
       typedef typename CrsMatrix<Scalar, LO, GO>::nonconst_local_inds_host_view_type lids_type;
       typedef typename CrsMatrix<Scalar,LO,GO>::nonconst_values_host_view_type vals_type;
- 
+
       lids_type tgtRowInds;
       vals_type tgtRowVals;
       lids_type tgt2RowInds;
@@ -730,7 +730,7 @@ namespace {
         // MV::imports_ and MV::view_ have the same memory space, the
         // imports_ view is aliased to the data view of the target MV.
         if ((myImageID == collectRank) && (myImageID == 0)) {
-          if (mv_type::dual_view_type::impl_dualview_is_single_device::value)
+          if (std::is_same_v<typename mv_type::dual_view_type::t_dev::device_type, typename mv_type::dual_view_type::t_host::device_type>)
             TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
           // else {
           //   We do not know if copyAndPermute was run on host or device.
@@ -800,7 +800,7 @@ namespace {
         // MV::imports_ and MV::view_ have the same memory space, the
         // imports_ view is aliased to the data view of the target MV.
         if ((myImageID == collectRank) && (myImageID == 0)) {
-          if (mv_type::dual_view_type::impl_dualview_is_single_device::value)
+          if (std::is_same_v<typename mv_type::dual_view_type::t_dev::device_type, typename mv_type::dual_view_type::t_host::device_type>)
             TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
           // else {
           //   We do not know if copyAndPermute was run on host or device.
@@ -2356,8 +2356,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 4-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
+
+    // NOTE: This test is run entirely on host.  Trying to run this on
+    // device is trickier, since we don't allow sending from CudaUVM buffers, but
+    // do allow sends from HIP Unified Memory
     Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
-    distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
+    auto exportsView_h = create_mirror_view(Kokkos::HostSpace(),exports.view_host());
+    deep_copy(exportsView_h,exports.view_host());
+    distor.doPostsAndWaits(exportsView_h,numExportPackets(),importsView,numImportPackets());
     auto importsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(), importsView);
     deep_copy(importsView_d,importsView);
     if (verbose) {
@@ -2514,7 +2520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   // it will), in which case we can remove the persistingView call.
   auto rowptr = Kokkos::Compat::persistingView(A->getLocalRowPtrsHost());
   auto colind = Kokkos::Compat::persistingView(A->getLocalIndicesHost());
-  
+
   Acolmap = A->getColMap();
   Adomainmap = A->getDomainMap();
 

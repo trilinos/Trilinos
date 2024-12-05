@@ -126,6 +126,7 @@ int main(int argc, char* argv[]) {
     if (endRes < convTol && numIters == 1) {
       pass = true;
     }
+    delete myPrec;
   }
   Kokkos::finalize();
 

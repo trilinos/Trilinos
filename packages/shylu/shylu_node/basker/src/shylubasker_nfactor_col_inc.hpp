@@ -654,7 +654,7 @@ namespace BaskerNS
     //end get needed variables//
 
     //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
-    BASKER_MATRIX        &U = LU(U_col)(U_row); 
+    BASKER_MATRIX        &U = LU(U_col)(U_row);
     
     //Ask C++ guru if this is ok
     BASKER_MATRIX        *Bp;
@@ -664,7 +664,7 @@ namespace BaskerNS
       }
     else
       {
-	Bp = &(thread_array[kid].C);
+	Bp = &(thread_array(kid).C);
       }
     BASKER_MATRIX    &B = *Bp;
     //if(kid ==0)
@@ -2471,7 +2471,7 @@ namespace BaskerNS
     Int col_idx_offset    = 0;  //can get rid of?
    
     //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
-    BASKER_MATRIX        &U = LU(U_col)(U_row); 
+    BASKER_MATRIX        &U = LU(U_col)(U_row);
     
     INT_1DARRAY     ws = LL(X_col)(X_row).iws;
     //const Int  ws_size = LL(X_col)(X_row).iws_size;
@@ -2592,7 +2592,7 @@ namespace BaskerNS
     //Int col_idx_offset    = 0;  //can get rid of?//NDE - warning: unused 
    
     //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused
-    BASKER_MATRIX        &U = LU(U_col)(U_row); 
+    BASKER_MATRIX        &U = LU(U_col)(U_row);
     
     INT_1DARRAY     ws = LL(X_col)(X_row).iws;
     //const Int  ws_size = LL(X_col)(X_row).iws_size; 

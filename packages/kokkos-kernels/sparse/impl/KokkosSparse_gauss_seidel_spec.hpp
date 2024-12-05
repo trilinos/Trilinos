@@ -282,6 +282,8 @@ struct GAUSS_SEIDEL_APPLY<ExecSpaceIn, KernelHandle, format, a_size_view_t_, a_l
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_gauss_seidel_symbolic_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_GAUSS_SEIDEL_SYMBOLIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,    \
                                                          EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                        \
   template struct GAUSS_SEIDEL_SYMBOLIC<                                                                         \
@@ -320,6 +322,8 @@ struct GAUSS_SEIDEL_APPLY<ExecSpaceIn, KernelHandle, format, a_size_view_t_, a_l
       Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
       false, true>;
+
+#include <generated_specializations_hpp/KokkosSparse_gauss_seidel_numeric_eti_spec_decl.hpp>
 
 #define KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,     \
                                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                         \
@@ -382,6 +386,8 @@ struct GAUSS_SEIDEL_APPLY<ExecSpaceIn, KernelHandle, format, a_size_view_t_, a_l
       Kokkos::View<const SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
       false, true>;
+
+#include <generated_specializations_hpp/KokkosSparse_gauss_seidel_apply_eti_spec_decl.hpp>
 
 #define KOKKOSSPARSE_GAUSS_SEIDEL_APPLY_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,       \
                                                       EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                           \

@@ -98,6 +98,8 @@ void EntityKeyMapping::clear_all_cache()
 
 void EntityKeyMapping::clear_destroyed_entity_cache(EntityRank rank) const
 {
+  STK_ThrowAssertMsg(static_cast<unsigned>(rank) < m_destroy_cache.size(), "clear_destroyed_entity_cache rank="<<rank<<" out of range, m_destroy_cache.size()="<<m_destroy_cache.size());
+
   if (!m_destroy_cache[rank].empty()) {
     std::vector<EntityKey>& destroy = m_destroy_cache[rank];
     std::sort(destroy.begin(), destroy.end());
@@ -244,7 +246,17 @@ EntityKeyMapping::internal_create_entity( const EntityKey & key)
 
 Entity EntityKeyMapping::get_entity(const EntityKey &key) const
 {
+  if (!key.is_valid()) {
+    return Entity();
+  }
+
   EntityRank rank = key.rank();
+  if (rank >= entity_rank_count()) {
+    return Entity();
+  }
+
+  STK_ThrowAssertMsg(static_cast<unsigned>(rank) < m_destroy_cache.size(), "get_entity rank="<<rank<<" out of range, m_destroy_cache.size()="<<m_destroy_cache.size());
+
   if (!m_destroy_cache[rank].empty()) {
     const std::vector<EntityKey>& destroyed = m_destroy_cache[rank];
     if (destroyed.size() < 64) {
@@ -259,13 +271,6 @@ Entity EntityKeyMapping::get_entity(const EntityKey &key) const
   }
 
   clear_updated_entity_cache(rank);
-
-  STK_ThrowErrorMsgIf( ! key.is_valid(),
-      "Invalid key: " << key.rank() << " " << key.id());
-
-  if (rank >= entity_rank_count()) {
-    return Entity();
-  }
 
   entity_iterator ent = get_from_cache(key);
   if (ent != m_create_cache[rank].end()) {

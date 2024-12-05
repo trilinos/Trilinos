@@ -127,4 +127,3 @@ Zoltan_PHG_Timers_init(ZZ* zz);
 #endif
 
 #endif   /* __ZOLTAN_PHG_TREE_H */
-

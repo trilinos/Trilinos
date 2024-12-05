@@ -10,6 +10,7 @@
 #ifndef TPETRA_BLOCKMULTIVECTOR_DEF_HPP
 #define TPETRA_BLOCKMULTIVECTOR_DEF_HPP
 
+#include "Tpetra_BlockMultiVector_decl.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_BlockView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
@@ -18,9 +19,17 @@
 namespace Tpetra {
 
 template<class Scalar, class LO, class GO, class Node>
-typename BlockMultiVector<Scalar, LO, GO, Node>::mv_type
+const typename BlockMultiVector<Scalar, LO, GO, Node>::mv_type &
 BlockMultiVector<Scalar, LO, GO, Node>::
 getMultiVectorView () const
+{
+  return mv_;
+}
+
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::mv_type &
+BlockMultiVector<Scalar, LO, GO, Node>::
+getMultiVectorView ()
 {
   return mv_;
 }

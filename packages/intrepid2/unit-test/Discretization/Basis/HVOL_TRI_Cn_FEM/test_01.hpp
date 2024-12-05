@@ -109,12 +109,12 @@ namespace Intrepid2 {
             // test for Kronecker property
         for (int i=0;i<polydim;i++) {
           for (int j=0;j<numPoints;j++) {
-            if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
+            if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol * 10 ) { // relax tolerance now that we support orders up to 20
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               *outStream << " Basis function " << i << " does not have unit value at its node (" << h_basisAtLattice(i,j) <<")\n";
             }
-            if ( i!=j && std::abs( h_basisAtLattice(i,j) ) > tol ) {
+            if ( i!=j && std::abs( h_basisAtLattice(i,j) ) > tol * 10 ) { // relax tolerance now that we support orders up to 20
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";

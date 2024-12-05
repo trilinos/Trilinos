@@ -22,6 +22,7 @@ ADD_SUBDIRECTORIES(
   ImportExport
   ImportExport2
   inout
+  LinearProblem
   Map
   MatrixMatrix
   Merge

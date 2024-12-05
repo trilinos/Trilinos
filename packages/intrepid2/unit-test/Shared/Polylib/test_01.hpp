@@ -233,9 +233,11 @@ namespace Intrepid2 {
 
       outStream->precision(5);
 
-      // this test upto order 30 - offset (1,2,3)
       const ordinal_type npLower = 5, npUpper = Polylib::MaxPolylibPoint;
+      const ordinal_type npUpperStep1 = 21; // we cover all np values from npLower to npUpperStep1; we only cover every 5th one after that
       const ValueType tol = 1000.0 * tolerence();
+      const double  lowOrderTol = tol;
+      const double highOrderTol = tol * 100;
 
       try {
         Kokkos::View<ValueType*,Kokkos::HostSpace> 
@@ -267,18 +269,21 @@ namespace Intrepid2 {
             while (alpha <= 5.0) {
               ValueType beta = -0.5;
               while (beta <= 5.0) {
-                for (auto np = npLower; np <= npUpper; ++np){
+                ordinal_type npStep = 1;
+                for (auto np = npLower; np <= npUpper; np += npStep){
+                  const double localTol = (np > 20) ? highOrderTol : lowOrderTol;
                   Polylib::Serial::getCubature(z, w, np, alpha, beta, poly);
 
                   for (auto n = 2; n < 2*np-off; ++n){
                     Polylib::Serial::JacobiPolynomial(np, z, p, null, n, alpha, beta);
                     const ValueType sum = ddot<ValueType>(np, w, p);
-                    if (std::isnan(sum) || std::abs(sum) > tol) {
+                    if (std::isnan(sum) || std::abs(sum) > localTol) {
                       errorFlag = -1000;
                       *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
                         ", np = " << np << ", n = " << n << "  integral was " << sum << "\n";
                     }
                   }
+                  if (np == npUpperStep1) npStep = 5;
                 }
                 beta += 0.5;
               }
@@ -294,8 +299,10 @@ namespace Intrepid2 {
             while (alpha <= 5.0) {
               ValueType beta = -0.5;
               while (beta <= 5.0) {
-                for (auto np = npLower; np <= npUpper; ++np) {
+                ordinal_type npStep = 1;
+                for (auto np = npLower; np <= npUpper; np += npStep) {
                   Polylib::Serial::getCubature(z, w, np, alpha, beta, poly);
+                  const double localTol = (np > 20) ? highOrderTol : lowOrderTol;
 
                   for (auto n = 2; n < np-1; ++n) {
                     Polylib::Serial::getDerivative(d, z, np, alpha, beta, poly);
@@ -307,12 +314,13 @@ namespace Intrepid2 {
                     for (auto i = 0; i < np; ++i)
                       sum += std::abs(ddot<ValueType>(np, Kokkos::subview(d, i, Kokkos::ALL()), p) - n*std::pow(z(i),n-1));
                     sum /= (ValueType)np;
-                    if (std::abs(sum)>tol) {
+                    if (std::abs(sum)>localTol) {
                       errorFlag = -1000;
                       *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
                         ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
                     }
                   }
+                  if (np == npUpperStep1) npStep = 5;
                 }
                 beta += 0.5;
               }
@@ -328,8 +336,9 @@ namespace Intrepid2 {
             while (alpha <= 5.0) {
               ValueType beta = -0.5;
               while (beta <= 5.0) {
-                
-                for (auto np = npLower; np <= npUpper; ++np) {
+                ordinal_type npStep = 1;
+                for (auto np = npLower; np <= npUpper; np += npStep) {
+                  const double localTol = (np > 20) ? highOrderTol : lowOrderTol;
                   Polylib::Serial::getCubature(z, w, np, alpha, beta, poly);
 
                   for (auto n = 2; n < np-1; ++n) {
@@ -343,12 +352,13 @@ namespace Intrepid2 {
                     for (auto i = 0; i < np; ++i)
                       sum += std::abs(ddot<ValueType>(np, Kokkos::subview(d, i, Kokkos::ALL()), p) - std::pow(w(i),n));
                     sum /= (ValueType)np;
-                    if (std::abs(sum)>tol) {
+                    if (std::abs(sum)>localTol) {
                       errorFlag = -1000;
                       *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
                         ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
                     }
                   }
+                  if (np == npUpperStep1) npStep = 5;
                 }
                 beta += 0.5;
               }

@@ -16,7 +16,7 @@
 
 #include "KokkosBlas2_gemv.hpp"
 #include <Kokkos_Random.hpp>
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 struct Params {
   int use_cuda    = 0;

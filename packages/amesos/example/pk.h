@@ -20,4 +20,3 @@ void *my_realloc2 (void *p, size_t size) ;
 void my_free2 (void *p) ;
 void normal_memory_handler ( cholmod_common *cm ) ;
 void test_memory_handler ( cholmod_common *cm ) ;
-

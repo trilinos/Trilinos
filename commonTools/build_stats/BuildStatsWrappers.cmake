@@ -162,7 +162,7 @@ endfunction()
 macro(get_base_build_dir_for_python)
   set(get_cwd_for_python ${BUILD_STATS_SRC_DIR}/get_cwd_for_python.py)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${get_cwd_for_python}
+    COMMAND ${Python3_EXECUTABLE} ${get_cwd_for_python}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
     OUTPUT_STRIP_TRAILING_WHITESPACE)

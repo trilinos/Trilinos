@@ -617,7 +617,7 @@ int64_t spmv_struct_launch_parameters(int64_t numInterior, int64_t nnz, int nnz_
 
   // Determine rows per thread
   if (rows_per_thread < 1) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>())
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>)
       rows_per_thread = 1;
     else {
       if (nnz_per_row < 20 && numInterior * nnz_per_row > 5000000) {
@@ -628,7 +628,7 @@ int64_t spmv_struct_launch_parameters(int64_t numInterior, int64_t nnz, int nnz_
   }
 
   if (team_size < 1) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
       team_size = 128 / vector_length;
     } else {
       team_size = 1;

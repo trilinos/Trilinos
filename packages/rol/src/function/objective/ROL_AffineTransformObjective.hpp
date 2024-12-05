@@ -52,6 +52,7 @@ public:
   Real value( const Vector<Real> &x, Real &tol ) override;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  const Ptr<Objective<Real>> getObjective() const {return obj_;}
 
 public:
   void setParameter(const std::vector<Real> &param) override;

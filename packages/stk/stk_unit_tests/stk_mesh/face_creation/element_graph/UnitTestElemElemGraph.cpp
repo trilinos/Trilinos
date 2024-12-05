@@ -20,6 +20,7 @@
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ProcessKilledElements.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>

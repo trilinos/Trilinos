@@ -83,18 +83,8 @@ typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
 typedef std::vector<EntityKey>      EntityKeyVector;
 
-template< typename Scalar = void ,
-          class Tag1 = void , class Tag2 = void ,
-          class Tag3 = void , class Tag4 = void ,
-          class Tag5 = void , class Tag6 = void ,
-          class Tag7 = void >
-  class Field ;
-
-/** \brief Maximum
- *  \ref "multi-dimensional array" dimension of a
- *  \ref stk::mesh::Field "field"
- */
-enum { MaximumFieldDimension = 7 };
+template <typename Scalar = void>
+class Field;
 
 enum class Operation
 {
@@ -118,28 +108,9 @@ enum EntityState : char { Unchanged = 0 ,
                    Created  = 1 ,
                    Modified = 2 ,
                    Deleted  = 3 };
-inline
-std::ostream& operator<<(std::ostream& os, EntityState state)
-{
-  switch(state) {
-  case Unchanged: os<<"Unchanged"; break;
-  case Created: os<<"Created"; break;
-  case Modified: os<<"Modified"; break;
-  case Deleted: os<<"Deleted"; break;
-  default: break;
-  };
-  return os;
-}
-
-template< class FieldType > struct STK_DEPRECATED FieldTraits ;
-
-namespace legacy {
-template< class FieldType > struct FieldTraits;
-}
-
+//
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
 //and the offset (ordinal) into that bucket.
-//Ultimately we want this struct to contain two ints rather than a pointer and an int...
 struct MeshIndex
 {
   Bucket* bucket;

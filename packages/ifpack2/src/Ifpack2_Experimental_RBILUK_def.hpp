@@ -18,7 +18,7 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_RILUK.hpp"
-#include "KokkosSparse_trsv.hpp"
+#include "KokkosSparse_sptrsv.hpp"
 
 //#define IFPACK2_RBILUK_INITIAL
 //#define IFPACK2_RBILUK_INITIAL_NOKK
@@ -194,6 +194,11 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
     U_block_->setAllToScalar (STM::zero ());
     D_block_->setAllToScalar (STM::zero ());
 
+    // Allocate temp space for apply
+    if (this->isKokkosKernelsSpiluk_) {
+      const auto numRows = L_block_->getLocalNumRows();
+      tmp_ = decltype(tmp_)("RBILUK::tmp_", numRows * blockSize_);
+    }
   }
   this->isAllocated_ = true;
 }
@@ -322,12 +327,21 @@ void RBILUK<MatrixType>::initialize ()
 
     if (this->isKokkosKernelsSpiluk_) {
       this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+      const auto numRows = this->A_local_->getLocalNumRows();
       KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
-                                           this->A_local_->getLocalNumRows(),
+                                           numRows,
                                            2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                            2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                            blockSize_);
       this->Graph_->initialize(KernelHandle_); // this calls spiluk_symbolic
+
+      this->L_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+      this->U_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+
+      KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
+
+      this->L_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
+      this->U_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
     }
     else {
       this->Graph_->initialize ();
@@ -914,6 +928,10 @@ void RBILUK<MatrixType>::compute ()
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
                                                   A_local_rowmap, A_local_entries, A_local_values,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+
+      // Now call symbolic for sptrsvs
+      KokkosSparse::Experimental::sptrsv_symbolic(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values);
+      KokkosSparse::Experimental::sptrsv_symbolic(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values);
     }
   } // Stop timing
 
@@ -1070,7 +1088,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
           TEUCHOS_TEST_FOR_EXCEPTION(
             true, std::runtime_error,
-            "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm without KokkosKernels. ");
+            "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm");
         }
       }
       else { // alpha != 1 or beta != 0
@@ -1088,42 +1106,44 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
     }
     else {
-      // Kokkos kernels impl. For now, the only block trsv available is Sequential
-      // and must be done on host.
-      using row_map_type = typename local_matrix_host_type::row_map_type;
-      using index_type   = typename local_matrix_host_type::index_type;
-      using values_type  = typename local_matrix_host_type::values_type;
+      // Kokkos kernels impl.
+      auto X_views = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto Y_views = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-      auto X_view = X.getLocalViewHost(Tpetra::Access::ReadOnly);
-      auto Y_view = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto lclL = L_block_->getLocalMatrixDevice();
+      auto L_rowmap  = lclL.graph.row_map;
+      auto L_entries = lclL.graph.entries;
+      auto L_values  = lclL.values;
 
-      auto L_row_ptrs_host = L_block_->getCrsGraph().getLocalRowPtrsHost();
-      auto L_entries_host = L_block_->getCrsGraph().getLocalIndicesHost();
-      auto U_row_ptrs_host = U_block_->getCrsGraph().getLocalRowPtrsHost();
-      auto U_entries_host = U_block_->getCrsGraph().getLocalIndicesHost();
-      auto L_values_host = L_block_->getValuesHost();
-      auto U_values_host = U_block_->getValuesHost();
-
-      row_map_type* L_row_ptrs_host_ri = reinterpret_cast<row_map_type*>(&L_row_ptrs_host);
-      index_type* L_entries_host_ri    = reinterpret_cast<index_type*>(&L_entries_host);
-      row_map_type* U_row_ptrs_host_ri = reinterpret_cast<row_map_type*>(&U_row_ptrs_host);
-      index_type* U_entries_host_ri    = reinterpret_cast<index_type*>(&U_entries_host);
-      values_type* L_values_host_ri    = reinterpret_cast<values_type*>(&L_values_host);
-      values_type* U_values_host_ri    = reinterpret_cast<values_type*>(&U_values_host);
-
-      const auto numRows = L_block_->getLocalNumRows();
-      local_matrix_host_type L_block_local_host("L_block_local_host", numRows, numRows, L_entries_host.size(), *L_values_host_ri, *L_row_ptrs_host_ri, *L_entries_host_ri, blockSize_);
-      local_matrix_host_type U_block_local_host("U_block_local_host", numRows, numRows, U_entries_host.size(), *U_values_host_ri, *U_row_ptrs_host_ri, *U_entries_host_ri, blockSize_);
+      auto lclU = U_block_->getLocalMatrixDevice();
+      auto U_rowmap  = lclU.graph.row_map;
+      auto U_entries = lclU.graph.entries;
+      auto U_values  = lclU.values;
 
       if (mode == Teuchos::NO_TRANS) {
-        KokkosSparse::trsv("L", "N", "N", L_block_local_host, X_view, Y_view);
-        KokkosSparse::trsv("U", "N", "N", U_block_local_host, Y_view, Y_view);
-        KokkosBlas::axpby(alpha, Y_view, beta, Y_view);
+        {
+          const LO numVecs = X.getNumVectors();
+          for (LO vec = 0; vec < numVecs; ++vec) {
+            auto X_view = Kokkos::subview(X_views, Kokkos::ALL(), vec);
+            auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
+            KokkosSparse::Experimental::sptrsv_solve(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values, X_view, tmp_);
+          }
+        }
+
+        {
+          const LO numVecs = X.getNumVectors();
+          for (LO vec = 0; vec < numVecs; ++vec) {
+            auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
+            KokkosSparse::Experimental::sptrsv_solve(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values, tmp_, Y_view);
+          }
+        }
+
+        KokkosBlas::axpby(alpha, Y_views, beta, Y_views);
       }
       else {
-        KokkosSparse::trsv("U", "T", "N", U_block_local_host, X_view, Y_view);
-        KokkosSparse::trsv("L", "T", "N", L_block_local_host, Y_view, Y_view);
-        KokkosBlas::axpby(alpha, Y_view, beta, Y_view);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::runtime_error,
+          "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm");
       }
 
       //Y.getWrappedDualView().sync();

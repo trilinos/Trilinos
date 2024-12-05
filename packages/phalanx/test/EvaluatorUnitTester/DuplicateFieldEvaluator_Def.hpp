@@ -42,7 +42,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   const int cell = team.league_rank();
   const int num_qp = static_cast<int>(a.extent(1));
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_qp), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_qp), [&] (const int& qp) {
     const int num_dim = static_cast<int>(c.extent(2));
     a(cell,qp) = 0.0;
     for (int i = 0; i < num_dim; ++i)

@@ -79,6 +79,7 @@ else()
   add_library(stk_transfer_utils_lib ${TRANSFER_UTILS_SOURCES})
   target_link_libraries(stk_transfer_utils_lib PUBLIC stk_io)
   target_link_libraries(stk_transfer_utils_lib PUBLIC stk_transfer)
+  target_link_libraries(stk_transfer_utils_lib PRIVATE stk_util_registry)
 
   add_library(stk_tools_lib ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES})
   target_link_libraries(stk_tools_lib PUBLIC stk_io)

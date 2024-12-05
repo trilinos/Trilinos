@@ -573,6 +573,32 @@ TEST(StkIo, modify_sideset)
   }
 }
 
+
+TEST(StkIo, skinned_sideset_from_badly_named_element_block)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  if(stk::parallel_machine_size(pm) > 1) GTEST_SKIP();
+
+  std::string meshDesc = "textmesh: 0,1,HEX_8,1,2,3,4,5,6,7,8, shell_a"
+                         "|coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1"
+                         "|sideset:name=surface_skinned_shell_a; data=1,1";
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  EXPECT_NO_THROW(stk::io::fill_mesh(meshDesc, *bulk));
+
+  std::string fileName("missing_skinned_shell.g");
+  stk::io::write_mesh(fileName, *bulk);
+
+  std::shared_ptr<stk::mesh::BulkData> bulk2 = build_mesh_no_simple_fields(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::unit_test_util::sideset::read_exo_file(*bulk2, fileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+  stk::unit_test_util::sideset::SideSetIdAndElemIdSidesVector expectedInputSideset{ {1, {{1, 0}}} };
+  stk::unit_test_util::sideset::compare_sidesets(fileName, *bulk2, expectedInputSideset);
+  
+  unlink(fileName.c_str());
+}
+
 TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;

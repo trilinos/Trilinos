@@ -14,8 +14,9 @@ set(TRIBITS_CMAKE_MINIMUM_REQUIRED 3.23.0)
 macro(tribits_asesrt_minimum_cmake_version)
 
   if (CMAKE_VERSION VERSION_LESS ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
-    message(FATAL_ERROR "Error, TriBiTS must have version"
-        " ${TRIBITS_CMAKE_MINIMUM_REQUIRED} or higher!")
+    message(FATAL_ERROR "Error, this TriBITS project ${PROJECT_NAME} must have a"
+      " version of CMake ${TRIBITS_CMAKE_MINIMUM_REQUIRED} or higher but was"
+      " only provided CMake version ${CMAKE_VERSION}!" )
   endif()
   
 endmacro()

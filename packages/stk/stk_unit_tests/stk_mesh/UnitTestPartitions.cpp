@@ -270,7 +270,7 @@ void check_test_partition_invariant(SelectorFixture& fix,
       EXPECT_TRUE(check_nonempty_strictly_ordered(field_data, bkt.size()));
     }
     const unsigned *bucket_key = bkt.key();
-    for (size_t k = 0; k < partition_key.size() - 1; ++k)
+    for (size_t k = 0; k < partition_key.size(); ++k)
     {
       EXPECT_EQ(partition_key[k], bucket_key[k]);
     }

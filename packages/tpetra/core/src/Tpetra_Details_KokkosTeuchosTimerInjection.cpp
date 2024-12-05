@@ -42,11 +42,17 @@ namespace {
     else if (eid.type == DeviceType::OpenACC)      device_label+="OpenACC";
     else if (eid.type == DeviceType::Unknown)      device_label+="Unknown";
     else                                           device_label+="Unknown to Tpetra";
-    
+#if KOKKOS_VERSION >= 40499
+    if(eid.instance_id == int_for_synchronization_reason(SpecialSynchronizationCases::GlobalDeviceSynchronization))
+      device_label += " All Instances)";
+    else if(eid.instance_id == int_for_synchronization_reason(SpecialSynchronizationCases::DeepCopyResourceSynchronization))
+      device_label += " DeepCopyResource)";
+#else
     if(eid.instance_id == Impl::int_for_synchronization_reason(SpecialSynchronizationCases::GlobalDeviceSynchronization))
       device_label += " All Instances)";
     else if(eid.instance_id == Impl::int_for_synchronization_reason(SpecialSynchronizationCases::DeepCopyResourceSynchronization))
       device_label += " DeepCopyResource)";
+#endif
     else
       device_label += " Instance " + std::to_string(eid.instance_id) + ")";
 

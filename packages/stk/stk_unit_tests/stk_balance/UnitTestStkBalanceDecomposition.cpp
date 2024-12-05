@@ -39,7 +39,7 @@
 #include <stk_balance/internal/Balancer.hpp>
 #include <stk_balance/mesh/BalanceMesh.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <vector>
 #include <string>
 
@@ -78,11 +78,11 @@ protected:
   void balance_mesh(const std::vector<stk::mesh::Selector> & selectors)
   {
     stk::balance::GraphCreationSettings balanceSettings;
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::Balancer balancer(balanceSettings);
     stk::balance::BalanceMesh balanceMesh(get_bulk());
     balancer.balance(balanceMesh, selectors);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
   }
 
   void test_mesh_element_distribution(const std::vector<int> & expectedElemsPerProc)
@@ -96,8 +96,7 @@ protected:
 
 TEST_F(StkBalanceDecomposition, 4Elem1ProcMesh_EntireDomain)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) return;
-
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
   setup_initial_mesh("generated:1x1x4");
   balance_mesh({get_meta().universal_part()});
 

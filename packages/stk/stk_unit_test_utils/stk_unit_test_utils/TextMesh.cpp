@@ -301,8 +301,9 @@ private:
 class BulkDataInitializer
 {
 public:
-  BulkDataInitializer(const TextMeshData& d, stk::mesh::BulkData& b)
-    : m_data(d),
+  BulkDataInitializer(const StkTopologyMapping& t, const TextMeshData& d, stk::mesh::BulkData& b)
+    : m_topologyMapping(t),
+      m_data(d),
       m_bulk(b),
       m_meta(m_bulk.mesh_meta_data())
   { }
@@ -352,6 +353,92 @@ public:
     }
   }
 
+  stk::topology get_side_block_topology_from_entries(const SidesetData& ss, const SideBlockInfo& sideBlock)
+  {
+    std::vector<size_t> sideIndices = ss.get_sideblock_indices_local_to_proc(sideBlock, m_bulk.parallel_rank());
+    stk::topology invalidTopo = stk::topology::INVALID_TOPOLOGY;
+    stk::topology blockSideTopo = stk::topology::INVALID_TOPOLOGY;
+    int heterogenousTopo = 0;
+    
+    for (size_t sideIndex : sideIndices) {
+      stk::mesh::EntityId elemId = ss.data[sideIndex].first;
+      int elemSide = ss.data[sideIndex].second - 1;
+
+      auto elemIter = text_mesh::bound_search(m_data.elementDataVec.begin(), m_data.elementDataVec.end(), elemId, ElementDataLess());
+      STK_ThrowRequire(elemIter != m_data.elementDataVec.end());
+
+      Topology blockTopo = elemIter->topology;
+      Topology sideTopo = blockTopo.side_topology(elemSide);
+
+      if(stk::topology::INVALID_TOPOLOGY != blockSideTopo && sideTopo.topology != blockSideTopo) {
+	blockSideTopo = stk::topology::INVALID_TOPOLOGY;
+	heterogenousTopo = 1;
+	break;      
+      }
+
+      blockSideTopo = sideTopo.topology;	
+    }
+
+    int topoId = (stk::topology::topology_t) blockSideTopo;
+
+    if (m_bulk.parallel_size()) {
+      std::vector<int> l_topoData{topoId, heterogenousTopo};
+      std::vector<int> g_topoData(2);
+      stk::all_reduce_max(m_bulk.parallel(), l_topoData.data(), g_topoData.data(), 2);
+
+      topoId = g_topoData[0];
+      heterogenousTopo = g_topoData[1];
+    }
+
+    blockSideTopo = heterogenousTopo ? invalidTopo : stk::topology( (stk::topology::topology_t)topoId );
+
+    return blockSideTopo;
+  }
+
+  bool set_sideset_topology(const SidesetData& ss, stk::mesh::Part* part,
+			    const std::string& sideBlockTopo, stk::topology stkTopology,
+			    bool printWarning = false)
+  {
+    if (stkTopology == stk::topology::INVALID_TOPOLOGY) {
+      if (printWarning) {
+	std::ostringstream os;
+	os<<"TextMesh WARNING: failed to obtain sensible topology for sideset: " << ss.name<<", iossTopology: "<<sideBlockTopo<<", stk-part: "<<part->name()<<", rank: "<<part->primary_entity_rank()<<", stk-topology: "<<stkTopology<<". Probably because this SideSet is empty on this MPI rank. Unable to set correct stk topology hierarchy. Proceeding, but beware of unexpected behavior."<<std::endl;
+	std::cerr<<os.str();
+      }
+    }
+    else {
+      for(auto subsetPart : part->subsets()) {
+	if(subsetPart->topology() != stkTopology) {
+	  return false;
+	}
+      }
+	
+      stk::mesh::set_topology(*part, stkTopology);
+      return true;      
+    }
+
+    return false;    
+  }
+
+  
+  void setup_sideset_topology(const SidesetData& ss, stk::mesh::Part* part)
+  {
+    if(nullptr == part) return;
+    
+    std::vector<SideBlockInfo> sideBlocks = ss.get_side_block_info();
+    if(sideBlocks.size() != 1u) return;
+    
+    const SideBlockInfo& sideBlock = sideBlocks[0];
+
+    if(sideBlock.name != ss.name) {
+      stk::topology stkTopology = m_topologyMapping.topology(sideBlock.sideTopology).topology;
+      if(set_sideset_topology(ss, part, sideBlock.sideTopology, stkTopology, true)) return;
+    }
+
+    stk::topology blockSideTopo = get_side_block_topology_from_entries(ss, sideBlock);
+    set_sideset_topology(ss, part, sideBlock.sideTopology, blockSideTopo);
+  }
+  
   void setup_sidesets()
   {
     const bool fromInput = true;
@@ -359,6 +446,8 @@ public:
       stk::mesh::Part* part = m_meta.get_part(sidesetData.name);
       stk::mesh::SideSet& stkSideSet = m_bulk.create_sideset(*part, fromInput);
 
+      setup_sideset_topology(sidesetData, part);
+      
       std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
 
       for (const auto& sideBlock : sideBlocks) {
@@ -441,6 +530,7 @@ public:
     }
   }
 
+  const StkTopologyMapping &m_topologyMapping;
   const TextMeshData& m_data;
 
   stk::mesh::BulkData& m_bulk;
@@ -523,7 +613,7 @@ public:
     MetaDataInitializer metaInit(m_topologyMapping, m_data, m_meta);
     metaInit.setup();
 
-    BulkDataInitializer bulkInit(m_data, m_bulk);
+    BulkDataInitializer bulkInit(m_topologyMapping, m_data, m_bulk);
     bulkInit.setup();
 
     CoordinateInitializer coordInit(m_data, m_bulk);

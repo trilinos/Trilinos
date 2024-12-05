@@ -19,9 +19,6 @@
 #include <stk_mesh/base/PolarityUtil.hpp>
 
 #include "stk_mesh/base/ExodusTranslator.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
-#include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
 
 class TestTextMesh : public stk::unit_test_util::MeshFixture
 {

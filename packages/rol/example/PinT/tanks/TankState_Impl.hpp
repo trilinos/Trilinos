@@ -13,7 +13,8 @@
 
 namespace details {
 
-using namespace std;
+using std::vector;
+using std::ostream;
 
 template<typename Real>
 TankState<Real>::TankState( ROL::ParameterList& pl ) :

@@ -247,23 +247,21 @@ private:
   KOKKOS_FUNCTION
   unsigned get_component_stride() const
   {
-    unsigned stride = 1;
 #ifdef STK_USE_DEVICE_MESH
-    stride = bucketCapacity;
+    return bucketCapacity;
+#else
+    return 1;
 #endif
-    return stride;
   }
 
   KOKKOS_FUNCTION
   unsigned get_num_components_per_entity(const FastMeshIndex& entityIndex) const {
-    const unsigned bucketId = entityIndex.bucket_id;
-    return deviceAllFieldsBucketsLayoutPerEntity(bucketId, NUM_COMPONENTS_INDEX);
+    return deviceAllFieldsBucketsLayoutPerEntity(entityIndex.bucket_id, NUM_COMPONENTS_INDEX);
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent0_per_entity(const FastMeshIndex& entityIndex) const {
-    const unsigned bucketId = entityIndex.bucket_id;
-    return deviceAllFieldsBucketsLayoutPerEntity(bucketId, FIRST_DIMENSION_INDEX);
+    return deviceAllFieldsBucketsLayoutPerEntity(entityIndex.bucket_id, FIRST_DIMENSION_INDEX);
   }
 
   KOKKOS_FUNCTION
@@ -325,8 +323,7 @@ private:
   {
     fieldSyncDebugger.device_stale_access_check(this, index, fileName, lineNumber);
     T* dataPtr = &deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, 0));
-    const unsigned numScalars = get_num_components_per_entity(index);
-    return EntityFieldData<T>(dataPtr, numScalars, get_component_stride());
+    return EntityFieldData<T>(dataPtr, get_num_components_per_entity(index), get_component_stride());
   }
 
   template <typename Mesh>
@@ -507,6 +504,7 @@ private:
   {
     if (buckets.size() > deviceView.extent(0)) {
       deviceView = ViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), impl::allocation_size(buckets.size()));
+#ifndef STK_UNIFIED_MEMORY 
       if (hostView.extent(0) != deviceView.extent(0)) {
 #if defined STK_USE_DEVICE_MESH && !defined(STK_ENABLE_GPU)
         hostView = Kokkos::create_mirror(deviceView);
@@ -514,6 +512,7 @@ private:
         hostView = Kokkos::create_mirror_view(deviceView);
 #endif
       }
+#endif      
     }
   }
 
@@ -545,11 +544,19 @@ private:
   {
     construct_bucket_views(buckets, "_numFieldBucketComponentsPerEntity", hostBucketScratchMemory, deviceFieldBucketsNumComponentsPerEntity);
 
+#ifndef STK_UNIFIED_MEMORY
     for (size_t i=0; i<buckets.size(); ++i) {
       hostBucketScratchMemory[i] = field_scalars_per_entity(*hostField, *buckets[i]);
     }
 
     Kokkos::deep_copy(get_execution_space(), deviceFieldBucketsNumComponentsPerEntity, hostBucketScratchMemory);
+
+#else
+    for (size_t i=0; i<buckets.size(); ++i) {
+      deviceFieldBucketsNumComponentsPerEntity[i] = field_scalars_per_entity(*hostField, *buckets[i]);     
+    }
+
+#endif    
   }
 
   void construct_field_buckets_pointer_view(const BucketVector& buckets)
@@ -566,11 +573,17 @@ private:
   {
     construct_bucket_views(buckets, "_bucketSizes", hostBucketScratchMemory, deviceBucketSizes);
 
+#ifndef STK_UNIFIED_MEMORY    
     for (size_t i=0; i<buckets.size(); ++i) {
       hostBucketScratchMemory[i] = buckets[i]->size();
     }
 
     Kokkos::deep_copy(get_execution_space(), deviceBucketSizes, hostBucketScratchMemory);
+#else
+   for (size_t i=0; i<buckets.size(); ++i) {
+       deviceBucketSizes[i] = buckets[i]->size();
+   }       
+#endif    
   }
 
   void set_field_buckets_pointer_view(const BucketVector& buckets)
@@ -693,11 +706,17 @@ private:
       Bucket* bucket = buckets[bucketIdx];
       unsigned oldBucketId = bucket->get_ngp_field_bucket_id(get_ordinal());
       bool isModified = oldBucketId == INVALID_BUCKET_ID || bucket->get_ngp_field_bucket_is_modified(get_ordinal());
-      
+     
+#ifndef STK_UNIFIED_MEMORY      
       hostBucketScratchMemory(bucketIdx) = isModified ? 1 : 0;
+#else
+      deviceFieldBucketsMarkedModified(bucketIdx) = isModified ? 1 : 0;
+#endif  
     }
 
+#ifndef STK_UNIFIED_MEMORY    
     Kokkos::deep_copy(get_execution_space(), deviceFieldBucketsMarkedModified, hostBucketScratchMemory);
+#endif    
 
     impl::transpose_new_and_modified_buckets_to_device(get_execution_space(), deviceBucketPtrData, deviceData,
                                                        deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity, deviceFieldBucketsMarkedModified);

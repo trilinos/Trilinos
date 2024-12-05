@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.4.1")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.5.0")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
@@ -391,7 +391,7 @@ ASSERT_DEFINED (TPL_ENABLE_MPI)
 MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is GPU aware:")
 
 IF (NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP AND NOT Tpetra_INST_SYCL)
-  MESSAGE (STATUS "  - Tpetra_INST_CUDA, Tpetra_INST_HIP and Tpetra_INST_SYCL atre OFF, so Tpetra will assume that MPI is not GPU aware.")
+  MESSAGE (STATUS "  - Tpetra_INST_CUDA, Tpetra_INST_HIP and Tpetra_INST_SYCL are OFF, so Tpetra will assume that MPI is not GPU aware.")
   SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
 ELSEIF (NOT TPL_ENABLE_MPI)
   # Even if GPUs is enabled but MPI is not, Teuchos::SerialComm may

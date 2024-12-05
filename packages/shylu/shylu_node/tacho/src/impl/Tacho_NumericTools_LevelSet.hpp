@@ -78,6 +78,14 @@
   #else
     #define TACHO_CUSPARSE_SPMM_ALG CUSPARSE_MM_ALG_DEFAULT
   #endif
+#elif defined(KOKKOS_ENABLE_HIP)
+  #if (ROCM_VERSION >= 60000)
+    #define tacho_rocsparse_spmv rocsparse_spmv
+  #elif (ROCM_VERSION >= 50400)
+    #define tacho_rocsparse_spmv rocsparse_spmv_ex
+  #else
+    #define tacho_rocsparse_spmv rocsparse_spmv
+  #endif
 #endif
 
 namespace Tacho {
@@ -165,12 +173,15 @@ private:
   size_type_array _buf_factor_ptr;
 
   // workspace meta data for solve
+  ordinal_type _nrhs;
   size_type_array_host _h_buf_solve_ptr, _h_buf_solve_nrhs_ptr;
   size_type_array _buf_solve_ptr, _buf_solve_nrhs_ptr;
 
   // workspace
   size_type _bufsize_factorize, _bufsize_solve;
+  size_type _worksize;
   value_type_array _buf;
+  value_type_array _work;
 
   // for using SpMV
   rowptr_view rowptrU;
@@ -397,7 +408,7 @@ public:
   /// initialization / release
   ///
   inline void initialize(const ordinal_type device_level_cut, const ordinal_type device_factorize_thres,
-                         const ordinal_type device_solve_thres, const ordinal_type verbose = 0) {
+                         const ordinal_type device_solve_thres, const int nstreams = 1, const ordinal_type verbose = 0) {
     stat_level.n_device_factorize = 0;
     stat_level.n_device_solve = 0;
     stat_level.n_team_factorize = 0;
@@ -525,7 +536,8 @@ public:
 
     _h_buf_solve_nrhs_ptr =
         size_type_array_host(do_not_initialize_tag("h_buf_solve_nrhs_ptr"), _h_buf_solve_ptr.extent(0));
-    _buf_solve_nrhs_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_solve_nrhs_ptr);
+    Kokkos::deep_copy(_h_buf_solve_nrhs_ptr, _h_buf_solve_ptr);
+    _buf_solve_nrhs_ptr = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_buf_solve_nrhs_ptr);
     track_alloc(_buf_solve_nrhs_ptr.span() * sizeof(size_type));
 
     ///
@@ -551,6 +563,42 @@ public:
       _handle_lapack = _handle_blas;
     }
 #endif
+    // pre-allocate buf
+    _nrhs = 1;
+    Kokkos::resize(_buf, max(_bufsize_factorize, _bufsize_solve));
+    track_alloc(_buf.span() * sizeof(value_type));
+    // pre-allocate work
+    _worksize = 0;
+    switch (this->getSolutionMethod()) {
+    case 1: { /// Cholesky
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
+      _worksize = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, T, _work);
+#endif
+      break;
+    }
+    case 2: { /// LDL
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
+      ordinal_type_array P(NULL, _info.max_supernode_size);
+      _worksize = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, T, P, _work);
+#else
+      _worksize = 32 * _info.max_supernode_size;
+#endif
+      break;
+    }
+    case 3: { /// LU
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_num_cols);
+      ordinal_type_array P(NULL, std::min(_info.max_supernode_size, _info.max_num_cols));
+      _worksize = LU<Algo::OnDevice>::invoke(_handle_lapack, T, P, _work);
+#endif
+      break;
+    }
+    }
+    size_type worksize = _worksize * (nstreams + 1);
+    Kokkos::resize(_work, worksize);
+    track_alloc(_work.span() * sizeof(value_type));
     stat.t_init = timer.seconds();
 
     ///
@@ -613,6 +661,7 @@ public:
     _solve_mode = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_solve_mode);
     track_alloc(_solve_mode.span() * sizeof(ordinal_type));
 
+    createStream(nstreams, verbose);
     stat.t_mode_classification = timer.seconds();
     if (verbose) {
       switch (this->getSolutionMethod()) {
@@ -645,10 +694,15 @@ public:
     track_free(_buf_factor_ptr.span() * sizeof(size_type));
     track_free(_buf_solve_ptr.span() * sizeof(size_type));
     track_free(_buf_solve_nrhs_ptr.span() * sizeof(size_type));
-    track_free(_buf.span() * sizeof(value_type));
     track_free(_factorize_mode.span() * sizeof(ordinal_type));
     track_free(_solve_mode.span() * sizeof(ordinal_type));
     track_free(_level_sids.span() * sizeof(ordinal_type));
+
+    track_free(_buf.span() * sizeof(value_type));
+    track_free(_work.span() * sizeof(value_type));
+    Kokkos::resize(_buf, 0);
+    Kokkos::resize(_work, 0);
+
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
       printf("===========================================\n");
@@ -737,13 +791,14 @@ public:
 
   inline void createStream(const ordinal_type nstreams, const ordinal_type verbose = 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
+    _nstreams = nstreams;
+    if (_streams.size() == size_t(nstreams)) return;
     // destroy previously created streams
-    for (ordinal_type i = 0; i < _nstreams; ++i) {
+    for (size_t i = 0; i < _streams.size(); ++i) {
       _status = cudaStreamDestroy(_streams[i]);
       checkDeviceStatus("cudaStreamDestroy");
     }
     // new streams
-    _nstreams = nstreams;
     _streams.clear();
     _streams.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
@@ -752,8 +807,10 @@ public:
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
+    _nstreams = nstreams;
+    if (_streams.size() == size_t(nstreams)) return;
     // destroy previously created streams
-    for (ordinal_type i = 0; i < _nstreams; ++i) {
+    for (size_t i = 0; i < _streams.size(); ++i) {
       _status = rocblas_destroy_handle(_handles[i]);
       checkDeviceLapackStatus("rocblasDestroy");
 
@@ -761,7 +818,6 @@ public:
       checkDeviceStatus("hipStreamDestroy");
     }
     // new streams
-    _nstreams = nstreams;
     _streams.clear();
     _streams.resize(_nstreams);
     _handles.resize(_nstreams);
@@ -1939,11 +1995,7 @@ public:
                                  s0.rowptrU, s0.colindU, s0.nzvalsU,
                                  rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
       // workspace
-      #if ROCM_VERSION >= 50400
-      rocsparse_spmv_ex
-      #else
-      rocsparse_spmv
-      #endif
+      tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1958,7 +2010,7 @@ public:
       #if ROCM_VERSION >= 50400
       // preprocess
       buffer_size_U = buffer_U.extent(0);
-      rocsparse_spmv_ex
+      tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1971,11 +2023,7 @@ public:
                                    s0.rowptrL, s0.colindL, s0.nzvalsL,
                                    rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
         // workspace
-        #if ROCM_VERSION >= 50400
-        rocsparse_spmv_ex
-        #else
-        rocsparse_spmv
-        #endif
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -1990,7 +2038,7 @@ public:
         #if ROCM_VERSION >= 50400
         // preprocess
         buffer_size_L = buffer_L.extent(0);
-        rocsparse_spmv_ex
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2003,11 +2051,7 @@ public:
                                    s0.rowptrU, s0.colindU, s0.nzvalsU,
                                    rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
         // workspace (transpose)
-        #if ROCM_VERSION >= 50400
-        rocsparse_spmv_ex
-        #else
-        rocsparse_spmv
-        #endif
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2022,7 +2066,7 @@ public:
         #if ROCM_VERSION >= 50400
         // preprocess
         buffer_size_L = buffer_L.extent(0);
-        rocsparse_spmv_ex
+        tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2102,19 +2146,22 @@ public:
     double time_update = 0.0;
 
     timer.reset();
-    value_type_array work;
-    {
-      _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
+    if (_buf.span() < size_t(_bufsize_factorize)) {
+      if (_buf.span() > 0) track_free(_buf.span() * sizeof(value_type));
+      Kokkos::resize(_buf, _bufsize_factorize);
       track_alloc(_buf.span() * sizeof(value_type));
+    }
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
-      const size_type worksize = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, T, work);
-
-      work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1));
-      track_alloc(work.span() * sizeof(value_type));
-#endif
+    {
+      size_type worksize = _worksize * (_nstreams + 1);
+      if (size_t(worksize) > _work.span()) {
+        if (_work.span() > 0) track_free(_work.span() * sizeof(value_type));
+        Kokkos::resize(_work, worksize);
+        track_alloc(_work.span() * sizeof(value_type));
+      }
     }
+#endif
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -2201,7 +2248,7 @@ public:
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
-            factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, work);
+            factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             if (verbose) {
               Kokkos::fence(); time_device += tick.seconds();
               tick.reset();
@@ -2227,13 +2274,6 @@ public:
       // compress each partitioned inverse at each level into CRS matrix
       bool lu = false;
       extractCRS(lu);
-    }
-    {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      track_free(work.span() * sizeof(value_type));
-#endif
-      track_free(_buf.span() * sizeof(value_type));
-      _buf = value_type_array();
     }
     stat.t_extra += timer.seconds();
 
@@ -2372,7 +2412,7 @@ public:
     // compute t = L^{-1}*w
     const value_type alpha (1);
     const value_type beta  (0);
-    if (_w_vec.extent(1) != nrhs) {
+    if (_w_vec.extent(1) != size_t(nrhs)) {
       // expand workspace
       Kokkos::resize(_w_vec, m, nrhs);
       // attach to Cusparse/Rocsparse data struct
@@ -2490,12 +2530,7 @@ public:
       auto vecX = ((nlvls-1-lvl)%2 == 0 ? vecL : vecW);
       auto vecY = ((nlvls-1-lvl)%2 == 0 ? vecW : vecL);
       if (s0.spmv_explicit_transpose) {
-        status =
-          #if ROCM_VERSION >= 50400
-          rocsparse_spmv_ex
-          #else
-          rocsparse_spmv
-          #endif
+        status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2504,12 +2539,7 @@ public:
            #endif
            &buffer_size_L, (void*)buffer_L.data());
       } else {
-        status =
-          #if ROCM_VERSION >= 50400
-          rocsparse_spmv_ex
-          #else
-          rocsparse_spmv
-          #endif
+        status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY, // dscrL stores the same ptrs as descrU, but optimized for trans
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2826,12 +2856,7 @@ public:
       }
       auto vecX = (lvl%2 == 0 ? vecU : vecW);
       auto vecY = (lvl%2 == 0 ? vecW : vecU);
-      status =
-        #if ROCM_VERSION >= 50400
-        rocsparse_spmv_ex
-        #else
-        rocsparse_spmv
-        #endif
+      status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrU, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -3631,18 +3656,20 @@ public:
       const size_type buf_extent = _bufsize_solve * nrhs;
       const size_type buf_span = _buf.span();
 
-      if (buf_extent != buf_span) {
-        _buf = value_type_array(do_not_initialize_tag("buf"), buf_extent);
-        track_free(buf_span * sizeof(value_type));
+      if (buf_extent > buf_span) {
+        if (_buf.span() > 0) track_free(buf_span * sizeof(value_type));
+        Kokkos::resize(_buf, buf_extent);
         track_alloc(_buf.span() * sizeof(value_type));
-        {
-          const Kokkos::RangePolicy<exec_space> policy(0, _buf_solve_ptr.extent(0));
-          const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
-          const auto buf_solve_ptr = _buf_solve_ptr;
-          Kokkos::parallel_for(
-              policy, KOKKOS_LAMBDA(const ordinal_type &i) { buf_solve_nrhs_ptr(i) = nrhs * buf_solve_ptr(i); });
-        }
+      }
+      if (nrhs > _nrhs) {
+        // update pointer to solver-workspace with differet nrhs
+        const Kokkos::RangePolicy<exec_space> policy(0, _buf_solve_ptr.extent(0));
+        const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
+        const auto buf_solve_ptr = _buf_solve_ptr;
+        Kokkos::parallel_for(
+            policy, KOKKOS_LAMBDA(const ordinal_type &i) { buf_solve_nrhs_ptr(i) = nrhs * buf_solve_ptr(i); });
         Kokkos::deep_copy(_h_buf_solve_nrhs_ptr, _buf_solve_nrhs_ptr);
+	_nrhs = nrhs;
       }
     }
   }
@@ -3842,23 +3869,21 @@ public:
     double time_update = 0.0;
 
     timer.reset();
-    value_type_array work;
-    {
-      _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
+    if (_buf.span() < size_t(_bufsize_factorize)) {
+      if (_buf.span() > 0) track_free(_buf.span() * sizeof(value_type));
+      Kokkos::resize(_buf, _bufsize_factorize);
       track_alloc(_buf.span() * sizeof(value_type));
-
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
-      ordinal_type_array P(NULL, _info.max_supernode_size);
-      const size_type worksize = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
-
-      work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1) * max(8, _nstreams));
-#else
-      const size_type worksize = 32 * _info.max_supernode_size;
-      work = value_type_array(do_not_initialize_tag("work"), worksize);
-#endif
-      track_alloc(work.span() * sizeof(value_type));
     }
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    {
+      size_type worksize = _worksize * (_nstreams + 1);
+      if (size_t(worksize) > _work.span()) {
+        if (_work.span() > 0) track_free(_work.span() * sizeof(value_type));
+        Kokkos::resize(_work, worksize);
+        track_alloc(_work.span() * sizeof(value_type));
+      }
+    }
+#endif
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -3953,7 +3978,7 @@ public:
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
-            factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
+            factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             if (verbose) {
               Kokkos::fence(); time_device += tick.seconds();
               tick.reset();
@@ -3976,15 +4001,6 @@ public:
       }
     } // end of LDL
     stat.t_factor = timer.seconds();
-    timer.reset();
-    {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      track_free(work.span() * sizeof(value_type));
-#endif
-      track_free(_buf.span() * sizeof(value_type));
-      _buf = value_type_array();
-    }
-    stat.t_extra += timer.seconds();
 
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (LDL Factorize)\n", variant);
@@ -4197,22 +4213,22 @@ public:
     double time_update = 0.0;
 
     timer.reset();
-    value_type_array work;
-    {
-      _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
+    if (_buf.span() < size_t(_bufsize_factorize)) {
+      if (_buf.span() > 0) track_free(_buf.span() * sizeof(value_type));
+      Kokkos::resize(_buf, _bufsize_factorize);
       track_alloc(_buf.span() * sizeof(value_type));
+    }
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      // NOTE : move this to symbolic with the actual max worksize?
-      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_num_cols);
-      ordinal_type_array P(NULL, std::min(_info.max_supernode_size, _info.max_num_cols));
-      const size_type worksize = LU<Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
-
-      work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1));
-      // work = value_type_array(do_not_initialize_tag("work"), worksize*_nstreams);
-#endif
-      track_alloc(work.span() * sizeof(value_type));
+    {
+      size_type worksize = _worksize * (_nstreams + 1);
+      if (size_t(worksize) > _work.span()) {
+        if (_work.span() > 0) track_free(_work.span() * sizeof(value_type));
+        Kokkos::resize(_work, worksize);
+        track_alloc(_work.span() * sizeof(value_type));
+      }
     }
+#endif
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -4308,7 +4324,7 @@ public:
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
-            factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
+            factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             if (verbose) {
               Kokkos::fence(); time_device += tick.seconds();
               tick.reset();
@@ -4337,19 +4353,12 @@ public:
       bool lu = true;
       extractCRS(lu);
     }
-    {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      track_free(work.span() * sizeof(value_type));
-#endif
-      track_free(_buf.span() * sizeof(value_type));
-      _buf = value_type_array();
-    }
     stat.t_extra += timer.seconds();
 
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (LU Factorize)\n", variant);
       printf("================================================\n");
-      printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n\n",time_parallel,time_device,time_update );
+      printf( "\n  ** Team = %f s, Device = %f s, Update = %f s (%d streams) **\n\n",time_parallel,time_device,time_update,_nstreams );
       print_stat_factor();
       fflush(stdout);
     }

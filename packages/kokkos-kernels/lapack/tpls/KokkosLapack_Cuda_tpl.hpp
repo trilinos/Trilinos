@@ -25,12 +25,24 @@ namespace Impl {
 CudaLapackSingleton::CudaLapackSingleton() {
   cusolverStatus_t stat = cusolverDnCreate(&handle);
   if (stat != CUSOLVER_STATUS_SUCCESS) Kokkos::abort("CUSOLVER initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { cusolverDnDestroy(handle); });
 }
 
 CudaLapackSingleton& CudaLapackSingleton::singleton() {
-  static CudaLapackSingleton s;
+  std::unique_ptr<CudaLapackSingleton>& instance = get_instance();
+  if (!instance) {
+    instance = std::make_unique<CudaLapackSingleton>();
+    Kokkos::push_finalize_hook([&]() {
+      cusolverDnDestroy(instance->handle);
+      instance.reset();
+    });
+  }
+  return *instance;
+}
+
+bool CudaLapackSingleton::is_initialized() { return get_instance() != nullptr; }
+
+std::unique_ptr<CudaLapackSingleton>& CudaLapackSingleton::get_instance() {
+  static std::unique_ptr<CudaLapackSingleton> s;
   return s;
 }
 

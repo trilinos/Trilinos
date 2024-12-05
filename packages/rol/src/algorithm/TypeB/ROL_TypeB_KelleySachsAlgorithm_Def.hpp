@@ -54,7 +54,8 @@ KelleySachsAlgorithm<Real>::KelleySachsAlgorithm(ParameterList &list,
   useSecantPrecond_ = list.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
   useSecantHessVec_ = list.sublist("General").sublist("Secant").get("Use as Hessian",        false);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
   }
 }
 

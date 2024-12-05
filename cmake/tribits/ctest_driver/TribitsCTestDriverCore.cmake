@@ -141,7 +141,7 @@ tribits_project_read_version_file(${TRIBITS_PROJECT_ROOT})
 
 include(TribitsFindPythonInterp)
 tribits_find_python()
-message("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+message("Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 
 #############################
 ### Do some initial setup ###

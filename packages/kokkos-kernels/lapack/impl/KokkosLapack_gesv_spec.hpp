@@ -120,5 +120,6 @@ struct GESV<ExecutionSpace, AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMP
       false, true>;
 
 #include <KokkosLapack_gesv_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosLapack_gesv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSLAPACK_IMPL_GESV_SPEC_HPP_

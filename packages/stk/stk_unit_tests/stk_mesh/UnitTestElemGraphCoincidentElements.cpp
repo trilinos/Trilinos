@@ -52,7 +52,7 @@ private:
     {
       setup_node_sharing(get_bulk(), shared_nodeIDs_and_procs2);
     }
-    else
+    if(get_bulk().parallel_size()==3)
     {
       setup_node_sharing(get_bulk(), shared_nodeIDs_and_procs3);
     }

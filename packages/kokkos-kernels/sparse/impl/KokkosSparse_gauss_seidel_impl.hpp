@@ -514,7 +514,7 @@ class PointGaussSeidel {
             });
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-            if (!KokkosKernels::Impl::kk_is_gpu_exec_space<typename team_member_t::execution_space>() &&
+            if (!KokkosKernels::Impl::is_gpu_exec_space_v<typename team_member_t::execution_space> &&
                 (ii == 0 || (block_size == 1 && ii < 2))) {
               std::cout << "\n\n\nrow:" << ii * block_size + i;
               std::cout << "\nneighbors:";
@@ -606,8 +606,8 @@ class PointGaussSeidel {
       nnz_lno_t color      = t.league_rank();
       nnz_lno_t colorBegin = color_xadj(color);
       nnz_lno_t colorLen   = color_xadj(color + 1) - colorBegin;
-      KokkosKernels::TeamBitonicSort(color_adj.data() + colorBegin, colorLen, t, comp);
-      t.team_barrier();
+      Kokkos::Experimental::sort_team(
+          t, Kokkos::subview(color_adj, Kokkos::make_pair(colorBegin, colorBegin + colorLen)), comp);
       // Now that the color set is sorted, count how many long rows there were
       nnz_lno_t numLongRows;
       Kokkos::parallel_reduce(
@@ -897,7 +897,7 @@ class PointGaussSeidel {
       nnz_lno_t num_values_in_l2 = 0;
       nnz_lno_t num_big_rows     = 0;
 
-      if (!KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+      if (!KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
         // again, if it is on CPUs, we make L1 as big as we need.
         size_t l1mem = 1;
         while (l1mem < level_1_mem) {
@@ -937,7 +937,7 @@ class PointGaussSeidel {
               KOKKOSKERNELS_MACRO_MIN(num_large_rows, (size_type)(my_exec_space.concurrency() / suggested_vector_size));
           // std::cout << "num_big_rows:" << num_big_rows << std::endl;
 
-          if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+          if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
             // check if we have enough memory for this. lower the concurrency if
             // we do not have enugh memory.
             size_t free_byte;
@@ -1208,7 +1208,7 @@ class PointGaussSeidel {
       // this!!!!!!!!!!!!!!!!!! change fill_matrix_numeric so that they store
       // the internal matrix as above. the rest will wok fine.
 
-      if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+      if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
         Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_fill_matrix_numeric",
                              team_policy_t(my_exec_space, (num_rows + rows_per_team - 1) / rows_per_team,
                                            suggested_team_size, suggested_vector_size),
@@ -1239,7 +1239,7 @@ class PointGaussSeidel {
         Get_Matrix_Diagonals gmd(newxadj_, newadj_, permuted_adj_vals, permuted_inverse_diagonal, this->num_rows,
                                  rows_per_team, block_size, block_matrix_size);
 
-        if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>() || block_size > 1) {
+        if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace> || block_size > 1) {
           Kokkos::parallel_for("KokkosSparse::GaussSeidel::team_get_matrix_diagonals",
                                team_policy_t(my_exec_space, (num_rows + rows_per_team - 1) / rows_per_team,
                                              suggested_team_size, suggested_vector_size),

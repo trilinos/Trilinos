@@ -6,6 +6,12 @@
 #ifndef __MLVIZSTATS__
 #define __MLVIZSTATS__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*MS*/
 #define ML_AGGREGATE_VIZ_STATS_ID 24680
 
@@ -35,10 +41,3 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
 /*ms*/
 
 #endif /* #ifndef __MLAGGMETIS__ */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

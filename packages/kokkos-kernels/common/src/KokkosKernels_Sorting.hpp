@@ -17,8 +17,9 @@
 #define _KOKKOSKERNELS_SORTING_HPP
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Sort.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"     //for kk_exclusive_parallel_prefix_sum
-#include "KokkosKernels_ExecSpaceUtils.hpp"  //for kk_is_gpu_exec_space
+#include "KokkosKernels_ExecSpaceUtils.hpp"  //for is_gpu_exec_space
 #include <type_traits>
 
 namespace KokkosKernels {
@@ -59,30 +60,13 @@ KOKKOS_INLINE_FUNCTION void SerialRadixSort2(ValueType* values, ValueType* value
 // Team-level parallel sorting (callable inside any TeamPolicy kernel)
 // -------------------------------------------------------------------
 
-// Comparison based sorting that uses the entire team (described by mem) to sort
-// raw array according to the comparator.
-template <typename Ordinal, typename ValueType, typename TeamMember,
-          typename Comparator = Impl::DefaultComparator<ValueType>>
-KOKKOS_INLINE_FUNCTION void TeamBitonicSort(ValueType* values, Ordinal n, const TeamMember mem,
-                                            const Comparator& comp = Comparator());
-
-// Same as SerialRadixSort, but also permutes perm[0...n] as it sorts
-// values[0...n].
-template <typename Ordinal, typename ValueType, typename PermType, typename TeamMember,
-          typename Comparator = Impl::DefaultComparator<ValueType>>
-KOKKOS_INLINE_FUNCTION void TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember mem,
-                                             const Comparator& comp = Comparator());
-
 namespace Impl {
 
 // Functor that sorts a view on one team
 template <typename View, typename Ordinal, typename TeamMember, typename Comparator>
 struct BitonicSingleTeamFunctor {
   BitonicSingleTeamFunctor(View& v_, const Comparator& comp_) : v(v_), comp(comp_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const {
-    KokkosKernels::TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data(), v.extent(0), t,
-                                                                                               comp);
-  };
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const { Kokkos::Experimental::sort_team(t, v, comp); };
   View v;
   Comparator comp;
 };
@@ -97,8 +81,7 @@ struct BitonicChunkFunctor {
     Ordinal chunkStart = chunk * chunkSize;
     Ordinal n          = chunkSize;
     if (chunkStart + n > Ordinal(v.extent(0))) n = v.extent(0) - chunkStart;
-    KokkosKernels::TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data() + chunkStart, n,
-                                                                                               t, comp);
+    Kokkos::Experimental::sort_team(t, Kokkos::subview(v, Kokkos::make_pair(chunkStart, chunkStart + n)), comp);
   };
   View v;
   Comparator comp;
@@ -217,10 +200,11 @@ void bitonicSort(View v, const Comparator& comp) {
     Ordinal npot = 1;
     while (npot < n) npot <<= 1;
     // Partition the data equally among fixed number of teams
-    Ordinal chunkSize = 512;
-    Ordinal numTeams  = npot / chunkSize;
+    Ordinal chunkSize         = 512;
+    Ordinal numTeamsChunkSort = (n + chunkSize - 1) / chunkSize;
+    Ordinal numTeams          = npot / chunkSize;
     // First, sort within teams
-    Kokkos::parallel_for(team_policy(numTeams, Kokkos::AUTO()),
+    Kokkos::parallel_for(team_policy(numTeamsChunkSort, Kokkos::AUTO()),
                          Impl::BitonicChunkFunctor<View, Ordinal, team_member, Comparator>(v, comp, chunkSize));
     for (int teamsPerBox = 2; teamsPerBox <= npot / chunkSize; teamsPerBox *= 2) {
       Ordinal boxSize = teamsPerBox * chunkSize;
@@ -388,165 +372,23 @@ KOKKOS_INLINE_FUNCTION void SerialRadixSort2(ValueType* values, ValueType* value
 // trivially-copyable) Pros: In-place, plenty of parallelism for GPUs, and
 // memory references are coalesced Con: O(n log^2(n)) serial time is bad on CPUs
 // Good diagram of the algorithm at https://en.wikipedia.org/wiki/Bitonic_sorter
-template <typename Ordinal, typename ValueType, typename TeamMember, typename Comparator>
-KOKKOS_INLINE_FUNCTION void TeamBitonicSort(ValueType* values, Ordinal n, const TeamMember mem,
-                                            const Comparator& comp) {
-  // Algorithm only works on power-of-two input size only.
-  // If n is not a power-of-two, will implicitly pretend
-  // that values[i] for i >= n is just the max for ValueType, so it never gets
-  // swapped
-  Ordinal npot   = 1;
-  Ordinal levels = 0;
-  while (npot < n) {
-    levels++;
-    npot <<= 1;
-  }
-  for (Ordinal i = 0; i < levels; i++) {
-    for (Ordinal j = 0; j <= i; j++) {
-      // n/2 pairs of items are compared in parallel
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(mem, npot / 2), [=](const Ordinal t) {
-        // How big are the brown/pink boxes?
-        Ordinal boxSize = Ordinal(2) << (i - j);
-        // Which box contains this thread?
-        Ordinal boxID     = t >> (i - j);          // t * 2 / boxSize;
-        Ordinal boxStart  = boxID << (1 + i - j);  // boxID * boxSize
-        Ordinal boxOffset = t - (boxStart >> 1);   // t - boxID * boxSize /
-                                                   // 2;
-        Ordinal elem1 = boxStart + boxOffset;
-        if (j == 0) {
-          // first phase (brown box): within a block, compare with the
-          // opposite value in the box
-          Ordinal elem2 = boxStart + boxSize - 1 - boxOffset;
-          if (elem2 < n) {
-            // both elements in bounds, so compare them and swap if out of
-            // order
-            if (comp(values[elem2], values[elem1])) {
-              ValueType temp = values[elem1];
-              values[elem1]  = values[elem2];
-              values[elem2]  = temp;
-            }
-          }
-        } else {
-          // later phases (pink box): within a block, compare with fixed
-          // distance (boxSize / 2) apart
-          Ordinal elem2 = elem1 + boxSize / 2;
-          if (elem2 < n) {
-            if (comp(values[elem2], values[elem1])) {
-              ValueType temp = values[elem1];
-              values[elem1]  = values[elem2];
-              values[elem2]  = temp;
-            }
-          }
-        }
-      });
-      mem.team_barrier();
-    }
-  }
+template <typename Ordinal, typename ValueType, typename TeamMember,
+          typename Comparator = Impl::DefaultComparator<ValueType>>
+[[deprecated("Use Kokkos::Experimental::sort_team instead")]] KOKKOS_INLINE_FUNCTION void TeamBitonicSort(
+    ValueType* values, Ordinal n, const TeamMember mem, const Comparator& comp = Comparator()) {
+  Kokkos::View<ValueType*, Kokkos::AnonymousSpace> valuesView(values, n);
+  Kokkos::Experimental::sort_team(mem, valuesView, comp);
 }
 
 // Sort "values", while applying the same swaps to "perm"
-template <typename Ordinal, typename ValueType, typename PermType, typename TeamMember, typename Comparator>
-KOKKOS_INLINE_FUNCTION void TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember mem,
-                                             const Comparator& comp) {
-  // Algorithm only works on power-of-two input size only.
-  // If n is not a power-of-two, will implicitly pretend
-  // that values[i] for i >= n is just the max for ValueType, so it never gets
-  // swapped
-  Ordinal npot   = 1;
-  Ordinal levels = 0;
-  while (npot < n) {
-    levels++;
-    npot <<= 1;
-  }
-  for (Ordinal i = 0; i < levels; i++) {
-    for (Ordinal j = 0; j <= i; j++) {
-      // n/2 pairs of items are compared in parallel
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(mem, npot / 2), [=](const Ordinal t) {
-        // How big are the brown/pink boxes?
-        Ordinal boxSize = Ordinal(2) << (i - j);
-        // Which box contains this thread?
-        Ordinal boxID     = t >> (i - j);          // t * 2 / boxSize;
-        Ordinal boxStart  = boxID << (1 + i - j);  // boxID * boxSize
-        Ordinal boxOffset = t - (boxStart >> 1);   // t - boxID * boxSize /
-                                                   // 2;
-        Ordinal elem1 = boxStart + boxOffset;
-        if (j == 0) {
-          // first phase (brown box): within a block, compare with the
-          // opposite value in the box
-          Ordinal elem2 = boxStart + boxSize - 1 - boxOffset;
-          if (elem2 < n) {
-            // both elements in bounds, so compare them and swap if out of
-            // order
-            if (comp(values[elem2], values[elem1])) {
-              ValueType temp1 = values[elem1];
-              values[elem1]   = values[elem2];
-              values[elem2]   = temp1;
-              PermType temp2  = perm[elem1];
-              perm[elem1]     = perm[elem2];
-              perm[elem2]     = temp2;
-            }
-          }
-        } else {
-          // later phases (pink box): within a block, compare with fixed
-          // distance (boxSize / 2) apart
-          Ordinal elem2 = elem1 + boxSize / 2;
-          if (elem2 < n) {
-            if (comp(values[elem2], values[elem1])) {
-              ValueType temp1 = values[elem1];
-              values[elem1]   = values[elem2];
-              values[elem2]   = temp1;
-              PermType temp2  = perm[elem1];
-              perm[elem1]     = perm[elem2];
-              perm[elem2]     = temp2;
-            }
-          }
-        }
-      });
-      mem.team_barrier();
-    }
-  }
-}
-
-// For backward compatibility: keep the public interface accessible in
-// KokkosKernels::Impl::
-namespace Impl {
-
-template <typename View, typename ExecSpace, typename Ordinal,
-          typename Comparator = Impl::DefaultComparator<typename View::value_type>>
-[[deprecated]] void bitonicSort(View v, const Comparator& comp = Comparator()) {
-  KokkosKernels::bitonicSort<View, ExecSpace, Ordinal, Comparator>(v, comp);
-}
-
-template <typename Ordinal, typename ValueType>
-[[deprecated]] KOKKOS_INLINE_FUNCTION void SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n) {
-  KokkosKernels::SerialRadixSort<Ordinal, ValueType>(values, valuesAux, n);
-}
-
-// Same as SerialRadixSort, but also permutes perm[0...n] as it sorts
-// values[0...n].
-template <typename Ordinal, typename ValueType, typename PermType>
-[[deprecated]] KOKKOS_INLINE_FUNCTION void SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm,
-                                                            PermType* permAux, Ordinal n) {
-  KokkosKernels::SerialRadixSort2<Ordinal, ValueType, PermType>(values, valuesAux, perm, permAux, n);
-}
-
-template <typename Ordinal, typename ValueType, typename TeamMember,
-          typename Comparator = Impl::DefaultComparator<ValueType>>
-[[deprecated]] KOKKOS_INLINE_FUNCTION void TeamBitonicSort(ValueType* values, Ordinal n, const TeamMember mem,
-                                                           const Comparator& comp = Comparator()) {
-  KokkosKernels::TeamBitonicSort<Ordinal, ValueType, TeamMember, Comparator>(values, n, mem, comp);
-}
-
-// Same as SerialRadixSort, but also permutes perm[0...n] as it sorts
-// values[0...n].
 template <typename Ordinal, typename ValueType, typename PermType, typename TeamMember,
           typename Comparator = Impl::DefaultComparator<ValueType>>
-[[deprecated]] KOKKOS_INLINE_FUNCTION void TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n,
-                                                            const TeamMember mem,
-                                                            const Comparator& comp = Comparator()) {
-  KokkosKernels::TeamBitonicSort2<Ordinal, ValueType, PermType, TeamMember, Comparator>(values, perm, n, mem, comp);
+[[deprecated("Use Kokkos::Experimental::sort_by_key_team instead")]] KOKKOS_INLINE_FUNCTION void TeamBitonicSort2(
+    ValueType* values, PermType* perm, Ordinal n, const TeamMember mem, const Comparator& comp = Comparator()) {
+  Kokkos::View<ValueType*, Kokkos::AnonymousSpace> valuesView(values, n);
+  Kokkos::View<PermType*, Kokkos::AnonymousSpace> permView(perm, n);
+  Kokkos::Experimental::sort_by_key_team(mem, valuesView, permView, comp);
 }
-}  // namespace Impl
 
 }  // namespace KokkosKernels
 

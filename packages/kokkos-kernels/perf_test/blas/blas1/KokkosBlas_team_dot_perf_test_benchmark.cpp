@@ -42,10 +42,12 @@
 //@HEADER
 */
 
+#include <iostream>
+
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_team_dot.hpp>
 #include <Kokkos_Random.hpp>
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 #include <benchmark/benchmark.h>
 

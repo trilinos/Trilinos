@@ -1,5 +1,3 @@
-#ifndef KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL_HPP_
-#define KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -18,11 +16,11 @@
 //@HEADER
 */
 
+#ifndef KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL_HPP_
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL_HPP_
 namespace KokkosSparse {
 namespace Impl {
-
 @SPARSE_GMRES_ETI_AVAIL_BLOCK@
-
 } // Impl
 } // KokkosSparse
 #endif // KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL_HPP_

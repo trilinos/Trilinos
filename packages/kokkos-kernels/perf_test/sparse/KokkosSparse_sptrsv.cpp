@@ -98,9 +98,9 @@ void check_entries_sorted(const RowMapType drow_map, const EntriesType dentries)
 int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename, const std::string &ufilename,
                      const int team_size, const int vector_length, const int /*idx_offset*/, const int loop,
                      const int chain_threshold = 0, const float /*dense_row_percent*/ = -1.0) {
-  typedef default_scalar scalar_t;
-  typedef default_lno_t lno_t;
-  typedef default_size_type size_type;
+  using scalar_t  = KokkosKernels::default_scalar;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using size_type = KokkosKernels::default_size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef typename execution_space::memory_space memory_space;
 

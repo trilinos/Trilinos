@@ -13,6 +13,7 @@
 /// \file Tpetra_FECrsGraph_decl.hpp
 /// \brief Declaration of the Tpetra::FECrsGraph class
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_FECrsGraph_fwd.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"
 
@@ -548,25 +549,13 @@ namespace Tpetra {
     // template<typename ViewType>
     // Teuchos::RCP<const map_type> makeOwnedColMap (ViewType ownedGraphIndices);
 
-    // Enum for activity
-    enum FEWhichActive
-    {
-      FE_ACTIVE_OWNED,
-      FE_ACTIVE_OWNED_PLUS_SHARED
-    };
-
-    enum class FillState
-    {
-      open,  // matrix is "open".  Values can freely inserted
-      closed
-    };
-    Teuchos::RCP<FillState> fillState_;
+    Teuchos::RCP<FE::FillState> fillState_;
 
     // This is whichever graph isn't currently active
     Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsGraph_;
 
     // This is in RCP to make shallow copies of the FECrsGraph work correctly
-    Teuchos::RCP<FEWhichActive> activeCrsGraph_;
+    Teuchos::RCP<FE::WhichActive> activeCrsGraph_;
 
     // The importer between the rowmaps of the two graphs
     Teuchos::RCP<const import_type> ownedRowsImporter_;

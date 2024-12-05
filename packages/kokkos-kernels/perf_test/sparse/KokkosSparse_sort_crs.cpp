@@ -57,9 +57,9 @@ void run_experiment(int argc, char** argv, const CommonInputParams& common_param
 
   using mem_space = typename exec_space::memory_space;
   using device_t  = typename Kokkos::Device<exec_space, mem_space>;
-  using size_type = default_size_type;
-  using lno_t     = default_lno_t;
-  using scalar_t  = default_scalar;
+  using size_type = KokkosKernels::default_size_type;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using scalar_t  = KokkosKernels::default_scalar;
   using crsMat_t  = KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
 
   using graph_t = typename crsMat_t::StaticCrsGraphType;
@@ -79,8 +79,12 @@ void run_experiment(int argc, char** argv, const CommonInputParams& common_param
   // Randomly shuffle the entries within each row, so that the rows aren't
   // already sorted. Leave the values alone; this changes the matrix numerically
   // but this doesn't affect sorting.
+  std::random_device rd;
+  std::mt19937 g(rd());
   for (lno_t i = 0; i < m; i++) {
-    std::random_shuffle(entriesHost.data() + i, entriesHost.data() + i + 1);
+    const size_type rowBegin = rowmapHost(i);
+    const size_type rowEnd   = rowmapHost(i + 1);
+    std::shuffle(entriesHost.data() + rowBegin, entriesHost.data() + rowEnd, g);
   }
   Kokkos::deep_copy(shuffledEntries, entriesHost);
   exec_space exec;

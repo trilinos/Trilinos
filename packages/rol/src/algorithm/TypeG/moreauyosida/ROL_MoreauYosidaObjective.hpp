@@ -175,21 +175,35 @@ public:
     lam_->set(lam);
   }
 
+  void updateMultiplier(const Vector<Real> &x) {
+    computePenalty(x);
+    lam_->set(*u1_);
+    lam_->axpy(static_cast<Real>(-1),*l1_);
+    lam_->scale(mu_);
+    isPenEvaluated_ = false;
+  }
+  void updatePenalty(Real mu) {
+    mu_ = mu;
+    isPenEvaluated_ = false;
+  }
+
   void updateMultipliers(Real mu, const Vector<Real> &x) {
     if ( bnd_->isActivated() ) {
       if ( updateMultiplier_ ) {
-        const Real one(1);
-        computePenalty(x);
-        lam_->set(*u1_);
-        lam_->axpy(-one,*l1_);
-        lam_->scale(mu_);
+        updateMultiplier(x);
+        //const Real one(1);
+        //computePenalty(x);
+        //lam_->set(*u1_);
+        //lam_->axpy(-one,*l1_);
+        //lam_->scale(mu_);
       }
       if ( updatePenalty_ ) {
-        mu_ = mu;
+        updatePenalty(mu);
+        //mu_ = mu;
       }
     }
     nfval_ = 0; ngrad_ = 0;
-    isPenEvaluated_ = false;
+    //isPenEvaluated_ = false;
   }
 
   void reset(const Real mu) {

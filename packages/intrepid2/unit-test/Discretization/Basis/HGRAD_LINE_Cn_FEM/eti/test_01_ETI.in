@@ -28,10 +28,8 @@ constexpr int num_deriv = 10;
 #define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
 #define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
 #elif (ETI_SACADO == 23)
-///  Mauro, the master branch uses this derivative dimension which sounds dummy
-constexpr int num_deriv = 0; //9;
-constexpr int max_deriv = 1; //10;  
-#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, max_deriv+1)
+constexpr int num_deriv = 3;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
 #define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
 #elif (ETI_SACADO == 20)
 constexpr int num_deriv = 2;

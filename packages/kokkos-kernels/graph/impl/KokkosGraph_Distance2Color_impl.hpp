@@ -616,7 +616,7 @@ class GraphColorDistance2 {
     const lno_t numVerts = this->nr;
     const lno_t numCols  = this->nc;
     // note: relying on forbidden and colors_out being initialized to 0
-    forbidden_view forbidden("Forbidden", batch * numCols);
+    forbidden_view forbidden("Forbidden", static_cast<size_t>(batch) * numCols);
     int iter = 0;
     Kokkos::Timer timer;
     lno_t currentWork    = this->nr;

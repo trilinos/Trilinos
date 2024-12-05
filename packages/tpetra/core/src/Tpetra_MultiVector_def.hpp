@@ -1795,7 +1795,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // - CombineMode needs to be INSERT.
     // - The number of vectors needs to be 1, otherwise we need to
     //   reorder the received data.
-    if ((dual_view_type::impl_dualview_is_single_device::value ||
+    if ((std::is_same_v<typename dual_view_type::t_dev::device_type, typename dual_view_type::t_host::device_type> ||
          (Details::Behavior::assumeMpiIsGPUAware () && !this->need_sync_device()) ||
          (!Details::Behavior::assumeMpiIsGPUAware () && !this->need_sync_host())) &&
         areRemoteLIDsContiguous &&

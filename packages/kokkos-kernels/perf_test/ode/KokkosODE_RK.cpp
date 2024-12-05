@@ -16,7 +16,7 @@
 
 #include "KokkosODE_RungeKutta.hpp"
 
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #include <benchmark/benchmark.h>
@@ -92,7 +92,7 @@ struct chem_model_2 {
   }
 };
 
-template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type>
+template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type, class count_type>
 struct RKSolve_wrapper {
   using ode_params = KokkosODE::Experimental::ODE_params;
 
@@ -103,10 +103,11 @@ struct RKSolve_wrapper {
   scalar_type tstart, tend;
   vec_type y_old, y_new, tmp;
   mv_type kstack;
+  count_type count;
 
   RKSolve_wrapper(const ode_type& my_ode_, const table_type& table_, const ode_params& params_,
                   const scalar_type tstart_, const scalar_type tend_, const vec_type& y_old_, const vec_type& y_new_,
-                  const vec_type& tmp_, const mv_type& kstack_)
+                  const vec_type& tmp_, const mv_type& kstack_, const count_type& count_)
       : my_ode(my_ode_),
         table(table_),
         params(params_),
@@ -115,7 +116,8 @@ struct RKSolve_wrapper {
         y_old(y_old_),
         y_new(y_new_),
         tmp(tmp_),
-        kstack(kstack_) {}
+        kstack(kstack_),
+        count(count_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
@@ -124,10 +126,12 @@ struct RKSolve_wrapper {
     auto local_y_new  = Kokkos::subview(y_new, Kokkos::pair(2 * idx, 2 * idx + 1));
     auto local_tmp    = Kokkos::subview(tmp, Kokkos::pair(2 * idx, 2 * idx + 1));
     auto local_kstack = Kokkos::subview(kstack, Kokkos::ALL(), Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_count  = Kokkos::subview(count, idx, Kokkos::ALL());
 
     // Run Runge-Kutta time integrator
-    KokkosODE::Impl::RKSolve<ode_type, table_type, vec_type, mv_type, double>(
-        my_ode, table, params, tstart, tend, local_y_old, local_y_new, local_tmp, local_kstack);
+    // This should be replaced by a call to the public interface!
+    KokkosODE::Impl::RKSolve(my_ode, table, params, tstart, tend, local_y_old, local_y_new, local_tmp, local_kstack,
+                             local_count.data());
   }
 };
 
@@ -149,6 +153,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
   using mv_type    = Kokkos::View<double**, execution_space>;
   using table_type = KokkosODE::Impl::ButcherTableau<4, 5, 1>;
   using ode_params = KokkosODE::Experimental::ODE_params;
+  using count_type = Kokkos::View<int**, execution_space>;
 
   const int num_odes = inputs.num_odes;
   const int model    = inputs.model;
@@ -159,6 +164,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       const int neqs      = chem_model.neqs;
       const int num_steps = 15000;
       const double dt     = 0.1;
+      count_type count("time steps count", num_odes, 1);
 
       table_type table;
       ode_params params(num_steps);
@@ -176,7 +182,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
 
       Kokkos::RangePolicy<execution_space> my_policy(0, num_odes);
       RKSolve_wrapper solve_wrapper(chem_model, table, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp,
-                                    kstack);
+                                    kstack, count);
 
       Kokkos::Timer time;
       time.reset();
@@ -206,6 +212,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       const int neqs      = chem_model.neqs;
       const int num_steps = 15000;
       const double dt     = 0.1;
+      count_type count("time steps count", num_odes, 1);
 
       table_type table;
       ode_params params(num_steps);
@@ -228,7 +235,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
 
       Kokkos::RangePolicy<execution_space> my_policy(0, num_odes);
       RKSolve_wrapper solve_wrapper(chem_model, table, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp,
-                                    kstack);
+                                    kstack, count);
 
       Kokkos::Timer time;
       time.reset();

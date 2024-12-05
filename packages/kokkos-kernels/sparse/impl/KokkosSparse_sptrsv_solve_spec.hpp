@@ -217,6 +217,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType, Value
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_sptrsv_solve_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPTRSV_SOLVE_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
                                                 MEM_SPACE_TYPE)                                                       \
   template struct SPTRSV_SOLVE<                                                                                       \

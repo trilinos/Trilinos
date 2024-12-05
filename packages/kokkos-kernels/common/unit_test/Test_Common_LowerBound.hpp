@@ -117,7 +117,7 @@ void test_lower_bound_team(const std::vector<T> &_haystack, const T _needle) {
 
   // test lower_bound search
   const int leagueSize = 1;
-  const int teamSize   = KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>() ? 64 : 1;
+  const int teamSize   = KokkosKernels::Impl::is_gpu_exec_space_v<execution_space> ? 64 : 1;
   int errCount;
   Kokkos::parallel_reduce(Policy(leagueSize, teamSize),
                           TeamLowerBoundFunctor<Member, view_t>(expected, haystack, _needle), errCount);

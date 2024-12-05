@@ -644,9 +644,9 @@ namespace Tpetra {
     global_ordinal_type getGlobalElement (local_ordinal_type localIndex) const;
     bool getGlobalElements (const local_ordinal_type localIndices[], size_t numEntries, global_ordinal_type globalIndices[]) const;
 
-    /// \brief Get the local Map for Kokkos kernels.
+    /// \brief Get the LocalMap for Kokkos-Kernels.
     ///
-    /// \warning The interface of the local Map object is SUBJECT TO
+    /// \warning The interface of the LocalMap object is SUBJECT TO
     ///   CHANGE and is for EXPERT USERS ONLY.
     local_map_type getLocalMap () const;
 

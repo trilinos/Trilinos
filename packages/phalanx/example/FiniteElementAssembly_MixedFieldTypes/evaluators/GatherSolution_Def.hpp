@@ -50,7 +50,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   const int cell = team.league_rank();
   if (team.team_rank() == 0) {
     // Fix gcc 5/6 lambda bug by changing to capture by value (potentially less efficient)
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [=] (const int& node) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [&] (const int& node) {
       field(cell,node) = x( gids(cell_global_offset_index+cell,node) * num_equations + field_index);
     });
   }
@@ -95,7 +95,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   const int cell = team.league_rank();
   if (team.team_rank() == 0) {
     // Fix gcc 5/6 lambda bug by changing to capture by value (potentially less efficient)
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [=] (const int& node) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [&] (const int& node) {
       field(cell,node).val() = x(gids(cell_global_offset_index+cell,node) * num_equations + field_index);
       field(cell,node).fastAccessDx(num_equations * node + field_index) = 1.0;
     });

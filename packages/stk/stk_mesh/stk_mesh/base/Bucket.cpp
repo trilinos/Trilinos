@@ -95,7 +95,7 @@ struct ClearEntityFunctor
   {}
 
   template<typename ConnectivityType>
-  void operator()(Bucket&, ConnectivityType& connectivity)
+  void operator()(Bucket&, ConnectivityType& /*connectivity*/)
   {}
 
   void operator()(Bucket&, impl::BucketConnDynamic& connectivity)
@@ -144,7 +144,7 @@ struct DeclareRelationFunctor
   {}
 
   template <typename Connectivity>
-  void operator()(Bucket& bucket, Connectivity& connectivity)
+  void operator()(Bucket& /*bucket*/, Connectivity& connectivity)
   {
     STK_ThrowAssert(!m_modified);
     m_modified = connectivity.add_connectivity(m_bucket_ordinal, m_to, m_ordinal, m_permutation);
@@ -167,7 +167,7 @@ struct DestroyRelationFunctor
   {}
 
   template <typename Connectivity>
-  void operator()(Bucket& bucket, Connectivity& connectivity)
+  void operator()(Bucket& /*bucket*/, Connectivity& connectivity)
   {
     STK_ThrowAssert(!m_modified);
     m_modified = connectivity.remove_connectivity(m_bucket_ordinal, m_to, m_ordinal);
@@ -195,7 +195,7 @@ struct ReplaceRelationFunctor
   {}
 
   template <typename Connectivity>
-  void operator()(Bucket& bucket, Connectivity& connectivity)
+  void operator()(Bucket& /*bucket*/, Connectivity& connectivity)
   {
     STK_ThrowAssert(!m_modified);
     m_modified = connectivity.replace_connectivity(m_bucket_ordinal, m_numConnectivity,
@@ -249,7 +249,7 @@ bool raw_part_equal( const unsigned * lhs , const unsigned * rhs )
 {
   bool result = true ;
   {
-    const unsigned * const end_lhs = lhs + *lhs ;
+    const unsigned * const end_lhs = lhs + *lhs + 1 ;
     while ( result && end_lhs != lhs ) {
       result = *lhs == *rhs ;
       ++lhs ; ++rhs ;
@@ -287,7 +287,7 @@ Bucket::Bucket(BulkData & mesh,
     m_entity_rank(entityRank),
     m_topology(),
     m_key(key),
-    m_partOrdsBeginEnd(m_key.data()+1,m_key.data()+m_key[0]),
+    m_partOrdsBeginEnd(m_key.data()+1,m_key.data()+1+m_key[0]),
     m_capacity(initialCapacity),
     m_maxCapacity(maximumCapacity),
     m_size(0),
@@ -323,7 +323,7 @@ Bucket::Bucket(BulkData & mesh,
   setup_connectivity(m_topology, entityRank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity);
   setup_connectivity(m_topology, entityRank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity);
 
-  m_parts.reserve(m_key.size());
+  m_parts.reserve(m_key.size()-1);
   supersets(m_parts);
   m_mesh.new_bucket_callback(m_entity_rank, m_parts, m_capacity, this);
 
@@ -655,17 +655,15 @@ unsigned Bucket::get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const
 void Bucket::reset_part_ord_begin_end()
 {
   m_partOrdsBeginEnd.first = m_key.data()+1;
-  m_partOrdsBeginEnd.second = m_key.data()+m_key[0];
+  m_partOrdsBeginEnd.second = m_key.data()+1+m_key[0];
 }
 
 void Bucket::reset_bucket_key(const OrdinalVector& newPartOrdinals)
 {
-  unsigned partitionCount = m_key[m_key.size() - 1];
   unsigned newPartCount = newPartOrdinals.size();
 
-  m_key.resize(newPartCount + 2);
-  m_key[0] = newPartCount + 1;
-  m_key[newPartCount+1] = partitionCount;
+  m_key.resize(newPartCount + 1);
+  m_key[0] = newPartCount;
 
   for(unsigned i = 0; i < newPartCount; i++) {
     m_key[i+1] = newPartOrdinals[i];

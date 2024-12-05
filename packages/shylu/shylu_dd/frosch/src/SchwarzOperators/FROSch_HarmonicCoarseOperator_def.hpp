@@ -109,10 +109,10 @@ namespace FROSch {
                 if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
                     FROSCH_ASSERT(InterfaceCoarseSpaces_[i]->hasBasisMapUnique(),"FROSch::HarmonicCoarseOperator: !InterfaceCoarseSpaces_[i]->hasAssembledBasis()");
                     this->AssembledInterfaceCoarseSpace_->addSubspace(InterfaceCoarseSpaces_[i]->getBasisMap(),InterfaceCoarseSpaces_[i]->getBasisMapUnique(),InterfaceCoarseSpaces_[i]->getAssembledBasis(),ii);
+                    ii += InterfaceCoarseSpaces_[i]->getAssembledBasis()->getLocalLength();
                 }
+                InterfaceCoarseSpaces_[i].reset();
             }
-            ii += InterfaceCoarseSpaces_[i]->getAssembledBasis()->getLocalLength();
-            InterfaceCoarseSpaces_[i].reset();
         }
         return this->AssembledInterfaceCoarseSpace_->assembleCoarseSpace();
     }
@@ -121,15 +121,6 @@ namespace FROSch {
     int HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap)
     {
         FROSCH_DETAILTIMER_START_LEVELID(addZeroCoarseSpaceBlockTime,"HarmonicCoarseOperator::addZeroCoarseSpaceBlock");
-        // Das könnte man noch ändern
-        GammaDofs_->resize(GammaDofs_.size()+1);
-        IDofs_->resize(IDofs_.size()+1);
-        InterfaceCoarseSpaces_->resize(InterfaceCoarseSpaces_.size()+1);
-        DofsMaps_->resize(DofsMaps_.size()+1);
-        DofsPerNode_->resize(DofsPerNode_.size()+1);
-
-        NumberOfBlocks_++;
-
         /////
         int blockId = NumberOfBlocks_-1;
 
@@ -138,43 +129,52 @@ namespace FROSch {
         blockIdStringstream << blockId+1;
         string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
-
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
 
-        GammaDofs_[blockId] = LOVecPtr(0);
+	if (useForCoarseSpace) {
+            // Das könnte man noch ändern
+            NumberOfBlocks_++;
 
-        XMultiVectorPtr mVPhiGamma;
-        XMapPtr blockCoarseMap;
-        if (useForCoarseSpace) {
-            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
+            GammaDofs_[blockId] = LOVecPtr(0);
 
-            //Epetra_SerialComm serialComm;
-            XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getLocalNumElements(),0,this->SerialComm_);
-            mVPhiGamma = MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getLocalNumElements());
-        }
+            XMultiVectorPtr mVPhiGamma;
+            XMapPtr blockCoarseMap;
+            if (useForCoarseSpace) {
+                InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
-        for (int i=0; i<dofsMap->getLocalNumElements(); i++) {
-            GammaDofs_[blockId]->push_back(i);
+                //Epetra_SerialComm serialComm;
+                XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getLocalNumElements(),0,this->SerialComm_);
+                mVPhiGamma = MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getLocalNumElements());
+            }
+
+            for (int i=0; i<dofsMap->getLocalNumElements(); i++) {
+                GammaDofs_[blockId]->push_back(i);
+
+                if (useForCoarseSpace) {
+                    mVPhiGamma->replaceLocalValue(i,i,ScalarTraits<SC>::one());
+                }
+            }
+
+            GammaDofs_->resize(GammaDofs_.size()+1);
+            IDofs_->resize(IDofs_.size()+1);
+            InterfaceCoarseSpaces_->resize(InterfaceCoarseSpaces_.size()+1);
+            DofsMaps_->resize(DofsMaps_.size()+1);
+            DofsPerNode_->resize(DofsPerNode_.size()+1);
+
+            IDofs_[blockId] = LOVecPtr(0);
 
             if (useForCoarseSpace) {
-                mVPhiGamma->replaceLocalValue(i,i,ScalarTraits<SC>::one());
+                blockCoarseMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,GammaDofs_[blockId](),0,this->MpiComm_);
+
+                InterfaceCoarseSpaces_[blockId]->addSubspace(blockCoarseMap,mVPhiGamma);
+                InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
             }
+
+            DofsMaps_[blockId] = XMapPtrVecPtr(0);
+            DofsMaps_[blockId].push_back(dofsMap);
+
+            DofsPerNode_[blockId] = 1;
         }
-
-        IDofs_[blockId] = LOVecPtr(0);
-
-        if (useForCoarseSpace) {
-            blockCoarseMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,GammaDofs_[blockId](),0,this->MpiComm_);
-
-            InterfaceCoarseSpaces_[blockId]->addSubspace(blockCoarseMap,mVPhiGamma);
-            InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
-        }
-
-        DofsMaps_[blockId] = XMapPtrVecPtr(0);
-        DofsMaps_[blockId].push_back(dofsMap);
-
-        DofsPerNode_[blockId] = 1;
-
         return 0;
     }
 
@@ -832,7 +832,7 @@ namespace FROSch {
 
         LO itmp = 0;
         ConstUNVecView numLocalBlockColumns = AssembledInterfaceCoarseSpace_->getLocalSubspaceSizes();
-        FROSCH_ASSERT(numLocalBlockColumns.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator: numLocalBlockColumns.size()!=NumberOfBlocks_");
+        FROSCH_ASSERT(numLocalBlockColumns.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator: numLocalBlockColumns.size()!=NumberOfBlocks_("+to_string(numLocalBlockColumns.size())+", "+to_string(NumberOfBlocks_)+") ");
         for (UN i=0; i<NumberOfBlocks_; i++) {
             stringstream blockIdStringstream;
             blockIdStringstream << i+1;
@@ -881,8 +881,8 @@ namespace FROSch {
                 auto mvPhiICols = Tpetra::getMultiVectorWhichVectors(*mVPhiITpetraMVector);
                 auto mvPhiCols = Tpetra::getMultiVectorWhichVectors(*mVPhiTpetraMVector);
                 for (UN j=0; j<numLocalBlockColumns[i]; j++) {
-                    int col_in = mVPhiITpetraMVector->isConstantStride() ? j : mvPhiICols[j];
-                    int col_out = mVPhiTpetraMVector->isConstantStride() ? j : mvPhiCols[j];
+                    int col_in = mVPhiITpetraMVector->isConstantStride() ? itmp : mvPhiICols[itmp];
+                    int col_out = mVPhiTpetraMVector->isConstantStride() ? itmp : mvPhiCols[itmp];
                     CopyPhiViewFunctor<GOIndView, ConstSCView, SCView> functor(col_in, indicesIDofsAllData, mvPhiIView, col_out, mvPhiView);
                     for (UN ii=0; ii<extensionBlocks.size(); ii++) {
                         Kokkos::RangePolicy<execution_space> policy (bound[extensionBlocks[ii]], bound[extensionBlocks[ii]+1]);

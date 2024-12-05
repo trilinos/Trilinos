@@ -44,6 +44,14 @@
 #ifndef EPETRA_LONGLONGSERIALDENSEMATRIX_H
 #define EPETRA_LONGLONGSERIALDENSEMATRIX_H
 
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
+
+
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 
@@ -410,10 +418,3 @@ inline const long long* Epetra_LongLongSerialDenseMatrix::operator [] (int ColIn
 #endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 #endif /* EPETRA_LONGLONGSERIALDENSEMATRIX_H */
-
-#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The Epetra package is deprecated"
-#endif
-#endif
-

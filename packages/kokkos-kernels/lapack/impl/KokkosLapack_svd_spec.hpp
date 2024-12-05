@@ -128,5 +128,6 @@ struct SVD<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix, false, KOKKOSKERN
       false, true>;
 
 #include <KokkosLapack_svd_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosLapack_svd_eti_spec_decl.hpp>
 
 #endif  // KOKKOSLAPACK_IMPL_SVD_SPEC_HPP_
