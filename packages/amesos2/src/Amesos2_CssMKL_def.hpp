@@ -439,9 +439,6 @@ CssMKL<Matrix,Vector>::getValidParameters_impl() const
     pl->set("IPARM(28)", as<int>(iparm_temp[27]), "Check input matrix is sorted",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
-    pl->set("useZoltan2",  false, "Use Zoltan2 for re-distribution");
-    pl->set("useParMETIS", false, "Use ParMETIS for re-distribution");
-
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
     pl->set("verbose", 0, "Verbosity Message Level");
