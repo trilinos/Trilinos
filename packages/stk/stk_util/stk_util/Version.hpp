@@ -44,7 +44,7 @@
 //See the file CHANGELOG.md for a listing that shows the
 //correspondence between version numbers and API changes.
 
-#define STK_VERSION 5210401
+#define STK_VERSION 5210601
 
 
 namespace stk

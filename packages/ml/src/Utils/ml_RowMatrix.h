@@ -5,6 +5,12 @@
 #ifndef ML_ROWMATRIX_H
 #define ML_ROWMATRIX_H
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /*! \file ml_RowMatrix.h
  *  \brief Wrapper from ML_Operator to Epetra_RowMatrix
  */
@@ -389,10 +395,3 @@ private:
 
 #endif /* HAVE_ML_EPETRA */
 #endif /* ML_ROWMATRIX_H */
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

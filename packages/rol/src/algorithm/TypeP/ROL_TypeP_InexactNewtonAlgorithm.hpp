@@ -22,7 +22,7 @@ namespace TypeP {
 template<typename Real>
 class InexactNewtonAlgorithm : public TypeP::Algorithm<Real> {
 private:
-  int t0_;
+  Real t0_;
   bool initProx_;
 
   int maxit_;         ///< Maximum number of line search steps (default: 20)

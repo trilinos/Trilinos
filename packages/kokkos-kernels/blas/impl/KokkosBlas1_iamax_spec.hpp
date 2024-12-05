@@ -294,5 +294,7 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
   KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
 
 #include <KokkosBlas1_iamax_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_iamax_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_iamax_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_IAMAX_SPEC_HPP_

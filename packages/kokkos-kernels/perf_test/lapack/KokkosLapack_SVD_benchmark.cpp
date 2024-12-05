@@ -14,9 +14,11 @@
 //
 //@HEADER
 
-#include "KokkosLapack_svd.hpp"
+#include <Kokkos_Random.hpp>
 
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_IOUtils.hpp"  // getRandomBounds
+#include "KokkosLapack_svd.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #include <benchmark/benchmark.h>
@@ -72,7 +74,7 @@ void run_svd_benchmark(benchmark::State& state, const svd_parameters& svd_params
 
   // Initialize A with random numbers
   double randStart = 0, randEnd = 0;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  KokkosKernels::Impl::getRandomBounds(10.0, randStart, randEnd);
   Kokkos::fill_random(A, rand_pool, randStart, randEnd);
 
   for (auto _ : state) {

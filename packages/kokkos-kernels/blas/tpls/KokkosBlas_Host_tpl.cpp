@@ -790,6 +790,18 @@ double HostBlas<std::complex<double> >::nrm2(KK_INT n, const std::complex<double
 }
 template <>
 double HostBlas<std::complex<double> >::asum(KK_INT n, const std::complex<double>* x, KK_INT x_inc) {
+  // see issue 2005
+  // On some platforms with OpenBLAS < 0.3.26, dzasum on vectors less than 16 entries is producing 0.
+  // this has been observed on some (not all) systems with:
+  // clang 14.0.6 / 15.0.7 AND OpenBLAS 0.3.23 AND Sapphire Rapids CPU
+  // unfortunately, it's not clear exactly what the trigger is
+  if (n > 0 && n < 16) {
+    double ret = 0.0;
+    for (int i = 0; i < n; ++i) {
+      ret += Kokkos::abs(x[i].real()) + Kokkos::abs(x[i].imag());
+    }
+    return ret;
+  }
   return F77_FUNC_DZASUM(&n, x, &x_inc);
 }
 template <>

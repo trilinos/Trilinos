@@ -34,6 +34,7 @@
 
 #include <stk_util/parallel/DeviceAwareMPI.hpp>
 #include <stk_util/stk_config.h>
+#include <stk_util/stk_kokkos_macros.h>
 #include <stk_util/parallel/Parallel.hpp>
 
 #ifdef OMPI_MAJOR_VERSION
@@ -44,8 +45,15 @@ namespace stk {
 
 bool have_device_aware_mpi()
 {
-#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
-  return true;
+#if defined(STK_ENABLE_GPU) && defined(MPIX_CUDA_AWARE_SUPPORT)
+  //This runtime-check is described at this web page:
+  //https://www.open-mpi.org/faq/?category=runcuda
+  if (1 == MPIX_Query_cuda_support()) {
+    return true;
+  }
+  else {
+    return false;
+  }
 #endif
 
   return false;

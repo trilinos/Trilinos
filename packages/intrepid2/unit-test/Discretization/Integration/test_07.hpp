@@ -87,7 +87,6 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 3D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;
@@ -109,14 +108,6 @@ namespace Intrepid2 {
         // analytic integral values
         const auto analyticMaxDeg = 11;
 
-        // storage for cubatrue points and weights
-        DynRankView ConstructWithLabel(cubPoints,
-                                       Parameters::MaxIntegrationPoints,
-                                       Parameters::MaxDimension);
-
-        DynRankView ConstructWithLabel(cubWeights,
-                                       Parameters::MaxIntegrationPoints);
-
         // perform comparison
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
 
@@ -125,13 +116,17 @@ namespace Intrepid2 {
           CubatureLineType xy_line(cubDeg);          
           CubatureLineJacobiType z_line(cubDeg);          
           CubatureTensorPyrType pyrCub( xy_line, xy_line, z_line );
+          auto cubPoints  = pyrCub.allocateCubaturePoints();
+          auto cubWeights = pyrCub.allocateCubatureWeights();
           pyrCub.getCubature(cubPoints, cubWeights);
-          auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
-          ValueType minWeigth = 1.0;
+          using HostDevice = Kokkos::HostSpace::device_type;
+          TensorData<weightValueType,HostDevice> cubWeightsHost(cubWeights); // this constructor does any necessary allocation and copying to host
+          
+          ValueType minWeight = 1.0;
           for(int i=0; i<pyrCub.getNumPoints();++i)
-            minWeigth = std::min(minWeigth,cubWeights_host(i));
+            minWeight = std::min(minWeight,cubWeightsHost(i));
 
-          if (minWeigth <= 0.0) {
+          if (minWeight <= 0.0) {
             errorFlag++;
             *outStream << "   Cubature Rule is not positive!\n" << std::right << std::setw(111) << "^^^^---FAILURE!\n";
           }
@@ -141,24 +136,32 @@ namespace Intrepid2 {
 
           ordinal_type offset = 0;
           const auto oldFlag = errorFlag;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg,offset += x_offs) 
-            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,offset += y_offs) 
-              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg) { 
+          Kokkos::Array<int,3> degrees;
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg,offset += x_offs)
+          {
+            degrees[0] = xDeg;
+            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,offset += y_offs)
+            {
+              degrees[1] = yDeg;
+              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg) {
+                degrees[2] = zDeg;
                 const auto analyticIntegral = analyticIntegralOfMonomialOverPyr<ValueType>(xDeg,yDeg,zDeg);
-                const auto computedIntegral = computeIntegralOfMonomial<ValueType>(pyrCub,cubPoints,cubWeights,xDeg,yDeg,zDeg);
-                const auto abstol  = ( analyticIntegral == 0.0 ? tol : std::fabs(tol*analyticIntegral) );   
+                const auto computedIntegral = computeIntegralOfMonomial<ValueType>(cubPoints,cubWeights,degrees);
+                const auto abstol  = ( analyticIntegral == 0.0 ? tol : std::fabs(tol*analyticIntegral) );
                 const auto absdiff = std::fabs(analyticIntegral - computedIntegral);
                 if (absdiff > abstol) {
                   *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
-                             << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
-                             << " * z^" << std::setw(2) << zDeg << ":" << "   "
-                             << std::scientific << std::setprecision(16)
-                             << computedIntegral << "   " <<  analyticIntegral << " "
-                             << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+                  << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
+                  << " * z^" << std::setw(2) << zDeg << ":" << "   "
+                  << std::scientific << std::setprecision(16)
+                  << computedIntegral << "   " <<  analyticIntegral << " "
+                  << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
                   errorFlag++;
                   *outStream << std::right << std::setw(118) << "^^^^---FAILURE!\n";
                 }
               }
+            }
+          }
           *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg
                      << (errorFlag == oldFlag ? "  PASSED" : "  FAILED") << std::endl;                         
         }

@@ -1,0 +1,10 @@
+*.zip
+*.tar
+*.tar.gz
+*.bz2
+*.xz
+*.swo
+*.swp
+*.pyc
+__pycache__
+

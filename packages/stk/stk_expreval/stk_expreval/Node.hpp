@@ -171,6 +171,8 @@ public:
 
   double& setResult();
 
+  void checkFPError(const char* fname = nullptr);
+
   const Opcode m_opcode;
 
   union _data

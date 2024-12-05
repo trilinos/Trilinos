@@ -77,9 +77,9 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
   // These special cases are to maintain accuracy.
   using result_type = typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
   using RVector_Internal =
-      Kokkos::View<dot_type, default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using RVector_Result =
-      Kokkos::View<result_type, default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      Kokkos::View<dot_type, KokkosKernels::default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using RVector_Result = Kokkos::View<result_type, KokkosKernels::default_layout, Kokkos::HostSpace,
+                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   XVector_Internal X = x;
   YVector_Internal Y = y;

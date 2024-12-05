@@ -62,7 +62,7 @@ Python and SWIG
 You may specify the python interpreter (and thus the version of the
 Python/C API) with the ``cmake`` option::
 
-    -D PYTHON_EXECUTABLE:FILEPATH=...
+    -D Python3_EXECUTABLE:FILEPATH=...
 
 If you do not specify this option, ``cmake`` actually looks for an
 executable named ``python2.7`` (and then ``python2.6``, etc., down to

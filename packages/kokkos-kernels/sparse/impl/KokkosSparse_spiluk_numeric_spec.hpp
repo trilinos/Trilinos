@@ -181,6 +181,8 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType, A
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spiluk_numeric_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPILUK_NUMERIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,           \
                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                               \
   template struct SPILUK_NUMERIC<                                                                                \

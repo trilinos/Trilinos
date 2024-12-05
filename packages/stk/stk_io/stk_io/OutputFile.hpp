@@ -213,7 +213,6 @@ public:
     void has_adaptivity(bool hasAdaptivity);
 
     bool is_skin_mesh() const;
-    void is_skin_mesh(bool skinMesh);
 
     void set_enable_edge_io(bool enableEdgeIO);
 

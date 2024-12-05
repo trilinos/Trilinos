@@ -52,23 +52,28 @@ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLe
 
 namespace KokkosLapack {
 namespace Impl {
-#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, MEMSPACE)                                       \
-  template <>                                                                                                  \
-  struct gesv_tpl_spec_avail<                                                                                  \
-      Kokkos::Cuda,                                                                                            \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
-      Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                               \
-    enum : bool { value = true };                                                                              \
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                  \
+  template <>                                                                                                        \
+  struct gesv_tpl_spec_avail<                                                                                        \
+      EXECSPACE,                                                                                                     \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                                     \
+    enum : bool { value = true };                                                                                    \
   };
-
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#if defined(KOKKOS_ENABLE_CUDA)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+#endif
 }  // namespace Impl
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA

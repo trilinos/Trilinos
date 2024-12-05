@@ -26,8 +26,8 @@
 /// use Kokkos::ArithTraits, so it may be useful for users to
 /// read it.
 
-#ifndef KOKKOS_ARITHTRAITSTEST_HPP
-#define KOKKOS_ARITHTRAITSTEST_HPP
+#ifndef KOKKOSKERNELS_TEST_COMMON_ARITHTRAITSTEST_HPP
+#define KOKKOSKERNELS_TEST_COMMON_ARITHTRAITSTEST_HPP
 
 #include <Kokkos_Core.hpp>
 #include "Kokkos_ArithTraits.hpp"
@@ -1693,4 +1693,4 @@ void test_ArithTraits() {
 }
 TEST_F(TestCategory, common_ArithTraits) { test_ArithTraits<TestDevice>(); }
 
-#endif  // KOKKOS_ARITHTRAITSTEST_HPP
+#endif  // KOKKOSKERNELS_TEST_COMMON_ARITHTRAITSTEST_HPP

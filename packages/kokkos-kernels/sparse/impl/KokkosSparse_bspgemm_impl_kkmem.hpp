@@ -376,7 +376,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
           nnz_lno_t *globally_used_hash_indices = NULL;
 
           if (global_memory_hash_size > thread_shmem_key_size) {
-            volatile nnz_lno_t *tmp = NULL;
+            nnz_lno_t *tmp = NULL;
             // size_t tid = get_thread_id(row_index);
             // the code gets internal compiler error on gcc 4.7.2
             // assuming that this part only runs on GPUs for now, below fix
@@ -386,10 +386,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
             while (tmp == NULL) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](volatile nnz_lno_t *&memptr) {
-                    memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(tid));
-                  },
-                  tmp);
+                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(memory_space.allocate_chunk(tid)); }, tmp);
             }
 
             is_global_alloced          = true;
@@ -507,17 +504,14 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
       scalar_t *c_row_vals           = valuesC.data() + c_row_begin * block_size;
       nnz_lno_t *global_acc_row_keys = c_row;
       scalar_t *global_acc_row_vals  = c_row_vals;
-      volatile nnz_lno_t *tmp        = NULL;
+      nnz_lno_t *tmp                 = NULL;
 
       if (c_row_size > max_first_level_hash_size) {
         {
           while (tmp == NULL) {
             Kokkos::single(
                 Kokkos::PerTeam(teamMember),
-                [&](volatile nnz_lno_t *&memptr) {
-                  memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(row_index));
-                },
-                tmp);
+                [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(memory_space.allocate_chunk(row_index)); }, tmp);
           }
           global_acc_row_keys = (nnz_lno_t *)(tmp);
           global_acc_row_vals = KokkosKernels::Impl::alignPtrTo<scalar_t>(tmp + pow2_hash_size);
@@ -613,9 +607,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
               if (!insert_is_on) {
                 try_to_insert = false;
                 break;
-              } else if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)) {
+              } else if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
                 kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
-                Kokkos::atomic_increment(used_hash_sizes);
+                Kokkos::atomic_inc(used_hash_sizes);
                 if (used_hash_sizes[0] > max_first_level_hash_size) insert_is_on = false;
                 fail = 0;
                 break;
@@ -635,9 +629,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
               } else if (keys[trial] == init_value) {
                 if (!insert_is_on) {
                   break;
-                } else if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)) {
+                } else if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
                   kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
-                  Kokkos::atomic_increment(used_hash_sizes);
+                  Kokkos::atomic_inc(used_hash_sizes);
                   if (used_hash_sizes[0] > max_first_level_hash_size) insert_is_on = false;
                   fail = 0;
                   break;
@@ -657,9 +651,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
                   fail = 0;
                   break;
                 } else if (global_acc_row_keys[trial] == init_value) {
-                  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial, init_value, my_b_col)) {
+                  if (init_value ==
+                      Kokkos::atomic_compare_exchange(global_acc_row_keys + trial, init_value, my_b_col)) {
                     kk_vector_block_add_mul(block_dim, global_acc_row_vals + trial * block_size, a_val, b_val);
-                    // Kokkos::atomic_increment(used_hash_sizes + 1);
+                    // Kokkos::atomic_inc(used_hash_sizes + 1);
                     // c_row_vals[trial] = my_b_val;
                     fail = 0;
                     break;
@@ -675,8 +670,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
                     kk_vector_block_add_mul(block_dim, global_acc_row_vals + trial * block_size, a_val, b_val);
                     break;
                   } else if (global_acc_row_keys[trial] == init_value) {
-                    if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial, init_value, my_b_col)) {
-                      // Kokkos::atomic_increment(used_hash_sizes + 1);
+                    if (init_value ==
+                        Kokkos::atomic_compare_exchange(global_acc_row_keys + trial, init_value, my_b_col)) {
+                      // Kokkos::atomic_inc(used_hash_sizes + 1);
                       kk_vector_block_add_mul(block_dim, global_acc_row_vals + trial * block_size, a_val, b_val);
                       // c_row_vals[trial] = my_b_val;
                       break;
@@ -883,7 +879,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
               fail = 0;
               break;
             } else if (keys[trial] == init_value) {
-              if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)) {
+              if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
                 kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
                 fail = 0;
                 break;
@@ -899,7 +895,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
                 fail = 0;
                 break;
               } else if (keys[trial] == init_value) {
-                if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)) {
+                if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
                   kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
                   fail = 0;
                   break;
@@ -1069,7 +1065,7 @@ void KokkosBSPGEMM<
 
   // choose parameters
   if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
       // then chose the best method and parameters.
       size_type average_row_nnz = 0;
       size_t average_row_flops  = 0;
@@ -1207,7 +1203,7 @@ void KokkosBSPGEMM<
   // END OF SHARED MEMORY SIZE CALCULATIONS
 
   // required memory for L2
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>) {
     if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM) {
       tmp_max_nnz = 1;
     } else if (algorithm_to_run == SPGEMM_KK_MEMORY_BIGSPREADTEAM) {
@@ -1257,7 +1253,7 @@ void KokkosBSPGEMM<
 
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1288,7 +1284,7 @@ void KokkosBSPGEMM<
   }
   timer1.reset();
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
     if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM) {
       if (thread_shmem_key_size <= 0) {
         std::cout << "KokkosBSPGEMM_numeric_hash SPGEMM_KK_MEMORY_SPREADTEAM: "

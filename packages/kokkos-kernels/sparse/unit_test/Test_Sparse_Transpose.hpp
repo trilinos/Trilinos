@@ -44,9 +44,9 @@ template <typename device_t>
 void testTranspose(int numRows, int numCols, bool doValues) {
   using exec_space  = typename device_t::execution_space;
   using range_pol   = Kokkos::RangePolicy<exec_space>;
-  using scalar_t    = default_scalar;
-  using lno_t       = default_lno_t;
-  using size_type   = default_size_type;
+  using scalar_t    = KokkosKernels::default_scalar;
+  using lno_t       = KokkosKernels::default_lno_t;
+  using size_type   = KokkosKernels::default_size_type;
   using crsMat_t    = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
   using c_rowmap_t  = typename crsMat_t::row_map_type;
   using c_entries_t = typename crsMat_t::index_type;
@@ -106,7 +106,7 @@ template <class bsrMat_t>
 void CompareBsrMatrices(bsrMat_t& A, bsrMat_t& B) {
   using exec_space  = typename bsrMat_t::execution_space;
   using range_pol   = Kokkos::RangePolicy<exec_space>;
-  using size_type   = default_size_type;
+  using size_type   = KokkosKernels::default_size_type;
   using c_rowmap_t  = typename bsrMat_t::row_map_type;
   using c_entries_t = typename bsrMat_t::index_type;
   using values_t    = typename bsrMat_t::values_type::non_const_type;
@@ -133,9 +133,9 @@ void CompareBsrMatrices(bsrMat_t& A, bsrMat_t& B) {
 
 template <typename device_t>
 void testTransposeBsrRef() {
-  using scalar_t  = default_scalar;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
+  using scalar_t  = KokkosKernels::default_scalar;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using size_type = KokkosKernels::default_size_type;
   using bsrMat_t  = typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device_t, void, size_type>;
   using rowmap_t  = typename bsrMat_t::row_map_type::non_const_type;
   using entries_t = typename bsrMat_t::index_type::non_const_type;
@@ -199,9 +199,9 @@ void testTransposeBsrRef() {
 
 template <typename device_t>
 void testTransposeBsr(int numRows, int numCols, int blockSize) {
-  using scalar_t    = default_scalar;
-  using lno_t       = default_lno_t;
-  using size_type   = default_size_type;
+  using scalar_t    = KokkosKernels::default_scalar;
+  using lno_t       = KokkosKernels::default_lno_t;
+  using size_type   = KokkosKernels::default_size_type;
   using exec_space  = typename device_t::execution_space;
   using bsrMat_t    = typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device_t, void, size_type>;
   using c_rowmap_t  = typename bsrMat_t::row_map_type;

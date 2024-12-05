@@ -41,6 +41,12 @@
 #ifndef EPETRAEXT_PACKTRAITS_H
 #define EPETRAEXT_PACKTRAITS_H
 
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
 // ---------- Standard Includes ----------
 
 #include <string>
@@ -152,10 +158,3 @@ struct PackTraits< std::vector<T> >
 } //namespace EpetraExt
 
 #endif
-
-#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The EpetraExt package is deprecated"
-#endif
-#endif
-

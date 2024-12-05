@@ -8,7 +8,7 @@ IF(PETSC4PY_INCLUDES)
 ENDIF(PETSC4PY_INCLUDES)
 
 EXECUTE_PROCESS(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; from sys import stdout; stdout.write(petsc4py.get_include())"
+  COMMAND ${Python3_EXECUTABLE} -c "import petsc4py; from sys import stdout; stdout.write(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDES
   RESULT_VARIABLE PETSC4PY_NOT_FOUND)
 

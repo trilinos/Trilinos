@@ -47,8 +47,7 @@
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_util/Version.hpp>                                 // for versi...
 #include <stk_util/command_line/CommandLineParserParallel.hpp>  // for Comma...
-#include <stk_util/environment/Env.hpp>                         // for outputP0
-#include <stk_util/environment/EnvData.hpp>                     // for EnvData
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/environment/LogWithTimeAndMemory.hpp>        // for log_w...
 #include <stk_util/environment/memory_util.hpp>                 // for get_c...
 #include <stk_util/parallel/Parallel.hpp>                       // for paral...
@@ -81,10 +80,7 @@
 
 void set_output_streams(MPI_Comm comm)
 {
-  if (stk::parallel_machine_rank(comm) != 0) {
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-  }
-  Ioss::Utils::set_output_stream(sierra::Env::outputP0());
+  Ioss::Utils::set_output_stream(stk::outputP0());
 }
 
 class IoMeshDriver
@@ -289,14 +285,14 @@ public:
     // For each global field name on the input database, determine the type of the field
     // and define that same global field on the results, restart, history, and heartbeat outputs.
     if (!global_fields.empty()) {
-      sierra::Env::outputP0() << "Adding " << global_fields.size() << " global fields:\n";
+      stk::outputP0() << "Adding " << global_fields.size() << " global fields:\n";
     }
 
     auto io_region = ioBroker.get_input_ioss_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
-      sierra::Env::outputP0() << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
+      stk::outputP0() << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
 
       if (input_field.raw_storage()->component_count() == 1) {
 	double val = 0.0;
@@ -446,7 +442,7 @@ public:
       ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
     }
     else {
-      sierra::Env::outputP0()<<"decomposition not specified, defaulting to file-per-processor mode for mesh-read."<<std::endl;
+      stk::outputP0()<<"decomposition not specified, defaulting to file-per-processor mode for mesh-read."<<std::endl;
     }
 
     if (compose_output) {
@@ -552,10 +548,10 @@ int main(int argc, const char** argv)
       returnCode = 1;
       break;
     case stk::CommandLineParser::ParseHelpOnly:
-      sierra::Env::outputP0() << cmdLine.get_usage() << std::endl;
+      stk::outputP0() << cmdLine.get_usage() << std::endl;
       break;
     case stk::CommandLineParser::ParseVersionOnly:
-      sierra::Env::outputP0() << "STK Version: " << stk::version_string() << std::endl;
+      stk::outputP0() << "STK Version: " << stk::version_string() << std::endl;
       break;
     default: break;
     }

@@ -46,6 +46,7 @@ Eval::Eval(VariableMap::Resolver & resolver, const std::string & expression, Var
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
+    m_fpErrorBehavior(FPErrorBehavior::Warn),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
@@ -58,6 +59,7 @@ Eval::Eval(const std::string & expression, Variable::ArrayOffset arrayOffsetType
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
+    m_fpErrorBehavior(FPErrorBehavior::Warn),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
@@ -377,12 +379,9 @@ Eval::initialize_function_map()
   m_functionMap["weibull_pdf"] = FunctionType::WEIBULL_PDF;
   m_functionMap["gamma_pdf"] = FunctionType::GAMMA_PDF;
 
-  m_functionMap["rand"] = FunctionType::RAND;
-  m_functionMap["srand"] = FunctionType::SRAND;
-  m_functionMap["random"] = FunctionType::RANDOM;
+
   m_functionMap["ts_random"] = FunctionType::TS_RANDOM;
   m_functionMap["ts_normal"] = FunctionType::TS_NORMAL;
-  m_functionMap["time"] = FunctionType::TIME;
 }
 
 Eval &

@@ -516,7 +516,7 @@ struct HashmapAccumulator {
           Kokkos::atomic_add(values + hash, value);
           return __insert_success;
         } else if (keys[hash] == -1) {
-          if (Kokkos::atomic_compare_exchange_strong<key_type>(keys + hash, -1, key)) {
+          if (-1 == Kokkos::atomic_compare_exchange(keys + hash, -1, key)) {
             // should only be here if we used a new hash
             used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
             Kokkos::atomic_add(values + hash, value);

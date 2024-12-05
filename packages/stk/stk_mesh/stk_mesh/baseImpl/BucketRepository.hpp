@@ -137,8 +137,7 @@ public:
   void sync_from_partitions();
   void sync_from_partitions(EntityRank rank);
 
-  // Used in unit tests.  Returns the current partitions.
-  std::vector<Partition *> get_partitions(EntityRank rank) const;
+  const std::vector<Partition *>& get_partitions(EntityRank rank) const;
 
   Partition* get_partition(const EntityRank arg_entity_rank, const OrdinalVector &parts);
 

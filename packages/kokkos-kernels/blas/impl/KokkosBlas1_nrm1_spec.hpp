@@ -244,5 +244,7 @@ struct Nrm1<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
                        2, false, true>;
 
 #include <KokkosBlas1_nrm1_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_nrm1_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_nrm1_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_NRM1_SPEC_HPP_

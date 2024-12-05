@@ -95,8 +95,9 @@ inline EAlgorithmP StringToEAlgorithmP(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
-  EAlgorithmP ealg = StringToEAlgorithmP(parlist.sublist("Step").get("Type","Trust Region"));
+inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
+  std::string stepType = parlist.sublist("Step").get("Type","Trust Region");
+  EAlgorithmP ealg = StringToEAlgorithmP(stepType);
   switch(ealg) {
     case ALGORITHM_P_LINESEARCH:
     {
@@ -104,12 +105,12 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
         = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
       if (desc=="Newton-Krylov" || desc=="Newton")
         return makePtr<InexactNewtonAlgorithm<Real>>(parlist);
-      else if (desc=="Quasi-Newton Method" || desc = "Quasi-Newton")
-        return makePtr<QuasiNewtonAlgorithm<Real>>(parlist);
+      else if (desc=="Quasi-Newton Method" || desc == "Quasi-Newton")
+        return makePtr<QuasiNewtonAlgorithm<Real>>(parlist, secant);
       else
         return makePtr<ProxGradientAlgorithm<Real>>(parlist);
     }
-    case ALGORITHM_P_TRUSTREGION:         return makePtr<TrustRegionAlgorithm<Real>>(parlist);
+    case ALGORITHM_P_TRUSTREGION:         return makePtr<TrustRegionAlgorithm<Real>>(parlist, secant);
     case ALGORITHM_P_SPECTRALGRADIENT:    return makePtr<SpectralGradientAlgorithm<Real>>(parlist);
     case ALGORITHM_P_IPIANO:              return makePtr<iPianoAlgorithm<Real>>(parlist);
     default:                              return nullPtr;

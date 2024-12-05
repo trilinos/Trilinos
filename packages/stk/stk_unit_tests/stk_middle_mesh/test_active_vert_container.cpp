@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_middle_mesh/active_vert_container.hpp"
 #include "stk_middle_mesh/boundary_fixture.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
@@ -21,7 +22,7 @@ class AlwaysTrue
 ActiveVertData& get_closest_patch(stk::middle_mesh::mesh::impl::ActiveVertContainer& container, const Point& pt)
 {
   double minDist = std::numeric_limits<double>::max();
-  ActiveVertData* minPatch;
+  ActiveVertData* minPatch = nullptr;
   for (auto& patch : container.get_active_verts())
   {
     auto disp = patch.get_current_vert()->get_point_orig(0) - pt;
@@ -33,6 +34,7 @@ ActiveVertData& get_closest_patch(stk::middle_mesh::mesh::impl::ActiveVertContai
     }
   }
 
+  STK_ThrowRequireMsg(minPatch != nullptr, "get_closest_patch failed to find patch");
   return *minPatch;
 }
 

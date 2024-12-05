@@ -22,14 +22,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_SUPPRESS_ERRORS
   "Enable the suppress errors option of Binder."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_USE_ONE_FILE
+  PYROL_USE_ONE_FILE
+  "Enable the use of one file by Binder."
+  OFF )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_CMAKE_ERROR
   PYROL_CMAKE_ERROR
-  "Stop the configuration if binder fails."
+  "Stop the configuration if Binder fails."
   ON )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_VERBOSE
   PYROL_B_VERBOSE
-  "Increase the verbosity of binder"
+  "Increase the verbosity of Binder"
   OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_ENABLE_BINDER_UPDATE
@@ -37,14 +42,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_ENABLE_BINDER_UPDATE
   "Enable the update of the generated source files with Binder."
   OFF )
 
-MESSAGE("-- PYTHON_EXECUTABLE:")
-IF(NOT DEFINED ${PYTHON_EXECUTABLE})
-  find_program(PYTHON_EXECUTABLE
+MESSAGE("-- Python3_EXECUTABLE:")
+IF(NOT DEFINED ${Python3_EXECUTABLE})
+  find_program(Python3_EXECUTABLE
       NAMES python3 python
       )
-  MESSAGE("  -- CMake has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  MESSAGE("  -- CMake has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 ELSE()
-  MESSAGE("  -- User has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  MESSAGE("  -- User has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
 ENDIF()
 
 
@@ -87,6 +92,7 @@ list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm")
 list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeB")
 list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeE")
 list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeP")
 list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeU")
 list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeB/pqn")
 list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG/augmentedlagrangian/")
@@ -223,15 +229,6 @@ IF (PYROL_GENERATE_SRC)
     endforeach()
   endforeach()
 
-
-  #list(REMOVE_DUPLICATES PyROL_all_include_files_without_dir)
-  #list(REMOVE_ITEM PyROL_all_include_files_without_dir "")
-
-  #list(REMOVE_DUPLICATES PyROL_all_include_files_with_dir)
-  #list(REMOVE_ITEM PyROL_all_include_files_with_dir "")
-
-  #MESSAGE("PyROL_all_include_files_with_dir = ${PyROL_all_include_files_with_dir}")
-
   SET(CONTENTS "")
   FOREACH(line IN LISTS all_include_dirs)
     SET(CONTENTS "${CONTENTS}${line}\n")
@@ -252,19 +249,24 @@ IF (PYROL_GENERATE_SRC)
 
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/python)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
-      
+
   file (GLOB PyROLPyFiles2 "${CMAKE_CURRENT_BINARY_DIR}/python/*.py")
   list (APPEND PyROLPyFiles ${PyROLPyFiles2})
 
   EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
+  ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
   )
 
   set(BINDER_OPTIONS "")
   list(APPEND BINDER_OPTIONS ${binder_include_name})
   list(APPEND BINDER_OPTIONS --root-module pyrol)
   list(APPEND BINDER_OPTIONS --prefix ${CMAKE_CURRENT_BINARY_DIR}/binder)
-  list(APPEND BINDER_OPTIONS -max-file-size=1000000)
+  IF(PYROL_USE_ONE_FILE)
+    list(APPEND BINDER_OPTIONS -single-file)
+  ELSE()
+    list(APPEND BINDER_OPTIONS -max-file-size=1000000)
+    list(APPEND BINDER_OPTIONS -flat)
+  ENDIF()
   list(APPEND BINDER_OPTIONS --bind Teuchos)
   list(APPEND BINDER_OPTIONS --bind ROL)
   list(APPEND BINDER_OPTIONS --bind pyrol)
@@ -274,7 +276,7 @@ IF (PYROL_GENERATE_SRC)
   list(APPEND BINDER_OPTIONS --config ${BINDER_CFG})
   IF(PYROL_SUPPRESS_ERRORS)
     list(APPEND BINDER_OPTIONS --suppress-errors)
-  ENDIF()  
+  ENDIF()
   list(APPEND BINDER_OPTIONS --)
   IF(TPL_ENABLE_CUDA)
     list(APPEND BINDER_OPTIONS -x cuda --cuda-host-only)
@@ -294,10 +296,18 @@ IF (PYROL_GENERATE_SRC)
 
   message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
 
+  IF(NOT PYROL_USE_ONE_FILE)
+    MATH(EXPR NUMBER_FILE "${PYROL_BINDER_NUM_FILES}")
+
+    foreach(index RANGE 0 ${NUMBER_FILE})
+      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/binder/pyrol_${index}.cpp "")
+    endforeach()
+  ENDIF()
+
   EXECUTE_PROCESS(COMMAND
     ${PyROL_BINDER_EXECUTABLE} ${BINDER_OPTIONS}
     RESULT_VARIABLE STATUS
-    OUTPUT_VARIABLE OUTPUT_BINDER 
+    OUTPUT_VARIABLE OUTPUT_BINDER
   )
 
   if(STATUS AND NOT STATUS EQUAL 0)
@@ -308,7 +318,7 @@ IF (PYROL_GENERATE_SRC)
       message("BINDER FAILED: ${STATUS}")
     endif()
   else()
-    message(STATUS "BINDER SUCCESS:") 
+    message(STATUS "BINDER SUCCESS:")
     message("${OUTPUT_BINDER}")
   endif()
 
@@ -322,12 +332,12 @@ ELSE()
 ENDIF()
 
 # Get the python version
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
                         "import sys; print(sys.version_info.major)"
   OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
                         "import sys; print(sys.version_info.minor)"
   OUTPUT_VARIABLE PYTHON_MINOR_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -385,7 +395,7 @@ ENDFOREACH()
 
 # Find the pybind11 CMake module
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
+  ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
   OUTPUT_VARIABLE pybind11_DIR
   ERROR_VARIABLE  pybind11_CMAKE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -395,7 +405,7 @@ MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
 find_package(pybind11 REQUIRED)
 
 EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
+  ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE Mpi4Py_INCLUDE_DIR
   ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE

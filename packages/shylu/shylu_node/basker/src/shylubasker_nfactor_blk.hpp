@@ -149,7 +149,7 @@ namespace BaskerNS
     const Mag normA     = BTF_A.gnorm;
     const Mag normA_blk = BTF_A.anorm;
 
-    Int b = S[0][kid]; //Which blk from schedule
+    Int b = S(0)(kid); //Which blk from schedule
     BASKER_MATRIX &L   = LL(b)(0);
     BASKER_MATRIX &U   = LU(b)(LU_size(b)-1);
     BASKER_MATRIX &M   = ALM(b)(0); //A->blk
@@ -159,9 +159,9 @@ namespace BaskerNS
     ENTRY_1DARRAY X    = LL(b)(0).ews;
     Int        ws_size = LL(b)(0).iws_size;
 #else  //else if BASKER_2DL
-    INT_1DARRAY   ws   = thread_array[kid].iws;
-    ENTRY_1DARRAY X    = thread_array[kid].ews;
-    Int       ws_size  = thread_array[kid].iws_size;
+    INT_1DARRAY   ws   = thread_array(kid).iws;
+    ENTRY_1DARRAY X    = thread_array(kid).ews;
+    Int       ws_size  = thread_array(kid).iws_size;
 #endif
     //Int          bcol  = L.scol;  //begining col //NOT UD
     Int          scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
@@ -546,37 +546,37 @@ namespace BaskerNS
           if (Options.replace_tiny_pivot && normA_blk > abs(zero)) {
             // just insert tiny pivot on diagonal
             maxindex = k;
-	    while (gperm(maxindex+brow_g) != BASKER_MAX_IDX && maxindex < M.ncol) {
+            while (gperm(maxindex+brow_g) != BASKER_MAX_IDX && maxindex < M.ncol) {
               maxindex ++;
-	    }
-	    if (maxindex < M.ncol) {
+            }
+            if (maxindex < M.ncol) {
               if (Options.verbose == BASKER_TRUE)
               {
                 cout << "  thread-" << kid << " Explicit tiny pivot for maxind = " << maxindex << endl;
-	      }
+              }
               pivot = normA_blk * sqrt(eps);
               lastU = pivot;
               npivots ++;
-	      explicit_pivot = true;
-	    }
+              explicit_pivot = true;
+            }
           } else if (Options.replace_zero_pivot && normA_blk > abs(zero)) {
             // just insert tiny pivot on diagonal
             maxindex = k;
-	    while (gperm(maxindex+brow_g) != BASKER_MAX_IDX && maxindex < M.ncol-1) {
+            while (gperm(maxindex+brow_g) != BASKER_MAX_IDX && maxindex < M.ncol-1) {
               maxindex ++;
-	    }
-	    if (maxindex < M.ncol) {
+            }
+            if (maxindex < M.ncol) {
               if (Options.verbose == BASKER_TRUE)
               {
                 cout << "  thread-" << kid << " Explicit nonzero pivot for maxind = " << maxindex << "(" << gperm(maxindex+brow_g) << ")" << endl;
-	      }
+              }
               pivot = normA_blk * eps;
               lastU = pivot;
               npivots ++;
-	      explicit_pivot = true;
-	    }
+              explicit_pivot = true;
+            }
           }
-	  if (!explicit_pivot) {
+          if (!explicit_pivot) {
             thread_array(kid).error_type =
               BASKER_ERROR_SINGULAR;
             thread_array(kid).error_blk    = b;
@@ -1286,8 +1286,8 @@ namespace BaskerNS
     INT_1DARRAY    ws  = LL(wsb)(l).iws;
     const Int  ws_size = LL(wsb)(l).iws_size;
     #else
-    INT_1DARRAY    ws  = thread_array[kid].iws;
-    Int        ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY    ws  = thread_array(kid).iws;
+    Int        ws_size = thread_array(kid).iws_size;
     #endif
 
     const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
@@ -1460,9 +1460,9 @@ namespace BaskerNS
     ENTRY_1DARRAY X  = LL(wsb)(l).ews;
     Int      ws_size = LL(wsb)(l).iws_size;
     #else
-    INT_1DARRAY   ws = thread_array[kid].iws;
-    ENTRY_1DARRAY  X = thread_array[kid].ews;
-    Int      ws_size = thread_array[kid].iws_size;
+    INT_1DARRAY   ws = thread_array(kid).iws;
+    ENTRY_1DARRAY  X = thread_array(kid).ews;
+    Int      ws_size = thread_array(kid).iws_size;
     #endif
     
     const Entry zero (0.0);
@@ -1543,8 +1543,8 @@ namespace BaskerNS
    
 
     #ifdef BASKER_DEBUG_NFACTOR_BLK
-    printf("t_dense_move_offdiag_L, kid=%d, k=%d:  L (%d %d) X (%d %d)\n",
-           kid, k, blkcol,blkrow, X_col, X_row);
+    printf("t_dense_move_offdiag_L, kid=%d, k=%d:  L (%d %d) X (%d %d), nnz=%d\n",
+           kid, k, blkcol,blkrow, X_col, X_row, L.nnz);
     #endif
 
    
@@ -1565,7 +1565,6 @@ namespace BaskerNS
       }
     */
 
-    ///for(Int i = 0; i < p_size; i++)
     for(Int j = 0; j < L.nrow; ++j)
     {
       //Int j = pattern[i];
@@ -1573,7 +1572,15 @@ namespace BaskerNS
       if(X(j) != (Entry)(0) )
       {
         //Int t = gperm(j+brow);
-
+        if (lnnz >= L.nnz) { // this should not happen since allocated as dense separator blocks
+          if (Options.verbose == BASKER_TRUE)
+          {
+            printf("Move Off-diag L failed with insufficient storage L(%d,%d).nnz = %d\n",
+                   (int)blkcol, (int)blkrow, (int)L.nnz );
+          }
+          BASKER_ASSERT(true, "\n Not enough memory allocated for off-diagonal L\n");
+          return BASKER_ERROR;
+        }
 #ifdef BASKER_DEBUG_NFACTOR_BLK
         printf("L-Moving, kid: %d j: %d val: %f lnnz: %d \n",
             kid, j, X[j]/pivot, lnnz);
@@ -1594,7 +1601,6 @@ namespace BaskerNS
 #ifdef BASKER_INC_LVL
         L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
 #endif
-
         lnnz++;
       }
     }
@@ -1607,7 +1613,7 @@ namespace BaskerNS
     if (blkcol == 2 && blkrow == 1) printf( " L.colptr(%d) = %d\n",k+1,lnnz );
     #endif
 
-    //LL[X_col][X_row].p_size = 0;
+    //LL(X_col)(X_row).p_size = 0;
     LL(X_col)(X_row).p_size = 0;
 
     return 0;
@@ -1756,7 +1762,7 @@ namespace BaskerNS
     printf("t_back_solve_diag, kid: %d, ws: %d starting psize: %d \n",
            kid, ws_size, nnz);
     printf("t_back_solve_diag, kid: %d, ALM(%d)(%d): %dx%d\n",kid,blkcol,blkrow,B.nrow,B.ncol );
-    printf("t_back_solve_diag, kid: %d,  LL(%d)(%d): %dx%d\n",kid,blkcol,blkrow,L.nrow,L.ncol );
+    printf("t_back_solve_diag, kid: %d,  LL(%d)(%d): %dx%d, nnz=%d, X.nnz=%d\n",kid,blkcol,blkrow,L.nrow,L.ncol,LL(blkcol)(blkrow).nnz,X.extent(0) );
     printf("\n\n"); fflush(stdout);
     #endif
     //B.info();
@@ -1831,7 +1837,7 @@ namespace BaskerNS
     }//over all nonzero in left
 
     #ifdef BASKER_2DL
-    //LL[X_col][X_row].p_size = nnz;
+    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 
@@ -2056,7 +2062,7 @@ namespace BaskerNS
            nnz, kid, X_col, X_row);
     printf("kid %d Ending nnz: %d \n",kid, nnz);
     #endif
-    //LL[X_col][X_row].p_size = nnz;
+    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 

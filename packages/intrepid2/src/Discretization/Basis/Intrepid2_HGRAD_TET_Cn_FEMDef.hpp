@@ -24,44 +24,36 @@ namespace Intrepid2 {
 // -------------------------------------------------------------------------------------
 namespace Impl {
 
-template<EOperator opType>
+template<EOperator OpType>
 template<typename OutputViewType,
-typename inputViewType,
-typename workViewType,
-typename vinvViewType>
+typename InputViewType,
+typename WorkViewType,
+typename VinvViewType>
 KOKKOS_INLINE_FUNCTION
 void
-Basis_HGRAD_TET_Cn_FEM::Serial<opType>::
+Basis_HGRAD_TET_Cn_FEM::Serial<OpType>::
 getValues(       OutputViewType output,
-    const inputViewType  input,
-    workViewType   work,
-    const vinvViewType   vinv ) {
+    const InputViewType  input,
+    WorkViewType         work,
+    const VinvViewType   vinv,
+    const ordinal_type   order ) {
 
   constexpr ordinal_type spaceDim = 3;
   const ordinal_type
   card = vinv.extent(0),
   npts = input.extent(0);
 
-  // compute order
-  ordinal_type order = 0;
-  for (ordinal_type p=0;p<=Parameters::MaxOrder;++p) {
-    if (card == Intrepid2::getPnCardinality<spaceDim>(p)) {
-      order = p;
-      break;
-    }
-  }
-
-  typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
-  auto vcprop = Kokkos::common_view_alloc_prop(work);
+  typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
+  auto vcprop = Kokkos::common_view_alloc_prop(input);
   auto ptr = work.data();
 
-  switch (opType) {
+  switch (OpType) {
   case OPERATOR_VALUE: {
-    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
-    viewType dummyView;
+    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
+    ViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, dummyView, order);
+    Serial<OpType>::getValues(phis, input, dummyView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
@@ -73,15 +65,18 @@ getValues(       OutputViewType output,
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
-    ptr += card*npts*spaceDim*get_dimension_scalar(work);
-    const viewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
+    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
+    ptr += card*npts*spaceDim*get_dimension_scalar(input);
+    const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, workView, order);
+    Serial<OpType>::getValues(phis, input, workView, order);
 
-    for (ordinal_type i=0;i<card;++i)
-      for (ordinal_type j=0;j<npts;++j)
-        for (ordinal_type k=0;k<spaceDim;++k) {
+    // loop order interchanged to workaround nvcc compiler issues with sems-cuda/11.4.2
+    // nvcc error   : 'ptxas' died due to signal 11 (Invalid memory reference)
+    for (ordinal_type j=0;j<npts;++j)
+      for (ordinal_type k=0;k<spaceDim;++k)
+        for (ordinal_type i=0;i<card;++i)
+        {
           output.access(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
             output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
@@ -97,12 +92,12 @@ getValues(       OutputViewType output,
   case OPERATOR_D8:
   case OPERATOR_D9:
   case OPERATOR_D10: {
-    const ordinal_type dkcard = getDkCardinality<opType,spaceDim>(); //(orDn + 1);
-    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
-    viewType dummyView;
+    const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
+    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
+    ViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    Serial<opType>::getValues(phis, input, dummyView, order);
+    Serial<OpType>::getValues(phis, input, dummyView, order);
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
@@ -131,6 +126,7 @@ getValues(
           Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+    const ordinal_type order,
     const EOperator operatorType) {
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
@@ -156,7 +152,7 @@ getValues(
     workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
-    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
   case OPERATOR_GRAD:
@@ -164,23 +160,16 @@ getValues(
     workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D1,numPtsPerEval> FunctorType;
-    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
   case OPERATOR_D2: {
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D2,numPtsPerEval> FunctorType;
     workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.extent(2), inputPoints.extent(0));
-    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
-  /*  case OPERATOR_D3: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType
-            OPERATOR_D3,numPtsPerEval> FunctorType;
-        workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0), outputValues.extent(2));
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
-        break;
-      }*/
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
         ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented" );
@@ -431,5 +420,65 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
         posDfOrd);
   }
 }
+
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_TET_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perTeamSpaceSize = 0;
+    perThreadSpaceSize = getWorkSizePerPoint(operatorType)*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_TET_Cn_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+      
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      const int numPoints = inputPoints.extent(0);
+      using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+      using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      constexpr ordinal_type spaceDim = 3;
+      auto sizePerPoint = (operatorType==OPERATOR_VALUE) ? 
+                          this->vinv_.extent(0)*get_dimension_scalar(inputPoints) : 
+                          (2*spaceDim+1)*this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
+      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_TET_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, this->vinv_, this->basisDegree_);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_TET_Cn_FEM::Serial<OPERATOR_GRAD>::getValues( output, input, work, this->vinv_, this->basisDegree_);
+          });
+          break;
+        default: {          
+          INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): getValues not implemented for this operator");
+          }
+    }
+  }
+
 } // namespace Intrepid2
 #endif

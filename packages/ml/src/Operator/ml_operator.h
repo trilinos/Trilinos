@@ -13,6 +13,12 @@
 #ifndef __MLOPERATOR__
 #define __MLOPERATOR__
 
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
 /* ******************************************************************** */
 /* data structure type definition                                       */
 /* ******************************************************************** */
@@ -387,10 +393,3 @@ extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 #endif
 
 #endif
-
-#if defined(ML_SHOW_DEPRECATED_WARNINGS)
-#ifdef __GNUC__
-#warning "The ML package is deprecated"
-#endif
-#endif
-

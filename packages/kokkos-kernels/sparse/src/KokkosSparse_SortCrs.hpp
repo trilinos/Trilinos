@@ -63,7 +63,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
     return;
   }
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
-  if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+  if constexpr (!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
     // On CPUs, use a sequential radix sort within each row.
     Kokkos::parallel_for("sort_crs_matrix[CPU,radix]",
                          Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
@@ -77,7 +77,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
 #ifndef KK_DISABLE_BULK_SORT_BY_KEY
     Ordinal maxDeg   = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
     bool useBulkSort = false;
-    if (KokkosSparse::Impl::useBulkSortHeuristic(avgDeg, maxDeg)) {
+    if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
       // Calculate the true number of columns if user didn't pass it in
       if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
         KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries, numCols);
@@ -240,7 +240,7 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
   if (entries.extent(0) <= size_t(1)) {
     return;
   }
-  if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+  if constexpr (!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
     // If on CPU, sort each row independently. Don't need to know numCols for
     // this.
     Kokkos::parallel_for("sort_crs_graph[CPU,radix]",
@@ -255,7 +255,7 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
 #ifndef KK_DISABLE_BULK_SORT_BY_KEY
     Ordinal maxDeg   = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
     bool useBulkSort = false;
-    if (KokkosSparse::Impl::useBulkSortHeuristic(avgDeg, maxDeg)) {
+    if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
       // Calculate the true number of columns if user didn't pass it in
       if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
         KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries, numCols);

@@ -14,6 +14,7 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Phalanx_KokkosViewOfViews.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -134,6 +135,7 @@ public:
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  typedef typename panzer::Traits::RealType RealT;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -153,8 +155,13 @@ private:
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
   std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
-  std::vector< Teuchos::ArrayRCP<double> > dfdp_vectors_;
+  /// Storage for the tangent data
+  PHX::ViewOfViews<1,Kokkos::View<RealT**,Kokkos::LayoutLeft,PHX::Device>> dfdpFieldsVoV_;
+
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
 
   ScatterResidual_Tpetra();
 };

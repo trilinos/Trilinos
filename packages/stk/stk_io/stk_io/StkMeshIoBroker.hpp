@@ -45,7 +45,6 @@
 #include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
 #include <stk_io/MeshField.hpp>             // for MeshField, MeshField::CLO...
 #include <stk_io/OutputFile.hpp>            // for OutputFile
-#include <stk_mesh/base/BulkData.hpp>       // for BulkData
 #include <stk_mesh/base/Selector.hpp>       // for Selector
 #include <stk_util/parallel/Parallel.hpp>   // for ParallelMachine
 #include <stk_util/util/ParameterList.hpp>  // for Parameter, Type
@@ -160,7 +159,6 @@ namespace stk {
 
       void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
-      void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
       void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
       void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
@@ -327,7 +325,7 @@ namespace stk {
       //
       // NOTE: this function internally calls the two methods
       // 'populate_mesh()' and 'populate_field_data()', declared
-      // below, and does NOT do the delayed field-data allocation
+      // below, and does the delayed field-data allocation
       // optimization.
       void populate_bulk_data();
 
@@ -338,8 +336,8 @@ namespace stk {
       // 'populate_field_data()' method declared below.
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
-      virtual void populate_mesh(bool delay_field_data_allocation = true);
-      bool populate_mesh_elements_and_nodes(bool delay_field_data_allocation);
+      virtual void populate_mesh(bool delayFieldDataAllocation = true);
+      bool populate_mesh_elements_and_nodes(bool delayFieldDataAllocation);
       void populate_mesh_entitysets(bool i_started_modification_cycle);
 
       // Read/generate the field-data for the mesh, including
@@ -655,6 +653,9 @@ namespace stk {
       void set_throw_on_missing_input_fields(bool flag);
       bool get_throw_on_missing_input_fields() const;
 
+      void set_enable_all_face_sides_shell_topo(bool flag);
+      bool get_enable_all_face_sides_shell_topo() const;
+
       void set_option_to_not_collapse_sequenced_fields();
       int get_num_time_steps() const;
       double get_max_time() const;
@@ -771,6 +772,7 @@ namespace stk {
       bool m_enableEdgeIO;
       bool m_cacheEntityListForTransientSteps;
       bool m_throwOnMissingInputFields{false};
+      bool m_enableAllFaceSidesShellTopo;
     };
 
     inline std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_output_ioss_region(size_t output_file_index) const {
@@ -852,11 +854,6 @@ namespace stk {
     inline void StkMeshIoBroker::set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->has_adaptivity(hasAdaptivity);
-    }
-
-    inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
     }
 
     inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {

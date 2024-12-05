@@ -194,7 +194,8 @@ inline void coarse_search_arborx(std::vector<std::pair<DomainBoxType, DomainIden
     std::vector<std::pair<RangeBoxType, RangeIdentProcType>> const& localRange,
     MPI_Comm comm,
     std::vector<std::pair<DomainIdentProcType, RangeIdentProcType>>& searchResults,
-    bool enforceSearchResultSymmetry = true)
+    bool enforceSearchResultSymmetry = true,
+    bool sortSearchResults = false)
 {
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
   using MemSpace = typename HostSpace::memory_space;
@@ -237,6 +238,11 @@ inline void coarse_search_arborx(std::vector<std::pair<DomainBoxType, DomainIden
   if (enforceSearchResultSymmetry) {
     Kokkos::Profiling::pushRegion("Enforce results symmetry");
     communicate_vector(comm, searchResults, enforceSearchResultSymmetry);
+    Kokkos::Profiling::popRegion();
+  }
+
+  if (sortSearchResults) {
+    Kokkos::Profiling::pushRegion("Sort searchResults");
     std::sort(searchResults.begin(), searchResults.end());
     Kokkos::Profiling::popRegion();
   }
@@ -252,7 +258,8 @@ inline void coarse_search_arborx(
     MPI_Comm comm,
     ResultView& searchResults,
     ExecutionSpace const& execSpace = ExecutionSpace{},
-    bool enforceSearchResultSymmetry = true)
+    bool enforceSearchResultSymmetry = true,
+    bool sortSearchResults = false)
 {
   check_coarse_search_types_parallel<DomainView, RangeView, ResultView, ExecutionSpace>();
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
@@ -318,10 +325,12 @@ inline void coarse_search_arborx(
   Kokkos::resize(Kokkos::WithoutInitializing, searchResults, searchResultsHost.extent(0));
   Kokkos::deep_copy(searchResults, searchResultsHost);
   Kokkos::Profiling::popRegion();
-
-  Kokkos::Profiling::pushRegion("sorting searchResults");
-  Kokkos::sort(searchResults);
-  Kokkos::Profiling::popRegion();
+  
+  if (sortSearchResults) {
+    Kokkos::Profiling::pushRegion("Sort searchResults");
+    Kokkos::sort(searchResults, Comparator<typename ResultView::value_type>());
+    Kokkos::Profiling::popRegion();
+  }
 
 }
 

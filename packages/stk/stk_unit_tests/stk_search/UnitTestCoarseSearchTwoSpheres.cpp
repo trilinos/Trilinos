@@ -254,8 +254,8 @@ void host_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod,
 
   LocalSearchResults intersections;
 
-  stk::search::local_coarse_search(domain, range, searchMethod, intersections);
-  std::sort(intersections.begin(), intersections.end());
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, searchMethod, intersections, sortSearchResults);
 
   ASSERT_EQ(intersections.size(), expectedNumOverlap);
 
@@ -284,17 +284,18 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
 
   auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
-  stk::search::local_coarse_search(domain, range, searchMethod, intersections);
+  auto execSpace = stk::ngp::ExecSpace{};
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, searchMethod, intersections, execSpace, sortSearchResults);
 
   Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
-  Kokkos::sort(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);
 
   for (unsigned i = 0; i < expectedNumOverlap; ++i) {
-    EXPECT_EQ(intersections(i).domainIdent, 1);
-    EXPECT_EQ(intersections(i).rangeIdent,  2);
+    EXPECT_EQ(hostIntersections(i).domainIdent, 1);
+    EXPECT_EQ(hostIntersections(i).rangeIdent,  2);
   }
 }
 

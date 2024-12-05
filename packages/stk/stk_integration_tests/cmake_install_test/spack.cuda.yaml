@@ -9,13 +9,15 @@ spack:
   - zlib
   - openmpi@4.1.6
   - kokkos+cuda+cuda_constexpr+cuda_lambda+cuda_relocatable_device_code~cuda_uvm~shared+wrapper cuda_arch=70
-  - trilinos@develop~boost+cuda+cuda_rdc+exodus+kokkos~shared+stk+test~uvm+wrapper cuda_arch=70 cxxstd=17
+  - trilinos@master~boost+cuda+cuda_rdc+exodus+kokkos~shared~uvm+wrapper cuda_arch=70 cxxstd=17
   view: true
   concretizer:
     unify: true
   config:
       install_tree:
         root: SED_REPLACE_INSTALL_PATH
+      build_stage:
+      - /fgs/$USER/spack-stage
   compilers:
   - compiler:
       spec: gcc@=10.3.0
@@ -43,10 +45,6 @@ spack:
       modules: []
       environment: {}
       extra_rpaths: []
-  develop:
-    trilinos:
-      path: SED_REPLACE_TRILINOS_PATH
-      spec: trilinos@=develop
   packages:
     binutils:
       externals:

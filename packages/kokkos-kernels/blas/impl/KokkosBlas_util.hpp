@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_BLAS_UTIL_HPP
-#define KOKKOS_BLAS_UTIL_HPP
+#ifndef KOKKOSBLAS_UTIL_HPP
+#define KOKKOSBLAS_UTIL_HPP
 
 #include "Kokkos_ArithTraits.hpp"
 
@@ -86,6 +86,7 @@ struct Algo {
   using QR        = Level3;
   using UTV       = Level3;
   using Pttrf     = Level3;
+  using Pttrs     = Level3;
 
   struct Level2 {
     struct Unblocked {};
@@ -118,6 +119,8 @@ struct Algo {
   using Trsv   = Level2;
   using ApplyQ = Level2;
   using Tbsv   = Level2;
+  using Pbtrf  = Level2;
+  using Pbtrs  = Level2;
 };
 
 namespace Impl {
@@ -174,4 +177,4 @@ struct TakeSqrtFunctor {
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSBLAS_UTIL_HPP

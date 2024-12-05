@@ -529,25 +529,6 @@ namespace BaskerNS
     );
 
     BASKER_INLINE
-    void L_blk_sfactor
-    (
-     BASKER_MATRIX &MV,
-     BASKER_SYMBOLIC_TREE &ST, 
-     INT_1DARRAY gcol, 
-     INT_1DARRAY grow
-    );
-
-    //old
-    BASKER_INLINE
-    void L_blk_sfactor
-    (
-     BASKER_MATRIX_VIEW &MV,
-     BASKER_SYMBOLIC_TREE &ST, 
-     INT_1DARRAY gcol, 
-     INT_1DARRAY grow
-    );
-
-    BASKER_INLINE
     void S_sfactor_reduce
     (
      BASKER_MATRIX &MV,
@@ -1160,8 +1141,6 @@ namespace BaskerNS
     void printMTX(std::string fname, BASKER_MATRIX &M);
     void printMTX(std::string fname, BASKER_MATRIX &M, BASKER_BOOL  off);
     void readMTX(std::string fname, BASKER_MATRIX &M);
-    int printRHS();
-    int printSOL();
     void printTree();
 
     BASKER_INLINE
@@ -1494,13 +1473,6 @@ namespace BaskerNS
 
     //end NDE
 
-
-    //RHS and solutions (These are not used anymore)
-    ENTRY_2DARRAY rhs;
-    ENTRY_2DARRAY sol;
-    Int nrhs;
-
-    
     BASKER_TREE   part_tree;
     BASKER_TREE   tree;
     BASKER_SYMBOLIC_TREE stree;

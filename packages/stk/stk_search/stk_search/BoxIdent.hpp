@@ -103,6 +103,16 @@ struct IdentProcIntersection
 
 };
 
+template<class T>
+struct Comparator {
+
+KOKKOS_FUNCTION
+bool operator()(T a, T b) const {
+  return a < b;
+}
+
+};
+
 }
 
 #endif // BOXIDENT_HPP

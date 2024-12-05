@@ -1,5 +1,24 @@
 # CHANGELOG
 
+5.21.6-1 (STK_VERSION 5210601) 10/31/2024
+  stk_mesh, stk_search: more fixes for HIP unified and Cuda no-uvm builds
+
+5.21.6 (STK_VERSION 5210600) 10/25/2024
+  stk_search: fix build-error (instantiation error for morton_lbvh_search) for gcc 13.2
+  stk_util: added parallel/OutputStreams.hpp
+    - which includes the functions outputP0(), output(), output_flush(), set_outputP0(..), reset_default_output_streams().
+
+5.21.5-2 (STK_VERSION 5210502) 10/07/2024
+  stk_search: Fixed HIP sort error.
+  stk_mesh: add multi-field NGP-FieldBLAS field_fill
+
+5.21.5-1 (STK_VERSION 5210501) 9/27/2024
+  stk_mesh: deprecate BulkData::relation_exist
+
+5.21.5 (STK_VERSION 5210500) 9/25/2024
+   general: Fixed MI300A unified memory build errors.
+   stk_search: Turned off sorted results by default.
+
 5.21.4-1 (STK_VERSION 5210401) 9/04/2024
    Fix cmake configuration errors that occurred on AMD MI300A platform
 

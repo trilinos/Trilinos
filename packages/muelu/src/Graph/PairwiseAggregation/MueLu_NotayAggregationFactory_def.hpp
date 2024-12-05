@@ -55,7 +55,6 @@ RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrd
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("aggregation: pairwise: size");
   SET_VALID_ENTRY("aggregation: pairwise: tie threshold");
-  SET_VALID_ENTRY("aggregation: compute aggregate qualities");
   SET_VALID_ENTRY("aggregation: Dirichlet threshold");
   SET_VALID_ENTRY("aggregation: ordering");
 #undef SET_VALID_ENTRY
@@ -64,21 +63,15 @@ RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrd
   validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of the matrix");
   validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
   validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase>>("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
   return validParamList;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
-  const ParameterList& pL = GetParameterList();
-
   Input(currentLevel, "A");
   Input(currentLevel, "Graph");
   Input(currentLevel, "DofsPerNode");
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    Input(currentLevel, "AggregateQualities");
-  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

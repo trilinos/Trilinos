@@ -69,17 +69,17 @@ void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 template<typename Real>
 void Algorithm<Real>::run( Problem<Real> &problem,
                            std::ostream  &outStream ) {
-  /*if (problem.getProblemType() == TYPE_P) {
+  if (problem.getProblemType() == TYPE_P) {
     run(*problem.getPrimalOptimizationVector(),
         *problem.getDualOptimizationVector(),
         *problem.getObjective(),
+        *problem.getProximableObjective(),
         outStream);
     problem.finalizeIteration();
   }
   else {
     throw Exception::NotImplemented(">>> ROL::TypeP::Algorithm::run : Optimization problem is not Type P!");
-  }*/
-  throw Exception::NotImplemented(">>> ROL::TypeP::Algorithm::run : Optimization problem is not available for Type P problems!");
+  }
 }
 
 template<typename Real>

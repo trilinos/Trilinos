@@ -91,7 +91,7 @@ class KokkosBSPGEMM : public KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_v
   static constexpr size_t scalarAlignPad =
       (alignof(scalar_t) > alignof(nnz_lno_t)) ? (alignof(scalar_t) - alignof(nnz_lno_t)) : 0;
 
-  static constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  static constexpr bool exec_gpu = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
 
  private:
   nnz_lno_t block_dim;

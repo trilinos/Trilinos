@@ -23,7 +23,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 #define MAXVAL 1
 
@@ -62,7 +62,7 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
     cols_view_t columns_view("colsmap_view", ne);
     values_view_t values_view("values_view", ne);
 
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<myExecSpace>()) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<myExecSpace>) {
       typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
       typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
       typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);

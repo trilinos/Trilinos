@@ -43,17 +43,17 @@
 # - Find the python include path
 
 # This module determines where the python include file Python.h is,
-# based on the current value of PYTHON_EXECUTABLE. This code sets the
+# based on the current value of Python3_EXECUTABLE. This code sets the
 # following variable:
 #
 #  PYTHON_INCLUDE_PATH  = path to where Python.h is found
 #
 
-IF(PYTHON_EXECUTABLE)
+IF(Python3_EXECUTABLE)
 
   # Obtain the Python version string
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c 
+    ${Python3_EXECUTABLE} -c 
     "import sys; print('python' + sys.version[:3])"
     OUTPUT_VARIABLE PYVERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -61,7 +61,7 @@ IF(PYTHON_EXECUTABLE)
 
   # Obtain the Python prefix path
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c 
+    ${Python3_EXECUTABLE} -c 
     "import sys; print(sys.prefix)"
     OUTPUT_VARIABLE PYPREFIX
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -69,7 +69,7 @@ IF(PYTHON_EXECUTABLE)
 
   # Obtain the Python include path
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c
+    ${Python3_EXECUTABLE} -c
     "import sysconfig; print(sysconfig.get_paths()['include'])"
     OUTPUT_VARIABLE PYTHON_INCLUDE_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -100,4 +100,4 @@ IF(PYTHON_EXECUTABLE)
 
   MESSAGE(STATUS "PYTHON_INCLUDE_PATH is ${PYTHON_INCLUDE_PATH}")
 
-ENDIF(PYTHON_EXECUTABLE)
+ENDIF(Python3_EXECUTABLE)

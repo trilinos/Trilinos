@@ -947,9 +947,16 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
                 const size_t newBucketAllocation = stk::adjust_up_to_alignment_boundary(newBucketStorageUsed,
                                                                                         alignment_increment_bytes);
                 const size_t extraAllocationNeeded = newBucketAllocation - currentBucketAllocation;
-                const size_t newFieldSizeNeeded = m_num_bytes_used_per_field[field_ordinal] + extraAllocationNeeded + m_extra_capacity;
-                const size_t newFieldSize = std::max(newFieldSizeNeeded, m_num_bytes_allocated_per_field[field_ordinal]);
-                bool requiresNewAllocation = newFieldSize > m_num_bytes_allocated_per_field[field_ordinal];
+                const size_t newFieldSizeNeeded = m_num_bytes_used_per_field[field_ordinal] + extraAllocationNeeded;
+
+                bool requiresNewAllocation = false;
+                size_t newFieldSize = m_num_bytes_allocated_per_field[field_ordinal];
+
+                // Only reallocate if we've outgrown the extra capacity
+                if (newFieldSizeNeeded > m_num_bytes_allocated_per_field[field_ordinal]) {
+                  requiresNewAllocation = true;
+                  newFieldSize = newFieldSizeNeeded + m_extra_capacity;
+                }
 
                 unsigned char* new_field_data = m_field_raw_data[field_ordinal];
                 FieldMetaDataVector& field_meta_data_vector = const_cast<FieldMetaDataVector&>(field.get_meta_data_for_field());

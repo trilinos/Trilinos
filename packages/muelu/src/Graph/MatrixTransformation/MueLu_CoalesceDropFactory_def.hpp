@@ -25,6 +25,8 @@
 
 #include <Xpetra_IO.hpp>
 
+#include <Kokkos_NestedSort.hpp>
+#include <Kokkos_StdAlgorithms.hpp>
 #include "MueLu_CoalesceDropFactory_decl.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
@@ -78,6 +80,11 @@ struct DropTol {
   //      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
 };
 }  // namespace Details
+
+enum decisionAlgoType { defaultAlgo,
+                        unscaled_cut,
+                        scaled_cut,
+                        scaled_cut_symmetric };
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
@@ -314,11 +321,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 #endif
     ////////////////////////////////////////////////////
 
-    enum decisionAlgoType { defaultAlgo,
-                            unscaled_cut,
-                            scaled_cut,
-                            scaled_cut_symmetric };
-
     decisionAlgoType distanceLaplacianAlgo = defaultAlgo;
     decisionAlgoType classicalAlgo         = defaultAlgo;
     if (algo == "distance laplacian") {
@@ -452,8 +454,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               GetOStream(Statistics1) << "Calculating max block off-diagonal" << std::endl;
           }
         } else {
-          ghostedDiag     = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixOverlappedDiagonal(*A);
-          ghostedDiagVals = ghostedDiag->getData(0);
+          ghostedDiag = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixOverlappedDiagonal(*A);
+          if (classicalAlgo == defaultAlgo) {
+            ghostedDiagVals = ghostedDiag->getData(0);
+          }
         }
         auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
         if (rowSumTol > 0.) {
@@ -474,14 +478,15 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
         LO realnnz = 0;
         rows(0)    = 0;
-        for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
-          size_t nnz          = A->getNumEntriesInLocalRow(row);
-          bool rowIsDirichlet = boundaryNodes[row];
-          ArrayView<const LO> indices;
-          ArrayView<const SC> vals;
-          A->getLocalRowView(row, indices, vals);
+        if (classicalAlgo == defaultAlgo) {
+          SubFactoryMonitor m1(*this, "Classical RS/SA", currentLevel);
+          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
+            size_t nnz          = A->getNumEntriesInLocalRow(row);
+            bool rowIsDirichlet = boundaryNodes[row];
+            ArrayView<const LO> indices;
+            ArrayView<const SC> vals;
+            A->getLocalRowView(row, indices, vals);
 
-          if (classicalAlgo == defaultAlgo) {
             // FIXME the current predrop function uses the following
             // FIXME    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid )
             // FIXME but the threshold doesn't take into account the rows' diagonal entries
@@ -540,109 +545,183 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               }
               rows(row + 1) = realnnz;
             }
-          } else {
-            /* Cut Algorithm */
-            // CMS
-            using DropTol = Details::DropTol<real_type, LO>;
-            std::vector<DropTol> drop_vec;
-            drop_vec.reserve(nnz);
-            const real_type zero = Teuchos::ScalarTraits<real_type>::zero();
-            const real_type one  = Teuchos::ScalarTraits<real_type>::one();
-            LO rownnz            = 0;
-            // NOTE: This probably needs to be fixed for rowsum
+          }  // end for row
+        } else {
+          /* Cut Algorithm */
+          SubFactoryMonitor m1(*this, "Cut Drop", currentLevel);
+          using ExecSpace        = typename Node::execution_space;
+          using TeamPol          = Kokkos::TeamPolicy<ExecSpace>;
+          using TeamMem          = typename TeamPol::member_type;
+          using ATS              = Kokkos::ArithTraits<Scalar>;
+          using impl_scalar_type = typename ATS::val_type;
+          using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
 
-            // find magnitudes
-            for (LO colID = 0; colID < (LO)nnz; colID++) {
-              LO col = indices[colID];
-              if (row == col) {
-                drop_vec.emplace_back(zero, one, colID, false);
-                continue;
-              }
+          // move from host to device
+          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+          auto thresholdKokkos     = static_cast<impl_scalar_type>(threshold);
+          auto realThresholdKokkos = implATS::magnitude(thresholdKokkos);
+          auto columnsDevice       = Kokkos::create_mirror_view(ExecSpace(), columns);
 
-              // Don't aggregate boundaries
-              if (boundaryNodes[colID]) continue;
-              typename STS::magnitudeType aiiajj = STS::magnitude(threshold * threshold * ghostedDiagVals[col] * ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
-              typename STS::magnitudeType aij    = STS::magnitude(vals[colID] * vals[colID]);                                            // |a_ij|^2
-              drop_vec.emplace_back(aij, aiiajj, colID, false);
-            }
-
-            const size_t n = drop_vec.size();
-
-            if (classicalAlgo == unscaled_cut) {
-              std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) {
-                return a.val > b.val;
-              });
-
-              bool drop = false;
-              for (size_t i = 1; i < n; ++i) {
-                if (!drop) {
-                  auto const& x = drop_vec[i - 1];
-                  auto const& y = drop_vec[i];
-                  auto a        = x.val;
-                  auto b        = y.val;
-                  if (a > realThreshold * b) {
-                    drop = true;
-#ifdef HAVE_MUELU_DEBUG
-                    if (distanceLaplacianCutVerbose) {
-                      std::cout << "DJS: KEEP, N, ROW:  " << i + 1 << ", " << n << ", " << row << std::endl;
-                    }
-#endif
-                  }
-                }
-                drop_vec[i].drop = drop;
-              }
-            } else if (classicalAlgo == scaled_cut) {
-              std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) {
-                return a.val / a.diag > b.val / b.diag;
-              });
-              bool drop = false;
-              //                  printf("[%d] Scaled Cut: ",(int)row);
-              //                  printf("%3d(%4s) ",indices[drop_vec[0].col],"keep");
-              for (size_t i = 1; i < n; ++i) {
-                if (!drop) {
-                  auto const& x = drop_vec[i - 1];
-                  auto const& y = drop_vec[i];
-                  auto a        = x.val / x.diag;
-                  auto b        = y.val / y.diag;
-                  if (a > realThreshold * b) {
-                    drop = true;
-
-#ifdef HAVE_MUELU_DEBUG
-                    if (distanceLaplacianCutVerbose) {
-                      std::cout << "DJS: KEEP, N, ROW:  " << i + 1 << ", " << n << ", " << row << std::endl;
-                    }
-#endif
-                  }
-                  //                      printf("%3d(%4s) ",indices[drop_vec[i].col],drop?"drop":"keep");
-                }
-                drop_vec[i].drop = drop;
-              }
-              //                  printf("\n");
-            }
-            std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) {
-              return a.col < b.col;
-            });
-
-            for (LO idxID = 0; idxID < (LO)drop_vec.size(); idxID++) {
-              LO col = indices[drop_vec[idxID].col];
-              // don't drop diagonal
-              if (row == col) {
-                columns[realnnz++] = col;
-                rownnz++;
-                continue;
-              }
-
-              if (!drop_vec[idxID].drop) {
-                columns[realnnz++] = col;
-                rownnz++;
-              } else {
-                numDropped++;
-              }
-            }
-            // CMS
-            rows[row + 1] = realnnz;
+          auto A_device                               = A->getLocalMatrixDevice();
+          RCP<LWGraph> graph                          = rcp(new LWGraph(A->getCrsGraph(), "graph of A"));
+          RCP<const Import> importer                  = A->getCrsGraph()->getImporter();
+          RCP<LocalOrdinalVector> boundaryNodesVector = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(graph->GetDomainMap());
+          RCP<LocalOrdinalVector> boundaryColumnVector;
+          for (size_t i = 0; i < graph->GetNodeNumVertices(); i++) {
+            boundaryNodesVector->getDataNonConst(0)[i] = boundaryNodes[i];
           }
-        }  // end for row
+          if (!importer.is_null()) {
+            boundaryColumnVector = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(graph->GetImportMap());
+            boundaryColumnVector->doImport(*boundaryNodesVector, *importer, Xpetra::INSERT);
+          } else {
+            boundaryColumnVector = boundaryNodesVector;
+          }
+          auto boundaryColumn = boundaryColumnVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+          auto boundary       = Kokkos::subview(boundaryColumn, Kokkos::ALL(), 0);
+
+          Kokkos::View<LO*, ExecSpace> rownnzView("rownnzView", A_device.numRows());
+          auto drop_views  = Kokkos::View<bool*, ExecSpace>("drop_views", A_device.nnz());
+          auto index_views = Kokkos::View<size_t*, ExecSpace>("index_views", A_device.nnz());
+
+          Kokkos::parallel_reduce(
+              "classical_cut", TeamPol(A_device.numRows(), Kokkos::AUTO), KOKKOS_LAMBDA(const TeamMem& teamMember, LO& globalnnz, GO& totalDropped) {
+                LO row       = teamMember.league_rank();
+                auto rowView = A_device.rowConst(row);
+                size_t nnz   = rowView.length;
+
+                auto drop_view  = Kokkos::subview(drop_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row + 1)));
+                auto index_view = Kokkos::subview(index_views, Kokkos::make_pair(A_device.graph.row_map(row), A_device.graph.row_map(row + 1)));
+
+                // find magnitudes
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, (LO)nnz), [&](const LO colID) {
+                  index_view(colID) = colID;
+                  LO col            = rowView.colidx(colID);
+                  // ignore diagonals for now, they are checked again later
+                  // Don't aggregate boundaries
+                  if (row == col || boundary(col)) {
+                    drop_view(colID) = true;
+                  } else {
+                    drop_view(colID) = false;
+                  }
+                });
+
+                size_t dropStart = nnz;
+                if (classicalAlgo == unscaled_cut) {
+                  // push diagonals and boundaries to the right, sort everything else by aij on the left
+                  Kokkos::Experimental::sort_team(teamMember, index_view, [=](size_t& x, size_t& y) -> bool {
+                    if (drop_view(x) || drop_view(y)) {
+                      return drop_view(x) < drop_view(y);
+                    } else {
+                      auto x_aij = implATS::magnitude(rowView.value(x) * rowView.value(x));
+                      auto y_aij = implATS::magnitude(rowView.value(y) * rowView.value(y));
+                      return x_aij > y_aij;
+                    }
+                  });
+
+                  // find index where dropping starts
+                  Kokkos::parallel_reduce(
+                      Kokkos::TeamThreadRange(teamMember, 1, nnz), [=](size_t i, size_t& min) {
+                        auto const& x                         = index_view(i - 1);
+                        auto const& y                         = index_view(i);
+                        typename implATS::magnitudeType x_aij = 0;
+                        typename implATS::magnitudeType y_aij = 0;
+                        if (!drop_view(x)) {
+                          x_aij = implATS::magnitude(rowView.value(x) * rowView.value(x));
+                        }
+                        if (!drop_view(y)) {
+                          y_aij = implATS::magnitude(rowView.value(y) * rowView.value(y));
+                        }
+
+                        if (realThresholdKokkos * realThresholdKokkos * x_aij > y_aij) {
+                          if (i < min) {
+                            min = i;
+                          }
+                        }
+                      },
+                      Kokkos::Min<size_t>(dropStart));
+                } else if (classicalAlgo == scaled_cut) {
+                  // push diagonals and boundaries to the right, sort everything else by aij/aiiajj on the left
+                  Kokkos::Experimental::sort_team(teamMember, index_view, [=](size_t& x, size_t& y) -> bool {
+                    if (drop_view(x) || drop_view(y)) {
+                      return drop_view(x) < drop_view(y);
+                    } else {
+                      auto x_aij    = implATS::magnitude(rowView.value(x) * rowView.value(x));
+                      auto y_aij    = implATS::magnitude(rowView.value(y) * rowView.value(y));
+                      auto x_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(x)) * ghostedDiagValsView(row));
+                      auto y_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(y)) * ghostedDiagValsView(row));
+                      return (x_aij / x_aiiajj) > (y_aij / y_aiiajj);
+                    }
+                  });
+
+                  // find index where dropping starts
+                  Kokkos::parallel_reduce(
+                      Kokkos::TeamThreadRange(teamMember, 1, nnz), [=](size_t i, size_t& min) {
+                        auto const& x                         = index_view(i - 1);
+                        auto const& y                         = index_view(i);
+                        typename implATS::magnitudeType x_val = 0;
+                        typename implATS::magnitudeType y_val = 0;
+                        if (!drop_view(x)) {
+                          typename implATS::magnitudeType x_aij    = implATS::magnitude(rowView.value(x) * rowView.value(x));
+                          typename implATS::magnitudeType x_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(x)) * ghostedDiagValsView(row));
+                          x_val                                    = x_aij / x_aiiajj;
+                        }
+                        if (!drop_view(y)) {
+                          typename implATS::magnitudeType y_aij    = implATS::magnitude(rowView.value(y) * rowView.value(y));
+                          typename implATS::magnitudeType y_aiiajj = implATS::magnitude(ghostedDiagValsView(rowView.colidx(y)) * ghostedDiagValsView(row));
+                          y_val                                    = y_aij / y_aiiajj;
+                        }
+
+                        if (realThresholdKokkos * realThresholdKokkos * x_val > y_val) {
+                          if (i < min) {
+                            min = i;
+                          }
+                        }
+                      },
+                      Kokkos::Min<size_t>(dropStart));
+                }
+
+                // drop everything to the right of where values stop passing threshold
+                if (dropStart < nnz) {
+                  Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, dropStart, nnz), [=](size_t i) {
+                    drop_view(index_view(i)) = true;
+                  });
+                }
+
+                LO rownnz     = 0;
+                GO rowDropped = 0;
+                Kokkos::parallel_reduce(
+                    Kokkos::TeamThreadRange(teamMember, nnz), [=](const size_t idxID, LO& keep, GO& drop) {
+                      LO col = rowView.colidx(idxID);
+                      // don't drop diagonal
+                      if (row == col || !drop_view(idxID)) {
+                        columnsDevice(A_device.graph.row_map(row) + idxID) = col;
+                        keep++;
+                      } else {
+                        columnsDevice(A_device.graph.row_map(row) + idxID) = -1;
+                        drop++;
+                      }
+                    },
+                    rownnz, rowDropped);
+
+                globalnnz += rownnz;
+                totalDropped += rowDropped;
+                rownnzView(row) = rownnz;
+              },
+              realnnz, numDropped);
+
+          // update column indices so that kept indices are aligned to the left for subview that happens later on
+          Kokkos::Experimental::remove(ExecSpace(), columnsDevice, -1);
+          Kokkos::deep_copy(columns, columnsDevice);
+
+          // update row indices by adding up new # of nnz in each row
+          auto rowsDevice = Kokkos::create_mirror_view(ExecSpace(), rows);
+          Kokkos::parallel_scan(
+              Kokkos::RangePolicy<ExecSpace>(0, A_device.numRows()), KOKKOS_LAMBDA(const int i, LO& partial_sum, bool is_final) {
+                partial_sum += rownnzView(i);
+                if (is_final) rowsDevice(i + 1) = partial_sum;
+              });
+          Kokkos::deep_copy(rows, rowsDevice);
+        }
 
         numTotal = A->getLocalNumEntries();
 
@@ -1172,6 +1251,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               isBoundary = pointBoundaryNodes[row];
             } else {
               // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
+              isBoundary = true;
               for (LO j = 0; j < blkSize; j++) {
                 if (!pointBoundaryNodes[row * blkSize + j]) {
                   isBoundary = false;
@@ -1281,7 +1361,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                       auto const& y = drop_vec[i];
                       auto a        = x.val;
                       auto b        = y.val;
-                      if (a > realThreshold * b) {
+                      if (realThreshold * realThreshold * a > b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -1304,7 +1384,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                       auto const& y = drop_vec[i];
                       auto a        = x.val / x.diag;
                       auto b        = y.val / y.diag;
-                      if (a > realThreshold * b) {
+                      if (realThreshold * realThreshold * a > b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -1435,7 +1515,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       }
     }
 
-    if ((GetVerbLevel() & Statistics1) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
+    if (GetVerbLevel() & Statistics1) {
       RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
       GO numGlobalTotal, numGlobalDropped;
       MueLu_sumAll(comm, numTotal, numGlobalTotal);

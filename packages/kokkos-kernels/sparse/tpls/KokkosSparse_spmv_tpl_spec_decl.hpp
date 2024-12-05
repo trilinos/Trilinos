@@ -301,9 +301,9 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
   rocsparse_dnvec_descr vecX, vecY;
   void* x_data = static_cast<void*>(const_cast<typename XVector::non_const_value_type*>(x.data()));
   void* y_data = static_cast<void*>(const_cast<typename YVector::non_const_value_type*>(y.data()));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_dnvec_descr(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_dnvec_descr(
       &vecX, x.extent_int(0), x_data, rocsparse_compute_type<typename XVector::non_const_value_type>()));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_dnvec_descr(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_dnvec_descr(
       &vecY, y.extent_int(0), y_data, rocsparse_compute_type<typename YVector::non_const_value_type>()));
 
   // Default to using the "stream" algorithm which has almost no setup cost,
@@ -332,31 +332,32 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
     void* csr_col_ind = static_cast<void*>(const_cast<entry_type*>(A.graph.entries.data()));
     void* csr_val     = static_cast<void*>(const_cast<value_type*>(A.values.data()));
 
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_csr_descr(
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_csr_descr(
         &subhandle->mat, A.numRows(), A.numCols(), A.nnz(), csr_row_ptr, csr_col_ind, csr_val, offset_index_type,
         entry_index_type, rocsparse_index_base_zero, compute_type));
 
     /* Size and allocate buffer, and analyze the matrix */
 
 #if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
-                                                   &beta, vecY, compute_type, alg, rocsparse_spmv_stage_buffer_size,
-                                                   &subhandle->bufferSize, nullptr));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+        rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY, compute_type,
+                       alg, rocsparse_spmv_stage_buffer_size, &subhandle->bufferSize, nullptr));
     KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&subhandle->buffer, subhandle->bufferSize));
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
-                                                   &beta, vecY, compute_type, alg, rocsparse_spmv_stage_preprocess,
-                                                   &subhandle->bufferSize, subhandle->buffer));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+        rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY, compute_type,
+                       alg, rocsparse_spmv_stage_preprocess, &subhandle->bufferSize, subhandle->buffer));
 #elif KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat,
-                                                      vecX, &beta, vecY, compute_type, alg, rocsparse_spmv_stage_auto,
-                                                      &subhandle->bufferSize, nullptr));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+        rocsparse_spmv_ex(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY,
+                          compute_type, alg, rocsparse_spmv_stage_auto, &subhandle->bufferSize, nullptr));
     KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&subhandle->buffer, subhandle->bufferSize));
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_spmv_ex(
         rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY, compute_type, alg,
         rocsparse_spmv_stage_preprocess, &subhandle->bufferSize, subhandle->buffer));
 #else
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
-                                                   &beta, vecY, compute_type, alg, &subhandle->bufferSize, nullptr));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat,
+                                                         vecX, &beta, vecY, compute_type, alg, &subhandle->bufferSize,
+                                                         nullptr));
     KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&subhandle->buffer, subhandle->bufferSize));
 #endif
   }
@@ -364,21 +365,21 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
   /* Perform the actual computation */
 
 #if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
-                                                 &beta, vecY, compute_type, alg, rocsparse_spmv_stage_compute,
-                                                 &subhandle->bufferSize, subhandle->buffer));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+      rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY, compute_type,
+                     alg, rocsparse_spmv_stage_compute, &subhandle->bufferSize, subhandle->buffer));
 #elif KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
-                                                    &beta, vecY, compute_type, alg, rocsparse_spmv_stage_compute,
-                                                    &subhandle->bufferSize, subhandle->buffer));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+      rocsparse_spmv_ex(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY, compute_type,
+                        alg, rocsparse_spmv_stage_compute, &subhandle->bufferSize, subhandle->buffer));
 #else
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
-                                                 &beta, vecY, compute_type, alg, &subhandle->bufferSize,
-                                                 subhandle->buffer));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat,
+                                                       vecX, &beta, vecY, compute_type, alg, &subhandle->bufferSize,
+                                                       subhandle->buffer));
 #endif
 
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnvec_descr(vecY));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnvec_descr(vecX));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_dnvec_descr(vecY));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_dnvec_descr(vecX));
 }
 
 #define KOKKOSSPARSE_SPMV_ROCSPARSE(SCALAR, LAYOUT)                                                                    \
@@ -548,7 +549,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #undef KOKKOSSPARSE_SPMV_MKL
 #endif
 
-#if defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 inline oneapi::mkl::transpose mode_kk_to_onemkl(char mode_kk) {
   switch (toupper(mode_kk)) {
     case 'N': return oneapi::mkl::transpose::nontrans;

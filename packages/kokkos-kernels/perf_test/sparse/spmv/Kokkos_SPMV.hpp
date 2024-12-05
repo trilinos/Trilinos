@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SPMV_HPP_
-#define KOKKOS_SPMV_HPP_
+#ifndef KOKKOSKERNELS_PERFTEST_KOKKOS_SPMV_HPP_
+#define KOKKOSKERNELS_PERFTEST_KOKKOS_SPMV_HPP_
 
 template <class AMatrix, class XVector, class YVector, int dobeta, bool conjugate>
 struct SPMV_Functor {
@@ -142,4 +142,4 @@ void kokkos_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size
   Kokkos::parallel_for("KokkosSparse::PerfTest::SpMV", policy, func);
 }
 
-#endif /* KOKKOS_SPMV_HPP_ */
+#endif /* KOKKOSKERNELS_PERFTEST_KOKKOS_SPMV_HPP_ */

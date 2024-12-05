@@ -56,4 +56,3 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
 #warning "The Epetra package is deprecated"
 #endif
 #endif
-
