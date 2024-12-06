@@ -326,8 +326,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
       Belos::ReturnType status = solver->solve();
       int iters                = solver->getNumIters();
       success                  = (iters < 50 && status == Belos::Converged);
+      if (status == Belos::Converged)
+        *out << "Belos converged in " << iters << " iterations." << std::endl;
       if (success)
-        *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+        *out << "SUCCESS!" << std::endl;
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
     }
@@ -349,8 +351,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
         Belos::ReturnType status = solver->solve();
         int iters                = solver->getNumIters();
         success                  = (iters < 50 && status == Belos::Converged);
+        if (status == Belos::Converged)
+          *out << "Belos converged in " << iters << " iterations." << std::endl;
         if (success)
-          *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+          *out << "SUCCESS!" << std::endl;
         else
           *out << "FAILURE! Belos did not converge fast enough." << std::endl;
       }
@@ -495,7 +499,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   std::string belosSolverType = "Block CG";
   clp.setOption("belosSolverType", &belosSolverType, "Name of the Belos linear solver");
   std::string precType = "MueLu-RefMaxwell";
-  clp.setOption("precType", &precType, "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
+  clp.setOption("precType", &precType, "preconditioner to use (MueLu-RefMaxwell|MueLu-Maxwell1|ML-RefMaxwell|none)");
   std::string xml = "";
   clp.setOption("xml", &xml, "xml file with solver parameters (default: \"Maxwell.xml\")");
   std::string belos_xml = "Belos.xml";
