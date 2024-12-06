@@ -282,15 +282,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
       !precList22_.isType<std::string>("Preconditioner Type") &&
       !precList22_.isParameter("reuse: type"))
     precList22_.set("reuse: type", "full");
-
-  // This should be taken out again as soon as
-  // CoalesceDropFactory_kokkos supports BlockSize > 1 and
-  // drop tol != 0.0
-  if (useKokkos_ && precList11_.isParameter("aggregation: drop tol") && precList11_.get<double>("aggregation: drop tol") != 0.0) {
-    GetOStream(Warnings0) << solverName_ + "::compute(): Setting \"aggregation: drop tol\". to 0.0, since CoalesceDropFactory_kokkos does not "
-                          << "support BlockSize > 1 and drop tol != 0.0" << std::endl;
-    precList11_.set("aggregation: drop tol", 0.0);
-  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -469,7 +460,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
   if (!coarseA11_.is_null()) {
     VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
     std::string label("coarseA11");
-    setupSubSolve(HierarchyCoarse11_, thyraPrecOpH_, coarseA11_, NullspaceCoarse11_, CoordsCoarse11_, precList11_, label, reuse);
+    setupSubSolve(HierarchyCoarse11_, thyraPrecOpH_, coarseA11_, NullspaceCoarse11_, CoordsCoarse11_, Material_beta_, precList11_, label, reuse);
     VerboseObject::SetDefaultVerbLevel(verbosityLevel);
   }
 
@@ -525,9 +516,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
         int maxLevels = precList22_.get("max levels", MasterList::getDefault<int>("max levels"));
         if (maxLevels < 2)
           precList22_.set("max levels", 2);
-        setupSubSolve(Hierarchy22_, thyraPrecOp22_, A22_, Teuchos::null, Teuchos::null, precList22_, label, reuse, /*isSingular=*/globalNumberBoundaryUnknowns11_ == 0);
+        setupSubSolve(Hierarchy22_, thyraPrecOp22_, A22_, Teuchos::null, Teuchos::null, Material_alpha_, precList22_, label, reuse, /*isSingular=*/globalNumberBoundaryUnknowns11_ == 0);
       } else
-        setupSubSolve(Hierarchy22_, thyraPrecOp22_, A22_, CoarseNullspace22_, Coords22_, precList22_, label, reuse, /*isSingular=*/globalNumberBoundaryUnknowns11_ == 0);
+        setupSubSolve(Hierarchy22_, thyraPrecOp22_, A22_, CoarseNullspace22_, Coords22_, Material_alpha_, precList22_, label, reuse, /*isSingular=*/globalNumberBoundaryUnknowns11_ == 0);
 
       VerboseObject::SetDefaultVerbLevel(verbosityLevel);
     }
@@ -1994,6 +1985,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupSubSolve(Teucho
                                                                           const Teuchos::RCP<Matrix> &A,
                                                                           const Teuchos::RCP<MultiVector> &Nullspace,
                                                                           const Teuchos::RCP<RealValuedMultiVector> &Coords,
+                                                                          const Teuchos::RCP<MultiVector> &Material,
                                                                           Teuchos::ParameterList &params,
                                                                           std::string &label,
                                                                           const bool reuse,
@@ -2013,6 +2005,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupSubSolve(Teucho
       ParameterList &userParamList = params.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
       if (!Nullspace.is_null())
         userParamList.set<RCP<MultiVector> >("Nullspace", Nullspace);
+      if (!Material.is_null())
+        userParamList.set<RCP<MultiVector> >("Material", Material);
       userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords);
     }
     thyraPrecOp = rcp(new XpetraThyraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(coarseA11_, rcp(&params, false)));
@@ -2027,6 +2021,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupSubSolve(Teucho
         userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords);
       if (!Nullspace.is_null())
         userParamList.set<RCP<MultiVector> >("Nullspace", Nullspace);
+      if (!Material.is_null())
+        userParamList.set<RCP<MultiVector> >("Material", Material);
 
       if (isSingular) {
         std::string coarseType = "";
@@ -2441,6 +2437,7 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              invMk_1_invBeta, invMk_2_invAlpha,
              Nullspace11, Nullspace22,
              NodalCoords,
+             Teuchos::null, Teuchos::null,
              List);
 
   if (SM_Matrix != Teuchos::null)
@@ -2455,6 +2452,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                const Teuchos::RCP<Matrix> &M1_Matrix,
                const Teuchos::RCP<MultiVector> &Nullspace11,
                const Teuchos::RCP<RealValuedMultiVector> &NodalCoords,
+               const Teuchos::RCP<MultiVector> &Material,
                Teuchos::ParameterList &List) {
   initialize(1,
              D0_Matrix, Teuchos::null, D0_Matrix,
@@ -2463,6 +2461,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              M0inv_Matrix, Teuchos::null,
              Nullspace11, Teuchos::null,
              NodalCoords,
+             Teuchos::null, Material,
              List);
 }
 
@@ -2481,6 +2480,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                const Teuchos::RCP<MultiVector> &Nullspace11,
                const Teuchos::RCP<MultiVector> &Nullspace22,
                const Teuchos::RCP<RealValuedMultiVector> &NodalCoords,
+               const Teuchos::RCP<MultiVector> &Material_beta,
+               const Teuchos::RCP<MultiVector> &Material_alpha,
                Teuchos::ParameterList &List) {
   spaceNumber_ = k;
   if (spaceNumber_ == 1)
@@ -2644,6 +2645,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   M1_beta_  = M1_beta;
   M1_alpha_ = M1_alpha;
+
+  Material_beta_  = Material_beta;
+  Material_alpha_ = Material_alpha;
 
   Mk_one_   = Mk_one;
   Mk_1_one_ = Mk_1_one;

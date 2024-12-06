@@ -254,7 +254,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     RCP<Operator> preconditioner;
     if (precType == "MueLu-RefMaxwell") {
       preconditioner = rcp(new MueLu::RefMaxwell<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Ms_Matrix, M0inv_Matrix,
-                                                                 M1_Matrix, nullspace, coords, params));
+                                                                 M1_Matrix, nullspace, coords, material, params));
     } else if (precType == "MueLu-Maxwell1" || precType == "MueLu-Reitzinger") {
       if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params));
