@@ -5892,8 +5892,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             idx += 1;
           }
         }
-        auto inds = Kokkos::subview(indices, Kokkos::make_pair(size_t(0), idx));
-        auto vals = Kokkos::subview(values, Kokkos::make_pair(size_t(0), idx));
+        Kokkos::View<const local_ordinal_type*, DT> indices_const(indices.data(), indices.size());
+        const impl_scalar_type* const values_const_data = reinterpret_cast<const impl_scalar_type*>(values.data());
+        Kokkos::View<const impl_scalar_type*, DT> values_const(values_const_data, values.size());
+        auto inds = Kokkos::subview(indices_const, Kokkos::make_pair(size_t(0), idx));
+        auto vals = Kokkos::subview(values_const, Kokkos::make_pair(size_t(0), idx));
         this->replaceLocalValues(local_row, inds, vals);
       }
     } else if (sourceIsLocallyIndexed) {
@@ -9648,7 +9651,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
            local_inds_device_value_t numInTgtRow = (tend - tstart);
 
            KOKKOS_ASSERT(tstart < tvals.extent(0));
-           Scalar *tgtRowVals = &tvals(tstart);
+           impl_scalar_type *tgtRowVals = reinterpret_cast<impl_scalar_type *>(&tvals(tstart));
            const local_inds_device_value_t *tgtColInds = &tgtLocalColIndsDevice(tstart);
 
            size_t hint=0;

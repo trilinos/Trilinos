@@ -5222,6 +5222,7 @@ namespace Tpetra {
     std::vector<GO> tgtGblColIndsScratch;
 
     execute_sync_host_uvm_access(); // protect host UVM access
+    // FIXME parallel_for
     for (LO lclRowInd = 0; lclRowInd < numSameIDs; ++lclRowInd) {
       const GO srcGblRowInd = srcRowMap.getGlobalElement(lclRowInd);
       const GO tgtGblRowInd = tgtRowMap.getGlobalElement(lclRowInd);
