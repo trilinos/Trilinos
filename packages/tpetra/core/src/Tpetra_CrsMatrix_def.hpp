@@ -62,6 +62,7 @@
 
 #define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
+#define INCL_EXP(a) a
 extern bool panzer_impl_new, panzer_impl_old;
 extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
 extern bool in_eval_J;
@@ -70,6 +71,7 @@ extern double timer_capsg;
 #define PANZER_IMPL_NEW panzer_impl_new
 #define PANZER_IMPL_OLD panzer_impl_old
 #else
+#define INCL_EXP(a) do {} while(0)
 #define PANZER_IMPL_NEW true
 #define PANZER_IMPL_OLD false
 #endif
@@ -6365,7 +6367,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
     if (isStaticGraph ()) {
       if (PANZER_IMPL_NEW) {
-        double time_ = Teuchos::Time::wallTime();
+        INCL_EXP(double time_ = Teuchos::Time::wallTime());
         TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_device () );
         auto permuteToLIDs_d = permuteToLIDs.view_device ();
         TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_device () );
@@ -6376,15 +6378,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                       permuteToLIDs_d.data(),
                                       permuteFromLIDs_d.data(),
                                       numPermute);
-#if EXP_INCLUDED_FROM_PANXER_MINI_EM
-        if (in_eval_J) {
-          Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime();
-        }
-#endif        
-
+        INCL_EXP(if (in_eval_J) Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime());
       }
       if (PANZER_IMPL_OLD) {
-        double time_ = Teuchos::Time::wallTime();
+        INCL_EXP(double time_ = Teuchos::Time::wallTime());
         TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
         auto permuteToLIDs_h = permuteToLIDs.view_host ();
         TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
@@ -6394,11 +6391,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                   permuteToLIDs_h.data(),
                                   permuteFromLIDs_h.data(),
                                   numPermute);
-#if EXP_INCLUDED_FROM_PANXER_MINI_EM
-        if (in_eval_J) {
-          Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime();
-        }
-#endif
+        INCL_EXP(if (in_eval_J) Timers["capsg_M"].first += -time_ + Teuchos::Time::wallTime());
       }
     }
     else {
@@ -7352,27 +7345,23 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if (isStaticGraph ()) {
-      double padTime = Teuchos::Time::wallTime();
+      INCL_EXP(double padTime = Teuchos::Time::wallTime());
 
       using Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
                                    importLIDs, constantNumPackets,
                                    combineMode);
-#if EXP_INCLUDED_FROM_PANXER_MINI_EM
-      Timers["capsg_M_ucmac"].first += -padTime + Teuchos::Time::wallTime();
-#endif
+      INCL_EXP(Timers["capsg_M_ucmac"].first += -padTime + Teuchos::Time::wallTime());
     }
     else {
       {
         using padding_type = typename crs_graph_type::padding_type;
         std::unique_ptr<padding_type> padding;
         try {
-          double padTime = Teuchos::Time::wallTime();
+          INCL_EXP(double padTime = Teuchos::Time::wallTime());
           padding = myGraph_->computePaddingForCrsMatrixUnpack(
             importLIDs, imports, numPacketsPerLID, verbose);
-#if EXP_INCLUDED_FROM_PANXER_MINI_EM
-          Timers["capsg_M_pad"].first += -padTime + Teuchos::Time::wallTime();
-#endif
+          INCL_EXP(Timers["capsg_M_pad"].first += -padTime + Teuchos::Time::wallTime());
         }
         catch (std::exception& e) {
           const auto rowMap = getRowMap();
@@ -7389,11 +7378,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           os << *prefix << "Call applyCrsPadding" << endl;
           std::cerr << os.str();
         }
-        double padTime = Teuchos::Time::wallTime();
+        INCL_EXP(double padTime = Teuchos::Time::wallTime());
         applyCrsPadding(*padding, verbose);
-#if EXP_INCLUDED_FROM_PANXER_MINI_EM
-        Timers["capsg_M_apad"].first += -padTime + Teuchos::Time::wallTime();
-#endif
+        INCL_EXP(Timers["capsg_M_apad"].first += -padTime + Teuchos::Time::wallTime());
       }
       if (verbose) {
         std::ostringstream os;

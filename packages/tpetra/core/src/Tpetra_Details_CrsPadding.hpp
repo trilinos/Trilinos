@@ -21,7 +21,23 @@
 #include <unordered_map>
 #include <utility>
 
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
+#if EXP_INCLUDED_FROM_PANXER_MINI_EM
+#define INCL_EXP(a) a
 extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
+extern bool panzer_impl_new, panzer_impl_old;
+extern bool in_eval_J;
+extern double timer_evalJ;
+extern double timer_capsg;
+#define PANZER_IMPL_NEW panzer_impl_new
+#define PANZER_IMPL_OLD panzer_impl_old
+#define IN_EVAL_J in_eval_J
+#else
+#define INCL_EXP(a) do {} while(0)
+#define PANZER_IMPL_NEW true
+#define PANZER_IMPL_OLD false
+#define IN_EVAL_J true
+#endif
 
 namespace Tpetra {
   namespace Details {
@@ -175,7 +191,7 @@ namespace Tpetra {
 
         // FIXME (08 Feb 2020) We only need to sort and unique
         // tgtGblColInds if we haven't already seen it before.
-        double time_ = Teuchos::Time::wallTime();
+        INCL_EXP(double time_ = Teuchos::Time::wallTime());
         size_t newNumTgtEnt = origNumTgtEnt;
         auto tgtEnd = tgtGblColInds + origNumTgtEnt;
         std::sort(tgtGblColInds, tgtEnd);
@@ -199,13 +215,13 @@ namespace Tpetra {
           newNumSrcEnt = size_t(srcEnd - srcGblColInds);
           TEUCHOS_ASSERT( newNumSrcEnt <= origNumSrcEnt );
         }
-        Timers["capsg_G_pad_sort"].first += -time_ + Teuchos::Time::wallTime();
+        INCL_EXP(Timers["capsg_G_pad_sort"].first += -time_ + Teuchos::Time::wallTime());
 
-        time_ = Teuchos::Time::wallTime();
+        INCL_EXP(time_ = Teuchos::Time::wallTime());
         merge_with_current_state(phase, whichImport, targetLocalIndex,
                                  tgtGblColInds, newNumTgtEnt,
                                  srcGblColInds, newNumSrcEnt);
-        Timers["capsg_G_pad_merge"].first += -time_ + Teuchos::Time::wallTime();
+        INCL_EXP(Timers["capsg_G_pad_merge"].first += -time_ + Teuchos::Time::wallTime());
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "Done" << endl;
