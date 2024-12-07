@@ -17,7 +17,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
     Implements Standard mode Trilinos Pull Request Driver
     """
     def __init__(self, args):
-        super(TrilinosPRConfigurationStandard, self).__init__(args)
+        super().__init__(args)
 
 
     def execute_test(self):

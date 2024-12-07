@@ -801,7 +801,8 @@ class TrilinosPRConfigurationBase(object):
             "F77",
             "F90",
             "FC",
-            "MODULESHOME"
+            "MODULESHOME",
+            "EXTRA_CONFIGURE_ARGS"
             ]
         self.message("")
         tr_env.set_environment.pretty_print_envvars(envvar_filter=envvars_to_print)

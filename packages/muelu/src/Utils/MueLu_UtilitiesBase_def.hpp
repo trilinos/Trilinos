@@ -1182,6 +1182,37 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    EnforceInitialCondition(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                            const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& RHS,
+                            Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& InitialGuess,
+                            const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol,
+                            const bool count_twos_as_dirichlet) {
+  using range_type = Kokkos::RangePolicy<LO, typename Node::execution_space>;
+
+  auto dirichletRows = DetectDirichletRows_kokkos(A, tol, count_twos_as_dirichlet);
+
+  LocalOrdinal numRows    = A.getLocalNumRows();
+  LocalOrdinal numVectors = RHS.getNumVectors();
+  TEUCHOS_ASSERT_EQUALITY(numVectors, Teuchos::as<LocalOrdinal>(InitialGuess.getNumVectors()));
+#ifdef MUELU_DEBUG
+  TEUCHOS_ASSERT(RHS.getMap()->isCompatible(InitialGuess.getMap()));
+#endif
+
+  auto lclRHS          = RHS.getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto lclInitialGuess = InitialGuess.getDeviceLocalView(Xpetra::Access::ReadWrite);
+
+  Kokkos::parallel_for(
+      "MueLu:Utils::EnforceInitialCondition", range_type(0, numRows),
+      KOKKOS_LAMBDA(const LO row) {
+        if (dirichletRows(row)) {
+          for (LocalOrdinal j = 0; j < numVectors; ++j)
+            lclInitialGuess(row, j) = lclRHS(row, j);
+        }
+      });
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     FindNonZeros(const Teuchos::ArrayRCP<const Scalar> vals,
                  Teuchos::ArrayRCP<bool> nonzeros) {
   TEUCHOS_ASSERT(vals.size() == nonzeros.size());
