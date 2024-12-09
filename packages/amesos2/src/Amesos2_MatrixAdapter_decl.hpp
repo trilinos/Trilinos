@@ -216,6 +216,9 @@ namespace Amesos2 {
     }
 
     Teuchos::RCP<const type> get(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+
+    /// Reindex the GIDs such that they are contiguous without gaps (0, .., n-1)
+    ///  This is called in loadA for the matrix with (DISTRIBUTED_NO_OVERLAP && !is_contiguous_)
     Teuchos::RCP<const type> reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const;
 
     /// Returns a short description of this Solver

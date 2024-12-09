@@ -113,6 +113,8 @@ namespace Amesos2 {
       local_ordinal_t nCols = colMap->getLocalNumElements();
 
       RCP<matrix_t> contiguous_t_mat;
+      // if-checks when to recompute contigRowMap & contigColMap
+      // TODO: this is currentlly based on the global matrix dimesions
       if (contigRowMap->getGlobalNumElements() != numDoFs || contigColMap->getGlobalNumElements() != numDoFs) {
         auto tmpMap = rcp (new contiguous_map_type (numDoFs, nRows, indexBase, rowComm));
         global_ordinal_t frow = tmpMap->getMinGlobalIndex();
