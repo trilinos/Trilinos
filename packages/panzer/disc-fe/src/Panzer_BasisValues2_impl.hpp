@@ -1120,7 +1120,7 @@ getBasisValues(const bool weighted,
       // while create_mirror_view creates views in UVMSpace or
       // HIPSpace. These are not "assignable" in kokkos. We do an
       // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_basis_scalar.get_view())::memory_space>::value) {
 #else
@@ -1174,7 +1174,7 @@ getBasisValues(const bool weighted,
         } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST) {
           fst::HGRADtransformVALUE(s_aux,s_ref);
         }
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1292,7 +1292,7 @@ getVectorBasisValues(const bool weighted,
       // while create_mirror_view creates views in UVMSpace or
       // HIPSpace. These are not "assignable" in kokkos. We do an
       // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_basis_vector.get_view())::memory_space>::value) {
 #else
@@ -1352,7 +1352,7 @@ getVectorBasisValues(const bool weighted,
           auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
           fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, s_ref);
         }
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1456,7 +1456,7 @@ getGradBasisValues(const bool weighted,
       // while create_mirror_view creates views in UVMSpace or
       // HIPSpace. These are not "assignable" in kokkos. We do an
       // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_grad_basis.get_view())::memory_space>::value) {
 #else
@@ -1506,7 +1506,7 @@ getGradBasisValues(const bool weighted,
         // Apply transformation
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HGRADtransformGRAD(s_aux, s_jac_inv, s_ref);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1611,7 +1611,7 @@ getCurl2DVectorBasis(const bool weighted,
       // while create_mirror_view creates views in UVMSpace or
       // HIPSpace. These are not "assignable" in kokkos. We do an
       // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_curl_basis_scalar.get_view())::memory_space>::value) {
 #else
@@ -1665,7 +1665,7 @@ getCurl2DVectorBasis(const bool weighted,
         // the divergence space in 2D!
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1767,7 +1767,7 @@ getCurlVectorBasis(const bool weighted,
       // while create_mirror_view creates views in UVMSpace or
       // HIPSpace. These are not "assignable" in kokkos. We do an
       // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_curl_basis_vector.get_view())::memory_space>::value) {
 #else
@@ -1817,7 +1817,7 @@ getCurlVectorBasis(const bool weighted,
 
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, s_ref);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
@@ -1917,7 +1917,7 @@ getDivVectorBasis(const bool weighted,
       // while create_mirror_view creates views in UVMSpace or
       // HIPSpace. These are not "assignable" in kokkos. We do an
       // inefficient copy if UVM or UNIFIED_MEMORY is enabled.
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
 #ifdef KOKKOS_ENABLE_CUDA
       if constexpr (std::is_same<Kokkos::CudaUVMSpace,typename decltype(tmp_div_basis.get_view())::memory_space>::value) {
 #else
@@ -1965,7 +1965,7 @@ getDivVectorBasis(const bool weighted,
 
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
       }
 #endif
       PHX::Device().fence();
