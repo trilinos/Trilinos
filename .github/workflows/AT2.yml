@@ -385,7 +385,7 @@ jobs:
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake \
+            --skip-create-packageenables \
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}

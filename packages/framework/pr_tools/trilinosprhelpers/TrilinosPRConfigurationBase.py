@@ -278,6 +278,13 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.filename_packageenables
 
+    @property
+    def arg_skip_create_packageenables(self):
+        """
+        This property controls whether the creation of a packageEnables.cmake fragment file
+        should be skipped.
+        """
+        return self.args.skip_create_packageenables
 
     @property
     def arg_workspace_dir(self):
@@ -634,7 +641,6 @@ class TrilinosPRConfigurationBase(object):
         job_name = self.arg_pr_jenkins_job_name
 
         enable_map_entry = self.get_multi_property_from_config("ENABLE_MAP", job_name, delimeter=" ")
-
         # Generate files using ATDM/TriBiTS Scripts
         if enable_map_entry is None:
             cmd = [os.path.join( self.arg_workspace_dir,
@@ -745,6 +751,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_ctest_driver            = {}".format(self.arg_ctest_driver))
         self.message("--- arg_ctest_drop_site         = {}".format(self.arg_ctest_drop_site))
         self.message("--- arg_ccache_enable           = {}".format(self.arg_ccache_enable))
+        self.message("--- arg_skip_create_packageenables = {}".format(self.arg_skip_create_packageenables))
         self.message("")
         self.message("--- concurrency_build           = {}".format(self.concurrency_build))
         self.message("--- concurrency_test            = {}".format(self.concurrency_test))
@@ -811,16 +818,22 @@ class TrilinosPRConfigurationBase(object):
         self.message("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
         self.message("+" + "-"*68 + "+")
 
-        self.message("+" + "-"*68 + "+")
-        self.message("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
-        self.message("+" + "-"*68 + "+")
+        if self.arg_skip_create_packageenables:
+            self.message("+" + "-"*68 + "+")
+            self.message("|   S K I P P I N G   `packageEnables.cmake`   G E N E R A T I O N")
+            self.message("+" + "-"*68 + "+")
 
-        self.create_package_enables_file(dryrun=self.args.dry_run)
+        else:
+            self.message("+" + "-"*68 + "+")
+            self.message("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
+            self.message("+" + "-"*68 + "+")
 
-        self.message("+" + "-"*68 + "+")
-        self.message("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
-        self.message("+" + "-"*68 + "+")
-        self.message("")
+            self.create_package_enables_file(dryrun=self.args.dry_run)
+
+            self.message("+" + "-"*68 + "+")
+            self.message("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
+            self.message("+" + "-"*68 + "+")
+            self.message("")
 
         return 0
 
