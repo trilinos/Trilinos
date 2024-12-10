@@ -59,8 +59,7 @@ by %Piro include:
 <ul>
 <li>NOX: Nonlinear Solver
 <li>LOCA: Continuation and Bifurcation Analysis Solver
-<li>Stokhos: Embedded UQ solver for Stochastic-Galerkin over random variables
-<li>LIME: Algorithms for multi-physics coupling (under development)
+<li>ROL: Tools for Numerical Optimization
 </ul>
 
 Each of these solvers not only takes a ModelEvaluator as
@@ -121,7 +120,7 @@ and not just two.
 
 %Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey, Kim Liegeois,
 Roger Pawlowski, Mauro Perego, Eric Phipps and Irina Tezaur. Much of the code is adapted from
-tests and examples for NOX, LOCA, Stokhos, and was developed and matured in the Albany
+tests and examples for NOX, LOCA, and was developed and matured in the Albany
 application code before being library-ized into %Piro.
 
 */
