@@ -209,9 +209,6 @@ using MergedBlockedMatrixFactory [[maybe_unused]] = MueLu::MergedBlockedMatrixFa
 #ifdef MUELU_MERGEDSMOOTHER_SHORT
 using MergedSmoother [[maybe_unused]] = MueLu::MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
-using MLParameterListInterpreter [[maybe_unused]] = MueLu::MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 using MultiVectorTransferFactory [[maybe_unused]] = MueLu::MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif

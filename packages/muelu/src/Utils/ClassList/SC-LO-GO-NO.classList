@@ -64,7 +64,6 @@ MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
-MLParameterListInterpreter - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 MultiVectorTransferFactory
 NotayAggregationFactory
 NullspaceFactory
