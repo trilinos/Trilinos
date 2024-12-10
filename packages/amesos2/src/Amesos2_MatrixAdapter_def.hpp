@@ -41,7 +41,7 @@ namespace Amesos2 {
         KV_GO & colind,
         KV_GS & rowptr,
         typename MatrixAdapter<Matrix>::global_size_t& nnz,
-        const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > rowmap,
+        const Teuchos::Ptr<const map_t> rowmap,
         EStorage_Ordering ordering,
         EDistribution distribution) const
   {
@@ -60,7 +60,7 @@ namespace Amesos2 {
         EDistribution distribution,
         EStorage_Ordering ordering) const
   {
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap
+    const Teuchos::RCP<const map_t> rowmap
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
                                                                                         this->getGlobalNumRows(),
                                                                                         this->getComm());
@@ -74,7 +74,7 @@ namespace Amesos2 {
         KV_GO & rowind,
         KV_GS & colptr,
         typename MatrixAdapter<Matrix>::global_size_t& nnz,
-        const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > colmap,
+        const Teuchos::Ptr<const map_t> colmap,
         EStorage_Ordering ordering,
         EDistribution distribution) const
   {
@@ -93,7 +93,7 @@ namespace Amesos2 {
         EDistribution distribution,
         EStorage_Ordering ordering) const
   {
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap
+    const Teuchos::RCP<const map_t> colmap
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
                                                                                         this->getGlobalNumCols(),
                                                                                         this->getComm());
@@ -176,7 +176,10 @@ namespace Amesos2 {
   void
   MatrixAdapter<Matrix>::describe(Teuchos::FancyOStream &out,
                                   const Teuchos::EVerbosityLevel verbLevel) const
-  {}
+  {
+    // (implemented for Epetra::CrsMatrix & Tpetra::CrsMatrix)
+    return static_cast<const adapter_t*>(this)->describe(out, verbLevel);
+  }
 
   template < class Matrix >
   template < class KV >
@@ -209,7 +212,7 @@ namespace Amesos2 {
              KV_GO & colind,
              KV_GS & rowptr,
              typename MatrixAdapter<Matrix>::global_size_t& nnz,
-             const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+             const Teuchos::Ptr<const map_t> rowmap,
              EDistribution distribution,
              EStorage_Ordering ordering,
              no_special_impl nsi) const
@@ -229,7 +232,7 @@ namespace Amesos2 {
            KV_GO & colind,
            KV_GS & rowptr,
            typename MatrixAdapter<Matrix>::global_size_t& nnz,
-           const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+           const Teuchos::Ptr<const map_t> rowmap,
            EDistribution distribution,
            EStorage_Ordering ordering,
            row_access ra) const
@@ -270,7 +273,7 @@ namespace Amesos2 {
     // TODO: There may be some more checking between the row map
     // compatibility, but things are working fine now.
 
-    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
+    RCP<const map_t> rmap = get_mat->getRowMap();
     ArrayView<const global_ordinal_t> node_elements = rmap->getLocalElementList();
     //if( node_elements.size() == 0 ) return; // no more contribution
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
@@ -384,7 +387,7 @@ namespace Amesos2 {
              KV_GO & rowind,
              KV_GS & colptr,
              typename MatrixAdapter<Matrix>::global_size_t& nnz,
-             const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+             const Teuchos::Ptr<const map_t> colmap,
              EDistribution distribution,
              EStorage_Ordering ordering,
              no_special_impl nsi) const
@@ -404,7 +407,7 @@ namespace Amesos2 {
            KV_GO & rowind,
            KV_GS & colptr,
            typename MatrixAdapter<Matrix>::global_size_t& nnz,
-           const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+           const Teuchos::Ptr<const map_t> colmap,
            EDistribution distribution,
            EStorage_Ordering ordering,
            row_access ra) const
@@ -505,9 +508,17 @@ namespace Amesos2 {
 
   template < class Matrix >
   Teuchos::RCP<const MatrixAdapter<Matrix> >
-  MatrixAdapter<Matrix>::get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
+  MatrixAdapter<Matrix>::get(const Teuchos::Ptr<const map_t> map, EDistribution distribution) const
   {
     return static_cast<const adapter_t*>(this)->get_impl(map, distribution);
+  }
+
+
+  template < class Matrix >
+  Teuchos::RCP<const MatrixAdapter<Matrix> >
+  MatrixAdapter<Matrix>::reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const
+  {
+    return static_cast<const adapter_t*>(this)->reindex_impl(contigRowMap, contigColMap);
   }
 
 

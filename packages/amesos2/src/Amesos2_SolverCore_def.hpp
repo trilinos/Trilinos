@@ -92,19 +92,23 @@ SolverCore<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 #endif
 
-  if( !status_.preOrderingDone() ){
-    preOrdering();
-    if( !matrix_loaded_ ) loadA(SYMBFACT);
-  } else {
-    loadA(SYMBFACT);
-  }
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor LocalTimer2(timers_.coreSymFactTime_);
+#endif
+    if( !status_.preOrderingDone() ){
+      preOrdering();
+      if( !matrix_loaded_ ) loadA(SYMBFACT);
+    } else {
+      loadA(SYMBFACT);
+    }
 
-  int error_code = static_cast<solver_type*>(this)->symbolicFactorization_impl();
-  if (error_code == EXIT_SUCCESS){
-    ++status_.numSymbolicFact_;
-    status_.last_phase_ = SYMBFACT;
+    int error_code = static_cast<solver_type*>(this)->symbolicFactorization_impl();
+    if (error_code == EXIT_SUCCESS){
+      ++status_.numSymbolicFact_;
+      status_.last_phase_ = SYMBFACT;
+    }
   }
-
   return *this;
 }
 
@@ -116,18 +120,22 @@ SolverCore<ConcreteSolver,Matrix,Vector>::numericFactorization()
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 #endif
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor LocalTimer2(timers_.coreNumFactTime_);
+#endif
+    if( !status_.symbolicFactorizationDone() ){
+      symbolicFactorization();
+      if( !matrix_loaded_ ) loadA(NUMFACT);
+    } else {
+      loadA(NUMFACT);
+    }
 
-  if( !status_.symbolicFactorizationDone() ){
-    symbolicFactorization();
-    if( !matrix_loaded_ ) loadA(NUMFACT);
-  } else {
-    loadA(NUMFACT);
-  }
-
-  int error_code = static_cast<solver_type*>(this)->numericFactorization_impl();
-  if (error_code == EXIT_SUCCESS){
-    ++status_.numNumericFact_;
-    status_.last_phase_ = NUMFACT;
+    int error_code = static_cast<solver_type*>(this)->numericFactorization_impl();
+    if (error_code == EXIT_SUCCESS){
+      ++status_.numNumericFact_;
+      status_.last_phase_ = NUMFACT;
+    }
   }
 
   return *this;
@@ -189,10 +197,15 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
     const_cast<type&>(*this).numericFactorization();
   }
 
-  int error_code = static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
-  if (error_code == EXIT_SUCCESS){
-    ++status_.numSolve_;
-    status_.last_phase_ = SOLVE;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor LocalTimer2(timers_.coreSolveTime_);
+#endif
+    int error_code = static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
+    if (error_code == EXIT_SUCCESS){
+      ++status_.numSolve_;
+      status_.last_phase_ = SOLVE;
+    }
   }
 }
 

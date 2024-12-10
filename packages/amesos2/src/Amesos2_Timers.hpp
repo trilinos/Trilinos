@@ -36,6 +36,9 @@ struct Timers {
     , symFactTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for symbolic factorization")))
     , numFactTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for numeric factorization")))
     , solveTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for solve")))
+    , coreSymFactTime_(*(Teuchos::TimeMonitor::getNewTimer("SolverCore::symbolicFactorization")))
+    , coreNumFactTime_(*(Teuchos::TimeMonitor::getNewTimer("SolverCore::numericFactorization")))
+    , coreSolveTime_(*(Teuchos::TimeMonitor::getNewTimer("SolverCore::solve")))
     , totalTime_(*(Teuchos::TimeMonitor::getNewTimer("Total Time in Amesos2 interface")))
     {}
 
@@ -47,6 +50,9 @@ struct Timers {
   Teuchos::Time symFactTime_;
   Teuchos::Time numFactTime_;
   Teuchos::Time solveTime_;
+  Teuchos::Time coreSymFactTime_;
+  Teuchos::Time coreNumFactTime_;
+  Teuchos::Time coreSolveTime_;
   Teuchos::Time totalTime_;
 };
 
