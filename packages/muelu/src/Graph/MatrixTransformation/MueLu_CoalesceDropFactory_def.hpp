@@ -439,7 +439,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         using MT = typename STS::magnitudeType;
         RCP<Vector> ghostedDiag;
         ArrayRCP<const SC> ghostedDiagVals;
-        ArrayRCP<const MT> negMaxOffDiagonal;
+        ArrayRCP<const SC> negMaxOffDiagonal;
         // RS style needs the max negative off-diagonal, SA style needs the diagonal
         if (useSignedClassicalRS) {
           if (ghostedBlockNumber.is_null()) {
