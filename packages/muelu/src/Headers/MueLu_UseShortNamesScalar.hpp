@@ -218,9 +218,6 @@ using NotayAggregationFactory [[maybe_unused]] = MueLu::NotayAggregationFactory<
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 using NullspaceFactory [[maybe_unused]] = MueLu::NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
-using NullspaceFactory_kokkos [[maybe_unused]] = MueLu::NullspaceFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 using NullspacePresmoothFactory [[maybe_unused]] = MueLu::NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
