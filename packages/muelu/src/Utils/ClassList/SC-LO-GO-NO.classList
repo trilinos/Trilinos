@@ -67,7 +67,6 @@ MergedSmoother
 MultiVectorTransferFactory
 NotayAggregationFactory
 NullspaceFactory
-NullspaceFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory
