@@ -113,6 +113,7 @@ private:
   ordinal_type_array_host _h_peri_graph;
 
   // ** symbolic factorization output
+  ordinal_type _nnz_u;
   // supernodes output
   ordinal_type _nsupernodes;
   ordinal_type_array _supernodes;
@@ -217,6 +218,7 @@ public:
   ///
   /// get interface
   ///
+  ordinal_type getNumNonZerosU() const;
   ordinal_type getNumSupernodes() const;
   ordinal_type_array getSupernodes() const;
   ordinal_type_array getPermutationVector() const;
