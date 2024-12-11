@@ -2286,7 +2286,12 @@ public:
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (CholeskyFactorize)\n", variant);
       printf("=====================================================\n");
-      printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n\n",time_parallel,time_device,time_update );
+      printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n",time_parallel,time_device,time_update );
+      if (variant == 3) {
+        printf( " extractCRS with total nnzL = %d and nnzU = %d\n\n",colindL.extent(0),colindU.extent(0) );
+      } else {
+        printf( "\n" );
+      }
       print_stat_factor();
       fflush(stdout);
     }
@@ -4368,7 +4373,12 @@ public:
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (LU Factorize)\n", variant);
       printf("================================================\n");
-      printf( "\n  ** Team = %f s, Device = %f s, Update = %f s (%d streams) **\n\n",time_parallel,time_device,time_update,_nstreams );
+      printf( "\n  ** Team = %f s, Device = %f s, Update = %f s (%d streams) **\n",time_parallel,time_device,time_update,_nstreams );
+      if (variant == 3) {
+        printf( " extractCRS with total nnzL = %d and nnzU = %d\n\n",colindL.extent(0),colindU.extent(0) );
+      } else {
+        printf( "\n" );
+      }
       print_stat_factor();
       fflush(stdout);
     }

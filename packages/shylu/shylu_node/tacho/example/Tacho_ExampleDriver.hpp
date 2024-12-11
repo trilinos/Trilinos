@@ -257,6 +257,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
     std::cout << std::endl;
     std::cout << " Initi Time " << initi_time << std::endl;
+    std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl;
     std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
     std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
     std::cout << std::endl;
