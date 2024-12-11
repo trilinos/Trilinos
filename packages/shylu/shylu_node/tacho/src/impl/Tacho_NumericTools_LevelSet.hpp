@@ -2288,7 +2288,7 @@ public:
       printf("=====================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n",time_parallel,time_device,time_update );
       if (variant == 3) {
-        printf( " extractCRS with total nnzL = %d and nnzU = %d\n\n",colindL.extent(0),colindU.extent(0) );
+        printf( " extractCRS with total nnzL = %ld and nnzU = %ld\n\n",colindL.extent(0),colindU.extent(0) );
       } else {
         printf( "\n" );
       }
@@ -4375,7 +4375,7 @@ public:
       printf("================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s (%d streams) **\n",time_parallel,time_device,time_update,_nstreams );
       if (variant == 3) {
-        printf( " extractCRS with total nnzL = %d and nnzU = %d\n\n",colindL.extent(0),colindU.extent(0) );
+        printf( " extractCRS with total nnzL = %ld and nnzU = %ld\n\n",colindL.extent(0),colindU.extent(0) );
       } else {
         printf( "\n" );
       }
