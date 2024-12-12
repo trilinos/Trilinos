@@ -90,7 +90,7 @@ copyAndPermuteNew(
     // source graph is not a CrsGraph, we can't use view mode,
     // because RowGraph only provides copy mode access to the data.
     INCL_EXP(double time = Teuchos::Time::wallTime());
-#if 1
+#if 0
     // std::cout << "here 3" << std::endl;
 
     for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
