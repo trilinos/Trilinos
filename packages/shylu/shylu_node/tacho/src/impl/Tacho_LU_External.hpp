@@ -61,6 +61,12 @@ template <> struct LU<Algo::External> {
     }
   }
 
+  template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double /*tol*/, const ViewTypeA &A, const ViewTypeP &P) {
+    // tol is not used, for now
+    return invoke(member, A, P);
+  }
+
   template <typename ViewTypeP> inline static int modify(const ordinal_type m, const ViewTypeP &P) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeP::execution_space>;

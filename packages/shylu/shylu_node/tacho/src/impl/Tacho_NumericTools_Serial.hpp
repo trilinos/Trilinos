@@ -45,6 +45,7 @@ public:
   using typename base_type::ordinal_type_array;
   using typename base_type::ordinal_type_array_host;
   using typename base_type::size_type_array;
+  using typename base_type::mag_type;
   using typename base_type::value_type;
   using typename base_type::value_type_array;
   using typename base_type::value_type_matrix;
@@ -475,7 +476,7 @@ public:
   ///
   /// main interface
   ///
-  inline void factorize(const value_type_array &ax, const ordinal_type verbose = 0) override {
+  inline void factorize(const value_type_array &ax, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
     {
       const bool test = !std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
       TACHO_TEST_FOR_EXCEPTION(test, std::logic_error, "Serial interface works on host device only");
