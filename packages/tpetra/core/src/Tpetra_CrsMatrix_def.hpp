@@ -60,7 +60,7 @@
 #include <utility>
 #include <vector>
 
-#define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 1
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
 #define INCL_EXP(a) a
 extern bool panzer_impl_new, panzer_impl_old;
