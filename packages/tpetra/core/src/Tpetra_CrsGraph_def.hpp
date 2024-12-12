@@ -4870,6 +4870,13 @@ namespace Tpetra {
     const char tfecfFuncName[] = "copyAndPermute: ";
     const bool verbose = verbose_;
 
+    if (PANZER_IMPL_NEW) {
+      const row_graph_type& srcRowGraph =
+        dynamic_cast<const row_graph_type&> (source);
+      copyAndPermuteNew(srcRowGraph, *this, numSameIDs, permuteToLIDs, permuteFromLIDs, INSERT);
+      return;
+    }
+
     Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermute");
     INCL_EXP(double capTime = Teuchos::Time::wallTime());
     std::unique_ptr<std::string> prefix;
@@ -7662,7 +7669,7 @@ namespace Tpetra {
     return output;
   }
 
-
+#include "graphCopyAndPermuteNew.hpp"
 
 } // namespace Tpetra
 
