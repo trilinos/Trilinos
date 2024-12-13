@@ -108,7 +108,7 @@ inline void set_topology(Part & part)
 stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets);
 
 /** get the stk::topology given a Shards Cell Topology */
-stk::topology get_topology(shards::CellTopology shards_topology, unsigned spatial_dimension = 3);
+stk::topology get_topology(shards::CellTopology shards_topology, unsigned spatial_dimension = 3, bool useAllFaceSideShell = false);
 
 /** Get the Shards Cell Topology given a stk::topology  */
 shards::CellTopology get_cell_topology(stk::topology topo);
@@ -590,14 +590,28 @@ public:
   bool delete_part_alias_case_insensitive(Part& part, const std::string& alias);
   std::vector<std::string> get_part_aliases(const Part& part) const;
 
+  // To enable the Field Sync Debugger in a production run, add the STK_DEBUG_FIELD_SYNC
+  // define to your build.  This function is solely used to flip external parts of the
+  // debugger on for unit testing when it is not enabled globally.
+  //
+  void enable_field_sync_debugger() {
+    m_isFieldSyncDebuggerEnabled = true;
+  }
+
+  bool is_field_sync_debugger_enabled() {
+#ifdef STK_DEBUG_FIELD_SYNC
+    return true;
+#else
+    return m_isFieldSyncDebuggerEnabled;
+#endif
+  }
+
 protected:
 
   Part & declare_internal_part( const std::string & p_name);
 
   /** \} */
 private:
-  // Functions
-
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
@@ -611,11 +625,9 @@ private:
 
   void assign_topology(Part& part, stk::topology stkTopo);
 
-  // Members
+  void declare_field_sync_debugger_field(stk::mesh::FieldBase& field);
 
   BulkData* m_bulk_data;
-  bool   m_commit ;
-  bool   m_are_late_fields_enabled;
   impl::PartRepository m_part_repo ;
   CSet   m_attributes ;
 
@@ -640,6 +652,10 @@ private:
 
   std::map<std::string, unsigned, std::less<std::string> > m_partAlias;
   std::map<unsigned, std::vector<std::string>> m_partReverseAlias;
+
+  bool m_commit;
+  bool m_are_late_fields_enabled;
+  bool m_isFieldSyncDebuggerEnabled;
 
   /** \name  Invariants/preconditions for MetaData.
    * \{
@@ -877,6 +893,8 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
   }
 
   f[0]->set_mesh(m_bulk_data);
+
+  declare_field_sync_debugger_field(*f[0]);
 
   return *f[0];
 }

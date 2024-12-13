@@ -59,7 +59,7 @@ constexpr unsigned NUM_COMPONENTS_INDEX = 0;
 constexpr unsigned FIRST_DIMENSION_INDEX = 1;
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
-template<typename T, template <typename> class NgpDebugger> class DeviceField;
+template <typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger> class DeviceField;
 
 namespace impl {
   constexpr double OVERALLOCATION_FACTOR = 1.1;
@@ -69,19 +69,18 @@ namespace impl {
     return std::lround(size_requested*OVERALLOCATION_FACTOR);
   }
 
-  template <typename T> const FieldDataDeviceViewType<T> get_device_data(const DeviceField<T>& deviceField);
-  template <typename T> FieldDataDeviceViewType<T> get_device_data(DeviceField<T>&);
+  template <typename T, typename NgpMemSpace> const FieldDataDeviceViewType<T, NgpMemSpace> get_device_data(const DeviceField<T, NgpMemSpace>& deviceField);
+  template <typename T, typename NgpMemSpace> FieldDataDeviceViewType<T, NgpMemSpace> get_device_data(DeviceField<T, NgpMemSpace>&);
 }
 
-template<typename T, template <typename> class NgpDebugger>
+template <typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger>
 class DeviceField : public NgpFieldBase
 {
-private:
-  using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
-
  public:
   using ExecSpace = stk::ngp::ExecSpace;
+  using MemSpace = NgpMemSpace;
   using value_type = T;
+  using StkDebugger = typename NgpDebugger<T, NgpMemSpace>::StkFieldSyncDebuggerType;
 
   KOKKOS_FUNCTION
   DeviceField()
@@ -114,19 +113,19 @@ private:
     initialize();
   }
 
-  KOKKOS_DEFAULTED_FUNCTION DeviceField(const DeviceField<T, NgpDebugger>&) = default;
-  KOKKOS_DEFAULTED_FUNCTION DeviceField(DeviceField<T, NgpDebugger>&&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField(const DeviceField<T, NgpMemSpace, NgpDebugger>&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField(DeviceField<T, NgpMemSpace, NgpDebugger>&&) = default;
   KOKKOS_FUNCTION ~DeviceField() {}
-  KOKKOS_DEFAULTED_FUNCTION DeviceField<T, NgpDebugger>& operator=(const DeviceField<T, NgpDebugger>&) = default;
-  KOKKOS_DEFAULTED_FUNCTION DeviceField<T, NgpDebugger>& operator=(DeviceField<T, NgpDebugger>&&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField<T, NgpMemSpace, NgpDebugger>& operator=(const DeviceField<T, NgpMemSpace, NgpDebugger>&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField<T, NgpMemSpace, NgpDebugger>& operator=(DeviceField<T, NgpMemSpace, NgpDebugger>&&) = default;
 
   void initialize()
   {
     hostField->template make_field_sync_debugger<StkDebugger>();
-    fieldSyncDebugger = NgpDebugger<T>(&hostField->get_field_sync_debugger<StkDebugger>());
+    fieldSyncDebugger = NgpDebugger<T, NgpMemSpace>(&hostField->get_field_sync_debugger<StkDebugger>());
   }
 
-  void set_field_states(DeviceField<T, NgpDebugger>* /*fields*/[])
+  void set_field_states(DeviceField<T, NgpMemSpace, NgpDebugger>* /*fields*/[])
   {
   }
 
@@ -359,13 +358,15 @@ private:
 
   void swap_field_views(NgpFieldBase *other) override
   {
-    DeviceField<T,NgpDebugger>* deviceFieldT = dynamic_cast<DeviceField<T,NgpDebugger>*>(other);
+    DeviceField<T, NgpMemSpace, NgpDebugger>* deviceFieldT = dynamic_cast<DeviceField<T, NgpMemSpace, NgpDebugger>*>(other);
     STK_ThrowRequireMsg(deviceFieldT != nullptr, "DeviceField::swap_field_views called with class that can't dynamic_cast to DeviceField<T,NgpDebugger>");
     swap_views(deviceData, deviceFieldT->deviceData);
+    swap_views(hostBucketPtrData, deviceFieldT->hostBucketPtrData);
+    swap_views(deviceBucketPtrData, deviceFieldT->deviceBucketPtrData);
   }
 
   KOKKOS_FUNCTION
-  void swap(DeviceField<T, NgpDebugger> &other)
+  void swap(DeviceField<T, NgpMemSpace, NgpDebugger> &other)
   {
     swap_views(deviceData, other.deviceData);
   }
@@ -405,10 +406,15 @@ private:
 private:
  ExecSpace& get_execution_space() const { return hostField->get_execution_space(); }
 
- void set_execution_space(const ExecSpace& executionSpace) { hostField->set_execution_space(executionSpace); }
+ void set_execution_space(const ExecSpace& executionSpace)
+ { 
+   static_assert(Kokkos::SpaceAccessibility<ExecSpace, NgpMemSpace>::accessible);
+   hostField->set_execution_space(executionSpace);
+ }
 
  void set_execution_space(ExecSpace&& executionSpace)
  {
+   static_assert(Kokkos::SpaceAccessibility<ExecSpace, NgpMemSpace>::accessible);
    hostField->set_execution_space(std::forward<ExecSpace>(executionSpace));
  }
 
@@ -468,8 +474,9 @@ private:
   void construct_view(const BucketVector& buckets, const std::string& name, unsigned numPerEntity)
   {
     unsigned numBuckets = buckets.size();
-    FieldDataDeviceViewType<T> tempDataDeviceView = FieldDataDeviceViewType<T>(Kokkos::view_alloc(Kokkos::WithoutInitializing, name), numBuckets,
-                                                    ORDER_INDICES(bucketCapacity, numPerEntity));
+    FieldDataDeviceViewType<T, NgpMemSpace> tempDataDeviceView =
+                                   FieldDataDeviceViewType<T, NgpMemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, name),
+                                   numBuckets, ORDER_INDICES(bucketCapacity, numPerEntity));
     fieldSyncDebugger.initialize_view(tempDataDeviceView);
 
     copy_unmodified_buckets(buckets, tempDataDeviceView, numPerEntity);
@@ -609,7 +616,7 @@ private:
     Kokkos::deep_copy(get_execution_space(), deviceBucketPtrData, hostBucketPtrData);
   }
 
-  void copy_unmodified_buckets(const BucketVector& buckets, FieldDataDeviceViewType<T> destDevView, unsigned numPerEntity)
+  void copy_unmodified_buckets(const BucketVector& buckets, FieldDataDeviceViewType<T, NgpMemSpace> destDevView, unsigned numPerEntity)
   {
     for(unsigned i = 0; i < buckets.size(); i++) {
       unsigned oldBucketId = buckets[i]->get_ngp_field_bucket_id(get_ordinal());
@@ -617,7 +624,7 @@ private:
 
       if(!buckets[i]->get_ngp_field_bucket_is_modified(get_ordinal())) {
         STK_ThrowRequire(deviceData.extent(0) != 0 && deviceSelectedBucketOffset.extent(0) != 0);
-        copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(destDevView, deviceData, oldBucketId, newBucketId, numPerEntity);
+        copy_moved_device_bucket_data<FieldDataDeviceViewType<T, NgpMemSpace>, UnmanagedDevInnerView<T, NgpMemSpace>>(destDevView, deviceData, oldBucketId, newBucketId, numPerEntity);
       }
     }
   }
@@ -682,19 +689,19 @@ private:
 
   void shift_bucket_forward(unsigned oldBucketId, unsigned newBucketId, unsigned numPerEntity)
   {
-    copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(deviceData, deviceData,
-                                                                                        oldBucketId, newBucketId,
-                                                                                        numPerEntity);
+    copy_moved_device_bucket_data<FieldDataDeviceViewType<T, NgpMemSpace>, UnmanagedDevInnerView<T, NgpMemSpace>>(deviceData, deviceData,
+                                                                                                                  oldBucketId, newBucketId,
+                                                                                                                  numPerEntity);
   }
 
   void shift_buckets_backward(const std::vector<BackwardShiftIndices> & backwardShiftList, unsigned numPerEntity)
   {
     for (auto it = backwardShiftList.rbegin(); it != backwardShiftList.rend(); ++it) {
       const BackwardShiftIndices& shiftIndices = *it;
-      copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(deviceData, deviceData,
-                                                                                          shiftIndices.oldIndex,
-                                                                                          shiftIndices.newIndex,
-                                                                                          numPerEntity);
+      copy_moved_device_bucket_data<FieldDataDeviceViewType<T, NgpMemSpace>, UnmanagedDevInnerView<T, NgpMemSpace>>(deviceData, deviceData,
+                                                                                                                    shiftIndices.oldIndex,
+                                                                                                                    shiftIndices.newIndex,
+                                                                                                                    numPerEntity);
     }
   }
 
@@ -784,11 +791,11 @@ private:
     host = Kokkos::create_mirror_view(view);
   }
 
-  friend NgpDebugger<T>;
-  friend const FieldDataDeviceViewType<T> impl::get_device_data<T>(const DeviceField<T>&);
-  friend FieldDataDeviceViewType<T> impl::get_device_data<T>(DeviceField<T>&);
+  friend NgpDebugger<T, NgpMemSpace>;
+  friend const FieldDataDeviceViewType<T, NgpMemSpace> impl::get_device_data<T, NgpMemSpace>(const DeviceField<T, NgpMemSpace>&);
+  friend FieldDataDeviceViewType<T, NgpMemSpace> impl::get_device_data<T, NgpMemSpace>(DeviceField<T, NgpMemSpace>&);
 
-  FieldDataDeviceViewType<T> deviceData;
+  FieldDataDeviceViewType<T, NgpMemSpace> deviceData;
 
   FieldDataPointerHostViewType hostBucketPtrData;
   FieldDataPointerDeviceViewType deviceBucketPtrData;
@@ -814,20 +821,20 @@ private:
   UnsignedViewType deviceFieldBucketsNumComponentsPerEntity;
   UnsignedViewType deviceFieldBucketsMarkedModified;
 
-  NgpDebugger<T> fieldSyncDebugger;
+  NgpDebugger<T, NgpMemSpace> fieldSyncDebugger;
 };
 
 namespace impl {
 
 //not for public consumption. calling this will void your warranty.
-template<typename T>
-const FieldDataDeviceViewType<T> get_device_data(const DeviceField<T>& deviceField)
+template<typename T, typename NgpMemSpace>
+const FieldDataDeviceViewType<T, NgpMemSpace> get_device_data(const DeviceField<T, NgpMemSpace>& deviceField)
 {
   return deviceField.deviceData;
 }
 
-template<typename T>
-FieldDataDeviceViewType<T> get_device_data(DeviceField<T>& deviceField)
+template<typename T, typename NgpMemSpace>
+FieldDataDeviceViewType<T, NgpMemSpace> get_device_data(DeviceField<T, NgpMemSpace>& deviceField)
 {
   return deviceField.deviceData;
 }

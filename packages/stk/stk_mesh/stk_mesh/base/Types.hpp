@@ -116,6 +116,7 @@ struct MeshIndex
   Bucket* bucket;
   unsigned bucket_ordinal;
 
+  STK_FUNCTION
   MeshIndex(Bucket *bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
 };
 

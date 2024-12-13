@@ -97,6 +97,9 @@ struct DeviceBucketT {
   KOKKOS_INLINE_FUNCTION
   ConnectedOrdinals get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
 
+  KOKKOS_INLINE_FUNCTION
+  Permutations get_connected_permutations(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
+
   KOKKOS_FUNCTION
   ConnectedNodes get_nodes(unsigned offsetIntoBucket) const {
     return get_connected_entities(offsetIntoBucket, stk::topology::NODE_RANK);
@@ -136,6 +139,7 @@ struct DeviceBucketT {
   void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
   void initialize_fixed_data_from_host(const stk::mesh::Bucket &bucket);
   void update_entity_data_from_host(const stk::mesh::Bucket &bucket);
+  void update_sparse_connectivity_from_host(const stk::mesh::Bucket &bucket);
 
   void resize_device_views(const stk::mesh::Bucket &bucket);
   std::pair<unsigned, unsigned> scan_entities_for_nodal_connectivity(const stk::mesh::Bucket & bucket);
@@ -145,6 +149,11 @@ struct DeviceBucketT {
   OrdinalViewType m_nodeConnectivityOffsets;
 
   OrdinalViewType m_nodeOrdinals;
+
+  Unsigned2dViewType m_sparseConnectivityOffsets;
+  BucketConnectivityType m_sparseConnectivity;
+  OrdinalViewType m_sparseConnectivityOrdinals;
+  PermutationViewType m_sparseConnectivityPermutations;
 
   PartOrdinalViewType m_partOrdinals;
 
@@ -244,69 +253,39 @@ public:
   }
 
   KOKKOS_FUNCTION
-  ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
+  ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    if (connectedRank == stk::topology::NODE_RANK)
-    {
-      return buckets[rank](entity.bucket_id).get_connected_entities(entity.bucket_ord, connectedRank);
-    }
-  
-    int entityOffset = bucketEntityOffsets[rank](entity.bucket_id) + entity.bucket_ord;
-    int connectivityOffset = entityConnectivityOffset[rank][connectedRank](entityOffset);
-    size_t numConnected = entityConnectivityOffset[rank][connectedRank](entityOffset+1)
-        - connectivityOffset;
-    ConnectedEntities connectedEntities(nullptr, 0);
-    if (numConnected > 0) {
-      int stride = 1;
-      connectedEntities =
-          ConnectedEntities(&(sparseConnectivity[rank][connectedRank](connectivityOffset)), numConnected, stride);
-    }
-    return connectedEntities;
+    return buckets[rank](entityIndex.bucket_id).get_connected_entities(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
-  ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
+  ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex) const
   {
-    return buckets[rank](entity.bucket_id).get_nodes(entity.bucket_ord);
+    return buckets[rank](entityIndex.bucket_id).get_nodes(entityIndex.bucket_ord);
   }
 
   KOKKOS_FUNCTION
-  ConnectedEntities get_edges(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
+  ConnectedEntities get_edges(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex) const
   {
-    return get_connected_entities(rank, entity, stk::topology::EDGE_RANK);
+    return get_connected_entities(rank, entityIndex, stk::topology::EDGE_RANK);
   }
 
   KOKKOS_FUNCTION
-  ConnectedEntities get_faces(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
+  ConnectedEntities get_faces(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex) const
   {
-    return get_connected_entities(rank, entity, stk::topology::FACE_RANK);
+    return get_connected_entities(rank, entityIndex, stk::topology::FACE_RANK);
   }
 
   KOKKOS_FUNCTION
-  ConnectedEntities get_elements(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
+  ConnectedEntities get_elements(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex) const
   {
-    return get_connected_entities(rank, entity, stk::topology::ELEM_RANK);
+    return get_connected_entities(rank, entityIndex, stk::topology::ELEM_RANK);
   }
 
   KOKKOS_FUNCTION
-  ConnectedOrdinals get_connected_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
+  ConnectedOrdinals get_connected_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    if (connectedRank == stk::topology::NODE_RANK) {
-      return buckets[rank](entity.bucket_id).get_connected_ordinals(entity.bucket_ord, connectedRank);
-    }
-  
-    int entityOffset = bucketEntityOffsets[rank](entity.bucket_id) + entity.bucket_ord;
-    int connectivityOffset = entityConnectivityOffset[rank][connectedRank](entityOffset);
-    size_t numConnected = entityConnectivityOffset[rank][connectedRank](entityOffset+1)
-        - connectivityOffset;
-    ConnectedOrdinals connectedOrdinals(nullptr, 0);
-    if (numConnected > 0)
-    {
-      int stride = 1;
-      connectedOrdinals = ConnectedOrdinals(
-          &(sparseConnectivityOrdinals[rank][connectedRank](connectivityOffset)), numConnected, stride);
-    }
-    return connectedOrdinals;
+    return buckets[rank](entityIndex.bucket_id).get_connected_ordinals(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
@@ -334,24 +313,9 @@ public:
   }
 
   KOKKOS_FUNCTION
-  Permutations get_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
+  Permutations get_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    Permutations permutations(nullptr, 0);
-    if (connectedRank == stk::topology::NODE_RANK)
-    {
-      return permutations;
-    }
-  
-    int entityOffset = bucketEntityOffsets[rank](entity.bucket_id) + entity.bucket_ord;
-    int connectivityOffset = entityConnectivityOffset[rank][connectedRank](entityOffset);
-    size_t numConnected = entityConnectivityOffset[rank][connectedRank](entityOffset+1)
-        - connectivityOffset;
-    if (numConnected > 0)
-    {
-      int stride = 1;
-      permutations = Permutations(&(sparsePermutations[rank][connectedRank](connectivityOffset)), numConnected, stride);
-    }
-    return permutations;
+    return buckets[rank](entityIndex.bucket_id).get_connected_permutations(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
@@ -522,12 +486,29 @@ public:
     return m_needSyncToHost;
   }
 
+  template <typename... EntitiesParams, typename... AddPartParams, typename... RemovePartParams>
+  void impl_batch_change_entity_parts(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
+                                 const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
+                                 const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
+  {
+    using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
+    using AddPartOrdinalsMemorySpace = typename std::remove_reference<decltype(addPartOrdinals)>::type::memory_space;
+    using RemovePartOrdinalsMemorySpace = typename std::remove_reference<decltype(removePartOrdinals)>::type::memory_space;
+
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
+                  "The memory space of the 'entities' View is inaccessible from the DeviceMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, AddPartOrdinalsMemorySpace>::accessible,
+                  "The memory space of the 'addPartOrdinals' View is inaccessible from the DeviceMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
+                  "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
+
+    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::HostMirror;
+    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::HostMirror;
+    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::HostMirror;
+  }
+
 private:
   void set_entity_keys(const stk::mesh::BulkData& bulk_in);
-
-  void set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in);
-
-  void fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in);
 
   KOKKOS_FUNCTION
   bool is_last_bucket_reference(unsigned rank = stk::topology::NODE_RANK) const
@@ -557,8 +538,6 @@ private:
 
   void copy_mesh_indices_to_device();
 
-  void copy_bucket_entity_offsets_to_device();
-
   void copy_sparse_connectivities_to_device();
 
   void copy_volatile_fast_shared_comm_map_to_device();
@@ -578,11 +557,6 @@ private:
   HostMeshIndexType hostMeshIndices;
   MeshIndexType deviceMeshIndices;
 
-  BucketEntityOffsetsViewType bucketEntityOffsets[stk::topology::NUM_RANKS];
-  UnsignedViewType entityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  EntityViewType sparseConnectivity[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  OrdinalViewType sparseConnectivityOrdinals[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  PermutationViewType sparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
   UnsignedViewType volatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
   FastSharedCommMapViewType volatileFastSharedCommMap[stk::topology::NUM_RANKS];
 };
@@ -599,9 +573,10 @@ DeviceBucketT<BucketNgpMemSpace>::get_connected_entities(unsigned offsetIntoBuck
     const size_t nodeOffset = m_nodeConnectivityOffsets(offsetIntoBucket);
     return ConnectedEntities(&m_nodeConnectivity(nodeOffset), numNodes, 1);
   }
-  STK_NGP_ThrowAssert(m_owningMesh != nullptr);
-  stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
-  return m_owningMesh->get_connected_entities(entity_rank(), meshIndex, connectedRank);
+
+  const unsigned offset = m_sparseConnectivityOffsets(connectedRank,offsetIntoBucket);
+  const unsigned length = m_sparseConnectivityOffsets(connectedRank,offsetIntoBucket+1) - offset;
+  return ConnectedEntities(&m_sparseConnectivity(offset), length, 1);
 }
 
 template<typename BucketNgpMemSpace>
@@ -613,10 +588,26 @@ DeviceBucketT<BucketNgpMemSpace>::get_connected_ordinals(unsigned offsetIntoBuck
     const unsigned numNodes = m_nodeConnectivityOffsets(offsetIntoBucket+1)-m_nodeConnectivityOffsets(offsetIntoBucket);
     return ConnectedOrdinals(m_nodeOrdinals.data(), numNodes, 1);
   }
-  STK_NGP_ThrowAssert(m_owningMesh != nullptr);
-  stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
-  return m_owningMesh->get_connected_ordinals(entity_rank(), meshIndex, connectedRank);
+
+  const unsigned offset = m_sparseConnectivityOffsets(connectedRank,offsetIntoBucket);
+  const unsigned length = m_sparseConnectivityOffsets(connectedRank,offsetIntoBucket+1) - offset;
+  return ConnectedOrdinals(&m_sparseConnectivityOrdinals(offset), length, 1);
 }
+
+template<typename BucketNgpMemSpace>
+KOKKOS_INLINE_FUNCTION
+typename DeviceBucketT<BucketNgpMemSpace>::Permutations
+DeviceBucketT<BucketNgpMemSpace>::get_connected_permutations(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
+  STK_NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
+  const unsigned offset = m_sparseConnectivityOffsets(connectedRank,offsetIntoBucket);
+  const unsigned length = m_sparseConnectivityOffsets(connectedRank,offsetIntoBucket+1) - offset;
+  if (m_sparseConnectivityPermutations.size() <= offset) {
+    return Permutations(nullptr, 0);
+  }
+
+  return Permutations(&m_sparseConnectivityPermutations(offset), length, 1);
+}
+
 template<typename BucketNgpMemSpace>
 void DeviceBucketT<BucketNgpMemSpace>::initialize_bucket_attributes(const stk::mesh::Bucket &bucket)
 {
@@ -660,32 +651,36 @@ void DeviceBucketT<BucketNgpMemSpace>::resize_device_views(const stk::mesh::Buck
 {
   Kokkos::Profiling::pushRegion("resize_device_views()");
 
+  Kokkos::Profiling::pushRegion("set node ordinals");
+
   const auto [maxNodesPerEntity, totalNumConnectedNodes] = scan_entities_for_nodal_connectivity(bucket);
 
   if (m_nodeOrdinals.size() != maxNodesPerEntity) {
-    m_nodeOrdinals = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOrdinals"),
-                                     static_cast<size_t>(maxNodesPerEntity));
+    Kokkos::resize(Kokkos::WithoutInitializing, m_nodeOrdinals, static_cast<size_t>(maxNodesPerEntity));
     OrdinalViewType& nodeOrds = m_nodeOrdinals; //local var to avoid implicit this capture
     Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace>(0, maxNodesPerEntity),
       KOKKOS_LAMBDA(const int i) {
         nodeOrds(i) = static_cast<stk::mesh::ConnectivityOrdinal>(i);
       });
   }
+  Kokkos::Profiling::popRegion();
 
+  Kokkos::Profiling::pushRegion("bucket entities");
   if (m_entities.size() != m_bucketCapacity) {
-    m_entities = EntityViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketEntities"), m_bucketCapacity);
+    Kokkos::resize(Kokkos::WithoutInitializing, m_entities, m_bucketCapacity);
     STK_ThrowRequireMsg(m_bucketCapacity > 0, "bucket capacity must be greater than 0");
   }
+  Kokkos::Profiling::popRegion();
 
+  Kokkos::Profiling::pushRegion("nodal connectivity");
   if (m_nodeConnectivity.size() != totalNumConnectedNodes) {
-    m_nodeConnectivity = BucketConnectivityType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                                                   "NodeConnectivity"), totalNumConnectedNodes);
+    Kokkos::resize(Kokkos::WithoutInitializing, m_nodeConnectivity, totalNumConnectedNodes);
   }
 
   if (m_nodeConnectivityOffsets.size() != m_bucketCapacity+1) {
-    m_nodeConnectivityOffsets = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                                                   "NodeConnectivityOffsets"), m_bucketCapacity+1);
+    Kokkos::resize(Kokkos::WithoutInitializing, m_nodeConnectivityOffsets, m_bucketCapacity+1);
   }
+  Kokkos::Profiling::popRegion();
   Kokkos::Profiling::popRegion();
 }
 
@@ -725,6 +720,87 @@ void DeviceBucketT<BucketNgpMemSpace>::update_entity_data_from_host(const stk::m
   Kokkos::Profiling::popRegion();
 }
 
+constexpr double RESIZE_FACTOR = 0.05;
+
+template <typename DEVICE_VIEW, typename HOST_VIEW>
+inline void reallocate_views(DEVICE_VIEW & deviceView, HOST_VIEW & hostView, size_t requiredSize, double resizeFactor = 0.0)
+{
+  const size_t currentSize = deviceView.extent(0);
+  const size_t shrinkThreshold = currentSize - static_cast<size_t>(2*resizeFactor*currentSize);
+  const bool needGrowth = (requiredSize > currentSize);
+  const bool needShrink = (requiredSize < shrinkThreshold);
+
+  if (needGrowth || needShrink) {
+    const size_t newSize = requiredSize + static_cast<size_t>(resizeFactor*requiredSize);
+    deviceView = DEVICE_VIEW(Kokkos::view_alloc(Kokkos::WithoutInitializing, deviceView.label()), newSize);
+    hostView = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, deviceView);
+  }
+}
+
+template<typename BucketNgpMemSpace>
+void DeviceBucketT<BucketNgpMemSpace>::update_sparse_connectivity_from_host(const stk::mesh::Bucket &bucket)
+{
+  Kokkos::Profiling::pushRegion("update_sparse_connectivity_from_host()");
+
+  Unsigned2dViewType::HostMirror hostConnectivityOffsets("hostConnectivityOffsets", 0,0); 
+  Kokkos::resize(Kokkos::WithoutInitializing, hostConnectivityOffsets, stk::topology::NUM_RANKS, bucket.size()+1);
+  Kokkos::resize(Kokkos::WithoutInitializing, m_sparseConnectivityOffsets, stk::topology::NUM_RANKS, bucket.size()+1);
+  BucketConnectivityType::HostMirror hostConnectivity("hostConnectivity", 0);
+  OrdinalViewType::HostMirror hostConnectivityOrdinals("hostConnectivityOrdinals", 0);
+  PermutationViewType::HostMirror hostConnectivityPermutations("hostConnectivityPermutations", 0);
+
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bucket.mesh().mesh_meta_data().entity_rank_count());
+
+  unsigned offset = 0;
+  for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; ++connectedRank) {
+    for(unsigned i=0; i<bucket.size(); ++i) {
+      hostConnectivityOffsets(connectedRank,i) = offset;
+      offset += bucket.num_connectivity(i, connectedRank);
+    }
+    hostConnectivityOffsets(connectedRank,bucket.size()) = offset;
+  }
+
+  Kokkos::resize(Kokkos::WithoutInitializing, hostConnectivity, offset);
+  Kokkos::resize(Kokkos::WithoutInitializing, m_sparseConnectivity, offset);
+  Kokkos::resize(Kokkos::WithoutInitializing, hostConnectivityOrdinals, offset);
+  Kokkos::resize(Kokkos::WithoutInitializing, m_sparseConnectivityOrdinals, offset);
+  const bool hasPermutations = bucket.has_permutation(stk::topology::EDGE_RANK)
+                            || bucket.has_permutation(stk::topology::FACE_RANK)
+                            || bucket.has_permutation(stk::topology::ELEM_RANK);
+  if (hasPermutations) {
+    Kokkos::resize(Kokkos::WithoutInitializing, hostConnectivityPermutations, offset);
+    Kokkos::resize(Kokkos::WithoutInitializing, m_sparseConnectivityPermutations, offset);
+  }
+
+  offset = 0;
+  for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; ++connectedRank) {
+    for(unsigned i=0; i<bucket.size(); ++i) {
+      const unsigned numConn = bucket.num_connectivity(i, connectedRank);
+      const Entity* conn = bucket.begin(i, connectedRank);
+      const ConnectivityOrdinal* ords = bucket.begin_ordinals(i, connectedRank);
+      const Permutation* perms = bucket.begin_permutations(i, connectedRank);
+
+      for(unsigned nc=0; nc<numConn; ++nc) {
+        hostConnectivity(offset+nc) = conn[nc];
+        hostConnectivityOrdinals(offset+nc) = ords[nc];
+        if (hasPermutations) {
+          hostConnectivityPermutations(offset+nc) = perms[nc];
+        }
+      }
+      offset += numConn;
+    }
+  }
+
+  Kokkos::deep_copy(m_sparseConnectivityOffsets, hostConnectivityOffsets);
+  Kokkos::deep_copy(m_sparseConnectivity, hostConnectivity);
+  Kokkos::deep_copy(m_sparseConnectivityOrdinals, hostConnectivityOrdinals);
+  if (hasPermutations) {
+    Kokkos::deep_copy(m_sparseConnectivityPermutations, hostConnectivityPermutations);
+  }
+
+  Kokkos::Profiling::popRegion();
+}
+
 template<typename NgpMemSpace>
 void DeviceMeshT<NgpMemSpace>::update_mesh()
 {
@@ -738,15 +814,23 @@ void DeviceMeshT<NgpMemSpace>::update_mesh()
   const bool anyChanges = fill_buckets(*bulk);
 
   if (anyChanges) {
+    Kokkos::Profiling::pushRegion("anyChanges stuff");
+
+    Kokkos::Profiling::pushRegion("entity-keys");
     set_entity_keys(*bulk);
     copy_entity_keys_to_device();
-    set_bucket_entity_offsets(*bulk);
-    copy_bucket_entity_offsets_to_device();
-    fill_sparse_connectivities(*bulk);
-    copy_sparse_connectivities_to_device();
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("volatile-fast-shared-comm-map");
     copy_volatile_fast_shared_comm_map_to_device();
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("mesh-indices");
     fill_mesh_indices(*bulk);
     copy_mesh_indices_to_device();
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::popRegion();
   }
 
   synchronizedCount = bulk->synchronized_count();
@@ -780,6 +864,7 @@ bool DeviceMeshT<NgpMemSpace>::fill_buckets(const stk::mesh::BulkData& bulk_in)
         bucketBuffer[iBucket].initialize_bucket_attributes(stkBucket);
         bucketBuffer[iBucket].initialize_fixed_data_from_host(stkBucket);
         bucketBuffer[iBucket].update_entity_data_from_host(stkBucket);
+        bucketBuffer[iBucket].update_sparse_connectivity_from_host(stkBucket);
         anyBucketChanges = true;
         Kokkos::Profiling::popRegion();
       }
@@ -789,6 +874,7 @@ bool DeviceMeshT<NgpMemSpace>::fill_buckets(const stk::mesh::BulkData& bulk_in)
         new (&bucketBuffer[iBucket]) DeviceBucketT(buckets[rank][ngpBucketId]);
         if (stkBucket.is_modified()) {
           bucketBuffer[iBucket].update_entity_data_from_host(stkBucket);
+          bucketBuffer[iBucket].update_sparse_connectivity_from_host(stkBucket);
           anyBucketChanges = true;
         }
         bucketBuffer[iBucket].m_bucketId = stkBucket.bucket_id();
@@ -811,23 +897,6 @@ bool DeviceMeshT<NgpMemSpace>::fill_buckets(const stk::mesh::BulkData& bulk_in)
   return anyBucketChanges;
 }
 
-constexpr double RESIZE_FACTOR = 0.05;
-
-template <typename DEVICE_VIEW, typename HOST_VIEW>
-inline void reallocate_views(DEVICE_VIEW & deviceView, HOST_VIEW & hostView, size_t requiredSize, double resizeFactor = 0.0)
-{
-  const size_t currentSize = deviceView.extent(0);
-  const size_t shrinkThreshold = currentSize - static_cast<size_t>(2*resizeFactor*currentSize);
-  const bool needGrowth = (requiredSize > currentSize);
-  const bool needShrink = (requiredSize < shrinkThreshold);
-
-  if (needGrowth || needShrink) {
-    const size_t newSize = requiredSize + static_cast<size_t>(resizeFactor*requiredSize);
-    deviceView = DEVICE_VIEW(Kokkos::view_alloc(Kokkos::WithoutInitializing, deviceView.label()), newSize);
-    hostView = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, deviceView);
-  }
-}
-
 template<typename NgpMemSpace>
 void DeviceMeshT<NgpMemSpace>::set_entity_keys(const stk::mesh::BulkData& bulk_in)
 {
@@ -843,119 +912,6 @@ void DeviceMeshT<NgpMemSpace>::set_entity_keys(const stk::mesh::BulkData& bulk_i
       for (unsigned j = 0; j < bucket.size(); ++j) {
         stk::mesh::Entity entity = bucket[j];
         hostEntityKeys[entity.local_offset()] = bulk_in.entity_key(entity);
-      }
-    }
-  }
-}
-
-template<typename NgpMemSpace>
-void DeviceMeshT<NgpMemSpace>::set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
-{
-  auto& hostBucketEntityOffsets = deviceMeshHostData->hostBucketEntityOffsets;
-
-  for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
-  {
-    const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
-    reallocate_views(bucketEntityOffsets[rank], hostBucketEntityOffsets[rank], stkBuckets.size()+1, RESIZE_FACTOR);
-
-    int bucketOffsetIntoEntities = 0;
-    for (unsigned i = 0; i < stkBuckets.size(); ++i)
-    {
-      hostBucketEntityOffsets[rank](i) = bucketOffsetIntoEntities;
-      bucketOffsetIntoEntities += stkBuckets[i]->size();
-    }
-    for (unsigned i = stkBuckets.size(); i < hostBucketEntityOffsets[rank].extent(0); ++i) {
-      hostBucketEntityOffsets[rank](i) = bucketOffsetIntoEntities;
-    }
-  }
-}
-
-template<typename NgpMemSpace>
-void DeviceMeshT<NgpMemSpace>::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
-{
-  auto& hostEntityConnectivityOffset = deviceMeshHostData->hostEntityConnectivityOffset;
-  auto& hostBucketEntityOffsets = deviceMeshHostData->hostBucketEntityOffsets;
-  auto& hostSparseConnectivity = deviceMeshHostData->hostSparseConnectivity;
-  auto& hostSparseConnectivityOrdinals = deviceMeshHostData->hostSparseConnectivityOrdinals;
-  auto& hostSparsePermutations = deviceMeshHostData->hostSparsePermutations;
-
-  unsigned totalNumConnectedEntities[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
-  unsigned totalNumPermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
-
-  for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
-  {
-    const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
-    for(unsigned iBucket=0; iBucket<stkBuckets.size(); ++iBucket)
-    {
-      const stk::mesh::Bucket& stkBucket = *stkBuckets[iBucket];
-      for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
-      {
-        const bool hasPermutation = stkBucket.has_permutation(connectedRank);
-        for(unsigned iEntity=0; iEntity<stkBucket.size(); ++iEntity)
-        {
-          const unsigned numConnected = stkBucket.num_connectivity(iEntity, connectedRank);
-          totalNumConnectedEntities[rank][connectedRank] += numConnected;
-          totalNumPermutations[rank][connectedRank] += hasPermutation ? numConnected : 0;
-        }
-      }
-    }
-
-    for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
-    {
-      size_t numEntities = hostBucketEntityOffsets[rank](hostBucketEntityOffsets[rank].size()-1);
-      reallocate_views(entityConnectivityOffset[rank][connectedRank], hostEntityConnectivityOffset[rank][connectedRank],
-                       numEntities+1, RESIZE_FACTOR);
-
-      reallocate_views(sparseConnectivity[rank][connectedRank], hostSparseConnectivity[rank][connectedRank],
-                       totalNumConnectedEntities[rank][connectedRank], RESIZE_FACTOR);
-
-      reallocate_views(sparseConnectivityOrdinals[rank][connectedRank], hostSparseConnectivityOrdinals[rank][connectedRank],
-                       totalNumConnectedEntities[rank][connectedRank], RESIZE_FACTOR);
-
-      reallocate_views(sparsePermutations[rank][connectedRank], hostSparsePermutations[rank][connectedRank],
-                       totalNumPermutations[rank][connectedRank], RESIZE_FACTOR);
-    }
-
-    int entriesOffsets[stk::topology::NUM_RANKS] = {0};
-    unsigned myOffset = 0;
-    for(unsigned iBucket=0; iBucket<stkBuckets.size(); ++iBucket)
-    {
-      const stk::mesh::Bucket& stkBucket = *stkBuckets[iBucket];
-      int bucketEntityOffset = hostBucketEntityOffsets[rank](stkBucket.bucket_id());
-      for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
-      {
-        const bool hasPermutation = stkBucket.has_permutation(connectedRank);
-        for(unsigned iEntity=0; iEntity<stkBucket.size(); ++iEntity)
-        {
-          myOffset = bucketEntityOffset + iEntity;
-          unsigned numConnected = stkBucket.num_connectivity(iEntity, connectedRank);
-
-          int entriesOffset = entriesOffsets[connectedRank];
-          hostEntityConnectivityOffset[rank][connectedRank](myOffset) = entriesOffset;
-
-          if (numConnected > 0) {
-
-            const stk::mesh::Entity* connectedEntities = stkBucket.begin(iEntity, connectedRank);
-            const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(iEntity, connectedRank);
-            const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(iEntity, connectedRank) : nullptr;
-            for(unsigned i=0; i<numConnected; ++i)
-            {
-              hostSparseConnectivity[rank][connectedRank](entriesOffset+i) = connectedEntities[i];
-              hostSparseConnectivityOrdinals[rank][connectedRank](entriesOffset+i) = connectedOrdinals[i];
-              if (hasPermutation) {
-                hostSparsePermutations[rank][connectedRank](entriesOffset+i) = permutations[i];
-              }
-            }
-
-            entriesOffsets[connectedRank] = entriesOffset + numConnected;
-          }
-        }
-      }
-    }
-    for (stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
-    {
-      for (unsigned i = myOffset+1; i < hostEntityConnectivityOffset[rank][connectedRank].extent(0); ++i) {
-        hostEntityConnectivityOffset[rank][connectedRank](i) = entriesOffsets[connectedRank];
       }
     }
   }
@@ -997,37 +953,6 @@ void DeviceMeshT<NgpMemSpace>::copy_mesh_indices_to_device()
   Kokkos::View<stk::mesh::FastMeshIndex*, NgpMemSpace> nonconst_device_mesh_indices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_dev_mesh_indices"), length);
   Kokkos::deep_copy(nonconst_device_mesh_indices, hostMeshIndices);
   deviceMeshIndices = nonconst_device_mesh_indices;
-}
-
-template<typename NgpMemSpace>
-void DeviceMeshT<NgpMemSpace>::copy_bucket_entity_offsets_to_device()
-{
-  auto& hostBucketEntityOffsets = deviceMeshHostData->hostBucketEntityOffsets;
-
-  for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
-  {
-    Kokkos::deep_copy(bucketEntityOffsets[rank], hostBucketEntityOffsets[rank]);
-  }
-}
-
-template<typename NgpMemSpace>
-void DeviceMeshT<NgpMemSpace>::copy_sparse_connectivities_to_device()
-{
-  auto& hostEntityConnectivityOffset = deviceMeshHostData->hostEntityConnectivityOffset;
-  auto& hostSparseConnectivity = deviceMeshHostData->hostSparseConnectivity;
-  auto& hostSparseConnectivityOrdinals = deviceMeshHostData->hostSparseConnectivityOrdinals;
-  auto& hostSparsePermutations = deviceMeshHostData->hostSparsePermutations;
-
-  for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
-  {
-    for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
-    {
-      Kokkos::deep_copy(entityConnectivityOffset[rank][connectedRank], hostEntityConnectivityOffset[rank][connectedRank]);
-      Kokkos::deep_copy(sparseConnectivity[rank][connectedRank], hostSparseConnectivity[rank][connectedRank]);
-      Kokkos::deep_copy(sparseConnectivityOrdinals[rank][connectedRank], hostSparseConnectivityOrdinals[rank][connectedRank]);
-      Kokkos::deep_copy(sparsePermutations[rank][connectedRank], hostSparsePermutations[rank][connectedRank]);
-    }
-  }
 }
 
 template<typename NgpMemSpace>

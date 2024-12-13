@@ -441,4 +441,33 @@ TEST_F(NgpBatchChangeEntityParts, failedHostAccessAfterDeviceMeshMod)
   }
 }
 
+TEST_F(NgpBatchChangeEntityParts, impl_addPartToNode_ngpDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  build_empty_mesh(1, 1);
+
+  stk::mesh::Part & part1 = m_meta->declare_part_with_topology("part1", stk::topology::NODE);
+  stk::mesh::Part & part2 = m_meta->declare_part_with_topology("part2", stk::topology::NODE);
+  const unsigned nodeId = 1;
+  const stk::mesh::Entity node1 = create_node(*m_bulk, nodeId, {&part1});
+  check_bucket_layout(*m_bulk, {{{"part1"}, {nodeId}}}, stk::topology::NODE_RANK);
+
+  DeviceEntitiesType entities("deviceEntities", 1);
+  DevicePartOrdinalsType addPartOrdinals("deviceAddParts", 1);
+  DevicePartOrdinalsType removePartOrdinals("deviceRemoveParts", 0);
+
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+  fill_device_views_add_remove_part_from_node(entities, addPartOrdinals, removePartOrdinals, ngpMesh, 
+                                              node1, &part2, nullptr);
+
+  ngpMesh.impl_batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+//  confirm_host_mesh_is_not_synchronized_from_device(ngpMesh);
+//
+//  ngpMesh.sync_to_host();
+//  confirm_host_mesh_is_synchronized_from_device(ngpMesh);
+//
+//  check_bucket_layout(*m_bulk, {{{"part1", "part2"}, {nodeId}}}, stk::topology::NODE_RANK);
+}
+
 }  // namespace

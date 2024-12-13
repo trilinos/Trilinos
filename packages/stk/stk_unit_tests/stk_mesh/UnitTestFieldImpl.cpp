@@ -116,9 +116,16 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   //------------------------------
   // Test for correctness of vector of declared fields.
-  ASSERT_EQ(7u,  allocated_fields.size());
-  ASSERT_TRUE( f2 == allocated_fields[0] );
-  ASSERT_TRUE( nodeField == allocated_fields[1] );
+  if (meta_data.is_field_sync_debugger_enabled()) {
+    ASSERT_EQ(14u,  allocated_fields.size());
+    ASSERT_TRUE( f2 == allocated_fields[0] );
+    ASSERT_TRUE( nodeField == allocated_fields[2] );
+  }
+  else {
+    ASSERT_EQ(7u,  allocated_fields.size());
+    ASSERT_TRUE( f2 == allocated_fields[0] );
+    ASSERT_TRUE( nodeField == allocated_fields[1] );
+  }
 
   //------------------------------
   // Test for correctness of field internal state access:

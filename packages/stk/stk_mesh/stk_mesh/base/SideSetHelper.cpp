@@ -473,11 +473,11 @@ void SideSetHelper::add_sideset_entry_for_element_selected_by_sidesets(Entity en
 {
   if(mesh.bucket_ptr(entity) == nullptr) { return; }
 
-  const unsigned numSides = mesh.num_sides(entity);
+  const unsigned numSides = stk::mesh::num_sides(mesh, entity);
 
   if(sidesetsAndSelectors.size() > 0 && mesh.entity_rank(entity) == stk::topology::ELEM_RANK && numSides > 0) {
-    const stk::mesh::ConnectivityOrdinal* ordinals = mesh.begin_ordinals(entity, mesh.mesh_meta_data().side_rank());
-    const stk::mesh::Entity* sides = mesh.begin(entity, mesh.mesh_meta_data().side_rank());
+    const std::vector<stk::mesh::ConnectivityOrdinal> ordinals = stk::mesh::get_side_ordinals(mesh, entity);
+    const stk::mesh::EntityVector sides = stk::mesh::get_sides(mesh, entity);
 
     stk::mesh::SideSetEntry entry(entity);
 

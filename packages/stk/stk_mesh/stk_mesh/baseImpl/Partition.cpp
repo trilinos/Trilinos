@@ -326,7 +326,7 @@ stk::mesh::FieldVector get_fields_for_bucket(const stk::mesh::BulkData& mesh,
 
 void Partition::sort(const EntitySorterBase& sorter)
 {
-  std::vector<unsigned> partition_key = get_legacy_partition_id();
+  const std::vector<unsigned>& partition_key = get_legacy_partition_id();
 
   std::vector<Entity> entities(m_size);
 
@@ -540,7 +540,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
   clear_pending_removes_by_filling_from_end();
 
   if (no_buckets()) {
-    std::vector<unsigned> partition_key = get_legacy_partition_id();
+    const std::vector<unsigned>& partition_key = get_legacy_partition_id();
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
                                                    m_repository->get_initial_bucket_capacity(),
                                                    m_repository->get_maximum_bucket_capacity());
@@ -554,7 +554,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
 
   if (bucket->size() == bucket->capacity()) {
     if (bucket->size() == m_repository->get_maximum_bucket_capacity()) {
-      std::vector<unsigned> partition_key = get_legacy_partition_id();
+      const std::vector<unsigned>& partition_key = get_legacy_partition_id();
       bucket = m_repository->allocate_bucket(m_rank, partition_key,
                                              m_repository->get_initial_bucket_capacity(),
                                              m_repository->get_maximum_bucket_capacity());

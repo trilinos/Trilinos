@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,34 +30,44 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
 
+#include <gtest/gtest.h>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
+#include <stk_io/FillMesh.hpp>
+#include <stk_search/LocalCoarseSearch.hpp>
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
+#include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
+#include <stk_unit_test_utils/getOption.h>
 
-#ifndef  STK_COPYSEARCHBASE_HPP
-#define  STK_COPYSEARCHBASE_HPP
+namespace
+{
 
-#include <set>
-#include <vector>
+TEST(StkSearch, NGP_coarse_search_mesh_elem_boxes_MORTON)
+{
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
 
-#include "TransferCopyByIdMeshAdapter.hpp"
+  stk::mesh::MeshBuilder builder(comm);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+ 
+  stk::io::fill_mesh("generated:1x9x19|sideset:xXyYzZ", *bulkPtr);
+ 
+  Kokkos::View<FloatBoxIdent*, ExecSpace> elemBoxes =
+      createBoundingBoxesForEntities<FloatBoxIdent>(*bulkPtr, stk::topology::ELEM_RANK);
+  Kokkos::View<FloatBoxIdent*, ExecSpace> faceBoxes =
+      createBoundingBoxesForEntities<FloatBoxIdent>(*bulkPtr, stk::topology::FACE_RANK);
 
-namespace stk {
-namespace transfer {
+  std::cout<<"Num elem-boxes: "<<elemBoxes.size()<<", num face-boxes: "<<faceBoxes.size()<<std::endl;
 
-class SearchById {
-public:
-  using Mesh_ID = TransferCopyByIdMeshAdapter::Mesh_ID;
-  using KeyToTargetProcessor = std::vector<std::pair<Mesh_ID, int>>;
-  using MeshIDSet = std::set<Mesh_ID>;
+  stk::search::SearchMethod searchMethod = stk::search::MORTON_LBVH;
+  Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
+  stk::search::local_coarse_search(elemBoxes, faceBoxes, searchMethod, searchResults, ExecSpace{});
 
-  virtual ~SearchById() = default;
-  virtual void intialize(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb) =0;
-  virtual void do_search(const TransferCopyByIdMeshAdapter & mesha,
-                         const TransferCopyByIdMeshAdapter & meshb,
-                         KeyToTargetProcessor & key_to_target_processor) =0;
-  virtual const MeshIDSet & get_remote_keys() const =0;
-};
+  const size_t expectedSize = 2910;
+  EXPECT_EQ(expectedSize, searchResults.size())<<"expected results size: "<<expectedSize<<", actual results size: "<<searchResults.size();
+}
 
-}  } // namespace transfer stk
-
-#endif //  STK_COPYSEARCHBASE_HPP
+}
