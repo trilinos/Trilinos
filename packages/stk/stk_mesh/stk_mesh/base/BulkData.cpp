@@ -859,12 +859,13 @@ Entity BulkData::declare_element_side_with_id(const stk::mesh::EntityId globalSi
         }
     }
     else {
-        EntityKey sideKey(mesh_meta_data().side_rank(), globalSideId);
+        stk::topology sideTop = bucket(elem).topology().side_topology(sideOrd);
+        EntityKey sideKey(sideTop.rank(), globalSideId);
+
         std::pair<Entity,bool> result = internal_get_or_create_entity_with_notification(sideKey);
         side = result.first;
         const bool newlyCreated = result.second;
 
-        stk::topology sideTop = bucket(elem).topology().side_topology(sideOrd);
         if (newlyCreated) {
           PARTVECTOR allParts = add_root_topology_part(parts, mesh_meta_data().get_topology_root_part(sideTop));
           allParts.push_back(&mesh_meta_data().locally_owned_part());
@@ -4118,12 +4119,6 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
 
     m_meshModification.get_deleted_entity_cache().update_deleted_entities_container();
 
-    for (FieldBase * stkField : mesh_meta_data().get_fields()) {
-      if (stkField->has_ngp_field()) {
-        impl::get_ngp_field(*stkField)->debug_modification_end(synchronized_count());
-      }
-    }
-
     for(SelectorBucketMap& selectorBucketMap : m_selector_to_buckets_maps) {
       for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end(); itr != end; ++itr) {
         if (itr->second.empty()) {
@@ -4136,6 +4131,14 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
     }
 
     notify_finished_mod_end();
+
+    if (mesh_meta_data().is_field_sync_debugger_enabled()) {
+      for (FieldBase * stkField : mesh_meta_data().get_fields()) {
+        if (stkField->has_ngp_field()) {
+          impl::get_ngp_field(*stkField)->debug_modification_end(synchronized_count());
+        }
+      }
+    }
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, ModEndOptimizationFlag opt, const stk::mesh::Selector& selectedToSkin,
@@ -4807,8 +4810,8 @@ void BulkData::internal_change_bucket_parts_without_propagating_to_downward_conn
     bucket->reset_bucket_parts(newBucketPartList);
     originalPartition->reset_partition_key(bucket->key_vector());
   } else {
-    if(impl::partition_key_less(originalPartition->key(), partition->key()) ||
-       impl::partition_key_less(partition->key(), originalPartition->key()) ) {
+    if(originalPartition->get_legacy_partition_id() < partition->get_legacy_partition_id() ||
+       partition->get_legacy_partition_id() < originalPartition->get_legacy_partition_id()) {
 
       originalPartition->remove_bucket(bucket);
       bucket->reset_bucket_parts(newBucketPartList);
@@ -5573,7 +5576,14 @@ void BulkData::de_induce_parts_from_nodes(const stk::mesh::EntityVector & deacti
 
 unsigned BulkData::num_sides(Entity entity) const
 {
+  if (bucket(entity).topology().has_mixed_rank_sides()) {
+    auto num_connected_edges = num_connectivity(entity, stk::topology::EDGE_RANK);
+    auto num_connected_faces = num_connectivity(entity, stk::topology::FACE_RANK);
+
+    return num_connected_edges + num_connected_faces;
+  } else {
     return num_connectivity(entity, mesh_meta_data().side_rank());
+  }
 }
 
 void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)

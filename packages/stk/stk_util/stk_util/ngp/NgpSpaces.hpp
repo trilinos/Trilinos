@@ -72,6 +72,8 @@ using MemSpace = Kokkos::HIPSpace;
 using MemSpace = ExecSpace::memory_space;
 #endif
 
+using HostMemSpace = HostExecSpace::memory_space;
+
 #ifdef KOKKOS_ENABLE_HIP
 template <typename ExecutionSpace>
 using RangePolicy = Kokkos::RangePolicy<ExecutionSpace, Kokkos::LaunchBounds<128, 1>>;

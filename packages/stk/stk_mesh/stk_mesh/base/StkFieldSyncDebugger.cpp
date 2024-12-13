@@ -38,9 +38,60 @@
 #include "MetaData.hpp"
 #include "FieldRestriction.hpp"
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
+#include "stk_util/util/string_utils.hpp"
 
 namespace stk {
 namespace mesh {
+
+const static std::string s_lastFieldModLocationPrefix = "DEBUG_lastFieldModLocation_";
+
+namespace FieldSyncDebugger {
+
+void declare_field(stk::mesh::FieldBase& field)
+{
+  MetaData& meta = field.mesh_meta_data();
+  if (meta.is_field_sync_debugger_enabled()) {
+    if (not stk::string_starts_with(field.name(), s_lastFieldModLocationPrefix)) {
+      meta.declare_field<uint8_t>(field.entity_rank(),
+                                  s_lastFieldModLocationPrefix + field.name(),
+                                  field.number_of_states());
+    }
+  }
+}
+
+void declare_field_restriction(stk::mesh::FieldBase& field, const Part& part,
+                               const unsigned numScalarsPerEntity, const unsigned firstDimension)
+{
+  MetaData& meta = field.mesh_meta_data();
+  if (meta.is_field_sync_debugger_enabled()) {
+    if (not stk::string_starts_with(field.name(), s_lastFieldModLocationPrefix)) {
+      stk::mesh::FieldBase* lastModLocationField = meta.get_field(field.entity_rank(),
+                                                                  s_lastFieldModLocationPrefix + field.name());
+      STK_ThrowRequire(lastModLocationField != nullptr);
+      std::vector<uint8_t> initValue(numScalarsPerEntity, LastModLocation::HOST_OR_DEVICE);
+      meta.declare_field_restriction(*lastModLocationField, part, numScalarsPerEntity, firstDimension,
+                                     initValue.data());
+    }
+  }
+}
+
+void declare_field_restriction(stk::mesh::FieldBase& field, const Selector& selector,
+                               const unsigned numScalarsPerEntity, const unsigned firstDimension)
+{
+  MetaData& meta = field.mesh_meta_data();
+  if (meta.is_field_sync_debugger_enabled()) {
+    if (not stk::string_starts_with(field.name(), s_lastFieldModLocationPrefix)) {
+      stk::mesh::FieldBase* lastModLocationField = meta.get_field(field.entity_rank(),
+                                                                  s_lastFieldModLocationPrefix + field.name());
+      STK_ThrowRequire(lastModLocationField != nullptr);
+      std::vector<uint8_t> initValue(numScalarsPerEntity, LastModLocation::HOST_OR_DEVICE);
+      meta.declare_field_restriction(*lastModLocationField, selector, numScalarsPerEntity, firstDimension,
+                                     initValue.data());
+    }
+  }
+}
+
+}
 
 StkFieldSyncDebugger::StkFieldSyncDebugger(const FieldBase* stkField)
   : m_stkField(stkField),
@@ -133,7 +184,8 @@ StkFieldSyncDebugger::fill_last_mod_location_field_from_device()
     for (unsigned ordinal = 0; ordinal < bucket->size(); ++ordinal) {
       const Entity & entity = (*bucket)[ordinal];
       const unsigned numComponents = field_scalars_per_entity(lastModLocationField, entity);
-      uint8_t * lastModLocation = reinterpret_cast<uint8_t*>(field_data<FieldBase, EmptyStkFieldSyncDebugger>(lastModLocationField, entity));
+      uint8_t * lastModLocation = reinterpret_cast<uint8_t*>(field_data<FieldBase, EmptyStkFieldSyncDebugger>(lastModLocationField,
+                                                                                                              entity));
       for (unsigned component = 0; component < numComponents; ++component) {
         const unsigned bucketOffset = ngpField.debug_get_bucket_offset(bucket->bucket_id());
         lastModLocation[component] = m_debugFieldLastModification(bucketOffset, ORDER_INDICES(ordinal, component));
@@ -147,30 +199,10 @@ StkFieldSyncDebugger::get_last_mod_location_field() const
 {
   if (m_lastModLocationField == nullptr) {
     STK_ThrowRequire(impl::get_ngp_field(*m_stkField) != nullptr);
-    BulkData & bulk = m_stkField->get_mesh();
-    MetaData & meta = bulk.mesh_meta_data();
-    meta.enable_late_fields();
-    FieldState state = m_stkField->state();
-    FieldBase* fieldWithStateNew = m_stkField->field_state(stk::mesh::StateNew);
-    Field<uint8_t> & lastModLocationField =
-        meta.declare_field<uint8_t>(m_stkField->entity_rank(),
-                                    "DEBUG_lastFieldModLocation_"+fieldWithStateNew->name(),
-                                    m_stkField->number_of_states());
-
-    meta.set_mesh_on_fields(&bulk);
-    const FieldBase::RestrictionVector & fieldRestrictions = m_stkField->restrictions();
-    if (not fieldRestrictions.empty()) {
-      for (const FieldBase::Restriction & restriction : fieldRestrictions) {
-        const unsigned numComponents = restriction.num_scalars_per_entity();
-        std::vector<uint8_t> initLastModLocation(numComponents, LastModLocation::HOST_OR_DEVICE);
-        put_field_on_mesh(lastModLocationField, restriction.selector(), numComponents, initLastModLocation.data());
-      }
-    }
-    else {
-      bulk.reallocate_field_data(lastModLocationField);
-    }
-
-    m_lastModLocationField = lastModLocationField.field_state(state);
+    MetaData& meta = m_stkField->mesh_meta_data();
+    m_lastModLocationField = meta.get_field<uint8_t>(m_stkField->entity_rank(),
+                                                     s_lastFieldModLocationPrefix + m_stkField->name());
+    STK_ThrowRequire(m_lastModLocationField != nullptr);
   }
   return *m_lastModLocationField;
 }

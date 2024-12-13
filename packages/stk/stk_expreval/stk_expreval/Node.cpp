@@ -82,7 +82,11 @@ double& Node::setResult() {
 void
 Node::eval()
 {
-  stk::util::clear_fp_errors();
+  if (m_owner->get_fp_error_behavior() != Eval::FPErrorBehavior::Ignore)
+  {
+    stk::util::clear_fp_errors();
+  }
+
   switch (m_opcode) {
   case OPCODE_STATEMENT: {
     setResult() = m_left->getResult();

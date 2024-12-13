@@ -372,13 +372,12 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
   typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
   const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
-
   Kokkos::parallel_for(teamPolicy,
                        KOKKOS_LAMBDA(const TeamHandleType& team)
                        {
                          const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK,
                          team.league_rank());
-                         unsigned numElems = bucket.size();
+                         const unsigned numElems = bucket.size();
 
                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
                          {
@@ -409,9 +408,8 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
 
 TEST_F(NgpHowTo, loopOverElemFaces)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
-    GTEST_SKIP();
-  }
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
   stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);

@@ -52,7 +52,7 @@ namespace stk {
 namespace mesh {
 
 //==============================================================================
-template <typename T>
+template <typename T, typename NgpMemSpace>
 class EmptyNgpFieldSyncDebugger
 {
 public:
@@ -111,7 +111,7 @@ public:
 };
 
 //==============================================================================
-template <typename T>
+template <typename T, typename NgpMemSpace>
 class NgpFieldSyncDebugger
 {
 public:
@@ -293,8 +293,8 @@ public:
     stk::mesh::Selector fieldSelector(*(ngpField->hostField));
 
     UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceFieldBucketsNumComponentsPerEntity;
-    FieldDataDeviceViewType<T> & localDeviceData = ngpField->deviceData;
-    FieldDataDeviceViewType<T> & localLastFieldValue = lastFieldValue;
+    FieldDataDeviceViewType<T, NgpMemSpace> & localDeviceData = ngpField->deviceData;
+    FieldDataDeviceViewType<T, NgpMemSpace> & localLastFieldValue = lastFieldValue;
     LastFieldModLocationType & localLastFieldModLocation = lastFieldModLocation;
     ScalarUvmType<bool> & localLostDeviceFieldData = lostDeviceFieldData;
     UnsignedViewType & localDebugDeviceSelectedBucketOffset = debugDeviceSelectedBucketOffset;
@@ -349,8 +349,8 @@ public:
     const stk::mesh::BulkData & bulk = *ngpField->hostBulk;
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
     UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceFieldBucketsNumComponentsPerEntity;
-    FieldDataDeviceViewType<T> & localDeviceData = ngpField->deviceData;
-    FieldDataDeviceViewType<T> & localLastFieldValue = lastFieldValue;
+    FieldDataDeviceViewType<T, NgpMemSpace> & localDeviceData = ngpField->deviceData;
+    FieldDataDeviceViewType<T, NgpMemSpace> & localLastFieldValue = lastFieldValue;
     UnsignedViewType & localDebugDeviceSelectedBucketOffset = debugDeviceSelectedBucketOffset;
 
     stk::mesh::for_each_entity_run(ngpMesh, ngpField->rank, modifiedSelector,
@@ -371,8 +371,8 @@ private:
     const stk::mesh::FieldBase & stkField = *ngpField->hostField;
 
     if (buckets.size() != 0) {
-      lastFieldValue = FieldDataDeviceViewType<T>(stkField.name()+"_lastValue", buckets.size(),
-                                                  ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
+      lastFieldValue = FieldDataDeviceViewType<T, NgpMemSpace>(stkField.name()+"_lastValue", buckets.size(),
+                                                               ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
       lastFieldModLocation = LastFieldModLocationType(stkField.name()+"_lastModLocation", buckets.size(),
                                                       ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
     }
@@ -490,7 +490,7 @@ private:
   ScalarUvmType<bool> lostDeviceFieldData;
   ScalarUvmType<bool> anyPotentialDeviceFieldModification;
   LastFieldModLocationType lastFieldModLocation;
-  FieldDataDeviceViewType<T> lastFieldValue;
+  FieldDataDeviceViewType<T, NgpMemSpace> lastFieldValue;
   typename UnsignedViewType::HostMirror debugHostSelectedBucketOffset;
   UnsignedViewType debugDeviceSelectedBucketOffset;
 };

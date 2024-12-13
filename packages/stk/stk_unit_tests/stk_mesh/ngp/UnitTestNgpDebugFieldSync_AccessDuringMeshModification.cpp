@@ -102,7 +102,7 @@ public:
   {
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    stk::mesh::NgpField<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
     stk::mesh::EntityRank rank = ngpField.get_rank();
 
@@ -1372,7 +1372,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   modify_element_part_membership_with_scalar_field_write_using_entity({{2, "Part2", "Part1"}}, stkField, 3.14);
@@ -1392,7 +1392,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   create_element_with_scalar_field_write_using_entity({{3, "Part1"}, {4, "Part1"}}, stkField, 3.14);
@@ -1413,7 +1413,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   delete_element_with_scalar_field_write_using_entity({2}, stkField, 3.14);
@@ -1433,7 +1433,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_M
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   modify_element_part_membership_with_scalar_field_write_using_entity({{2, "Part2", "Part1"}}, stkField, 3.14);
@@ -1459,7 +1459,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   create_element_with_scalar_field_write_using_entity({{3, "Part1"}, {4, "Part1"}}, stkField, 3.14);
@@ -1486,7 +1486,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   delete_element_with_scalar_field_write_using_entity({2}, stkField, 3.14);
@@ -2111,7 +2111,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Change
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
 
@@ -2133,7 +2133,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Create
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   create_element_with_scalar_field_write_using_entity({{3, "Part1"}, {4, "Part1"}}, stkField, 3.14);
@@ -2155,7 +2155,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Delete
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   delete_element_with_scalar_field_write_using_entity({2}, stkField, 3.14);
@@ -2446,7 +2446,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
 
@@ -2469,7 +2469,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
   const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
@@ -2493,7 +2493,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
-  stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+  stk::mesh::NgpField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
 

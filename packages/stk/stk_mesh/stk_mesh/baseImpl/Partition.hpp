@@ -209,35 +209,26 @@ private:
 
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);
 
-inline
-bool partition_key_less( const unsigned * lhs , const unsigned * rhs )
-{
-// The following (very old) code is clever... So I'm adding some comments.
-//
-// A partition key is an array of unsigned, laid out like this:
-// key[num-part-ordinals, first-part-ordinal, ..., last-part-ordinal]
-
-  if (*lhs == *rhs) { //num-part-ordinals is equal for lhs and rhs...
-    const unsigned * const last_lhs = lhs + *lhs;
-    do {
-      ++lhs ; ++rhs ;
-    } while ( last_lhs != lhs && *lhs == *rhs );
-  }
-  return *lhs < *rhs;
-}
-
 struct PartitionLess {
-  bool operator()( const Partition * lhs_Partition , const unsigned * rhs ) const
-  { return partition_key_less( lhs_Partition->key() , rhs ); }
+  bool operator()( const Partition * lhs_Partition , const OrdinalVector& rhs ) const
+  {
+    return lhs_Partition->get_legacy_partition_id().size() != rhs.size() ?
+           lhs_Partition->get_legacy_partition_id().size() < rhs.size() :
+           lhs_Partition->get_legacy_partition_id() < rhs;
+  }
 
-  bool operator()( const unsigned * lhs , const Partition * rhs_Partition ) const
-  { return partition_key_less( lhs , rhs_Partition->key() ); }
+  bool operator()( const OrdinalVector& lhs , const Partition * rhs_Partition ) const
+  {
+    return lhs.size() != rhs_Partition->get_legacy_partition_id().size() ?
+           lhs.size() < rhs_Partition->get_legacy_partition_id().size() :
+           lhs < rhs_Partition->get_legacy_partition_id();
+  }
 };
 
 inline
 std::vector<Partition*>::iterator
-lower_bound( std::vector<Partition*> & v , const unsigned * key )
-{ return std::lower_bound( v.begin() , v.end() , key , PartitionLess() ); }
+upper_bound( std::vector<Partition*> & v , const OrdinalVector& key )
+{ return std::upper_bound( v.begin() , v.end() , key , PartitionLess() ); }
 
 } // impl
 } // mesh

@@ -245,10 +245,10 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
       set_send_buffers_values();
     }
 
-    void set_recv_buffer_sizes(std::vector< std::vector<T> >& recvLists)
+    void set_recv_buffer_sizes(std::vector< std::vector<T> >& rcvLists)
     {
       for (int src=0; src < commSize; ++src) {
-        recvLists[src].resize(this->get_size(src, myrank));
+        rcvLists[src].resize(this->get_size(src, myrank));
       }
     }
 
@@ -256,10 +256,10 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
 
     virtual int get_num_recvs() override { return commSize; }
 
-    void test_results(std::vector< std::vector<T> >& recvLists)
+    void test_results(std::vector< std::vector<T> >& rcvLists)
     {
       for (int src=0; src < commSize; ++src) {
-        test_recv_vals(recvLists[src], src);
+        test_recv_vals(rcvLists[src], src);
       }
     }
 
@@ -275,9 +275,9 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
       }
     }
 
-    void test_send_ranks(std::vector< std::vector<T> >& sendLists)
+    void test_send_ranks(std::vector< std::vector<T> >& sndLists)
     {
-      test_ranks_inner(sendLists);
+      test_ranks_inner(sndLists);
     }
 
 
@@ -348,22 +348,22 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
       set_send_buffers_values();
     }
 
-    void set_recv_buffer_sizes(std::vector< std::vector<T> >& recvLists)
+    void set_recv_buffer_sizes(std::vector< std::vector<T> >& rcvLists)
     {
       int src1 = (myrank - 1 + commSize) % commSize;
       int src2 = (myrank - 2 + commSize) % commSize;
-      recvLists[src1].resize(this->get_size(src1, myrank));
-      recvLists[src2].resize(this->get_size(src2, myrank));
+      rcvLists[src1].resize(this->get_size(src1, myrank));
+      rcvLists[src2].resize(this->get_size(src2, myrank));
     }
 
     virtual int get_num_sends() override { return std::min(2, commSize); }
 
     virtual int get_num_recvs() override { return std::min(2, commSize); }
 
-    void test_results(std::vector< std::vector<T> >& recvLists)
+    void test_results(std::vector< std::vector<T> >& rcvLists)
     {
       for (int src=0; src < commSize; ++src) {
-        test_recv_vals(recvLists[src], src);
+        test_recv_vals(rcvLists[src], src);
       }
     }
 
@@ -382,10 +382,10 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
       }
     }
 
-    void test_send_ranks(std::vector<std::vector<T>>& sendLists)
+    void test_send_ranks(std::vector<std::vector<T>>& sndLists)
     {
 
-      std::vector<int> sendRanks = get_ranks(sendLists);
+      std::vector<int> sendRanks = get_ranks(sndLists);
 
       int len = sendRanks.size();
       int dest1 = (myrank + 1) % commSize;
@@ -404,9 +404,9 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
       }
     }
 
-    void test_recv_ranks(std::vector<std::vector<T>>& recvLists)
+    void test_recv_ranks(std::vector<std::vector<T>>& rcvLists)
     {
-      auto recvRanks = get_ranks(recvLists);
+      auto recvRanks = get_ranks(rcvLists);
 
       int len = recvRanks.size();
       int dest1 = (myrank - 1 + commSize) % commSize;

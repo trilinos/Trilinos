@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STK_UTIL_DIAG_Timer_hpp
 #define STK_UTIL_DIAG_Timer_hpp
@@ -38,6 +38,7 @@
 #include "stk_util/diag/Option.hpp"             // for OptionMask, OptionMaskParser, OptionMaskP...
 #include "stk_util/diag/TimerMetricTraits.hpp"  // for MetricTraits, MetricsMask, CPUTime (ptr o...
 #include "stk_util/environment/FormatTime.hpp"  // for TimeFormat
+#include "stk_util/util/Marshal.hpp"
 #include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine, ompi_communicator_t
 #include <cstddef>                              // for size_t
 #include <list>                                 // for list
@@ -182,6 +183,7 @@ class Timer
   friend class TimerImpl;
   friend class TimeBlock;
   friend class TimeBlockSynchronized;
+  friend class TimerTester;
   friend void updateRootTimer(Timer);
   friend Timer createRootTimer(const std::string &, const TimerSet &);
   friend void deleteRootTimer(Timer);
@@ -469,6 +471,53 @@ private:
   TimerImpl *    m_timerImpl;      ///< Reference to the actual timer
 };
 
+template <class T>
+Marshal &operator<<(Marshal &mout, const Timer::Metric<T> &t) {
+  mout << t.getAccumulatedLap(false) << t.getAccumulatedLap(true);
+
+  return mout;
+}
+
+inline Marshal &operator<<(Marshal &mout, const Timer &t) {
+  mout << t.getName() << t.getTimerMask() << t.getSubtimerLapCount()
+       << t.getMetric<LapCount>() << t.getMetric<CPUTime>() << t.getMetric<WallTime>()
+       << t.getMetric<MPICount>() << t.getMetric<MPIByteCount>() << t.getMetric<HeapAlloc>();
+
+  mout << t.getTimerList();
+
+  return mout;
+}
+
+/**
+ * @brief Function <b>operator<<</b> writes a timer to the diagnostic stream.
+ *
+ * @param dout      a <b>Writer</b> reference to the diagnostic writer to print
+ *        to.
+ *
+ * @param timer      a <b>Timer::Metric</b> const reference to the timer
+ *        to print.
+ *
+ * @return      a <b>Writer</b> reference to <b>dout</b>.
+ */
+template <class T>
+inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
+  return timer.dump(dout);
+}
+
+/**
+ * Function <b>operator<<</b> writes a timer metric to the diagnostic stream.
+ *
+ * @param dout      a <b>Writer</b> reference to the diagnostic writer to print
+ *        to.
+ *
+ * @param timer      a <b>Timer::Metric</b> const reference to the timer
+ *        to print.
+ *
+ * @return      a <b>Writer</b> reference to <b>dout</b>.
+ */
+inline Writer &operator<<(Writer &dout, const Timer &timer) {
+  return timer.dump(dout);
+}
 
 
 /**
@@ -604,36 +653,6 @@ private:
 };
 
 
-/**
- * @brief Function <b>operator<<</b> writes a timer to the diagnostic stream.
- *
- * @param dout      a <b>Writer</b> reference to the diagnostic writer to print
- *        to.
- *
- * @param timer      a <b>Timer::Metric</b> const reference to the timer
- *        to print.
- *
- * @return      a <b>Writer</b> reference to <b>dout</b>.
- */
-template <class T>
-inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
-  return timer.dump(dout);
-}
-
-/**
- * Function <b>operator<<</b> writes a timer metric to the diagnostic stream.
- *
- * @param dout      a <b>Writer</b> reference to the diagnostic writer to print
- *        to.
- *
- * @param timer      a <b>Timer::Metric</b> const reference to the timer
- *        to print.
- *
- * @return      a <b>Writer</b> reference to <b>dout</b>.
- */
-inline Writer &operator<<(Writer &dout, const Timer &timer) {
-  return timer.dump(dout);
-}
 
 } // namespace diag
 } // namespace stk
@@ -780,14 +799,14 @@ public:
    * @param arg			a <b>std::string</b> const reference to the argument
    *				values.
    */
-  virtual void parseArg(const std::string &name, const std::string &arg) const;  
+  virtual void parseArg(const std::string &name, const std::string &arg) const;
 
   mutable stk::diag::MetricsMask        m_metricsSetMask;
   mutable stk::diag::MetricsMask        m_metricsMask;
 };
 
 
-class SierraRootTimer 
+class SierraRootTimer
 {
   public:
     SierraRootTimer();
@@ -795,7 +814,7 @@ class SierraRootTimer
     stk::diag::Timer & sierraTimer();
 
   private:
-    stk::diag::Timer m_sierraTimer; 
+    stk::diag::Timer m_sierraTimer;
 };
 
 } // namespace Diag

@@ -114,14 +114,18 @@ void run_volume_to_one_test_with_views(const std::string& meshFileName,
     stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
 
     Kokkos::View<BoxIdentProcType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentProcType>(*bulkPtr, stk::topology::ELEM_RANK);
+    auto elemBoxesHost = Kokkos::create_mirror_view(elemBoxes);
+    Kokkos::deep_copy(elemBoxesHost, elemBoxes);
 
     Kokkos::View<BoxIdentProcType *, ExecSpace> supersetBoxes("Range Boxes", 1);
-    supersetBoxes(0) = {elemBoxes[0].box, IdentProc(pRank, pRank)};
+    auto supersetBoxesHost = Kokkos::create_mirror_view(supersetBoxes);
+    supersetBoxesHost(0) = {elemBoxesHost[0].box, IdentProc(pRank, pRank)};
 
-    for (unsigned i = 0; i != elemBoxes.extent(0); ++i) {
-      stk::search::add_to_box(supersetBoxes(0).box, elemBoxes(i).box);
+    for (unsigned i = 0; i != elemBoxesHost.extent(0); ++i) {
+      stk::search::add_to_box(supersetBoxesHost(0).box, elemBoxesHost(i).box);
     }
 
+    Kokkos::deep_copy(supersetBoxes, supersetBoxesHost);
 
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
@@ -219,13 +223,18 @@ void run_volume_to_one_test_local_with_views(const std::string& meshFileName,
     stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
 
     Kokkos::View<BoxIdentType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentType>(*bulkPtr, stk::topology::ELEM_RANK);
+    auto elemBoxesHost = Kokkos::create_mirror_view(elemBoxes);
+    Kokkos::deep_copy(elemBoxesHost, elemBoxes);
 
     Kokkos::View<BoxIdentType *, ExecSpace> supersetBoxes("Range Boxes", 1);
-    supersetBoxes(0) = {elemBoxes[0].box, stk::parallel_machine_rank(comm)};
-
+    auto supersetBoxesHost = Kokkos::create_mirror_view(supersetBoxes);
+    supersetBoxesHost(0) = {elemBoxesHost[0].box, stk::parallel_machine_rank(comm)};
+  
     for (unsigned i = 0; i != elemBoxes.extent(0); ++i) {
-      stk::search::add_to_box(supersetBoxes(0).box, elemBoxes(i).box);
+      stk::search::add_to_box(supersetBoxesHost(0).box, elemBoxesHost(i).box);
     }
+
+    Kokkos::deep_copy(supersetBoxes, supersetBoxesHost);
 
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
@@ -259,13 +268,18 @@ void run_one_to_volume_test_local_with_views(const std::string& meshFileName,
     stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
 
     Kokkos::View<BoxIdentType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentType>(*bulkPtr, stk::topology::ELEM_RANK);
+    auto elemBoxesHost = Kokkos::create_mirror_view(elemBoxes);
+    Kokkos::deep_copy(elemBoxesHost, elemBoxes);
 
     Kokkos::View<BoxIdentType *, ExecSpace> supersetBoxes("Range Boxes", 1);
-    supersetBoxes(0) = {elemBoxes[0].box, stk::parallel_machine_rank(comm)};
+    auto supersetBoxesHost = Kokkos::create_mirror_view(supersetBoxes);
+    supersetBoxesHost(0) = {elemBoxesHost[0].box, stk::parallel_machine_rank(comm)};
 
-    for (unsigned i = 0; i != elemBoxes.extent(0); ++i) {
-      stk::search::add_to_box(supersetBoxes(0).box, elemBoxes(i).box);
+    for (unsigned i = 0; i != elemBoxesHost.extent(0); ++i) {
+      stk::search::add_to_box(supersetBoxesHost(0).box, elemBoxesHost(i).box);
     }
+
+    Kokkos::deep_copy(supersetBoxes, supersetBoxesHost);
 
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {

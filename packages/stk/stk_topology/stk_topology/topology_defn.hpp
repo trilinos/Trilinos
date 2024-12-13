@@ -76,13 +76,7 @@ void topology::sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordina
   {
   case NODE_RANK: *output_ordinals = sub_ordinal;                    break;
   case EDGE_RANK: edge_node_ordinals(sub_ordinal, output_ordinals);  break;
-  case FACE_RANK:
-    if (has_mixed_rank_sides() && sub_ordinal >= num_faces()) {
-      edge_node_ordinals(sub_ordinal - num_faces(), output_ordinals);
-    } else {
-      face_node_ordinals(sub_ordinal, output_ordinals);
-    }
-    break;
+  case FACE_RANK: face_node_ordinals(sub_ordinal, output_ordinals);  break;
   default: break;
   }
 }
@@ -95,13 +89,7 @@ void topology::sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, un
   {
   case NODE_RANK: *output_nodes = nodes[sub_ordinal];            break;
   case EDGE_RANK: edge_nodes(nodes, sub_ordinal, output_nodes);  break;
-  case FACE_RANK:
-    if (has_mixed_rank_sides() && sub_ordinal >= num_faces()) {
-      edge_nodes(nodes, sub_ordinal - num_faces(), output_nodes);
-    } else {
-      face_nodes(nodes, sub_ordinal, output_nodes);
-    }
-    break;
+  case FACE_RANK: face_nodes(nodes, sub_ordinal, output_nodes);  break;
   default: break;
   }
 }
@@ -126,11 +114,7 @@ topology topology::sub_topology(unsigned sub_rank, unsigned sub_ordinal) const
   {
   case NODE_RANK: return NODE;
   case EDGE_RANK: return edge_topology(sub_ordinal);
-  case FACE_RANK:
-    if (has_mixed_rank_sides() && sub_ordinal >= num_faces()) {
-      return edge_topology(sub_ordinal - num_faces());
-    }
-    return face_topology(sub_ordinal);
+  case FACE_RANK: return face_topology(sub_ordinal);
   default: break;
   }
   return INVALID_TOPOLOGY;
@@ -140,22 +124,20 @@ template <typename OrdinalOutputIterator>
 STK_INLINE_FUNCTION
 void topology::side_node_ordinals(unsigned side_ordinal, OrdinalOutputIterator output_ordinals) const
 {
-  if (has_mixed_rank_sides() && is_shell_side_ordinal(side_ordinal)) {
-    sub_topology_node_ordinals(EDGE_RANK, side_ordinal-num_faces(), output_ordinals);
-  } else {
-    sub_topology_node_ordinals( side_rank(), side_ordinal, output_ordinals);
-  }
+  auto fix_ordinal = has_mixed_rank_sides() && side_ordinal >= num_sub_topology(side_rank());
+  auto adjusted_ordinal = (fix_ordinal) ? side_ordinal - num_sub_topology(side_rank()) : side_ordinal;
+
+  sub_topology_node_ordinals(side_rank(side_ordinal), adjusted_ordinal, output_ordinals);
 }
 
 template <typename NodeArray, typename NodeOutputIterator>
 STK_INLINE_FUNCTION
 void topology::side_nodes(const NodeArray & nodes, unsigned side_ordinal, NodeOutputIterator output_nodes) const
 {
-  if (has_mixed_rank_sides() && is_shell_side_ordinal(side_ordinal)) {
-    sub_topology_nodes( nodes, EDGE_RANK, side_ordinal-num_faces(), output_nodes);
-  } else {
-    sub_topology_nodes( nodes, side_rank(), side_ordinal, output_nodes);
-  }
+  auto fix_ordinal = has_mixed_rank_sides() && side_ordinal >= num_sub_topology(side_rank());
+  auto adjusted_ordinal = (fix_ordinal) ? side_ordinal - num_sub_topology(side_rank()) : side_ordinal;
+
+  sub_topology_nodes(nodes, side_rank(side_ordinal), adjusted_ordinal, output_nodes);
 }
 
 STK_INLINE_FUNCTION
@@ -165,7 +147,7 @@ unsigned topology::num_sides() const
   if (side_rank() != INVALID_RANK) {
     num_sides_out = side_rank() > NODE_RANK ? num_sub_topology(side_rank()) : num_vertices();
 
-    if (has_mixed_rank_sides()) {
+    if (has_mixed_rank_sides() && side_rank() > EDGE_RANK) {
       num_sides_out += num_sub_topology(EDGE_RANK);
     }
   }
@@ -175,10 +157,10 @@ unsigned topology::num_sides() const
 STK_INLINE_FUNCTION
 topology topology::side_topology(unsigned side_ordinal) const
 {
-  if (has_mixed_rank_sides() && is_shell_side_ordinal(side_ordinal))
-    return shell_side_topology(side_ordinal-num_faces());
+  auto fix_ordinal = has_mixed_rank_sides() && side_ordinal >= num_sub_topology(side_rank());
+  auto adjusted_ordinal = (fix_ordinal) ? side_ordinal - num_sub_topology(side_rank()) : side_ordinal;
 
-  return sub_topology(side_rank(), side_ordinal);
+  return sub_topology(side_rank(side_ordinal), adjusted_ordinal);
 }
 
 STK_INLINE_FUNCTION
