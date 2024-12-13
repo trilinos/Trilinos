@@ -124,6 +124,9 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
+#ifdef HAVE_AMESOS2_TIMER
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
@@ -154,9 +157,6 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   int ierr = 0; // returned error code
 
   if ( this->root_ ) {  // Do solve!
-#ifdef HAVE_AMESOS2_TIMER
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
     // Bump up the workspace size if needed
     if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
       workspace_ = device_solve_array_t(

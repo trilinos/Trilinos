@@ -51,6 +51,7 @@ namespace Amesos2 {
     typedef typename MatrixTraits<matrix_t>::global_ordinal_t global_ordinal_t;
     typedef typename MatrixTraits<matrix_t>::node_t                     node_t;
     typedef typename MatrixTraits<matrix_t>::global_size_t       global_size_t;
+    typedef Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>       map_t;
     typedef no_special_impl                                       get_crs_spec;
     typedef no_special_impl                                       get_ccs_spec;
     typedef ConcreteMatrixAdapter<matrix_t>                               type;
@@ -58,7 +59,9 @@ namespace Amesos2 {
 
     ConcreteMatrixAdapter(Teuchos::RCP<matrix_t> m);
 
-    Teuchos::RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
+    Teuchos::RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+    Teuchos::RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                                                              Teuchos::RCP<const map_t> &contigColMap) const;
 
     const Teuchos::RCP<const Teuchos::Comm<int> > getComm_impl() const;
     global_size_t getGlobalNumRows_impl() const;
@@ -88,19 +91,13 @@ namespace Amesos2 {
     global_size_t getRowIndexBase() const;
     global_size_t getColumnIndexBase() const;
 
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,
-        global_ordinal_t,
-        node_t> >
+    const Teuchos::RCP<const map_t>
     getMap_impl() const;
 
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,
-        global_ordinal_t,
-        node_t> >
+    const Teuchos::RCP<const map_t>
     getRowMap_impl() const;
 
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,
-        global_ordinal_t,
-        node_t> >
+    const Teuchos::RCP<const map_t>
     getColMap_impl() const;
 
     // implementation functions
@@ -121,6 +118,9 @@ namespace Amesos2 {
                                            KV_S & vals,
                                            size_t& nnz) const;
 
+    template<typename KV_S, typename KV_GO, typename KV_GS>
+    LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                             bool column_major) const;
   };
 
 } // end namespace Amesos2

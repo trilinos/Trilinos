@@ -221,6 +221,10 @@ namespace Amesos2 {
     ///  This is called in loadA for the matrix with (DISTRIBUTED_NO_OVERLAP && !is_contiguous_)
     Teuchos::RCP<const type> reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const;
 
+    /// Gather matrix to MPI-0
+    template<typename KV_S, typename KV_GO, typename KV_GS>
+    local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major) const;
+
     /// Returns a short description of this Solver
     std::string description() const;
 

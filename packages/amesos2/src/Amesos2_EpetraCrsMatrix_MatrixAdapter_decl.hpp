@@ -61,19 +61,22 @@ namespace Amesos2 {
 					  Epetra_CrsMatrix> super_t;
   public:
     // 'import' superclass types
-    typedef super_t::scalar_t                              scalar_t;
-    typedef super_t::local_ordinal_t                local_ordinal_t;
-    typedef super_t::global_ordinal_t              global_ordinal_t;
-    typedef super_t::node_t                                  node_t;
-    typedef super_t::global_size_t                    global_size_t;
-    
-    typedef ConcreteMatrixAdapter<matrix_t>                    type;
+    typedef super_t::scalar_t                                 scalar_t;
+    typedef super_t::local_ordinal_t                   local_ordinal_t;
+    typedef super_t::global_ordinal_t                 global_ordinal_t;
+    typedef super_t::node_t                                     node_t;
+    typedef super_t::global_size_t                       global_size_t;
+
+    typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
+    typedef ConcreteMatrixAdapter<matrix_t>                       type;
     
     ConcreteMatrixAdapter(RCP<matrix_t> m);
     
-    RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
-    RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t>> &contigRowMap,
-                                                     Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t>> &contigColMap) const;
+    RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+    RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                                                     Teuchos::RCP<const map_t> &contigColMap) const;
+    template<typename KV_S, typename KV_GO, typename KV_GS>
+    local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major) const;
 
     //! Print a description of this adapter to the given output stream
     void
