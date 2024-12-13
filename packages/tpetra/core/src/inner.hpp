@@ -40,14 +40,26 @@ auto k_numRowEnt = Kokkos::create_mirror_view_and_copy (device_type (), h_numRow
 LO numSameIDs_as_LID = static_cast<LO>(numSameIDs);
 const bool sorted = false;
 
+#ifdef PANZER_DO_CHECK_INNER_HPP
+#undef PANZER_DO_CHECK_INNER_HPP
+#endif
+#define PANZER_DO_CHECK_INNER_HPP 1
+#if PANZER_DO_CHECK_INNER_HPP
 #define CHECK(a,i) do {                                                 \
-    if (i >= a.extent(0) || i < 0) {                                    \
+    if ((int)(i) >= (int)a.extent(0)) {                                 \
       char buf[100];                                                    \
-      sprintf(buf,"ERROR: i= %d a= %s e= %d", i, #a, a.extent(0));      \
+      sprintf(buf,"ERROR: i= %d a= %s e= %d", (int)(i), #a, (int)a.extent(0)); \
       Kokkos::abort(buf);                                               \
     } } while(0)
+#else
+#define CHECK(a,i) do { } while(0)
+#endif
 
-#define AB(lin) do {                            \
+#ifdef PANZER_INNER_ABORT
+#undef PANZER_INNER_ABORT
+#endif
+
+#define PANZER_INNER_ABORT(lin) do {            \
     char buf[100];                              \
     sprintf(buf,"ERROR: line= %d", lin);        \
     Kokkos::abort(buf);                         \
@@ -58,10 +70,10 @@ Kokkos::parallel_for("Tpetra_CrsGraph::copyAndPermuteNew2",
                      KOKKOS_LAMBDA(const LO sourceLID)
                      {
                        auto srcGid = srcRowMapLocal.getGlobalElement(sourceLID);
+                       if (srcGid == GINV) PANZER_INNER_ABORT(__LINE__);
                        auto tgtLocalRow = tgtRowMapLocal.getLocalElement(srcGid);
-                       if (tgtLocalRow == LINV) {
-                         AB(__LINE__);
-                       }
+                       if (tgtLocalRow == LINV) PANZER_INNER_ABORT(__LINE__);
+
                        CHECK(k_numRowEnt, tgtLocalRow);
                        auto tgtNumEntries = k_numRowEnt(tgtLocalRow);
 
@@ -81,17 +93,17 @@ Kokkos::parallel_for("Tpetra_CrsGraph::copyAndPermuteNew2",
                        auto tend1       = tgtLocalRowPtrsDevice(tgtLocalRow + 1);
 
                        const size_t num_avail = (tend1 < tend) ? size_t (0) : tend1 - tend;
-                       const size_t num_new_indices = rowLength;
                        size_t num_inserted = 0;
 
                        CHECK(tgtGlobalColInds, tstart);
-                       //global_inds_device_value_t *tgtColInds = tgtGlobalColInds.data()+tstart;
                        global_inds_device_value_t *tgtGlobalColIndsPtr = tgtGlobalColInds.data();
 
                        size_t hint=0;
-                       for (LO j = 0; j < rowLength; j++) {
+                       for (size_t j = 0; j < rowLength; j++) {
+                         CHECK(srcLocalColIndsDevice, start + j);
                          auto ci = srcLocalColIndsDevice(start + j);
                          GO gi = srcColMapLocal.getGlobalElement(ci);
+                         if (gi == GINV) PANZER_INNER_ABORT(__LINE__);
                          auto numInTgtRow = (tend - tstart);
 
                          const size_t offset =
@@ -105,24 +117,19 @@ Kokkos::parallel_for("Tpetra_CrsGraph::copyAndPermuteNew2",
                              Kokkos::abort("num_avail");
                            }
                            //Kokkos::atomic_store (&tgtRowVals[offset], newVals);
+                           CHECK(tgtGlobalColInds, tstart + offset);
                            tgtGlobalColIndsPtr[tstart + offset] = gi;
                            ++tend;
                            hint = offset + 1;
                            ++num_inserted;
                          }
                        }
+                       CHECK(k_numRowEnt, tgtLocalRow);
                        k_numRowEnt(tgtLocalRow) += num_inserted;
 
                        return size_t(0);
                      });
 
-std::cout << "here 10 host size= " << tgtCrsGraph.k_numRowEntries_.extent(0) << " dev: " << k_numRowEnt.extent(0) << std::endl;
-
 Kokkos::fence("here 10");
-  std::cout << "here 10.1" << std::endl;
-
 Kokkos::deep_copy(tgtCrsGraph.k_numRowEntries_, k_numRowEnt);
-  std::cout << "here 11" << std::endl;
-
 tgtCrsGraph.setLocallyModified();
-  std::cout << "here 12" << std::endl;

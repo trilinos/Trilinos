@@ -969,7 +969,7 @@ int main(int argc,char * argv[]){
     }
     if (!comm->getRank()) {
       for (auto& t : Timers) {
-        std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
+        //std::cout << "[TIMER] repeat= " << repeat << " " << t.first << " = " << t.second.first << std::endl;
         if (t.second.second.size() != numRepeatRuns) t.second.second.resize(numRepeatRuns);
         t.second.second[repeat] = t.second.first;
       }
