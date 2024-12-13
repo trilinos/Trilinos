@@ -41,13 +41,16 @@
 namespace stk {
 namespace mesh {
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace,
+          template <typename, typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+NgpField<T, NgpMemSpace, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
 {
+  static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, NgpMemSpace>::accessible);
+
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    ngpField = new NgpField<T, NgpMemSpace, NgpDebugger>(stkField.get_mesh(), stkField, true);
     ngpField->update_field(execSpace);
     ngpField->debug_initialize_debug_views();
     impl::set_ngp_field(stkField, ngpField);
@@ -59,16 +62,19 @@ NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkFiel
     }
   }
 
-  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpMemSpace, NgpDebugger>& >(*ngpField);
 }
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace,
+          template <typename, typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+NgpField<T, NgpMemSpace, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
 {
+  static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, NgpMemSpace>::accessible);
+
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    ngpField = new NgpField<T, NgpMemSpace, NgpDebugger>(stkField.get_mesh(), stkField, true);
     ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
     ngpField->debug_initialize_debug_views();
     impl::set_ngp_field(stkField, ngpField);
@@ -80,13 +86,17 @@ NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkFiel
     }
   }
 
-  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpMemSpace, NgpDebugger>& >(*ngpField);
 }
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace,
+          template <typename, typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+NgpField<T, NgpMemSpace, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
 {
-  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpDebugger>(stkField, Kokkos::DefaultExecutionSpace());
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+  static_assert(Kokkos::SpaceAccessibility<ExecSpace, NgpMemSpace>::accessible);
+
+  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpMemSpace, NgpDebugger>(stkField, ExecSpace());
   ngpFieldRef.fence();
   return ngpFieldRef;
 }

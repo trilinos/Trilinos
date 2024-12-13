@@ -74,7 +74,8 @@ void check_field(std::shared_ptr<stk::mesh::BulkData> bulkDataPtr, stk::mesh::Fi
 {
   const stk::mesh::FieldBase& coordField = *(bulkDataPtr->mesh_meta_data_ptr()->coordinate_field());
 
-  stk::mesh::Selector selector(field);
+  auto meshMetaDataPtr = bulkDataPtr->mesh_meta_data_ptr();
+  stk::mesh::Selector selector(field & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
   for (stk::mesh::Bucket* bucket : buckets)
@@ -100,9 +101,9 @@ void check_field(std::shared_ptr<stk::mesh::BulkData> bulkDataPtr, stk::mesh::Fi
 TEST(StkFieldCopier, MiddleMeshToStk)
 {
 
-  std::string meshFileName1 = "generated:3x3x1|sideset:Z|bbox:0,0,0,1,1,1";
+  std::string meshFileName1 = "generated:3x3x2|sideset:Z|bbox:0,0,0,1,1,1";
   std::string partName1 = "surface_1";
-  stk_interface::StkMeshCreator creator1(meshFileName1, "NONE", MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator creator1(meshFileName1, "RCB", MPI_COMM_WORLD);
   stk_interface::MeshPart meshPart = creator1.create_mesh_from_part(partName1);
 
   mesh::FieldPtr<double> meshField = mesh::create_field<double>(meshPart.mesh, mesh::FieldShape(2, 0, 0), 3);
@@ -121,7 +122,7 @@ TEST(StkFieldCopier, MiddleMeshToStk)
 TEST(StkFieldCopier, StkToMiddleMesh)
 {
 
-  std::string meshFileName1 = "generated:3x3x1|sideset:Z|bbox:0,0,0,1,1,1";
+  std::string meshFileName1 = "generated:3x3x2|sideset:Z|bbox:0,0,0,1,1,1";
   std::string partName1 = "surface_1";
   stk_interface::StkMeshCreator creator1(meshFileName1, "NONE", MPI_COMM_WORLD);
   stk_interface::MeshPart meshPart = creator1.create_mesh_from_part(partName1);

@@ -287,8 +287,8 @@ namespace stk {
 
       // Get a reference to an existing mesh database so it can be modified
       // Typical modifications deal with
-      // times: tart/stop/offset/scale/cycle/periodlength.
-      InputFile &get_mesh_database(size_t input_file_index);
+      // times: start/stop/offset/scale/cycle/periodlength.
+      InputFile &get_mesh_database(size_t input_file_index) const;
 
       // Remove the specified mesh database from the list of mesh databases.
       // All files associated with the mesh database will be closed and destructors

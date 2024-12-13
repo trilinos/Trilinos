@@ -37,10 +37,10 @@
 #include <new>                          // for operator new
 #include <sstream>                      // for operator<<, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
+#include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, upper_bound
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
@@ -162,85 +162,31 @@ void BucketRepository::ensure_data_structures_sized()
     }
 }
 
-////
-//// Note that we need to construct a key vector that the particular
-//// format so we can use the lower_bound(..) function to lookup the
-//// partition.  Because we are using partitions now instead of
-//// buckets, it should be possible to do without that vector and
-//// instead do the lookup directly from the OrdinalVector.
-////
-
 Partition *BucketRepository::get_or_create_partition(
   const EntityRank arg_entity_rank ,
   const OrdinalVector &parts)
 {
-  const unsigned maxKeyTmpBufferSize = 64;
-  PartOrdinal keyTmpBuffer[maxKeyTmpBufferSize];
-  OrdinalVector keyTmpVec;
-
-  PartOrdinal* keyPtr = nullptr;
-  PartOrdinal* keyEnd = nullptr;
-
-  fill_key_ptr(parts, &keyPtr, &keyEnd, maxKeyTmpBufferSize, keyTmpBuffer, keyTmpVec);
-
   std::vector<Partition *>::iterator ik;
 
-  Partition* partition = get_partition(arg_entity_rank, parts, ik, keyPtr, keyEnd);
+  Partition* partition = get_partition(arg_entity_rank, parts, ik);
 
   if(partition == nullptr) {
-    partition = create_partition(arg_entity_rank, parts, ik, keyPtr, keyEnd);
+    partition = create_partition(arg_entity_rank, parts, ik);
   }
   return partition;
 }
 
-void BucketRepository::fill_key_ptr(const OrdinalVector& parts, PartOrdinal** keyPtr, PartOrdinal** keyEnd,
-                                    const unsigned maxKeyTmpBufferSize, PartOrdinal* keyTmpBuffer, OrdinalVector& keyTmpVec)
-{
-  const size_t part_count = parts.size();
-
-  const size_t keyLen = 1 + part_count;
-
-  *keyPtr = keyTmpBuffer;
-  *keyEnd = *keyPtr+keyLen;
-
-  if (keyLen >= maxKeyTmpBufferSize) {
-    keyTmpVec.resize(keyLen);
-    *keyPtr = keyTmpVec.data();
-    *keyEnd = *keyPtr+keyLen;
-  }
-
-  //----------------------------------
-  // Key layout:
-  // { part_count , { part_ordinals } }
-  //
-  (*keyPtr)[0] = part_count;
-
-  for ( unsigned i = 0 ; i < part_count ; ++i ) {
-    (*keyPtr)[i+1] = parts[i];
-  }
-}
-
 Partition *BucketRepository::get_partition(const EntityRank arg_entity_rank, const OrdinalVector &parts)
 {
-  PartOrdinal* keyPtr = nullptr;
-  PartOrdinal* keyEnd = nullptr;
   std::vector<impl::Partition*>::iterator ik;
 
-  const unsigned maxKeyTmpBufferSize = 64;
-  PartOrdinal keyTmpBuffer[maxKeyTmpBufferSize];
-  OrdinalVector keyTmpVec;
-
-  fill_key_ptr(parts, &keyPtr, &keyEnd, maxKeyTmpBufferSize, keyTmpBuffer, keyTmpVec);
-
-  return get_partition(arg_entity_rank, parts, ik, keyPtr, keyEnd);
+  return get_partition(arg_entity_rank, parts, ik);
 }
 
 Partition *BucketRepository::get_partition(
   const EntityRank arg_entity_rank ,
   const OrdinalVector &parts,
-  std::vector<Partition*>::iterator& ik,
-  PartOrdinal* keyPtr,
-  PartOrdinal* keyEnd)
+  std::vector<Partition*>::iterator& ik)
 {
   STK_ThrowAssertMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
                      "Entity rank " << arg_entity_rank << " is invalid");
@@ -249,12 +195,12 @@ Partition *BucketRepository::get_partition(
 
   std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
 
-  ik = lower_bound( partitions , keyPtr );
-  const bool partition_exists = (ik != partitions.end()) && raw_part_equal( (*ik)->key() , keyPtr );
+  ik = upper_bound( partitions , parts );
+  const bool partition_exists = (ik != partitions.begin() && (ik[-1])->get_legacy_partition_id() == parts );
 
   if (partition_exists)
   {
-    return *ik;
+    return ik[-1];
   }
 
   return nullptr;
@@ -263,11 +209,9 @@ Partition *BucketRepository::get_partition(
 Partition* BucketRepository::create_partition(
   const EntityRank arg_entity_rank,
   const OrdinalVector& parts,
-  std::vector<Partition*>::iterator& ik,
-  PartOrdinal* keyPtr,
-  PartOrdinal* keyEnd)
+  std::vector<Partition*>::iterator& ik)
 {
-  Partition *partition = new Partition(m_mesh, this, arg_entity_rank, keyPtr, keyEnd);
+  Partition *partition = new Partition(m_mesh, this, arg_entity_rank, parts.data(), parts.data()+parts.size());
   STK_ThrowRequire(partition != nullptr);
 
   m_need_sync_from_partitions[arg_entity_rank] = true;
@@ -411,8 +355,7 @@ Bucket *BucketRepository::allocate_bucket(EntityRank entityRank,
                                           unsigned initialCapacity,
                                           unsigned maximumCapacity)
 {
-  std::vector<unsigned> tmp(key.begin()+1,key.end());
-  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(tmp,std::less<unsigned>()),
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(key,std::less<unsigned>()),
                      "bucket created with 'key' vector that's not sorted and unique");
   BucketVector &bucket_vec = m_buckets[entityRank];
   const unsigned bucket_id = bucket_vec.size();

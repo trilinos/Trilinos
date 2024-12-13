@@ -1280,7 +1280,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         return stk::topology::SHELL_TRI_6_ALL_FACE_SIDES;
       } else if (name == "shell4") {
         return stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES;
-      } else if (name == "shel8") {
+      } else if (name == "shell8") {
         return stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES;
       } else if (name == "shell9") {
         return stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES;
@@ -1837,7 +1837,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
-    const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState fieldState, std::vector<std::string>* multiStateSuffixes)
+    const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState fieldState,
+                                                    const std::vector<std::string>* multiStateSuffixes)
     {
       if(nullptr != multiStateSuffixes) {
           STK_ThrowRequireMsg((multiStateSuffixes->size() >= fieldState),
@@ -1872,26 +1873,27 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     }
 
     std::string get_stated_field_name(const std::string &fieldBaseName, stk::mesh::FieldState stateIdentifier,
-                                      std::vector<std::string>* multiStateSuffixes)
+                                      const std::vector<std::string>* multiStateSuffixes)
     {
       std::string field_name_with_suffix = fieldBaseName + get_suffix_for_field_at_state(stateIdentifier, multiStateSuffixes);
       return field_name_with_suffix;
     }
 
     bool field_state_exists_on_io_entity(const std::string& dbName, const stk::mesh::FieldBase* field, stk::mesh::FieldState stateIdentifier,
-                                         Ioss::GroupingEntity *ioEntity, std::vector<std::string>* multiStateSuffixes)
+                                         Ioss::GroupingEntity *ioEntity, const std::vector<std::string>* multiStateSuffixes)
     {
         std::string fieldNameWithSuffix = get_stated_field_name(dbName, stateIdentifier, multiStateSuffixes);
         return ioEntity->field_exists(fieldNameWithSuffix);
     }
 
-    bool all_field_states_exist_on_io_entity(const std::string& dbName, const stk::mesh::FieldBase* field, Ioss::GroupingEntity *ioEntity,
-                                             std::vector<stk::mesh::FieldState> &missingStates, std::vector<std::string>* inputMultiStateSuffixes)
+    bool all_field_states_exist_on_io_entity(const std::string& dbName, const stk::mesh::FieldBase* field,
+                                             Ioss::GroupingEntity *ioEntity, std::vector<stk::mesh::FieldState> &missingStates,
+                                             const std::vector<std::string>* inputMultiStateSuffixes)
     {
         bool allStatesExist = true;
         size_t stateCount = field->number_of_states();
 
-        std::vector<std::string>* multiStateSuffixes = stateCount > 2 ? inputMultiStateSuffixes : nullptr;
+        const std::vector<std::string>* multiStateSuffixes = stateCount > 2 ? inputMultiStateSuffixes : nullptr;
 
         if(nullptr != multiStateSuffixes) {
             STK_ThrowRequire(multiStateSuffixes->size() >= stateCount);
@@ -4414,7 +4416,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
         filter_nodes_by_local_connectivity(bulk, params.get_subset_selector(), nodes);
     }
-
 
   }//namespace io
 }//namespace stk

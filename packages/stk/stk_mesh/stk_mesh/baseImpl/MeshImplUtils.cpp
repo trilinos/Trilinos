@@ -640,11 +640,11 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     OrdinalVector entity_node_ordinals(entity_top.num_nodes());
     elem_top.sub_topology_node_ordinals(mesh.entity_rank(entity), relationOrdinal, entity_node_ordinals.data());
 
-    const stk::mesh::Entity *elem_nodes = mesh.begin_nodes(elem);
+    stk::mesh::EntityVector elem_nodes(mesh.begin_nodes(elem),mesh.end_nodes(elem));
     EntityVector entity_top_nodes(entity_top.num_nodes());
-    elem_top.sub_topology_nodes(elem_nodes, mesh.entity_rank(entity), relationOrdinal, entity_top_nodes.data());
+    elem_top.sub_topology_nodes(elem_nodes.data(), mesh.entity_rank(entity), relationOrdinal, entity_top_nodes.data());
 
-    Permutation perm = stk::mesh::find_permutation(mesh, elem_top, elem_nodes, entity_top, entity_top_nodes.data(), relationOrdinal);
+    Permutation perm = stk::mesh::find_permutation(mesh, elem_top, elem_nodes.data(), entity_top, entity_top_nodes.data(), relationOrdinal);
 
     OrdinalVector scratch1, scratch2, scratch3;
 
@@ -676,10 +676,9 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     if(0 == num_side_nodes)
     {
         Permutation node_perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        Entity const *elem_nodes_local = mesh.begin_nodes(elem);
         for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
         {
-            Entity node = elem_nodes_local[entity_node_ordinals[i]];
+            Entity node = elem_nodes[entity_node_ordinals[i]];
             mesh.declare_relation(entity, node, i, node_perm, scratch1, scratch2, scratch3);
         }
     }

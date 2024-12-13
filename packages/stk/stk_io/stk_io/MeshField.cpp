@@ -302,6 +302,11 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
   return time_read;
 }
 
+void MeshField::clear_field_parts()
+{
+  m_fieldParts.clear();
+}
+
 void MeshFieldPart::release_field_data()
 {
   m_preStep = 0;

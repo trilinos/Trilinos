@@ -1464,7 +1464,7 @@ private:
   friend class ::stk::io::StkMeshIoBroker;
   template<typename NgpMemSpace> friend class stk::mesh::DeviceMeshT;
   friend class stk::mesh::StkFieldSyncDebugger;
-  template <typename T, template <typename> class NgpDebugger> friend class stk::mesh::DeviceField;
+  template <typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger> friend class stk::mesh::DeviceField;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);

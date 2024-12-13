@@ -302,6 +302,14 @@ public:
     return false;
   }
 
+  template <typename... EntitiesParams, typename... AddPartParams, typename... RemovePartParams>
+  void impl_batch_change_entity_parts(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
+                                 const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
+                                 const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
+  {
+    batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+  }
+
 private:
   stk::mesh::BulkData *bulk;
   size_t m_syncCountWhenUpdated;

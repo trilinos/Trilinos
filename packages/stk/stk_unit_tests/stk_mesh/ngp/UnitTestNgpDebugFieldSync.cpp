@@ -172,8 +172,8 @@ public:
     }
   }
 
-  template <typename T, template <typename> class NgpDebugger = stk::mesh::DefaultNgpFieldSyncDebugger>
-  void write_scalar_host_field_on_device(stk::mesh::HostField<T, NgpDebugger> & hostField, T value)
+  template <typename T, template <typename, typename> class NgpDebugger = stk::mesh::DefaultNgpFieldSyncDebugger>
+  void write_scalar_host_field_on_device(stk::mesh::HostField<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & hostField, T value)
   {
     const int component = 0;
     stk::mesh::HostMesh hostMesh(get_bulk());
@@ -205,7 +205,7 @@ public:
     const int component = 1;  // Just write to the second component
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    stk::mesh::NgpField<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
     stk::mesh::EntityRank rank = ngpField.get_rank();
 
@@ -226,7 +226,7 @@ public:
     const int component = 1;  // Just write to the second component
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    stk::mesh::NgpField<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
@@ -269,7 +269,7 @@ public:
   {
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    stk::mesh::NgpField<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger>(stkField);
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
     stk::mesh::EntityRank rank = ngpField.get_rank();
 
@@ -334,6 +334,7 @@ public:
   template <typename T>
   stk::mesh::Field<T> & create_scalar_field(stk::topology::rank_t rank, const std::string & name)
   {
+    get_meta().enable_field_sync_debugger();
     unsigned numStates = 1;
     const T init = 1;
     stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
@@ -344,6 +345,7 @@ public:
   template <typename T>
   stk::mesh::Field<T> & create_scalar_multistate_field(stk::topology::rank_t rank, const std::string & name)
   {
+    get_meta().enable_field_sync_debugger();
     unsigned numStates = 2;
     const T init = 1;
     stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
@@ -354,6 +356,7 @@ public:
   template <typename T>
   stk::mesh::Field<T> & create_vector_field(stk::topology::rank_t rank, const std::string & name)
   {
+    get_meta().enable_field_sync_debugger();
     unsigned numStates = 1;
     unsigned numScalarsPerEntity = 3;
     const T init[] = {1, 2, 3};
@@ -375,6 +378,7 @@ public:
                                                                       const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    get_meta().enable_field_sync_debugger();
     stk::mesh::Field<T> & stkField = create_scalar_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -395,6 +399,7 @@ public:
                                                      const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    get_meta().enable_field_sync_debugger();
     stk::mesh::Field<T> & stkField = create_scalar_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -416,6 +421,7 @@ public:
                                                      const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    get_meta().enable_field_sync_debugger();
     stk::mesh::Field<T> & stkField = create_vector_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -2237,7 +2243,7 @@ TEST_F(NgpDebugFieldSync, ForcedDebugger_HostField_UsageNotProblematic_UsingEnti
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
-  stk::mesh::HostField<double, NgpDebugger> hostField(get_bulk(), stkField);
+  stk::mesh::HostField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> hostField(get_bulk(), stkField);
 
   testing::internal::CaptureStdout();
   write_scalar_host_field_on_device<double, NgpDebugger>(hostField, 3.14);
@@ -2251,7 +2257,7 @@ TEST_F(NgpDebugFieldSync, ForcedDebugger_HostField_UsageNotProblematic_UsingBuck
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
-  stk::mesh::HostField<double, NgpDebugger> hostField(get_bulk(), stkField);
+  stk::mesh::HostField<double, stk::mesh::NgpMeshDefaultMemSpace, NgpDebugger> hostField(get_bulk(), stkField);
 
   testing::internal::CaptureStdout();
   write_scalar_host_field_on_device<double, NgpDebugger>(hostField, 3.14);
@@ -2267,6 +2273,7 @@ public:
   void setup_mesh_and_field_with_multiple_restrictions(const std::string& fieldName)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    get_meta().enable_field_sync_debugger();
     stk::mesh::Part& part1 = get_meta().declare_part_with_topology("Part1", stk::topology::HEX_8);
     stk::mesh::Part& part2 = get_meta().declare_part_with_topology("Part2", stk::topology::HEX_8);
 

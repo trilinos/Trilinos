@@ -108,7 +108,7 @@ public:
 
   void setup_views(unsigned numBuckets, double overallocationFactor)
   {
-    deviceFieldData = stk::mesh::FieldDataDeviceViewType<double>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), numBuckets, ORDER_INDICES(bucketCapacity, numPerEntity));
+    deviceFieldData = stk::mesh::FieldDataDeviceViewType<double, stk::mesh::NgpMeshDefaultMemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), numBuckets, ORDER_INDICES(bucketCapacity, numPerEntity));
     goldHostFieldData = stk::mesh::FieldDataHostViewType<double>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "goldHostFieldData"), numBuckets, ORDER_INDICES(bucketCapacity,numPerEntity));
 
     fill_gold_host_field_data(numBuckets);
@@ -171,7 +171,7 @@ protected:
   stk::mesh::FieldDataPointerHostViewType  hostBucketPtrData;
   stk::mesh::FieldDataPointerDeviceViewType  deviceBucketPtrData;
 
-  stk::mesh::FieldDataDeviceViewType<double>  deviceFieldData;
+  stk::mesh::FieldDataDeviceViewType<double, stk::mesh::NgpMeshDefaultMemSpace>  deviceFieldData;
   stk::mesh::FieldDataHostViewType<double>  goldHostFieldData;
 
   stk::mesh::UnsignedViewType  deviceBucketSizes;

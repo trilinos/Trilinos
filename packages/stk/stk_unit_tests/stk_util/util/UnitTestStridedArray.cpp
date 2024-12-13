@@ -32,8 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include "gtest/gtest.h"
 #include "stk_util/util/StridedArray.hpp"
+#include "Kokkos_Core.hpp"
+#include "gtest/gtest.h"
 #include <vector>
 
 TEST( StridedArray, ptr_and_size)

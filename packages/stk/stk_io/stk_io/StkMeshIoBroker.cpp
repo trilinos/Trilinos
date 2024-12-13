@@ -372,7 +372,7 @@ std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_input_ioss_region() const
     }
 }
 
-InputFile &StkMeshIoBroker::get_mesh_database(size_t input_file_index)
+InputFile &StkMeshIoBroker::get_mesh_database(size_t input_file_index) const
 {
     validate_input_file_index(input_file_index);
     return *m_inputFiles[input_file_index];
@@ -1275,6 +1275,12 @@ bool StkMeshIoBroker::get_throw_on_missing_input_fields() const
 void StkMeshIoBroker::set_enable_all_face_sides_shell_topo(bool flag)
 {
   m_enableAllFaceSidesShellTopo = flag;
+  if (m_inputFiles.size() > m_activeMeshIndex) {
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
+    if (nullptr != region) {
+      region->property_add(Ioss::Property("ENABLE_ALL_FACE_SIDES_SHELL", "YES"));
+    }
+  }
 }
 
 bool StkMeshIoBroker::get_enable_all_face_sides_shell_topo() const
