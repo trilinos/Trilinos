@@ -78,6 +78,11 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
 
+  // maps for reindexing
+  //const global_ordinal_type indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
+  //contig_rowmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, this->matrixA_->getComm ()));
+  //contig_colmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, this->matrixA_->getComm ()));
+
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
      std::runtime_error,
@@ -306,31 +311,35 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
   const bool initialize_data = true;
   const bool do_not_initialize_data = false;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+    if ( single_proc_optimization() && nrhs == 1 ) {
 
-  if ( single_proc_optimization() && nrhs == 1 ) {
+      // no msp creation
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
-    // no msp creation
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
 
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
+    } // end if ( single_proc_optimization() && nrhs == 1 )
+    else {
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
 
-  } // end if ( single_proc_optimization() && nrhs == 1 )
-  else {
-
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(initialize_data, B, bValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
-
-    // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
+      // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+    }
   }
 
   if ( this->root_ ) { // do solve
@@ -341,7 +350,6 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
     else
       ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues, true);
   }
-
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
@@ -351,12 +359,16 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
       std::runtime_error,
       "Could not alloc needed working memory for solve" );
-
-  Util::put_1d_data_helper_kokkos_view<
-    MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-      as<size_t>(ld_rhs),
-      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+  }
   return(ierr);
 }
 
@@ -585,20 +597,38 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
-
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
-        ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          ARBITRARY,
-          this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
+      if (this->matrixA_->getComm()->getSize() > 1) {
+        bool column_major = true;
+        if (!is_contiguous_) {
+          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, column_major);
+        } else {
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, column_major);
+	}
+      } else {
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
+          ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
+      }
     }
 
-    if( this->root_ ){
-      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
-          std::runtime_error,
-          "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals");
-    }
+    /*if (this->root_) {
+        FILE *fp = fopen("A.dat","w");
+        for (int i=0; i <this->globalNumCols_; i++) {
+          for (int k=colptr_view_(i); k < colptr_view_(i+1); k++) {
+            fprintf(fp,"%d %d %.16e\n",1+k,1+rowind_view_(k),i,nzvals_view_(k));
+          }
+        }
+        fclose(fp);
+    }*/
+    // gather return the total nnz_ret on every MPI process
+    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+        std::runtime_error,
+        "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals("
+        +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
 
   } //end alternative path 
   return true;

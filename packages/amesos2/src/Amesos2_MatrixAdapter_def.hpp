@@ -521,6 +521,13 @@ namespace Amesos2 {
     return static_cast<const adapter_t*>(this)->reindex_impl(contigRowMap, contigColMap);
   }
 
+  template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  typename MatrixAdapter<Matrix>::local_ordinal_t
+  MatrixAdapter<Matrix>::gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major) const
+  {
+    return static_cast<const adapter_t*>(this)->gather_impl(nzvals, indices, pointers, column_major);
+  }
 
   template <class Matrix>
   Teuchos::RCP<MatrixAdapter<Matrix> >

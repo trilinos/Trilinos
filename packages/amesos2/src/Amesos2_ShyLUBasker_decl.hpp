@@ -182,8 +182,14 @@ private:
   mutable host_solve_array_t bValues_;
   int ldb_;
 
-    /*Handle for ShyLUBasker object*/
- 
+  /// Contiguous GID map
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
+  Teuchos::RCP<const map_type> contig_rowmap_;
+  Teuchos::RCP<const map_type> contig_colmap_;
+
+  /*Handle for ShyLUBasker object*/
 #if defined( HAVE_AMESOS2_KOKKOS ) && defined( KOKKOS_ENABLE_OPENMP )
   /*
   typedef typename node_type::device_type  kokkos_device;

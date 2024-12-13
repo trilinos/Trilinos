@@ -432,6 +432,9 @@ bool
 KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
+#ifdef HAVE_AMESOS2_TIMERS
+  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
 
   if(current_phase == SOLVE)return(false);
 
@@ -440,40 +443,43 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
   }
   else
   {
+    // Only the root image needs storage allocated
+    if( this->root_ ) {
+      host_nzvals_view_ = host_value_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
+      host_rows_view_ = host_ordinal_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
+      host_col_ptr_view_ = host_ordinal_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
+    }
 
+    local_ordinal_type nnz_ret = 0;
+    {
 #ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
+      if (this->matrixA_->getComm()->getSize() > 1) {
+        bool column_major = true;
+        if (!is_contiguous_) {
+          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_);
+          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major);
+        } else {
+          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major);
+        }
+      } else {
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+      }
+    }
 
-  // Only the root image needs storage allocated
-  if( this->root_ ) {
-    host_nzvals_view_ = host_value_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
-    host_rows_view_ = host_ordinal_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
-    host_col_ptr_view_ = host_ordinal_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
-  }
-
-  local_ordinal_type nnz_ret = 0;
-  {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
-#endif
-
-    Util::get_ccs_helper_kokkos_view<
-      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-      ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        ARBITRARY,
-        this->rowIndexBase_);
-  }
-
-  if( this->root_ ) {
+    // gather return the total nnz_ret on every MPI process
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
-  }
 
   } //end else single_process_optim_check = false
 

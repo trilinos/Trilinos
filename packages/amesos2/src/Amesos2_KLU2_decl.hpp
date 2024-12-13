@@ -53,6 +53,7 @@ public:
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
+  typedef typename super_type::node_type                          node_type;
 
   typedef TypeMap<Amesos2::KLU2,scalar_type>                    type_map;
 
@@ -228,6 +229,13 @@ private:
   int transFlag_;
 
   bool is_contiguous_;
+
+  /// Contiguous GID map
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
+  Teuchos::RCP<const map_type> contig_rowmap_;
+  Teuchos::RCP<const map_type> contig_colmap_;
 };                              // End class KLU2
 
 
