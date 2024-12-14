@@ -45,7 +45,18 @@ struct StkTopologyMapEntry {
 
   bool operator!=(const StkTopologyMapEntry &rhs) const { return !(*this == rhs); }
 
-  int num_sides() const { return topology.num_sides(); }
+  int num_face_sides() const {
+    return 2; // FIXME: Number of stackable faces for a 3D shell is always 2 in STK
+  }
+
+  int num_sides() const {
+    if (topology.is_shell()) {
+      if (topology.dimension() == 3) {
+        return num_face_sides(); // FIXME: Number of stackable faces for a 3D shell is always 2 in STK
+      }
+    }
+    return topology.num_sides();
+  }
 
   bool valid_side(unsigned side) const
   {

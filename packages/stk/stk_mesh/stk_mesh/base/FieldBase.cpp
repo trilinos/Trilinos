@@ -508,6 +508,7 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
       }
     }
 
+    Kokkos::Profiling::pushRegion("field-meta-data swap");
     for (int s = 1; s < numStates; ++s) {
       FieldBase* sField = field_state(static_cast<FieldState>(s));
       m_field_meta_data.swap(sField->m_field_meta_data);
@@ -517,15 +518,21 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
       std::swap(m_modifiedOnHost, sField->m_modifiedOnHost);
       std::swap(m_modifiedOnDevice, sField->m_modifiedOnDevice);
     }
+    Kokkos::Profiling::popRegion();
 
-    for(int s = 0; s < numStates; ++s) {
-      NgpFieldBase* ngpField = field_state(static_cast<FieldState>(s))->get_ngp_field();
-      if (ngpField != nullptr) {
-        ngpField->update_bucket_pointer_view();
-        ngpField->fence();
+    if (!(rotateNgpFieldViews && allStatesHaveNgpFields)) {
+      Kokkos::Profiling::pushRegion("ngpField update_bucket_pointer_view");
+      for(int s = 0; s < numStates; ++s) {
+        NgpFieldBase* ngpField = field_state(static_cast<FieldState>(s))->get_ngp_field();
+        if (ngpField != nullptr) {
+          ngpField->update_bucket_pointer_view();
+          ngpField->fence();
+        }
       }
+      Kokkos::Profiling::popRegion();
     }
 
+    Kokkos::Profiling::pushRegion("ngpField swap_field_views");
     if (rotateNgpFieldViews && allStatesHaveNgpFields) {
       for (int s = 1; s < numStates; ++s) {
         NgpFieldBase* ngpField_sminus1 = field_state(static_cast<FieldState>(s-1))->get_ngp_field();
@@ -533,12 +540,13 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
         ngpField_s->swap_field_views(ngpField_sminus1);
       }
     }
+    Kokkos::Profiling::popRegion();
   }
 }
 
 void
 FieldBase::modify_on_host() const
-{ 
+{
   STK_ThrowRequireMsg(m_modifiedOnDevice == false,
                   "Modify on host called for Field: " << name() << " but it has an uncleared modified_on_device");
 
@@ -556,7 +564,7 @@ FieldBase::modify_on_device() const
 
 void
 FieldBase::modify_on_host(const Selector& s) const
-{ 
+{
   modify_on_host();
 }
 

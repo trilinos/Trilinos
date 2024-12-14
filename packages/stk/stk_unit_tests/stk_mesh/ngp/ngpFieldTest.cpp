@@ -1768,6 +1768,7 @@ TEST_F(NgpFieldFixture, LateFieldUsage)
   get_meta().enable_late_fields();
   stk::mesh::Field<int> & stkLateIntField = create_field<int>(stk::topology::ELEM_RANK, "lateIntField");
 
+  initialize_ngp_field(stkIntField);  // Must update early fields after adding late field
   initialize_ngp_field(stkLateIntField);
 
   int multiplier = 2;
@@ -2037,17 +2038,6 @@ TEST(DeviceField, checkSizeof)
   size_t expectedNumBytes = 384;
   std::cout << "sizeof(stk::mesh::DeviceField<double>): " << sizeof(stk::mesh::DeviceField<double>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::DeviceField<double>) <= expectedNumBytes);
-}
-
-TEST(DeviceBucket, checkSizeof)
-{
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2024/06/26
-  size_t expectedNumBytes = 176;
-#else
-  size_t expectedNumBytes = 152;  // Value after removing DeviceBucket::m_hostEntities
-#endif
-  std::cout << "sizeof(stk::mesh::DeviceBucket): " << sizeof(stk::mesh::DeviceBucket) << std::endl;
-  EXPECT_TRUE(sizeof(stk::mesh::DeviceBucket) <= expectedNumBytes);
 }
 
 
@@ -2630,6 +2620,78 @@ TEST_F(NgpFieldUpdate, MoveBackwardForwardBackward)
   add_node({9, part_9});
 
   check_field_values();
+}
+
+class NgpFieldExecSpaceTestFixture : public stk::unit_test_util::MeshFixture
+{
+public:
+  void setup_empty_mesh_and_field()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    const std::vector<int> init(1, 1);
+    stk::mesh::Field<int>& field = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "", 1);
+    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), 1, init.data());
+  }
+
+  auto get_default_field()
+  {
+    return get_meta().get_field(stk::topology::ELEM_RANK, "");
+  }
+};
+
+TEST_F(NgpFieldExecSpaceTestFixture, CheckValidMemSpace)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_empty_mesh_and_field();
+  auto field = get_default_field();
+
+  EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int>(*field)));
+
+  EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field)));
+
+#ifdef STK_ENABLE_GPU
+  EXPECT_ANY_THROW(
+#else
+  EXPECT_NO_THROW(
+#endif
+    (stk::mesh::get_updated_ngp_field<int, stk::ngp::HostPinnedSpace>(*field)));
+}
+
+TEST_F(NgpFieldExecSpaceTestFixture, CheckSameMemSpace)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_empty_mesh_and_field();
+  auto field = get_default_field();
+
+  auto& ngpField1 = stk::mesh::get_updated_ngp_field<int>(*field);
+  auto& ngpField2 = stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field);
+
+  EXPECT_TRUE((std::is_same_v<std::remove_reference_t<decltype(ngpField1)>::MemSpace, stk::mesh::NgpMeshDefaultMemSpace>));
+  EXPECT_TRUE((std::is_same_v<std::remove_reference_t<decltype(ngpField1)>::MemSpace, std::remove_reference_t<decltype(ngpField2)>::MemSpace>));
+}
+
+TEST_F(NgpFieldExecSpaceTestFixture, UseNonDefaultMemSpace)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_empty_mesh_and_field();
+  auto field = get_default_field();
+
+  EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int, stk::ngp::HostPinnedSpace>(*field)));
+
+#ifdef STK_ENABLE_GPU
+  EXPECT_ANY_THROW(
+#else
+  EXPECT_NO_THROW(
+#endif
+    (stk::mesh::get_updated_ngp_field<int>(*field)));
+
+#ifdef STK_ENABLE_GPU
+  EXPECT_ANY_THROW(
+#else
+  EXPECT_NO_THROW(
+#endif
+    (stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field)));
 }
 
 }  // namespace ngp_field_test

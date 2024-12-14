@@ -274,6 +274,11 @@ then
     test_cmd_options+=( "--use-explicit-cachefile ")
 fi
 
+if [[ ${GENCONFIG_BUILD_NAME} == *"framework"* ]]
+then
+    test_cmd_options+=( "--skip-create-packageenables ")
+fi
+
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 # Call the script to launch the tests

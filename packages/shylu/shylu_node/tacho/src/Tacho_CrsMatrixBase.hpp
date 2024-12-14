@@ -371,7 +371,8 @@ inline static void applyPermutationToCrsMatrixLower(/* */ CrsMatrixType &A, cons
 template <typename ValueType, typename DeviceType>
 inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType> &A,
                                       const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &x,
-                                      const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b) {
+                                      const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b,
+                                      const bool verbose = false) {
   const bool test = (size_t(A.NumRows()) != size_t(A.NumCols()) || size_t(A.NumRows()) != size_t(b.extent(0)) ||
                      size_t(x.extent(0)) != size_t(b.extent(0)) || size_t(x.extent(1)) != size_t(b.extent(1)));
   if (test)
@@ -405,6 +406,8 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
       diff += arith_traits::real((h_b(i, p) - s) * arith_traits::conj(h_b(i, p) - s));
     }
   }
+  if (verbose)
+    std::cout << " Relative residual norm = " << sqrt(diff) << " / " << sqrt(norm) << " = " << sqrt(diff/norm) << std::endl;
   return sqrt(diff / norm);
 }
 

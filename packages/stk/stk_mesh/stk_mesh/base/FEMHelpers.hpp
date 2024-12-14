@@ -147,6 +147,10 @@ stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::Bu
 stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal);
 stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal, stk::mesh::EntityRank sideRank);
 
+size_t num_sides(const BulkData& mesh, Entity entity);
+stk::mesh::EntityVector get_sides(const BulkData& mesh, Entity entity);
+std::vector<stk::mesh::ConnectivityOrdinal> get_side_ordinals(const BulkData& mesh, Entity entity);
+
 stk::mesh::EntityId get_max_id_on_local_proc(const BulkData& bulk, EntityRank rank);
 
 /** \---} */

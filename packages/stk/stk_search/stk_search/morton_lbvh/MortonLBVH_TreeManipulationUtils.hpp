@@ -628,6 +628,8 @@ struct UpdateInteriorNodeBVs
 
   KOKKOS_INLINE_FUNCTION
   void operator()(unsigned argIdx) const;
+  KOKKOS_INLINE_FUNCTION
+  void check_tree(unsigned argIdx) const;
 
   KOKKOS_FORCEINLINE_FUNCTION
   void get_box(RealType bvMinMax[6], LocalOrdinal idx, const bboxes_3d_view_amt &boxesMinMax) const;
@@ -661,10 +663,71 @@ template <typename ViewType, typename ExecutionSpace>
 void UpdateInteriorNodeBVs<ViewType, ExecutionSpace>::apply(const MortonAabbTree<ViewType, ExecutionSpace> &tree, ExecutionSpace const& execSpace)
 {
   const UpdateInteriorNodeBVs<ViewType, ExecutionSpace> op(tree);
-  const size_t numLeaves = tree.hm_numLeaves();
 
+  const size_t numLeaves = tree.hm_numLeaves();
   auto policy = Kokkos::RangePolicy<ExecutionSpace>(execSpace, 0, numLeaves);
-  Kokkos::parallel_for(policy, op);
+  Kokkos::parallel_for("UpdateInteriorNodeBVs", policy, op);
+  Kokkos::parallel_for("check_tree", policy, KOKKOS_LAMBDA(const unsigned& argIdx){op.check_tree(argIdx);});
+}
+
+template <typename ViewType, typename ExecutionSpace>
+KOKKOS_INLINE_FUNCTION
+void UpdateInteriorNodeBVs<ViewType, ExecutionSpace>::check_tree(unsigned argIdx) const
+{
+  if (m_numLeaves > 1) {
+    LocalOrdinal idx = static_cast<LocalOrdinal>(argIdx);
+
+    RealType bvMinMax[6];
+
+    LocalOrdinal parent = tm_nodeParents(idx);
+    RealType sibMinMax[6];
+
+    constexpr RealType tol = std::numeric_limits<RealType>::epsilon();
+    bool fixedBox = false;
+
+    while (idx != parent) {
+      const LocalOrdinal parentIdx = parent - m_numLeaves;
+
+      const bool boxIsAllZeros = ((m_nodeMinMaxs(parentIdx, 0)  < tol)
+                                &&(m_nodeMinMaxs(parentIdx, 1)  < tol)
+                                &&(m_nodeMinMaxs(parentIdx, 2)  < tol)
+                                &&(m_nodeMinMaxs(parentIdx, 3)  < tol)
+                                &&(m_nodeMinMaxs(parentIdx, 4)  < tol)
+                                &&(m_nodeMinMaxs(parentIdx, 5)  < tol));
+      if (boxIsAllZeros || fixedBox) {
+        const LocalOrdinal sib0 = tm_nodeChildren(parent, 0);
+        const LocalOrdinal sib1 = tm_nodeChildren(parent, 1);
+
+        if (sib0 < m_numLeaves) {
+          get_stk_box(bvMinMax, sib0, m_leafMinMaxs);
+        }
+        else {
+          get_box(bvMinMax, sib0-m_numLeaves, m_nodeMinMaxs);
+        }
+
+        if (sib1 < m_numLeaves) {
+          get_stk_box(sibMinMax, sib1, m_leafMinMaxs);
+        }
+        else {
+          get_box(sibMinMax, sib1-m_numLeaves, m_nodeMinMaxs);
+        }
+
+        m_nodeMinMaxs(parentIdx, 0) = AABB_MIN(bvMinMax[0], sibMinMax[0]);
+        m_nodeMinMaxs(parentIdx, 1) = AABB_MIN(bvMinMax[1], sibMinMax[1]);
+        m_nodeMinMaxs(parentIdx, 2) = AABB_MIN(bvMinMax[2], sibMinMax[2]);
+        m_nodeMinMaxs(parentIdx, 3) = AABB_MAX(bvMinMax[3], sibMinMax[3]);
+        m_nodeMinMaxs(parentIdx, 4) = AABB_MAX(bvMinMax[4], sibMinMax[4]);
+        m_nodeMinMaxs(parentIdx, 5) = AABB_MAX(bvMinMax[5], sibMinMax[5]);
+        fixedBox = true;
+      }
+
+      idx = parent;
+      parent = tm_nodeParents(parent);
+      if (idx == parent) {
+        return;
+      }
+    }
+  }
 }
 
 template <typename ViewType, typename ExecutionSpace>

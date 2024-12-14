@@ -32,13 +32,20 @@ constexpr bool have_errexcept()
 #endif
 }
 
+constexpr int FE_EXCEPT_CHECKS = FE_ALL_EXCEPT & ~FE_INEXACT;
+
 std::string get_fe_except_string(int fe_except_bitmask);
 
 inline void clear_fp_errors()
 {
   if constexpr (have_errexcept())
   {
-    std::feclearexcept(FE_ALL_EXCEPT);
+    // experimental results show calling std::feclearexcept is *very*
+    // expensive, so dont call it unless needed.
+    if (std::fetestexcept(FE_EXCEPT_CHECKS) > 0)
+    {
+      std::feclearexcept(FE_EXCEPT_CHECKS);
+    }
   } else if constexpr (have_errno())
   {
     errno = 0;
@@ -49,7 +56,7 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
 {
   if constexpr (have_errexcept())
   {
-    int fe_except_bitmask = std::fetestexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+    int fe_except_bitmask = std::fetestexcept(FE_EXCEPT_CHECKS);
     if (fe_except_bitmask != 0)
     {
       std::string msg = std::string(fname ? fname : "") + " raised floating point error(s): " + get_fe_except_string(fe_except_bitmask);
@@ -76,6 +83,7 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
       }
     }
   }
+
 }
 
 inline void warn_on_fp_error(const char* fname = nullptr, std::ostream& os = std::cerr)

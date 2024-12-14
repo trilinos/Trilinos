@@ -348,6 +348,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
     } else
       GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+
+    if (((algo == "classical") && (classicalAlgoStr.find("scaled") != std::string::npos)) || ((algo == "distance laplacian") && (distanceLaplacianAlgoStr.find("scaled") != std::string::npos)))
+      TEUCHOS_TEST_FOR_EXCEPTION(realThreshold > 1.0, Exceptions::RuntimeError, "For cut-drop algorithms, \"aggregation: drop tol\" = " << threshold << ", needs to be <= 1.0");
+
     Set<bool>(currentLevel, "Filtering", (threshold != STS::zero()));
 
     const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
@@ -439,7 +443,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         using MT = typename STS::magnitudeType;
         RCP<Vector> ghostedDiag;
         ArrayRCP<const SC> ghostedDiagVals;
-        ArrayRCP<const MT> negMaxOffDiagonal;
+        ArrayRCP<const SC> negMaxOffDiagonal;
         // RS style needs the max negative off-diagonal, SA style needs the diagonal
         if (useSignedClassicalRS) {
           if (ghostedBlockNumber.is_null()) {

@@ -76,7 +76,7 @@ namespace Amesos2 {
 
     // This may be PMKL::_INTEGER_t or long long int depending on the
     // mapping and input ordinal
-    typedef typename TypeMap<Amesos2::PardisoMKL,local_ordinal_type>::type int_t;
+    typedef typename TypeMap<Amesos2::PardisoMKL,global_ordinal_type>::type int_t;
 
     /* For CssMKL we dispatch based on the integer type instead of
      * the scalar type:
@@ -271,12 +271,12 @@ namespace Amesos2 {
     bool css_initialized_;
     bool is_contiguous_;
 
+    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
+    int_t msglvl_;
+
     /// CssMKL parameter vector.  Note that the documentation uses
     /// 1-based indexing, but our interface must use 0-based indexing
     int_t iparm_[64];
-
-    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
-    static const int_t msglvl_;
 
     // We will deal with 1 factor at a time
     static const int_t maxfct_;
@@ -289,6 +289,8 @@ namespace Amesos2 {
 
     MPI_Fint CssComm_;
     Teuchos::RCP<const map_type> css_rowmap_;
+    Teuchos::RCP<const map_type> css_contig_rowmap_;
+    Teuchos::RCP<const map_type> css_contig_colmap_;
 
 };                              // End class CssMKL
 

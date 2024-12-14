@@ -16,11 +16,12 @@
 
 #include "Tacho_Util.hpp"
 
-#if defined(TACHO_HAVE_METIS)
 #include "Tacho_Graph.hpp"
 
 #include "trilinos_amd.h"
-#include "metis.h"
+#if defined(TACHO_HAVE_METIS)
+ #include "metis.h"
+#endif
 
 namespace Tacho {
 
@@ -28,6 +29,9 @@ class GraphTools_Metis {
 public:
   typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
+  #if !defined(TACHO_HAVE_METIS)
+  typedef ordinal_type idx_t;
+  #endif
   typedef Kokkos::View<idx_t *, host_device_type> idx_t_array;
   typedef Kokkos::View<ordinal_type *, host_device_type> ordinal_type_array;
 
@@ -36,7 +40,10 @@ private:
   idx_t _nvts;
   idx_t_array _xadj, _adjncy, _vwgt;
 
+  int _algo;
+  #if defined(TACHO_HAVE_METIS)
   idx_t _options[METIS_NOPTIONS];
+  #endif
 
   // metis output
   idx_t_array _perm_t, _peri_t;
@@ -61,6 +68,7 @@ public:
 
   void setVerbose(const bool verbose);
   void setOption(const int id, const idx_t value);
+  void setAlgorithm(const int algo);
 
   template <typename ordering_type>
   ordering_type amd_order(ordering_type n, const ordering_type *xadj,
@@ -81,5 +89,4 @@ public:
 };
 
 } // namespace Tacho
-#endif
 #endif

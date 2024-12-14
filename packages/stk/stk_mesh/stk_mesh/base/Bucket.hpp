@@ -91,8 +91,10 @@ std::ostream & operator << ( std::ostream & , const Bucket & );
 std::ostream &
 print( std::ostream & , const std::string & indent , const Bucket & );
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 1, 2025
 // The part count and parts are equal
-bool raw_part_equal( const unsigned * lhs , const unsigned * rhs );
+STK_DEPRECATED bool raw_part_equal( const unsigned * lhs , const unsigned * rhs );
+#endif
 
 #define CONNECTIVITY_TYPE_SWITCH(entity_kind, fixed_func_sig, dynamic_func_sig, check_invalid) \
   switch(entity_kind) {                                                 \
@@ -220,9 +222,9 @@ public:
   std::pair<const unsigned *, const unsigned *>
   superset_part_ordinals() const { return m_partOrdsBeginEnd; }
 
-#ifndef DOXYGEN_COMPILE
+  const std::vector<unsigned> & key_vector() const { return m_key; }
+
   const unsigned * key() const { return m_key.data() ; }
-#endif /* DOXYGEN_COMPILE */
 
   /** \brief  The allocation size, in bytes, of this bucket */
   unsigned allocation_size() const { return 0 ; }
@@ -460,8 +462,6 @@ private:
          unsigned maximumCapacity,
          unsigned bucketId);
 
-  const std::vector<unsigned> & key_vector() const { return m_key; }
-
   // Add a new entity to end of bucket
   void add_entity(Entity entity = Entity());
 
@@ -598,16 +598,16 @@ bool has_superset( const Bucket & bucket ,  const Part & p )
  */
 bool has_superset( const Bucket & bucket , const PartVector & parts );
 
-
-struct BucketLess {
-  bool operator()( const Bucket * lhs_bucket , const unsigned * rhs ) const ;
-  bool operator()( const unsigned * lhs , const Bucket * rhs_bucket ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 1 2025
+struct STK_DEPRECATED BucketLess {
+  bool operator()( const Bucket * lhs_bucket , const OrdinalVector& rhs ) const ;
+  bool operator()( const OrdinalVector& lhs , const Bucket * rhs_bucket ) const ;
 };
 
-inline
-BucketVector::iterator
-lower_bound( BucketVector & v , const unsigned * key )
+STK_DEPRECATED inline BucketVector::iterator
+lower_bound( BucketVector & v , const OrdinalVector& key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
+#endif
 
 struct BucketIdComparator
 {

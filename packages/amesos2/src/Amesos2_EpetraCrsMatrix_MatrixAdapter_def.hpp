@@ -47,6 +47,43 @@ namespace Amesos2 {
       return( rcp(new ConcreteMatrixAdapter<Epetra_CrsMatrix>(t_mat)) );
     }
 
+  Teuchos::RCP<const MatrixAdapter<Epetra_CrsMatrix> >
+  ConcreteMatrixAdapter<Epetra_CrsMatrix>::reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > &contigRowMap,
+                                                        Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > &contigColMap) const
+    {
+      #if defined(HAVE_AMESOS2_EPETRAEXT)
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcpFromRef;
+      auto CrsMatrix = const_cast<Epetra_CrsMatrix *>(this->mat_.getRawPtr());
+      if(!CrsMatrix) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Amesos2_EpetraCrsMatrix_MatrixAdapter requires CsrMatrix to reindex matrices.");
+      }
+
+      // Map
+      RCP<const Epetra_Map> OriginalMap = rcpFromRef(CrsMatrix->RowMap());
+      int NumGlobalElements = OriginalMap->NumGlobalElements();
+      int NumMyElements = OriginalMap->NumMyElements();
+      auto ReindexMap = rcp( new Epetra_Map( NumGlobalElements, NumMyElements, 0, OriginalMap->Comm() ) );
+
+      // Matrix
+      StdIndex_ = rcp( new EpetraExt::CrsMatrix_Reindex( *ReindexMap ) );
+      ContigMat_ = rcpFromRef((*StdIndex_)( *CrsMatrix ));
+      if(!ContigMat_) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Amesos2_EpetraCrsMatrix_MatrixAdapter reindexing failed.");
+      }
+      return rcp(new ConcreteMatrixAdapter<Epetra_CrsMatrix>(ContigMat_));
+      #else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ConcreteMatrixAdapter<Epetra_CrsMatrix> requires EpetraExt to reindex matrices.");
+      #endif
+    }
+
+  void
+  ConcreteMatrixAdapter<Epetra_CrsMatrix>::describe (Teuchos::FancyOStream& os,
+                 const Teuchos::EVerbosityLevel verbLevel) const
+    {
+      this->mat_->Print(*(os.getOStream()));
+    }
 } // end namespace Amesos2
 
 #endif  // AMESOS2_EPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP

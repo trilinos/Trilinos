@@ -127,9 +127,9 @@ class UtilitiesBase {
    * @ret: vector containing max_{i\not=k}(-a_ik)
    */
 
-  static Teuchos::RCP<Xpetra::Vector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+  static Teuchos::RCP<Vector> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
-  static Teuchos::RCP<Xpetra::Vector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber);
+  static Teuchos::RCP<Vector> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber);
 
   /*! @brief Return vector containing inverse of input vector
    *

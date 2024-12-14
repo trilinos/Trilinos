@@ -125,7 +125,7 @@ TEST(UnitTestingOfBucket, testBucket)
     std::stringstream  out1_str;
     out1_str << (*b1);
     bool equal = (gold1 == out1_str.str());
-    ASSERT_TRUE(equal);
+    ASSERT_TRUE(equal)<<"expected str="<<gold1<<", but actual="<<out1_str.str();
   }
 
   // Second, update state of bucket until circular cue is filled

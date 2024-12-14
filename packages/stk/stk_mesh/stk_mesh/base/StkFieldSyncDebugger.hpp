@@ -48,6 +48,16 @@ namespace mesh {
 class Bucket;
 class FieldBase;
 
+namespace FieldSyncDebugger {
+
+void declare_field(stk::mesh::FieldBase& field);
+void declare_field_restriction(stk::mesh::FieldBase& field, const Part& part,
+                               const unsigned numScalarsPerEntity, const unsigned firstDimension);
+void declare_field_restriction(stk::mesh::FieldBase& field, const Selector& selector,
+                               const unsigned numScalarsPerEntity, const unsigned firstDimension);
+
+}
+
 class EmptyStkFieldSyncDebugger
 {
 public:

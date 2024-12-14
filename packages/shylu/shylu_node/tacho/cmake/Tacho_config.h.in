@@ -25,6 +25,9 @@
 /* Define if want to build with CHOLMOD enabled */
 #cmakedefine TACHO_HAVE_SUITESPARSE
 
+/* Define if want to build with TrilinosSS enabled */
+#cmakedefine TACHO_HAVE_TRILINOS_SS
+
 /* Define if want to build with VTune enabled */
 #cmakedefine TACHO_HAVE_VTUNE
 
