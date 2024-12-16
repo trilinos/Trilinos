@@ -161,7 +161,7 @@ namespace MueLu {
   "<Parameter name=\"smoother: pre overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"smoother: post overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse: max size\" type=\"int\" value=\"2000\"/>"
-  "<Parameter name=\"coarse: type\" type=\"string\" value=\"SuperLU\"/>"
+  "<Parameter name=\"coarse: type\" type=\"string\" value=\"KLU\"/>"
   "<ParameterList name=\"coarse: params\"/>"
   "<Parameter name=\"coarse: overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
