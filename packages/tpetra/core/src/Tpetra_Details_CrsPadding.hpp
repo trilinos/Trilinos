@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <utility>
 
-#define EXP_INCLUDED_FROM_PANXER_MINI_EM 1
+#define EXP_INCLUDED_FROM_PANXER_MINI_EM 0
 #if EXP_INCLUDED_FROM_PANXER_MINI_EM
 #define INCL_EXP(a) a
 extern std::unordered_map<std::string, std::pair<double, std::vector<double>> >& Timers;
