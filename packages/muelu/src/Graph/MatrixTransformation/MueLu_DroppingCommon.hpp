@@ -21,7 +21,7 @@ namespace MueLu {
   Once we are done with dropping, we should have no UNDECIDED entries left.
   Normally, both DROP and BOUNDARY entries will be dropped, but we distinguish them in case we want to keep boundaries.
  */
-enum DecisionType {
+enum DecisionType : char {
   UNDECIDED = 0,  // no decision has been taken yet, used for initialization
   KEEP      = 1,  // keeep the entry
   DROP      = 2,  // drop it
