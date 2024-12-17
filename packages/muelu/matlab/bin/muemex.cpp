@@ -296,7 +296,7 @@ RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp) {
   RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
   switch (dp->type) {
 #ifdef HAVE_MUELU_EPETRA
-   case EPETRA: {
+    case EPETRA: {
       EpetraSystem* pack = (EpetraSystem*)dp;
       hier               = pack->getHierarchy();
       break;
@@ -330,7 +330,7 @@ void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataN
     level                                                             = hier->GetLevel(levelID);
   } else
 #endif
-    if (problem->type == TPETRA) {
+      if (problem->type == TPETRA) {
     RCP<Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((TpetraSystem<double>*)problem)->getHierarchy();
     level                                                             = hier->GetLevel(levelID);
   } else if (problem->type == TPETRA_COMPLEX) {
@@ -1052,7 +1052,7 @@ void parse_list_item(RCP<ParameterList> List, char* option_name, const mxArray* 
           useEpetra = true;
         else
 #endif
-          if (strcmp(opt_str.c_str(), "tpetra") == 0)
+            if (strcmp(opt_str.c_str(), "tpetra") == 0)
           useEpetra = false;
       }
       mxFree(opt_char);
@@ -1280,7 +1280,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
           D  = rcp_implicit_cast<MuemexSystem>(dp);
         } else
 #endif
-          if (intf == "tpetra") {
+            if (intf == "tpetra") {
           // infer scalar type from prhs (can be double or complex<double>)
           if (mxIsComplex(prhs[1])) {
 #ifdef HAVE_COMPLEX_SCALARS
