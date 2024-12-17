@@ -379,7 +379,9 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
       // Otherwise would break getting A and P when 'keep' is off
       needFMB = false;
     switch (this->type) {
+#ifdef HAVE_MUELU_EPETRA
       case EPETRA:
+#endif
       case TPETRA: {
         RCP<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = rcp_static_cast<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(getDatapackHierarchy<double>(this));
         level                                                                 = hier->GetLevel(levelID);
