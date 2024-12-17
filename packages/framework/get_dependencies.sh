@@ -3,7 +3,7 @@ ini_file_option=$1
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # Data that needs to be updated when GenConfig changes!
-genconfig_sha1=HEAD
+genconfig_sha1=88c44e347c0377a170ec9ca45a47732a9630b4ec
 
 
 # The following code contains no changing data
@@ -60,7 +60,7 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ "${has_submodules}" == "has-submodules" ]] ; then
     echo
     echo "STATUS: ${sub_dir}: Update submodules"
-    cmd="git submodule update --force --init"
+    cmd="git submodule update --force --init --recursive"
     retry_command "${cmd}"
     cd - > /dev/null
   elif [[ "${has_submodules}" != "" ]] ; then
