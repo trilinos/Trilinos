@@ -11,7 +11,7 @@ SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
 SET(KokkosKernels_VERSION_MINOR 5)
-SET(KokkosKernels_VERSION_PATCH 0)
+SET(KokkosKernels_VERSION_PATCH 1)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -32,7 +32,7 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
     ENDIF()
   ENDIF()
   IF(NOT DEFINED ${PROJECT_NAME})
-    PROJECT(KokkosKernels CXX)
+    PROJECT(KokkosKernels VERSION ${KokkosKernels_VERSION} LANGUAGES CXX)
   ENDIF()
 ENDIF()
 
