@@ -6,8 +6,8 @@ on:
       - opened
       - synchronize
     branches:
-    - master
-    - develop
+      - master
+      - develop
   workflow_dispatch:
 
 # Cancels any in progress 'workflows' associated with this PR
@@ -60,7 +60,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -92,7 +92,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -103,18 +103,20 @@ jobs:
             --workspace-dir /home/runner/_work/Trilinos \
             --source-dir ${GITHUB_WORKSPACE} \
             --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
+            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake
+            --filename-packageenables ./packageEnables.cmake \
+            --max-cores-allowed=29 \
+            --num-concurrent-tests=16
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -151,7 +153,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -183,7 +185,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -194,18 +196,20 @@ jobs:
             --workspace-dir /home/runner/_work/Trilinos \
             --source-dir ${GITHUB_WORKSPACE} \
             --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
+            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake
+            --filename-packageenables ./packageEnables.cmake \
+            --max-cores-allowed=29 \
+            --num-concurrent-tests=16
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -217,7 +221,7 @@ jobs:
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
-  cuda11-uvm-EXPERIMENTAL:
+  cuda11-EXPERIMENTAL:
     needs: pre-checks
     runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
@@ -242,7 +246,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -273,31 +277,32 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name rhel8_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables \
+            --genconfig-build-name rhel8_cuda-11-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
             --workspace-dir /home/runner/_work/Trilinos \
             --source-dir ${GITHUB_WORKSPACE} \
             --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
+            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
-            --max-cores-allowed=96 \
-            --num-concurrent-tests=96
+            --max-cores-allowed=56 \
+            --num-concurrent-tests=112 \
+            --slots-per-gpu=8
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -334,7 +339,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Repo status
@@ -365,7 +370,7 @@ jobs:
 
           printf "\n\n\n"
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -376,18 +381,18 @@ jobs:
             --workspace-dir /home/runner/_work/Trilinos \
             --source-dir ${GITHUB_WORKSPACE} \
             --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
+            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_framework-tests \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake \
+            --skip-create-packageenables \
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
           echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -398,4 +403,3 @@ jobs:
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
-

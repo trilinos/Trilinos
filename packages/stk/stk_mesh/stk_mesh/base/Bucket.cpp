@@ -95,7 +95,7 @@ struct ClearEntityFunctor
   {}
 
   template<typename ConnectivityType>
-  void operator()(Bucket&, ConnectivityType& connectivity)
+  void operator()(Bucket&, ConnectivityType& /*connectivity*/)
   {}
 
   void operator()(Bucket&, impl::BucketConnDynamic& connectivity)
@@ -144,7 +144,7 @@ struct DeclareRelationFunctor
   {}
 
   template <typename Connectivity>
-  void operator()(Bucket& bucket, Connectivity& connectivity)
+  void operator()(Bucket& /*bucket*/, Connectivity& connectivity)
   {
     STK_ThrowAssert(!m_modified);
     m_modified = connectivity.add_connectivity(m_bucket_ordinal, m_to, m_ordinal, m_permutation);
@@ -167,7 +167,7 @@ struct DestroyRelationFunctor
   {}
 
   template <typename Connectivity>
-  void operator()(Bucket& bucket, Connectivity& connectivity)
+  void operator()(Bucket& /*bucket*/, Connectivity& connectivity)
   {
     STK_ThrowAssert(!m_modified);
     m_modified = connectivity.remove_connectivity(m_bucket_ordinal, m_to, m_ordinal);
@@ -195,7 +195,7 @@ struct ReplaceRelationFunctor
   {}
 
   template <typename Connectivity>
-  void operator()(Bucket& bucket, Connectivity& connectivity)
+  void operator()(Bucket& /*bucket*/, Connectivity& connectivity)
   {
     STK_ThrowAssert(!m_modified);
     m_modified = connectivity.replace_connectivity(m_bucket_ordinal, m_numConnectivity,
@@ -245,11 +245,12 @@ unsigned get_default_bucket_capacity() { return impl::default_maximum_bucket_cap
 unsigned get_default_initial_bucket_capacity() { return impl::default_initial_bucket_capacity; }
 unsigned get_default_maximum_bucket_capacity() { return impl::default_maximum_bucket_capacity; }
 
-bool raw_part_equal( const unsigned * lhs , const unsigned * rhs )
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 1, 2025
+STK_DEPRECATED bool raw_part_equal( const unsigned * lhs , const unsigned * rhs )
 {
   bool result = true ;
   {
-    const unsigned * const end_lhs = lhs + *lhs ;
+    const unsigned * const end_lhs = lhs + *lhs + 1 ;
     while ( result && end_lhs != lhs ) {
       result = *lhs == *rhs ;
       ++lhs ; ++rhs ;
@@ -259,21 +260,19 @@ bool raw_part_equal( const unsigned * lhs , const unsigned * rhs )
 }
 
 inline
-bool bucket_key_less( const unsigned * lhs , const unsigned * rhs )
+bool bucket_key_less( const OrdinalVector& lhs , const OrdinalVector& rhs )
 {
-  const unsigned * const last_lhs = lhs + ( *lhs < *rhs ? *lhs : *rhs );
-  while ( last_lhs != lhs && *lhs == *rhs ) { ++lhs ; ++rhs ; }
-  return *lhs < *rhs ;
+  return lhs < rhs;
 }
 
-// The part count and part ordinals are less
 bool BucketLess::operator()( const Bucket * lhs_bucket ,
-                             const unsigned * rhs ) const
-{ return bucket_key_less( lhs_bucket->key() , rhs ); }
+                             const OrdinalVector& rhs ) const
+{ return bucket_key_less( lhs_bucket->key_vector() , rhs ); }
 
-bool BucketLess::operator()( const unsigned * lhs ,
+bool BucketLess::operator()( const OrdinalVector& lhs ,
                              const Bucket * rhs_bucket ) const
-{ return bucket_key_less( lhs , rhs_bucket->key() ); }
+{ return bucket_key_less( lhs , rhs_bucket->key_vector() ); }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -287,7 +286,7 @@ Bucket::Bucket(BulkData & mesh,
     m_entity_rank(entityRank),
     m_topology(),
     m_key(key),
-    m_partOrdsBeginEnd(m_key.data()+1,m_key.data()+m_key[0]),
+    m_partOrdsBeginEnd(m_key.data(),m_key.data()+m_key.size()),
     m_capacity(initialCapacity),
     m_maxCapacity(maximumCapacity),
     m_size(0),
@@ -654,22 +653,13 @@ unsigned Bucket::get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const
 
 void Bucket::reset_part_ord_begin_end()
 {
-  m_partOrdsBeginEnd.first = m_key.data()+1;
-  m_partOrdsBeginEnd.second = m_key.data()+m_key[0];
+  m_partOrdsBeginEnd.first = m_key.data();
+  m_partOrdsBeginEnd.second = m_key.data()+m_key.size();
 }
 
 void Bucket::reset_bucket_key(const OrdinalVector& newPartOrdinals)
 {
-  unsigned partitionCount = m_key[m_key.size() - 1];
-  unsigned newPartCount = newPartOrdinals.size();
-
-  m_key.resize(newPartCount + 2);
-  m_key[0] = newPartCount + 1;
-  m_key[newPartCount+1] = partitionCount;
-
-  for(unsigned i = 0; i < newPartCount; i++) {
-    m_key[i+1] = newPartOrdinals[i];
-  }
+  m_key = newPartOrdinals;
 }
 
 void Bucket::reset_bucket_parts(const OrdinalVector& newPartOrdinals)
@@ -750,6 +740,10 @@ bool Bucket::destroy_relation(Entity e_from, Entity e_to, const RelationIdentifi
   DestroyRelationFunctor functor(from_bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id));
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
 
+  if (functor.m_modified) {
+    mark_for_modification();
+  }
+
   return functor.m_modified;
 }
 
@@ -757,6 +751,10 @@ bool Bucket::declare_relation(unsigned bucket_ordinal, Entity e_to, const Connec
 {
   DeclareRelationFunctor functor(bucket_ordinal, e_to, ordinal, permutation);
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
+
+  if (functor.m_modified) {
+    mark_for_modification();
+  }
 
   return functor.m_modified;
 }

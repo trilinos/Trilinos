@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_TRMM_DECL_HPP__
-#define __KOKKOSBATCHED_TRMM_DECL_HPP__
+#ifndef KOKKOSBATCHED_TRMM_DECL_HPP
+#define KOKKOSBATCHED_TRMM_DECL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
@@ -28,4 +28,4 @@ struct SerialTrmm {
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B);
 };
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_TRMM_DECL_HPP__
+#endif  // KOKKOSBATCHED_TRMM_DECL_HPP

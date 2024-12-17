@@ -19,7 +19,11 @@
 
 namespace Tanks {
 
-using namespace std;
+using std::vector;
+using std::ostream;
+using std::string;
+using std::setw;
+using std::endl;
 
 // Forward declaration 
 template<typename> class StateVector;

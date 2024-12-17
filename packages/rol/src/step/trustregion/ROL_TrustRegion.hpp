@@ -60,7 +60,8 @@ public:
     : pRed_(0), ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Trust-Region Parameters
     ROL::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
-    TRmodel_ = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
+    std::string modelName = list.get("Subproblem Model", "Kelley-Sachs");
+    TRmodel_ = StringToETrustRegionModel(modelName);
     eta0_    = list.get("Step Acceptance Threshold",            static_cast<Real>(0.05));
     eta1_    = list.get("Radius Shrinking Threshold",           static_cast<Real>(0.05));
     eta2_    = list.get("Radius Growing Threshold",             static_cast<Real>(0.9));
@@ -73,9 +74,13 @@ public:
     // General Inexactness Information
     ROL::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
-    useInexact_.push_back(glist.get("Inexact Objective Function",     false));
-    useInexact_.push_back(glist.get("Inexact Gradient",               false));
-    useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
+
+    bool inexactObj     = glist.get("Inexact Objective Function",     false);
+    bool inexactGrad    = glist.get("Inexact Gradient",               false);
+    bool inexactHessVec = glist.get("Inexact Hessian-Times-A-Vector", false);
+    useInexact_.push_back(inexactObj    );
+    useInexact_.push_back(inexactGrad   );
+    useInexact_.push_back(inexactHessVec);
     // Inexact Function Evaluation Information
     ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Value");
     scale_       = ilist.get("Tolerance Scaling",                 static_cast<Real>(1.e-1));

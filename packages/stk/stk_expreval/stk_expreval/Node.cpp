@@ -35,6 +35,7 @@
 #include "stk_expreval/Node.hpp"
 #include "stk_expreval/Eval.hpp"
 #include "stk_expreval/Constants.hpp"
+#include "stk_util/util/FPExceptions.hpp"
 #include <string>
 
 namespace stk {
@@ -81,6 +82,11 @@ double& Node::setResult() {
 void
 Node::eval()
 {
+  if (m_owner->get_fp_error_behavior() != Eval::FPErrorBehavior::Ignore)
+  {
+    stk::util::clear_fp_errors();
+  }
+
   switch (m_opcode) {
   case OPCODE_STATEMENT: {
     setResult() = m_left->getResult();
@@ -105,6 +111,7 @@ Node::eval()
   }
   case OPCODE_EXPONENIATION: {
     setResult() = std::pow(m_left->getResult(),m_right->getResult());
+    checkFPError("std::pow");
     break;
   }
   case OPCODE_DIVIDE: {
@@ -205,12 +212,15 @@ Node::eval()
     }
 
     setResult() = (*m_data.function.function)(argc, argv);
+    checkFPError(m_data.function.functionName);
+
     break;
   }
   default: {
     STK_ThrowErrorMsg("Unknown OpCode (" + std::to_string(m_opcode) + ")");
   }
   }
+  checkFPError();
 
   m_hasBeenEvaluated = true;
 }
@@ -428,6 +438,22 @@ Node::evalTrace(const NodeWeightMap & nodeWeights, EvalNodesType & evaluationNod
     evaluationNodes.push_back(this);
   }
 }
+
+void Node::checkFPError(const char* fname)
+{
+  Eval::FPErrorBehavior behavior = m_owner->get_fp_error_behavior();
+  if (behavior == Eval::FPErrorBehavior::Ignore)
+  {
+    return;
+  } else if (behavior == Eval::FPErrorBehavior::Warn)
+  {
+    stk::util::warn_on_fp_error(fname);
+  } else if (behavior == Eval::FPErrorBehavior::Error)
+  {
+    stk::util::throw_on_fp_error(fname);
+  }
+}
+
 
 }
 }

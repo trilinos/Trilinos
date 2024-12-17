@@ -27,7 +27,11 @@ namespace Impl {
 struct MagmaSingleton {
   MagmaSingleton();
 
+  static bool is_initialized();
   static MagmaSingleton& singleton();
+
+ private:
+  static std::unique_ptr<MagmaSingleton>& get_instance();
 };
 
 }  // namespace Impl

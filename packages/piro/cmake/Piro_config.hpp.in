@@ -24,9 +24,7 @@
 #cmakedefine HAVE_PIRO_TEMPUS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Tempus
-#cmakedefine HAVE_PIRO_STOKHOS
 /* DEPRECATED */
-#cmakedefine Piro_ENABLE_Stokhos
 #cmakedefine HAVE_PIRO_ROL
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_ROL

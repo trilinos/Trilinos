@@ -30,6 +30,11 @@ struct MagmaSingleton {
   MagmaSingleton();
 
   static MagmaSingleton& singleton();
+
+  static bool is_initialized();
+
+ private:
+  static std::unique_ptr<MagmaSingleton>& get_instance();
 };
 
 }  // namespace Impl

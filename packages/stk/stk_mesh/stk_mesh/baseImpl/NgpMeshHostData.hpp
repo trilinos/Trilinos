@@ -53,11 +53,6 @@ template <typename NgpMemSpace>
 struct NgpMeshHostData : NgpMeshHostDataBase {
 
   typename EntityKeyViewTypeT<NgpMemSpace>::HostMirror hostEntityKeys;
-  typename BucketEntityOffsetsViewTypeT<NgpMemSpace>::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
-  typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostEntityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  typename EntityViewTypeT<NgpMemSpace>::HostMirror hostSparseConnectivity[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  typename OrdinalViewTypeT<NgpMemSpace>::HostMirror hostSparseConnectivityOrdinals[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
-  typename PermutationViewTypeT<NgpMemSpace>::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
   typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
   typename NgpCommMapIndicesT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
   unsigned volatileFastSharedCommMapSyncCount = 0;

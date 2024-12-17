@@ -120,15 +120,11 @@ public:
 
   Partition *get_partition(const EntityRank arg_entity_rank ,
                            const OrdinalVector &parts,
-                           std::vector<Partition*>::iterator& ik,
-                           PartOrdinal* keyPtr,
-                           PartOrdinal* keyEnd);
+                           std::vector<Partition*>::iterator& ik);
 
   Partition *create_partition(const EntityRank arg_entity_rank ,
                               const OrdinalVector &parts,
-                              std::vector<Partition*>::iterator& ik,
-                              PartOrdinal* keyPtr,
-                              PartOrdinal* keyEnd);
+                              std::vector<Partition*>::iterator& ik);
 
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();
@@ -137,8 +133,7 @@ public:
   void sync_from_partitions();
   void sync_from_partitions(EntityRank rank);
 
-  // Used in unit tests.  Returns the current partitions.
-  std::vector<Partition *> get_partitions(EntityRank rank) const;
+  const std::vector<Partition *>& get_partitions(EntityRank rank) const;
 
   Partition* get_partition(const EntityRank arg_entity_rank, const OrdinalVector &parts);
 
@@ -169,14 +164,9 @@ private:
 
   void ensure_data_structures_sized();
 
-  void fill_key_ptr(const OrdinalVector& parts, PartOrdinal** keyPtr, PartOrdinal** keyEnd,
-                    const unsigned maxKeyTmpBufferSize, PartOrdinal* keyTmpBuffer, OrdinalVector& keyTmpVec);
+  BulkData & m_mesh ;
 
-
-  BulkData & m_mesh ; // Associated Bulk Data Aggregate
-
-  // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
-  // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
+  // Vector of bucket pointers for each rank.
   std::vector< BucketVector >   m_buckets ;
 
   std::vector<std::vector<Partition *> > m_partitions;

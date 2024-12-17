@@ -192,7 +192,7 @@ public:
                                [&](const int& i) {
                                  // diagonal block
                                  ordinal_type j;
-                                 for (ordinal_type j = i; j < s.m; j++) {
+                                 for (j = i; j < s.m; j++) {
                                    if (AT(i,j) != zero) {
                                      int nnz = _rowptr[i+offm];
                                      _colind[nnz] = j+offm;
@@ -202,8 +202,8 @@ public:
                                  }
                                  // off-diagonal blocksa
                                  j = s.m;
-                                 for (ordinal_type id = s.sid_col_begin + 1; id < s.sid_col_end - 1; id++) {
-                                   for (ordinal_type k = _info.sid_block_colidx(id).second; k < _info.sid_block_colidx(id + 1).second; k++) {
+                                 for (ordinal_type blk_id = s.sid_col_begin + 1; blk_id < s.sid_col_end - 1; blk_id++) {
+                                   for (ordinal_type k = _info.sid_block_colidx(blk_id).second; k < _info.sid_block_colidx(blk_id + 1).second; k++) {
                                      if (AT(i,j) != zero) {
                                        int nnz = _rowptr[i+offm];
                                        _colind[nnz] = _info.gid_colidx(k+offn);
@@ -262,8 +262,8 @@ public:
                                  }
                                  // off-diagonals (each thread extract col, needing atomic-add)
                                  ordinal_type i = s.m;
-                                 for (ordinal_type id = s.sid_col_begin + 1; id < s.sid_col_end - 1; id++) {
-                                   for (ordinal_type k = _info.sid_block_colidx(id).second; k < _info.sid_block_colidx(id + 1).second; k++) {
+                                 for (ordinal_type blk_id = s.sid_col_begin + 1; blk_id < s.sid_col_end - 1; blk_id++) {
+                                   for (ordinal_type k = _info.sid_block_colidx(blk_id).second; k < _info.sid_block_colidx(blk_id + 1).second; k++) {
                                      if (AL(i, j) != zero) {
                                        ordinal_type gid_i = _info.gid_colidx(k+offn);
                                        Kokkos::atomic_add(&(_rowptr[1+gid_i]), 1);
@@ -329,8 +329,8 @@ public:
                                  }
                                  // off-diagonals (each thread extract col, needing atomic-add)
                                  ordinal_type i = s.m;
-                                 for (ordinal_type id = s.sid_col_begin + 1; id < s.sid_col_end - 1; id++) {
-                                   for (ordinal_type k = _info.sid_block_colidx(id).second; k < _info.sid_block_colidx(id + 1).second; k++) {
+                                 for (ordinal_type blk_id = s.sid_col_begin + 1; blk_id < s.sid_col_end - 1; blk_id++) {
+                                   for (ordinal_type k = _info.sid_block_colidx(blk_id).second; k < _info.sid_block_colidx(blk_id + 1).second; k++) {
                                      if (AL(i, j) != zero) {
                                        ordinal_type gid_i = _info.gid_colidx(k+offn);
                                        ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr[gid_i]), 1);

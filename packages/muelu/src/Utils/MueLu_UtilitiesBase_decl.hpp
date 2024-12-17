@@ -127,9 +127,9 @@ class UtilitiesBase {
    * @ret: vector containing max_{i\not=k}(-a_ik)
    */
 
-  static Teuchos::RCP<Xpetra::Vector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+  static Teuchos::RCP<Vector> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
-  static Teuchos::RCP<Xpetra::Vector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber);
+  static Teuchos::RCP<Vector> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber);
 
   /*! @brief Return vector containing inverse of input vector
    *
@@ -253,6 +253,13 @@ class UtilitiesBase {
     @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
   */
   static Teuchos::ArrayRCP<const bool> DetectDirichletRowsExt(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, bool& bHasZeroDiagonal, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero());
+
+  /*! @brief Detect Dirichlet rows and copy values from RHS multivector to InitialGuess for Dirichlet rows.
+
+    This can be used to assure that the InitialGuess satisfies the boundary conditions enforced on A.
+    Useful in particular for using CG when boundary conditions have only been enforce by one-and-zeroing rows of A, but not columns.
+   */
+  static void EnforceInitialCondition(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& RHS, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& InitialGuess, const Magnitude& tol = Teuchos::ScalarTraits<Magnitude>::zero(), const bool count_twos_as_dirichlet = false);
 
   /*! @brief Find non-zero values in an ArrayRCP
     Compares the value to 2 * machine epsilon

@@ -52,7 +52,7 @@ public:
     const Real c2(2);
     hv[0] = c2*v[0];
     hv[1] = c2*v[1];
-  } 
+  }
 };
 
 template<class Real>
@@ -63,7 +63,7 @@ public:
   void value( std::vector<Real> &c, const std::vector<Real> &x, Real &tol ) {
     const Real c1(1), c2(2);
     c[0] = x[0] - c2*x[1] + c1;
-  }  
+  }
 
   void applyJacobian(std::vector<Real> &jv, const std::vector<Real> &v,
                      const std::vector<Real> &x, Real &tol) {
@@ -93,7 +93,7 @@ public:
   void value( std::vector<Real> &c, const std::vector<Real> &x, Real &tol ) {
     const Real c0(0.25), c1(1), c2(2);
     c[0] = -c0*std::pow(x[0],c2) - std::pow(x[1],c2) + c1;
-  }  
+  }
 
   void applyJacobian(std::vector<Real> &jv, const std::vector<Real> &v,
                      const std::vector<Real> &x, Real &tol) {
@@ -105,7 +105,7 @@ public:
                              const std::vector<Real> &x, Real &tol ) {
     const Real c0(0.25), c2(2);
     ajv[0] = -c0*c2*x[0]*v[0];
-    ajv[1] = -c2*x[1]*v[0]; 
+    ajv[1] = -c2*x[1]*v[0];
   }
 
   void applyAdjointHessian(std::vector<Real> &ahuv, const std::vector<Real> &u,

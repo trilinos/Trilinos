@@ -142,7 +142,7 @@ struct BDF_system_wrapper2 {
     if (compute_jac) {
       mySys.evaluate_jacobian(t, dt, y, jac);
 
-      // J = I - dt*(dy/dy)
+      // J = I - dt*(df/dy)
       for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
         for (int colIdx = 0; colIdx < neqs; ++colIdx) {
           jac(rowIdx, colIdx) = -dt * jac(rowIdx, colIdx);

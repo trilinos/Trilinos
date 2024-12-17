@@ -105,7 +105,6 @@
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #ifdef HAVE_MUELU_DEPRECATED_CODE
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #endif
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
@@ -216,7 +215,6 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   if (factoryName == "CoalesceDropFactory_kokkos") return Build2<CoalesceDropFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_DEPRECATED_CODE
-  if (factoryName == "NullspaceFactory_kokkos") return Build2<NullspaceFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "SaPFactory_kokkos") return Build2<SaPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 #endif
   if (factoryName == "SemiCoarsenPFactory_kokkos") return Build2<SemiCoarsenPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);

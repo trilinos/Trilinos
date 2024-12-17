@@ -68,21 +68,25 @@ using HostPartOrdinalViewType     = Kokkos::View<const PartOrdinal*, stk::ngp::H
 using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
 template <typename NgpMemSpace> using PermutationViewTypeT = Kokkos::View<Permutation*, NgpMemSpace>;
 using FastSharedCommMapViewType   = DeviceCommMapIndices;
-using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
 using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+using HostMeshIndexType           = MeshIndexType::HostMirror;
 
 
 using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
 template <typename NgpMemSpace> using BucketEntityOffsetsViewTypeT = Kokkos::View<int*, NgpMemSpace>;
 
-template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace>;
-template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
+template <typename T, typename NgpMemSpace>
+using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, NgpMemSpace>;
+template <typename T>
+using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
 
 using FieldDataPointerHostViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
 using FieldDataPointerDeviceViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 
-template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename T, typename NgpMemSpace>
+using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, NgpMemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename T>
+using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
 #ifdef STK_USE_DEVICE_MESH
 #define ORDER_INDICES(i,j) j,i

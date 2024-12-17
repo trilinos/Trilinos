@@ -169,6 +169,7 @@ public:
     Kokkos::deep_copy(_peri, G.InvPermVector());
   }
 
+  ordinal_type NumNonzerosU() const;
   ordinal_type NumSupernodes() const;
   ordinal_type_array Supernodes() const;
   size_type_array gidSuperPanelPtr() const;

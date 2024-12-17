@@ -1,5 +1,15 @@
 # CHANGELOG
 
+5.23.2 (STK_VERSION 5230200) 12/11/2024
+  misc fixes for AMD/ROCm (ATS-4)
+  stk_mesh: speedup for device-field multi-state rotation
+            reduce stacksize (sizeof(DeviceMesh)) from ~2900 to ~470
+  stk_search: misc fixes
+  stk_io: add query for existence of fields on database
+
+5.21.6-1 (STK_VERSION 5210601) 10/31/2024
+  stk_mesh, stk_search: more fixes for HIP unified and Cuda no-uvm builds
+
 5.21.6 (STK_VERSION 5210600) 10/25/2024
   stk_search: fix build-error (instantiation error for morton_lbvh_search) for gcc 13.2
   stk_util: added parallel/OutputStreams.hpp

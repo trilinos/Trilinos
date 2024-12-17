@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP__
-#define __KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP__
+#ifndef KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP
+#define KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
@@ -36,7 +36,7 @@ namespace KokkosBatched {
 /// NT/NT
 ///
 
-#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
@@ -95,7 +95,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Al
 /// T/NT
 ///
 
-#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
@@ -154,7 +154,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo
 /// NT/T
 ///
 
-#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
@@ -213,7 +213,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo
 /// T/T
 ///
 
-#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>

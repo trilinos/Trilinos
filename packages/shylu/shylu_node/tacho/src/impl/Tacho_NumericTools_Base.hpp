@@ -24,6 +24,7 @@ namespace Tacho {
 template <typename ValueType, typename DeviceType> class NumericToolsBase {
 public:
   using value_type = ValueType;
+  using mag_type = typename ArithTraits<ValueType>::mag_type;
   using device_type = DeviceType;
   using exec_space = typename device_type::execution_space;
   using exec_memory_space = typename device_type::memory_space;
@@ -243,7 +244,7 @@ public:
     }
   }
 
-  inline virtual void factorize(const value_type_array &ax, const ordinal_type verbose = 0) {
+  inline virtual void factorize(const value_type_array &ax, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) {
     TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The function should be overriden by derived classes");
   }
 

@@ -379,7 +379,7 @@ int Ifpack_CrsRiluk::Factor() {
   int NumIn, NumL, NumU;
 
   // Get Maximun Row length
-  int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
+  int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 2;
 
   std::vector<int> InI(MaxNumEntries); // Allocate temp space
   std::vector<double> InV(MaxNumEntries);

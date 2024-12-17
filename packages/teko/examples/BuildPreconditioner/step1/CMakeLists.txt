@@ -1,9 +1,11 @@
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+IF (TEKO_ENABLE_EPETRA)
 
-TRIBITS_ADD_EXECUTABLE(
-   BuilderPreconditioner_Step1_Example
-   SOURCES 
-      example-test.cpp
-   COMM mpi
-   )
+  TRIBITS_ADD_EXECUTABLE(
+    BuilderPreconditioner_Step1_Example
+    SOURCES
+    example-test.cpp
+    COMM mpi
+  )
+ENDIF()

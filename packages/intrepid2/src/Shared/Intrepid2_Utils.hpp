@@ -805,6 +805,32 @@ namespace Intrepid2 {
   {
     return (std::is_standard_layout<typename ViewType::value_type>::value && std::is_trivial<typename ViewType::value_type>::value) ? 0 : get_dimension_scalar(view);
   }
+
+  /// Struct for deleting device instantiation
+  template<typename Device>
+  struct DeviceDeleter {
+    template<typename T>
+    void operator()(T* ptr) {
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename Device::execution_space>(0,1),
+                           KOKKOS_LAMBDA (const int i) { ptr->~T(); });
+      typename Device::execution_space().fence();
+      Kokkos::kokkos_free<typename Device::memory_space>(ptr);
+    }
+  };
+
+  /// Function for creating a vtable on device (requires copy ctor for
+  /// derived object). Allocates device memory and must be called from
+  /// host.
+  template<typename Device,typename Derived>
+  std::unique_ptr<Derived,DeviceDeleter<Device>>
+  copy_virtual_class_to_device(const Derived& host_source)
+  {
+    auto* p = static_cast<Derived*>(Kokkos::kokkos_malloc<typename Device::memory_space>(sizeof(Derived)));
+    Kokkos::parallel_for(Kokkos::RangePolicy<typename Device::execution_space>(0,1),
+                         KOKKOS_LAMBDA (const int i) {new (p) Derived(host_source); });
+    typename Device::execution_space().fence();
+    return std::unique_ptr<Derived,DeviceDeleter<Device>>(p);
+  }
 } // end namespace Intrepid2
 
 #endif

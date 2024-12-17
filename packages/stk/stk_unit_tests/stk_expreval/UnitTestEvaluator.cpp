@@ -36,16 +36,21 @@
 #include <gtest/gtest.h>
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_expreval/Evaluator.hpp>
+#include <stk_util/util/FPExceptions.hpp>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <iomanip>
 #include <cmath>
 #include <memory>
+#include "stk_expreval/NgpNode.hpp"
+#include "stk_expreval/Node.hpp"
 
 namespace {
 
 using ViewInt1DHostType = Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::HostSpace>;
+
+using FPErrorBehavior = stk::expreval::Eval::FPErrorBehavior;
 
 bool
 has_variable(const std::vector<std::string>& variableNames, const std::string& variableName)
@@ -87,6 +92,7 @@ double evaluate(const std::string & expression,
                 const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
 {
   stk::expreval::Eval eval(expression, arrayOffsetType);
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Error);
   eval.parse();
 
   for (ScalarBinding & scalar : boundScalars) {
@@ -564,6 +570,37 @@ TEST( UnitTestEvaluator, testEvaluateEmptyString)
     double result = evaluate(emptyExpression);
     EXPECT_EQ(0.0, result);
 }
+
+TEST( UnitTestEvaluator, FunctionNameNullTerminated)
+{
+  stk::expreval::Eval eval("sin(0.5)");
+  eval.parse();
+  for (int i=0; i < eval.get_node_count(); ++i)
+  {
+    stk::expreval::Node* node = eval.get_node(i);
+    if (node->m_opcode == stk::expreval::OPCODE_FUNCTION)
+    {
+      EXPECT_EQ(std::strcmp(node->m_data.function.functionName, "sin"), 0);
+    }
+  }
+}
+
+#ifndef STK_ENABLE_GPU
+
+TEST(UnitTestEvaluator, CheckNGPNodeFPError_Ignore)
+{
+  FPErrorBehavior m_fpErrorBehavior = FPErrorBehavior::Ignore;
+  EXPECT_NO_THROW(checkNgpNodeFPError(NAN, "foo"));
+}
+
+TEST(UnitTestEvaluator, CheckNGPNodeFPError_Error)
+{
+  FPErrorBehavior m_fpErrorBehavior = FPErrorBehavior::Error;
+  EXPECT_ANY_THROW(checkNgpNodeFPError(NAN, "foo"));
+}
+
+#endif
+
 
 TEST(UnitTestEvaluator, test_copy_constructor)
 {
@@ -2224,6 +2261,9 @@ TEST(UnitTestEvaluator, testFunction_sqrt)
   EXPECT_DOUBLE_EQ(evaluate("sqrt(9)"),    3);
   EXPECT_DOUBLE_EQ(evaluate("sqrt(2)"),    std::sqrt(2));
   EXPECT_DOUBLE_EQ(evaluate("sqrt(1.21)"), 1.1);
+  if (stk::util::have_errno() || stk::util::have_errexcept()) {
+    EXPECT_ANY_THROW(evaluate("sqrt(-1)"));
+  }
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_sqrt)
@@ -2234,6 +2274,36 @@ TEST(UnitTestEvaluator, Ngp_testFunction_sqrt)
   EXPECT_DOUBLE_EQ(device_evaluate("sqrt(9)"),    3);
   EXPECT_DOUBLE_EQ(device_evaluate("sqrt(2)"),    std::sqrt(2));
   EXPECT_DOUBLE_EQ(device_evaluate("sqrt(1.21)"), 1.1);
+  if (stk::util::have_errno() || stk::util::have_errexcept()) {
+    KOKKOS_IF_ON_HOST(
+      EXPECT_ANY_THROW(evaluate("sqrt(-1)"));
+    )
+  }
+}
+
+TEST(UnitTestEvaluator, IgnoreFloatingPointError)
+{
+  stk::expreval::Eval eval("sqrt(-1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Ignore);
+  eval.parse();
+  EXPECT_NO_THROW(eval.evaluate());
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointError)
+{
+  stk::expreval::Eval eval("sqrt(-1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+  EXPECT_NO_THROW(eval.evaluate());
+}
+
+TEST(UnitTestEvaluator, ThrowFloatingPointError)
+{
+  if (!stk::util::have_errno() && !stk::util::have_errexcept()) { GTEST_SKIP(); }
+  stk::expreval::Eval eval("sqrt(-1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Error);
+  eval.parse();
+  EXPECT_ANY_THROW(eval.evaluate());
 }
 
 TEST(UnitTestEvaluator, testFunction_exp)
@@ -2598,7 +2668,7 @@ TEST(UnitTestEvaluator, testFunction_atanh)
   EXPECT_DOUBLE_EQ(evaluate("atanh(0)"),    0);
   EXPECT_DOUBLE_EQ(evaluate("atanh(0.1)"),  std::atanh(0.1));
   EXPECT_DOUBLE_EQ(evaluate("atanh(0.5)"),  std::atanh(0.5));
-  EXPECT_DOUBLE_EQ(evaluate("atanh(1)"),    std::atanh(1));
+  EXPECT_DOUBLE_EQ(evaluate("atanh(0.9)"),  std::atanh(0.9));
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_atanh)
@@ -2607,7 +2677,7 @@ TEST(UnitTestEvaluator, Ngp_testFunction_atanh)
   EXPECT_DOUBLE_EQ(device_evaluate("atanh(0)"),    0);
   EXPECT_DOUBLE_EQ(device_evaluate("atanh(0.1)"),  std::atanh(0.1));
   EXPECT_DOUBLE_EQ(device_evaluate("atanh(0.5)"),  std::atanh(0.5));
-  EXPECT_DOUBLE_EQ(device_evaluate("atanh(1)"),    std::atanh(1));
+  EXPECT_DOUBLE_EQ(device_evaluate("atanh(0.9)"),  std::atanh(0.9));
 }
 
 TEST(UnitTestEvaluator, testFunction_erf)

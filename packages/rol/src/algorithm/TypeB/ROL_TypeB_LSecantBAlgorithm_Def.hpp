@@ -47,7 +47,8 @@ LSecantBAlgorithm<Real>::LSecantBAlgorithm(ParameterList &list,
   useSecantHessVec_ = true;
   ESecantMode mode = SECANTMODE_BOTH;
   if (secant == nullPtr) {
-    esec_   = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory Secant"));
+    std::string secantType = list.sublist("General").sublist("Secant").get("Type","Limited-Memory Secant");
+    esec_   = StringToESecant(secantType);
     secant_ = SecantFactory<Real>(list,mode);
   }
 }
@@ -135,8 +136,11 @@ void LSecantBAlgorithm<Real>::run(Vector<Real>          &x,
     bnd.pruneActive(*pwa1,x,zero);
     gfree->set(pwa1->dual());
     if (hasEcon_) {
-      applyFreePrecond(*pwa1,*gfree,x,*secant_,bnd,tol0,*dwa1,*pwa2);
-      gfnorm = pwa1->norm();
+      gfnorm = gfree->norm();
+      if (gfnorm > zero) {
+        applyFreePrecond(*pwa1,*gfree,x,*secant_,bnd,tol0,*dwa1,*pwa2);
+        gfnorm = pwa1->norm();
+      }
     }
     else {
       gfnorm = gfree->norm();

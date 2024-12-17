@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_ABS_SPEC_HPP_
-#define KOKKOS_BLAS1_IMPL_ABS_SPEC_HPP_
+#ifndef KOKKOSBLAS1_IMPL_ABS_SPEC_HPP_
+#define KOKKOSBLAS1_IMPL_ABS_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -229,5 +229,7 @@ struct Abs<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
       2, false, true>;
 
 #include <KokkosBlas1_abs_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_abs_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas1_abs_mv_eti_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_
+#endif  // KOKKOSBLAS1_IMPL_ABS_SPEC_HPP_

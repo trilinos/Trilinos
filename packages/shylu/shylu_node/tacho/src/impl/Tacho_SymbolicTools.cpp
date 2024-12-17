@@ -665,6 +665,7 @@ SymbolicTools::SymbolicTools(const ordinal_type m, const size_type_array &ap, co
                              const ordinal_type_array &perm, const ordinal_type_array &peri)
     : _m(m), _ap(ap), _aj(aj), _perm(perm), _peri(peri) {}
 
+ordinal_type SymbolicTools::NumNonzerosU() const { return stat.nnz_u; }
 ordinal_type SymbolicTools::NumSupernodes() const { return _supernodes.extent(0) - 1; }
 ordinal_type_array SymbolicTools::Supernodes() const { return _supernodes; }
 size_type_array SymbolicTools::gidSuperPanelPtr() const { return _gid_super_panel_ptr; }

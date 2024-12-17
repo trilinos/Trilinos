@@ -142,7 +142,8 @@ public:
     else {
       step_ = makePtr<TrustRegionStep<Real>>(trlist);
     }
-    etr_ = StringToETrustRegion(parlist_.sublist("Step").sublist("Trust Region").get("Subproblem Solver", "Truncated CG"));
+    std::string solverType = parlist_.sublist("Step").sublist("Trust Region").get("Subproblem Solver", "Truncated CG");
+    etr_ = StringToETrustRegion(solverType);
 
     // Initialize class members
     g_ = g.clone();

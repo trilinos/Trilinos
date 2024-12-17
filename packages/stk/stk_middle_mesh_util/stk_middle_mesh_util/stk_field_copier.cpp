@@ -28,7 +28,7 @@ stk::mesh::Field<double>* StkFieldCopier::create_stk_field(mesh::FieldPtr<double
 {
   auto metaData = m_bulkDataPtr->mesh_meta_data_ptr();
   stk::mesh::Field<double>* stkField = &(metaData->declare_field<double>(stk::topology::NODE_RANK, name));
-  stk::mesh::put_field_on_mesh(*stkField, *m_part, middleMeshField->get_num_comp(), 
+  stk::mesh::put_field_on_mesh(*stkField, *m_part, middleMeshField->get_num_comp(),
                                 middleMeshField->get_field_shape().get_num_nodes(0), 0);
 
   return stkField;
@@ -38,7 +38,8 @@ void StkFieldCopier::copy(const stk::mesh::Field<double>& stkField, mesh::FieldP
 {
   check_field_shapes(stkField, middleMeshFieldPtr);
 
-  stk::mesh::Selector selector(stkField);
+  auto meshMetaDataPtr = m_bulkDataPtr->mesh_meta_data_ptr();
+  stk::mesh::Selector selector(stkField & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = m_bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
   int numNodesPerEntity = middleMeshFieldPtr->get_field_shape().get_num_nodes(0);
@@ -62,7 +63,8 @@ void StkFieldCopier::copy(const mesh::FieldPtr<double> middleMeshFieldPtr, stk::
 {
   check_field_shapes(stkField, middleMeshFieldPtr);
 
-  stk::mesh::Selector selector(stkField);
+  auto meshMetaDataPtr = m_bulkDataPtr->mesh_meta_data_ptr();
+  stk::mesh::Selector selector(stkField & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = m_bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
   int numNodesPerEntity = middleMeshFieldPtr->get_field_shape().get_num_nodes(0);
@@ -109,7 +111,7 @@ void StkFieldCopier::check_field_shapes(const stk::mesh::Field<double>& stkField
       std::string("Field shapes not compatible: stk field has ") + std::to_string(stk_field_dims.second) +
       " components per node, while the middle mesh field has " + std::to_string(meshField->get_num_comp())
     );
-  } 
+  }
 }
 
 std::pair<mesh::FieldShape, int> StkFieldCopier::get_field_shape_and_num_components(const stk::mesh::Field<double>& stkField)

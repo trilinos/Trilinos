@@ -24,6 +24,9 @@
 #include "Amesos2_config.h"
 
 #include <Epetra_CrsMatrix.h>
+#ifdef HAVE_AMESOS2_EPETRAEXT
+#include <EpetraExt_Reindex_CrsMatrix.h>
+#endif
 
 #include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
 #include "Amesos2_MatrixAdapter_decl.hpp"
@@ -69,7 +72,19 @@ namespace Amesos2 {
     ConcreteMatrixAdapter(RCP<matrix_t> m);
     
     RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
-    
+    RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t>> &contigRowMap,
+                                                     Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t>> &contigColMap) const;
+
+    //! Print a description of this adapter to the given output stream
+    void
+    describe (Teuchos::FancyOStream& os,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
+#ifdef HAVE_AMESOS2_EPETRAEXT
+  private:
+    mutable RCP<EpetraExt::CrsMatrix_Reindex> StdIndex_;
+    mutable RCP<Epetra_CrsMatrix> ContigMat_;
+#endif
   };
 
 } // end namespace Amesos2

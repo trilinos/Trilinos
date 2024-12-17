@@ -595,7 +595,7 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAf
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-NGP_TEST_F(NgpParallelSum, DISABLED_DeviceMPIVersion)
+NGP_TEST_F(NgpParallelSum, DeviceMPIVersion)
 {
   if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
 

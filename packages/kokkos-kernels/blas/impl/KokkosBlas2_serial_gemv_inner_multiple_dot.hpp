@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP__
-#define __KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP__
+#ifndef KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP
+#define KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -356,4 +356,4 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(const Scala
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif  // __KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP__
+#endif  // KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP

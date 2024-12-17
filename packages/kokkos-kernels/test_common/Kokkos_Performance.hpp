@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_PERFORMANCE_HPP
-#define KOKKOS_PERFORMANCE_HPP
+#ifndef KOKKOSKERNELS_KOKKOS_PERFORMANCE_HPP
+#define KOKKOSKERNELS_KOKKOS_PERFORMANCE_HPP
 
 #include "Kokkos_Core.hpp"
 #include <yaml-cpp/yaml.h>
@@ -555,4 +555,4 @@ void Performance::Tolerance::from_string(const std::string& valtol_str) {
 
 }  // namespace KokkosKernels
 
-#endif  // KOKKOS_PERFORMANCE_HPP
+#endif  // KOKKOSKERNELS_KOKKOS_PERFORMANCE_HPP

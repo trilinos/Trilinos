@@ -19,6 +19,7 @@
 #include <KokkosBlas2_gemv.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosKernels_TestUtils.hpp>
+#include "KokkosKernels_TestVanilla.hpp"
 
 namespace Test {
 template <class ExecutionSpace, class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>

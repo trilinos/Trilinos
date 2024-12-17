@@ -33,6 +33,7 @@
 //
 
 #include "gtest/gtest.h"                // for AssertHelper, ASSERT_TRUE
+#include <stk_io/InputQuery.hpp>
 #include <stk_io/IossBridge.hpp>        // for is_part_io_part
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -126,6 +127,42 @@ TEST(StkMeshIoBroker, missingInputField) {
 
   std::vector<stk::io::MeshField> missingFields;
   EXPECT_THROW(broker.read_defined_input_fields(0.0, &missingFields), std::logic_error);
+
+  unlink(fieldDataFile.c_str());
+}
+
+TEST(StkMeshIoBroker, testMissingInputField) {
+  const std::string fieldDataFile = "testMeshWithMissingFieldData.e";
+  std::vector<double> transientTimeSteps = {0.0, 1.0, 2.0};
+  std::string transientFieldName = "transient_field";
+
+  write_mesh_with_transient_field_data(fieldDataFile, transientTimeSteps, transientFieldName);
+
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  const stk::mesh::EntityRank rank = stk::topology::NODE_RANK;
+
+  const std::string   fieldNameBad =  transientFieldName+"_scalar_bad_field";
+  stk::mesh::Field<double> &scalarFieldBad = meta.declare_field<double>(rank, fieldNameBad, 1);
+  stk::mesh::put_field_on_mesh(scalarFieldBad, meta.universal_part(), nullptr);
+  stk::io::MeshField meshFieldBad(&scalarFieldBad, fieldNameBad);
+
+  const std::string   fieldNameGood =  transientFieldName+"_scalar";
+  stk::mesh::Field<double> &scalarFieldGood = meta.declare_field<double>(rank, fieldNameGood, 1);
+  stk::mesh::put_field_on_mesh(scalarFieldGood, meta.universal_part(), nullptr);
+  stk::io::MeshField meshFieldGood(&scalarFieldGood, fieldNameGood);
+
+  stk::io::StkMeshIoBroker broker(MPI_COMM_WORLD);
+
+  broker.set_bulk_data(*bulk);
+  broker.add_mesh_database(fieldDataFile, stk::io::READ_MESH);
+  broker.create_input_mesh();
+
+  EXPECT_FALSE(stk::io::verify_field_request(broker, meshFieldBad));
+  EXPECT_TRUE(stk::io::verify_field_request(broker, meshFieldGood));
+
+  broker.populate_bulk_data();
 
   unlink(fieldDataFile.c_str());
 }

@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_SCAL_SPEC_HPP_
-#define KOKKOS_BLAS1_IMPL_SCAL_SPEC_HPP_
+#ifndef KOKKOSBLAS1_IMPL_SCAL_SPEC_HPP_
+#define KOKKOSBLAS1_IMPL_SCAL_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -292,6 +292,8 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       1, false, true>;
 
+#include <generated_specializations_hpp/KokkosBlas1_scal_eti_spec_decl.hpp>
+
 #define KOKKOSBLAS1_SCAL_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
   template struct Scal<                                                                                               \
       EXEC_SPACE,                                                                                                     \
@@ -324,6 +326,8 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
       2, false, true>;
 
+#include <generated_specializations_hpp/KokkosBlas1_scal_mv_eti_spec_decl.hpp>
+
 #define KOKKOSBLAS1_SCAL_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
   template struct Scal<                                                                                                \
       EXEC_SPACE,                                                                                                      \
@@ -343,4 +347,4 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
 
 #include <KokkosBlas1_scal_tpl_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_
+#endif  // KOKKOSBLAS1_IMPL_SCAL_SPEC_HPP_

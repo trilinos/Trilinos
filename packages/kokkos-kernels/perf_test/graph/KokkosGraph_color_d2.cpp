@@ -36,7 +36,7 @@
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosGraph;
@@ -69,9 +69,9 @@ struct D2Parameters {
   }
 };
 
-typedef default_scalar kk_scalar_t;
-typedef default_size_type kk_size_type;
-typedef default_lno_t kk_lno_t;
+using kk_scalar_t  = KokkosKernels::default_scalar;
+using kk_size_type = KokkosKernels::default_size_type;
+using kk_lno_t     = KokkosKernels::default_lno_t;
 
 using KokkosKernels::Impl::xorshiftHash;
 

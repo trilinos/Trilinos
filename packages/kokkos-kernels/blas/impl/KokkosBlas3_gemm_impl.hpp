@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_BLAS3_GEMM_IMPL_HPP_
-#define KOKKOS_BLAS3_GEMM_IMPL_HPP_
+#ifndef KOKKOSBLAS3_GEMM_IMPL_HPP_
+#define KOKKOSBLAS3_GEMM_IMPL_HPP_
 
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_Macros.hpp"
@@ -23,7 +23,7 @@
 #ifdef KOKKOS_ENABLE_CXX14
 #ifdef KOKKOS_COMPILER_GNU
 #if KOKKOS_COMPILER_GNU <= 740
-#define KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#define KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
 #endif
 #endif
 #endif
@@ -69,11 +69,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Layout
                    const int& offset_j) {
     if (offset_i + blockDim_i <= A.extent_int(0) && offset_j + blockDim_j <= A.extent_int(1)) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_j), [&](const int j) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         const int idx_j = offset_j + j;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_i), [&](const int i) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           const int idx_j = offset_j + j;
 #endif
           const int idx_i = offset_i + i;
@@ -82,11 +82,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Layout
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_j), [&](const int j) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         int idx_j = offset_j + j;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_i), [&](const int i) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           int idx_j = offset_j + j;
 #endif
           const int idx_i = offset_i + i;
@@ -116,11 +116,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Kokkos
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_i), [&](const int i) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         int idx_i = offset_i + i;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_j), [&](const int j) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           int idx_i = offset_i + i;
 #endif
           const int idx_j = offset_j + j;
@@ -141,11 +141,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Layout
                    const int& offset_j) {
     if (offset_i + blockDim_i <= A.extent_int(1) && offset_j + blockDim_j <= A.extent_int(0)) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_j), [&](const int j) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         const int idx_j = offset_j + j;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_i), [&](const int i) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           const int idx_j = offset_j + j;
 #endif
           const int idx_i = offset_i + i;
@@ -154,11 +154,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Layout
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_j), [&](const int j) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         int idx_j = offset_j + j;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_i), [&](const int i) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           int idx_j = offset_j + j;
 #endif
           const int idx_i = offset_i + i;
@@ -180,11 +180,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Kokkos
                    const int& offset_j) {
     if (offset_i + blockDim_i <= A.extent_int(1) && offset_j + blockDim_j <= A.extent_int(0)) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_i), [&](const int i) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         const int idx_i = offset_i + i;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_j), [&](const int j) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           const int idx_i = offset_i + i;
 #endif
           const int idx_j = offset_j + j;
@@ -193,11 +193,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Kokkos
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_i), [&](const int i) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         int idx_i = offset_i + i;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_j), [&](const int j) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           int idx_i = offset_i + i;
 #endif
           const int idx_j = offset_j + j;
@@ -218,11 +218,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Layout
                    const int& offset_j) {
     if (offset_i + blockDim_i <= A.extent_int(1) && offset_j + blockDim_j <= A.extent_int(0)) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_j), [&](const int j) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         const int idx_j = offset_j + j;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_i), [&](const int i) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           const int idx_j = offset_j + j;
 #endif
           const int idx_i = offset_i + i;
@@ -231,11 +231,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Layout
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_j), [&](const int j) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         int idx_j = offset_j + j;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_i), [&](const int i) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           int idx_j = offset_j + j;
 #endif
           const int idx_i = offset_i + i;
@@ -257,11 +257,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Kokkos
                    const int& offset_j) {
     if (offset_i + blockDim_i <= A.extent_int(1) && offset_j + blockDim_j <= A.extent_int(0)) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_i), [&](const int i) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         const int idx_i = offset_i + i;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_j), [&](const int j) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           const int idx_i = offset_i + i;
 #endif
           const int idx_j = offset_j + j;
@@ -270,11 +270,11 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType, Kokkos
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, blockDim_i), [&](const int i) {
-#ifndef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifndef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
         int idx_i = offset_i + i;
 #endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim_j), [&](const int j) {
-#ifdef KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
+#ifdef KOKKOSKERNELS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
           int idx_i = offset_i + i;
 #endif
           const int idx_j = offset_j + j;
@@ -568,4 +568,4 @@ struct GEMMImpl {
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif
+#endif  // KOKKOSBLAS3_GEMM_IMPL_HPP_

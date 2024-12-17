@@ -146,5 +146,6 @@ struct SYR {
       false, true>;
 
 #include <KokkosBlas2_syr_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas2_syr_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS2_SYR_SPEC_HPP_

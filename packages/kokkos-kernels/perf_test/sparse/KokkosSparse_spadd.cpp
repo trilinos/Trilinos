@@ -20,7 +20,7 @@
 #include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_Utils_cusparse.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #include "KokkosSparse_spadd.hpp"
@@ -129,9 +129,9 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
 
   using mem_space = typename exec_space::memory_space;
   using device_t  = typename Kokkos::Device<exec_space, mem_space>;
-  using size_type = default_size_type;
-  using lno_t     = default_lno_t;
-  using scalar_t  = default_scalar;
+  using size_type = KokkosKernels::default_size_type;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using scalar_t  = KokkosKernels::default_scalar;
   using crsMat_t  = KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
 
   using KernelHandle =

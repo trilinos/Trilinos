@@ -954,7 +954,7 @@ namespace phalanx_test {
           n.count_ += 1;
           n.mean_ += ( a(i) - n_minus_one.mean_ ) / n.count_;
           n.M2_ += ( a(i) - n_minus_one.mean_ ) * ( a(i) - n.mean_ );
-          success_local = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
+          success_local = (n_minus_one == Kokkos::atomic_compare_exchange(&(values()),n_minus_one,n));
         } while (!success_local);
       });
       PHX::Device().fence();

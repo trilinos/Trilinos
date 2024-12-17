@@ -209,9 +209,6 @@ using MergedBlockedMatrixFactory [[maybe_unused]] = MueLu::MergedBlockedMatrixFa
 #ifdef MUELU_MERGEDSMOOTHER_SHORT
 using MergedSmoother [[maybe_unused]] = MueLu::MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
-using MLParameterListInterpreter [[maybe_unused]] = MueLu::MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 using MultiVectorTransferFactory [[maybe_unused]] = MueLu::MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -220,9 +217,6 @@ using NotayAggregationFactory [[maybe_unused]] = MueLu::NotayAggregationFactory<
 #endif
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 using NullspaceFactory [[maybe_unused]] = MueLu::NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
-using NullspaceFactory_kokkos [[maybe_unused]] = MueLu::NullspaceFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 using NullspacePresmoothFactory [[maybe_unused]] = MueLu::NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;

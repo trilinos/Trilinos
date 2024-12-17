@@ -650,7 +650,7 @@ class KokkosSPGEMM {
   // chunk (no contention)
   template <typename Pool>
   size_t compute_num_pool_chunks(size_t chunk_bytes, size_t ideal_num_chunks) {
-    if (!KokkosKernels::Impl::kk_is_gpu_exec_space<typename Pool::execution_space>()) return ideal_num_chunks;
+    if (!KokkosKernels::Impl::is_gpu_exec_space_v<typename Pool::execution_space>) return ideal_num_chunks;
     size_t free_byte, total_byte;
     KokkosKernels::Impl::kk_get_free_total_memory<typename Pool::memory_space>(free_byte, total_byte);
     size_t required_size = ideal_num_chunks * chunk_bytes;

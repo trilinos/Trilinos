@@ -31,10 +31,10 @@ struct GemmAlgorithm {
 };
 
 struct GemmAlgorithm_Team {
-#if defined(KOKKOS_ENABLE_OPENMP)
-  using type = ActiveHostAlgorithm<runsWithOMP()>::type;
-#else
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
+#else
+  using type = ActiveHostAlgorithm<runsWithOMP()>::type;
 #endif
 };
 

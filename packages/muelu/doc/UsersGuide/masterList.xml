@@ -353,7 +353,7 @@
       <name>coarse: type</name>
       <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
-      <default>"SuperLU"</default>
+      <default>"KLU"</default>
       <description>Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.</description>
     </parameter>
 
@@ -873,6 +873,14 @@
       <type>bool</type>
       <default>false</default>
       <description>Whether to output a random colormap in a separate XML file.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: aggregate qualities</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to plot the aggregate quality.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

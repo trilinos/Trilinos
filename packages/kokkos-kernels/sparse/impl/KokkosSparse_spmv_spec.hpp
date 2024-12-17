@@ -222,6 +222,8 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, true, false, K
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spmv_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPMV_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,         \
                                         MEM_SPACE_TYPE)                                                               \
   template struct SPMV<                                                                                               \
@@ -247,6 +249,8 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, true, false, K
       Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
       std::is_integral_v<SCALAR_TYPE>, false, true>;
+
+#include <generated_specializations_hpp/KokkosSparse_spmv_mv_eti_spec_decl.hpp>
 
 #define KOKKOSSPARSE_SPMV_MV_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,      \
                                            MEM_SPACE_TYPE)                                                            \

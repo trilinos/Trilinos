@@ -25,8 +25,6 @@ namespace ROL {
 
 namespace details {
 
-using namespace std;
-
 template<typename Real>
 class MINRES : public Krylov<Real> {
 
@@ -39,8 +37,8 @@ private:
   Real resnorm_;
   int maxiter_;  
   bool useInexact_;
-  array<Real,4> H_;
-  array<Real,2> rhs_;
+  std::array<Real,4> H_;
+  std::array<Real,2> rhs_;
 
   VectorCloneMap<Real> clones_;      
 
@@ -51,23 +49,23 @@ private:
     if( b == zero ) {
       c = ( a >= zero ? one : -one );
       s = zero;
-      r = abs(a);
+      r = std::abs(a);
     }
     else if( a == zero ) {
       c = zero;
       s = ( b >= zero ? one : -one );
-      r = abs(b);
+      r = std::abs(b);
     }
-    else if( abs(a) > abs(b) ) {
+    else if( std::abs(a) > std::abs(b) ) {
       auto t = b/a;
-      auto u = copysign(sqrt(one+t*t),a);
+      auto u = std::copysign(std::sqrt(one+t*t),a);
       c = one/u;
       s = c*t;
       r = a*u;
     }
     else {
       auto t = a/b;
-      auto u = copysign(sqrt(one+t*t),b);
+      auto u = std::copysign(std::sqrt(one+t*t),b);
       s = 1/u;
       c = s*t;
       r = b*u;
@@ -93,8 +91,8 @@ public:
     Real c_prev{0}, s_prev{0}, c_curr{0}, s_curr{0}, c_next{0}, s_next{0};
 
     resnorm_ = v_curr->norm();    
-    Real rtol = min(Krylov<Real>::getAbsoluteTolerance(),Krylov<Real>::getRelativeTolerance()*resnorm_);
-    Real itol = sqrt(ROL_EPSILON<Real>());
+    Real rtol = std::min(Krylov<Real>::getAbsoluteTolerance(),Krylov<Real>::getRelativeTolerance()*resnorm_);
+    Real itol = std::sqrt(ROL_EPSILON<Real>());
 
     for( auto &e: H_ ) e = 0;
 
@@ -162,7 +160,7 @@ public:
 
       H_[1] = H_[3];
 
-      resnorm_ = abs( rhs_[1] );
+      resnorm_ = std::abs( rhs_[1] );
 
     } // for (iter)
 

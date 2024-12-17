@@ -169,7 +169,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
       SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */, SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
-  if (!KokkosKernels::Impl::kk_is_gpu_exec_space<typename device::execution_space>()) {
+  if (!KokkosKernels::Impl::is_gpu_exec_space_v<typename device::execution_space>) {
     // SPGEMM_KK_LP is useful on CPU to cover MultiCoreTag4 functor
     // (otherwise skipped) but on GPU it's same as SPGEMM_KK, so we can skip it.
     algorithms.push_back(SPGEMM_KK_LP);

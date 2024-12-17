@@ -622,7 +622,11 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_1", 2);
   }
 
-  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
+  if (not meta.is_field_sync_debugger_enabled()) { // Picks up on lastModLocation Fields in an indeterminate order
+    STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1,
+                         "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n"
+                         "[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
+  }
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooFew)

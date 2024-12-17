@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_SET_IDENTITY_IMPL_HPP__
-#define __KOKKOSBATCHED_SET_IDENTITY_IMPL_HPP__
+#ifndef KOKKOSBATCHED_SET_IDENTITY_IMPL_HPP
+#define KOKKOSBATCHED_SET_IDENTITY_IMPL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

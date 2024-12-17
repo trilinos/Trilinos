@@ -17,7 +17,8 @@
 #include "ROL_StdVector.hpp"
 
 namespace details {
-using namespace std;
+
+using std::vector;  
 
 /* \class LowerBandedMatrix
    \brief Implements linear solve and multiplication by

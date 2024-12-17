@@ -161,7 +161,7 @@ namespace MueLu {
   "<Parameter name=\"smoother: pre overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"smoother: post overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse: max size\" type=\"int\" value=\"2000\"/>"
-  "<Parameter name=\"coarse: type\" type=\"string\" value=\"SuperLU\"/>"
+  "<Parameter name=\"coarse: type\" type=\"string\" value=\"KLU\"/>"
   "<ParameterList name=\"coarse: params\"/>"
   "<Parameter name=\"coarse: overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
@@ -219,6 +219,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: aggregate qualities\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"strength-of-connection: params\"/>"
   "<Parameter name=\"aggregation: mesh layout\" type=\"string\" value=\"Global Lexicographic\"/>"
@@ -702,6 +703,8 @@ namespace MueLu {
          ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
       
          ("aggregation: output file: build colormap","aggregation: output file: build colormap")
+      
+         ("aggregation: output file: aggregate qualities","aggregation: output file: aggregate qualities")
       
          ("aggregation: params","aggregation: params")
       

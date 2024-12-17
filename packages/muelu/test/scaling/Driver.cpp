@@ -204,6 +204,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("belosType", &belosType, "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
   bool computeCondEst = false;
   clp.setOption("condEst", "noCondEst", &computeCondEst, "compute condition number estimate (currently only available for Pseudoblock CG)");
+  bool enforceBoundaryConditionsOnInitialGuess = true;
+  clp.setOption("enforceBCs", "noEnforceBCs", &enforceBoundaryConditionsOnInitialGuess, "enforce Dirichlet boundary condition on initial guess");
   double dtol = 1e-12, tol;
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
@@ -523,7 +525,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         // Solve the system numResolves+1 times
-        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst);
+        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess);
 
         comm->barrier();
       } catch (const std::exception& e) {

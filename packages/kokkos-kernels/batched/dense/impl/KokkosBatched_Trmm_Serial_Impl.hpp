@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP__
-#define __KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP__
+#ifndef KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP
+#define KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trmm_Serial_Internal.hpp"
@@ -137,4 +137,4 @@ struct SerialTrmm<Side::Right, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo:
 };
 }  // namespace KokkosBatched
 
-#endif  // __KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP__
+#endif  // KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP
