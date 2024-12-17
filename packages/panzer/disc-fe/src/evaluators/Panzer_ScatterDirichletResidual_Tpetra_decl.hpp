@@ -14,6 +14,7 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Phalanx_KokkosViewOfViews.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -96,8 +97,6 @@ private:
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
-  std::size_t num_nodes;
-
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
 
@@ -116,6 +115,10 @@ private:
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
+  std::vector<PHX::View<int*> > scratch_basisIds_;
 };
 
 // **************************************************************
@@ -146,6 +149,7 @@ public:
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  typedef typename panzer::Traits::RealType RealT;
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // dummy field so that the evaluator will have something to do
@@ -164,8 +168,6 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
-
-  std::size_t num_nodes;
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
@@ -186,6 +188,13 @@ private:
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
+  std::vector<PHX::View<int*> > scratch_basisIds_;
+
+  /// Storage for the tangent data
+  PHX::ViewOfViews<1,Kokkos::View<RealT**,Kokkos::LayoutLeft,PHX::Device>> dfdpFieldsVoV_;
 };
 
 // **************************************************************
