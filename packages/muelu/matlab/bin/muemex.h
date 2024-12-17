@@ -21,21 +21,31 @@
 #include "Teuchos_RCP.hpp"
 #include "MueLu_config.hpp"
 #include "MueLu.hpp"
+#ifdef HAVE_MUELU_EPETRA
 #include "MueLu_EpetraOperator.hpp"
+#endif
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_MatlabUtils.hpp"
+#ifdef HAVE_MUELU_EPETRA
 #include "MueLu_CreateEpetraPreconditioner.hpp"
+#endif
 #include "MueLu_CreateTpetraPreconditioner.hpp"
+#ifdef HAVE_MUELU_EPETRA
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+#endif
 #include "Tpetra_CrsMatrix.hpp"
+#ifdef HAVE_MUELU_EPETRA
 #include "Xpetra_EpetraCrsMatrix.hpp"
+#endif
 #include "BelosSolverFactory.hpp"
+#ifdef HAVE_MUELU_EPETRA
 #include "BelosEpetraAdapter.hpp"
+#endif
 #include "BelosTpetraAdapter.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
@@ -53,7 +63,9 @@ namespace MueLu
 
 typedef enum
   {
+#ifdef HAVE_MUELU_EPETRA
     EPETRA,
+#endif
     TPETRA,
     TPETRA_COMPLEX
   } DataPackType;
@@ -89,6 +101,7 @@ class MuemexSystem
   mxArray* getHierarchyData(std::string dataName, MuemexType dataType, int levelID); //Works for all dp types
 };
 
+#ifdef HAVE_MUELU_EPETRA
 class EpetraSystem : public MuemexSystem
 {
  public:
@@ -120,6 +133,7 @@ class EpetraSystem : public MuemexSystem
   Teuchos::RCP<Epetra_CrsMatrix> A;
   Teuchos::RCP<Epetra_Operator> prec;
 };
+#endif
 
 //Scalar can be double or std::complex<double> (complex_t)
 //Note: DataPackType is either TPETRA or TPETRA_COMPLEX
@@ -140,7 +154,7 @@ class TpetraSystem : public MuemexSystem
   mxArray* apply(const mxArray* rhs);
   //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
   Teuchos::RCP<TMatrix> GetMatrix()
-  { 
+  {
     return A;
   }
   Teuchos::RCP<TOperator> GetPrec()
