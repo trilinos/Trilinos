@@ -404,17 +404,6 @@ ENDIF ()
 # C) Add the libraries, tests, and examples
 #
 
-# The build has to be in a very specific order because of the existence of Matlab interface:
-#   1. Build the majority of the code in src/   [except src/Interface; src/CMakeLists.txt is responsible for ignoring that]
-#   2. Build matlab factories                   [located in matlab/; matlab/bin is ignored in matlab/CMakeLists.txt]
-#   3. Build the interpreter                    [requires all factories]
-#   4. Build the adapters                       [required for Matlab]
-#   5. Build the rest of matlab code
-# This order required splitting of the src/ library into two: muelu and muelu-interface, as steps 1. and 3. are separated.
-# A simple diagram explains this:
-#                                               /  muelu
-# matlab/bin - muelu-adapters - muelu-interface      |
-#                                               \  matlab
 ADD_SUBDIRECTORY(src)
 
 if(TPL_ENABLE_MATLAB)
@@ -427,6 +416,7 @@ if(TPL_ENABLE_MATLAB)
   ENDIF()
 ENDIF()
 
+# Not: adapters needs to come before matlab
 ADD_SUBDIRECTORY(adapters)
 if(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab)
