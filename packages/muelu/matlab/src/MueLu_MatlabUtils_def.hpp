@@ -614,15 +614,15 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph> >(const mxArray* mxa) {
   RCP<MGraph> mgraph = rcp(new MueLu::LWGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
   // Set boundary nodes
   int numBoundaryNodes = mxGetNumberOfElements(boundaryNodes);
-  bool* boundaryFlags  = new bool[nRows];
+  Kokkos::View<bool *,typename mm_node_t::memory_space> boundaryFlags("boundaryFlags",nRows);
+  // NOTE: This will not work correctly for non-CPU Node types
   for (int i = 0; i < nRows; i++) {
     boundaryFlags[i] = false;
   }
   for (int i = 0; i < numBoundaryNodes; i++) {
     boundaryFlags[boundaryList[i]] = true;
   }
-  ArrayRCP<bool> boundaryNodesInput(boundaryFlags, 0, nRows, true);
-  mgraph->SetBoundaryNodeMap(boundaryNodesInput);
+  mgraph->SetBoundaryNodeMap(boundaryFlags);
   return mgraph;
 }
 
@@ -1092,7 +1092,7 @@ mxArray* saveDataToMatlab(RCP<MAggregates>& data) {
   }
   dataIn[4]                      = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
   int* as                        = (int*)mxGetData(dataIn[4]);  // list of aggregate sizes
-  ArrayRCP<mm_LocalOrd> aggSizes = data->ComputeAggregateSizes();
+  auto aggSizes = data->ComputeAggregateSizes();
   for (int i = 0; i < numAggs; i++) {
     as[i] = aggSizes[i];
   }
@@ -1126,7 +1126,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
     entriesPerCol[i] = 0;
   }
   for (int i = 0; i < numRows; i++) {
-    ArrayView<const mm_LocalOrd> neighbors = data->getNeighborVertices(i);  // neighbors has the column indices for row i
+    ArrayView<typename MGraph::local_ordinal_type> neighbors = data->getNeighborVertices_av(i);  // neighbors has the column indices for row i
     memcpy(iter, neighbors.getRawPtr(), sizeof(mm_LocalOrd) * neighbors.size());
     entriesPerRow[i] = neighbors.size();
     for (int j = 0; j < neighbors.size(); j++) {
@@ -1173,9 +1173,9 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   delete[] entriesPerRow;
   delete[] entriesPerCol;
   // Construct list of boundary nodes
-  const ArrayRCP<const bool> boundaryFlags = data->GetBoundaryNodeMap();
+  auto boundaryFlags = data->GetBoundaryNodeMap();
   int numBoundaryNodes                     = 0;
-  for (int i = 0; i < boundaryFlags.size(); i++) {
+  for (int i = 0; i < (int)boundaryFlags.size(); i++) {
     if (boundaryFlags[i])
       numBoundaryNodes++;
   }
@@ -1184,7 +1184,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   mxArray* boundaryList = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
   int* dest             = (int*)mxGetData(boundaryList);
   int* destIter         = dest;
-  for (int i = 0; i < boundaryFlags.size(); i++) {
+  for (int i = 0; i < (int) boundaryFlags.size(); i++) {
     if (boundaryFlags[i]) {
       *destIter = i;
       destIter++;

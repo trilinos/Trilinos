@@ -63,7 +63,9 @@ namespace MueLu
 
 typedef enum
   {
+#ifdef HAVE_MUELU_EPETRA
     EPETRA,
+#endif
     TPETRA,
     TPETRA_COMPLEX
   } DataPackType;
