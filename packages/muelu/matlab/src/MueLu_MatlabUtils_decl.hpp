@@ -173,13 +173,13 @@ Teuchos::RCP<MuemexArg> convertMatlabVar(const mxArray* mxa);
 
 // trim from start
 static inline std::string& ltrim(std::string& s) {
-  s.erase(0,s.find_first_not_of(" "));
+  s.erase(0, s.find_first_not_of(" "));
   return s;
 }
 
 // trim from end
 static inline std::string& rtrim(std::string& s) {
-  s.erase(s.find_last_not_of(" "),std::string::npos);
+  s.erase(s.find_last_not_of(" "), std::string::npos);
   return s;
 }
 

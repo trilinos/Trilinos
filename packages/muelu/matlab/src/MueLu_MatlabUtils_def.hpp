@@ -448,7 +448,7 @@ RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadD
   return MueLu::TpetraMultiVector_To_XpetraMultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
 }
 
- #ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_EPETRA
 template <>
 RCP<Epetra_CrsMatrix> loadDataFromMatlab<RCP<Epetra_CrsMatrix> >(const mxArray* mxa) {
   RCP<Epetra_CrsMatrix> matrix;
@@ -614,7 +614,7 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph> >(const mxArray* mxa) {
   RCP<MGraph> mgraph = rcp(new MueLu::LWGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
   // Set boundary nodes
   int numBoundaryNodes = mxGetNumberOfElements(boundaryNodes);
-  Kokkos::View<bool *,typename mm_node_t::memory_space> boundaryFlags("boundaryFlags",nRows);
+  Kokkos::View<bool*, typename mm_node_t::memory_space> boundaryFlags("boundaryFlags", nRows);
   // NOTE: This will not work correctly for non-CPU Node types
   for (int i = 0; i < nRows; i++) {
     boundaryFlags[i] = false;
@@ -1090,8 +1090,8 @@ mxArray* saveDataToMatlab(RCP<MAggregates>& data) {
         throw runtime_error("Cannot store invalid aggregates in MATLAB - fewer root nodes than aggregates.");
     }
   }
-  dataIn[4]                      = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
-  int* as                        = (int*)mxGetData(dataIn[4]);  // list of aggregate sizes
+  dataIn[4]     = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
+  int* as       = (int*)mxGetData(dataIn[4]);  // list of aggregate sizes
   auto aggSizes = data->ComputeAggregateSizes();
   for (int i = 0; i < numAggs; i++) {
     as[i] = aggSizes[i];
@@ -1173,8 +1173,8 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   delete[] entriesPerRow;
   delete[] entriesPerCol;
   // Construct list of boundary nodes
-  auto boundaryFlags = data->GetBoundaryNodeMap();
-  int numBoundaryNodes                     = 0;
+  auto boundaryFlags   = data->GetBoundaryNodeMap();
+  int numBoundaryNodes = 0;
   for (int i = 0; i < (int)boundaryFlags.size(); i++) {
     if (boundaryFlags[i])
       numBoundaryNodes++;
@@ -1184,7 +1184,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   mxArray* boundaryList = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
   int* dest             = (int*)mxGetData(boundaryList);
   int* destIter         = dest;
-  for (int i = 0; i < (int) boundaryFlags.size(); i++) {
+  for (int i = 0; i < (int)boundaryFlags.size(); i++) {
     if (boundaryFlags[i]) {
       *destIter = i;
       destIter++;
