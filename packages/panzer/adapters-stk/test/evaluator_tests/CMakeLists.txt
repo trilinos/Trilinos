@@ -72,6 +72,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tScatterDirichletResidual_BlockedTpetra
+  SOURCES tpetra_blocked_scatter_dirichlet_residual.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tBasisTimesVector
   SOURCES basis_times_vector.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
