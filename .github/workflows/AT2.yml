@@ -74,7 +74,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -167,7 +167,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -260,7 +260,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -353,7 +353,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
