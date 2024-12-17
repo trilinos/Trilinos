@@ -21,7 +21,6 @@
 #include <iostream>
 
 #ifdef HAVE_MUELU_MATLAB
-#include "mex.h"
 
 namespace MueLu {
 
@@ -96,7 +95,6 @@ std::string TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::de
 
 }  // namespace MueLu
 
-#define MUELU_TWOLEVELMATLABFACTORY_SHORT
 #endif  // HAVE_MUELU_MATLAB
 
 #endif  // MUELU_TWOLEVELMATLABFACTORY_DEF_HPP

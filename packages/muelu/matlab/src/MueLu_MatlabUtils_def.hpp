@@ -11,9 +11,10 @@
 #define MUELU_MATLABUTILS_DEF_HPP
 
 #include "MueLu_MatlabUtils_decl.hpp"
+#include <mex.h>
 
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA)
-#error "Muemex types require MATLAB, Epetra and Tpetra."
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_TPETRA)
+#error "Muemex types require MATLAB and Tpetra."
 #else
 
 using Teuchos::RCP;
@@ -103,6 +104,7 @@ MuemexType getMuemexType(const RCP<Xpetra_Matrix_complex>& data) { return XPETRA
 template <>
 MuemexType getMuemexType<RCP<Xpetra_Matrix_complex> >() { return XPETRA_MATRIX_COMPLEX; }
 
+#ifdef HAVE_MUELU_EPETRA
 template <>
 MuemexType getMuemexType(const RCP<Epetra_CrsMatrix>& data) { return EPETRA_CRSMATRIX; }
 template <>
@@ -112,6 +114,7 @@ template <>
 MuemexType getMuemexType(const RCP<Epetra_MultiVector>& data) { return EPETRA_MULTIVECTOR; }
 template <>
 MuemexType getMuemexType<RCP<Epetra_MultiVector> >() { return EPETRA_MULTIVECTOR; }
+#endif
 
 template <>
 MuemexType getMuemexType(const RCP<MAggregates>& data) { return AGGREGATES; }
@@ -445,6 +448,7 @@ RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadD
   return MueLu::TpetraMultiVector_To_XpetraMultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
 }
 
+ #ifdef HAVE_MUELU_EPETRA
 template <>
 RCP<Epetra_CrsMatrix> loadDataFromMatlab<RCP<Epetra_CrsMatrix> >(const mxArray* mxa) {
   RCP<Epetra_CrsMatrix> matrix;
@@ -492,6 +496,7 @@ RCP<Epetra_MultiVector> loadDataFromMatlab<RCP<Epetra_MultiVector> >(const mxArr
   Epetra_BlockMap map(nr * nc, 1, 0, Comm);
   return rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, mxGetPr(mxa), nr, nc));
 }
+#endif
 
 template <>
 RCP<MAggregates> loadDataFromMatlab<RCP<MAggregates> >(const mxArray* mxa) {
@@ -606,7 +611,7 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph> >(const mxArray* mxa) {
     tgraph->insertGlobalIndices((mm_GlobalOrd)i, cols(rows[i], entriesPerRow[i]));
   }
   tgraph->fillComplete(map, map);
-  RCP<MGraph> mgraph = rcp(new MueLu::Graph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
+  RCP<MGraph> mgraph = rcp(new MueLu::LWGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
   // Set boundary nodes
   int numBoundaryNodes = mxGetNumberOfElements(boundaryNodes);
   bool* boundaryFlags  = new bool[nRows];
@@ -1005,6 +1010,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_Glo
   return output;
 }
 
+#ifdef HAVE_MUELU_EPETRA
 template <>
 mxArray* saveDataToMatlab(RCP<Epetra_CrsMatrix>& data) {
   RCP<Xpetra_Matrix_double> xmat = EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data);
@@ -1018,6 +1024,7 @@ mxArray* saveDataToMatlab(RCP<Epetra_MultiVector>& data) {
   data->ExtractCopy(dataPtr, data->GlobalLength());
   return output;
 }
+#endif
 
 template <>
 mxArray* saveDataToMatlab(RCP<MAggregates>& data) {
