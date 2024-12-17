@@ -191,7 +191,7 @@ namespace Amesos2 {
   LocalOrdinal
   ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
-    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major)  const
+    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase)  const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosCrsMatrixAdapter has not been implemented gather_impl.");
     return -1;

@@ -223,7 +223,7 @@ namespace Amesos2 {
 
     /// Gather matrix to MPI-0
     template<typename KV_S, typename KV_GO, typename KV_GS>
-    local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major) const;
+    local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;
 
     /// Returns a short description of this Solver
     std::string description() const;

@@ -601,11 +601,12 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_);
-          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, column_major);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, column_major);
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, current_phase);
 	}
-      } else {
+      } else 
+      {
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
           ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
@@ -623,7 +624,8 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
           }
         }
         fclose(fp);
-    }*/
+    }
+    MPI_Barrier(MPI_COMM_WORLD);*/
     // gather return the total nnz_ret on every MPI process
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
         std::runtime_error,

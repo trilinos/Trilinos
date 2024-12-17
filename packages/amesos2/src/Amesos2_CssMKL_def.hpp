@@ -264,7 +264,7 @@ namespace Amesos2 {
     }
 
     return( 0 );
-}
+  }
 
 
   template <class Matrix, class Vector>
