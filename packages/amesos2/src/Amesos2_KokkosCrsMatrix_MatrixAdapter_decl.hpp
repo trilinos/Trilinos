@@ -120,7 +120,7 @@ namespace Amesos2 {
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
-                             bool column_major) const;
+                             bool column_major, EPhase current_phase) const;
   };
 
 } // end namespace Amesos2

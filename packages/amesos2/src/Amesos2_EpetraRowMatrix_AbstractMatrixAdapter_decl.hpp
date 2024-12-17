@@ -57,13 +57,14 @@ namespace Amesos2 {
   public:
     // Give our base class access to our private implementation functions
     friend class MatrixAdapter< DerivedMat >;
-						 
+                                                 
     typedef MatrixTraits<Epetra_RowMatrix>::scalar_t                 scalar_t;
     typedef MatrixTraits<Epetra_RowMatrix>::local_ordinal_t   local_ordinal_t;
     typedef MatrixTraits<Epetra_RowMatrix>::global_ordinal_t global_ordinal_t;
     typedef MatrixTraits<Epetra_RowMatrix>::node_t                     node_t;
 
     typedef DerivedMat                                               matrix_t;
+    typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t>     map_t;
 
   private:
     typedef MatrixAdapter< DerivedMat >                               super_t;
@@ -80,18 +81,18 @@ namespace Amesos2 {
 
     AbstractConcreteMatrixAdapter(RCP<matrix_t> m);
 
-  public:			// these functions should technically be private
+  public:                        // these functions should technically be private
 
     // implementation functions
     void getGlobalRowCopy_impl(global_ordinal_t row,
-			       const Teuchos::ArrayView<global_ordinal_t>& indices,
-			       const Teuchos::ArrayView<scalar_t>& vals,
-			       size_t& nnz) const;
+                               const Teuchos::ArrayView<global_ordinal_t>& indices,
+                               const Teuchos::ArrayView<scalar_t>& vals,
+                               size_t& nnz) const;
     
     void getGlobalColCopy_impl(global_ordinal_t col,
-			       const Teuchos::ArrayView<global_ordinal_t>& indices,
-			       const Teuchos::ArrayView<scalar_t>& vals,
-			       size_t& nnz) const;
+                               const Teuchos::ArrayView<global_ordinal_t>& indices,
+                               const Teuchos::ArrayView<scalar_t>& vals,
+                               size_t& nnz) const;
 
     template<typename KV_GO, typename KV_S>
     void getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
@@ -121,19 +122,13 @@ namespace Amesos2 {
 
     // Brunt of the work is put on the implementation for converting
     // their maps to a Tpetra::Map
-    const RCP<const Tpetra::Map<local_ordinal_t,
-				global_ordinal_t,
-				node_t> >
+    const RCP<const map_t>
     getMap_impl() const;
 
-    const RCP<const Tpetra::Map<local_ordinal_t,
-				global_ordinal_t,
-				node_t> >
+    const RCP<const map_t>
     getRowMap_impl() const;
 
-    const RCP<const Tpetra::Map<local_ordinal_t,
-				global_ordinal_t,
-				node_t> >
+    const RCP<const map_t>
     getColMap_impl() const;
 
     const RCP<const Teuchos::Comm<int> > getComm_impl() const;
@@ -145,7 +140,11 @@ namespace Amesos2 {
     // Because instantiation of the subclasses could be wildly
     // different (cf subclasses of Epetra_RowMatrix), this method
     // hands off implementation to the adapter for the subclass
-    RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
+    RCP<const super_t> get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+    RCP<const super_t> reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                                    Teuchos::RCP<const map_t> &contigColMap) const;
+    template<typename KV_S, typename KV_GO, typename KV_GS>
+    local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;
 
     using spmtx_ptr_t = typename MatrixTraits<DerivedMat>::sparse_ptr_type;
     using spmtx_idx_t = typename MatrixTraits<DerivedMat>::sparse_idx_type;
@@ -182,4 +181,4 @@ namespace Amesos2 {
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DECL_HPP
+#endif // AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DECL_HPP

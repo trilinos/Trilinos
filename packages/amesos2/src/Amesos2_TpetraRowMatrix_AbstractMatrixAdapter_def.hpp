@@ -349,13 +349,13 @@ namespace Amesos2 {
   LocalOrdinal
   AbstractConcreteMatrixAdapter<
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat
-    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers) const
+    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const
   {
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, column_major, current_phase);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, column_major, current_phase);
 #endif
   }
 } // end namespace Amesos2

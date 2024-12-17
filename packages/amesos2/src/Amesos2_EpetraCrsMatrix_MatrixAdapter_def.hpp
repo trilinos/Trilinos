@@ -108,15 +108,6 @@ namespace Amesos2 {
       #endif
     }
 
-  //template<>
-  template<typename KV_S, typename KV_GO, typename KV_GS>
-  ConcreteMatrixAdapter<Epetra_CrsMatrix>::local_ordinal_t
-  ConcreteMatrixAdapter<Epetra_CrsMatrix>::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major)  const
-  {
-    local_ordinal_t ret = -1;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ConcreteMatrixAdapter<Epetra_CrsMatrix> has not been implemented gather_impl.");
-    return ret;
-  }
 
   void
   ConcreteMatrixAdapter<Epetra_CrsMatrix>::describe (Teuchos::FancyOStream& os,

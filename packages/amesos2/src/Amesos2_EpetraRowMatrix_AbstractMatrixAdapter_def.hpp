@@ -336,6 +336,33 @@ namespace Amesos2 {
   }
 
   template <class DerivedMat>
+  RCP<const MatrixAdapter<DerivedMat> >
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                                                                            Teuchos::RCP<const map_t> &contigColMap) const
+  {
+    // Delegate implementation to subclass
+#ifdef __CUDACC__
+    // NVCC doesn't seem to like the static_cast, even though it is valid
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap);
+#else
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap);
+#endif
+  }
+
+  template <class DerivedMat>
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::local_ordinal_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase)  const
+  {
+#ifdef __CUDACC__
+    // NVCC doesn't seem to like the static_cast, even though it is valid
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, column_major, current_phase);
+#else
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, column_major, current_phase);
+#endif
+  }
+
+  template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::spmtx_ptr_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const
