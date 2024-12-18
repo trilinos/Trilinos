@@ -110,10 +110,10 @@ Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(cons
   // TODO: It would be great is Amesos2 provides directly this kind of logic for us
   if (type_ == "" || Amesos2::query(type_) == false) {
     std::string oldtype = type_;
-#if defined(HAVE_AMESOS2_SUPERLU)
-    type_ = "Superlu";
-#elif defined(HAVE_AMESOS2_KLU2)
+#if defined(HAVE_AMESOS2_KLU2)
     type_ = "Klu";
+#elif defined(HAVE_AMESOS2_SUPERLU)
+    type_ = "Superlu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     type_ = "Superludist";
 #elif defined(HAVE_AMESOS2_BASKER)

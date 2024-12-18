@@ -59,6 +59,12 @@ TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Utils)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/xpetra)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/stratimikos)
+ENDIF()
+IF (${PACKAGE_NAME}_ENABLE_Thyra)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/thyra)
+ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
 ENDIF()
@@ -72,7 +78,9 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../research/regionMG/src)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
-   TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/stratimikos)
+ ENDIF()
+IF (TPL_ENABLE_MATLAB)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../matlab/src)
 ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
@@ -397,6 +405,9 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
 ENDIF()
+IF (TPL_ENABLE_MATLAB)
+  TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../matlab/src)
+ENDIF()
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
@@ -423,14 +434,5 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

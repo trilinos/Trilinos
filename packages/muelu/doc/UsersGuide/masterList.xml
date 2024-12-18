@@ -353,7 +353,7 @@
       <name>coarse: type</name>
       <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
-      <default>"SuperLU"</default>
+      <default>"KLU"</default>
       <description>Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.</description>
     </parameter>
 
