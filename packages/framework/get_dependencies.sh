@@ -3,7 +3,8 @@ ini_file_option=$1
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # Data that needs to be updated when GenConfig changes!
-genconfig_sha1=924a08af66f0a0573b5dd1128179731489339aec
+genconfig_sha1=88c44e347c0377a170ec9ca45a47732a9630b4ec
+
 
 # The following code contains no changing data
 
@@ -70,15 +71,10 @@ function tril_genconfig_clone_or_update_repo() {
   popd &> /dev/null
 }
 
-# Clone or update the repos
-if [[ "$ini_file_option" == "--container" ]] ; then
-  echo "In a container it is assumed that GenConfig is already in the container at /GenConfig"
-else
-  #Clone GenConfig from gitlab-ex
-  tril_genconfig_clone_or_update_repo \
-    git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
-    GenConfig  has-submodules ${genconfig_sha1}
-fi
+# Clone GenConfig from GitHub
+tril_genconfig_clone_or_update_repo \
+  https://github.com/sandialabs/GenConfig.git \
+  GenConfig  has-submodules ${genconfig_sha1}
 
 if [[ "$ini_file_option" == "--srn" ]] ; then
   #Clone srn-ini-files from cee-gitlab
@@ -92,10 +88,6 @@ elif [[ "$ini_file_option" == "--son" ]] ; then
     git@gitlab-ex.sandia.gov:trilinos-project/son-ini-files.git \
     son-ini-files
   
-elif [[ "$ini_file_option" == "--container" ]] ; then
-  #Copy Genconfig into place from /GenConfig
-  cp -R /GenConfig ${script_dir}
-    
 elif [[ "$ini_file_option" != "" ]] ; then
   echo "ERROR: Option '${ini_file_option}' not allowed! Must select '--son', '--srn' or ''."
   exit 1
