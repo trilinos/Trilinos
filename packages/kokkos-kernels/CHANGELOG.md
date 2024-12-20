@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.5.01](https://github.com/kokkos/kokkos-kernels/tree/4.5.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.5.00...4.5.01)
+
+### Bug Fixes:
+- Fix the package version [\#2460](https://github.com/kokkos/kokkos-kernels/pull/2460)
+
 ## [4.5.00](https://github.com/kokkos/kokkos-kernels/tree/4.5.00)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.4.01...4.5.00)
 
