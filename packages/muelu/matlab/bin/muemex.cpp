@@ -14,8 +14,8 @@
 #define MUEMEX_ERROR -1
 
 // Do not compile MueMex if any of these aren't available
-#if !defined HAVE_MUELU_EPETRA || !defined HAVE_MUELU_MATLAB
-#error "MueMex requires Epetra, Tpetra and MATLAB."
+#if !defined HAVE_MUELU_TPETRA || !defined HAVE_MUELU_MATLAB
+#error "MueMex requires Tpetra and MATLAB."
 #endif
 
 #include <Tpetra_Core.hpp>
@@ -295,11 +295,13 @@ template <>
 RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp) {
   RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
   switch (dp->type) {
+#ifdef HAVE_MUELU_EPETRA
     case EPETRA: {
       EpetraSystem* pack = (EpetraSystem*)dp;
       hier               = pack->getHierarchy();
       break;
     }
+#endif
     case TPETRA: {
       TpetraSystem<double>* pack = (TpetraSystem<double>*)dp;
       hier                       = pack->getHierarchy();
@@ -322,10 +324,13 @@ RCP<Hierarchy_complex> getDatapackHierarchy<complex_t>(MuemexSystem* dp) {
 template <typename Scalar, typename T>
 void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataName) {
   RCP<Level> level;
+#ifdef HAVE_MUELU_EPETRA
   if (problem->type == EPETRA) {
     RCP<Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((EpetraSystem*)problem)->getHierarchy();
     level                                                             = hier->GetLevel(levelID);
-  } else if (problem->type == TPETRA) {
+  } else
+#endif
+      if (problem->type == TPETRA) {
     RCP<Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((TpetraSystem<double>*)problem)->getHierarchy();
     level                                                             = hier->GetLevel(levelID);
   } else if (problem->type == TPETRA_COMPLEX) {
@@ -374,7 +379,9 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
       // Otherwise would break getting A and P when 'keep' is off
       needFMB = false;
     switch (this->type) {
+#ifdef HAVE_MUELU_EPETRA
       case EPETRA:
+#endif
       case TPETRA: {
         RCP<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = rcp_static_cast<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(getDatapackHierarchy<double>(this));
         level                                                                 = hier->GetLevel(levelID);
@@ -493,6 +500,7 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
   return output;
 }
 
+#ifdef HAVE_MUELU_EPETRA
 // EpetraSystem impl
 
 EpetraSystem::EpetraSystem()
@@ -608,6 +616,7 @@ RCP<Hierarchy_double> EpetraSystem::getHierarchy() {
     throw runtime_error("Hierarchy from Epetra problem was null.");
   return hier;
 }
+#endif
 
 // tpetra_double_data_pack implementation
 
@@ -1038,9 +1047,12 @@ void parse_list_item(RCP<ParameterList> List, char* option_name, const mxArray* 
       opt_str  = opt_char;
       List->set(option_name, opt_str);
       if (strcmp(option_name, MUEMEX_INTERFACE) == 0) {
+#ifdef HAVE_MUELU_EPETRA
         if (strcmp(opt_str.c_str(), "epetra") == 0)
           useEpetra = true;
-        else if (strcmp(opt_str.c_str(), "tpetra") == 0)
+        else
+#endif
+            if (strcmp(opt_str.c_str(), "tpetra") == 0)
           useEpetra = false;
       }
       mxFree(opt_char);
@@ -1254,6 +1266,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         }
         intf = List->get(MUEMEX_INTERFACE, "tpetra");
         List->remove(MUEMEX_INTERFACE);  // no longer need this parameter
+#ifdef HAVE_MUELU_EPETRA
         if (intf == "epetra") {
           if (mxIsComplex(prhs[1])) {
             mexPrintf("Error: Attempting to use complex-valued matrix with Epetra, which is unsupported.\n");
@@ -1265,7 +1278,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
           dp->setup(prhs[1], haveCoords, haveCoords ? prhs[2] : (mxArray*)NULL);
           oc = dp->operatorComplexity;
           D  = rcp_implicit_cast<MuemexSystem>(dp);
-        } else if (intf == "tpetra") {
+        } else
+#endif
+            if (intf == "tpetra") {
           // infer scalar type from prhs (can be double or complex<double>)
           if (mxIsComplex(prhs[1])) {
 #ifdef HAVE_COMPLEX_SCALARS
@@ -1353,6 +1368,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         // get pointer to MATLAB array that will be "B" or "rhs" multivector
         const mxArray* rhs = reuse ? prhs[2] : prhs[3];
         switch (dp->type) {
+#ifdef HAVE_MUELU_EPETRA
           case EPETRA: {
             RCP<EpetraSystem> esys = rcp_static_cast<EpetraSystem, MuemexSystem>(dp);
             RCP<Epetra_CrsMatrix> matrix;
@@ -1363,6 +1379,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             plhs[0] = esys->solve(List, matrix, rhs, iters);
             break;
           }
+#endif
           case TPETRA: {
             RCP<TpetraSystem<double>> tsys = rcp_static_cast<TpetraSystem<double>, MuemexSystem>(dp);
             RCP<Tpetra_CrsMatrix_double> matrix;
@@ -1410,11 +1427,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         // get pointer to MATLAB array that will be "B" or "rhs" multivector
         const mxArray* rhs = prhs[2];
         switch (dp->type) {
+#ifdef HAVE_MUELU_EPETRA
           case EPETRA: {
             RCP<EpetraSystem> esys = rcp_static_cast<EpetraSystem, MuemexSystem>(dp);
             plhs[0]                = esys->apply(rhs);
             break;
           }
+#endif
           case TPETRA: {
             RCP<TpetraSystem<double>> tsys = rcp_static_cast<TpetraSystem<double>, MuemexSystem>(dp);
             plhs[0]                        = tsys->apply(rhs);

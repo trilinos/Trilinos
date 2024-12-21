@@ -27,8 +27,6 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
-#include "mex.h"
-
 namespace MueLu {
 /*!
   @class SingleLevelMatlabFactory

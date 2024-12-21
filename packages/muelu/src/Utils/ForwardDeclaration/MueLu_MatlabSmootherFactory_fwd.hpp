@@ -7,21 +7,21 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef MUELU_TWOLEVELMATLABFACTORY_FWD_HPP
-#define MUELU_TWOLEVELMATLABFACTORY_FWD_HPP
+#ifndef MUELU_MATLABSMOOTHERFACTORY_FWD_HPP
+#define MUELU_MATLABSMOOTHERFACTORY_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_MATLAB)
 
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class TwoLevelMatlabFactory;
+class MatlabSmootherFactory;
 }
 
-#ifndef MUELU_TWOLEVELMATLABFACTORY_SHORT
-#define MUELU_TWOLEVELMATLABFACTORY_SHORT
+#ifndef MUELU_MATLABSMOOTHERFACTORY_SHORT
+#define MUELU_MATLABSMOOTHERFACTORY_SHORT
 #endif
 
 #endif
 
-#endif  // MUELU_TWOLEVELMATLABFACTORY_FWD_HPP
+#endif  // MUELU_MATLABSMOOTHERFACTORY_FWD_HPP

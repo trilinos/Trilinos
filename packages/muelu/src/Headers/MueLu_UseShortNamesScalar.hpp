@@ -455,12 +455,12 @@ using MultiPhys [[maybe_unused]] = MueLu::MultiPhys<Scalar, LocalOrdinal, Global
 #ifdef MUELU_MAXWELL_UTILS_SHORT
 using Maxwell_Utils [[maybe_unused]] = MueLu::Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
-typedef MueLu::TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> TwoLevelMatlabFactory;
-#endif
 #ifdef MUELU_SINGLELEVELMATLABFACTORY_SHORT
-typedef MueLu::SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> SingleLevelMatlabFactory;
+using SingleLevelMatlabFactory [[maybe_unused]] = MueLu::SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
+#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
+using TwoLevelMatlabFactory [[maybe_unused]] = MueLu::TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_MATLABSMOOTHER_SHORT
-typedef MueLu::MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatlabSmoother;
+using MatlabSmoother [[maybe_unused]] = MueLu::MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
