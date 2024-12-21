@@ -10,3 +10,5 @@
 __version__ = '0.1.0'
 def version():
     return 'PyTrilinos2 version: ' + __version__
+
+from . PyTrilinos2 import *

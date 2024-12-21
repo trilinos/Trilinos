@@ -316,18 +316,15 @@ void define_MultiVector_member_functions(T cl) {
 template <typename T>
 void def_initialize_Kokkos(T m) {
   m.def("initialize_Kokkos",[](int num_threads,
-                               int num_devices,
                                int device_id){
         if(!Kokkos::is_initialized()) {
           Kokkos::InitializationSettings args;
           args.set_num_threads(num_threads);
-          args.set_num_devices(num_devices);
           args.set_device_id(device_id);
           Kokkos::initialize(args);
         }
       },
       py::arg("num_threads") = -1,
-      py::arg("num_devices") = -1,
       py::arg("device_id") = -1
     );
   m.def("finalize_Kokkos",[](){
