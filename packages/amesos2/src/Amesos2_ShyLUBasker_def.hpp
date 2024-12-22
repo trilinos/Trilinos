@@ -616,16 +616,6 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
       }
     }
 
-    /*if (this->root_) {
-        FILE *fp = fopen("A.dat","w");
-        for (int i=0; i <this->globalNumCols_; i++) {
-          for (int k=colptr_view_(i); k < colptr_view_(i+1); k++) {
-            fprintf(fp,"%d %d %.16e\n",1+k,1+rowind_view_(k),i,nzvals_view_(k));
-          }
-        }
-        fclose(fp);
-    }
-    MPI_Barrier(MPI_COMM_WORLD);*/
     // gather return the total nnz_ret on every MPI process
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
         std::runtime_error,

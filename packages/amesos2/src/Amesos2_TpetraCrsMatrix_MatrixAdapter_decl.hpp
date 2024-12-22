@@ -85,8 +85,9 @@ namespace Amesos2 {
     typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
     typedef ConcreteMatrixAdapter<matrix_t>                       type;
 
-    typedef Kokkos::DefaultHostExecutionSpace                    HostExecSpaceType;
+    typedef Kokkos::DefaultHostExecutionSpace                 HostExecSpaceType;
     typedef Kokkos::View<local_ordinal_t*, HostExecSpaceType> host_ordinal_type_array;
+    typedef Kokkos::View<       scalar_t*, HostExecSpaceType> host_scalar_type_array;
 
     ConcreteMatrixAdapter(RCP<matrix_t> m);
 
@@ -105,6 +106,7 @@ namespace Amesos2 {
     mutable host_ordinal_type_array recvCounts;
     mutable host_ordinal_type_array recvDispls;
     mutable host_ordinal_type_array transpose_map_;
+    mutable host_scalar_type_array   nzvals_t;
   };
 
 } // end namespace Amesos2
