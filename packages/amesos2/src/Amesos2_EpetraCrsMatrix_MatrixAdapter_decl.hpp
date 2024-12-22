@@ -87,25 +87,11 @@ namespace Amesos2 {
     local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const
     {
       local_ordinal_t ret = -1;
-      //TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ConcreteMatrixAdapter<Epetra_CrsMatrix> has not been implemented gather_impl.");
       {
 #ifdef HAVE_MPI
-        auto Comm = this->mat_->Comm();
-        printf( " %d/%d\n",Comm.MyPID(),Comm.NumProc());
-        #if 0
-        Comm.PrintInfo(std::cout);
-        Teuchos::RCP<const Epetra_MpiComm>
-          mpiEpetraComm = Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>(Teuchos::rcpFromRef(Comm));
-        if( !mpiEpetraComm.get() ) {
-          printf( " ERROR\n" ); fflush(stdout);
-          return ret;
-        }
-        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
-          rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
-        RCP<Teuchos::Comm<int>> comm = Teuchos::createMpiComm<int>(rawMpiComm);
-        #else
-        auto comm = Util::to_teuchos_comm(Teuchos::rcpFromRef(Comm));
-        #endif
+        auto rowMap = this->getRowMap();
+        auto colMap = this->getColMap();
+        auto comm = rowMap->getComm();
         auto nRanks = comm->getSize();
         auto myRank = comm->getRank();
 #else
@@ -119,105 +105,149 @@ namespace Amesos2 {
         double *lclNzvals = nullptr;
         this->mat_->ExtractCrsDataPointers(lclRowptr, lclColind, lclNzvals);
 
-        // workspace for column major
-        KV_GS pointers_t;
-        KV_S nzvals_t;
-        KV_GO indices_t;
-
-        // gether rowptr
         int nRows = this->mat_->NumGlobalRows();
         int myNRows = this->mat_->NumMyRows();
         int myNnz = this->mat_->NumMyNonzeros();
-        KV_GS recvCounts("recvCounts",nRanks);
-        KV_GS recvDispls("recvDispls",nRanks+1);
+        if(current_phase == SYMBFACT)
         {
+          // workspace for column major
+          KV_GS pointers_t;
+          KV_GO indices_t;
+
+          // gether rowptr
+          Kokkos::resize(recvCounts, nRanks);
+          Kokkos::resize(recvDispls, nRanks+1);
+          {
 #ifdef HAVE_AMESOS2_TIMERS
-          Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
-          Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
+            Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-          Teuchos::gather<int, int> (&myNRows, 1, recvCounts.data(), 1, 0, *comm);
-          if (myRank == 0) {
-            Kokkos::resize(recvDispls, nRanks+1);
-            recvDispls(0) = 0;
-            for (int p = 1; p <= nRanks; p++) {
-              recvDispls(p) = recvDispls(p-1) + recvCounts(p-1);
+            Teuchos::gather<int, int> (&myNRows, 1, recvCounts.data(), 1, 0, *comm);
+            if (myRank == 0) {
+              Kokkos::resize(recvDispls, nRanks+1);
+              recvDispls(0) = 0;
+              for (int p = 1; p <= nRanks; p++) {
+                recvDispls(p) = recvDispls(p-1) + recvCounts(p-1);
+              }
+              if (recvDispls(nRanks) != nRows) {
+                TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Amesos2_TpetraCrsMatrix_MatrixAdapter::gather_impl : mismatch between gathered(local nrows) and global nrows.");
+              }
+            } else {
+              for (int p = 0; p < nRanks; p++) {
+                recvCounts(p) = 0;
+                recvDispls(p) = 0;
+              }
+              recvDispls(nRanks) = 0;
             }
-            fflush(stdout);
-            if (recvDispls(nRanks) != nRows) {
-              TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Amesos2_TpetraCrsMatrix_MatrixAdapter::gather_impl : mismatch between gathered(local nrows) and global nrows.");
+            if (myRank == 0 && column_major) {
+              Kokkos::resize(pointers_t, nRows+1);
+            } else if (myRank != 0) {
+              Kokkos::resize(pointers_t, 2);
             }
-          } else {
-            for (int p = 0; p < nRanks; p++) {
-              recvCounts(p) = 0;
-              recvDispls(p) = 0;
+            int *pointers_ = (myRank != 0 || column_major ? pointers_t.data() : pointers.data());
+            Teuchos::gatherv<int, local_ordinal_t> (&lclRowptr[1], myNRows, &pointers_[1], 
+                                                    recvCounts.data(), recvDispls.data(),
+                                                    0, *comm);
+            if (myRank == 0) {
+              // shift to global pointers
+              pointers_[0] = 0;
+              recvCounts(0) = pointers_[recvDispls(1)];
+              local_ordinal_t displs = recvCounts(0);
+              for (int p = 1; p < nRanks; p++) {
+                // save recvCounts from pth MPI
+                recvCounts(p) = pointers_[recvDispls(p+1)];
+                // shift pointers for pth MPI to global
+                for (int i = 1+recvDispls(p); i <= recvDispls(p+1); i++) {
+                  pointers_[i] += displs;
+                }
+                displs += recvCounts(p);
+              }
+              ret = pointers_[nRows];
             }
-            recvDispls(nRanks) = 0;
+          }
+          {
+#ifdef HAVE_AMESOS2_TIMERS
+            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
+            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+#endif
+            // gather colinds & nzvals
+            if (myRank == 0) {
+              recvDispls(0) = 0;
+              for (int p = 0; p < nRanks; p++) {
+                recvDispls(p+1) = recvDispls(p) + recvCounts(p);
+              }
+            }
+            // -- convert to global colids
+            KV_GO lclColind_ ("localColind_", myNnz);
+            for (int i = 0; i < int(myNnz); i++) lclColind_(i) = colMap->getGlobalElement((lclColind[i]));
+            if (column_major) {
+              Kokkos::resize(indices_t, indices.extent(0));
+              Teuchos::gatherv<int, local_ordinal_t> (lclColind_.data(), myNnz, indices_t.data(), 
+                                                      recvCounts.data(), recvDispls.data(),
+                                                      0, *comm);
+            } else {
+              Teuchos::gatherv<int, local_ordinal_t> (lclColind_.data(), myNnz, indices.data(), 
+                                                      recvCounts.data(), recvDispls.data(),
+                                                      0, *comm);
+            }
           }
           if (myRank == 0 && column_major) {
-            Kokkos::resize(pointers_t, nRows+1);
-          } else if (myRank != 0) {
-            Kokkos::resize(pointers_t, 2);
-          }
-          int *pointers_ = (myRank != 0 || column_major ? pointers_t.data() : pointers.data());
-          Teuchos::gatherv<int, local_ordinal_t> (&lclRowptr[1], myNRows, &pointers_[1], 
-                                                  recvCounts.data(), recvDispls.data(),
-                                                  0, *comm);
-          if (myRank == 0) {
-            // shift to global pointers
-            pointers_[0] = 0;
-            recvCounts(0) = pointers_[recvDispls(1)];
-            local_ordinal_t displs = recvCounts(0);
-            for (int p = 1; p < nRanks; p++) {
-              // save recvCounts from pth MPI
-              recvCounts(p) = pointers_[recvDispls(p+1)];
-              // shift pointers for pth MPI to global
-              for (int i = 1+recvDispls(p); i <= recvDispls(p+1); i++) {
-                pointers_[i] += displs;
+#ifdef HAVE_AMESOS2_TIMERS
+            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
+            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+#endif
+            // Map to transpose
+            Kokkos::resize(this->transpose_map_, ret);
+            // Transopose to convert to CSC
+            for (int i=0; i<=nRows; i++) {
+              pointers(i) = 0;
+            }
+            for (int k=0; k<ret; k++) {
+              if (indices_t(k) < nRows-1) {
+                pointers(indices_t(k)+2) ++;
               }
-              displs += recvCounts(p);
             }
-            ret = pointers_[nRows];
-          }
-        }
-        {
-#ifdef HAVE_AMESOS2_TIMERS
-          Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
-          Teuchos::TimeMonitor GatherTimer(*gatherTime);
-#endif
-          // gather colinds & nzvals
-          if (myRank == 0) {
-            recvDispls(0) = 0;
-            for (int p = 0; p < nRanks; p++) {
-              recvDispls(p+1) = recvDispls(p) + recvCounts(p);
+            for (int i=1; i < nRows; i++) {
+              pointers(i+1) += pointers(i);
+            }
+            for (int i=0; i<nRows; i++) {
+              for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
+                this->transpose_map_(k) = pointers(1+indices_t(k));
+                indices(pointers(1+indices_t(k))) = i;
+                pointers(1+indices_t(k)) ++;
+              }
             }
           }
-          if (column_major) {
-            Kokkos::resize(indices_t, indices.extent(0));
-            Teuchos::gatherv<int, local_ordinal_t> (lclColind, myNnz, indices_t.data(), 
-                                                    recvCounts.data(), recvDispls.data(),
-                                                    0, *comm);
-          } else {
-            Teuchos::gatherv<int, local_ordinal_t> (lclColind, myNnz, indices.data(), 
-                                                    recvCounts.data(), recvDispls.data(),
-                                                    0, *comm);
-          }
         }
+        //if(current_phase == NUMFACT) // Numerical values may be used in symbolic (e.g, MWM)
         {
+          // workspace for column major
+          {
 #ifdef HAVE_AMESOS2_TIMERS
-          Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
-          Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
+            Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-          if (column_major) {
-            Kokkos::resize(nzvals_t, nzvals.extent(0));
-            Teuchos::gatherv<int, scalar_t> (lclNzvals, myNnz, nzvals_t.data(), 
-                                             recvCounts.data(), recvDispls.data(),
-                                             0, *comm);
-          } else {
-            Teuchos::gatherv<int, scalar_t> (lclNzvals, myNnz, nzvals.data(), 
-                                             recvCounts.data(), recvDispls.data(),
-                                             0, *comm);
+            if (column_major) {
+              Kokkos::resize(nzvals_t, nzvals.extent(0));
+              Teuchos::gatherv<int, scalar_t> (lclNzvals, myNnz, nzvals_t.data(), 
+                                               recvCounts.data(), recvDispls.data(),
+                                               0, *comm);
+            } else {
+              Teuchos::gatherv<int, scalar_t> (lclNzvals, myNnz, nzvals.data(), 
+                                               recvCounts.data(), recvDispls.data(),
+                                               0, *comm);
+            }
+          }
+          if (myRank == 0 && column_major) {
+            // Insert Numerical values to transopose matrix
+            ret = pointers(nRows);
+            for (int k=0; k<ret; k++) {
+              nzvals(this->transpose_map_(k)) = nzvals_t(k);
+            }
           }
         }
+        // broadcast return value
+        Teuchos::broadcast<int, local_ordinal_t>(*comm, 0, 1, &ret);
       }
       return ret;
     }
@@ -232,6 +262,13 @@ namespace Amesos2 {
     mutable RCP<EpetraExt::CrsMatrix_Reindex> StdIndex_;
     mutable RCP<Epetra_CrsMatrix> ContigMat_;
 #endif
+    typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+    typedef Kokkos::View<local_ordinal_t*, HostExecSpaceType> host_ordinal_type_array;
+    typedef Kokkos::View<scalar_t       *, HostExecSpaceType> host_scalar_type_array;
+    mutable host_ordinal_type_array recvCounts;
+    mutable host_ordinal_type_array recvDispls;
+    mutable host_ordinal_type_array transpose_map_;
+    mutable host_scalar_type_array  nzvals_t;
   };
 
 } // end namespace Amesos2

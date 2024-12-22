@@ -305,9 +305,9 @@ namespace Amesos2 {
             }
           }
         }
-        if(current_phase == NUMFACT) {
+        //if(current_phase == NUMFACT) // Numerical values may be used in symbolic (e.g, MWM)
+        {
           // workspace to transpose
-          KV_S nzvals_t;
           {
 #ifdef HAVE_AMESOS2_TIMERS
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
@@ -331,30 +331,9 @@ namespace Amesos2 {
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose values)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-#if 1
             for (int k=0; k<ret; k++) {
               nzvals(this->transpose_map_(k)) = nzvals_t(k);
             }
-#else
-            for (int i=0; i<=nRows; i++) {
-              pointers(i) = 0;
-            }
-            for (int k=0; k<ret; k++) {
-              if (indices_t(k) < nRows-1) {
-                pointers(indices_t(k)+2) ++;
-              }
-            }
-            for (int i=1; i < nRows; i++) {
-              pointers(i+1) += pointers(i);
-            }
-            for (int i=0; i<nRows; i++) {
-              for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
-                indices(pointers(1+indices_t(k))) = i;
-                nzvals(pointers(1+indices_t(k))) = nzvals_t(k);
-                pointers(1+indices_t(k)) ++;
-              }
-            }
-#endif
           }
         }
         // broadcast return value
