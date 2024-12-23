@@ -315,12 +315,12 @@ namespace Amesos2 {
 #endif
             if (column_major) {
               Kokkos::resize(nzvals_t, nzvals.extent(0));
-              Teuchos::gatherv<int, Scalar> (lclNzvals.data(), lclNzvals.extent(0), nzvals_t.data(), 
-                                             recvCounts.data(), recvDispls.data(),
+              Teuchos::gatherv<int, Scalar> (reinterpret_cast<Scalar*> (lclNzvals.data()), lclNzvals.extent(0),
+                                             reinterpret_cast<Scalar*> (nzvals_t.data()), recvCounts.data(), recvDispls.data(),
                                              0, *comm);
             } else {
-              Teuchos::gatherv<int, Scalar> (lclNzvals.data(), lclNzvals.extent(0), nzvals.data(), 
-                                             recvCounts.data(), recvDispls.data(),
+              Teuchos::gatherv<int, Scalar> (reinterpret_cast<Scalar*> (lclNzvals.data()), lclNzvals.extent(0),
+                                             reinterpret_cast<Scalar*> (nzvals.data()), recvCounts.data(), recvDispls.data(),
                                              0, *comm);
             }
           }
