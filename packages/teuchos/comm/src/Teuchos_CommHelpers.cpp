@@ -941,7 +941,6 @@ isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
 #endif // HAVE_TEUCHOS_COMPLEX
 #endif // if 0
 
-
 // Specialization for Ordinal=int and Packet=double.
 template<>
 void

@@ -593,11 +593,12 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     local_ordinal_type nnz_ret = 0;
+    bool gather_supported = (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value);
     {
     #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
-      if (this->matrixA_->getComm()->getSize() > 1) {
+      if (this->matrixA_->getComm()->getSize() > 1 && gather_supported) {
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_);
@@ -617,11 +618,12 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     // gather return the total nnz_ret on every MPI process
-    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
-        std::runtime_error,
-        "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals("
-        +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
-
+    if (gather_supported || this->root_) {
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+          std::runtime_error,
+          "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals("
+          +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
+    }
   } //end alternative path 
   return true;
 }
