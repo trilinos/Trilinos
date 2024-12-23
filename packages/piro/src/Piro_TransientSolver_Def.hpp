@@ -348,7 +348,13 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
   // Solution at convergence is the response at index num_g_
   RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
   if (Teuchos::nonnull(gx_out)) {
-    Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+    auto x = modelInArgs.get_x();
+    if (x->space()->isCompatible(*gx_out->space())) {
+      Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+    } else {
+      *out_ << "  WARNING: x and gx_out are not compatible (likely, because adaptation occurred).\n"
+               "    If you need the solution, you will have to retrieve it in another way.\n";
+    }
   }
 
   // Setup output for final evalution of underlying model
