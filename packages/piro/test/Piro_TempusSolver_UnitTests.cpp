@@ -13,6 +13,7 @@
 #include "Piro_TempusSolver.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
+#include "Piro_Test_MockTempusObserver.hpp"
 
 #ifdef HAVE_PIRO_NOX
 #include "Piro_NOXSolver.hpp"
@@ -343,6 +344,60 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
   const RCP<TempusSolver<double> > solver =
     solverNew(model, initialTime, finalTime, timeStepSize, observer, "None");
 
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const RCP<Thyra::VectorBase<double> > solution =
+    Thyra::createMember(solver->get_g_space(solutionResponseIndex));
+  outArgs.set_g(solutionResponseIndex, solution);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_COMPARE_FLOATING_ARRAYS(
+      arrayFromVector(*observer->lastSolution()),
+      arrayFromVector(*solution),
+      tol);
+
+  TEST_FLOATING_EQUALITY(observer->lastStamp(), finalTime, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolutionNoWrapper)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  auto observer = Teuchos::rcp(new MockTempusObserver<double>());
+
+  const double initialTime = 0.0;
+  const double finalTime = 0.1;
+  const double timeStepSize = 0.05;
+
+  const RCP<ParameterList> appParams(new ParameterList("params"));
+  auto& tempusPL = appParams->sublist("Tempus");
+  tempusPL.set("Integrator Name", "Demo Integrator");
+  tempusPL.sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
+  tempusPL.sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
+  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
+  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", initialTime);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", fixedTimeStep);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time Step", fixedTimeStep);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", fixedTimeStep);
+  tempusPL.sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
+  tempusPL.sublist("Demo Stepper").set("Zero Initial Guess", false);
+  tempusPL.sublist("Demo Stepper").set("Solver Name", "Demo Solver");
+  tempusPL.sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
+
+  auto solver = tempusSolver(appParams,model,Teuchos::null,observer);
+
+  // Check that the piro integrator did NOT wrap our observer in a tempus adapter
+  auto piro_integrator = solver->getPiroTempusIntegrator();
+  auto tempus_integrator = piro_integrator->getIntegrator();
+  auto basic_integrator = Teuchos::rcp_dynamic_cast<const Tempus::IntegratorBasic<double>>(tempus_integrator);
+  auto tempus_observer = basic_integrator->getObserver();
+  TEST_ASSERT (tempus_observer==observer);
+
+  // Proceed like the test above
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
