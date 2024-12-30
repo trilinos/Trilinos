@@ -274,12 +274,8 @@ namespace Amesos2 {
                               MatrixTraits<Epetra_RowMatrix>::node_t> >
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMap_impl() const
   {
-    // Should Map() be used (returns Epetra_BlockMap)
-    /*
-    printf("Amesos2_EpetraRowMatrix_AbstractMatrixAdapter: Epetra does not support a 'getMap()' method. Returning rcp(Teuchos::null). \
-        If your map contains non-contiguous GIDs please use Tpetra instead of Epetra. \n");
-    */
-    return( Teuchos::null );
+    const Epetra_BlockMap map = this->mat_->Map();
+    return( Util::epetra_map_to_tpetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(map) );
   }
 
   template <class DerivedMat>
