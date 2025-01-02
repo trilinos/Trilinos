@@ -17,6 +17,14 @@ macro(enable_warnings warnings)
 endmacro()
 
 
+macro(disable_warnings warnings)
+    message(STATUS "Trilinos warnings disabled: ${warnings}")
+    foreach(warning ${warnings})
+        set(CMAKE_CXX_FLAGS "-Wno-${warning} ${CMAKE_CXX_FLAGS}")
+    endforeach()
+endmacro()
+
+
 macro(enable_errors errors)
     message(STATUS "Trilinos warnings-as-errors enabled: ${errors}")
     foreach(error ${errors})
@@ -43,13 +51,19 @@ IF (KokkosEnable)
   # being treated as an internal package.
 ENDIF()
 
-set(upcoming_warnings shadow ${Trilinos_ADDITIONAL_WARNINGS})
+set(explicitly_disabled_warnings
+    deprecated-declarations
+    inline
+)
+set(upcoming_warnings
+    shadow
+    ${Trilinos_ADDITIONAL_WARNINGS}
+)
 set(promoted_warnings
     address
     aggressive-loop-optimizations
     builtin-declaration-mismatch
     cast-align
-    deprecated-declarations
     div-by-zero
     format-extra-args
     format
@@ -80,3 +94,5 @@ elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
     enable_errors("${promoted_warnings};${upcoming_warnings}")
     disable_warnings_for_deprecated_packages()
 endif()
+
+disable_warnings("${explicitly_disabled_warnings}")
