@@ -45,6 +45,7 @@ Framework
     if either of these modes are enabled, all warnings are disabled for any
     deprecated packages, in the interest of not spending effort cleaning them.
     By default, no warnings or errors are added.
+  - Set all currently-clean GCC 10 warnings as 'promoted'.
 
 
 ###############################################################################

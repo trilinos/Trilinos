@@ -1,5 +1,6 @@
 tribits_get_package_enable_status(Kokkos  KokkosEnable "")
 
+
 macro(disable_warnings_for_deprecated_packages)
     message(STATUS "Disabling all warnings/errors for deprecated packages")
     foreach(package ${DEPRECATED_PACKAGES})
@@ -43,7 +44,33 @@ IF (KokkosEnable)
 ENDIF()
 
 set(upcoming_warnings shadow ${Trilinos_ADDITIONAL_WARNINGS})
-set(promoted_warnings parentheses sign-compare unused-variable reorder uninitialized)
+set(promoted_warnings
+    address
+    aggressive-loop-optimizations
+    builtin-declaration-mismatch
+    cast-align
+    deprecated-declarations
+    div-by-zero
+    format-extra-args
+    format
+    format-zero-length
+    init-self
+    int-to-pointer-cast
+    parentheses
+    reorder
+    return-type
+    sequence-point
+    sign-compare
+    strict-aliasing
+    type-limits
+    uninitialized
+    unused-function
+    unused-label
+    unused-value
+    unused-variable
+    variadic-macros
+    write-strings
+)
 
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
     enable_warnings("${upcoming_warnings}")
