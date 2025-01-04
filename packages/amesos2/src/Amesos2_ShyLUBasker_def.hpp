@@ -78,11 +78,6 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
 
-  // maps for reindexing
-  //const global_ordinal_type indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
-  //contig_rowmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, this->matrixA_->getComm ()));
-  //contig_colmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, this->matrixA_->getComm ()));
-
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
      std::runtime_error,
@@ -601,11 +596,12 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
       if (this->matrixA_->getComm()->getSize() > 1 && gather_supported) {
         bool column_major = true;
         if (!is_contiguous_) {
-          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_);
-          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, current_phase);
+          // NOTE: calling gather with SYMBFACT to recompute communication pattern
+          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_, current_phase);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, SYMBFACT);
         } else {
           nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, current_phase);
-	}
+        }
       } else 
       {
         Util::get_ccs_helper_kokkos_view<

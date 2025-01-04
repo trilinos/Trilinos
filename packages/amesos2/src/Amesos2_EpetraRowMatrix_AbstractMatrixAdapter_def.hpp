@@ -338,14 +338,15 @@ namespace Amesos2 {
   template <class DerivedMat>
   RCP<const MatrixAdapter<DerivedMat> >
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
-                                                                            Teuchos::RCP<const map_t> &contigColMap) const
+                                                                            Teuchos::RCP<const map_t> &contigColMap,
+                                                                            const EPhase current_phase) const
   {
     // Delegate implementation to subclass
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
 #endif
   }
 

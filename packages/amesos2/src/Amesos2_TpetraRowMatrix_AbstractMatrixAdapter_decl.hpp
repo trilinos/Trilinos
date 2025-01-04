@@ -146,7 +146,7 @@ namespace Amesos2 {
     // different (cf subclasses of Tpetra::CrsMatrix), this method
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
-    RCP<const super_t> reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigRowMap, Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigColMap) const;
+    RCP<const super_t> reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigRowMap, Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigColMap, const EPhase current_phase) const;
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;

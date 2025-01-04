@@ -79,7 +79,8 @@ namespace Amesos2 {
 
   Teuchos::RCP<const MatrixAdapter<Epetra_CrsMatrix> >
   ConcreteMatrixAdapter<Epetra_CrsMatrix>::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
-                                                        Teuchos::RCP<const map_t> &contigColMap) const
+                                                        Teuchos::RCP<const map_t> &contigColMap,
+                                                        const EPhase /*current_phase*/) const
     {
       #if defined(HAVE_AMESOS2_EPETRAEXT)
       using Teuchos::RCP;

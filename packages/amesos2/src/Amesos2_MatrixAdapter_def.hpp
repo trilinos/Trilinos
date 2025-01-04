@@ -516,9 +516,9 @@ namespace Amesos2 {
 
   template < class Matrix >
   Teuchos::RCP<const MatrixAdapter<Matrix> >
-  MatrixAdapter<Matrix>::reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const
+  MatrixAdapter<Matrix>::reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const
   {
-    return static_cast<const adapter_t*>(this)->reindex_impl(contigRowMap, contigColMap);
+    return static_cast<const adapter_t*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
   }
 
   template < class Matrix >
