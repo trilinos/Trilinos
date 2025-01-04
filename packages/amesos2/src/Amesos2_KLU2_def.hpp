@@ -462,8 +462,9 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
       if (this->matrixA_->getComm()->getSize() > 1 && gather_supported) {
         bool column_major = true;
         if (!is_contiguous_) {
-          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_);
-          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major, current_phase);
+          // NOTE: calling gather with SYMBFACT to recompute communication pattern
+          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_, current_phase);
+          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major, SYMBFACT);
         } else {
           nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major, current_phase);
         }

@@ -334,13 +334,13 @@ namespace Amesos2 {
   RCP<const MatrixAdapter<DerivedMat> >
   AbstractConcreteMatrixAdapter<
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat
-    >::reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigRowMap, Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigColMap) const
+    >::reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigRowMap, Teuchos::RCP<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t>> &contigColMap, const EPhase current_phase) const
   {
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
 #endif
   }
 

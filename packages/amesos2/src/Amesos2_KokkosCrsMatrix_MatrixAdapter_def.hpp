@@ -180,7 +180,7 @@ namespace Amesos2 {
   Teuchos::RCP<const MatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>>
   ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
-    >::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap)  const
+    >::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosCrsMatrixAdapter has not implemented reindex_impl.");
     return RCP (this);

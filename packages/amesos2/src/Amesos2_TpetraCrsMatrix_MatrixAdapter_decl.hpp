@@ -82,7 +82,7 @@ namespace Amesos2 {
     typedef typename super_t::node_t                            node_t;
     typedef typename super_t::global_size_t              global_size_t;
 
-    typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>       map_t;
     typedef ConcreteMatrixAdapter<matrix_t>                       type;
 
     typedef Kokkos::DefaultHostExecutionSpace                 HostExecSpaceType;
@@ -92,7 +92,7 @@ namespace Amesos2 {
     ConcreteMatrixAdapter(RCP<matrix_t> m);
 
     RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
-    RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap) const;
+    RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const;
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;
@@ -103,10 +103,11 @@ namespace Amesos2 {
               const Teuchos::EVerbosityLevel verbLevel =
               Teuchos::Describable::verbLevel_default) const;
   private:
+    // for gather_impl
     mutable host_ordinal_type_array recvCounts;
     mutable host_ordinal_type_array recvDispls;
     mutable host_ordinal_type_array transpose_map_;
-    mutable host_scalar_type_array   nzvals_t;
+    mutable host_scalar_type_array  nzvals_t;
   };
 
 } // end namespace Amesos2

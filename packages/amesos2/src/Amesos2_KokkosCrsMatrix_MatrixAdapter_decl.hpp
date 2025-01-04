@@ -61,7 +61,8 @@ namespace Amesos2 {
 
     Teuchos::RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
     Teuchos::RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
-                                                              Teuchos::RCP<const map_t> &contigColMap) const;
+                                                              Teuchos::RCP<const map_t> &contigColMap,
+                                                              const EPhase current_phase) const;
 
     const Teuchos::RCP<const Teuchos::Comm<int> > getComm_impl() const;
     global_size_t getGlobalNumRows_impl() const;

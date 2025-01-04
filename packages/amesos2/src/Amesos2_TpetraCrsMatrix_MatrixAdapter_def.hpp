@@ -94,7 +94,8 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     >::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
-                    Teuchos::RCP<const map_t> &contigColMap) const
+                    Teuchos::RCP<const map_t> &contigColMap,
+                    const EPhase current_phase) const
     {
       typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t> contiguous_map_type;
       auto rowMap = this->mat_->getRowMap();
@@ -107,21 +108,18 @@ namespace Amesos2 {
       Teuchos::TimeMonitor ReindexTimer(*reindexTimer);
 #endif
 
-      global_ordinal_t indexBase = rowMap->getIndexBase();
-      global_ordinal_t numDoFs = this->mat_->getGlobalNumRows();
-      local_ordinal_t nRows = this->mat_->getLocalNumRows();
-      local_ordinal_t nCols = colMap->getLocalNumElements();
+      GlobalOrdinal indexBase = rowMap->getIndexBase();
+      GlobalOrdinal numDoFs = this->mat_->getGlobalNumRows();
+      LocalOrdinal nRows = this->mat_->getLocalNumRows();
+      LocalOrdinal nCols = colMap->getLocalNumElements();
 
       RCP<matrix_t> contiguous_t_mat;
-      // if-checks when to recompute contigRowMap & contigColMap
-      // TODO: this is currentlly based on the global matrix dimesions
-      if ((contigRowMap.is_null() || contigColMap.is_null()) ||
-          (contigRowMap->getGlobalNumElements() != numDoFs || contigColMap->getGlobalNumElements() != numDoFs)) {
+      // check when to recompute contigRowMap & contigColMap
+      if(current_phase == PREORDERING || current_phase == SYMBFACT) {
         auto tmpMap = rcp (new contiguous_map_type (numDoFs, nRows, indexBase, rowComm));
         global_ordinal_t frow = tmpMap->getMinGlobalIndex();
 
         // Create new GID list for RowMap
-        typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
         Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("indexList", nRows);
         for (local_ordinal_t k = 0; k < nRows; k++) {
           rowIndexList(k) = frow+k;
@@ -152,11 +150,14 @@ namespace Amesos2 {
         contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
       } else {
         // Build Matrix with contiguous Maps
+        // NOTE: can we just swap the nzvals such that we can keep other info (recvCounts, recvDispls)?
         auto lclMatrix = this->mat_->getLocalMatrixDevice();
         auto importer  = this->mat_->getCrsGraph()->getImporter();
         auto exporter  = this->mat_->getCrsGraph()->getExporter();
         contiguous_t_mat = rcp( new matrix_t(lclMatrix, contigRowMap, contigColMap, contigRowMap, contigColMap, importer,exporter));
       }
+
+      // Return new matrix adapter
       return rcp (new ConcreteMatrixAdapter<matrix_t> (contiguous_t_mat));
     }
 
@@ -190,7 +191,8 @@ namespace Amesos2 {
         auto myRank = comm->getRank();
 
         global_ordinal_t nRows = this->mat_->getGlobalNumRows();
-        if(current_phase == SYMBFACT) {
+        // check when to recompute communication patterns
+        if(current_phase == PREORDERING || current_phase == SYMBFACT) {
           // workspace to transpose
           KV_GS pointers_t;
           KV_GO indices_t;
