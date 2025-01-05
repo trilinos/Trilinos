@@ -588,22 +588,25 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     local_ordinal_type nnz_ret = 0;
-    bool gather_supported = (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value);
+    bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
     {
     #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
-      if (this->matrixA_->getComm()->getSize() > 1 && gather_supported) {
+      if (gather_supported) {
         bool column_major = true;
         if (!is_contiguous_) {
-          // NOTE: calling gather with SYMBFACT to recompute communication pattern
-          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, SYMBFACT);
+          auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                       column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, column_major, current_phase);
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                           column_major, current_phase);
         }
-      } else 
-      {
+        // gather failed (e.g., not implemened for KokkosCrsMatrix)
+        if (nnz_ret < 0) gather_supported = false;
+      } 
+      if (!gather_supported) {
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
           ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,

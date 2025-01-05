@@ -119,8 +119,10 @@ namespace Amesos2 {
                                            KV_S & vals,
                                            size_t& nnz) const;
 
-    template<typename KV_S, typename KV_GO, typename KV_GS>
+    template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
     LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                             host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                             host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                              bool column_major, EPhase current_phase) const;
   };
 

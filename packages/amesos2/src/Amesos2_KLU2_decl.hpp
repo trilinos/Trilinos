@@ -229,13 +229,6 @@ private:
   int transFlag_;
 
   bool is_contiguous_;
-
-  /// Contiguous GID map
-  typedef Tpetra::Map<local_ordinal_type,
-                      global_ordinal_type,
-                      node_type> map_type;
-  Teuchos::RCP<const map_type> contig_rowmap_;
-  Teuchos::RCP<const map_type> contig_colmap_;
 };                              // End class KLU2
 
 

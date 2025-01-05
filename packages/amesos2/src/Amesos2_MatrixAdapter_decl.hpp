@@ -222,8 +222,11 @@ namespace Amesos2 {
     Teuchos::RCP<const type> reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const;
 
     /// Gather matrix to MPI-0
-    template<typename KV_S, typename KV_GO, typename KV_GS>
-    local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;
+    template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
+    local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                           host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                           host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                           bool column_major, EPhase current_phase) const;
 
     /// Returns a short description of this Solver
     std::string description() const;

@@ -144,8 +144,11 @@ namespace Amesos2 {
     RCP<const super_t> reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
                                     Teuchos::RCP<const map_t> &contigColMap,
                                     const EPhase current_phase) const;
-    template<typename KV_S, typename KV_GO, typename KV_GS>
-    local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;
+    template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
+    local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                                host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                                host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                                bool column_major, EPhase current_phase) const;
 
     using spmtx_ptr_t = typename MatrixTraits<DerivedMat>::sparse_ptr_type;
     using spmtx_idx_t = typename MatrixTraits<DerivedMat>::sparse_idx_type;
