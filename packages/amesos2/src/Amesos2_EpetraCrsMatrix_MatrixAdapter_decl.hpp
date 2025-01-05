@@ -84,8 +84,11 @@ namespace Amesos2 {
                                                      const EPhase current_phase) const;
 
     // gather
-    template<typename KV_S, typename KV_GO, typename KV_GS>
-    local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const
+    template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
+    local_ordinal_t gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                                host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                                host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                                bool column_major, EPhase current_phase) const
     {
       local_ordinal_t ret = -1;
       {
@@ -109,8 +112,7 @@ namespace Amesos2 {
         int nRows = this->mat_->NumGlobalRows();
         int myNRows = this->mat_->NumMyRows();
         int myNnz = this->mat_->NumMyNonzeros();
-        if(current_phase == SYMBFACT)
-        {
+        if(current_phase == PREORDERING || current_phase == SYMBFACT) {
           // workspace for column major
           KV_GS pointers_t;
           KV_GO indices_t;
@@ -198,7 +200,7 @@ namespace Amesos2 {
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
             // Map to transpose
-            Kokkos::resize(this->transpose_map_, ret);
+            Kokkos::resize(transpose_map, ret);
             // Transopose to convert to CSC
             for (int i=0; i<=nRows; i++) {
               pointers(i) = 0;
@@ -213,7 +215,7 @@ namespace Amesos2 {
             }
             for (int i=0; i<nRows; i++) {
               for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
-                this->transpose_map_(k) = pointers(1+indices_t(k));
+                transpose_map(k) = pointers(1+indices_t(k));
                 indices(pointers(1+indices_t(k))) = i;
                 pointers(1+indices_t(k)) ++;
               }
@@ -222,7 +224,6 @@ namespace Amesos2 {
         }
         //if(current_phase == NUMFACT) // Numerical values may be used in symbolic (e.g, MWM)
         {
-          // workspace for column major
           {
 #ifdef HAVE_AMESOS2_TIMERS
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
@@ -243,7 +244,7 @@ namespace Amesos2 {
             // Insert Numerical values to transopose matrix
             ret = pointers(nRows);
             for (int k=0; k<ret; k++) {
-              nzvals(this->transpose_map_(k)) = nzvals_t(k);
+              nzvals(transpose_map(k)) = nzvals_t(k);
             }
           }
         }
@@ -263,13 +264,6 @@ namespace Amesos2 {
     mutable RCP<EpetraExt::CrsMatrix_Reindex> StdIndex_;
     mutable RCP<Epetra_CrsMatrix> ContigMat_;
 #endif
-    typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
-    typedef Kokkos::View<local_ordinal_t*, HostExecSpaceType> host_ordinal_type_array;
-    typedef Kokkos::View<scalar_t       *, HostExecSpaceType> host_scalar_type_array;
-    mutable host_ordinal_type_array recvCounts;
-    mutable host_ordinal_type_array recvDispls;
-    mutable host_ordinal_type_array transpose_map_;
-    mutable host_scalar_type_array  nzvals_t;
   };
 
 } // end namespace Amesos2

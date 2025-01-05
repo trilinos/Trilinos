@@ -445,31 +445,34 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
   {
     // Only the root image needs storage allocated
     if( this->root_ ) {
-      host_nzvals_view_ = host_value_type_array(
-        Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
-      host_rows_view_ = host_ordinal_type_array(
-        Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
-      host_col_ptr_view_ = host_ordinal_type_array(
-        Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
+      if (host_nzvals_view_.extent(0) != this->globalNumNonZeros_) 
+        Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
+      if (host_rows_view_.extent(0) != this->globalNumNonZeros_)
+        Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
+      if (host_col_ptr_view_.extent(0) != (this->globalNumRows_ + 1))
+        Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
     }
 
     local_ordinal_type nnz_ret = 0;
-    bool gather_supported = (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value);
+    bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
-      if (this->matrixA_->getComm()->getSize() > 1 && gather_supported) {
+      if (gather_supported) {
         bool column_major = true;
         if (!is_contiguous_) {
-          // NOTE: calling gather with SYMBFACT to recompute communication pattern
-          auto contig_mat = this->matrixA_->reindex(contig_rowmap_, contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major, SYMBFACT);
+          auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
+          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                       column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, column_major, current_phase);
+          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                           column_major, current_phase);
         }
-      } else
-      {
+	// gather failed (e.g., not implemened for KokkosCrsMatrix)
+	if (nnz_ret < 0) gather_supported = false;
+      }
+      if (!gather_supported) {
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
           ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
@@ -483,7 +486,8 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     if (gather_supported || this->root_) {
       TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                           std::runtime_error,
-                          "Did not get the expected number of non-zero vals");
+                          "Amesos2_KLU2 loadA_impl: Did not get the expected number of non-zero vals("
+                          +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
     }
 
   } //end else single_process_optim_check = false

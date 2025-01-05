@@ -351,15 +351,20 @@ namespace Amesos2 {
   }
 
   template <class DerivedMat>
-  template<typename KV_S, typename KV_GO, typename KV_GS>
+  template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::local_ordinal_t
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase)  const
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                                host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                                host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                                bool column_major, EPhase current_phase) const
   {
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, column_major, current_phase);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, recvCounts, recvDispls, transpose_map, nzvals_t,
+                                                                               column_major, current_phase);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, column_major, current_phase);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, recvCounts, recvDispls, transpose_map, nzvals_t,
+                                                                              column_major, current_phase);
 #endif
   }
 

@@ -86,28 +86,23 @@ namespace Amesos2 {
     typedef ConcreteMatrixAdapter<matrix_t>                       type;
 
     typedef Kokkos::DefaultHostExecutionSpace                 HostExecSpaceType;
-    typedef Kokkos::View<local_ordinal_t*, HostExecSpaceType> host_ordinal_type_array;
-    typedef Kokkos::View<       scalar_t*, HostExecSpaceType> host_scalar_type_array;
 
     ConcreteMatrixAdapter(RCP<matrix_t> m);
 
     RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
     RCP<const MatrixAdapter<matrix_t> > reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const;
 
-    template<typename KV_S, typename KV_GO, typename KV_GS>
-    LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const;
+    template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
+    LocalOrdinal gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                             host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                             host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                             bool column_major, EPhase current_phase) const;
 
     //! Print a description of this adapter to the given output stream
     void
     describe (Teuchos::FancyOStream& os,
               const Teuchos::EVerbosityLevel verbLevel =
               Teuchos::Describable::verbLevel_default) const;
-  private:
-    // for gather_impl
-    mutable host_ordinal_type_array recvCounts;
-    mutable host_ordinal_type_array recvDispls;
-    mutable host_ordinal_type_array transpose_map_;
-    mutable host_scalar_type_array  nzvals_t;
   };
 
 } // end namespace Amesos2

@@ -166,11 +166,14 @@ namespace Amesos2 {
             typename LocalOrdinal,
             typename GlobalOrdinal,
             typename Node>
-  template<typename KV_S, typename KV_GO, typename KV_GS>
+  template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
   LocalOrdinal
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers, bool column_major, EPhase current_phase) const
+    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                   host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                   host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                   bool column_major, EPhase current_phase) const
     {
       LocalOrdinal ret = 0;
       {
@@ -285,7 +288,7 @@ namespace Amesos2 {
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
             // Map to transpose
-            Kokkos::resize(this->transpose_map_, ret);
+            Kokkos::resize(transpose_map, ret);
             // Transopose to convert to CSC
             for (int i=0; i<=nRows; i++) {
               pointers(i) = 0;
@@ -300,7 +303,7 @@ namespace Amesos2 {
             }
             for (int i=0; i<nRows; i++) {
               for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
-                this->transpose_map_(k) = pointers(1+indices_t(k));
+                transpose_map(k) = pointers(1+indices_t(k));
                 indices(pointers(1+indices_t(k))) = i;
                 pointers(1+indices_t(k)) ++;
               }
@@ -309,7 +312,6 @@ namespace Amesos2 {
         }
         //if(current_phase == NUMFACT) // Numerical values may be used in symbolic (e.g, MWM)
         {
-          // workspace to transpose
           {
 #ifdef HAVE_AMESOS2_TIMERS
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
@@ -334,7 +336,7 @@ namespace Amesos2 {
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
             for (int k=0; k<ret; k++) {
-              nzvals(this->transpose_map_(k)) = nzvals_t(k);
+              nzvals(transpose_map(k)) = nzvals_t(k);
             }
           }
         }
