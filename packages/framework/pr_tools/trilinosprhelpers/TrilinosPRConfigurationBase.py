@@ -352,6 +352,15 @@ class TrilinosPRConfigurationBase(object):
         """Is ccache enabled?"""
         return self.args.ccache_enable
 
+    @property
+    def arg_skip_run_tests(self):
+        """
+        Control whether tests should run for this build. Used for cases
+        where resources are limited such that you choose to only compile tests
+        but skip running them.
+        """
+        return self.args.skip_run_tests
+
     # --------------------
     # P R O P E R T I E S
     # --------------------

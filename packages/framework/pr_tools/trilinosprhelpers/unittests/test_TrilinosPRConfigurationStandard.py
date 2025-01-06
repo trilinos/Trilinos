@@ -175,7 +175,8 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             ccache_enable=False,
             dry_run = False,
             use_explicit_cachefile = False,
-            extra_configure_args = ""
+            extra_configure_args = "",
+            skip_run_tests = False
         )
         return output
 
