@@ -36,8 +36,8 @@
 
 #include "MueLu.hpp"
 
-#include "../../research/q2q1/MueLu_Q2Q1PFactory.hpp"
-#include "../../research/q2q1/MueLu_Q2Q1uPFactory.hpp"
+#include "MueLu_Q2Q1PFactory.hpp"
+#include "MueLu_Q2Q1uPFactory.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BaseClass.hpp"

@@ -279,6 +279,8 @@ class LinearOpWithSolveBase
 {
 public:
 
+  using scalar_type = Scalar;
+
   /** \name Public interface funtions. */
   //@{
 
