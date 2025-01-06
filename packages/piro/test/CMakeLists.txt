@@ -153,6 +153,19 @@ ENDIF(Piro_ENABLE_NOX)
 
 IF (Piro_ENABLE_Tempus)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_UnitTests_Tpetra
+    SOURCES
+    Piro_TempusSolver_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A_Tpetra.hpp
+    MockModelEval_A_Tpetra.cpp
+    MatrixBased_LOWS.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TempusSolver_SensitivitySinCos_Combined_FSA_UnitTests
     SOURCES
     Piro_TempusSolver_SensitivitySinCos_Combined_FSA_UnitTests.cpp
@@ -380,6 +393,7 @@ IF (PIRO_HAVE_EPETRA_STACK)
       MockModelEval_A.cpp
       NUM_MPI_PROCS 1-4
       STANDARD_PASS_OUTPUT
+      TARGET_DEFINES TEST_USE_EPETRA
     )
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       TempusSolverForwardOnly_UnitTests
@@ -408,7 +422,6 @@ IF (PIRO_HAVE_EPETRA_STACK)
       NUM_MPI_PROCS 4
       STANDARD_PASS_OUTPUT
     )
-    
   ENDIF (Piro_ENABLE_Tempus)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyEpetraTestInputFiles
