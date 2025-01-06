@@ -24,14 +24,18 @@
 #include "Piro_Test_MockObserver.hpp"
 #include "Piro_TempusIntegrator.hpp"
 
+
+#ifdef TEST_USE_EPETRA
+#include "Thyra_EpetraModelEvaluator.hpp"
 #include "MockModelEval_A.hpp"
 
-#include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+#else
+#include "MockModelEval_A_Tpetra.hpp"
+#endif
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
 #include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
-
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -52,6 +56,7 @@ namespace Thyra {
 
 // Setup support
 
+#ifdef TEST_USE_EPETRA
 const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
 {
 #ifdef HAVE_MPI
@@ -62,19 +67,26 @@ const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
   return rcp(new MockModelEval_A(comm));
 }
 
-const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
+const RCP<Thyra::ModelEvaluator<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
 {
   const RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory(new Thyra::AmesosLinearOpWithSolveFactory);
   return epetraModelEvaluator(epetraModel, lowsFactory);
 }
 
-RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
+RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
 {
   return thyraModelNew(epetraModelNew());
 }
+#else
+RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
+{
+  auto comm = Tpetra::getDefaultComm();
+  return rcp(new MockModelEval_A_Tpetra(comm));
+}
+#endif
 
 const RCP<TempusSolver<double> > solverNew(
-    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
+    const RCP<Thyra::ModelEvaluator<double> > &thyraModel,
     double finalTime, 
     const std::string sens_method_string)
 {
@@ -106,7 +118,7 @@ const RCP<TempusSolver<double> > solverNew(
 }
 
 const RCP<TempusSolver<double> > solverNew(
-    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
+    const RCP<Thyra::ModelEvaluator<double> > &thyraModel,
     double initialTime,
     double finalTime,
     const RCP<Piro::ObserverBase<double> > &observer,
@@ -146,7 +158,7 @@ const RCP<TempusSolver<double> > solverNew(
 }
 
 const RCP<TempusSolver<double> > solverNew(
-    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
+    const RCP<Thyra::ModelEvaluator<double> > &thyraModel,
     double initialTime,
     double finalTime,
     double fixedTimeStep,
@@ -203,7 +215,7 @@ const double tol = 1.0e-8;
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Solution)
 {
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const auto model = defaultModelNew();
   const double finalTime = 0.0;
 
   const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
@@ -230,7 +242,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Solution)
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Response)
 {
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const auto model = defaultModelNew();
 
   const int responseIndex = 0;
 
@@ -306,7 +318,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDgDp_NoResponseSensitivity)
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialCondition)
 {
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const auto model = defaultModelNew();
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
   const double timeStamp = 2.0;
 
@@ -335,7 +347,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialCondition)
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
 {
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const auto model = defaultModelNew();
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
   const double initialTime = 0.0;
   const double finalTime = 0.1;
@@ -364,7 +376,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolutionNoWrapper)
 {
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const auto model = defaultModelNew();
   auto observer = Teuchos::rcp(new MockTempusObserver<double>());
 
   const double initialTime = 0.0;
@@ -380,21 +392,24 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolutionNoWrapper)
   tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
   tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", initialTime);
   tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", fixedTimeStep);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time Step", fixedTimeStep);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", fixedTimeStep);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", timeStepSize);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time Step", timeStepSize);
+  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", timeStepSize);
   tempusPL.sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
   tempusPL.sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL.sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL.sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
 
-  auto solver = tempusSolver(appParams,model,Teuchos::null,observer);
+  RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
+  RCP<ObserverBase<double>> piro_obs = observer;
+  auto solver = tempusSolver(appParams,model,adjointModel,piro_obs);
 
   // Check that the piro integrator did NOT wrap our observer in a tempus adapter
   auto piro_integrator = solver->getPiroTempusIntegrator();
   auto tempus_integrator = piro_integrator->getIntegrator();
   auto basic_integrator = Teuchos::rcp_dynamic_cast<const Tempus::IntegratorBasic<double>>(tempus_integrator);
-  auto tempus_observer = basic_integrator->getObserver();
+  auto nonconst_basic_integrator = Teuchos::rcp_const_cast<Tempus::IntegratorBasic<double>>(basic_integrator);
+  auto tempus_observer = nonconst_basic_integrator->getObserver();
   TEST_ASSERT (tempus_observer==observer);
 
   // Proceed like the test above
