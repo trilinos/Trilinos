@@ -364,6 +364,8 @@ evaluateBCs(const panzer::BCType bc_type,
           workset.alpha = in.alpha;
           workset.beta = betaValue;
           workset.time = in.time;
+          workset.step_size = in.step_size;
+          workset.stage_number = in.stage_number;
           workset.gather_seeds = in.gather_seeds;
           workset.evaluate_transient_terms = in.evaluate_transient_terms;
           
