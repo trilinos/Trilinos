@@ -1,0 +1,3 @@
+[submodule "commonTools/framework/containers/GenConfig"]
+	path = commonTools/framework/containers/GenConfig
+	url = https://github.com/sandialabs/GenConfig
