@@ -28,11 +28,13 @@
 #ifdef TEST_USE_EPETRA
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "MockModelEval_A.hpp"
-
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #else
 #include "MockModelEval_A_Tpetra.hpp"
+#include "Piro_StratimikosUtils.hpp"
+#include "Teuchos_YamlParameterListCoreHelpers.hpp"
 #endif
+
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
 #include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
@@ -66,7 +68,6 @@ const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
 #endif /*HAVE_MPI*/
   return rcp(new MockModelEval_A(comm));
 }
-
 const RCP<Thyra::ModelEvaluator<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
 {
   const RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory(new Thyra::AmesosLinearOpWithSolveFactory);
@@ -81,7 +82,20 @@ RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
 RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
 {
   auto comm = Tpetra::getDefaultComm();
-  return rcp(new MockModelEval_A_Tpetra(comm));
+  auto model = rcp(new MockModelEval_A_Tpetra(comm));
+
+  std::string inputFile = "input_tempus_be_nox_solver.yaml";
+  auto piroParams = rcp(new Teuchos::ParameterList("Piro Parameters"));
+  Teuchos::updateParametersFromYamlFile(inputFile, piroParams.ptr());
+
+  auto stratParams = Piro::extractStratimikosParams(piroParams);
+
+  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+  linearSolverBuilder.setParameterList(stratParams);
+
+  auto lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+
+  return rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(model, lowsFactory));
 }
 #endif
 
@@ -180,6 +194,7 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
+
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
@@ -353,8 +368,31 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
   const double finalTime = 0.1;
   const double timeStepSize = 0.05;
 
-  const RCP<TempusSolver<double> > solver =
-    solverNew(model, initialTime, finalTime, timeStepSize, observer, "None");
+  const RCP<ParameterList> appParams(new ParameterList("params"));
+#ifdef TEST_USE_EPETRA
+  auto& tempusPL = appParams->sublist("Tempus");
+  tempusPL.set("Integrator Name", "Demo Integrator");
+  tempusPL.sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
+  tempusPL.sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
+  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
+  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
+  tempusPL.sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
+  tempusPL.sublist("Demo Stepper").set("Zero Initial Guess", false);
+  tempusPL.sublist("Demo Stepper").set("Solver Name", "Demo Solver");
+  tempusPL.sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
+#else
+  Teuchos::updateParametersFromYamlFile("input_tempus_be_nox_solver.yaml",appParams.ptr());
+#endif
+  auto& tsc = appParams->sublist("Tempus").sublist("Demo Integrator").sublist("Time Step Control");
+  tsc.set("Initial Time", initialTime);
+  tsc.set("Final Time", finalTime);
+  tsc.set("Minimum Time Step", timeStepSize/10);
+  tsc.set("Initial Time Step", timeStepSize);
+  tsc.set("Maximum Time Step", timeStepSize);
+
+  RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
+  RCP<ObserverBase<double>> piro_obs = observer;
+  auto solver = tempusSolver(appParams,model,adjointModel,piro_obs);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -384,21 +422,26 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolutionNoWrapper)
   const double timeStepSize = 0.05;
 
   const RCP<ParameterList> appParams(new ParameterList("params"));
+#ifdef TEST_USE_EPETRA
   auto& tempusPL = appParams->sublist("Tempus");
   tempusPL.set("Integrator Name", "Demo Integrator");
   tempusPL.sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
   tempusPL.sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
   tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
   tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", initialTime);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", timeStepSize);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time Step", timeStepSize);
-  tempusPL.sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", timeStepSize);
   tempusPL.sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
   tempusPL.sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL.sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL.sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
+#else
+  Teuchos::updateParametersFromYamlFile("input_tempus_be_nox_solver.yaml",appParams.ptr());
+#endif
+  auto& tsc = appParams->sublist("Tempus").sublist("Demo Integrator").sublist("Time Step Control");
+  tsc.set("Initial Time", initialTime);
+  tsc.set("Final Time", finalTime);
+  tsc.set("Minimum Time Step", timeStepSize/10);
+  tsc.set("Initial Time Step", timeStepSize);
+  tsc.set("Maximum Time Step", timeStepSize);
 
   RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
   RCP<ObserverBase<double>> piro_obs = observer;
