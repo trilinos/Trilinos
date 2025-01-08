@@ -69,7 +69,7 @@ jobs:
       name: Get dependencies
       working-directory: ./packages/framework
       run: |
-          ./get_dependencies.sh --container
+          ./get_dependencies.sh
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
