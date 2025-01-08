@@ -117,7 +117,7 @@ namespace FROSch {
         FROSCH_ASSERT(nDofs<=DofsPerNode_,"nDofs>DofsPerNode_.");
 
         for (unsigned i=0; i<nDofs; i++) {
-            if ((0<=dofIDs[i])&&(dofIDs[i]<=DofsPerNode_)) {
+            if (dofIDs[i]<=DofsPerNode_) {
                 NodeVector_[iD].DofsGlobal_[dofIDs[i]] = dofsGlobal[dofIDs[i]];
             } else {
                 FROSCH_ASSERT(false,"dofIDs[i] is out of range.");
