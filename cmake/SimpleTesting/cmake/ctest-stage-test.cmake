@@ -13,20 +13,28 @@ banner("START test step")
 
 set(STAGE_TEST_ERROR OFF)
 
-if(CTEST_BUILD_NAME MATCHES .*_asan_.*)
-    set(CTEST_MEMORYCHECK_TYPE "AddressSanitizer")
-    set(ENV{LSAN_OPTIONS} "suppressions=${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/lsan.supp")
-    set(ENV{LD_PRELOAD} ${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/dummy_dlclose.so)
-    ctest_memcheck(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}
+message(STATUS "=== skip_run_tests is ${skip_run_tests}")
+if(NOT skip_run_tests)
+    if(CTEST_BUILD_NAME MATCHES .*_asan_.*)
+        set(CTEST_MEMORYCHECK_TYPE "AddressSanitizer")
+        set(ENV{LSAN_OPTIONS} "suppressions=${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/lsan.supp")
+        set(ENV{LD_PRELOAD} ${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/dummy_dlclose.so)
+        ctest_memcheck(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}
+                       CAPTURE_CMAKE_ERROR captured_cmake_error
+                       RETURN_VALUE test_error)
+        unset(ENV{LD_PRELOAD})
+        submit_by_parts( "MemCheck" )
+    else()
+        ctest_test(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}
                    CAPTURE_CMAKE_ERROR captured_cmake_error
                    RETURN_VALUE test_error)
-    unset(ENV{LD_PRELOAD})
-    submit_by_parts( "MemCheck" )
+        submit_by_parts( "Test" )
+    endif()
 else()
-    ctest_test(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}
-               CAPTURE_CMAKE_ERROR captured_cmake_error
-               RETURN_VALUE test_error)
-    submit_by_parts( "Test" )
+    message(">>> SKIPPED RUNNING TESTS (skip_run_tests=${skip_run_tests})")
+    set(test_error 0)
+    submit_by_parts("Test")
+
 endif()
 
 # Print out final stage banner
