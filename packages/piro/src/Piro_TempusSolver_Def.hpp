@@ -167,24 +167,10 @@ void Piro::TempusSolver<Scalar>::initialize(
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
     //*out_ << "Stepper Type = " << stepperType << "\n";
 
-    //
-    // *out_ << "\nB) Create the Stratimikos linear solver factory ...\n";
-    //
-    // This is the linear solve strategy that will be used to solve for the
-    // linear system with the W.
-    //
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-
-#ifdef HAVE_PIRO_MUELU
-    Stratimikos::enableMueLu(linearSolverBuilder);
-#endif
-
-    linearSolverBuilder.setParameterList(sublist(tempusPL, "Stratimikos", true));
     tempusPL->validateParameters(*getValidTempusParameters(
       tempusPL->get<std::string>("Integrator Name", "Tempus Integrator"), 
       integratorPL->get<std::string>("Stepper Name", "Tempus Stepper")
     ), 0);
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     //
     *out_ << "\nC) Create and initalize the forward model ...\n";
@@ -287,11 +273,6 @@ void Piro::TempusSolver<Scalar>::initialize(
       }	
     }
     
-    // C.2) Create the Thyra-wrapped ModelEvaluator
-
-    thyraModel_ = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model_, lowsFactory));
-    const RCP<const Thyra::VectorSpaceBase<double> > x_space = thyraModel_->get_x_space();
-
     //
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
