@@ -196,13 +196,16 @@ namespace Amesos2 {
         global_ordinal_t nRows = this->mat_->getGlobalNumRows();
         // check when to recompute communication patterns
         if(current_phase == PREORDERING || current_phase == SYMBFACT) {
+          // map from global to local
+          host_ordinal_type_array  perm_g2l;
           // workspace to transpose
           KV_GS pointers_t;
           KV_GO indices_t;
-          // gether rowptr
+          // communication counts & displacements
           LocalOrdinal myNRows = this->mat_->getLocalNumRows();
           Kokkos::resize(recvCounts, nRanks);
           Kokkos::resize(recvDispls, nRanks+1);
+          bool need_to_perm = false;
           {
 #ifdef HAVE_AMESOS2_TIMERS
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
@@ -226,15 +229,37 @@ namespace Amesos2 {
               }
               recvDispls(nRanks) = 0;
             }
+            // gether g2l perm
+            {
+              host_ordinal_type_array lclMap;
+              Kokkos::resize(lclMap, myNRows);
+              if (myRank == 0) {
+                Kokkos::resize(perm_g2l, nRows);
+              } else {
+                Kokkos::resize(perm_g2l, 1);
+              }
+              for (int i=0; i < myNRows; i++) {
+                lclMap(i) = rowMap->getGlobalElement(i);
+              }
+              Teuchos::gatherv<int, LocalOrdinal> (lclMap.data(), myNRows, perm_g2l.data(), 
+                                                   recvCounts.data(), recvDispls.data(),
+                                                   0, *comm);
+              if (myRank == 0) {
+                for (int i=0; i < nRows; i++) {
+                  if (i != perm_g2l(i)) need_to_perm = true;
+                }
+              }
+            }
+            // gether rowptr
             // - making sure same ordinal type
             KV_GS lclRowptr_ ("localRowptr_", lclRowptr.extent(0));
             for (int i = 0; i < int(lclRowptr.extent(0)); i++) lclRowptr_(i) = lclRowptr(i);
-            if (myRank == 0 && column_major) {
+            if (myRank == 0 && (column_major || need_to_perm)) {
               Kokkos::resize(pointers_t, nRows+1);
             } else if (myRank != 0) {
               Kokkos::resize(pointers_t, 2);
             }
-            LocalOrdinal *pointers_ = (myRank != 0 || column_major ? pointers_t.data() : pointers.data());
+            LocalOrdinal *pointers_ = ((myRank != 0 || (column_major || need_to_perm)) ? pointers_t.data() : pointers.data());
             Teuchos::gatherv<int, LocalOrdinal> (&lclRowptr_(1), myNRows, &pointers_[1], 
                                                  recvCounts.data(), recvDispls.data(),
                                                  0, *comm);
@@ -261,7 +286,7 @@ namespace Amesos2 {
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-            // gather colinds & nzvals
+            // gather colinds
             if (myRank == 0) {
               recvDispls(0) = 0;
               for (int p = 0; p < nRanks; p++) {
@@ -271,7 +296,7 @@ namespace Amesos2 {
             // -- convert to global colids
             KV_GO lclColind_ ("localColind_", lclColind.extent(0));
             for (int i = 0; i < int(lclColind.extent(0)); i++) lclColind_(i) = colMap->getGlobalElement((lclColind(i)));
-            if (column_major) {
+            if (column_major || need_to_perm) {
               Kokkos::resize(indices_t, indices.extent(0));
               Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices_t.data(), 
                                                    recvCounts.data(), recvDispls.data(),
@@ -282,31 +307,57 @@ namespace Amesos2 {
                                                    0, *comm);
             }
           }
-          if (myRank == 0 && column_major) {
+          if (myRank == 0) {
 #ifdef HAVE_AMESOS2_TIMERS
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-            // Map to transpose
-            Kokkos::resize(transpose_map, ret);
-            // Transopose to convert to CSC
-            for (int i=0; i<=nRows; i++) {
-              pointers(i) = 0;
-            }
-            for (int k=0; k<ret; k++) {
-              if (indices_t(k) < nRows-1) {
-                pointers(indices_t(k)+2) ++;
+            if (column_major) {
+              // Map to transpose
+              Kokkos::resize(transpose_map, ret);
+              // Transopose to convert to CSC
+              for (int i=0; i<=nRows; i++) {
+                pointers(i) = 0;
               }
-            }
-            for (int i=1; i < nRows; i++) {
-              pointers(i+1) += pointers(i);
-            }
-            for (int i=0; i<nRows; i++) {
-              for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
-                transpose_map(k) = pointers(1+indices_t(k));
-                indices(pointers(1+indices_t(k))) = i;
-                pointers(1+indices_t(k)) ++;
+              for (int k=0; k<ret; k++) {
+                int col = indices_t(k);
+                if (col < nRows-1) {
+                  pointers(col+2) ++;
+                }
               }
+              for (int i=1; i < nRows; i++) {
+                pointers(i+1) += pointers(i);
+              }
+              for (int i=0; i<nRows; i++) {
+                int row = perm_g2l(i);
+                for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
+                  int col = indices_t(k);
+                  transpose_map(k) = pointers(1+col);
+                  indices(pointers(1+col)) = row;
+                  pointers(1+col) ++;
+                }
+              }
+            } else if (need_to_perm) {
+              // Map to permute
+              Kokkos::resize(transpose_map, ret);
+              for (int i=0; i<nRows; i++) {
+                int row = perm_g2l(i);
+                pointers(row+2) = pointers_t(i+1)-pointers_t(i);
+              }
+              for (int i=1; i < nRows; i++) {
+                pointers(i+1) += pointers(i);
+              }
+              for (int i=0; i<nRows; i++) {
+                int row = perm_g2l(i);
+                for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
+                  int col = indices_t(k);
+                  transpose_map(k) = pointers(1+row);
+                  indices(pointers(1+row)) = col;
+                  pointers(1+row) ++;
+                }
+              }
+            } else {
+              Kokkos::resize(transpose_map, 0);
             }
           }
         }
@@ -317,7 +368,8 @@ namespace Amesos2 {
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-            if (column_major) {
+            // gather nzvals
+            if (transpose_map.extent(0) > 0) {
               Kokkos::resize(nzvals_t, nzvals.extent(0));
               Teuchos::gatherv<int, Scalar> (reinterpret_cast<Scalar*> (lclNzvals.data()), lclNzvals.extent(0),
                                              reinterpret_cast<Scalar*> (nzvals_t.data()), recvCounts.data(), recvDispls.data(),
@@ -328,15 +380,17 @@ namespace Amesos2 {
                                              0, *comm);
             }
           }
-          if (myRank == 0 && column_major) {
+          if (myRank == 0) {
             // Insert Numerical values to transopose matrix
             ret = pointers(nRows);
 #ifdef HAVE_AMESOS2_TIMERS
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose values)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-            for (int k=0; k<ret; k++) {
-              nzvals(transpose_map(k)) = nzvals_t(k);
+            if (transpose_map.extent(0) > 0) {
+              for (int k=0; k<ret; k++) {
+                nzvals(transpose_map(k)) = nzvals_t(k);
+              }
             }
           }
         }
