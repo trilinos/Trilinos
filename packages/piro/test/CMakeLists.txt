@@ -264,6 +264,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
         input_Tempus_BackwardEuler_SinCos.xml 
+        input_tempus_be_nox_solver.yaml
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"
   EXEDEPS ${ThyraSolverTpetra_EXENAME} ${AnalysisDriverTpetra_EXENAME}
