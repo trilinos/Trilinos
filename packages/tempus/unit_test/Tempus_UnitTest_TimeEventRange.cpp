@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, setTimeRange)
   te->setTimeRange(0.0, PI, 5);
   TEST_FLOATING_EQUALITY(te->getTimeStart(), 0.0, 1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStop(), PI, 1.0e-14);
-  TEST_FLOATING_EQUALITY(te->getTimeStride(), PI/4.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStride(), PI / 4.0, 1.0e-14);
   TEST_COMPARE(te->getNumEvents(), ==, 5);
 }
 
@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, setNumEvents)
   te->setNumEvents(5);
   TEST_FLOATING_EQUALITY(te->getTimeStart(), 0.0, 1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStop(), PI, 1.0e-14);
-  TEST_FLOATING_EQUALITY(te->getTimeStride(), PI/4.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStride(), PI / 4.0, 1.0e-14);
   TEST_COMPARE(te->getNumEvents(), ==, 5);
 }
 
