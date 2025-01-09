@@ -76,8 +76,8 @@ if( NOT DEFINED skip_upload_config_files )
     set( skip_upload_config_files OFF )
 endif()
 
-if( NOT DEFINED skip_run_tests )
-    set (skip_run_tests OFF)
+if( NOT DEFINED SKIP_RUN_TESTS )
+    set (SKIP_RUN_TESTS OFF)
 endif()
 
 # -----------------------------------------------------------
