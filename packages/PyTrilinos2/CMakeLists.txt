@@ -2,7 +2,7 @@
 TRIBITS_PACKAGE(PyTrilinos2 DISABLE_STRONG_WARNINGS)
 
 IF(NOT BUILD_SHARED_LIBS)
-  MESSAGE(FATAL_ERROR "PyTrilinos2 can only be built with shared libraries. Building of shared libraries is currently set to OFF. To enable shared libraries please set the cache variable \"BUILD_SHARED_LIBS\" to ON")
+  MESSAGE(WARNING "PyTrilinos2 can be built with static linking, but might require building with position-independent code. If you encounter build errors please add \"-fPIC\" to CMAKE_C_FLAGS, CMAKE_C_FLAGS and CMAKE_Fortran_FLAGS.")
 ENDIF()
 
 # Set the package version number
