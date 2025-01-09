@@ -33,7 +33,9 @@ target_include_directories(PyTrilinos2 PUBLIC ${Mpi4Py_INCLUDE_DIR} ${CMAKE_CURR
 target_compile_features(PyTrilinos2 PUBLIC cxx_std_14)
 
 foreach(depPkg IN LISTS PyTrilinos2_LIB_ENABLED_DEPENDENCIES)
+  if (NOT (${depPkg} MATCHES "LLVM" OR ${depPkg} MATCHES "Binder" OR ${depPkg} MATCHES "pybind11"))
     target_link_libraries(PyTrilinos2 PUBLIC ${depPkg}::all_libs)
+  endif()
 endforeach()
 target_link_libraries(PyTrilinos2 PUBLIC ${Trilinos_EXTRA_LINK_FLAGS})
 set_target_properties(PyTrilinos2 PROPERTIES SUFFIX ".so")

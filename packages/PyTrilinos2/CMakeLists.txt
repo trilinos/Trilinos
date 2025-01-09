@@ -30,16 +30,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_VERBOSE
 
 SET(PyTrilinos2_BINDER_NUM_FILES "150" CACHE STRING "Maxinum number of generated files by binder.")
 
-MESSAGE("-- Python3_EXECUTABLE:")
-IF(NOT DEFINED ${Python3_EXECUTABLE})
-  find_program(Python3_EXECUTABLE
-      NAMES python3 python
-      )
-  MESSAGE("  -- CMake has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
-ELSE()
-  MESSAGE("  -- User has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
-ENDIF()
-
 function(get_all_include_dirs  LIBRARY_NAME all_include_dirs all_visited_libs)
   if (TARGET ${LIBRARY_NAME})
     get_property(depend_libs TARGET ${LIBRARY_NAME} PROPERTY INTERFACE_LINK_LIBRARIES)
@@ -64,15 +54,7 @@ endfunction()
 FILE(GLOB PyTrilinos2PyFiles ${CMAKE_CURRENT_SOURCE_DIR}/python/*.py)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos2)
 
-MESSAGE("-- PyTrilinos2_BINDER_EXECUTABLE:")
-IF(NOT DEFINED PyTrilinos2_BINDER_EXECUTABLE)
-  find_program(PyTrilinos2_BINDER_EXECUTABLE
-      NAMES binder
-      )
-  MESSAGE("  -- CMake has set: PyTrilinos2_BINDER_EXECUTABLE = ${PyTrilinos2_BINDER_EXECUTABLE}")
-ELSE()
-  MESSAGE("  -- User has set: PyTrilinos2_BINDER_EXECUTABLE = ${PyTrilinos2_BINDER_EXECUTABLE}")
-ENDIF()
+set(PyTrilinos2_BINDER_EXECUTABLE ${BINDER_EXECUTABLE})
 file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
 file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/binder)
@@ -258,8 +240,8 @@ list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimenta
 list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/src)
 list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/src)
 IF(NOT DEFINED PyTrilinos2_BINDER_GCC_TOOLCHAIN)
-  list(APPEND BINDER_OPTIONS -I${PyTrilinos2_BINDER_clang_include_dirs})
-  list(APPEND BINDER_OPTIONS -iwithsysroot${PyTrilinos2_BINDER_LibClang_include_dir})
+  list(APPEND BINDER_OPTIONS -I${LLVM_INCLUDE_DIRS})
+  list(APPEND BINDER_OPTIONS -iwithsysroot${LLVM_INSTALL_PREFIX}/lib/clang/${LLVM_VERSION}/include)
 ELSE()
   list(APPEND BINDER_OPTIONS --gcc-toolchain=${PyTrilinos2_BINDER_GCC_TOOLCHAIN})
 ENDIF()
@@ -311,17 +293,6 @@ MESSAGE(STATUS "PyTrilinos2 installation path: ${PyTrilinos2_INSTALL_DIR}")
 INSTALL(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/python/getTpetraTypeName.py
   DESTINATION ${PyTrilinos2_INSTALL_DIR})
-
-# Find the pybind11 CMake module
-EXECUTE_PROCESS(COMMAND
-  ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
-  OUTPUT_VARIABLE pybind11_DIR
-  ERROR_VARIABLE  pybind11_CMAKE_ERROR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
-
-find_package(pybind11 REQUIRED)
 
 EXECUTE_PROCESS(COMMAND
   ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
