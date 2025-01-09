@@ -352,8 +352,12 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
     if (x->space()->isCompatible(*gx_out->space())) {
       Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
     } else {
-      *out_ << "  WARNING: x and gx_out are not compatible (likely, because adaptation occurred).\n"
-               "    If you need the solution, you will have to retrieve it in another way.\n";
+      *out_ << "  WARNING [PIRO::TransientSolver::evalConvergedModelResponsesAndSensitivities]\n"
+               "    The solution from inArgs (x) is incompatible with the last response in outArgs (gx),\n"
+               "    which was created as a vector with the same vector-space of x. Since the responses\n"
+               "    were created BEFORE calling the transient solver, the most likely explanation for this\n"
+               "    incompatibility is that during the time integration the solution vector space changed,\n"
+               "    for instance because the underlying spatial mesh was adapted (with topological changes).\n";
     }
   }
 
