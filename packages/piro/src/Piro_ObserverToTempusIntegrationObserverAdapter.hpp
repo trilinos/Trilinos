@@ -40,31 +40,13 @@ public:
   //@{
   /// Destructor
 
-  virtual ~ObserverToTempusIntegrationObserverAdapter();
+  virtual ~ObserverToTempusIntegrationObserverAdapter() = default;
 
   /// Observe the beginning of the time integrator.
   virtual void observeStartIntegrator(const Tempus::Integrator<Scalar>& integrator) override;
 
-  /// Observe the beginning of the time step loop.
-  virtual void observeStartTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
-
-  /// Observe after the next time step size is selected.
-  virtual void observeNextTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
-
-  /// Observe before Stepper takes step.
-  virtual void observeBeforeTakeStep(const Tempus::Integrator<Scalar>& integrator) override;
-
-  /// Observe after Stepper takes step.
-  virtual void observeAfterTakeStep(const Tempus::Integrator<Scalar>& integrator) override;
-
-  /// Observe after checking time step.  Observer can still fail the time step here.
-  virtual void observeAfterCheckTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
-
   /// Observe the end of the time step loop.
   virtual void observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
-
-  /// Observe the end of the time integrator.
-  virtual void observeEndIntegrator(const Tempus::Integrator<Scalar>& integrator) override;
   //@}
 
 private:

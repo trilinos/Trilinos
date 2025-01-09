@@ -348,7 +348,17 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
   // Solution at convergence is the response at index num_g_
   RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
   if (Teuchos::nonnull(gx_out)) {
-    Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+    auto x = modelInArgs.get_x();
+    if (x->space()->isCompatible(*gx_out->space())) {
+      Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+    } else {
+      *out_ << "  WARNING [PIRO::TransientSolver::evalConvergedModelResponsesAndSensitivities]\n"
+               "    The solution from inArgs (x) is incompatible with the last response in outArgs (gx),\n"
+               "    which was created as a vector with the same vector-space of x. Since the responses\n"
+               "    were created BEFORE calling the transient solver, the most likely explanation for this\n"
+               "    incompatibility is that during the time integration the solution vector space changed,\n"
+               "    for instance because the underlying spatial mesh was adapted (with topological changes).\n";
+    }
   }
 
   // Setup output for final evalution of underlying model
