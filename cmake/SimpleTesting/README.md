@@ -92,6 +92,8 @@ the [`ctest-driver.cmake`](ctest-driver.cmake) file in its place.
 | `build_dir`                | STRING |    NO     | `${build_root}/${CTEST_BUILD_NAME}`           | Path to the build directory.                                       |
 | `PARALLEL_LEVEL`           | STRING |    NO     | `<num cores>`                                 |                                                                    |
 | `TEST_PARALLEL_LEVEL`      | STRING |    NO     | `${PARALLEL_LEVEL}`                           |                                                                    |
+| `SKIP_RUN_TESTS`           | BOOL   |    NO     | OFF                                           | Skip running any tests (any tests enabled will still compile)      |
+
 
 1. It might worthwhile to remove `build_root` since it's only used to create `build_dir` IF `build_dir` is not passed in
    via a `-D` option.
