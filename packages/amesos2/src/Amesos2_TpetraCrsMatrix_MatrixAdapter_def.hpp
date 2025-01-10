@@ -181,12 +181,6 @@ namespace Amesos2 {
         Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather");
         Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
-        auto lclMatrix = this->mat_->getLocalMatrixHost();
-        auto lclRowptr = lclMatrix.graph.row_map;
-        auto lclColind = lclMatrix.graph.entries;
-        auto lclNzvals = lclMatrix.values;
-
-
         auto rowMap = this->mat_->getRowMap();
         auto colMap = this->mat_->getColMap();
         auto comm = rowMap->getComm();
@@ -194,8 +188,18 @@ namespace Amesos2 {
         auto myRank = comm->getRank();
 
         global_ordinal_t nRows = this->mat_->getGlobalNumRows();
+        auto lclMatrix = this->mat_->getLocalMatrixDevice();
+
         // check when to recompute communication patterns
         if(current_phase == PREORDERING || current_phase == SYMBFACT) {
+          // grab rowptr and colind on host
+          auto lclRowptr_d = lclMatrix.graph.row_map;
+          auto lclColind_d = lclMatrix.graph.entries;
+          auto lclRowptr = Kokkos::create_mirror_view(lclRowptr_d);
+          auto lclColind = Kokkos::create_mirror_view(lclColind_d);
+          Kokkos::deep_copy(lclRowptr, lclRowptr_d);
+          Kokkos::deep_copy(lclColind, lclColind_d);
+
           // map from global to local
           host_ordinal_type_array  perm_g2l;
           // workspace to transpose
@@ -368,6 +372,11 @@ namespace Amesos2 {
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
+            // grab numerical values on host
+            auto lclNzvals_d = lclMatrix.values;
+            auto lclNzvals = Kokkos::create_mirror_view(lclNzvals_d);;
+            Kokkos::deep_copy(lclNzvals, lclNzvals_d);
+
             // gather nzvals
             if (transpose_map.extent(0) > 0) {
               Kokkos::resize(nzvals_t, nzvals.extent(0));
