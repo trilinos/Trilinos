@@ -13,7 +13,6 @@ banner("START test step")
 
 set(STAGE_TEST_ERROR OFF)
 
-message(STATUS "=== SKIP_RUN_TESTS is ${SKIP_RUN_TESTS}")
 if(NOT SKIP_RUN_TESTS)
     if(CTEST_BUILD_NAME MATCHES .*_asan_.*)
         set(CTEST_MEMORYCHECK_TYPE "AddressSanitizer")
@@ -31,10 +30,9 @@ if(NOT SKIP_RUN_TESTS)
         submit_by_parts( "Test" )
     endif()
 else()
-    message(">>> SKIPPED RUNNING TESTS (skip_run_tests=${SKIP_RUN_TESTS})")
+    message(">>> SKIPPED RUNNING TESTS (SKIP_RUN_TESTS=${SKIP_RUN_TESTS})")
     set(test_error 0)
     submit_by_parts("Test")
-
 endif()
 
 # Print out final stage banner
