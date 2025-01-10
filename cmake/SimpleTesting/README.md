@@ -47,7 +47,6 @@ from being include more than once in an include chain.
 2. Related to (1), we might also change `build_dir` to be `BUILD_DIR` and pass that in.
 
 
-
 Example CTest call from a Trilinos PR
 -------------------------------------
 This is an example, for reference, of how the `ctest` command is invoked in the current Trilinos
@@ -68,6 +67,9 @@ ctest \
    -Dpackage_enables=../packageEnables.cmake \
    -Dsubprojects_file=../package_subproject_list.cmake
 ```
+
+See `TrilinosPRConfigurationStandard.py`[2] for information on what options are set to something
+other than the default during normal Trilinos PR operations.
 
 Additional Notes and Pitfalls
 =============================
