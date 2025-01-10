@@ -150,7 +150,6 @@ namespace Amesos2 {
         contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
       } else {
         // Build Matrix with contiguous Maps
-        // NOTE: can we just swap the nzvals such that we can keep other info (recvCounts, recvDispls)?
         auto lclMatrix = this->mat_->getLocalMatrixDevice();
         auto importer  = this->mat_->getCrsGraph()->getImporter();
         auto exporter  = this->mat_->getCrsGraph()->getExporter();
@@ -222,7 +221,6 @@ namespace Amesos2 {
               for (int p = 1; p <= nRanks; p++) {
                 recvDispls(p) = recvDispls(p-1) + recvCounts(p-1);
               }
-              fflush(stdout);
               if (recvDispls(nRanks) != nRows) {
                 TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Amesos2_TpetraCrsMatrix_MatrixAdapter::gather_impl : mismatch between gathered(local nrows) and global nrows.");
               }
@@ -274,13 +272,17 @@ namespace Amesos2 {
               recvCounts(0) = pointers_[recvDispls(1)];
               LocalOrdinal displs = recvCounts(0);
               for (int p = 1; p < nRanks; p++) {
-                // save recvCounts from pth MPI
-                recvCounts(p) = pointers_[recvDispls(p+1)];
-                // shift pointers for pth MPI to global
-                for (int i = 1+recvDispls(p); i <= recvDispls(p+1); i++) {
-                  pointers_[i] += displs;
-                }
-                displs += recvCounts(p);
+                // skip "Empty" submatrix (no rows)
+		//  recvCounts(p) is zero, while pointers_[recvDispls(p+1)] now contains nnz from p-1
+		if (recvDispls(p+1) > recvDispls(p)) {
+                  // save recvCounts from pth MPI
+                  recvCounts(p) = pointers_[recvDispls(p+1)];
+                  // shift pointers for pth MPI to global
+                  for (int i = 1+recvDispls(p); i <= recvDispls(p+1); i++) {
+                    pointers_[i] += displs;
+                  }
+                  displs += recvCounts(p);
+		}
               }
               ret = pointers_[nRows];
             }
