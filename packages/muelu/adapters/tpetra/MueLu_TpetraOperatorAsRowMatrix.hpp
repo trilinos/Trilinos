@@ -6,8 +6,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
+#ifndef MUELU_TPETRAOPERATORASROWMATRIX_HPP
+#define MUELU_TPETRAOPERATORASROWMATRIX_HPP
 
+#include <Teuchos_RCP.hpp>
 #include <Tpetra_RowMatrix.hpp>
+#include <MueLu_Exceptions.hpp>
 
 namespace MueLu {
 
@@ -244,3 +248,5 @@ class TpetraOperatorAsRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal,
 };
 
 }  // namespace MueLu
+
+#endif

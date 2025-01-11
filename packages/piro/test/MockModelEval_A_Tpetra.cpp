@@ -231,6 +231,7 @@ MockModelEval_A_Tpetra::createOutArgsImpl() const
 
   result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f, true);
   result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_W_op, true);
+  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_W, true);
   result.set_W_properties(Thyra::ModelEvaluatorBase::DerivativeProperties(
       Thyra::ModelEvaluatorBase::DERIV_LINEARITY_UNKNOWN,
       Thyra::ModelEvaluatorBase::DERIV_RANK_FULL,

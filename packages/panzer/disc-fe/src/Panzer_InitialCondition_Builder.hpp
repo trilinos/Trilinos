@@ -117,12 +117,16 @@ namespace panzer {
                             std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks);
 
   /** Execute the construction of an initial condition.
+    *
+    * The time_stamp, step_size and stage_number are workset parameters used in some transient problems. These are optional.
     */
   void evaluateInitialCondition(WorksetContainer & wkstContainer,
                                 const std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
                                 Teuchos::RCP<panzer::LinearObjContainer> loc,
                                 const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
-                                const double time_stamp);
+                                const double time_stamp,
+                                const double step_size = 0.0,
+                                const int stage_number = 0);
 }
 
 #endif

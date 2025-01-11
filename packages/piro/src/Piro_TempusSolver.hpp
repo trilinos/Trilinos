@@ -161,7 +161,6 @@ private:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjointModel_;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
 
   Scalar t_initial_;
   Scalar t_final_;

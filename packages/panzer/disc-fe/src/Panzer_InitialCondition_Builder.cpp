@@ -151,7 +151,9 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
                          const std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
                          Teuchos::RCP<panzer::LinearObjContainer> loc,
                          const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
-                         const double time_stamp)
+                         const double time_stamp,
+                         const double step_size,
+                         const int stage_number)
 {
   typedef LinearObjContainer LOC;
   panzer::Traits::PED ped;
@@ -185,6 +187,8 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
       workset.time = time_stamp;
+      workset.step_size = step_size;
+      workset.stage_number = static_cast<double>(stage_number);
       
       fm->evaluateFields<panzer::Traits::Residual>(workset);
     }
