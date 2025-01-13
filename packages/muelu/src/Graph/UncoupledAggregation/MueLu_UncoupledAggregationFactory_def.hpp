@@ -76,6 +76,8 @@ RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal
   SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
   SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
   SET_VALID_ENTRY("aggregation: phase 1 algorithm");
+  SET_VALID_ENTRY("aggregation: backend");
+  validParamList->getEntry("aggregation: backend").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("default", "host", "kokkos"))));
 #undef SET_VALID_ENTRY
 
   // general variables needed in AggregationFactory
@@ -175,20 +177,53 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   RCP<Aggregates> aggregates;
   RCP<const Teuchos::Comm<int>> comm;
   LO numRows;
+
+  const std::string aggregationBackend = pL.get<std::string>("aggregation: backend");
+
+  // "Graph" can have type "LWGraph" or "LWGraph_kokkos".
+  // The aggregation phases can call either "BuildAggregatesNonKokkos" or "BuildAggregates".
+
+  // "aggregation: backend" can take values "default", "non-Kokkos" or "Kokkos".
+  // "default": run depending on the type of "Graph"
+  // "non-Kokkos": run the non-Kokkos aggregation, moving "Graph" to host if necessary
+  // "Kokkos": run the Kokkos aggregation, potentially move "Graph", moving "Graph" to device if necessary
+
   bool runOnHost;
   if (IsType<RCP<LWGraph>>(currentLevel, "Graph")) {
-    graph      = Get<RCP<LWGraph>>(currentLevel, "Graph");
-    aggregates = rcp(new Aggregates(*graph));
-    comm       = graph->GetComm();
-    numRows    = graph->GetNodeNumVertices();
-    runOnHost  = true;
+    if ((aggregationBackend == "default") || (aggregationBackend == "non-Kokkos")) {
+      graph      = Get<RCP<LWGraph>>(currentLevel, "Graph");
+      aggregates = rcp(new Aggregates(*graph));
+      comm       = graph->GetComm();
+      numRows    = graph->GetNodeNumVertices();
+      runOnHost  = true;
+    } else {
+      RCP<LWGraph> tmp_graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
+      graph_kokkos           = tmp_graph->copyToDevice();
+      aggregates             = rcp(new Aggregates(*graph_kokkos));
+      comm                   = graph_kokkos->GetComm();
+      numRows                = graph_kokkos->GetNodeNumVertices();
+      runOnHost              = false;
+    }
+  } else if (IsType<RCP<LWGraph_kokkos>>(currentLevel, "Graph")) {
+    if ((aggregationBackend == "default") || (aggregationBackend == "Kokkos")) {
+      graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+      aggregates   = rcp(new Aggregates(*graph_kokkos));
+      comm         = graph_kokkos->GetComm();
+      numRows      = graph_kokkos->GetNodeNumVertices();
+      runOnHost    = false;
+    } else {
+      RCP<LWGraph_kokkos> tmp_graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+      graph                                = tmp_graph_kokkos->copyToHost();
+      aggregates                           = rcp(new Aggregates(*graph));
+      comm                                 = graph->GetComm();
+      numRows                              = graph->GetNodeNumVertices();
+      runOnHost                            = true;
+    }
   } else {
-    graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
-    aggregates   = rcp(new Aggregates(*graph_kokkos));
-    comm         = graph_kokkos->GetComm();
-    numRows      = graph_kokkos->GetNodeNumVertices();
-    runOnHost    = false;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Graph has bad type.");
+  }
 
+  if (!runOnHost) {
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: use interface aggregation"), std::invalid_argument, "Option: 'aggregation: use interface aggregation' is not supported in the Kokkos version of uncoupled aggregation");
     // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 , but it is in 2a and 2b
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase1"), std::invalid_argument, "Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");

@@ -377,6 +377,15 @@
   <aggregation>
 
     <parameter>
+      <name>aggregation: backend</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Aggregation scheme. Possible values: "default", "host", "kokkos"</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: type</name>
       <type>string</type>
       <default>"uncoupled"</default>

@@ -164,6 +164,7 @@ namespace MueLu {
   "<Parameter name=\"coarse: type\" type=\"string\" value=\"KLU\"/>"
   "<ParameterList name=\"coarse: params\"/>"
   "<Parameter name=\"coarse: overlap\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: backend\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
@@ -596,6 +597,8 @@ namespace MueLu {
          ("coarse: params","coarse: params")
       
          ("coarse: overlap","coarse: overlap")
+      
+         ("aggregation: backend","aggregation: backend")
       
          ("aggregation: type","aggregation: type")
       
