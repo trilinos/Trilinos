@@ -54,6 +54,11 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     validParams.set("Forcing Term Gamma", 0.9);
     validParams.set("Rescue Bad Newton Solve", true);
 
+    // Not used in this direction object, but needed in the Inexact
+    // Newton Utils which uses the same parameter list. Need to
+    // consolidate the two objects eventually.
+    validParams.set("Set Tolerance in Parameter List",true);
+
     p.validateParametersAndSetDefaults(validParams);
   }
 
