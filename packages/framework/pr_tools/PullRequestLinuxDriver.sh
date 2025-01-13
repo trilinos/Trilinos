@@ -279,6 +279,11 @@ then
     test_cmd_options+=( "--skip-create-packageenables ")
 fi
 
+if [[ ${GENCONFIG_BUILD_NAME} == *"_uvm_"* && ${GENCONFIG_BUILD_NAME} == *"no-package-enables"* ]]
+then
+    test_cmd_options+=( "--skip-run-tests" )
+fi
+
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 # Call the script to launch the tests
