@@ -36,11 +36,23 @@ function tril_genconfig_clone_or_update_repo() {
   echo
 
   if [[ -d ${sub_dir} ]] ; then
-    echo "STATUS: ${sub_dir}: Fetching remote repo"
     cd ${sub_dir}
-    tril_genconfig_assert_pwd_is_git_repo
-    cmd="git fetch"
-    retry_command "${cmd}"
+    remote=$(git remote get-url origin)
+    if [[ ${git_url} == *"${remote}"* ]]
+    then
+      echo "STATUS: ${sub_dir}: Fetching remote repo"
+      tril_genconfig_assert_pwd_is_git_repo
+      cmd="git fetch"
+      retry_command "${cmd}"
+    else
+      echo "ERROR: Current remote origin does not match expected!" >&2
+      echo "Please remove/move '$(pwd)' and re-run this script" >&2
+      echo "" >&2
+      echo "Current:  ${remote}" >&2
+      echo "Expected: ${git_url}" >&2
+      echo "" >&2
+      exit 1
+    fi
   else
     echo "STATUS: ${sub_dir}: Cloning from '${git_url}'"
     cmd="git clone ${git_url} ${sub_dir}"
