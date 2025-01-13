@@ -1059,6 +1059,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
     }
 
     if (!amalgFact.is_null())
