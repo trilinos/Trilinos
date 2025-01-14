@@ -44,12 +44,12 @@ namespace user_app {
   void addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList& response_sublist,
                                            panzer_stk::ModelEvaluatorFactory<double>& me_factory);
 
-  void computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator<double>>& me,
-                                const auto& x,
-                                const auto& x_dot,
-                                const auto& t,
-                                const auto& global_data,
-                                std::ostream& out);
+  // void computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator<double>>& me,
+  //                               const auto& x,
+  //                               const auto& x_dot,
+  //                               const auto& t,
+  //                               const auto& global_data,
+  //                               std::ostream& out);
 
   std::tuple< Teuchos::RCP<Thyra::ModelEvaluator<double>>,
               Teuchos::RCP<panzer::GlobalData>,
@@ -78,6 +78,7 @@ namespace user_app {
   std::tuple<int,int> findResponseIndex(const std::string& g_name,const Thyra::ModelEvaluator<double>& me);
 }
 
+/*
 void user_app::computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator<double>>& physics,
                                         const auto& x,
                                         const auto& x_dot,
@@ -141,5 +142,6 @@ void user_app::computeAndPrintResponses(const Teuchos::RCP<Thyra::ModelEvaluator
     }
   }
 }
+*/
 
 #endif
