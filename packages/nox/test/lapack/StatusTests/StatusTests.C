@@ -206,10 +206,8 @@ private:
 };
 
 
-//! Main subroutine of Broyden.C
 int main(int argc, char *argv[])
 {
-  // Basic declarations to clean up the code
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ParameterList;
@@ -231,31 +229,82 @@ int main(int argc, char *argv[])
       rcp(new Teuchos::ParameterList);
     Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 
-    // Set the nonlinear solver method
-    //solverParameters.set("Nonlinear Solver", "Tensor-Krylov Based");
-    //solverParameters.set("Nonlinear Solver", "Tensor Based");
-    solverParameters.set("Nonlinear Solver", "Line Search Based");
+    Teuchos::ParameterList status_test_list;
 
-    // Sublist for printing parameters
-    Teuchos::ParameterList& printParams = solverParameters.sublist("Printing");
-    //printParams.set("MyPID", 0);
-    printParams.set("Output Precision", 3);
-    printParams.set("Output Processor", 0);
-    printParams.set("Output Information",
-              NOX::Utils::OuterIteration +
-              NOX::Utils::OuterIterationStatusTest +
-              NOX::Utils::InnerIteration +
-              NOX::Utils::Details +
-              NOX::Utils::Warning);
-    NOX::Utils utils(printParams);
+    {
+      // Set the nonlinear solver method
+      //solverParameters.set("Nonlinear Solver", "Tensor-Krylov Based");
+      //solverParameters.set("Nonlinear Solver", "Tensor Based");
+      solverParameters.set("Nonlinear Solver", "Line Search Based");
 
+      // Sublist for printing parameters
+      Teuchos::ParameterList& printParams = solverParameters.sublist("Printing");
+      //printParams.set("MyPID", 0);
+      printParams.set("Output Precision", 3);
+      printParams.set("Output Processor", 0);
+      printParams.set("Output Information",
+                      NOX::Utils::OuterIteration +
+                      NOX::Utils::OuterIterationStatusTest +
+                      NOX::Utils::InnerIteration +
+                      NOX::Utils::Details +
+                      NOX::Utils::Warning);
 
-    // Convergence tests and factory
+      std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+      std::cout << "Testing Convergence tests (NormF, NormUpdate, NormWRMS) ..."
+                << std::endl;
+      std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 
-    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-    std::cout << "Testing Convergence tests (NormF, NormUpdate, NormWRMS) ..."
-         << std::endl;
-    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+      // **************************************
+      // Create the convergence tests
+      // **************************************
+      status_test_list.set("Test Type", "Combo");
+      status_test_list.set("Combo Type", "OR");
+      status_test_list.set("Number of Tests", 5);
+      Teuchos::ParameterList& conv = status_test_list.sublist("Test 0");
+      Teuchos::ParameterList& fv = status_test_list.sublist("Test 1");
+      Teuchos::ParameterList& divergence = status_test_list.sublist("Test 2");
+      Teuchos::ParameterList& stagnation = status_test_list.sublist("Test 3");
+      Teuchos::ParameterList& maxiters = status_test_list.sublist("Test 4");
+
+      conv.set("Test Type", "Combo");
+      conv.set("Combo Type", "AND");
+      conv.set("Number of Tests", 3);
+      Teuchos::ParameterList& normF = conv.sublist("Test 0");
+      Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
+      Teuchos::ParameterList& normUpdate = conv.sublist("Test 2");
+      normF.set("Test Type", "NormF");
+      normF.set("Tolerance", 1.0e-12);
+      normF.set("Norm Type", "Two Norm");
+      normF.set("Scale Type", "Unscaled");
+      normWRMS.set("Test Type", "NormWRMS");
+      normWRMS.set("Absolute Tolerance", 1.0e-8);
+      normWRMS.set("Relative Tolerance", 1.0e-5);
+      normWRMS.set("Tolerance", 1.0);
+      normWRMS.set("BDF Multiplier", 1.0);
+      normWRMS.set("Alpha", 1.0);
+      normWRMS.set("Beta", 0.5);
+      normWRMS.set("Disable Implicit Weighting", true);
+      normUpdate.set("Test Type", "NormUpdate");
+      normUpdate.set("Norm Type", "One Norm");
+      normUpdate.set("Scale Type", "Scaled");
+
+      fv.set("Test Type", "FiniteValue");
+      fv.set("Vector Type", "F Vector");
+      fv.set("Norm Type", "Two Norm");
+
+      divergence.set("Test Type", "Divergence");
+      divergence.set("Tolerance", 1.0e+20);
+      divergence.set("Consecutive Iterations", 3);
+
+      stagnation.set("Test Type", "Stagnation");
+      stagnation.set("Tolerance", 1.0);
+      stagnation.set("Consecutive Iterations", 5);
+
+      maxiters.set("Test Type", "MaxIters");
+      maxiters.set("Maximum Iterations", 20);
+    }
+
+    NOX::Utils utils(solverParameters.sublist("Printing"));
 
     // Set up the problem interface
     Broyden broyden(100,0.99);
@@ -265,88 +314,40 @@ int main(int argc, char *argv[])
     // specified problem.
     RCP<NOX::LAPACK::Group> grp = rcp(new NOX::LAPACK::Group(broyden));
 
-    // **************************************
-    // Create the convergence tests
-    // **************************************
-    Teuchos::ParameterList stl;
-    stl.set("Test Type", "Combo");
-    stl.set("Combo Type", "OR");
-    stl.set("Number of Tests", 5);
-    Teuchos::ParameterList& conv = stl.sublist("Test 0");
-    Teuchos::ParameterList& fv = stl.sublist("Test 1");
-    Teuchos::ParameterList& divergence = stl.sublist("Test 2");
-    Teuchos::ParameterList& stagnation = stl.sublist("Test 3");
-    Teuchos::ParameterList& maxiters = stl.sublist("Test 4");
-
-    conv.set("Test Type", "Combo");
-    conv.set("Combo Type", "AND");
-    conv.set("Number of Tests", 3);
-    Teuchos::ParameterList& normF = conv.sublist("Test 0");
-    Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
-    Teuchos::ParameterList& normUpdate = conv.sublist("Test 2");
-    normF.set("Test Type", "NormF");
-    normF.set("Tolerance", 1.0e-12);
-    normF.set("Norm Type", "Two Norm");
-    normF.set("Scale Type", "Unscaled");
-    normWRMS.set("Test Type", "NormWRMS");
-    normWRMS.set("Absolute Tolerance", 1.0e-8);
-    normWRMS.set("Relative Tolerance", 1.0e-5);
-    normWRMS.set("Tolerance", 1.0);
-    normWRMS.set("BDF Multiplier", 1.0);
-    normWRMS.set("Alpha", 1.0);
-    normWRMS.set("Beta", 0.5);
-    normWRMS.set("Disable Implicit Weighting", true);
-    normUpdate.set("Test Type", "NormUpdate");
-    normUpdate.set("Norm Type", "One Norm");
-    normUpdate.set("Scale Type", "Scaled");
-
-    fv.set("Test Type", "FiniteValue");
-    fv.set("Vector Type", "F Vector");
-    fv.set("Norm Type", "Two Norm");
-
-    divergence.set("Test Type", "Divergence");
-    divergence.set("Tolerance", 1.0e+20);
-    divergence.set("Consecutive Iterations", 3);
-
-    stagnation.set("Test Type", "Stagnation");
-    stagnation.set("Tolerance", 1.0);
-    stagnation.set("Consecutive Iterations", 5);
-
-    maxiters.set("Test Type", "MaxIters");
-    maxiters.set("Maximum Iterations", 20);
-
     Teuchos::RCP<NOX::StatusTest::Generic> statusTestsCombo;
     Teuchos::RCP<Teuchos::ParameterList> st_params;
 
 #ifdef HAVE_TEUCHOS_EXTENDED
     std::cout << "Writing parameter list to \"input.xml\"" << std::endl;
-    Teuchos::writeParameterListToXmlFile(stl, "input.xml");
+    Teuchos::writeParameterListToXmlFile(status_test_list, "input.xml");
     std::cout << "Reading parameter list from \"input.xml\"" << std::endl;
     statusTestsCombo = NOX::StatusTest::buildStatusTests("input.xml", utils);
 #else
-    statusTestsCombo = NOX::StatusTest::buildStatusTests(stl, utils);
+    statusTestsCombo = NOX::StatusTest::buildStatusTests(status_test_list, utils);
 #endif
 
     // **************************************
     // Finished: Create the convergence tests
     // **************************************
 
-    // Create the solver
-    Teuchos::RCP<NOX::Solver::Generic> solver =
-      NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
+    {
+      // Create the solver
+      Teuchos::RCP<NOX::Solver::Generic> solver =
+        NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
-    // Solve the nonlinear system
-    NOX::StatusTest::StatusType status = solver->solve();
+      // Solve the nonlinear system
+      NOX::StatusTest::StatusType status = solver->solve();
 
-    // Print final status
-    if (status == NOX::StatusTest::Converged &&
-        solver->getNumIterations() == 12) {
-      final_status_value += 0;
-      std::cout << "\nConvergence tests passed!" << std::endl;
-    }
-    else {
-      final_status_value += 1;
-      std::cout << "\nConvergence tests Failed!" << std::endl;
+      // Print final status
+      if (status == NOX::StatusTest::Converged &&
+          solver->getNumIterations() == 12) {
+        final_status_value += 0;
+        std::cout << "\nConvergence tests passed!" << std::endl;
+      }
+      else {
+        final_status_value += 1;
+        std::cout << "\nConvergence tests Failed!" << std::endl;
+      }
     }
 
     // Re-run test with complete checks of status tests
@@ -371,7 +372,7 @@ int main(int argc, char *argv[])
       Teuchos::RCP<NOX::Solver::Generic> solver =
         NOX::Solver::buildSolver(group, statusTestsCombo, tmpParams);
 
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
 
       std::cout << *tmpParams << std::endl;
 
@@ -417,7 +418,7 @@ int main(int argc, char *argv[])
       Teuchos::RCP<NOX::Solver::Generic> solver =
         NOX::Solver::buildSolver(group, combo, solverParametersPtr);
 
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
 
       if (status == NOX::StatusTest::Converged &&
       solver->getNumIterations() == 11) {
@@ -438,16 +439,16 @@ int main(int argc, char *argv[])
       std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
 
       std::map< std::string, Teuchos::RCP<NOX::StatusTest::Generic> > my_map;
-      normF.set("Tag", "Norm F Status Test");
+      status_test_list.sublist("Test 0").sublist("Test 0").set("Tag", "Norm F Status Test");
 
       Teuchos::RCP<NOX::StatusTest::Generic> all_tests =
-        NOX::StatusTest::buildStatusTests(stl, utils, &my_map);
+        NOX::StatusTest::buildStatusTests(status_test_list, utils, &my_map);
 
       Teuchos::RCP<NOX::StatusTest::Generic> my_test =
         my_map["Norm F Status Test"];
 
       Teuchos::RCP<NOX::StatusTest::NormF> my_normF_test=
-        Teuchos::rcp_dynamic_cast<NOX::StatusTest::NormF>(my_test);
+        Teuchos::rcp_dynamic_cast<NOX::StatusTest::NormF>(my_test,true);
 
       my_normF_test->print(std::cout);
 
@@ -516,7 +517,7 @@ int main(int argc, char *argv[])
 
       RCP<Teuchos::ParameterList> sp = rcp(new Teuchos::ParameterList);
       sp->set("Nonlinear Solver", "Line Search Based");
-      sp->sublist("Printing") = printParams;
+      sp->sublist("Printing") = solverParameters.sublist("Printing");
       sp->sublist("Solver Options").set("Status Test Check Type", "Complete");
 
       Teuchos::RCP<NOX::Solver::Generic> solver =
@@ -593,7 +594,7 @@ int main(int argc, char *argv[])
 
       RCP<Teuchos::ParameterList> sp = rcp(new Teuchos::ParameterList);
       sp->set("Nonlinear Solver", "Line Search Based");
-      sp->sublist("Printing") = printParams;
+      sp->sublist("Printing") = solverParameters.sublist("Printing");
       sp->sublist("Solver Options").set("Status Test Check Type", "Complete");
 
       Teuchos::RCP<NOX::Solver::Generic> solver =
@@ -644,7 +645,7 @@ int main(int argc, char *argv[])
         NOX::Solver::buildSolver(group,
                      NOX::StatusTest::buildStatusTests(p, utils),
                      solverParametersPtr);
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
 
       // A failure reported by max iters is a passing test
       if (status == NOX::StatusTest::Failed) {
@@ -674,7 +675,7 @@ int main(int argc, char *argv[])
 
       Teuchos::RCP<NOX::Solver::Generic> solver =
         NOX::Solver::buildSolver(group, combo, solverParametersPtr);
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
 
       // A failure reported by finite value is a passing test
       if (status == NOX::StatusTest::Failed &&
@@ -705,7 +706,7 @@ int main(int argc, char *argv[])
 
       Teuchos::RCP<NOX::Solver::Generic> solver =
         NOX::Solver::buildSolver(group, combo, solverParametersPtr);
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
 
       // A failure reported by divergence is a passing test
       if (status == NOX::StatusTest::Failed &&
@@ -737,7 +738,7 @@ int main(int argc, char *argv[])
 
       Teuchos::RCP<NOX::Solver::Generic> solver =
         NOX::Solver::buildSolver(group, combo, solverParametersPtr);
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
 
       // A failure reported by stagnation is a passing test
       if (status == NOX::StatusTest::Failed &&
@@ -783,7 +784,7 @@ int main(int argc, char *argv[])
         NOX::Solver::buildSolver(group, st, solverParametersPtr);
 
       // first time step
-      status = solver->solve();
+      NOX::StatusTest::StatusType status = solver->solve();
       TEUCHOS_ASSERT(solver->getNumIterations() == 3);
 
       // second time step

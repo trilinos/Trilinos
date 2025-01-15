@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
       clp.setOption("flux-calc","disable-flux-calc", &fluxCalculation, "Enable the flux calculation.");
       clp.setOption("point-calc","disable-point-calc", &pointCalculation, "Enable the probe evaluator unit test.");
       clp.setOption("time","no-time", &printTimers, "Print the timing information.");
-      clp.setOption("pl","no-pl", &printTimers, "Print the input ParameterList at the start of the run.");
+      clp.setOption("pl","no-pl", &printInputPL, "Print the input ParameterList at the start of the run.");
 
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
 	clp.parse(argc,argv,&std::cerr);

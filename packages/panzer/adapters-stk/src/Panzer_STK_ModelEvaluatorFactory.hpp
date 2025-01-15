@@ -85,6 +85,15 @@ namespace panzer_stk {
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     //@}
 
+    /** \brief Set the Stratimikos Linear Solver sublist used to
+        create the LinearOpWithSolve factory.
+
+        This function is optional to call. The default list is pull
+        from the main parameter list in "Solution
+        Control->NOX->Direction->Newton->Stratimikos Linear Solver".
+     */
+    void setStratimikosList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
+
     /** \brief Builds the model evaluators for a panzer assembly
         \param[in] comm (Required) Teuchos communicator.  Must be non-null.
         \param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
@@ -313,6 +322,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
 
     bool useDynamicCoordinates_;
+    Teuchos::RCP<Teuchos::ParameterList> m_stratimikos_params;
   };
 
 template<typename ScalarT>
