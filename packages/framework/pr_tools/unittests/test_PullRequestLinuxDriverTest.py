@@ -81,6 +81,7 @@ class Test_parse_args(unittest.TestCase):
                                          filename_packageenables='../packageEnables.cmake',
                                          filename_subprojects='../package_subproject_list.cmake',
                                          skip_create_packageenables=False,
+                                         skip_run_tests=False,
                                          test_mode='standard',
                                          req_mem_per_core=3.0,
                                          max_cores_allowed=12,
