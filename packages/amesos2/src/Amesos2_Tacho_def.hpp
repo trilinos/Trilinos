@@ -155,7 +155,7 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
 
   if ( this->root_ ) {  // Do solve!
     // Bump up the workspace size if needed
-#ifdef HAVE_AMESOS2_TIMER
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
     if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
