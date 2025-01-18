@@ -9,6 +9,9 @@
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/trilinos/Trilinos/badge)](https://securityscorecards.dev/viewer/?uri=github.com/trilinos/Trilinos)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9452/badge)](https://www.bestpractices.dev/projects/9452)
+[![CodeFactor](https://www.codefactor.io/repository/github/trilinos/trilinos/badge)](https://www.codefactor.io/repository/github/trilinos/trilinos)
+![GitHub contributors](https://img.shields.io/github/contributors/trilinos/Trilinos)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/w/trilinos/Trilinos)
 
 
 The Trilinos Project is an effort to develop algorithms and enabling

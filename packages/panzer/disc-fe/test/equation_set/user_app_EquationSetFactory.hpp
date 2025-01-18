@@ -8,6 +8,9 @@
 // *****************************************************************************
 // @HEADER
 
+#ifndef PANZER_DISC_FE_TEST_USER_APP_EQUATION_SET_FACTORY_HPP
+#define PANZER_DISC_FE_TEST_USER_APP_EQUATION_SET_FACTORY_HPP
+
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_Factory_Defines.hpp"
 #include "Panzer_CellData.hpp"
@@ -54,3 +57,5 @@ namespace user_app {
   };
 
 }
+
+#endif

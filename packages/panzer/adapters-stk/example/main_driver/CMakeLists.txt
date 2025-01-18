@@ -5,7 +5,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${PARENT_PACKAGE_SOURCE_DIR}/disc-fe/test/closure_mo
 TRIBITS_INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 
 SET(main_driver_SOURCES
-  main_driver.cpp
   user_app_NOXObserverFactory.hpp
   user_app_NOXObserver_WriteToExodus.hpp
   user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp
@@ -13,7 +12,12 @@ SET(main_driver_SOURCES
 
 TRIBITS_ADD_EXECUTABLE(
   main_driver
-  SOURCES ${main_driver_SOURCES}
+  SOURCES main_driver.cpp ${main_driver_SOURCES}
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  xml_to_yaml
+  SOURCES Panzer_xml_to_yaml.cpp
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
@@ -25,6 +29,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-ss-loca-eigenvalue.xml
     energy-ss-blocked.xml
     energy-transient-tempus-blocked.xml
+    energy-transient-tempus-opt-blocked.xml
+    rol_params.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
     periodic_wedge.xml
@@ -57,7 +63,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
-  TRIBITS_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-point-calc
   TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-point-calc.xml --exodus-io-num-procs=1 --point-calc
@@ -103,12 +109,27 @@ TRIBITS_ADD_ADVANCED_TEST(
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)
   IF(${PACKAGE_NAME}_ENABLE_Tempus)
+    # Simple Tempus transient test
     TRIBITS_ADD_ADVANCED_TEST(
       main_driver_energy-transient-tempus-blocked
       TEST_0 EXEC main_driver
         ARGS  --i=energy-transient-tempus-blocked.xml
         PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
       )
+
+    # Optimization with ROL (currently doesn't support GPU devices)
+    IF(${PACKAGE_NAME}_ENABLE_ROL AND NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_HIP)
+      TRIBITS_ADD_EXECUTABLE(
+        main_driver_opt
+        SOURCES main_driver_opt.cpp ${main_driver_SOURCES} user_app_ROLTempusReducedObjective.hpp user_app_TransientObjective.hpp user_app_TransientObjective_impl.hpp user_app_TransientObjective.cpp user_app_Utilities.hpp user_app_Utilities.cpp
+        )
+      TRIBITS_ADD_ADVANCED_TEST(
+        main_driver_energy-transient-tempus-opt-blocked
+        TEST_0 EXEC main_driver_opt
+          PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+        )
+    ENDIF()
+
   ENDIF()
 ENDIF()
 
