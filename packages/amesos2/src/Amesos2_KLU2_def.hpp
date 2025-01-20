@@ -469,8 +469,9 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
           nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
                                            column_major, current_phase);
         }
-	// gather failed (e.g., not implemened for KokkosCrsMatrix)
-	if (nnz_ret < 0) gather_supported = false;
+        // gather failed (e.g., not implemened for KokkosCrsMatrix)
+        // in case of the failure, it falls back to the original "do_get"
+        if (nnz_ret < 0) gather_supported = false;
       }
       if (!gather_supported) {
         Util::get_ccs_helper_kokkos_view<

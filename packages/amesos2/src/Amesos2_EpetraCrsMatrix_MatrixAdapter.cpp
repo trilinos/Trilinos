@@ -7,8 +7,4 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Amesos2_EpetraCrsMatrix_MatrixAdapter.hpp"
-
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 #include "Amesos2_EpetraCrsMatrix_MatrixAdapter_def.hpp"
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
