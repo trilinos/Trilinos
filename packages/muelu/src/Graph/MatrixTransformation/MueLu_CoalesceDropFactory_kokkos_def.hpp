@@ -12,6 +12,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <sstream>
 #include <tuple>
 
 #include "Xpetra_Matrix.hpp"
@@ -575,6 +576,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
             } else if (distanceLaplacianMetric == "material") {
               auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
               if (material->getNumVectors() == 1) {
+                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
+
                 auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
                 auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(*A, threshold, dist2, results);
 
@@ -590,6 +593,21 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
                 }
               } else {
                 TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
+
+                {
+                  std::stringstream ss;
+                  ss << "material tensor mean =" << std::endl;
+                  size_t k = 0;
+                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
+                    ss << "   ";
+                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
+                      ss << material->getVector(k)->meanValue() << " ";
+                      ++k;
+                    }
+                    ss << std::endl;
+                  }
+                  GetOStream(Runtime0) << ss.str();
+                }
 
                 auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
                 auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(*A, threshold, dist2, results);
