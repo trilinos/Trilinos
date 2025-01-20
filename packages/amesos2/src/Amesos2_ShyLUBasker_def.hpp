@@ -604,6 +604,7 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
                                            column_major, current_phase);
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
+        // in case of the failure, it falls back to the original "do_get"
         if (nnz_ret < 0) gather_supported = false;
       } 
       if (!gather_supported) {

@@ -53,7 +53,6 @@ public:
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
-  typedef typename super_type::node_type                          node_type;
 
   typedef TypeMap<Amesos2::KLU2,scalar_type>                    type_map;
 
