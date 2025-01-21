@@ -1352,7 +1352,7 @@ namespace BaskerNS
     double gperm_time = 0.0;
     Kokkos::Timer timer_gperm;
     #endif
-    if(Options.same_pattern == BASKER_TRUE)
+    if((Options.same_pattern == BASKER_TRUE))
     {
       if(same_pattern_flag == BASKER_FALSE)
       {

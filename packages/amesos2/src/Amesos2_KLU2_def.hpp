@@ -432,9 +432,6 @@ bool
 KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
-#ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-#endif
 
   if(current_phase == SOLVE)return(false);
 
@@ -443,53 +440,40 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
   }
   else
   {
-    // Only the root image needs storage allocated
-    if( this->root_ ) {
-      if (host_nzvals_view_.extent(0) != this->globalNumNonZeros_) 
-        Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
-      if (host_rows_view_.extent(0) != this->globalNumNonZeros_)
-        Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
-      if (host_col_ptr_view_.extent(0) != (this->globalNumRows_ + 1))
-        Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
-    }
 
-    local_ordinal_type nnz_ret = 0;
-    bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
-    {
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
-      if (gather_supported) {
-        bool column_major = true;
-        if (!is_contiguous_) {
-          auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                       column_major, current_phase);
-        } else {
-          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                           column_major, current_phase);
-        }
-        // gather failed (e.g., not implemened for KokkosCrsMatrix)
-        // in case of the failure, it falls back to the original "do_get"
-        if (nnz_ret < 0) gather_supported = false;
-      }
-      if (!gather_supported) {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
-            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-            ARBITRARY,
-            this->rowIndexBase_);
-      }
-    }
 
-    // gather return the total nnz_ret on every MPI process
-    if (gather_supported || this->root_) {
-      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
-                          std::runtime_error,
-                          "Amesos2_KLU2 loadA_impl: Did not get the expected number of non-zero vals("
-                          +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
-    }
+  // Only the root image needs storage allocated
+  if( this->root_ ) {
+    host_nzvals_view_ = host_value_type_array(
+      Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
+    host_rows_view_ = host_ordinal_type_array(
+      Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
+    host_col_ptr_view_ = host_ordinal_type_array(
+      Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
+  }
+
+  local_ordinal_type nnz_ret = 0;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+
+    Util::get_ccs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+      ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        ARBITRARY,
+        this->rowIndexBase_);
+  }
+
+  if( this->root_ ) {
+    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+                        std::runtime_error,
+                        "Did not get the expected number of non-zero vals");
+  }
 
   } //end else single_process_optim_check = false
 

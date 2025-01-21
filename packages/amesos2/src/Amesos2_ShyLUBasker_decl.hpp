@@ -182,7 +182,8 @@ private:
   mutable host_solve_array_t bValues_;
   int ldb_;
 
-  /*Handle for ShyLUBasker object*/
+    /*Handle for ShyLUBasker object*/
+ 
 #if defined( HAVE_AMESOS2_KOKKOS ) && defined( KOKKOS_ENABLE_OPENMP )
   /*
   typedef typename node_type::device_type  kokkos_device;
