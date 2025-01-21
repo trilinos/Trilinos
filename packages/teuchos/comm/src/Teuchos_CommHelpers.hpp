@@ -1574,16 +1574,6 @@ isend<int, double> (const ArrayRCP<const double>& sendBuffer,
                     const int tag,
                     const Comm<int>& comm);
 
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-gatherv<int, double> (const double sendBuf[],
-                      const int sendCount,
-                      double recvBuf[],
-                      const int recvCounts[],
-                      const int displs[],
-                      const int root,
-                      const Comm<int>& comm);
-
 // Specialization for Ordinal=int and Packet=float.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1622,16 +1612,6 @@ isend<int, float> (const ArrayRCP<const float>& sendBuffer,
                    const int destRank,
                    const int tag,
                    const Comm<int>& comm);
-
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-gatherv<int, float> (const float sendBuf[],
-                     const int sendCount,
-                     float recvBuf[],
-                     const int recvCounts[],
-                     const int displs[],
-                     const int root,
-                     const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=long long.
 template<>

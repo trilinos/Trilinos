@@ -47,18 +47,18 @@ namespace Amesos2 {
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
-  const Teuchos::RCP<const Tpetra::Map<typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::local_ordinal_t,
-                                       typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
-                                       typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >
+  const RCP<const Tpetra::Map<typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::local_ordinal_t,
+                              typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
+                              typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >
   ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getRowMap_impl() const
   {
     return Teuchos::null; // not going to use this right now - serial
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
-  const Teuchos::RCP<const Tpetra::Map<typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::local_ordinal_t,
-                                       typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
-                                       typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >
+  const RCP<const Tpetra::Map<typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::local_ordinal_t,
+                              typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
+                              typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >
   ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getColMap_impl() const
   {
     return Teuchos::null; // not going to use this right now - serial
@@ -104,9 +104,9 @@ namespace Amesos2 {
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
   const Teuchos::RCP<const Tpetra::Map<typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::local_ordinal_t,
-                                       typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
-                                       typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >
-    ConcreteMatrixAdapter<
+                              typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
+                              typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >
+  ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getMap_impl() const
   {
     return( Teuchos::null );
@@ -176,29 +176,6 @@ namespace Amesos2 {
                       "Please contact the Amesos2 developers." );
   }
 
-  template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
-  Teuchos::RCP<const MatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>>
-  ConcreteMatrixAdapter<
-    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
-    >::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosCrsMatrixAdapter has not implemented reindex_impl.");
-    return RCP (this);
-  }
-
-  template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
-  template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
-  LocalOrdinal
-  ConcreteMatrixAdapter<
-    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
-    >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
-                   host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
-                   host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
-                   bool column_major, EPhase current_phase) const
-  {
-    //TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosCrsMatrixAdapter has not been implemented gather_impl.");
-    return -1;
-  }
 } // end namespace Amesos2
 
 #endif  // AMESOS2_KOKKOS_CRSMATRIX_MATRIXADAPTER_DEF_HPP

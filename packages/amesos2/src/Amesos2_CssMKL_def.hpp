@@ -264,7 +264,7 @@ namespace Amesos2 {
     }
 
     return( 0 );
-  }
+}
 
 
   template <class Matrix, class Vector>
@@ -470,7 +470,7 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     #if 1
     // Only reinex GIDs
     css_rowmap_ = this->matrixA_->getRowMap(); // use original map to redistribute vectors in solve
-    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex(css_contig_rowmap_, css_contig_colmap_, current_phase);
+    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex(css_contig_rowmap_, css_contig_colmap_);
     #else
     // Redistribued matrixA into contiguous GIDs
     Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->get(ptrInArg(*css_rowmap_));
