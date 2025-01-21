@@ -577,7 +577,13 @@ namespace BaskerNS
       }
     }
     printf("];\n");*/
-
+    {
+      // setup data-structure for ND
+      bool doSymbolic = true;
+      bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
+      bool alloc_BTFA = (Options.static_delayed_pivot != 0);
+      int err = sfactor_copy2(doSymbolic, alloc_BTFA, copy_BTFA);
+    }
     return 0;
   } //end Symbolic()
 
@@ -1625,7 +1631,7 @@ namespace BaskerNS
         #ifdef BASKER_KOKKOS
         // ----------------------------------------------------------------------------------------------
         // Allocate & Initialize blocks
-        #ifdef BASKER_PARALLEL_INIT_FACTOR
+        #if 1//def BASKER_PARALLEL_INIT_FACTOR
         kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
           iF(this);
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
@@ -1947,24 +1953,25 @@ namespace BaskerNS
       }*/
 
       Kokkos::Timer nd_setup2_timer;
-#ifdef BASKER_PARALLEL_INIT_WORKSPACE
+      #if 1//def BASKER_PARALLEL_INIT_WORKSPACE
       kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
         iWS(flag, this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
       Kokkos::fence();
-#else
+      #else
       for (Int p = 0; p < num_threads; p++) {
         this->t_init_workspace(flag, p);
       }
-#endif
+      #endif
       if(Options.verbose == BASKER_TRUE) {
         std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
       }
       #endif
     }
+    bool doSymbolic = false;
     bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
     bool alloc_BTFA = (Options.static_delayed_pivot != 0);
-    err = sfactor_copy2(alloc_BTFA, copy_BTFA);
+    err = sfactor_copy2(doSymbolic, alloc_BTFA, copy_BTFA);
 
     if(Options.verbose == BASKER_TRUE) {
       sfactorcopy_time += timer_sfactorcopy.seconds();
@@ -1973,6 +1980,7 @@ namespace BaskerNS
     }
     if(err == BASKER_ERROR)
     { return BASKER_ERROR; }
+    //BTF_A.print_matrix("AA.dat");
 
     Kokkos::Timer timer_factornotoken;
     double fnotoken_time = 0.0;

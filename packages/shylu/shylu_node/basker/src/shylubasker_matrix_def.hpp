@@ -122,6 +122,7 @@ namespace BaskerNS
     if(v_fill == BASKER_TRUE)
     {
       FREE_INT_1DARRAY(col_ptr);
+      FREE_INT_1DARRAY(dig_ptr);
       FREE_INT_1DARRAY(row_idx);
       FREE_ENTRY_1DARRAY(val);
       v_fill = BASKER_FALSE;
@@ -190,10 +191,12 @@ namespace BaskerNS
     //printf( " init_col(n=%d)\n",ncol );
     BASKER_ASSERT(ncol >= 0, "INIT_COL, ncol > 0");
     MALLOC_INT_1DARRAY(col_ptr, ncol+1);
+    MALLOC_INT_1DARRAY(dig_ptr, ncol+1);
     MALLOC_INT_1DARRAY(col_idx, ncol+1);
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
+      dig_ptr(i) = (Int) BASKER_MAX_IDX;
       col_idx(i) = (Int) BASKER_MAX_IDX;
     }
   }//end init_col()
@@ -206,6 +209,7 @@ namespace BaskerNS
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
+      dig_ptr(i) = (Int) BASKER_MAX_IDX;
       col_idx(i) = (Int) BASKER_MAX_IDX;
     }
     nnz = 0;
@@ -228,6 +232,7 @@ namespace BaskerNS
     {
       BASKER_ASSERT((ncol+1)>0, "matrix init_vector ncol");
       MALLOC_INT_1DARRAY(col_ptr,ncol+1);
+      MALLOC_INT_1DARRAY(dig_ptr,ncol+1);
     }
     if(nnz > 0)
     {
