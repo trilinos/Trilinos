@@ -88,7 +88,7 @@ namespace BaskerNS
 	init_value(thread_start, num_threads+1, 
 		   (Int) BASKER_MAX_IDX);
 	int nt = nfactor_domain_error(thread_start);
-	if(nt == BASKER_SUCCESS)
+	if((nt == BASKER_SUCCESS))
 	  {
 	    FREE_INT_1DARRAY(thread_start);
 	    break;
@@ -188,7 +188,7 @@ namespace BaskerNS
 		      (Int) BASKER_MAX_IDX);
 	    int nt = nfactor_sep_error(thread_start);
 	    //printf("AFTER SEP ERROR %d \n", nt);
-	    if(nt == BASKER_SUCCESS)
+	    if((nt == BASKER_SUCCESS))
 	      {
 		FREE_INT_1DARRAY(thread_start);
 		break;
