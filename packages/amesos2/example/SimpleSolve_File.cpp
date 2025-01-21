@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::oblackholestream blackhole;
 
+  bool multi_solve     = false;
   bool printMatrix     = false;
   bool printSolution   = false;
   bool checkSolution   = false;
@@ -83,6 +84,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("rhs_filename",&rhs_filename,"Filename for Matrix-Market right-hand-side.");
   cmdp.setOption("solvername",&solvername,"Name of solver.");
   cmdp.setOption("xml_filename",&xml_filename,"XML Filename for Solver parameters.");
+  cmdp.setOption("multi-solve","no-multi-solve",&multi_solve,"Test multiple numFacto & solve per symbolic.");
   cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
   cmdp.setOption("check-solution","no-check-solution",&checkSolution,"Check solution vector after solve.");
@@ -104,7 +106,7 @@ int main(int argc, char *argv[]) {
   const size_t numVectors = 1;
 
   // Read matrix
-  RCP<const MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(mat_filename, comm);
+  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(mat_filename, comm);
 
   // get the map (Range Map used for both X & B)
   RCP<const Map<LO,GO> > rngmap = A->getRangeMap();
@@ -218,10 +220,31 @@ int main(int argc, char *argv[]) {
     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
   solver->symbolicFactorization().numericFactorization().solve();
+  if (multi_solve) {
+    {
+      // change (1,1) diagonal entry value
+      Teuchos::Array<GO> gblColIndsBuf (1);
+      Teuchos::Array<Scalar> valsBuf (1);
+      valsBuf[0] = 7.0;
+      gblColIndsBuf[0] = 0;
+
+      Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf.view (0, 1);
+      Teuchos::ArrayView<Scalar> vals = valsBuf.view (0, 1);
+
+      A->resumeFill();
+      A->replaceGlobalValues (0, gblColInds, vals);
+      A->fillComplete();
+    }
+    // perform numeric for the second time
+    solver->numericFactorization();
+
+    // chage RHS, and re-do solve
+    B->putScalar(10);
+    solver->solve();
+  }
   if(useStackedTimer) {
     stackedTimer->stopBaseTimer();
   }
-
   if( printSolution ){
     // Print the solution
     RCP<Map<LO,GO> > root_map
