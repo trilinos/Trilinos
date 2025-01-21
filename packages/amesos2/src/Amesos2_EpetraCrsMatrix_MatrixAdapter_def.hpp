@@ -26,7 +26,7 @@ namespace Amesos2 {
     {}
 
   Teuchos::RCP<const MatrixAdapter<Epetra_CrsMatrix> >
-  ConcreteMatrixAdapter<Epetra_CrsMatrix>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
+  ConcreteMatrixAdapter<Epetra_CrsMatrix>::get_impl(const Teuchos::Ptr<const map_t> map, EDistribution distribution) const
     {
       using Teuchos::as;
       using Teuchos::rcp;
@@ -78,8 +78,9 @@ namespace Amesos2 {
     }
 
   Teuchos::RCP<const MatrixAdapter<Epetra_CrsMatrix> >
-  ConcreteMatrixAdapter<Epetra_CrsMatrix>::reindex_impl(Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > &contigRowMap,
-                                                        Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > &contigColMap) const
+  ConcreteMatrixAdapter<Epetra_CrsMatrix>::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                                                        Teuchos::RCP<const map_t> &contigColMap,
+                                                        const EPhase /*current_phase*/) const
     {
       #if defined(HAVE_AMESOS2_EPETRAEXT)
       using Teuchos::RCP;
@@ -107,6 +108,7 @@ namespace Amesos2 {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ConcreteMatrixAdapter<Epetra_CrsMatrix> requires EpetraExt to reindex matrices.");
       #endif
     }
+
 
   void
   ConcreteMatrixAdapter<Epetra_CrsMatrix>::describe (Teuchos::FancyOStream& os,
