@@ -303,6 +303,13 @@ namespace Ifpack2 {
           });
       }
 
+      /*
+       * Note BMK: this function is unused but has an issue:
+       * the ThreadVectorRange modifies captured value "val", which is not valid in Kokkos.
+       *
+       * It probably produces correct results in practice but there are more atomic adds
+       * (one per vector lane) than what is necessary (one per thread)
+       *
       template<typename AAViewType, typename xxViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION
       void
@@ -320,9 +327,10 @@ namespace Ifpack2 {
                [&](const local_ordinal_type &k1) {
                 val += AA(k0,k1)*xx(k1);
               });
-            Kokkos::atomic_fetch_add(&yy(k0), typename yyViewType::const_value_type(-val));
+            Kokkos::atomic_add(&yy(k0), typename yyViewType::const_value_type(-val));
           });
       }
+      */
 
       template<typename xxViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION
@@ -338,14 +346,21 @@ namespace Ifpack2 {
         const size_type Aj_c = colindsub_(lclColID);
         auto point_row_offset = A_point_rowptr(lclRowID*blocksize + ii) + Aj_c*blocksize;
         impl_scalar_type val = 0;
-        Kokkos::parallel_for
+        Kokkos::parallel_reduce
           (Kokkos::ThreadVectorRange(member, blocksize),
-           [&](const local_ordinal_type &k1) {
-              val += tpetra_values(point_row_offset + k1) *xx(k1);
+           [&](const local_ordinal_type &k1, impl_scalar_type& update) {
+              update += tpetra_values(point_row_offset + k1) *xx(k1);
+          }, val);
+        Kokkos::single(Kokkos::PerThread(member),
+          [=]()
+          {
+            Kokkos::atomic_add(&yy(ii), typename yyViewType::const_value_type(-val));
           });
-        Kokkos::atomic_fetch_add(&yy(ii), typename yyViewType::const_value_type(-val));
       }
 
+      // Note BMK: this version coalesces accesses to AA for LayoutLeft blocks,
+      // but BlockCrsMatrix almost always uses LayoutRight.
+      /*
       template<typename AAViewType, typename xxViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION
       void
@@ -361,28 +376,34 @@ namespace Ifpack2 {
             for (local_ordinal_type k1=0;k1<blocksize;++k1) {
               val += AA(k0,k1)*xx(k1);
             }
-            Kokkos::atomic_fetch_add(&yy(k0), typename yyViewType::const_value_type(-val));
+            Kokkos::atomic_add(&yy(k0), typename yyViewType::const_value_type(-val));
           });
       }
+      */
 
-      // template<typename AAViewType, typename xxViewType, typename yyViewType>
-      // KOKKOS_INLINE_FUNCTION
-      // void
-      // VectorGemv(const member_type &member,
-      //                 const local_ordinal_type &blocksize,
-      //                 const AAViewType &AA,
-      //                 const xxViewType &xx,
-      //                 const yyViewType &yy) const {
-      //        for (local_ordinal_type k0=0;k0<blocksize;++k0) {
-      //          impl_scalar_type val = 0;
-      //          Kokkos::parallel_for
-      //            (Kokkos::ThreadVectorRange(member, blocksize),
-      //             [&](const local_ordinal_type &k1) {
-      //              val += AA(k0,k1)*xx(k1);
-      //            });
-      //          Kokkos::atomic_fetch_add(&yy(k0), -val);
-      //        }
-      // }
+      // BMK: This version coalesces accesses to AA for LayoutRight blocks.
+      template<typename AAViewType, typename xxViewType, typename yyViewType>
+      KOKKOS_INLINE_FUNCTION
+      void
+      VectorGemv(const member_type &member,
+                 const local_ordinal_type &blocksize,
+                 const AAViewType &AA,
+                 const xxViewType &xx,
+                 const yyViewType &yy) const {
+         for (local_ordinal_type k0=0;k0<blocksize;++k0) {
+           impl_scalar_type val = 0;
+           Kokkos::parallel_reduce
+             (Kokkos::ThreadVectorRange(member, blocksize),
+              [&](const local_ordinal_type &k1, impl_scalar_type& update) {
+                update += AA(k0,k1)*xx(k1);
+             }, val);
+           Kokkos::single(Kokkos::PerThread(member),
+             [=]()
+             {
+               Kokkos::atomic_add(&yy(k0), -val);
+             });
+         }
+      }
 
       struct SeqTag {};
 
