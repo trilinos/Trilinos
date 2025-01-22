@@ -154,10 +154,10 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   int ierr = 0; // returned error code
 
   if ( this->root_ ) {  // Do solve!
-#ifdef HAVE_AMESOS2_TIMER
+    // Bump up the workspace size if needed
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-    // Bump up the workspace size if needed
     if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
       workspace_ = device_solve_array_t(
         Kokkos::ViewAllocateWithoutInitializing("t"), this->globalNumRows_, nrhs);
