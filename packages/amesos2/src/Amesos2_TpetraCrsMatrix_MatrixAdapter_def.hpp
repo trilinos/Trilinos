@@ -186,6 +186,7 @@ namespace Amesos2 {
         auto nRanks = comm->getSize();
         auto myRank = comm->getRank();
 
+        global_ordinal_t indexBase = rowMap->getIndexBase();
         global_ordinal_t nRows = this->mat_->getGlobalNumRows();
         auto lclMatrix = this->mat_->getLocalMatrixDevice();
 
@@ -231,7 +232,7 @@ namespace Amesos2 {
               }
               recvDispls(nRanks) = 0;
             }
-            // gether g2l perm
+            // gether g2l perm (convert to 0-base)
             {
               host_ordinal_type_array lclMap;
               Kokkos::resize(lclMap, myNRows);
@@ -248,6 +249,7 @@ namespace Amesos2 {
                                                    0, *comm);
               if (myRank == 0) {
                 for (int i=0; i < nRows; i++) {
+                  perm_g2l(i) -= indexBase;
                   if (i != perm_g2l(i)) need_to_perm = true;
                 }
               }
@@ -299,9 +301,9 @@ namespace Amesos2 {
                 recvDispls(p+1) = recvDispls(p) + recvCounts(p);
               }
             }
-            // -- convert to global colids
+            // -- convert to global colids & convert to 0-base
             KV_GO lclColind_ ("localColind_", lclColind.extent(0));
-            for (int i = 0; i < int(lclColind.extent(0)); i++) lclColind_(i) = colMap->getGlobalElement((lclColind(i)));
+            for (int i = 0; i < int(lclColind.extent(0)); i++) lclColind_(i) = (colMap->getGlobalElement((lclColind(i))) - indexBase);
             if (column_major || need_to_perm) {
               Kokkos::resize(indices_t, indices.extent(0));
               Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices_t.data(), 
