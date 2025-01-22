@@ -212,6 +212,8 @@ protected:
    */
   bool opSupportedImpl(EOpTransp M_trans) const;
 
+  void allocateVecs(const Ordinal dim) const;
+
   /** \brief . */
   void applyImpl(
     const EOpTransp M_trans,
@@ -228,6 +230,7 @@ public:
 private:
 
   Array<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;
+  mutable std::vector<Teuchos::RCP<MultiVectorBase<Scalar> > > T_k_;
 
   inline void assertInitialized() const;
   inline std::string getClassName() const;
