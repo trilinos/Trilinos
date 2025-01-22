@@ -1344,7 +1344,7 @@ namespace BaskerNS
       if(ws(m_tree_p) == 0)
       {
         //Not assigned yet
-        if((_tree(s_tree_p) == otree(m_tree_p)))
+        if(_tree(s_tree_p) == otree(m_tree_p))
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("same case\n");

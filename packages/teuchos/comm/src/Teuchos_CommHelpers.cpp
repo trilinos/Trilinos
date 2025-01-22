@@ -941,7 +941,6 @@ isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
 #endif // HAVE_TEUCHOS_COMPLEX
 #endif // if 0
 
-
 // Specialization for Ordinal=int and Packet=double.
 template<>
 void
@@ -1010,6 +1009,20 @@ isend (const ArrayRCP<const double>& sendBuffer,
   return isendImpl<double> (sendBuffer, destRank, tag, comm);
 }
 
+template<>
+void
+gatherv<int, double> (const double sendBuf[],
+                      const int sendCount,
+                      double recvBuf[],
+                      const int recvCounts[],
+                      const int displs[],
+                      const int root,
+                      const Comm<int>& comm)
+{
+  gathervImpl<double> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
+}
+
+
 // Specialization for Ordinal=int and Packet=float.
 template<>
 void
@@ -1076,6 +1089,19 @@ isend (const ArrayRCP<const float>& sendBuffer,
        const Comm<int>& comm)
 {
   return isendImpl<float> (sendBuffer, destRank, tag, comm);
+}
+
+template<>
+void
+gatherv<int,float > (const float sendBuf[],
+                     const int sendCount,
+                     float recvBuf[],
+                     const int recvCounts[],
+                     const int displs[],
+                     const int root,
+                     const Comm<int>& comm)
+{
+  gathervImpl<float> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
 }
 
 

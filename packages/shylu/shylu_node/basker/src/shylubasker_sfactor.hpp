@@ -719,7 +719,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   #endif
     BASKER_MATRIX *MV = &M;
   
-    if((Options.symmetric == BASKER_TRUE))
+    if(Options.symmetric == BASKER_TRUE)
     {
     #ifdef BASKER_DEBUG_SFACTOR
       printf("symmetric\n");
