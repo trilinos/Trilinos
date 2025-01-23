@@ -386,7 +386,6 @@ namespace Ifpack2 {
 
       struct SeqTag {};
 
-      // inline  ---> FIXME HIP: should not need KOKKOS_INLINE_FUNCTION
       KOKKOS_INLINE_FUNCTION
       void
       operator() (const SeqTag &, const local_ordinal_type& i) const {
@@ -475,14 +474,31 @@ namespace Ifpack2 {
         }
       }
 
-      template<int B>
-      struct AsyncTag {};
+      // * B: block size for compile-time specialization, or 0 for general case (up to max_blocksize)
+      // * async: true if using async importer.
+      //          Whether a column is owned or nonowned is decided at runtime.
+      // * overlap: true if processing the columns that are not locally owned,
+      //            false if processing locally owned columns.
+      template<int B, bool async, bool overlap>
+      struct GeneralTag
+      {
+        static_assert(!(async && overlap),
+            "ComputeResidualVector: async && overlap is not a valid configuration for GeneralTag");
+      };
+
+      // Define AsyncTag and OverlapTag in terms of GeneralTag:
+      // P == 0 means only compute on owned columns
+      // P == 1 means only compute on nonowned columns
+      template<int P, int B>
+      using OverlapTag = GeneralTag<B, false, P != 0>;
 
       template<int B>
-      // inline  ---> FIXME HIP: should not need KOKKOS_INLINE_FUNCTION
+      using AsyncTag = GeneralTag<B, true, false>;
+
+      template<int B, bool async, bool overlap>
       KOKKOS_INLINE_FUNCTION
       void
-      operator() (const AsyncTag<B> &, const local_ordinal_type &rowidx) const {
+      operator() (const GeneralTag<B, async, overlap>&, const local_ordinal_type &rowidx) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
         const local_ordinal_type blocksize_square = blocksize*blocksize;
 
@@ -499,19 +515,28 @@ namespace Ifpack2 {
 
         const local_ordinal_type lr = lclrow(rowidx);
         const local_ordinal_type row = lr*blocksize;
-        for (local_ordinal_type col=0;col<num_vectors;++col) {
-          // y := b
-          memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
+
+        auto colindsub_used = overlap ? colindsub_remote : colindsub;
+        auto rowptr_used = overlap ? rowptr_remote : rowptr;
+
+        for (local_ordinal_type col = 0; col < num_vectors; ++col) {
+          if constexpr(overlap) {
+            // y (temporary) := 0
+            memset((void*) yy, 0, sizeof(impl_scalar_type)*blocksize);
+          }
+          else {
+            // y := b
+            memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
+          }
 
           // y -= Rx
           const size_type A_k0 = A_block_rowptr[lr];
-          for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
-            const size_type j = A_k0 + colindsub[k];
+          for (size_type k = rowptr_used[lr]; k < rowptr_used[lr+1]; ++k) {
+            const size_type j = A_k0 + colindsub_used[k];
             const local_ordinal_type A_colind_at_j = A_colind[j];
             if (hasBlockCrsMatrix) {
               const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
-              
-              if (A_colind_at_j < num_local_rows) {
+              if ((!async && !overlap) || (async && A_colind_at_j < num_local_rows)) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
                 const impl_scalar_type * const xx = &x(loc*blocksize, col);
                 SerialGemv(blocksize, AA,xx,yy);
@@ -522,186 +547,35 @@ namespace Ifpack2 {
               }
             }
             else {
-              if (A_colind_at_j < num_local_rows) {
+              if ((!async && !overlap) || (async && A_colind_at_j < num_local_rows)) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
                 const impl_scalar_type * const xx = &x(loc*blocksize, col);
-                for (local_ordinal_type k0=0;k0<blocksize;++k0)
-                  SerialDot(blocksize, lr, k, k0, colindsub, xx, yy);
-              } else {
-                const auto loc = A_colind_at_j - num_local_rows;
-                const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-                for (local_ordinal_type k0=0;k0<blocksize;++k0)
-                  SerialDot(blocksize, lr, k, k0, colindsub, xx_remote, yy);
-              }
-            }
-          }
-          // move yy to y_packed
-          for (local_ordinal_type k=0;k<blocksize;++k)
-            y_packed(pri, k, col)[v] = yy[k];
-        }
-      }
-
-      template<int B>
-      KOKKOS_INLINE_FUNCTION
-      void
-      operator() (const AsyncTag<B> &, const member_type &member) const {
-        const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
-        const local_ordinal_type blocksize_square = blocksize*blocksize;
-
-        // constants
-        const local_ordinal_type rowidx = member.league_rank();
-        const local_ordinal_type partidx = rowidx2part(rowidx);
-        const local_ordinal_type pri = part2packrowidx0(partidx) + (rowidx - partptr(partidx));
-        const local_ordinal_type v = partidx % vector_length;
-
-        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
-        const local_ordinal_type num_vectors = y_packed_scalar.extent(2);
-        const local_ordinal_type num_local_rows = lclrow.extent(0);
-
-        // subview pattern
-        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
-        subview_1D_right_t bb(nullptr, blocksize);
-        subview_1D_right_t xx(nullptr, blocksize);
-        subview_1D_right_t xx_remote(nullptr, blocksize);
-        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
-        subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
-        auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
-
-        const local_ordinal_type lr = lclrow(rowidx);
-        const local_ordinal_type row = lr*blocksize;
-        for (local_ordinal_type col=0;col<num_vectors;++col) {
-          // y := b
-          bb.assign_data(&b(row, col));
-          yy.assign_data(&y_packed_scalar(pri, 0, col, v));
-          if (member.team_rank() == 0)
-            VectorCopy(member, blocksize, bb, yy);
-          member.team_barrier();
-
-          // y -= Rx
-          const size_type A_k0 = A_block_rowptr[lr];
-          if(hasBlockCrsMatrix) {
-            Kokkos::parallel_for
-              (Kokkos::TeamThreadRange(member, rowptr[lr], rowptr[lr+1]),
-              [&](const local_ordinal_type &k) {
-                const size_type j = A_k0 + colindsub[k];
-                A_block_cst.assign_data( &tpetra_values(j*blocksize_square) );
-
-                const local_ordinal_type A_colind_at_j = A_colind[j];
-                if (A_colind_at_j < num_local_rows) {
-                  const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                  xx.assign_data( &x(loc*blocksize, col) );
-                  VectorGemv(member, blocksize, A_block_cst, xx, yy);
-                } else {
-                  const auto loc = A_colind_at_j - num_local_rows; 
-                  xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                  VectorGemv(member, blocksize, A_block_cst, xx_remote, yy);
-                }
-              });
-          }
-          else {
-            Kokkos::parallel_for
-              (Kokkos::TeamThreadRange(member, rowptr[lr], rowptr[lr+1]),
-              [&](const local_ordinal_type &k) {
-                const size_type j = A_k0 + colindsub[k];
-
-                const local_ordinal_type A_colind_at_j = A_colind[j];
-                if (A_colind_at_j < num_local_rows) {
-                  const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                  xx.assign_data( &x(loc*blocksize, col) );
-                  for (local_ordinal_type k0=0;k0<blocksize;++k0)
-                    VectorDot(member, blocksize, lr, k, k0, colindsub, xx, yy);
-                } else {
-                  const auto loc = A_colind_at_j - num_local_rows; 
-                  xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                  for (local_ordinal_type k0=0;k0<blocksize;++k0)
-                    VectorDot(member, blocksize, lr, k, k0, colindsub, xx_remote, yy);
-                }
-              });
-          }
-        }
-      }
-
-      template <int P, int B> struct OverlapTag {};
-
-      template<int P, int B>
-      // inline  ---> FIXME HIP: should not need KOKKOS_INLINE_FUNCTION
-      KOKKOS_INLINE_FUNCTION
-      void
-      operator() (const OverlapTag<P,B> &, const local_ordinal_type& rowidx) const {
-        const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
-        const local_ordinal_type blocksize_square = blocksize*blocksize;
-
-        // constants
-        const local_ordinal_type partidx = rowidx2part(rowidx);
-        const local_ordinal_type pri = part2packrowidx0(partidx) + (rowidx - partptr(partidx));
-        const local_ordinal_type v = partidx % vector_length;
-
-        const local_ordinal_type num_vectors = y_packed.extent(2);
-        const local_ordinal_type num_local_rows = lclrow.extent(0);
-
-        // temporary buffer for y flat
-        impl_scalar_type yy[max_blocksize] = {};
-
-        auto colindsub_used = (P == 0 ? colindsub : colindsub_remote);
-        auto rowptr_used = (P == 0 ? rowptr : rowptr_remote);
-
-        const local_ordinal_type lr = lclrow(rowidx);
-        const local_ordinal_type row = lr*blocksize;
-        for (local_ordinal_type col=0;col<num_vectors;++col) {
-          if (P == 0) {
-            // y := b
-            memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
-          } else {
-            // y (temporary) := 0
-            memset((void*) yy, 0, sizeof(impl_scalar_type)*blocksize);
-          }
-
-          // y -= Rx
-          const size_type A_k0 = A_block_rowptr[lr];
-          for (size_type k=rowptr_used[lr];k<rowptr_used[lr+1];++k) {
-            const size_type j = A_k0 + colindsub_used[k];
-            const local_ordinal_type A_colind_at_j = A_colind[j];
-            if (hasBlockCrsMatrix) {
-              const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
-              if (P == 0) {
-                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                const impl_scalar_type * const xx = &x(loc*blocksize, col);
-                SerialGemv(blocksize,AA,xx,yy);
-              } else {
-                const auto loc = A_colind_at_j - num_local_rows;
-                const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-                SerialGemv(blocksize,AA,xx_remote,yy);
-              }
-            }
-            else {
-              if (P == 0) {
-                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                const impl_scalar_type * const xx = &x(loc*blocksize, col);
-                for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
                   SerialDot(blocksize, lr, k, k0, colindsub_used, xx, yy);
               } else {
                 const auto loc = A_colind_at_j - num_local_rows;
                 const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-                for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
                   SerialDot(blocksize, lr, k, k0, colindsub_used, xx_remote, yy);
               }
             }
           }
           // move yy to y_packed
-          if (P == 0) {
-            for (local_ordinal_type k=0;k<blocksize;++k)
-              y_packed(pri, k, col)[v] = yy[k];
-          } else {
+          if constexpr(overlap) {
             for (local_ordinal_type k=0;k<blocksize;++k)
               y_packed(pri, k, col)[v] += yy[k];
+          }
+          else {
+            for (local_ordinal_type k=0;k<blocksize;++k)
+              y_packed(pri, k, col)[v] = yy[k];
           }
         }
       }
 
-      template<int P, int B>
+      template<int B, bool async, bool overlap>
       KOKKOS_INLINE_FUNCTION
       void
-      operator() (const OverlapTag<P,B> &, const member_type &member) const {
+      operator() (const GeneralTag<B, async, overlap>&, const member_type &member) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
         const local_ordinal_type blocksize_square = blocksize*blocksize;
 
@@ -723,14 +597,14 @@ namespace Ifpack2 {
         using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
         subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
         auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
-        auto colindsub_used = (P == 0 ? colindsub : colindsub_remote);
-        auto rowptr_used = (P == 0 ? rowptr : rowptr_remote);
+        auto colindsub_used = overlap ? colindsub_remote : colindsub;
+        auto rowptr_used = overlap ? rowptr_remote : rowptr;
 
         const local_ordinal_type lr = lclrow(rowidx);
         const local_ordinal_type row = lr*blocksize;
-        for (local_ordinal_type col=0;col<num_vectors;++col) {
+        for (local_ordinal_type col = 0; col < num_vectors; ++col) {
           yy.assign_data(&y_packed_scalar(pri, 0, col, v));
-          if (P == 0) {
+          if (!overlap) {
             // y := b
             bb.assign_data(&b(row, col));
             if (member.team_rank() == 0)
@@ -748,7 +622,7 @@ namespace Ifpack2 {
                 A_block_cst.assign_data( &tpetra_values(j*blocksize_square) );
 
                 const local_ordinal_type A_colind_at_j = A_colind[j];
-                if (P == 0) {
+                if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
                   const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
                   xx.assign_data( &x(loc*blocksize, col) );
                   VectorGemv(member, blocksize, A_block_cst, xx, yy);
@@ -766,15 +640,15 @@ namespace Ifpack2 {
                 const size_type j = A_k0 + colindsub_used[k];
 
                 const local_ordinal_type A_colind_at_j = A_colind[j];
-                if (P == 0) {
+                if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
                   const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
                   xx.assign_data( &x(loc*blocksize, col) );
-                  for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                  for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
                     VectorDot(member, blocksize, lr, k, k0, colindsub_used, xx, yy);
                 } else {
                   const auto loc = A_colind_at_j - num_local_rows;
                   xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                  for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                  for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
                     VectorDot(member, blocksize, lr, k, k0, colindsub_used, xx_remote, yy);
                 }
               });
