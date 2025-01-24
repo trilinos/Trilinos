@@ -64,7 +64,7 @@ void setup_system_list(Xpetra::UnderlyingLib& lib, Teuchos::RCP<Xpetra::Matrix<S
       oldbuffer = std::cout.rdbuf(&buffer);
     }
 
-    RCP<Tpetra_CrsMatrix> At = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
+    RCP<Tpetra_CrsMatrix> At = toTpetra(A);
     RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > opA(At);
     RCP<Tpetra_Operator> Mt = MueLu::CreateTpetraPreconditioner(opA, mueluList);
 

@@ -173,95 +173,6 @@ const Epetra_Map& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2Epet
 #endif
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> const vec) {
-  RCP<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(vec);
-  if (tmpVec == Teuchos::null)
-    throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
-  return tmpVec->getTpetra_MultiVector();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
-  RCP<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(vec);
-  if (tmpVec == Teuchos::null)
-    throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
-  return tmpVec->getTpetra_MultiVector();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& vec) {
-  const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(vec);
-  return *(tmpVec.getTpetra_MultiVector());
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV2(Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& vec) {
-  const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(vec);
-  return tmpVec.getTpetra_MultiVector();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& vec) {
-  const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(vec);
-  return *(tmpVec.getTpetra_MultiVector());
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Op) {
-  // Get the underlying Tpetra Mtx
-  RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>> crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
-  if (crsOp == Teuchos::null)
-    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-  const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(crsOp->getCrsMatrix());
-  if (tmp_ECrsMtx == Teuchos::null)
-    throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
-  return tmp_ECrsMtx->getTpetra_CrsMatrix();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Op) {
-  RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>> crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
-  if (crsOp == Teuchos::null)
-    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-  const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(crsOp->getCrsMatrix());
-  if (tmp_ECrsMtx == Teuchos::null)
-    throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
-  return tmp_ECrsMtx->getTpetra_CrsMatrixNonConst();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op) {
-  try {
-    const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
-    try {
-      const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tmp_ECrsMtx = dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(*crsOp.getCrsMatrix());
-      return *tmp_ECrsMtx.getTpetra_CrsMatrix();
-    } catch (std::bad_cast&) {
-      throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
-    }
-  } catch (std::bad_cast&) {
-    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-  }
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op) {
-  try {
-    Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
-    try {
-      Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tmp_ECrsMtx = dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(*crsOp.getCrsMatrix());
-      return *tmp_ECrsMtx.getTpetra_CrsMatrixNonConst();
-    } catch (std::bad_cast&) {
-      throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
-    }
-  } catch (std::bad_cast&) {
-    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-  }
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Op) {
   using XCrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   // Get the underlying Tpetra Mtx
@@ -424,7 +335,7 @@ void Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Tpet
                                                                                    bool doFillComplete,
                                                                                    bool doOptimizeStorage) {
   try {
-    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = toTpetra(Op);
 
     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> rowMap    = tpOp.getRowMap();
     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> domainMap = tpOp.getDomainMap();
@@ -513,7 +424,7 @@ Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using Helpers = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     /***************************************************************/
     if (Helpers::isTpetraCrs(Op)) {
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = toTpetra(Op);
 
       RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A;
       Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp), label);  // more than meets the eye

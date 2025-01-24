@@ -398,7 +398,7 @@ MakeCompositeDirectSolver(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeCompositeDirectSolver: 1 - Setup")));
 
     // convert matrix to Tpetra
-    RCP<Tpetra_CrsMatrix> tMat = Utilities::Op2NonConstTpetraCrs(compOp);
+    RCP<Tpetra_CrsMatrix> tMat = toTpetra(compOp);
 
     // Amesos2-specific key phrase that denote smoother type
     std::string amesos2SolverName = "KLU2";

@@ -944,7 +944,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     vector_type xt;
     vector_type yt;
 
-    At                         = Utilities::Op2TpetraCrs(A);
+    At                         = toTpetra(A);
     const crs_matrix_type& Att = *At;
     xt                         = Xpetra::toTpetra(*x);
     yt                         = Xpetra::toTpetra(*y);

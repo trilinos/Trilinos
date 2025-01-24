@@ -282,7 +282,7 @@ void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Create the prolongator matrix and its associated objects
     RCP<ParameterList> dummyList = rcp(new ParameterList());
     P                            = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
-    RCP<CrsMatrix> PCrs          = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    RCP<CrsMatrix> PCrs          = toCrsMatrix(P);
     PCrs->setAllToScalar(1.0);
     PCrs->fillComplete();
 
@@ -319,7 +319,7 @@ void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   RCP<ParameterList> dummyList = rcp(new ParameterList());
   P                            = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
-  RCP<CrsMatrix> PCrs          = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs          = toCrsMatrix(P);
   PCrs->resumeFill();  // The Epetra matrix is considered filled at this point.
 
   {
@@ -446,7 +446,7 @@ void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     P                           = rcp(new CrsMatrixWrap(prolongatorGraph->getRowMap(),
                                                         prolongatorGraph->getColMap(),
                                                         nnzOnRows));
-    RCP<CrsMatrix> PCrsSqueezed = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    RCP<CrsMatrix> PCrsSqueezed = toCrsMatrix(P);
     PCrsSqueezed->resumeFill();  // The Epetra matrix is considered filled at this point.
     PCrsSqueezed->setAllValues(rowPtr, colInd, values);
     PCrsSqueezed->expertStaticFillComplete(prolongatorGraph->getDomainMap(),

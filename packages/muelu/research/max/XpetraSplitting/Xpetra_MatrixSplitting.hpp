@@ -26,6 +26,7 @@
 
 // Ifpack2
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
+#include "Xpetra_TpetraMultiVector_decl.hpp"
 
 // MueLu
 #include <MueLu_Utilities.hpp>
@@ -621,7 +622,7 @@ class MatrixSplitting : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     TEUCHOS_TEST_FOR_EXCEPTION(num_total_regions_ != regionMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionMatrixData_ structure \n");
     RCP<Matrix> region_matrix = regionMatrixData_[region_idx];
 
-    RCP<tpetra_crs_matrix> tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(compositeMatrixData_);
+    RCP<tpetra_crs_matrix> tpetraGlobalMatrix = toTpetra(compositeMatrixData_);
     Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 2);
 
     region_matrix->resumeFill();
