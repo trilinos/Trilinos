@@ -15,37 +15,137 @@
 */
 
 #include "BelosConfigDefs.hpp"
+#include "BelosMultiVecTraits.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace Belos {
 
-  //! @name CGIteration Structures 
-  //@{ 
-  
+enum CGIterType {
+  CG,
+  CGSingleReduce,
+  PseudoBlockCG,
+  BlockCG
+};
+
+  //! @name CGIteration Structures
+  //@{
+
   /** \brief Structure to contain pointers to CGIteration state variables.
    *
    * This struct is utilized by CGIteration::initialize() and CGIteration::getState().
    */
   template <class ScalarType, class MV>
-  struct CGIterationState {
+  class CGIterationState {
+
+  public:
+    CGIterationState()
+    : S(Teuchos::null), R(Teuchos::null), Z(Teuchos::null), P(Teuchos::null),
+          AP(Teuchos::null), isInitialized_(false) {}
+
+    CGIterationState(Teuchos::RCP<const MV> tmp) {
+      initialize(tmp);
+    }
+
+    bool isInitialized() const {
+      return isInitialized_;
+    }
+
+    void initialize(Teuchos::RCP<const MV> tmp, CGIterType iterType, int numRHS_) {
+      using MVT = MultiVecTraits<ScalarType, MV>;
+      if (iterType == CG) {
+        TEUCHOS_ASSERT(numRHS_ == 1);
+
+        // S = (R, Z)
+        // This allows to compute the inner products (R, S) = ((R, R), (R, Z)) using a single reduction.
+        S = MVT::Clone( *tmp, 2 );
+        std::vector<int> index(1,0);
+        index[0] = 0;
+        R = MVT::CloneViewNonConst( *S, index );
+        index[0] = 1;
+        Z = MVT::CloneViewNonConst( *S, index );
+
+        P = MVT::Clone( *tmp, 1 );
+        AP = MVT::Clone(*tmp, 1);
+      } else if (iterType == CGSingleReduce) {
+        TEUCHOS_ASSERT(numRHS_ == 1);
+
+        // W = (AZ, R, Z)
+        W = MVT::Clone( *tmp, 3 );
+        std::vector<int> index2(2,0);
+        std::vector<int> index(1,0);
+
+        // S = (AZ, R)
+        index2[0] = 0;
+        index2[1] = 1;
+        S = MVT::CloneViewNonConst( *W, index2 );
+
+        // U = (AZ, Z)
+        index2[0] = 0;
+        index2[1] = 2;
+        U = MVT::CloneViewNonConst( *W, index2 );
+
+        index[0] = 1;
+        R = MVT::CloneViewNonConst( *W, index );
+        index[0] = 0;
+        AZ = MVT::CloneViewNonConst( *W, index );
+        index[0] = 2;
+        Z = MVT::CloneViewNonConst( *W, index );
+
+        // T = (R, Z)
+        index2[0] = 1;
+        index2[1] = 2;
+        T = MVT::CloneViewNonConst( *W, index2 );
+
+        // V = (AP, P)
+        V = MVT::Clone( *tmp, 2 );
+        index[0] = 0;
+        AP = MVT::CloneViewNonConst( *V, index );
+        index[0] = 1;
+        P = MVT::CloneViewNonConst( *V, index );
+      } else if ((iterType == PseudoBlockCG) || (iterType == BlockCG)) {
+        R = MVT::Clone( *tmp, numRHS_ );
+        Z = MVT::Clone( *tmp, numRHS_ );
+        P = MVT::Clone( *tmp, numRHS_ );
+        AP = MVT::Clone(*tmp, numRHS_ );
+      }
+      numRHS = numRHS_;
+      isInitialized_ = true;
+    }
+
+    bool matches(Teuchos::RCP<const MV> tmp, int numRHS_=1) const {
+      using MVT = MultiVecTraits<ScalarType, MV>;
+      return (isInitialized() && !S.is_null() && !R.is_null() &&
+              !Z.is_null() && !P.is_null() && !AP.is_null() && (numRHS == numRHS_) && (MVT::GetGlobalLength(*tmp) == MVT::GetGlobalLength(*R)));
+    }
+
+    Teuchos::RCP<MV> W;
+    Teuchos::RCP<MV> V;
+    Teuchos::RCP<MV> U;
+    Teuchos::RCP<MV> S;
+    Teuchos::RCP<MV> T;
 
     /*! \brief The current residual. */
-    Teuchos::RCP<const MV> R;
+    Teuchos::RCP<MV> R;
 
     /*! \brief The current preconditioned residual. */
-    Teuchos::RCP<const MV> Z;
+    Teuchos::RCP<MV> Z;
 
     /*! \brief The current decent direction vector */
-    Teuchos::RCP<const MV> P;
+    Teuchos::RCP<MV> P;
 
     /*! \brief The matrix A applied to current decent direction vector */
-    Teuchos::RCP<const MV> AP;
-    
-    CGIterationState() : R(Teuchos::null), Z(Teuchos::null), 
-		    P(Teuchos::null), AP(Teuchos::null)
-    {}
-  };
+    Teuchos::RCP<MV> AP;
+
+    Teuchos::RCP<MV> AZ;
+
+  private:
+
+    bool isInitialized_;
+    int numRHS;
+
+};
 
   //! @name CGIteration Exceptions
   //@{ 
@@ -128,7 +228,7 @@ class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  virtual void initializeCG(CGIterationState<ScalarType,MV>& newstate) = 0;
+  virtual void initializeCG(CGIterationState<ScalarType,MV>& newstate, Teuchos::RCP<MV> R_0) = 0;
 
   /*! \brief Get the current state of the linear solver.
    *

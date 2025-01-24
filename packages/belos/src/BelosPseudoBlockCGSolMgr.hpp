@@ -14,6 +14,7 @@
  *  \brief The Belos::PseudoBlockCGSolMgr provides a solver manager for the BlockCG linear solver.
 */
 
+#include "BelosCGIteration.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 
@@ -314,6 +315,8 @@ namespace Belos {
     bool genCondEst_;
     ScalarType condEstimate_;
     Teuchos::ArrayRCP<MagnitudeType> eigenEstimates_;
+
+    Teuchos::RCP<CGIterationState<ScalarType, MV >> state_;
 
     // Timers.
     std::string label_;
@@ -793,9 +796,9 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
       Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Get a new state struct and initialize the solver.
-      CGIterationState<ScalarType,MV> newState;
-      newState.R = R_0;
-      block_cg_iter->initializeCG(newState);
+      if (state_.is_null())
+        state_ = Teuchos::rcp(new CGIterationState<ScalarType, MV>());
+      block_cg_iter->initializeCG(*state_, R_0);
 
       while(1) {
 
@@ -813,7 +816,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 
             // Figure out which linear systems converged.
             std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
- 
+
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
             if (convIdx.size() == currRHSIdx.size())
@@ -850,7 +853,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
               compute_condnum_tridiag_sym(diag,offdiag,eigenEstimates_,l_min,l_max,condEstimate_);
 
               // Make sure not to do more condition estimate computations for this solve.
-              block_cg_iter->setDoCondEst(false); 
+              block_cg_iter->setDoCondEst(false);
               condEstPerf = true;
             }
 
@@ -863,9 +866,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
             for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
             // Set the new state and initialize the solver.
-            CGIterationState<ScalarType,MV> defstate;
-            defstate.R = R_0;
-            block_cg_iter->initializeCG(defstate);
+            block_cg_iter->initializeCG(*state_, R_0);
           }
 
           ////////////////////////////////////////////////////////////////////////////////////

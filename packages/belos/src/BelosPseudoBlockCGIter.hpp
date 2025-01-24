@@ -113,7 +113,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initializeCG(CGIterationState<ScalarType,MV>& newstate);
+    void initializeCG(CGIterationState<ScalarType,MV>& newstate, Teuchos::RCP<MV> R_0);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -121,7 +121,7 @@ namespace Belos {
     void initialize()
     {
       CGIterationState<ScalarType,MV> empty;
-      initializeCG(empty);
+      initializeCG(empty, Teuchos::null);
     }
 
     /*! \brief Get the current state of the linear solver.
@@ -138,6 +138,13 @@ namespace Belos {
       state.AP = AP_;
       state.Z = Z_;
       return state;
+    }
+
+    void setState(CGIterationState<ScalarType, MV> state) {
+      R_ = state.R;
+      Z_ = state.Z;
+      P_ = state.P;
+      AP_ = state.AP;
     }
 
     //@}
@@ -291,8 +298,9 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
-  {
+  void PseudoBlockCGIter<ScalarType, MV, OP>::initializeCG(
+      CGIterationState<ScalarType, MV> &newstate, Teuchos::RCP<MV> R_0) {
+
     // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
@@ -306,14 +314,10 @@ namespace Belos {
     int numRHS = MVT::GetNumberVecs(*tmp);
     numRHS_ = numRHS;
 
-    // Initialize the state storage
-    // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
-    if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
-      R_ = MVT::Clone( *tmp, numRHS_ );
-      Z_ = MVT::Clone( *tmp, numRHS_ );
-      P_ = MVT::Clone( *tmp, numRHS_ );
-      AP_ = MVT::Clone( *tmp, numRHS_ );
-    }
+    // Initialize the state storage if it isn't already.
+    if (!newstate.isInitialized() || !newstate.matches(tmp, numRHS_))
+      newstate.initialize(tmp, PseudoBlockCG, numRHS_);
+    setState(newstate);
 
     // Tracking information for condition number estimation
     if(numEntriesForCondEst_ > 0) {
@@ -321,25 +325,19 @@ namespace Belos {
       offdiag_.resize(numEntriesForCondEst_-1);
     }
 
-    // NOTE:  In CGIter R_, the initial residual, is required!!!
-    //
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    {
 
-    if (!Teuchos::is_null(newstate.R)) {
-
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*R_0) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*R_0) != numRHS_,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
-      if (newstate.R != R_) {
+      if (R_0 != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+        MVT::Assign( *R_0, *R_ );
       }
 
       // Compute initial direction vectors
@@ -357,14 +355,9 @@ namespace Belos {
         lp_->applyRightPrec( *R_, *Z_ );
       }
       else {
-        Z_ = R_;
+        MVT::Assign( *R_, *Z_ );
       }
-      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
-    }
-    else {
-
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
-                         "Belos::CGIter::initialize(): CGStateIterState does not have initial residual.");
+      MVT::Assign( *Z_, *P_ );
     }
 
     // The solver is initialized
@@ -477,7 +470,7 @@ namespace Belos {
         index[0] = i;
         Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
         Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv( one, *Z_i, beta[i], *P_i, *P_i );       
+        MVT::MvAddMv( one, *Z_i, beta[i], *P_i, *P_i );
       }
 
       // Condition estimate (if needed)

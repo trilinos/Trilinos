@@ -69,7 +69,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
-  void initializeCG (CGIterationState<ScalarType,MV>& /* newstate */) {
+  void initializeCG (CGIterationState<ScalarType,MV>& /* newstate */, Teuchos::RCP<MV> /* R_0 */) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
@@ -118,11 +118,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
-
-private:
-  void setStateSize() {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
-  }
 };
 
 /// \brief Partial specialization for ScalarType types for which
@@ -192,7 +187,7 @@ public:
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeCG(CGIterationState<ScalarType,MV>& newstate);
+  void initializeCG(CGIterationState<ScalarType,MV>& newstate, Teuchos::RCP<MV> R_0);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -200,7 +195,7 @@ public:
   void initialize()
   {
     CGIterationState<ScalarType,MV> empty;
-    initializeCG(empty);
+    initializeCG(empty, Teuchos::null);
   }
 
   /*! \brief Get the current state of the linear solver.
@@ -216,6 +211,13 @@ public:
     state.AP = AP_;
     state.Z = Z_;
     return state;
+  }
+
+  void setState(CGIterationState<ScalarType, MV> state) {
+    R_ = state.R;
+    Z_ = state.Z;
+    P_ = state.P;
+    AP_ = state.AP;
   }
 
   //@}
@@ -276,9 +278,6 @@ public:
 
   //
   // Internal methods
-  //
-  //! Method for initalizing the state storage needed by block CG.
-  void setStateSize();
 
   //
   // Classes inputed through constructor that define the linear problem to be solved.
@@ -349,40 +348,6 @@ public:
   }
 
   template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::setStateSize ()
-  {
-    if (! stateStorageInitialized_) {
-      // Check if there is any multivector to clone from.
-      Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
-      if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
-        stateStorageInitialized_ = false;
-        return;
-      }
-      else {
-        // Initialize the state storage If the subspace has not be
-        // initialized before, generate it using the LHS or RHS from
-        // lp_.
-        if (R_ == Teuchos::null || MVT::GetNumberVecs(*R_)!=blockSize_) {
-          // Get the multivector that is not null.
-          Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (tmp == Teuchos::null,std:: invalid_argument,
-             "Belos::BlockCGIter::setStateSize: LinearProblem lacks "
-             "multivectors from which to clone.");
-          R_ = MVT::Clone (*tmp, blockSize_);
-          Z_ = MVT::Clone (*tmp, blockSize_);
-          P_ = MVT::Clone (*tmp, blockSize_);
-          AP_ = MVT::Clone (*tmp, blockSize_);
-        }
-
-        // State storage has now been initialized.
-        stateStorageInitialized_ = true;
-      }
-    }
-  }
-
-  template <class ScalarType, class MV, class OP>
   void BlockCGIter<ScalarType,MV,OP,true>::setBlockSize (int blockSize)
   {
     // This routine only allocates space; it doesn't not perform any computation
@@ -398,45 +363,40 @@ public:
     }
     blockSize_ = blockSize;
     initialized_ = false;
-    // Use the current blockSize_ to initialize the state storage.
-    setStateSize ();
   }
 
   template <class ScalarType, class MV, class OP>
   void BlockCGIter<ScalarType,MV,OP,true>::
-  initializeCG (CGIterationState<ScalarType,MV>& newstate)
+  initializeCG (CGIterationState<ScalarType,MV>& newstate, Teuchos::RCP<MV> R_0)
   {
     const char prefix[] = "Belos::BlockCGIter::initialize: ";
 
     // Initialize the state storage if it isn't already.
-    if (! stateStorageInitialized_) {
-      setStateSize();
+    Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
+    Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
+    Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+    if (!newstate.isInitialized() || !newstate.matches(tmp, blockSize_)) {
+      newstate.initialize(tmp, BlockCG, blockSize_);
     }
-
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! stateStorageInitialized_, std::invalid_argument,
-       prefix << "Cannot initialize state storage!");
+    setState(newstate);
 
     // NOTE:  In BlockCGIter R_, the initial residual, is required!!!
     const char errstr[] = "Specified multivectors must have a consistent "
       "length and width.";
 
-    // Create convenience variables for zero and one.
-    //const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero(); // unused
-
-    if (newstate.R != Teuchos::null) {
+    {
 
       TEUCHOS_TEST_FOR_EXCEPTION
-        (MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
+        (MVT::GetGlobalLength(*R_0) != MVT::GetGlobalLength(*R_),
          std::invalid_argument, prefix << errstr );
       TEUCHOS_TEST_FOR_EXCEPTION
-        (MVT::GetNumberVecs(*newstate.R) != blockSize_,
+        (MVT::GetNumberVecs(*R_0) != blockSize_,
          std::invalid_argument, prefix << errstr );
 
       // Copy basis vectors from newstate into V
-      if (newstate.R != R_) {
+      if (R_0 != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::Assign( *newstate.R, *R_ );
+        MVT::Assign( *R_0, *R_ );
       }
       // Compute initial direction vectors
       // Initially, they are set to the preconditioned residuals
@@ -444,9 +404,9 @@ public:
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *R_, *Z_ );
         if ( lp_->getRightPrec() != Teuchos::null ) {
-          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, blockSize_ );
-          lp_->applyRightPrec( *Z_, *tmp );
-          Z_ = tmp;
+          Teuchos::RCP<MV> tmp2 = MVT::Clone( *Z_, blockSize_ );
+          lp_->applyRightPrec( *Z_, *tmp2 );
+          Z_ = tmp2;
         }
       }
       else if ( lp_->getRightPrec() != Teuchos::null ) {
@@ -456,11 +416,6 @@ public:
         Z_ = R_;
       }
       MVT::Assign( *Z_, *P_ );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (newstate.R == Teuchos::null, std::invalid_argument,
-         prefix << "BlockCGStateIterState does not have initial residual.");
     }
 
     // The solver is initialized
