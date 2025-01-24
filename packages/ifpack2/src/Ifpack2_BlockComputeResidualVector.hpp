@@ -303,35 +303,6 @@ namespace Ifpack2 {
           });
       }
 
-      /*
-       * Note BMK: this function is unused but has an issue:
-       * the ThreadVectorRange modifies captured value "val", which is not valid in Kokkos.
-       *
-       * It probably produces correct results in practice but there are more atomic adds
-       * (one per vector lane) than what is necessary (one per thread)
-       *
-      template<typename AAViewType, typename xxViewType, typename yyViewType>
-      KOKKOS_INLINE_FUNCTION
-      void
-      TeamVectorGemv(const member_type &member,
-               const local_ordinal_type &blocksize,
-               const AAViewType &AA,
-               const xxViewType &xx,
-               const yyViewType &yy) const {
-        Kokkos::parallel_for
-          (Kokkos::TeamThreadRange(member, blocksize),
-           [&](const local_ordinal_type &k0) {
-            impl_scalar_type val = 0;
-            Kokkos::parallel_for
-              (Kokkos::ThreadVectorRange(member, blocksize),
-               [&](const local_ordinal_type &k1) {
-                val += AA(k0,k1)*xx(k1);
-              });
-            Kokkos::atomic_add(&yy(k0), typename yyViewType::const_value_type(-val));
-          });
-      }
-      */
-
       template<typename xxViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION
       void
@@ -357,29 +328,6 @@ namespace Ifpack2 {
             Kokkos::atomic_add(&yy(ii), typename yyViewType::const_value_type(-val));
           });
       }
-
-      // Note BMK: this version coalesces accesses to AA for LayoutLeft blocks,
-      // but BlockCrsMatrix almost always uses LayoutRight.
-      /*
-      template<typename AAViewType, typename xxViewType, typename yyViewType>
-      KOKKOS_INLINE_FUNCTION
-      void
-      VectorGemv(const member_type &member,
-                 const local_ordinal_type &blocksize,
-                 const AAViewType &AA,
-                 const xxViewType &xx,
-                 const yyViewType &yy) const {
-        Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, blocksize),
-           [&](const local_ordinal_type &k0) {
-            impl_scalar_type val(0);
-            for (local_ordinal_type k1=0;k1<blocksize;++k1) {
-              val += AA(k0,k1)*xx(k1);
-            }
-            Kokkos::atomic_add(&yy(k0), typename yyViewType::const_value_type(-val));
-          });
-      }
-      */
 
       // BMK: This version coalesces accesses to AA for LayoutRight blocks.
       template<typename AAViewType, typename xxViewType, typename yyViewType>
@@ -597,6 +545,9 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION
       void
       operator() (const GeneralTag<B, async, overlap>&, const member_type &member) const {
+        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
+        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
+
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
         const local_ordinal_type blocksize_square = blocksize*blocksize;
 
@@ -611,11 +562,9 @@ namespace Ifpack2 {
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // subview pattern
-        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
         subview_1D_right_t bb(nullptr, blocksize);
         subview_1D_right_t xx(nullptr, blocksize);
         subview_1D_right_t xx_remote(nullptr, blocksize);
-        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
         subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
         auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
         auto colindsub_used = overlap ? colindsub_remote : colindsub;
@@ -641,7 +590,6 @@ namespace Ifpack2 {
               [&](const local_ordinal_type &k) {
                 const size_type j = A_k0 + colindsub_used[k];
                 A_block_cst.assign_data( &tpetra_values(j*blocksize_square) );
-
                 const local_ordinal_type A_colind_at_j = A_colind[j];
                 if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
                   const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
@@ -659,7 +607,6 @@ namespace Ifpack2 {
               (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]),
               [&](const local_ordinal_type &k) {
                 const size_type j = A_k0 + colindsub_used[k];
-
                 const local_ordinal_type A_colind_at_j = A_colind[j];
                 if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
                   const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
