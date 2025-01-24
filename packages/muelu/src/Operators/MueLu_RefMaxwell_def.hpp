@@ -14,8 +14,12 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
+#include "Xpetra_MultiVector.hpp"
 #include "Xpetra_TripleMatrixMultiply.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
@@ -76,12 +80,6 @@ T pop(Teuchos::ParameterList &pl, std::string const &name_in, T def_value) {
   T result = pl.get<T>(name_in, def_value);
   pl.remove(name_in, false);
   return result;
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-Matrix2CrsMatrix(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &matrix) {
-  return Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(matrix, true)->getCrsMatrix();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -544,23 +542,23 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
   if (!reuse) {
     if (!ImporterCoarse11_.is_null()) {
       RCP<const Import> ImporterP11 = ImportFactory::Build(ImporterCoarse11_->getTargetMap(), P11_->getColMap());
-      rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix()->replaceDomainMapAndImporter(ImporterCoarse11_->getTargetMap(), ImporterP11);
+      toCrsMatrix(P11_)->replaceDomainMapAndImporter(ImporterCoarse11_->getTargetMap(), ImporterP11);
     }
 
     if (!Importer22_.is_null()) {
       if (enable_reuse_) {
         DorigDomainMap_ = Dk_1_->getDomainMap();
-        DorigImporter_  = rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->getCrsGraph()->getImporter();
+        DorigImporter_  = toCrsMatrix(Dk_1_)->getCrsGraph()->getImporter();
       }
       RCP<const Import> ImporterD = ImportFactory::Build(Importer22_->getTargetMap(), Dk_1_->getColMap());
-      rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD);
+      toCrsMatrix(Dk_1_)->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD);
     }
 
 #ifdef HAVE_MUELU_TPETRA
     if ((!Dk_1_T_.is_null()) &&
         (!R11_.is_null()) &&
-        (!rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_T_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
-        (!rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
+        (!toCrsMatrix(Dk_1_T_)->getCrsGraph()->getImporter().is_null()) &&
+        (!toCrsMatrix(R11_)->getCrsGraph()->getImporter().is_null()) &&
         (Dk_1_T_->getColMap()->lib() == Xpetra::UseTpetra) &&
         (R11_->getColMap()->lib() == Xpetra::UseTpetra))
       Dk_1_T_R11_colMapsMatch_ = Dk_1_T_->getColMap()->isSameAs(*R11_->getColMap());
@@ -1139,8 +1137,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::build22Matrix(const 
         A22_ = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Dk_1_, true, *temp, false, A22_, GetOStream(Runtime0), true, true);
     } else {
       // we replaced domain map and importer on D, reverse that
-      RCP<const Import> Dimporter = rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->getCrsGraph()->getImporter();
-      rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->replaceDomainMapAndImporter(DorigDomainMap_, DorigImporter_);
+      RCP<const Import> Dimporter = toCrsMatrix(Dk_1_)->getCrsGraph()->getImporter();
+      toCrsMatrix(Dk_1_)->replaceDomainMapAndImporter(DorigDomainMap_, DorigImporter_);
 
       RCP<Matrix> temp, temp2;
       temp = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*SM_Matrix_, false, *Dk_1_, false, temp, GetOStream(Runtime0), true, true);
@@ -1150,7 +1148,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::build22Matrix(const 
         temp2 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Dk_1_, true, *temp, false, temp2, GetOStream(Runtime0), true, true);
 
       // and back again
-      rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), Dimporter);
+      toCrsMatrix(Dk_1_)->replaceDomainMapAndImporter(Importer22_->getTargetMap(), Dimporter);
 
       ParameterList XpetraList;
       XpetraList.set("Restrict Communicator", true);
@@ -1322,9 +1320,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::allocateMemory(int n
   }
 
   if (asyncTransfers_) {
-    if (!rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null())
+    if (!toCrsMatrix(P11_)->getCrsGraph()->getImporter().is_null())
       P11x_colmap_ = MultiVectorFactory::Build(P11_->getColMap(), numVectors);
-    if (!rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null())
+    if (!toCrsMatrix(Dk_1_)->getCrsGraph()->getImporter().is_null())
       Dx_colmap_ = MultiVectorFactory::Build(Dk_1_->getColMap(), numVectors);
   }
 
@@ -1405,8 +1403,10 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<S
     spaceLabel = "edge";
   else if (spaceNumber == 2)
     spaceLabel = "face";
-  else
+  else {
     TEUCHOS_ASSERT(false);
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  }
 
   RCP<Teuchos::TimeMonitor> tm;
   if (spaceNumber > 0) {
@@ -1543,8 +1543,10 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<S
 
     return Nullspace;
 
-  } else
+  } else {
     TEUCHOS_ASSERT(false);
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2135,15 +2137,15 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverseAdditive
         // Column maps of D_T and R11 match, and we're running Tpetra
         {
           RCP<Teuchos::TimeMonitor> tmD = getTimer("restrictions import");
-          DTR11Tmp_->doImport(*residual_, *rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix()->getCrsGraph()->getImporter(), Xpetra::INSERT);
+          DTR11Tmp_->doImport(*residual_, *toCrsMatrix(R11_)->getCrsGraph()->getImporter(), Xpetra::INSERT);
         }
         if (!onlyBoundary22_) {
           RCP<Teuchos::TimeMonitor> tmD = getTimer("restriction (2,2) (explicit)");
-          rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_T_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*DTR11Tmp_), toTpetra(*Dres_), Teuchos::NO_TRANS);
+          toTpetra(Dk_1_T_)->localApply(toTpetra(*DTR11Tmp_), toTpetra(*Dres_), Teuchos::NO_TRANS);
         }
         {
           RCP<Teuchos::TimeMonitor> tmP11 = getTimer("restriction coarse (1,1) (explicit)");
-          rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*DTR11Tmp_), toTpetra(*P11res_), Teuchos::NO_TRANS);
+          toTpetra(R11_)->localApply(toTpetra(*DTR11Tmp_), toTpetra(*P11res_), Teuchos::NO_TRANS);
         }
       } else {
         {
@@ -2213,29 +2215,32 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverseAdditive
     RCP<Teuchos::TimeMonitor> tmProlongations = getTimer("prolongations");
 
     if (asyncTransfers_) {
-      auto tpP11  = rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(P11_, true)->getCrsMatrix())->getTpetra_CrsMatrix();
-      auto tpP11x = rcp_dynamic_cast<TpetraMultiVector>(P11x_, true)->getTpetra_MultiVector();
-      RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpP11x_colmap;
-      auto tpX        = rcp_dynamic_cast<TpetraMultiVector>(Teuchos::rcpFromRef(X), true)->getTpetra_MultiVector();
-      auto tpResidual = rcp_dynamic_cast<TpetraMultiVector>(residual_, true)->getTpetra_MultiVector();
+      using Tpetra_Multivector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+      using Tpetra_Import      = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
 
-      auto tpDk_1 = rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(Dk_1_, true)->getCrsMatrix())->getTpetra_CrsMatrix();
-      auto tpDx   = rcp_dynamic_cast<TpetraMultiVector>(Dx_, true)->getTpetra_MultiVector();
-      RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpDx_colmap;
+      auto tpP11  = toTpetra(P11_);
+      auto tpDk_1 = toTpetra(Dk_1_);
+
+      RCP<Tpetra_Multivector> tpP11x = toTpetra(P11x_);
+      RCP<Tpetra_Multivector> tpP11x_colmap;
+      RCP<Tpetra_Multivector> tpX        = toTpetra(Teuchos::rcpFromRef(X));
+      RCP<Tpetra_Multivector> tpResidual = toTpetra(residual_);
+      RCP<Tpetra_Multivector> tpDx       = toTpetra(Dx_);
+      RCP<Tpetra_Multivector> tpDx_colmap;
 
       unsigned completedImports = 0;
       std::vector<bool> completedImport(2, false);
       auto tpP11importer = tpP11->getCrsGraph()->getImporter();
       if (!tpP11importer.is_null()) {
-        tpP11x_colmap = rcp_dynamic_cast<TpetraMultiVector>(P11x_colmap_, true)->getTpetra_MultiVector();
+        tpP11x_colmap = toTpetra(P11x_colmap_);
         tpP11x_colmap->beginImport(*tpP11x, *tpP11importer, Tpetra::INSERT);
       }
 
-      RCP<const Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>> tpDk_1importer;
+      RCP<const Tpetra_Import> tpDk_1importer;
       if (!onlyBoundary22_) {
         tpDk_1importer = tpDk_1->getCrsGraph()->getImporter();
         if (!tpDk_1importer.is_null()) {
-          tpDx_colmap = rcp_dynamic_cast<TpetraMultiVector>(Dx_colmap_, true)->getTpetra_MultiVector();
+          tpDx_colmap = toTpetra(Dx_colmap_);
           tpDx_colmap->beginImport(*tpDx, *tpDk_1importer, Tpetra::INSERT);
         }
       } else {
@@ -2709,11 +2714,11 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // We cannot use the Tpetra copy constructor, since it does not copy the graph.
 
     RCP<Matrix> Dk_1copy       = MatrixFactory::Build(Dk_1->getRowMap(), Dk_1->getColMap(), 0);
-    RCP<CrsMatrix> Dk_1copyCrs = rcp_dynamic_cast<CrsMatrixWrap>(Dk_1copy, true)->getCrsMatrix();
+    RCP<CrsMatrix> Dk_1copyCrs = toCrsMatrix(Dk_1copy);
     ArrayRCP<const size_t> Dk_1rowptr_RCP;
     ArrayRCP<const LO> Dk_1colind_RCP;
     ArrayRCP<const SC> Dk_1vals_RCP;
-    rcp_dynamic_cast<CrsMatrixWrap>(Dk_1, true)->getCrsMatrix()->getAllValues(Dk_1rowptr_RCP, Dk_1colind_RCP, Dk_1vals_RCP);
+    toCrsMatrix(Dk_1)->getAllValues(Dk_1rowptr_RCP, Dk_1colind_RCP, Dk_1vals_RCP);
 
     ArrayRCP<size_t> Dk_1copyrowptr_RCP;
     ArrayRCP<LO> Dk_1copycolind_RCP;
@@ -2726,8 +2731,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                               Dk_1copycolind_RCP,
                               Dk_1copyvals_RCP);
     Dk_1copyCrs->expertStaticFillComplete(Dk_1->getDomainMap(), Dk_1->getRangeMap(),
-                                          rcp_dynamic_cast<CrsMatrixWrap>(Dk_1, true)->getCrsMatrix()->getCrsGraph()->getImporter(),
-                                          rcp_dynamic_cast<CrsMatrixWrap>(Dk_1, true)->getCrsMatrix()->getCrsGraph()->getExporter());
+                                          toCrsMatrix(Dk_1)->getCrsGraph()->getImporter(),
+                                          toCrsMatrix(Dk_1)->getCrsGraph()->getExporter());
     Dk_1_ = Dk_1copy;
   } else
     Dk_1_ = MatrixFactory::BuildCopy(Dk_1);
@@ -2738,11 +2743,11 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // We cannot use the Tpetra copy constructor, since it does not copy the graph.
 
     RCP<Matrix> Dk_2copy       = MatrixFactory::Build(Dk_2->getRowMap(), Dk_2->getColMap(), 0);
-    RCP<CrsMatrix> Dk_2copyCrs = rcp_dynamic_cast<CrsMatrixWrap>(Dk_2copy, true)->getCrsMatrix();
+    RCP<CrsMatrix> Dk_2copyCrs = toCrsMatrix(Dk_2copy);
     ArrayRCP<const size_t> Dk_2rowptr_RCP;
     ArrayRCP<const LO> Dk_2colind_RCP;
     ArrayRCP<const SC> Dk_2vals_RCP;
-    rcp_dynamic_cast<CrsMatrixWrap>(Dk_2, true)->getCrsMatrix()->getAllValues(Dk_2rowptr_RCP, Dk_2colind_RCP, Dk_2vals_RCP);
+    toCrsMatrix(Dk_2)->getAllValues(Dk_2rowptr_RCP, Dk_2colind_RCP, Dk_2vals_RCP);
 
     ArrayRCP<size_t> Dk_2copyrowptr_RCP;
     ArrayRCP<LO> Dk_2copycolind_RCP;
@@ -2755,8 +2760,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                               Dk_2copycolind_RCP,
                               Dk_2copyvals_RCP);
     Dk_2copyCrs->expertStaticFillComplete(Dk_2->getDomainMap(), Dk_2->getRangeMap(),
-                                          rcp_dynamic_cast<CrsMatrixWrap>(Dk_2, true)->getCrsMatrix()->getCrsGraph()->getImporter(),
-                                          rcp_dynamic_cast<CrsMatrixWrap>(Dk_2, true)->getCrsMatrix()->getCrsGraph()->getExporter());
+                                          toCrsMatrix(Dk_2)->getCrsGraph()->getImporter(),
+                                          toCrsMatrix(Dk_2)->getCrsGraph()->getExporter());
     Dk_2_ = Dk_2copy;
   } else if (!Dk_2.is_null())
     Dk_2_ = MatrixFactory::BuildCopy(Dk_2);
