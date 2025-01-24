@@ -14,6 +14,7 @@
  *  \brief The Belos::PseudoBlockCGSolMgr provides a solver manager for the BlockCG linear solver.
 */
 
+#include "BelosCGIteration.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 
@@ -21,7 +22,6 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosPseudoBlockCGIter.hpp"
-#include "BelosCGSingleRedIter.hpp"
 #include "BelosCGIter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
@@ -79,8 +79,7 @@ namespace Belos {
   {
     static const bool scalarTypeIsSupported =
       Belos::Details::LapackSupportsScalar<ScalarType>::value;
-    typedef Details::SolverManagerRequiresLapack<ScalarType, MV, OP,
-                                                 scalarTypeIsSupported> base_type;
+    using base_type = Details::SolverManagerRequiresLapack<ScalarType, MV, OP, scalarTypeIsSupported>;
 
   public:
     PseudoBlockCGSolMgr () :
@@ -90,7 +89,7 @@ namespace Belos {
                          const Teuchos::RCP<Teuchos::ParameterList> &pl) :
       base_type ()
     {}
-    virtual ~PseudoBlockCGSolMgr () {}
+    virtual ~PseudoBlockCGSolMgr () = default;
 
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
     getResidualStatusTest() const { return Teuchos::null; }
@@ -102,11 +101,11 @@ namespace Belos {
     public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, true>
   {
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT;
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+    using MVT = MultiVecTraits<ScalarType, MV>;
+    using OPT = OperatorTraits<ScalarType, MV, OP>;
+    using SCT = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename Teuchos::ScalarTraits<ScalarType>::magnitudeType;
+    using MT = Teuchos::ScalarTraits<MagnitudeType>;
 
   public:
 
@@ -139,7 +138,7 @@ namespace Belos {
                          const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
-    virtual ~PseudoBlockCGSolMgr() {};
+    virtual ~PseudoBlockCGSolMgr() = default;
 
     //! clone for Inverted Injection (DII)
     Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
@@ -314,6 +313,8 @@ namespace Belos {
     bool genCondEst_;
     ScalarType condEstimate_;
     Teuchos::ArrayRCP<MagnitudeType> eigenEstimates_;
+
+    Teuchos::RCP<CGIterationStateBase<ScalarType, MV> > state_;
 
     // Timers.
     std::string label_;
@@ -523,8 +524,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP> StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
+  using StatusTestCombo_t = Belos::StatusTestCombo<ScalarType, MV, OP>;
+  using StatusTestResNorm_t = Belos::StatusTestGenResNorm<ScalarType, MV, OP>;
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {
@@ -761,9 +762,13 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
               foldConvergenceDetectionIntoAllreduce_);
     block_cg_iter =
       Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, convTest_, plist));
+    if (state_.is_null() || Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType, MV> >(state_).is_null())
+      state_ = Teuchos::rcp(new CGIterationState<ScalarType, MV>());
   } else {
     block_cg_iter =
       Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
+    if (state_.is_null() || Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType, MV> >(state_).is_null())
+      state_ = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType, MV>());
   }
 
   // Setup condition estimate
@@ -793,11 +798,9 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
       Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Get a new state struct and initialize the solver.
-      CGIterationState<ScalarType,MV> newState;
-      newState.R = R_0;
-      block_cg_iter->initializeCG(newState);
+      block_cg_iter->initializeCG(state_, R_0);
 
-      while(1) {
+      while(true) {
 
         // tell block_gmres_iter to iterate
         try {
@@ -813,7 +816,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 
             // Figure out which linear systems converged.
             std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
- 
+
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
             if (convIdx.size() == currRHSIdx.size())
@@ -850,7 +853,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
               compute_condnum_tridiag_sym(diag,offdiag,eigenEstimates_,l_min,l_max,condEstimate_);
 
               // Make sure not to do more condition estimate computations for this solve.
-              block_cg_iter->setDoCondEst(false); 
+              block_cg_iter->setDoCondEst(false);
               condEstPerf = true;
             }
 
@@ -863,9 +866,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
             for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
             // Set the new state and initialize the solver.
-            CGIterationState<ScalarType,MV> defstate;
-            defstate.R = R_0;
-            block_cg_iter->initializeCG(defstate);
+            block_cg_iter->initializeCG(state_, R_0);
           }
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -896,7 +897,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
-          printer_->stream(Warnings) << "Belos::PseudoBlockCGSolMgr::solve(): Warning! NaN has been detected!" 
+          printer_->stream(Warnings) << "Belos::PseudoBlockCGSolMgr::solve(): Warning! NaN has been detected!"
                                      << std::endl;
           return Unconverged;
         }
@@ -993,7 +994,7 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
                              ScalarType & lambda_max,
                              ScalarType & ConditionNumber )
 {
-  typedef Teuchos::ScalarTraits<ScalarType> STS;
+  using STS = Teuchos::ScalarTraits<ScalarType>;
 
   /* Copied from az_cg.c: compute_condnum_tridiag_sym */
   /* diag ==      ScalarType vector of size N, containing the diagonal
