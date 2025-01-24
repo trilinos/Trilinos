@@ -50,6 +50,8 @@
 
 #include "Amesos2_config.h"
 
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
+
 #include "Amesos2_Solver.hpp"
 #include "Amesos2_SolverTraits.hpp"
 
@@ -640,7 +642,7 @@ struct throw_no_matrix_support_exception {
         return handle_solver_matrix_and_type_support<MUMPS,Matrix,Vector>::apply(A,X,B);
       }
 #endif
-              
+
 #ifdef HAVE_AMESOS2_STRUMPACK
     if((solverName == "STRUMPACK") || (solverName == "strumpack") ||
        (solverName == "amesos2_STRUMPACK") || (solverName == "amesos2_strumpack"))
@@ -666,6 +668,7 @@ struct throw_no_matrix_support_exception {
     std::string err_msg = solver_name + " is not enabled or is not supported";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
     //return( Teuchos::null ); // unreachable
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
 } // end namespace Amesos2
