@@ -276,7 +276,7 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     }
 
     RCP<Matrix> newA       = rcp(new CrsMatrixWrap(rowMap, colMap, 0));
-    RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
+    RCP<CrsMatrix> newAcrs = toCrsMatrix(newA);
     newAcrs->setAllValues(newRowPointers, newColIndices, newValues);
     newAcrs->expertStaticFillComplete(A->getDomainMap(), A->getRangeMap(),
                                       importer, A->getCrsGraph()->getExporter());
@@ -287,7 +287,7 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     factorA = A;
   }
 
-  RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(factorA);
+  RCP<const Tpetra_CrsMatrix> tA = toTpetra(factorA);
 
   prec_ = Amesos2::create<Tpetra_CrsMatrix, Tpetra_MultiVector>(type_, tA);
   TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
@@ -311,8 +311,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
 
   RCP<Tpetra_MultiVector> tX, tB;
   if (!useTransformation_) {
-    tX = Utilities::MV2NonConstTpetraMV2(X);
-    tB = Utilities::MV2NonConstTpetraMV2(const_cast<MultiVector&>(B));
+    tX = toTpetra(Teuchos::rcpFromRef(X));
+    tB = toTpetra(Teuchos::rcpFromRef(const_cast<MultiVector&>(B)));
   } else {
     // Copy data of the original vectors into the transformed ones
     size_t numVectors = X.getNumVectors();
@@ -328,8 +328,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
       B_data[i] = Bdata[i];
     }
 
-    tX = Utilities::MV2NonConstTpetraMV2(*X_);
-    tB = Utilities::MV2NonConstTpetraMV2(*B_);
+    tX = toTpetra(X_);
+    tB = toTpetra(B_);
   }
 
   prec_->setX(tX);

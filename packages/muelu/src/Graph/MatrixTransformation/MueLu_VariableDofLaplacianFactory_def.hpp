@@ -161,8 +161,7 @@ void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   // start variable dof amalgamation
 
-  Teuchos::RCP<CrsMatrixWrap> Awrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A);
-  Teuchos::RCP<CrsMatrix> Acrs      = Awrap->getCrsMatrix();
+  Teuchos::RCP<CrsMatrix> Acrs = toCrsMatrix(A);
   // Acrs->describe(*fancy, Teuchos::VERB_EXTREME);
 
   size_t nNonZeros = 0;

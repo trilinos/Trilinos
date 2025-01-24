@@ -408,10 +408,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
           sublist->set(*key_it, Teuchos::rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node> >(coords, true)->getEpetra_MultiVector());
 #endif
         else if (value == "tD0") {
-          auto tD0 = Teuchos::rcp_dynamic_cast<TpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
+          auto tD0 = toTpetra(D0_Matrix);
           sublist->set(*key_it, tD0);
         } else if (value == "tCoordinates") {
-          sublist->set(*key_it, Teuchos::rcp_dynamic_cast<TpetraMultiVector>(coords, true)->getTpetra_MultiVector());
+          sublist->set(*key_it, toTpetra(coords));
         }
       }
     }

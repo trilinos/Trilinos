@@ -80,9 +80,9 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
   typedef typename vector_type::device_type device_type;
   typedef typename Kokkos::View<MKL_INT *, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type> mkl_int_type;
 
-  RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-  RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-  RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+  RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+  RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+  RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
   RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
   RCP<const vector_type> Du     = Xpetra::toTpetra(D);
 
@@ -245,9 +245,9 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
     LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     RCP<const import_type> Cimport;
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+    RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+    RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+    RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
     RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
     RCP<const vector_type> Du = Xpetra::toTpetra(D);

@@ -70,7 +70,7 @@ void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level &
 #if defined(HAVE_XPETRA_TPETRA)
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
   // Orthonormalize
-  RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > B_ = Utilities::MV2TpetraMV(B);
+  RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > B_ = toTpetra(B);
   // TAW: Oct 16 2015: subCopy is not part of Xpetra. One should either add it to Xpetra (with an emulator for Epetra)
   //                   or replace this call by a local loop. I'm not motivated to do this now...
   RCP<Tpetra::MultiVector<SC, LO, GO, NO> > Borth = B_->subCopy(selectedIndices);  // copy

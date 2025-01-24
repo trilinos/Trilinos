@@ -230,8 +230,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BelosAdapters, XpetraOp_TpetraMV, Scalar, Loca
   RCP<OP> belosPrec = rcp(new Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(p->GetH()));
 
   // X, B
-  RCP<MV> X = Utilities::MV2NonConstTpetraMV(p->GetNewX0());
-  RCP<MV> B = Utilities::MV2NonConstTpetraMV(p->GetRHS());
+  RCP<MV> X = toTpetra(p->GetNewX0());
+  RCP<MV> B = toTpetra(p->GetRHS());
 
   // Run Belos
   int numIters = MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, B, out, success);

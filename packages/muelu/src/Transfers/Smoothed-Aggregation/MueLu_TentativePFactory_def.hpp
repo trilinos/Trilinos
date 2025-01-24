@@ -851,7 +851,7 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Time to construct the matrix and fill in the values
   Ptentative              = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
-  RCP<CrsMatrix> PtentCrs = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
+  RCP<CrsMatrix> PtentCrs = toCrsMatrix(Ptentative);
 
   ArrayRCP<size_t> iaPtent;
   ArrayRCP<LO> jaPtent;
