@@ -43,13 +43,10 @@
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 
-#include "Epetra_MpiComm.h"
-
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(bcstrategy, basic_construction)
   {
-
     std::size_t bc_id = 0;
     panzer::BCType neumann = BCT_Dirichlet;
     std::string sideset_id = "4";
