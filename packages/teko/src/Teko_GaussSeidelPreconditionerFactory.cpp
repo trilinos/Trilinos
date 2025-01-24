@@ -11,6 +11,7 @@
 
 #include "Teko_BlockUpperTriInverseOp.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -54,6 +55,7 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(
   }
 
   TEUCHOS_ASSERT(false);  // we should never make it here!
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 //! Initialize from a parameter list
