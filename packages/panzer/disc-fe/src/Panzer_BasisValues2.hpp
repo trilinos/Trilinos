@@ -337,12 +337,6 @@ namespace panzer {
     void
     setWeightedMeasure(PHX::MDField<const Scalar, Cell, IP> weighted_measure);
 
-    /////////// TO BE DEPRECATED.....
-    /// Set the cell vertex coordinates (required for getBasisCoordinates())
-    void
-    setCellVertexCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates);
-    ////////// END TO BE DEPRECATED
-
     /// Set the cell node coordinates (required for getBasisCoordinates())
     void
     setCellNodeCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates);

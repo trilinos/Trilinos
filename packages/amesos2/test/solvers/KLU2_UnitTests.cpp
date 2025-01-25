@@ -451,6 +451,72 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  //! @test Test for one-base
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, BaseOne, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+
+    using Tpetra::global_size_t;
+    using Teuchos::tuple;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+    const global_size_t numVectors = 1;
+    const global_size_t nrows = 6;
+    const GO numGlobalEntries = nrows;
+
+    // Create one-base Map
+    const GO indexBase = 1;
+    typedef Tpetra::Map<LO,GO>  map_type;
+    RCP< const map_type > map = rcp( new map_type(numGlobalEntries, indexBase, comm) );
+    const LO numLocalEntries = LO(map->getLocalNumElements());
+
+    // Create a diagobal matrix = diag(1:nrows)
+    RCP<MAT> A = rcp( new MAT(map,1) );
+
+    Teuchos::Array<GO> gblColIndsBuf(1);
+    Teuchos::Array<SCALAR> valsBuf(1);
+    for (LO lclRow = 0; lclRow < numLocalEntries; ++lclRow) {
+      const GO gblRow = map->getGlobalElement(lclRow);
+      const GO gblCol = gblRow;
+      const LO numEnt = 1;
+      valsBuf[0] = SCALAR(gblRow);
+      gblColIndsBuf[0] = gblCol;
+
+      Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf.view(0, numEnt);
+      Teuchos::ArrayView<SCALAR> vals = valsBuf.view(0, numEnt);
+      A->insertGlobalValues(gblRow, gblColInds, vals);
+    }
+    A->fillComplete();
+
+    // Create Xhat = ones(nrows, 1), X, and B
+    RCP<MV> Xhat = rcp(new MV(map,numVectors));
+    RCP<MV> X = rcp(new MV(map,numVectors));
+    RCP<MV> B = rcp(new MV(map,numVectors));
+    Xhat->putScalar(SCALAR(1.0));
+    A->apply(*Xhat, *B);
+
+    // Create solver interface with Amesos2 factory method
+    RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("KLU2", A, X, B);
+    solver->symbolicFactorization().numericFactorization().solve();
+
+    A->describe(out, Teuchos::VERB_EXTREME);
+    B->describe(out, Teuchos::VERB_EXTREME);
+    Xhat->describe(out, Teuchos::VERB_EXTREME);
+    X->describe(out, Teuchos::VERB_EXTREME);
+
+    // Check result of solve
+    Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
+    Xhat->norm2(xhatnorms());
+    X->norm2(xnorms());
+    TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+  }
+
   //! @test Test for non-contiguous GIDs.
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, NonContigGID, SCALAR, LO, GO )
   {
@@ -970,7 +1036,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Solve, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveIR, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NonContigGID, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NonContigGID, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, BaseOne, SCALAR, LO, GO )
 
 #ifdef HAVE_AMESOS2_EPETRA
 #define UNIT_TEST_GROUP_EPETRA( LO, GO, SCALAR)  \

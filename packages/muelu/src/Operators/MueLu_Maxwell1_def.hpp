@@ -274,6 +274,8 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   /* Critical ParameterList changes */
   if (!Coords_.is_null())
     precList22_.sublist("user data").set("Coordinates", Coords_);
+  if (!Material_.is_null())
+    precList22_.sublist("user data").set("Material", Material_);
 
   /* Repartitioning *must* be in sync between hierarchies, which means
      that we need to keep the importers in sync too */
@@ -766,6 +768,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                const Teuchos::RCP<Matrix>& Kn_Matrix,
                const Teuchos::RCP<MultiVector>& Nullspace,
                const Teuchos::RCP<RealValuedMultiVector>& Coords,
+               const Teuchos::RCP<MultiVector>& Material,
                Teuchos::ParameterList& List) {
   // some pre-conditions
   TEUCHOS_ASSERT(D0_Matrix != Teuchos::null);
@@ -827,6 +830,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   Kn_Matrix_ = Kn_Matrix;
   Coords_    = Coords;
+  Material_  = Material;
   Nullspace_ = Nullspace;
 
   if (!Kn_Matrix_.is_null()) dump(*Kn_Matrix_, "Kn.m");

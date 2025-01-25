@@ -306,31 +306,35 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
   const bool initialize_data = true;
   const bool do_not_initialize_data = false;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+    if ( single_proc_optimization() && nrhs == 1 ) {
 
-  if ( single_proc_optimization() && nrhs == 1 ) {
+      // no msp creation
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
-    // no msp creation
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
 
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
+    } // end if ( single_proc_optimization() && nrhs == 1 )
+    else {
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
 
-  } // end if ( single_proc_optimization() && nrhs == 1 )
-  else {
-
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(initialize_data, B, bValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
-
-    // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
+      // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+    }
   }
 
   if ( this->root_ ) { // do solve
@@ -341,7 +345,6 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
     else
       ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues, true);
   }
-
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
@@ -351,12 +354,16 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
       std::runtime_error,
       "Could not alloc needed working memory for solve" );
-
-  Util::put_1d_data_helper_kokkos_view<
-    MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-      as<size_t>(ld_rhs),
-      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+  }
   return(ierr);
 }
 
@@ -581,25 +588,42 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     local_ordinal_type nnz_ret = 0;
+    bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
     {
     #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
-
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
-        ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          ARBITRARY,
-          this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
+      if (gather_supported) {
+        bool column_major = true;
+        if (!is_contiguous_) {
+          auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                       column_major, current_phase);
+        } else {
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                           column_major, current_phase);
+        }
+        // gather failed (e.g., not implemened for KokkosCrsMatrix)
+        // in case of the failure, it falls back to the original "do_get"
+        if (nnz_ret < 0) gather_supported = false;
+      } 
+      if (!gather_supported) {
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
+          ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
+      }
     }
 
-    if( this->root_ ){
+    // gather return the total nnz_ret on every MPI process
+    if (gather_supported || this->root_) {
       TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
           std::runtime_error,
-          "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals");
+          "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals("
+          +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
     }
-
   } //end alternative path 
   return true;
 }
