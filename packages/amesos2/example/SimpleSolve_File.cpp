@@ -219,7 +219,9 @@ int main(int argc, char *argv[]) {
     stackedTimer = rcp(new Teuchos::StackedTimer("Amesos2 SimpleSolve-File"));
     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
-  solver->symbolicFactorization().numericFactorization().solve();
+  solver->symbolicFactorization(); comm->barrier();
+  solver->numericFactorization();  comm->barrier();
+  solver->solve(); comm->barrier();
   if (multi_solve) {
     {
       // change (1,1) diagonal entry value
