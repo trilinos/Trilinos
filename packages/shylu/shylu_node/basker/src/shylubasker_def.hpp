@@ -577,7 +577,7 @@ namespace BaskerNS
       }
     }
     printf("];\n");*/
-    {
+    if (btf_tabs_offset != 0) {
       // setup data-structure for ND
       bool doSymbolic = true;
       bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
