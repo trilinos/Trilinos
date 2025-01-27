@@ -364,6 +364,8 @@ namespace Belos {
     bool assertPositiveDefiniteness_;
     bool foldConvergenceDetectionIntoAllreduce_;
 
+    Teuchos::RCP<CGIterationState<ScalarType, MV >> state_;
+
     //! Prefix label for all the timers.
     std::string label_;
 
@@ -900,9 +902,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
       RCP<MV> R_0 = MVT::CloneViewNonConst( *(rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Set the new state and initialize the solver.
-      CGIterationState<ScalarType,MV> newstate;
-      newstate.R = R_0;
-      block_cg_iter->initializeCG(newstate);
+      if (state_.is_null())
+        state_ = Teuchos::rcp(new CGIterationState<ScalarType, MV>());
+      block_cg_iter->initializeCG(*state_, R_0);
 
       while(1) {
 
@@ -964,9 +966,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
             block_cg_iter->setBlockSize( have );
 
             // Set the new state and initialize the solver.
-            CGIterationState<ScalarType,MV> defstate;
-            defstate.R = R_0;
-            block_cg_iter->initializeCG(defstate);
+            block_cg_iter->initializeCG(*state_, R_0);
           }
           //
           // None of the linear systems converged.  Check whether the

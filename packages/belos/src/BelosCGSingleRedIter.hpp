@@ -106,7 +106,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  void initializeCG(CGIterationState<ScalarType,MV>& newstate);
+  void initializeCG(CGIterationState<ScalarType,MV>& newstate, Teuchos::RCP<MV> R_0);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -114,9 +114,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   void initialize()
   {
     CGIterationState<ScalarType,MV> empty;
-    initializeCG(empty);
+    initializeCG(empty, Teuchos::null);
   }
-  
+
   /*! \brief Get the current state of the linear solver.
    *
    * The data is only valid if isInitialized() == \c true.
@@ -125,11 +125,30 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
    */
   CGIterationState<ScalarType,MV> getState() const {
     CGIterationState<ScalarType,MV> state;
+    state.W = W_;
+    state.V = V_;
+    state.U = U_;
+    state.S = S_;
+    state.T = T_;
     state.R = R_;
+    state.Z = Z_;
     state.P = P_;
     state.AP = AP_;
-    state.Z = Z_;
+    state.AZ = AZ_;
     return state;
+  }
+
+  void setState(CGIterationState<ScalarType, MV> state) {
+    W_ = state.W;
+    V_ = state.V;
+    U_ = state.U;
+    S_ = state.S;
+    T_ = state.T;
+    R_ = state.R;
+    Z_ = state.Z;
+    P_ = state.P;
+    AP_ = state.AP;
+    AZ_ = state.AZ;
   }
 
   //@}
@@ -195,10 +214,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   //
   // Internal methods
   //
-  //! Method for initalizing the state storage needed by CG.
-  void setStateSize();
-  
-  //
+
   // Classes inputed through constructor that define the linear problem to be solved.
   //
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
@@ -213,11 +229,6 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   // is capable of running; _initialize is controlled  by the initialize() member method
   // For the implications of the state of initialized_, please see documentation for initialize()
   bool initialized_;
-
-  // stateStorageInitialized_ specifies that the state storage has been initialized.
-  // This initialization may be postponed if the linear problem was generated without 
-  // the right-hand side or solution vectors.
-  bool stateStorageInitialized_;
 
   // Current number of iterations performed.
   int iter_;
@@ -270,96 +281,27 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     stest_(tester),
     convTest_(convTester),
     initialized_(false),
-    stateStorageInitialized_(false),
     iter_(0)
   {
     foldConvergenceDetectionIntoAllreduce_ = params.get<bool>("Fold Convergence Detection Into Allreduce",false);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void CGSingleRedIter<ScalarType,MV,OP>::setStateSize ()
-  {
-    if (!stateStorageInitialized_) {
-
-      // Check if there is any multivector to clone from.
-      Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
-      if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
-	stateStorageInitialized_ = false;
-	return;
-      }
-      else {
-	
-	// Initialize the state storage
-	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
-	if (R_ == Teuchos::null) {
-	  // Get the multivector that is not null.
-	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-			     "Belos::CGSingleRedIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-
-          // W_ = (AZ_, R_, Z_)
-          W_ = MVT::Clone( *tmp, 3 );
-          std::vector<int> index2(2,0);
-          std::vector<int> index(1,0);
-
-          // S_ = (AZ_, R_)
-          index2[0] = 0;
-          index2[1] = 1;
-          S_ = MVT::CloneViewNonConst( *W_, index2 );
-
-          // U_ = (AZ_, Z_)
-          index2[0] = 0;
-          index2[1] = 2;
-          U_ = MVT::CloneViewNonConst( *W_, index2 );
-
-          index[0] = 1;
-          R_ = MVT::CloneViewNonConst( *W_, index );
-          index[0] = 0;
-          AZ_ = MVT::CloneViewNonConst( *W_, index );
-          index[0] = 2;
-          Z_ = MVT::CloneViewNonConst( *W_, index );
-
-          // T_ = (R_, Z_)
-          index2[0] = 1;
-          index2[1] = 2;
-          T_ = MVT::CloneViewNonConst( *W_, index2 );
-
-          // V_ = (AP_, P_)
-          V_ = MVT::Clone( *tmp, 2 );
-          index[0] = 0;
-          AP_ = MVT::CloneViewNonConst( *V_, index );
-          index[0] = 1;
-	  P_ = MVT::CloneViewNonConst( *V_, index );
-
-	}
-	
-	// State storage has now been initialized.
-	stateStorageInitialized_ = true;
-      }
-    }
-  }
-
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void CGSingleRedIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
+  void CGSingleRedIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate, Teuchos::RCP<MV> R_0)
   {
     // Initialize the state storage if it isn't already.
-    if (!stateStorageInitialized_) 
-      setStateSize();
+    Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
+    Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
+    Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+    if (!newstate.isInitialized() || !newstate.matches(tmp, 1))
+      newstate.initialize(tmp, CGSingleReduce, 1);
+    setState(newstate);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
-		       "Belos::CGSingleRedIter::initialize(): Cannot initialize state storage!");
-    
-    // NOTE:  In CGSingleRedIter R_, the initial residual, is required!!!  
-    //
     std::string errstr("Belos::CGSingleRedIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    if (newstate.R != Teuchos::null) {
+    {
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
@@ -367,9 +309,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
-      if (newstate.R != R_) {
+      if (R_0 != R_) {
         // copy over the initial residual (unpreconditioned).
-	MVT::Assign( *newstate.R, *R_ );
+	MVT::Assign( *R_0, *R_ );
       }
 
       // Compute initial direction vectors
@@ -378,14 +320,14 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *R_, *Z_ );
         if ( lp_->getRightPrec() != Teuchos::null ) {
-          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, 1 );
-          lp_->applyRightPrec( *Z_, *tmp );
-          MVT::Assign( *tmp, *Z_ );
+          Teuchos::RCP<MV> tmp2 = MVT::Clone( *Z_, 1 );
+          lp_->applyRightPrec( *Z_, *tmp2 );
+          MVT::Assign( *tmp2, *Z_ );
         }
       }
       else if ( lp_->getRightPrec() != Teuchos::null ) {
         lp_->applyRightPrec( *R_, *Z_ );
-      } 
+      }
       else {
         MVT::Assign( *R_, *Z_ );
       }
@@ -396,11 +338,6 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       // P_ := Z_
       // Logically, AP_ := AZ_
       MVT::Assign( *U_, *V_);
-    }
-    else {
-
-      TEUCHOS_TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
-                         "Belos::CGSingleRedIter::initialize(): CGIterationState does not have initial residual.");
     }
 
     // The solver is initialized
