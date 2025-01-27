@@ -192,7 +192,7 @@ namespace BaskerNS
 
 
     //----------------Sep level upper tri-------------
-    for(Int l = 1; l < (lvl) && info == BASKER_SUCCESS; ++l)
+    for(Int l = 1; l < lvl && info == BASKER_SUCCESS; ++l)
     {
       for(Int k = 0; k < ncol; ++k)
       {
@@ -352,10 +352,10 @@ namespace BaskerNS
 
         // ------------------------------------------------------- //
         // > factor the k-th column of the off-diagonal blocks
+        #ifdef BASKER_TIMER
+        timer_facoff.reset();
+        #endif
         if (info == BASKER_SUCCESS) {
-          #ifdef BASKER_TIMER
-          timer_facoff.reset();
-          #endif
           #ifdef BASKER_DEBUG_NFACTOR_COL2
           printf(" calling lower offdiag factor, kid: %d k: %d \n",
                  kid, k); fflush(stdout);
