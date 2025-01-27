@@ -444,11 +444,12 @@ namespace Ifpack2 {
       }
 
       // * B: block size for compile-time specialization, or 0 for general case (up to max_blocksize)
-      // * async: true if using async importer.
+      // * async: true if using async importer. overlap is not used in this case.
       //          Whether a column is owned or nonowned is decided at runtime.
       // * overlap: true if processing the columns that are not locally owned,
       //            false if processing locally owned columns.
-      template<int B, bool async, bool overlap>
+      // * haveBlockMatrix: true if A is a BlockCrsMatrix, false if it's CrsMatrix.
+      template<int B, bool async, bool overlap, bool haveBlockMatrix>
       struct GeneralTag
       {
         static_assert(!(async && overlap),
@@ -458,16 +459,17 @@ namespace Ifpack2 {
       // Define AsyncTag and OverlapTag in terms of GeneralTag:
       // P == 0 means only compute on owned columns
       // P == 1 means only compute on nonowned columns
-      template<int P, int B>
-      using OverlapTag = GeneralTag<B, false, P != 0>;
+      template<int P, int B, bool haveBlockMatrix>
+      using OverlapTag = GeneralTag<B, false, P != 0, haveBlockMatrix>;
 
-      template<int B>
-      using AsyncTag = GeneralTag<B, true, false>;
+      template<int B, bool haveBlockMatrix>
+      using AsyncTag = GeneralTag<B, true, false, haveBlockMatrix>;
 
-      template<int B, bool async, bool overlap>
+      // CPU implementation for all cases
+      template<int B, bool async, bool overlap, bool haveBlockMatrix>
       KOKKOS_INLINE_FUNCTION
       void
-      operator() (const GeneralTag<B, async, overlap>&, const local_ordinal_type &rowidx) const {
+      operator() (const GeneralTag<B, async, overlap, haveBlockMatrix>&, const local_ordinal_type &rowidx) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
         const local_ordinal_type blocksize_square = blocksize*blocksize;
 
@@ -503,7 +505,7 @@ namespace Ifpack2 {
           for (size_type k = rowptr_used[lr]; k < rowptr_used[lr+1]; ++k) {
             const size_type j = A_k0 + colindsub_used[k];
             const local_ordinal_type A_colind_at_j = A_colind[j];
-            if (hasBlockCrsMatrix) {
+            if constexpr (haveBlockMatrix) {
               const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
               if ((!async && !overlap) || (async && A_colind_at_j < num_local_rows)) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
@@ -541,13 +543,11 @@ namespace Ifpack2 {
         }
       }
 
+      // GPU implementation for hasBlockCrsMatrix == true
       template<int B, bool async, bool overlap>
       KOKKOS_INLINE_FUNCTION
       void
-      operator() (const GeneralTag<B, async, overlap>&, const member_type &member) const {
-        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
-        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
-
+      operator() (const GeneralTag<B, async, overlap, true>&, const member_type &member) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
         const local_ordinal_type blocksize_square = blocksize*blocksize;
 
@@ -562,6 +562,8 @@ namespace Ifpack2 {
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // subview pattern
+        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
+        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
         subview_1D_right_t bb(nullptr, blocksize);
         subview_1D_right_t xx(nullptr, blocksize);
         subview_1D_right_t xx_remote(nullptr, blocksize);
@@ -584,43 +586,85 @@ namespace Ifpack2 {
 
           // y -= Rx
           const size_type A_k0 = A_block_rowptr[lr];
-          if(hasBlockCrsMatrix) {
-            Kokkos::parallel_for
-              (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]),
-              [&](const local_ordinal_type &k) {
-                const size_type j = A_k0 + colindsub_used[k];
-                A_block_cst.assign_data( &tpetra_values(j*blocksize_square) );
-                const local_ordinal_type A_colind_at_j = A_colind[j];
-                if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
-                  const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                  xx.assign_data( &x(loc*blocksize, col) );
-                  VectorGemv(member, blocksize, A_block_cst, xx, yy);
-                } else {
-                  const auto loc = A_colind_at_j - num_local_rows;
-                  xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                  VectorGemv(member, blocksize, A_block_cst, xx_remote, yy);
-                }
-              });
+          Kokkos::parallel_for
+            (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]),
+            [&](const local_ordinal_type &k) {
+              const size_type j = A_k0 + colindsub_used[k];
+              A_block_cst.assign_data( &tpetra_values(j*blocksize_square) );
+              const local_ordinal_type A_colind_at_j = A_colind[j];
+              if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                xx.assign_data( &x(loc*blocksize, col) );
+                VectorGemv(member, blocksize, A_block_cst, xx, yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                xx_remote.assign_data( &x_remote(loc*blocksize, col) );
+                VectorGemv(member, blocksize, A_block_cst, xx_remote, yy);
+              }
+            });
+        }
+      }
+
+      // GPU implementation for hasBlockCrsMatrix == false
+      template<int B, bool async, bool overlap>
+      KOKKOS_INLINE_FUNCTION
+      void
+      operator() (const GeneralTag<B, async, overlap, false>&, const member_type &member) const {
+        const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
+        const local_ordinal_type blocksize_square = blocksize*blocksize;
+
+        // constants
+        const local_ordinal_type rowidx = member.league_rank();
+        const local_ordinal_type partidx = rowidx2part(rowidx);
+        const local_ordinal_type pri = part2packrowidx0(partidx) + (rowidx - partptr(partidx));
+        const local_ordinal_type v = partidx % vector_length;
+
+        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
+        const local_ordinal_type num_vectors = y_packed_scalar.extent(2);
+        const local_ordinal_type num_local_rows = lclrow.extent(0);
+
+        // subview pattern
+        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
+        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
+        subview_1D_right_t bb(nullptr, blocksize);
+        subview_1D_right_t xx(nullptr, blocksize);
+        subview_1D_right_t xx_remote(nullptr, blocksize);
+        subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
+        auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
+        auto colindsub_used = overlap ? colindsub_remote : colindsub;
+        auto rowptr_used = overlap ? rowptr_remote : rowptr;
+
+        const local_ordinal_type lr = lclrow(rowidx);
+        const local_ordinal_type row = lr*blocksize;
+        for (local_ordinal_type col = 0; col < num_vectors; ++col) {
+          yy.assign_data(&y_packed_scalar(pri, 0, col, v));
+          if (!overlap) {
+            // y := b
+            bb.assign_data(&b(row, col));
+            if (member.team_rank() == 0)
+              VectorCopy(member, blocksize, bb, yy);
+            member.team_barrier();
           }
-          else {
-            Kokkos::parallel_for
-              (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]),
-              [&](const local_ordinal_type &k) {
-                const size_type j = A_k0 + colindsub_used[k];
-                const local_ordinal_type A_colind_at_j = A_colind[j];
-                if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
-                  const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                  xx.assign_data( &x(loc*blocksize, col) );
-                  for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
-                    VectorDot(member, blocksize, lr, k, k0, colindsub_used, xx, yy);
-                } else {
-                  const auto loc = A_colind_at_j - num_local_rows;
-                  xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                  for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
-                    VectorDot(member, blocksize, lr, k, k0, colindsub_used, xx_remote, yy);
-                }
-              });
-          }
+
+          // y -= Rx
+          const size_type A_k0 = A_block_rowptr[lr];
+          Kokkos::parallel_for
+            (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]),
+            [&](const local_ordinal_type &k) {
+              const size_type j = A_k0 + colindsub_used[k];
+              const local_ordinal_type A_colind_at_j = A_colind[j];
+              if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                xx.assign_data( &x(loc*blocksize, col) );
+                for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
+                  VectorDot(member, blocksize, lr, k, k0, colindsub_used, xx, yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                xx_remote.assign_data( &x_remote(loc*blocksize, col) );
+                for (local_ordinal_type k0 = 0; k0 < blocksize; ++k0)
+                  VectorDot(member, blocksize, lr, k, k0, colindsub_used, xx_remote, yy);
+              }
+            });
         }
       }
 
@@ -682,11 +726,21 @@ namespace Ifpack2 {
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
           // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
-            const Kokkos::TeamPolicy<execution_space,AsyncTag<B> >      \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
-               policy, *this); } break
+            if(this->hasBlockCrsMatrix) { \
+              const Kokkos::TeamPolicy<execution_space,AsyncTag<B, true> >      \
+                policy(rowidx2part.extent(0), team_size, vector_size);    \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
+                 policy, *this); \
+            } \
+            else { \
+              const Kokkos::TeamPolicy<execution_space,AsyncTag<B, false> >      \
+                policy(rowidx2part.extent(0), team_size, vector_size);    \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
+                 policy, *this); \
+            } \
+          } break
           switch (blocksize_requested) {
           case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
           case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
@@ -702,10 +756,20 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 	} else {
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
-            const Kokkos::RangePolicy<execution_space,AsyncTag<B> > policy(0, rowidx2part.extent(0)); \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::RangePolicy::run<AsyncTag>",           \
-               policy, *this); } break
+            if(this->hasBlockCrsMatrix) { \
+              const Kokkos::RangePolicy<execution_space,AsyncTag<B, true> > policy(0, rowidx2part.extent(0)); \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::RangePolicy::run<AsyncTag>",           \
+                 policy, *this); \
+            } \
+            else { \
+              const Kokkos::RangePolicy<execution_space,AsyncTag<B, false> > policy(0, rowidx2part.extent(0)); \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::RangePolicy::run<AsyncTag>",           \
+                 policy, *this); \
+            } \
+          } break
+
           switch (blocksize_requested) {
           case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
           case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
@@ -756,17 +820,33 @@ namespace Ifpack2 {
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
           // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
-          if (compute_owned) {                                          \
-            const Kokkos::TeamPolicy<execution_space,OverlapTag<0,B> > \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
-          } else {                                                      \
-            const Kokkos::TeamPolicy<execution_space,OverlapTag<1,B> > \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
-          } break
+          if(this->hasBlockCrsMatrix) { \
+            if (compute_owned) {                                          \
+              const Kokkos::TeamPolicy<execution_space,OverlapTag<0, B, true> > \
+                policy(rowidx2part.extent(0), team_size, vector_size);    \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
+            } else {                                                      \
+              const Kokkos::TeamPolicy<execution_space,OverlapTag<1, B, true> > \
+                policy(rowidx2part.extent(0), team_size, vector_size);    \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
+            } \
+          } \
+          else { \
+            if (compute_owned) {                                          \
+              const Kokkos::TeamPolicy<execution_space,OverlapTag<0, B, false> > \
+                policy(rowidx2part.extent(0), team_size, vector_size);    \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
+            } else {                                                      \
+              const Kokkos::TeamPolicy<execution_space,OverlapTag<1, B, false> > \
+                policy(rowidx2part.extent(0), team_size, vector_size);    \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
+            } \
+          } \
+          break
           switch (blocksize_requested) {
           case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
           case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
@@ -782,17 +862,33 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         } else {
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
-          if (compute_owned) {                                          \
-            const Kokkos::RangePolicy<execution_space,OverlapTag<0,B> > \
-              policy(0, rowidx2part.extent(0));                         \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, *this); \
-          } else {                                                      \
-            const Kokkos::RangePolicy<execution_space,OverlapTag<1,B> > \
-              policy(0, rowidx2part.extent(0));                         \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, *this); \
-          } break
+          if(this->hasBlockCrsMatrix) { \
+            if (compute_owned) {                                          \
+              const Kokkos::RangePolicy<execution_space,OverlapTag<0, B, true>> \
+                policy(0, rowidx2part.extent(0));                         \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, *this); \
+            } else {                                                      \
+              const Kokkos::RangePolicy<execution_space,OverlapTag<1, B, true>> \
+                policy(0, rowidx2part.extent(0));                         \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, *this); \
+            } \
+          } \
+          else { \
+            if (compute_owned) {                                          \
+              const Kokkos::RangePolicy<execution_space,OverlapTag<0, B, false>> \
+                policy(0, rowidx2part.extent(0));                         \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, *this); \
+            } else {                                                      \
+              const Kokkos::RangePolicy<execution_space,OverlapTag<1, B, false>> \
+                policy(0, rowidx2part.extent(0));                         \
+              Kokkos::parallel_for                                        \
+                ("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, *this); \
+            } \
+          } \
+          break
 
           switch (blocksize_requested) {
           case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
