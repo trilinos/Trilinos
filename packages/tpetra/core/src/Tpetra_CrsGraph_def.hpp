@@ -4825,125 +4825,9 @@ namespace Tpetra {
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
     using this_CRS_type = CrsGraph<LO, GO, node_type>;
-    const char tfecfFuncName[] = "copyAndPermute: ";
-    const bool verbose = verbose_;
-
-    if (true) {
-      const row_graph_type& srcRowGraph =
-        dynamic_cast<const row_graph_type&> (source);
-      copyAndPermuteNew(srcRowGraph, *this, numSameIDs, permuteToLIDs, permuteFromLIDs, INSERT);
-      return;
-    }
-
-    Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermute");
-    std::unique_ptr<std::string> prefix;
-    if (verbose) {
-      prefix = this->createPrefix("CrsGraph", "copyAndPermute");
-      std::ostringstream os;
-      os << *prefix << endl;
-      std::cerr << os.str ();
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (permuteToLIDs.extent (0) != permuteFromLIDs.extent (0),
-       std::runtime_error, "permuteToLIDs.extent(0) = "
-       << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
-       << permuteFromLIDs.extent (0) << ".");
-
-    // We know from checkSizes that the source object is a
-    // row_graph_type, so we don't need to check again.
-    const row_graph_type& srcRowGraph =
-      dynamic_cast<const row_graph_type&> (source);
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Compute padding" << endl;
-      std::cerr << os.str ();
-    }
-    auto padding = computeCrsPadding(srcRowGraph, numSameIDs,
-      permuteToLIDs, permuteFromLIDs, verbose);
-
-    applyCrsPadding(*padding, verbose);
-
-    // If the source object is actually a CrsGraph, we can use view
-    // mode instead of copy mode to access the entries in each row,
-    // if the graph is not fill complete.
-    const this_CRS_type* srcCrsGraph =
-      dynamic_cast<const this_CRS_type*> (&source);
-
-    const map_type& srcRowMap = *(srcRowGraph.getRowMap());
-    const map_type& tgtRowMap = *(getRowMap());
-    const bool src_filled = srcRowGraph.isFillComplete();
-    nonconst_global_inds_host_view_type row_copy;
-    LO myid = 0;
-
-    //
-    // "Copy" part of "copy and permute."
-    //
-    if (src_filled || srcCrsGraph == nullptr) {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "src_filled || srcCrsGraph == nullptr" << endl;
-        std::cerr << os.str ();
-      }
-      // If the source graph is fill complete, we can't use view mode,
-      // because the data might be stored in a different format not
-      // compatible with the expectations of view mode.  Also, if the
-      // source graph is not a CrsGraph, we can't use view mode,
-      // because RowGraph only provides copy mode access to the data.
-      for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-        const GO gid = srcRowMap.getGlobalElement (myid);
-        size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (gid);
-        Kokkos::resize(row_copy,row_length);
-        size_t check_row_length = 0;
-        srcRowGraph.getGlobalRowCopy (gid, row_copy, check_row_length);
-        this->insertGlobalIndices (gid, row_length, row_copy.data());
-      }
-    } else {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "! src_filled && srcCrsGraph != nullptr" << endl;
-        std::cerr << os.str ();
-      }
-      for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-        const GO gid = srcRowMap.getGlobalElement (myid);
-        global_inds_host_view_type row;
-        srcCrsGraph->getGlobalRowView (gid, row);
-        this->insertGlobalIndices (gid, row.extent(0), row.data());
-      }
-    }
-
-    //
-    // "Permute" part of "copy and permute."
-    //
-    auto permuteToLIDs_h = permuteToLIDs.view_host ();
-    auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
-
-    if (src_filled || srcCrsGraph == nullptr) {
-      for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
-        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
-        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
-        size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (srcgid);
-        Kokkos::resize(row_copy,row_length);
-        size_t check_row_length = 0;
-        srcRowGraph.getGlobalRowCopy (srcgid, row_copy, check_row_length);
-        this->insertGlobalIndices (mygid, row_length, row_copy.data());
-      }
-    } else {
-      for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
-        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
-        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
-        global_inds_host_view_type row;
-        srcCrsGraph->getGlobalRowView (srcgid, row);
-        this->insertGlobalIndices (mygid, row.extent(0), row.data());
-      }
-    }
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str ();
-    }
+    const row_graph_type& srcRowGraph = dynamic_cast<const row_graph_type&> (source);
+    copyAndPermuteImpl(srcRowGraph, *this, numSameIDs, permuteToLIDs, permuteFromLIDs, INSERT);
+    return;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -7661,66 +7545,69 @@ namespace Tpetra {
       Kokkos::abort("error");                   \
     } while(0)
 
-    Kokkos::parallel_for("Tpetra_CrsGraph::copyAndPermuteNew2",
-                         range_type (0, loopEnd),
-                         KOKKOS_LAMBDA(const LO sourceLID)
-                         {
-                           auto srcLid = sourceLID;
-                           auto tgtLid = sourceLID;
-                           if (hasMap) {
-                             srcLid = permuteFromLIDs_d(srcLid);
-                             tgtLid = permuteToLIDs_d(tgtLid);
-                           }
-                           auto srcGid = srcRowMapLocal.getGlobalElement(srcLid);
-                           if (srcGid == GINV) CRSGRAPH_INNER_ABORT(__LINE__);
-                           auto tgtGid = tgtRowMapLocal.getGlobalElement(tgtLid);
+    Kokkos::parallel_for(
+      "Tpetra_CrsGraph::copyAndPermuteNew2",
+      range_type (0, loopEnd),
+      KOKKOS_LAMBDA(const LO sourceLID) {
+        auto srcLid = sourceLID;
+        auto tgtLid = sourceLID;
+        if (hasMap) {
+          srcLid = permuteFromLIDs_d(srcLid);
+          tgtLid = permuteToLIDs_d(tgtLid);
+        }
+        auto srcGid = srcRowMapLocal.getGlobalElement(srcLid);
+        if (srcGid == GINV)
+          CRSGRAPH_INNER_ABORT(__LINE__);
+        auto tgtGid = tgtRowMapLocal.getGlobalElement(tgtLid);
 
-                           auto tgtLocalRow = tgtRowMapLocal.getLocalElement(tgtGid);
-                           if (tgtLocalRow == LINV) CRSGRAPH_INNER_ABORT(__LINE__);
-                           if (tgtLocalRow != tgtLid) CRSGRAPH_INNER_ABORT(__LINE__);
-                           auto tgtNumEntries = k_numRowEnt(tgtLocalRow);
+        auto tgtLocalRow = tgtRowMapLocal.getLocalElement(tgtGid);
+        if (tgtLocalRow == LINV)
+          CRSGRAPH_INNER_ABORT(__LINE__);
+        if (tgtLocalRow != tgtLid)
+          CRSGRAPH_INNER_ABORT(__LINE__);
+        auto tgtNumEntries = k_numRowEnt(tgtLocalRow);
 
-                           // FIXME no auto use
-                           auto start     = srcLocalRowPtrsDevice(srcLid);
-                           auto end       = srcLocalRowPtrsDevice(srcLid + 1);
-                           auto rowLength = (end - start);
+        // FIXME no auto use
+        auto start = srcLocalRowPtrsDevice(srcLid);
+        auto end = srcLocalRowPtrsDevice(srcLid + 1);
+        auto rowLength = (end - start);
 
-                           auto tstart      = tgtLocalRowPtrsDevice(tgtLocalRow);
-                           auto tend        = tstart + tgtNumEntries;
-                           auto tend1       = tgtLocalRowPtrsDevice(tgtLocalRow + 1);
+        auto tstart = tgtLocalRowPtrsDevice(tgtLocalRow);
+        auto tend = tstart + tgtNumEntries;
+        auto tend1 = tgtLocalRowPtrsDevice(tgtLocalRow + 1);
 
-                           const size_t num_avail = (tend1 < tend) ? size_t (0) : tend1 - tend;
-                           size_t num_inserted = 0;
+        const size_t num_avail = (tend1 < tend) ? size_t (0) : tend1 - tend;
+        size_t num_inserted = 0;
 
-                           global_inds_device_value_t *tgtGlobalColIndsPtr = tgtGlobalColInds.data();
+        global_inds_device_value_t *tgtGlobalColIndsPtr = tgtGlobalColInds.data();
 
-                           size_t hint=0;
-                           for (size_t j = 0; j < rowLength; j++) {
-                             auto ci = srcLocalColIndsDevice(start + j);
-                             GO gi = srcColMapLocal.getGlobalElement(ci);
-                             if (gi == GINV) CRSGRAPH_INNER_ABORT(__LINE__);
-                             auto numInTgtRow = (tend - tstart);
+        size_t hint=0;
+        for (size_t j = 0; j < rowLength; j++) {
+          auto ci = srcLocalColIndsDevice(start + j);
+          GO gi = srcColMapLocal.getGlobalElement(ci);
+          if (gi == GINV)
+            CRSGRAPH_INNER_ABORT(__LINE__);
+          auto numInTgtRow = (tend - tstart);
 
-                             const size_t offset =
-                               KokkosSparse::findRelOffset (tgtGlobalColIndsPtr+tstart,
-                                                            numInTgtRow,
-                                                            gi, hint, sorted);
+          const size_t offset = KokkosSparse::findRelOffset(
+            tgtGlobalColIndsPtr+tstart, numInTgtRow, gi, hint, sorted
+          );
 
-                             if (offset == numInTgtRow) {
-                               if (num_inserted >= num_avail) { // not enough room
-                                 Kokkos::abort("num_avail");
-                               }
-                               tgtGlobalColIndsPtr[tstart + offset] = gi;
-                               ++tend;
-                               hint = offset + 1;
-                               ++num_inserted;
-                             }
-                           }
-                           k_numRowEnt(tgtLocalRow) += num_inserted;
+          if (offset == numInTgtRow) {
+            if (num_inserted >= num_avail) { // not enough room
+              Kokkos::abort("num_avail");
+            }
+            tgtGlobalColIndsPtr[tstart + offset] = gi;
+            ++tend;
+            hint = offset + 1;
+            ++num_inserted;
+          }
+        }
+        k_numRowEnt(tgtLocalRow) += num_inserted;
 
-                           return size_t(0);
-                         });
-
+        return size_t(0);
+      }
+    );
     Kokkos::fence("here 10");
     Kokkos::deep_copy(tgtCrsGraph.k_numRowEntries_, k_numRowEnt);
     tgtCrsGraph.setLocallyModified();
@@ -7730,25 +7617,26 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermuteNew(const row_graph_type& srcRowGraph,
-                    row_graph_type& tgtRowGraph,
-                    const size_t numSameIDs,
-                    const Kokkos::DualView<const local_ordinal_type*,
-                    buffer_device_type>& permuteToLIDs,
-                    const Kokkos::DualView<const local_ordinal_type*,
-                    buffer_device_type>& permuteFromLIDs,
-                    const CombineMode CM)
-  {
+  copyAndPermuteImpl(
+    const row_graph_type& srcRowGraph,
+    row_graph_type& tgtRowGraph,
+    const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type*,
+    buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*,
+    buffer_device_type>& permuteFromLIDs,
+    const CombineMode CM
+  ) {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
-    const char tfecfFuncName[] = "copyAndPermuteNew: ";
+    const char tfecfFuncName[] = "copyAndPermuteImpl: ";
     const bool verbose = verbose_;
 
-    Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermuteNew");
+    Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermuteImpl");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsGraph", "copyAndPermuteNew");
+      prefix = this->createPrefix("CrsGraph", "copyAndPermuteImpl");
       std::ostringstream os;
       os << *prefix << endl;
       std::cerr << os.str ();
@@ -7768,18 +7656,21 @@ namespace Tpetra {
 
     using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
     const crs_graph_type *srcCrsGraphPtr = dynamic_cast<const crs_graph_type *>(&srcRowGraph);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!srcCrsGraphPtr, std::runtime_error,
-                                          "error srcGraph type= " << typeid(srcRowGraph).name());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      !srcCrsGraphPtr, std::runtime_error, "error srcGraph type= " << typeid(srcRowGraph).name()
+    );
     const crs_graph_type& srcCrsGraph = *srcCrsGraphPtr;
 
     crs_graph_type *tgtCrsGraphPtr = dynamic_cast<crs_graph_type *>(&tgtRowGraph);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!srcCrsGraphPtr, std::runtime_error,
-                                          "error tgtGraph type= " << typeid(tgtRowGraph).name());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      !srcCrsGraphPtr, std::runtime_error, "error tgtGraph type= " << typeid(tgtRowGraph).name()
+    );
 
     crs_graph_type& tgtCrsGraph = *tgtCrsGraphPtr;
 
-    auto padding = tgtCrsGraph.computeCrsPadding(srcRowGraph, numSameIDs,
-                                                 permuteToLIDs, permuteFromLIDs, verbose);
+    auto padding = tgtCrsGraph.computeCrsPadding(
+      srcRowGraph, numSameIDs, permuteToLIDs, permuteFromLIDs, verbose
+    );
 
     tgtCrsGraph.applyCrsPadding(*padding, verbose);
 
@@ -7805,21 +7696,8 @@ namespace Tpetra {
       // compatible with the expectations of view mode.  Also, if the
       // source graph is not a CrsGraph, we can't use view mode,
       // because RowGraph only provides copy mode access to the data.
-#if 0
-      for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-        const GO gid = srcRowMap.getGlobalElement (myid);
-        size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (gid);
-        Kokkos::resize(row_copy,row_length);
-        size_t check_row_length = 0;
-        srcRowGraph.getGlobalRowCopy (gid, row_copy, check_row_length);
-        tgtCrsGraph.insertGlobalIndices (gid, row_length, row_copy.data());
-      }
-#else
       Kokkos::DualView<const local_ordinal_type*, buffer_device_type> noPermute;
-      insertGlobalIndicesDevice(srcCrsGraph, tgtCrsGraph,
-                                noPermute, noPermute,
-                                numSameIDs_as_LID);
-#endif
+      insertGlobalIndicesDevice(srcCrsGraph, tgtCrsGraph, noPermute, noPermute, numSameIDs_as_LID);
     } else {
       if (verbose) {
         std::ostringstream os;
@@ -7843,21 +7721,14 @@ namespace Tpetra {
     auto permuteFromLIDs_d = permuteFromLIDs.view_device ();
 
     if (src_filled || srcCrsGraphPtr == nullptr) {
-#if 0
-      for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
-        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
-        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
-        size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (srcgid);
-        Kokkos::resize(row_copy,row_length);
-        size_t check_row_length = 0;
-        srcRowGraph.getGlobalRowCopy (srcgid, row_copy, check_row_length);
-        tgtCrsGraph.insertGlobalIndices (mygid, row_length, row_copy.data());
-      }
-#else
-      insertGlobalIndicesDevice(srcCrsGraph, tgtCrsGraph,
-                                permuteToLIDs, permuteFromLIDs,  // note reversed arg order, tgt, then src 
-                                static_cast<LO> (permuteToLIDs_h.extent (0)));
-#endif
+      // note reversed arg order, tgt, then src 
+      insertGlobalIndicesDevice(
+        srcCrsGraph,
+        tgtCrsGraph,
+        permuteToLIDs,
+        permuteFromLIDs,
+        static_cast<LO> (permuteToLIDs_h.extent (0))
+      );
     } else {
       for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
         const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);

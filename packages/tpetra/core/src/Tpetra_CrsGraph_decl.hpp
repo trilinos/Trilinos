@@ -1204,7 +1204,7 @@ public:
      LocalOrdinal loopEnd);
 
     void
-    copyAndPermuteNew
+    copyAndPermuteImpl
     (const row_graph_type& source,
      row_graph_type& target,
      const size_t numSameIDs,
