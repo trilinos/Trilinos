@@ -988,9 +988,16 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::fence();
-  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
-  Kokkos::fence();
+  switch(view.rank()) {
+    case 0: deep_copy(Impl::as_view_of_rank_n<0>(view), value); break;
+    case 1: deep_copy(Impl::as_view_of_rank_n<1>(view), value); break;
+    case 2: deep_copy(Impl::as_view_of_rank_n<2>(view), value); break;
+    case 3: deep_copy(Impl::as_view_of_rank_n<3>(view), value); break;
+    case 4: deep_copy(Impl::as_view_of_rank_n<4>(view), value); break;
+    case 5: deep_copy(Impl::as_view_of_rank_n<5>(view), value); break;
+    case 6: deep_copy(Impl::as_view_of_rank_n<6>(view), value); break;
+    case 7: deep_copy(Impl::as_view_of_rank_n<7>(view), value); break;
+  }
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -1010,9 +1017,16 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::fence();
-  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
-  Kokkos::fence();
+  switch(view.rank()) {
+    case 0: deep_copy(Impl::as_view_of_rank_n<0>(view), value); break;
+    case 1: deep_copy(Impl::as_view_of_rank_n<1>(view), value); break;
+    case 2: deep_copy(Impl::as_view_of_rank_n<2>(view), value); break;
+    case 3: deep_copy(Impl::as_view_of_rank_n<3>(view), value); break;
+    case 4: deep_copy(Impl::as_view_of_rank_n<4>(view), value); break;
+    case 5: deep_copy(Impl::as_view_of_rank_n<5>(view), value); break;
+    case 6: deep_copy(Impl::as_view_of_rank_n<6>(view), value); break;
+    case 7: deep_copy(Impl::as_view_of_rank_n<7>(view), value); break;
+  }
 }
 
 template< class DstType , class SrcType >

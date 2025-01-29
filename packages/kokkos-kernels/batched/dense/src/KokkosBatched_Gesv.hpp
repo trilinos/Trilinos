@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_GESV_HPP__
-#define __KOKKOSBATCHED_GESV_HPP__
+#ifndef KOKKOSBATCHED_GESV_HPP
+#define KOKKOSBATCHED_GESV_HPP
 
 /// \author Kim Liegeois (knliege@sandia.gov)
 

@@ -55,8 +55,13 @@ bool MeshModification::modification_begin(const std::string description)
     const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
     for (FieldBase * stkField : allFields) {
       stkField->sync_to_host();
-      if (stkField->has_ngp_field()) {
-        impl::get_ngp_field(*stkField)->debug_modification_begin();
+    }
+
+    if (m_bulkData.mesh_meta_data().is_field_sync_debugger_enabled()) {
+      for (FieldBase * stkField : allFields) {
+        if (stkField->has_ngp_field()) {
+          impl::get_ngp_field(*stkField)->debug_modification_begin();
+        }
       }
     }
 

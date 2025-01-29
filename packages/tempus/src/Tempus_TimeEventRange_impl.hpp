@@ -169,19 +169,18 @@ void TimeEventRange<Scalar>::setTimeStride(Scalar stride)
 template <class Scalar>
 void TimeEventRange<Scalar>::setNumEvents(int numEvents)
 {
-  numEvents_ = numEvents;
-  if (numEvents_ < 0) {  // Do not use numEvents_ to set stride!  Reset
-                         // numEvents_ from stride_.
+  if (numEvents < 0) {  // Do not use numEvents to set stride!
+                        // Reset numEvents_ from stride_.
     if (stride_ < 2 * absTol_) stride_ = 2 * absTol_;
     numEvents_ = int((stop_ + absTol_ - start_) / stride_) + 1;
     return;
   }
   else if (approxEqualAbsTol(start_, stop_, absTol_)) {
     numEvents_ = 1;
-    stride_    = 0.0;
     stride_    = stop_ - start_;
   }
   else {
+    numEvents_ = numEvents;
     if (numEvents_ < 2) numEvents_ = 2;
     stride_ = (stop_ - start_) / Scalar(numEvents_ - 1);
   }

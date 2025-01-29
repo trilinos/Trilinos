@@ -1096,11 +1096,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     find_2D_convert(BTF_A);
     //now we can fill submatrices
     #ifdef BASKER_KOKKOS
-    kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
-    Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-    Kokkos::fence();
+     #ifdef BASKER_PARALLEL_INIT_2D
+     kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
+     Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+     Kokkos::fence();
+     #else
+     bool alloc = true;
+     //bool keep_zeros = true;
+     for (Int p = 0; p < num_threads; p++) {
+       this->t_init_2DA(p, alloc, keep_zeros);
+     }
+     #endif
     #else
-    //Comeback
+     //Comeback
     #endif
     #ifdef BASKER_TIMER
     double init_2d_time = scotch_timer.seconds();
@@ -1152,8 +1160,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         std::cout << " > scotch_partition returned with info = " << info_scotch << " and apply_nd = " << apply_nd << std::endl;
       }
       return info_scotch;
+    } else if(Options.verbose == BASKER_TRUE) {
+      printf( "\n part_scotch done (num_threads = %d,%lu)\n",num_threads,part_tree.leaf_nnz.extent(0) );
+      //for (Int i = 0; i < num_threads; i++) printf( " nnz_leaf[%d] = %d\n",i,part_tree.leaf_nnz[i] ); printf( "\n" );
     }
-
     nd_flag = BASKER_TRUE;
     //permute
     permute_row(M, part_tree.permtab);
@@ -2192,7 +2202,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    INT_1DARRAY row
   )
   {
-    permute_row(M.nnz, &(M.row_idx(0)), &(row(0)));
+    if (M.nnz > 0) {
+      permute_row(M.nnz, &(M.row_idx(0)), &(row(0)));
+    }
     return 0;
   }//end permute_row(matrix,int)
 

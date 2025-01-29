@@ -46,23 +46,32 @@ namespace Amesos2 {
     , nrhs_(0)
     , css_initialized_(false)
     , is_contiguous_(true)
+    , msglvl_(0)
   {
+    // Matrix info
+    Teuchos::RCP<const Teuchos::Comm<int> > matComm = this->matrixA_->getComm ();
+    const global_ordinal_type indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
+    const local_ordinal_type  nrows = this->matrixA_->getLocalNumRows();
+
+    // rowmap for loadA (to have locally contiguous)
+    css_rowmap_ =
+      Teuchos::rcp (new map_type (this->globalNumRows_, nrows, indexBase, matComm));
+    css_contig_rowmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, matComm));
+    css_contig_colmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, matComm));
+
     // set the default matrix type
     set_css_mkl_matrix_type();
     set_css_mkl_default_parameters(pt_, iparm_);
 
     // index base
-    const global_ordinal_type indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
     iparm_[34] = (indexBase == 0 ? 1 : 0);  /* Use one or zero-based indexing */
-    // 1D block-row distribution
-    auto frow  = this->matrixA_->getRowMap()->getMinGlobalIndex();
-    auto nrows = this->matrixA_->getLocalNumRows();
+    // 1D block-row distribution (using Contiguous map)
+    auto frow  = css_rowmap_->getMinGlobalIndex();
     iparm_[39] = 2;  /* Matrix input format. */
     iparm_[40] = frow;          /* > Beginning of input domain. */
     iparm_[41] = frow+nrows-1;  /* > End of input domain. */
 
     // get MPI Comm
-    Teuchos::RCP<const Teuchos::Comm<int> > matComm = this->matrixA_->getComm ();
     TEUCHOS_TEST_FOR_EXCEPTION(
         matComm.is_null (), std::logic_error, "Amesos2::CssMKL "
         "constructor: The matrix's communicator is null!");
@@ -81,10 +90,6 @@ namespace Amesos2 {
       "MPI_COMM_NULL.");
     MPI_Comm CssComm = *(matMpiComm->getRawMpiComm ());
     CssComm_ = MPI_Comm_c2f(CssComm);
-
-    // rowmap for loadA (to have locally contiguous)
-    css_rowmap_ =
-      Teuchos::rcp (new map_type (this->globalNumRows_, nrows, indexBase, matComm));
   }
 
 
@@ -125,6 +130,10 @@ namespace Amesos2 {
   int
   CssMKL<Matrix,Vector>::symbolicFactorization_impl()
   {
+    if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
+      std::cout << " CssMKL::symbolicFactorization:\n" << std::endl;
+      for (int i=0; i < 64; i++) std::cout << " * IPARM[" << i << "] = " << iparm_[i] << std::endl;
+    }
     int_t error = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
@@ -141,13 +150,16 @@ namespace Amesos2 {
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
     }
     check_css_mkl_error(Amesos2::SYMBFACT, error);
+    if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
+      std::cout << " CssMKL::symbolicFactorization done:" << std::endl;
+      std::cout << " * Time : " << this->timers_.symFactTime_.totalElapsedTime() << std::endl;
+    }
 
     // Pardiso only lets you retrieve the total number of factor
     // non-zeros, not for each individually.  We should document how
     // such a situation is reported.
     this->setNnzLU(iparm_[17]);
     css_initialized_ = true;
-
     return(0);
   }
 
@@ -156,6 +168,9 @@ namespace Amesos2 {
   int
   CssMKL<Matrix,Vector>::numericFactorization_impl()
   {
+    if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
+      std::cout << " CssMKL::numericFactorization:\n" << std::endl;
+    }
     int_t error = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
@@ -173,6 +188,10 @@ namespace Amesos2 {
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
     }
     check_css_mkl_error(Amesos2::NUMFACT, error);
+    if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
+      std::cout << " CssMKL::numericFactorization done:" << std::endl;
+      std::cout << " Time : " << this->timers_.numFactTime_.totalElapsedTime() << std::endl;
+    }
 
     return( 0 );
   }
@@ -202,8 +221,7 @@ namespace Amesos2 {
         MultiVecAdapter<Vector>,
         solver_scalar_type>::do_get(B, bvals_(),
           as<size_t>(ld_rhs),
-          DISTRIBUTED_NO_OVERLAP,
-          this->rowIndexBase_);
+          Teuchos::ptrInArg(*css_rowmap_));
     }
 
     int_t error = 0;
@@ -242,11 +260,11 @@ namespace Amesos2 {
       MultiVecAdapter<Vector>,
         solver_scalar_type>::do_put(X, xvals_(),
           as<size_t>(ld_rhs),
-          DISTRIBUTED_NO_OVERLAP);
+          Teuchos::ptrInArg(*css_rowmap_));
     }
 
     return( 0 );
-}
+  }
 
 
   template <class Matrix, class Vector>
@@ -268,7 +286,7 @@ namespace Amesos2 {
 
     RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
-    // Fill-in reordering: 0 = minimum degree, 2 = METIS 4.0.1 (default), 3 = METIS 5.1, 4 = AMD,
+    // 2: Fill-in reordering from METIS, 3: thread dissection, 10: MPI version of the nested dissection
     if( parameterList->isParameter("IPARM(2)") )
     {
       RCP<const ParameterEntryValidator> fillin_validator = valid_params->getEntry("IPARM(2)").validator();
@@ -318,9 +336,21 @@ namespace Amesos2 {
       parameterList->getEntry("IPARM(18)").setValidator(report_validator);
       iparm_[17] = getIntegralValue<int>(*parameterList, "IPARM(18)");
     }
+
+    // Check input matrix is sorted
+    if( parameterList->isParameter("IPARM(28)") )
+    {
+      RCP<const ParameterEntryValidator> report_validator = valid_params->getEntry("IPARM(28)").validator();
+      parameterList->getEntry("IPARM(28)").setValidator(report_validator);
+      iparm_[27] = getIntegralValue<int>(*parameterList, "IPARM(28)");
+    }
    
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
+   
+    if( parameterList->isParameter("verbose") ){
+      msglvl_ = parameterList->get<int>("verbose");
     }
   }
 
@@ -406,7 +436,12 @@ CssMKL<Matrix,Vector>::getValidParameters_impl() const
     pl->set("IPARM(18)", as<int>(iparm_temp[17]), "Report the number of non-zero elements in the factors",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
+    pl->set("IPARM(28)", as<int>(iparm_temp[27]), "Check input matrix is sorted",
+            anyNumberParameterEntryValidator(preferred_int, accept_int));
+
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
+    pl->set("verbose", 0, "Verbosity Message Level");
 
     valid_params = pl;
   }
@@ -427,42 +462,82 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
   // CssMKL does not need matrix data in the pre-ordering phase
   if( current_phase == PREORDERING ) return( false );
 
+  // is_contiguous         : input is contiguous
+  // CONTIGUOUS_AND_ROOTED : input is not contiguous, so make output contiguous
   EDistribution dist_option = (iparm_[39] != 0 ? DISTRIBUTED_NO_OVERLAP : ((is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED));
-  if (current_phase == SYMBFACT) {
-    if (dist_option == DISTRIBUTED_NO_OVERLAP) {
-      Kokkos::resize(nzvals_temp_, this->matrixA_->getLocalNNZ());
-      Kokkos::resize(nzvals_view_, this->matrixA_->getLocalNNZ());
-      Kokkos::resize(colind_view_, this->matrixA_->getLocalNNZ());
-      Kokkos::resize(rowptr_view_, this->matrixA_->getLocalNumRows() + 1);
-    } else {
-      if( this->root_ ) {
-        Kokkos::resize(nzvals_temp_, this->matrixA_->getGlobalNNZ());
-        Kokkos::resize(nzvals_view_, this->matrixA_->getGlobalNNZ());
-        Kokkos::resize(colind_view_, this->matrixA_->getGlobalNNZ());
-        Kokkos::resize(rowptr_view_, this->matrixA_->getGlobalNumRows() + 1);
+  if (dist_option == DISTRIBUTED_NO_OVERLAP && !is_contiguous_) {
+    // Neeed to form contiguous matrix
+    #if 1
+    // Only reinex GIDs
+    css_rowmap_ = this->matrixA_->getRowMap(); // use original map to redistribute vectors in solve
+    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex(css_contig_rowmap_, css_contig_colmap_, current_phase);
+    #else
+    // Redistribued matrixA into contiguous GIDs
+    Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->get(ptrInArg(*css_rowmap_));
+    //css_rowmap_ = contig_mat->getRowMap(); // use new map to redistribute vectors in solve
+    #endif
+    // Copy into local views
+    if (current_phase == SYMBFACT) {
+        Kokkos::resize(nzvals_temp_, contig_mat->getLocalNNZ());
+        Kokkos::resize(nzvals_view_, contig_mat->getLocalNNZ());
+        Kokkos::resize(colind_view_, contig_mat->getLocalNNZ());
+        Kokkos::resize(rowptr_view_, contig_mat->getLocalNumRows() + 1);
+    }
+    int_t nnz_ret = 0;
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+      Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
+                                         contig_mat.ptr(),
+                                         nzvals_temp_, colind_view_, rowptr_view_,
+                                         nnz_ret,
+                                         ptrInArg(*(contig_mat->getRowMap())),
+                                         #if 1
+                                         DISTRIBUTED_NO_OVERLAP,
+                                         #else
+                                         ROOTED,
+                                         #endif
+                                         SORTED_INDICES);
+      Kokkos::deep_copy(nzvals_view_, nzvals_temp_);
+    }
+  } else {
+    if (current_phase == SYMBFACT) {
+      if (dist_option == DISTRIBUTED_NO_OVERLAP) {
+        Kokkos::resize(nzvals_temp_, this->matrixA_->getLocalNNZ());
+        Kokkos::resize(nzvals_view_, this->matrixA_->getLocalNNZ());
+        Kokkos::resize(colind_view_, this->matrixA_->getLocalNNZ());
+        Kokkos::resize(rowptr_view_, this->matrixA_->getLocalNumRows() + 1);
       } else {
-        Kokkos::resize(nzvals_temp_, 0);
-        Kokkos::resize(nzvals_view_, 0);
-        Kokkos::resize(colind_view_, 0);
-        Kokkos::resize(rowptr_view_, 0);
+        if( this->root_ ) {
+          Kokkos::resize(nzvals_temp_, this->matrixA_->getGlobalNNZ());
+          Kokkos::resize(nzvals_view_, this->matrixA_->getGlobalNNZ());
+          Kokkos::resize(colind_view_, this->matrixA_->getGlobalNNZ());
+          Kokkos::resize(rowptr_view_, this->matrixA_->getGlobalNumRows() + 1);
+        } else {
+          Kokkos::resize(nzvals_temp_, 0);
+          Kokkos::resize(nzvals_view_, 0);
+          Kokkos::resize(colind_view_, 0);
+          Kokkos::resize(rowptr_view_, 0);
+        }
       }
     }
-  }
-
-  {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
-#endif
     int_t nnz_ret = 0;
-    Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
-      host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
-                                       this->matrixA_.ptr(),
-                                       nzvals_temp_, colind_view_, rowptr_view_,
-                                       nnz_ret,
-                                       Teuchos::ptrInArg(*css_rowmap_),
-                                       dist_option,
-                                       SORTED_INDICES);
-    Kokkos::deep_copy(nzvals_view_, nzvals_temp_);
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+      Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
+                                         this->matrixA_.ptr(),
+                                         nzvals_temp_, colind_view_, rowptr_view_,
+                                         nnz_ret,
+                                         ptrInArg(*(this->matrixA_->getRowMap())),
+                                         dist_option,
+                                         SORTED_INDICES);
+      Kokkos::deep_copy(nzvals_view_, nzvals_temp_);
+    }
   }
   return( true );
 }
@@ -564,13 +639,21 @@ CssMKL<Matrix,Vector>::set_css_mkl_default_parameters(void* pt[], int_t iparm[])
   // Reset some of the default parameters
   iparm[1] = 10;  /* 2: Fill-in reordering from METIS, 3: thread dissection, 10: MPI version of the nested dissection and symbolic factorization*/
   iparm[7] = 0;   /* Max numbers of iterative refinement steps */
-  iparm[9] = 13;  /* Perturb the pivot elements with 1E-13 */
   iparm[10] = 0;  /* Disable nonsymmetric permutation and scaling MPS */
   iparm[11] = 0;  /* Normal solve (0), or a transpose solve (1) */
   iparm[12] = 0;  /* Do not use (non-)symmetric matchings */
   iparm[17] = -1; /* Output: Number of nonzeros in the factor LU */
-  iparm[20] = -1; /* Pivoting for symmetric indefinite matrices */
+  iparm[20] = 1;  /* Pivoting for symmetric indefinite matrices */
   iparm[26] = 1;  /* Check input matrix is sorted */
+
+  // diagonal pertubation
+  if (mtype_ == -2 || mtype_ == -4) {
+    // symmetric indefinite
+    iparm[9] = 8;   /* Perturb the pivot elements with 1E-8 */
+  } else {
+    // non-symmetric
+    iparm[9] = 13;  /* Perturb the pivot elements with 1E-13 */
+  }
 
   // set single or double precision
   if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
@@ -581,12 +664,9 @@ CssMKL<Matrix,Vector>::set_css_mkl_default_parameters(void* pt[], int_t iparm[])
   iparm[34] = 1;  /* Use zero-based indexing */
 }
 
-template <class Matrix, class Vector>
-const char* CssMKL<Matrix,Vector>::name = "CSSMKL";
 
 template <class Matrix, class Vector>
-const typename CssMKL<Matrix,Vector>::int_t
-CssMKL<Matrix,Vector>::msglvl_ = 0;  // set to be one, for more CSS messages
+const char* CssMKL<Matrix,Vector>::name = "CSSMKL";
 
 template <class Matrix, class Vector>
 const typename CssMKL<Matrix,Vector>::int_t

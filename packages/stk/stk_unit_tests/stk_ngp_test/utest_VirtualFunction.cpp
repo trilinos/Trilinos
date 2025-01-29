@@ -70,6 +70,7 @@ struct SimpleStruct {
 };
 
 struct BaseStruct {
+  virtual ~BaseStruct() = default;
   virtual void set_i(const int) = 0;
   KOKKOS_FUNCTION
   virtual void print() {

@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef __KOKKOSBATCHED_KRYLOV_HANDLE_HPP__
-#define __KOKKOSBATCHED_KRYLOV_HANDLE_HPP__
+#ifndef KOKKOSBATCHED_KRYLOV_HANDLE_HPP
+#define KOKKOSBATCHED_KRYLOV_HANDLE_HPP
 
 #include <KokkosBatched_Krylov_Solvers.hpp>
 #include <Kokkos_Core.hpp>

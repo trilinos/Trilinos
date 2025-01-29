@@ -119,7 +119,7 @@ class AlgMetis : public Algorithm<Adapter>
         int info = METIS_NodeND(&metis_nVtx, metis_rowptr.data(), metis_colidx.data(),
                                 NULL, NULL, metis_perm, metis_iperm);
         if (METIS_OK != info) {
-          throw std::runtime_error(std::string("METIS_NodeND returned info = " + info));
+          throw std::runtime_error("METIS_NodeND returned info = " + std::to_string(info));
         }
 
         // Copy result back

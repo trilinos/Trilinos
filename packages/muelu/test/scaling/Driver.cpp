@@ -7,6 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
+#include <cstddef>
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
@@ -35,6 +36,7 @@
 #include <MueLu.hpp>
 
 #include <MueLu_BaseClass.hpp>
+#include "Xpetra_Access.hpp"
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
@@ -204,6 +206,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("belosType", &belosType, "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
   bool computeCondEst = false;
   clp.setOption("condEst", "noCondEst", &computeCondEst, "compute condition number estimate (currently only available for Pseudoblock CG)");
+  bool enforceBoundaryConditionsOnInitialGuess = true;
+  clp.setOption("enforceBCs", "noEnforceBCs", &enforceBoundaryConditionsOnInitialGuess, "enforce Dirichlet boundary condition on initial guess");
   double dtol = 1e-12, tol;
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
@@ -231,6 +235,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("nullspace", &nullFile, "nullspace data file");
   std::string materialFile;
   clp.setOption("material", &materialFile, "material data file");
+  bool tensorMaterialCoefficient = true;
+  clp.setOption("tensorCoefficient", "scalarCoefficient", &tensorMaterialCoefficient, "Generate a tensor or scalar material coefficient if none is passed in from file");
   bool setNullSpace = true;
   clp.setOption("driver-nullspace", "muelu-computed-nullspace", &setNullSpace, "driver sets nullspace");
   int numRebuilds = 0;
@@ -379,8 +385,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Matrix> A;
   RCP<const Map> map;
   RCP<RealValuedMultiVector> coordinates;
-  RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace, material;
-  RCP<MultiVector> X, B;
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace;
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO> > material;
+  RCP<MultiVector> X;
+  RCP<MultiVector> B;
 
   // Load the matrix off disk (or generate it via Galeri)
   MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
@@ -433,6 +441,25 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           if ((GID - i) % blkSize == 0)
             nsData[j] = Teuchos::ScalarTraits<SC>::one();
         }
+      }
+    }
+
+    if (material.is_null() && !coordinates.is_null()) {
+      size_t dim = coordinates->getNumVectors();
+      if (tensorMaterialCoefficient) {
+        material = MultiVectorFactory::Build(map, dim * dim);
+        int k    = 0;
+        for (size_t i = 0; i < dim; ++i)
+          for (size_t j = 0; j < dim; ++j) {
+            if (i == j)
+              material->getVectorNonConst(k)->putScalar(2 * Teuchos::ScalarTraits<SC>::one());
+            else
+              material->getVectorNonConst(k)->putScalar(Teuchos::ScalarTraits<SC>::zero());
+            ++k;
+          }
+      } else {
+        material = MultiVectorFactory::Build(map, 1);
+        material->putScalar(2 * Teuchos::ScalarTraits<SC>::one());
       }
     }
 
@@ -523,7 +550,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         // Solve the system numResolves+1 times
-        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst);
+        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess);
 
         comm->barrier();
       } catch (const std::exception& e) {

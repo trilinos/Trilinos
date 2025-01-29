@@ -10,21 +10,6 @@
 
 namespace stk {
 
-namespace impl {
-
-// Temporary function used to identify the new SHELL_[TRI|QUAD]_ALL_FACE_SIDES
-// Will be removed once a proper conversion is available
-STK_INLINE_FUNCTION
-bool is_temporary_shell_with_all_face_sides(topology::topology_t m_value) {
-  return (m_value == topology::topology_t::SHELL_QUAD_4_ALL_FACE_SIDES ||
-          m_value == topology::topology_t::SHELL_QUAD_8_ALL_FACE_SIDES ||
-          m_value == topology::topology_t::SHELL_QUAD_9_ALL_FACE_SIDES ||
-          m_value == topology::topology_t::SHELL_TRI_3_ALL_FACE_SIDES ||
-          m_value == topology::topology_t::SHELL_TRI_4_ALL_FACE_SIDES ||
-          m_value == topology::topology_t::SHELL_TRI_6_ALL_FACE_SIDES);
-}
-}
-
 STK_INLINE_FUNCTION
 unsigned topology::num_nodes() const
 {
@@ -91,13 +76,7 @@ void topology::sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordina
   {
   case NODE_RANK: *output_ordinals = sub_ordinal;                    break;
   case EDGE_RANK: edge_node_ordinals(sub_ordinal, output_ordinals);  break;
-  case FACE_RANK:
-    if (is_shell_with_face_sides() && sub_ordinal >= num_faces()) {
-      edge_node_ordinals(sub_ordinal - num_faces(), output_ordinals);
-    } else {
-      face_node_ordinals(sub_ordinal, output_ordinals);
-    }
-    break;
+  case FACE_RANK: face_node_ordinals(sub_ordinal, output_ordinals);  break;
   default: break;
   }
 }
@@ -110,13 +89,7 @@ void topology::sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, un
   {
   case NODE_RANK: *output_nodes = nodes[sub_ordinal];            break;
   case EDGE_RANK: edge_nodes(nodes, sub_ordinal, output_nodes);  break;
-  case FACE_RANK:
-    if (is_shell_side_ordinal(sub_ordinal)) {
-      edge_nodes(nodes, sub_ordinal - num_faces(), output_nodes);
-    } else {
-      face_nodes(nodes, sub_ordinal, output_nodes);
-    }
-    break;
+  case FACE_RANK: face_nodes(nodes, sub_ordinal, output_nodes);  break;
   default: break;
   }
 }
@@ -141,11 +114,7 @@ topology topology::sub_topology(unsigned sub_rank, unsigned sub_ordinal) const
   {
   case NODE_RANK: return NODE;
   case EDGE_RANK: return edge_topology(sub_ordinal);
-  case FACE_RANK:
-    if (is_shell_side_ordinal(sub_ordinal)) {
-      return edge_topology(sub_ordinal - num_faces());
-    }
-    return face_topology(sub_ordinal);
+  case FACE_RANK: return face_topology(sub_ordinal);
   default: break;
   }
   return INVALID_TOPOLOGY;
@@ -155,22 +124,20 @@ template <typename OrdinalOutputIterator>
 STK_INLINE_FUNCTION
 void topology::side_node_ordinals(unsigned side_ordinal, OrdinalOutputIterator output_ordinals) const
 {
-  if (is_shell_side_ordinal(side_ordinal)) {
-    sub_topology_node_ordinals(EDGE_RANK, side_ordinal-num_faces(), output_ordinals);
-  } else {
-    sub_topology_node_ordinals( side_rank(), side_ordinal, output_ordinals);
-  }
+  auto fix_ordinal = has_mixed_rank_sides() && side_ordinal >= num_sub_topology(side_rank());
+  auto adjusted_ordinal = (fix_ordinal) ? side_ordinal - num_sub_topology(side_rank()) : side_ordinal;
+
+  sub_topology_node_ordinals(side_rank(side_ordinal), adjusted_ordinal, output_ordinals);
 }
 
 template <typename NodeArray, typename NodeOutputIterator>
 STK_INLINE_FUNCTION
 void topology::side_nodes(const NodeArray & nodes, unsigned side_ordinal, NodeOutputIterator output_nodes) const
 {
-  if (is_shell_side_ordinal(side_ordinal)) {
-    sub_topology_nodes( nodes, EDGE_RANK, side_ordinal-num_faces(), output_nodes);
-  } else {
-    sub_topology_nodes( nodes, side_rank(), side_ordinal, output_nodes);
-  }
+  auto fix_ordinal = has_mixed_rank_sides() && side_ordinal >= num_sub_topology(side_rank());
+  auto adjusted_ordinal = (fix_ordinal) ? side_ordinal - num_sub_topology(side_rank()) : side_ordinal;
+
+  sub_topology_nodes(nodes, side_rank(side_ordinal), adjusted_ordinal, output_nodes);
 }
 
 STK_INLINE_FUNCTION
@@ -178,11 +145,11 @@ unsigned topology::num_sides() const
 {
   unsigned num_sides_out = 0u;
   if (side_rank() != INVALID_RANK) {
-    num_sides_out = side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
+    num_sides_out = side_rank() > NODE_RANK ? num_sub_topology(side_rank()) : num_vertices();
 
-    if (is_shell_with_face_sides() &&
-        !impl::is_temporary_shell_with_all_face_sides(m_value))
+    if (has_mixed_rank_sides() && side_rank() > EDGE_RANK) {
       num_sides_out += num_sub_topology(EDGE_RANK);
+    }
   }
   return num_sides_out;
 }
@@ -190,10 +157,10 @@ unsigned topology::num_sides() const
 STK_INLINE_FUNCTION
 topology topology::side_topology(unsigned side_ordinal) const
 {
-  if (is_shell_side_ordinal(side_ordinal) && !impl::is_temporary_shell_with_all_face_sides(m_value))
-    return shell_side_topology(side_ordinal-num_faces());
+  auto fix_ordinal = has_mixed_rank_sides() && side_ordinal >= num_sub_topology(side_rank());
+  auto adjusted_ordinal = (fix_ordinal) ? side_ordinal - num_sub_topology(side_rank()) : side_ordinal;
 
-  return sub_topology(side_rank(), side_ordinal);
+  return sub_topology(side_rank(side_ordinal), adjusted_ordinal);
 }
 
 STK_INLINE_FUNCTION
@@ -248,9 +215,17 @@ bool topology::is_shell_with_face_sides() const {
 }
 
 STK_INLINE_FUNCTION
-stk::topology::rank_t topology::side_rank() const {
-  using functor = topology_detail::side_rank_impl;
+bool topology::has_mixed_rank_sides() const {
+  using functor = topology_detail::has_mixed_rank_sides_impl;
   topology::apply_functor< functor > apply;
+  return apply(m_value);
+}
+
+STK_INLINE_FUNCTION
+stk::topology::rank_t topology::side_rank(unsigned ord) const {
+  using functor = topology_detail::side_rank_impl;
+  functor f(ord);
+  topology::apply_functor< functor > apply(f);
   return apply(m_value);
 }
 

@@ -60,7 +60,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int i = team.league_rank();
 
-  Kokkos::single(Kokkos::PerTeam(team), [=] () {
+  Kokkos::single(Kokkos::PerTeam(team), [&] () {
       x1(i) = f1(i) * f1(i);
     });
 

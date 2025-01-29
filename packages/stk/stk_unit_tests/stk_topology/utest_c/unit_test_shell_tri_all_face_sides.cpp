@@ -35,7 +35,7 @@
 #include "Kokkos_Core.hpp"                   // for parallel_for, KOKKOS_LAMBDA
 #include "gtest/gtest.h"                     // for AssertionResult, Message, TestPartResult
 #include "stk_ngp_test/ngp_test.hpp"         // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_EXPECT_...
-#include "stk_topology/topology.hpp"         // for topology, topology::QUAD_4, topology::QUAD_8
+#include "stk_topology/topology.hpp"
 #include "topology_test_utils.hpp"           // for check_edge_node_ordinals, check_edge_node_or...
 #include <cstddef>                           // for size_t
 #include <iostream>                          // for operator<<, basic_ostream, basic_ostream<>::...
@@ -76,8 +76,9 @@ TEST(stk_topology, shell_tri_3_all_face_sides)
   stk::topology t = stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
 
   EXPECT_TRUE(t.is_valid());
-  EXPECT_TRUE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
+  EXPECT_TRUE(t.is_shell_with_face_sides());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -133,8 +134,9 @@ void check_shell_tri_3_all_face_sides_on_device()
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     NGP_EXPECT_TRUE(t.is_valid());
-    NGP_EXPECT_TRUE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
+    NGP_EXPECT_TRUE(t.is_shell_with_face_sides());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
     NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -219,8 +221,9 @@ TEST(stk_topology, shell_tri_4_all_face_sides)
   stk::topology t = stk::topology::SHELL_TRI_4_ALL_FACE_SIDES;
 
   EXPECT_TRUE(t.is_valid());
-  EXPECT_TRUE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
+  EXPECT_TRUE(t.is_shell_with_face_sides());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -276,8 +279,9 @@ void check_shell_tri_4_all_face_sides_on_device()
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     NGP_EXPECT_TRUE(t.is_valid());
-    NGP_EXPECT_TRUE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
+    NGP_EXPECT_TRUE(t.is_shell_with_face_sides());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
     NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -362,8 +366,9 @@ TEST(stk_topology, shell_tri_6_all_face_sides)
   stk::topology t = stk::topology::SHELL_TRI_6_ALL_FACE_SIDES;
 
   EXPECT_TRUE(t.is_valid());
-  EXPECT_TRUE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
+  EXPECT_TRUE(t.is_shell_with_face_sides());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -419,8 +424,9 @@ void check_shell_tri_6_all_face_sides_on_device()
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     NGP_EXPECT_TRUE(t.is_valid());
-    NGP_EXPECT_TRUE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
+    NGP_EXPECT_TRUE(t.is_shell_with_face_sides());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
     NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);

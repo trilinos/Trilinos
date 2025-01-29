@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_BLAS3_GEMM_DOTBASED_IMPL_HPP_
-#define KOKKOS_BLAS3_GEMM_DOTBASED_IMPL_HPP_
+#ifndef KOKKOSBLAS3_GEMM_DOTBASED_IMPL_HPP_
+#define KOKKOSBLAS3_GEMM_DOTBASED_IMPL_HPP_
 
 #include "KokkosBlas_util.hpp"
 
@@ -141,4 +141,4 @@ struct DotBasedGEMM {
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSBLAS3_GEMM_DOTBASED_IMPL_HPP_

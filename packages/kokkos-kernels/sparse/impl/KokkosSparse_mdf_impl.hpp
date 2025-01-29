@@ -568,7 +568,8 @@ struct MDF_compute_list_length {
       team.team_reduce(Kokkos::Sum<ordinal_type, execution_space>(updateIdx));
 
       // Sort update list
-      KokkosKernels::TeamBitonicSort(&update_list(0), updateIdx, team);
+      Kokkos::Experimental::sort_team(
+          team, Kokkos::subview(update_list, Kokkos::make_pair<ordinal_type, ordinal_type>(0, updateIdx)));
     }
     {
       size_type numEntrU = 0;

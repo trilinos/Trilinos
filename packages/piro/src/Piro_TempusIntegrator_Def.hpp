@@ -363,3 +363,22 @@ Piro::TempusIntegrator<Scalar>::getDgDp() const
 		 "which is not of type Tempus::IntegratorAdjointSensitivity!\n");
   }
 }
+
+
+template <typename Scalar>
+Teuchos::RCP<const Tempus::Integrator<Scalar> >
+Piro::TempusIntegrator<Scalar>:: getIntegrator () const
+{
+  Teuchos::RCP<const Tempus::Integrator<Scalar> > out;
+  if (basicIntegrator_ != Teuchos::null) {
+    out = basicIntegrator_;
+  } else if (fwdSensIntegrator_ != Teuchos::null) {
+    out = fwdSensIntegrator_;
+  } else if (adjSensIntegrator_ != Teuchos::null) {
+    out = adjSensIntegrator_;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                 "Error in Piro::TempusIntegrator: no integrator stored!\n");
+  }
+  return out;
+}

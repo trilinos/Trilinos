@@ -1358,8 +1358,9 @@ void invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int n
       char uplo_char = (lower ? 'L' : 'U');
       char diag_char = (unit_diag ? 'U' : 'N');
 
-      // NOTE: we currently supports only default_layout = LayoutLeft
-      Kokkos::View<scalar_t **, default_layout, memory_space, Kokkos::MemoryUnmanaged> viewL(&hv(nnzD), nsrow, nscol);
+      // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+      Kokkos::View<scalar_t **, KokkosKernels::default_layout, memory_space, Kokkos::MemoryUnmanaged> viewL(
+          &hv(nnzD), nsrow, nscol);
       auto Ljj = Kokkos::subview(viewL, range_type(0, nscol), Kokkos::ALL());
 
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
@@ -1403,7 +1404,7 @@ void invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int n
           Kokkos::deep_copy(dViewL, viewL);
 #endif
 
-          // NOTE: we currently supports only default_layout = LayoutLeft
+          // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
           auto dViewLjj = Kokkos::subview(dViewL, range_type(0, nscol), Kokkos::ALL());
           auto dViewLij = Kokkos::subview(dViewL, range_type(nscol, nsrow), Kokkos::ALL());
 
@@ -1946,7 +1947,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   }
   // allocate for all the subgraphs
   row_map_view_t total_rowmap_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap_view"),
-                                   2 * nlevels * (nrows + 1));
+                                   static_cast<typename row_map_view_t::size_type>(2 * nlevels) * (nrows + 1));
   cols_view_t total_column_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "colmap_view"), newNnz);
   values_view_t total_values_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_view"), newNnz);
   // create host-mirrors

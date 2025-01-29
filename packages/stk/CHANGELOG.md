@@ -1,8 +1,24 @@
 # CHANGELOG
 
+5.23.2 (STK_VERSION 5230200) 12/11/2024
+  misc fixes for AMD/ROCm (ATS-4)
+  stk_mesh: speedup for device-field multi-state rotation
+            reduce stacksize (sizeof(DeviceMesh)) from ~2900 to ~470
+  stk_search: misc fixes
+  stk_io: add query for existence of fields on database
+
+5.21.6-1 (STK_VERSION 5210601) 10/31/2024
+  stk_mesh, stk_search: more fixes for HIP unified and Cuda no-uvm builds
+
+5.21.6 (STK_VERSION 5210600) 10/25/2024
+  stk_search: fix build-error (instantiation error for morton_lbvh_search) for gcc 13.2
+  stk_util: added parallel/OutputStreams.hpp
+    - which includes the functions outputP0(), output(), output_flush(), set_outputP0(..), reset_default_output_streams().
+
 5.21.5-2 (STK_VERSION 5210502) 10/07/2024
   stk_search: Fixed HIP sort error.
   stk_mesh: add multi-field NGP-FieldBLAS field_fill
+
 5.21.5-1 (STK_VERSION 5210501) 9/27/2024
   stk_mesh: deprecate BulkData::relation_exist
 

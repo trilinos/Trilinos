@@ -291,8 +291,8 @@ void device_local_runTwoBoxTest(stk::search::SearchMethod searchMethod, const do
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);
 
   for (unsigned i = 0; i < expectedNumOverlap; ++i) {
-    EXPECT_EQ(intersections(i).domainIdent, 1);
-    EXPECT_EQ(intersections(i).rangeIdent,  2);
+    EXPECT_EQ(hostIntersections(i).domainIdent, 1);
+    EXPECT_EQ(hostIntersections(i).rangeIdent,  2);
   }
 }
 
@@ -399,6 +399,46 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NotQuiteEdgeOverlappingBoxes_ARBORX)
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
   device_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+}
+
+TEST(CoarseSearchCorrectness, UpdateInteriorNodeBVsAtomicsIssueReproducer)
+{
+  std::vector<stk::search::Box<double>> boxes(256);
+
+  double coord_min = -2.1;
+  double coord_max = 2.1;
+
+  int x_points = 5;
+  int y_points = 5;
+  int z_points = 9;
+
+  for (int i=0; i < z_points; i++) {
+    double z_coord_min = coord_min + 1*i;
+    double z_coord_max = coord_max + 1*i;
+
+    for (int j=0; j < y_points; j++) {
+      double y_coord_min = coord_min + 1*j;
+      double y_coord_max = coord_max + 1*j;
+
+      for (int k=0; k < x_points; k++) {
+        double x_coord_min = coord_min + 1*k;
+        double x_coord_max = coord_max + 1*k;
+
+        int index = k + x_points*j + x_points*y_points*i;
+        boxes[index] = stk::search::Box(x_coord_min, y_coord_min, z_coord_min,
+                                        x_coord_max, y_coord_max, z_coord_max);
+      }
+    }
+  }  
+
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+  stk::search::CollisionList<ExecSpace> collisions("collision_list");
+  stk::search::morton_lbvh_search<stk::search::Box<double>::value_type, ExecSpace, stk::search::Box<double>>(boxes, boxes, collisions);
+  collisions.sync_from_device();
+
+  int numExpectedCollisions = 38125;
+  EXPECT_EQ(collisions.get_num_collisions(), numExpectedCollisions);
+ 
 }
 
 }

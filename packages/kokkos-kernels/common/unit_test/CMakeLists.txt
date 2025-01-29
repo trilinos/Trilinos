@@ -95,3 +95,10 @@ IF (KOKKOS_ENABLE_THREADS)
   )
 ENDIF ()
 
+# Add eager_initialize test, which is not backend-specific
+KOKKOSKERNELS_ADD_UNIT_TEST(
+  common_eager_initialize
+  SOURCES Test_Common_EagerInitialize.cpp
+  COMPONENTS common
+)
+

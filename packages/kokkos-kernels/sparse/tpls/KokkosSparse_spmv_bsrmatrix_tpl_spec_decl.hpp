@@ -667,26 +667,26 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
   } else {
     subhandle         = new KokkosSparse::Impl::RocSparse_BSR_SpMV_Data(exec);
     handle->tpl_rank1 = subhandle;
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&subhandle->mat));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&subhandle->mat));
     // *_ex* functions deprecated in introduced in 6+
 #if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_info(&subhandle->info));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_info(&subhandle->info));
     if constexpr (std::is_same_v<value_type, float>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_sbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                      subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                                      block_dim, subhandle->info));
     } else if constexpr (std::is_same_v<value_type, double>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_dbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                      subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                                      block_dim, subhandle->info));
     } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_cbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                      subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                                      block_dim, subhandle->info));
     } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_zbsrmv_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                      subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                                      block_dim, subhandle->info));
     } else {
       static_assert(KokkosKernels::Impl::always_false_v<value_type>, "unsupported value type for rocsparse_*bsrmv");
     }
@@ -694,23 +694,23 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
 #elif KOKKOSSPARSE_IMPL_ROCM_VERSION < 50400
     // No analysis step in the older versions
 #else
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_info(&subhandle->info));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_info(&subhandle->info));
     if constexpr (std::is_same_v<value_type, float>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                   subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                   block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_sbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                         subhandle->mat, bsr_val, bsr_row_ptr,
+                                                                         bsr_col_ind, block_dim, subhandle->info));
     } else if constexpr (std::is_same_v<value_type, double>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                   subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                   block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_dbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                         subhandle->mat, bsr_val, bsr_row_ptr,
+                                                                         bsr_col_ind, block_dim, subhandle->info));
     } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                   subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                   block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_cbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                         subhandle->mat, bsr_val, bsr_row_ptr,
+                                                                         bsr_col_ind, block_dim, subhandle->info));
     } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
-                                                                   subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
-                                                                   block_dim, subhandle->info));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_zbsrmv_ex_analysis(rocsparseHandle, dir, trans, mb, nb, nnzb,
+                                                                         subhandle->mat, bsr_val, bsr_row_ptr,
+                                                                         bsr_col_ind, block_dim, subhandle->info));
     } else {
       static_assert(KokkosKernels::Impl::always_false_v<value_type>, "unsupported value type for rocsparse_*bsrmv");
     }
@@ -720,58 +720,62 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
   // *_ex* functions deprecated in introduced in 6+
 #if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
   if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, subhandle->info, x_,
-                                                     beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_sbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           subhandle->info, x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, subhandle->info, x_,
-                                                     beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_dbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           subhandle->info, x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, subhandle->info, x_,
-                                                     beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_cbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           subhandle->info, x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, subhandle->info, x_,
-                                                     beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_zbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           subhandle->info, x_, beta_, y_));
   } else {
     static_assert(KokkosKernels::Impl::always_false_v<value_type>, "unsupported value type for rocsparse_*bsrmv");
   }
   // *_ex* functions introduced in 5.4.0
 #elif KOKKOSSPARSE_IMPL_ROCM_VERSION < 50400
   if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_sbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_dbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_cbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_, subhandle->mat,
-                                                     bsr_val, bsr_row_ptr, bsr_col_ind, block_dim, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_zbsrmv(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                           subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
+                                                           x_, beta_, y_));
   } else {
     static_assert(KokkosKernels::Impl::always_false_v<value_type>, "unsupported value type for rocsparse_*bsrmv");
   }
 #else
   if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
-                                                        subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
-                                                        subhandle->info, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_sbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                              subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                              block_dim, subhandle->info, x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
-                                                        subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
-                                                        subhandle->info, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_dbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                              subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                              block_dim, subhandle->info, x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
-                                                        subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
-                                                        subhandle->info, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_cbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                              subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                              block_dim, subhandle->info, x_, beta_, y_));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
-                                                        subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind, block_dim,
-                                                        subhandle->info, x_, beta_, y_));
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_zbsrmv_ex(rocsparseHandle, dir, trans, mb, nb, nnzb, alpha_,
+                                                              subhandle->mat, bsr_val, bsr_row_ptr, bsr_col_ind,
+                                                              block_dim, subhandle->info, x_, beta_, y_));
   } else {
     static_assert(KokkosKernels::Impl::always_false_v<value_type>, "unsupported value type for rocsparse_*bsrmv");
   }

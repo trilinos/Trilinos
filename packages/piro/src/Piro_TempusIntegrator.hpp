@@ -82,6 +82,7 @@ public:
   //The following routine is only for adjoint sensitivities
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDgDp() const;
 
+  Teuchos::RCP<const Tempus::Integrator<Scalar> > getIntegrator () const;
 private:
 
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > basicIntegrator_;

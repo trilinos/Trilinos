@@ -110,3 +110,10 @@
 
 /* Define to 1 if SuperLU's *gssvx and *gsisx routines need a GlobalLU_t argument. */
 #cmakedefine HAVE_AMESOS2_SUPERLU5_API
+
+#cmakedefine HAVE_AMESOS2_XPETRA
+#cmakedefine HAVE_AMESOS2_ZOLTAN2CORE
+#ifdef HAVE_AMESOS2_ZOLTAN2CORE
+#  define HAVE_AMESOS2_ZOLTAN2
+#endif
+#cmakedefine HAVE_AMESOS2_GALERI

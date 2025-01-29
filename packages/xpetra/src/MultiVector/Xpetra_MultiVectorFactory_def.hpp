@@ -41,6 +41,7 @@ MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
   XPETRA_FACTORY_END;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

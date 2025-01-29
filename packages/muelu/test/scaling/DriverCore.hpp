@@ -169,6 +169,8 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
       Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
       if (!coordinates.is_null())
         userParamList.set<RCP<CoordinateMultiVector>>("Coordinates", coordinates);
+      if (!material.is_null())
+        userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Material", material);
       if (!nullspace.is_null() && setNullSpace)
         userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Nullspace", nullspace);
       userParamList.set<Teuchos::Array<LO>>("Array<LO> lNodesPerDim", lNodesPerDim);
@@ -233,7 +235,8 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
                  bool solvePreconditioned,
                  int maxIts,
                  double tol,
-                 bool computeCondEst) {
+                 bool computeCondEst,
+                 bool enforceBoundaryConditionsOnInitialGuess) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -272,6 +275,10 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   for (int solveno = 0; solveno <= numResolves; solveno++) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
     X->putScalar(zero);
+    if (enforceBoundaryConditionsOnInitialGuess) {
+      out << "Enforcing boundary conditions on initial guess\n";
+      Utilities::EnforceInitialCondition(*A, *B, *X);
+    }
     tm = Teuchos::null;
 
     if (solveType == "none") {

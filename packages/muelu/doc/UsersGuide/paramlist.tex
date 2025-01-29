@@ -46,7 +46,7 @@
           
 \cbb{coarse: max size}{int}{2000}{Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.}
           
-\cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.}
+\cbb{coarse: type}{string}{"KLU"}{Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.}
           
 \cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to the appropriate package library.}
           
@@ -63,6 +63,8 @@
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
       aggregation. Possible values: "classical", "distance laplacian",
       "unsupported vector smoothing"}
+          
+\cbb{aggregation: distance laplacian metric}{string}{unweighted}{Metric used to compute the distance Laplacian. Possible values: "unweighted", "material"}
           
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
           
@@ -114,6 +116,10 @@
 \cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
           
 \cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+          
+\cbb{aggregation: output file: aggregate qualities}{bool}{false}{Whether to plot the aggregate quality.}
+          
+\cbb{aggregation: output file: material}{bool}{false}{Whether to plot the material.}
           
 \cbb{aggregation: mesh layout}{string}{Global Lexicographic}{Type of ordering for structured mesh aggregation. Possible values: "Global Lexicographic" and "Local Lexicographic".}
           

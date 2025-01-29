@@ -253,9 +253,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
     if (ndims == 2)
-      paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-2D-Level%LEVELID-Proc%PROCID");
+      paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-2D-Level%LEVELID-Proc%PROCID");
     else if (ndims == 3)
-      paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-3D-Level%LEVELID-Proc%PROCID");
+      paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-3D-Level%LEVELID-Proc%PROCID");
     int numReruns = 1;
     if (paramList.isParameter("number of reruns"))
       numReruns = paramList.get<int>("number of reruns");

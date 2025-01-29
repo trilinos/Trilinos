@@ -124,7 +124,7 @@ protected:
 
 TEST_F(NgpFieldAccess, Centroid)
 {
-  if (get_parallel_size() != 1) return;
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
   const int NUM_ITERS = 100;
@@ -149,7 +149,7 @@ TEST_F(NgpFieldAccess, Centroid)
 
 TEST_F(NgpFieldAccess, HostCentroid)
 {
-  if (get_parallel_size() != 1) return;
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
   const int NUM_ITERS = 100;

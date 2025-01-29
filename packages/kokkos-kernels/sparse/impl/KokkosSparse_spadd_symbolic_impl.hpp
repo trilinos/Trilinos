@@ -342,7 +342,7 @@ template <typename execution_space, typename KernelHandle, typename alno_row_vie
 void runSortedCountEntries(
     const execution_space& exec, const alno_row_view_t_& a_rowmap, const alno_nnz_view_t_& a_entries,
     const blno_row_view_t_& b_rowmap, const blno_nnz_view_t_& b_entries, const clno_row_view_t_& c_rowmap,
-    typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr) {
+    typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr) {
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
   using range_type   = Kokkos::RangePolicy<execution_space>;
@@ -361,7 +361,7 @@ template <typename execution_space, typename KernelHandle, typename alno_row_vie
 void runSortedCountEntries(
     const execution_space& exec, const alno_row_view_t_& a_rowmap, const alno_nnz_view_t_& a_entries,
     const blno_row_view_t_& b_rowmap, const blno_nnz_view_t_& b_entries, const clno_row_view_t_& c_rowmap,
-    typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()>::type* = nullptr) {
+    typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>>::type* = nullptr) {
   using size_type     = typename KernelHandle::size_type;
   using ordinal_type  = typename KernelHandle::nnz_lno_t;
   using RangePol      = Kokkos::RangePolicy<execution_space>;

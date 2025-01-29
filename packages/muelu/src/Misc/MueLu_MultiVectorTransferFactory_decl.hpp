@@ -16,6 +16,8 @@
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
 #include "MueLu_MultiVectorTransferFactory_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 namespace MueLu {
 
@@ -48,8 +50,6 @@ class MultiVectorTransferFactory : public TwoLevelFactoryBase {
   */
   MultiVectorTransferFactory() {}
 
-  MultiVectorTransferFactory(std::string const &vectorName);  // deprecated
-
   //! Destructor.
   virtual ~MultiVectorTransferFactory() {}
 
@@ -76,9 +76,6 @@ class MultiVectorTransferFactory : public TwoLevelFactoryBase {
   void Build(Level &fineLevel, Level &coarseLevel) const;
 
   //@}
-
- private:
-  static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);
 
 };  // class MultiVectorTransferFactory
 

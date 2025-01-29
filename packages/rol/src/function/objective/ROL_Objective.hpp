@@ -152,14 +152,34 @@ public:
     Pv.set(v.dual());
   }
 
-	virtual void prox( Vector<Real> &Pv, const Vector<Real> &v, Real t, Real &tol){
+  /** \brief Compute the proximity operator.
+
+      This function returns the proximity operator.
+      @param[out]         Pv  is the proximity operator applied to \f$v\f$ (primal optimization vector).
+      @param[in]          v   is the input to the proximity operator (primal optimization vector).
+      @param[in]          t   is the proximity operator parameter (positive scalar).
+      @param[in]          tol is a tolerance for inexact objective function computation.
+  */
+  virtual void prox( Vector<Real> &Pv, const Vector<Real> &v, Real t, Real &tol){
     ROL_UNUSED(Pv);
     ROL_UNUSED(v);
     ROL_UNUSED(t);
     ROL_UNUSED(tol);
     ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::Objective): prox not implemented!"); 
-	}
+  }
+
+
+  /** \brief Apply the Jacobian of the proximity operator.
+
+      This function applies the Jacobian of the proximity operator.
+      @param[out]         Jv  is the Jacobian of the proximity operator at \f$x\f$ applied to \f$v\f$ (primal optimization vector).
+      @param[in]          v   is the direction vector (primal optimization vector).
+      @param[in]          x   is the input to the proximity operator (primal optimization vector).
+      @param[in]          t   is the proximity operator parameter (positive scalar).
+      @param[in]          tol is a tolerance for inexact objective function computation.
+  */
+  virtual void proxJacVec( Vector<Real> &Jv, const Vector<Real> &v, const Vector<Real> &x, Real t, Real &tol);
 
   /** \brief Finite-difference gradient check.
 
@@ -450,6 +470,31 @@ public:
                                           const Vector<Real> &w,
                                           const bool printToStream = true,
                                           std::ostream & outStream = std::cout );
+
+  /** \brief Finite-difference proximity operator Jacobian-applied-to-vector check.
+
+      This function computes a sequence of one-sided finite-difference checks for the proximity
+      operator Jacobian.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left\| \frac{\mathrm{prox}_{t f}(x+tv) - \mathrm{prox}_{t f}(x)}{t} - J_{t f}(x+tv)v\right\|_{\mathcal{X}},
+      \f]
+      if the approximation is first order.  Note that in some cases the proximity operator
+      is semismooth, which motivates the evaluation of \f$J_{t f}\f$ at \f$x+tv\f$.
+      @param[in]      x             is an optimization vector.
+      @param[in]      v             is a direction vector.
+      @param[in]      t             is the proximity operator parameter.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+  */
+  virtual std::vector<std::vector<Real>> checkProxJacVec( const Vector<Real> &x,
+                                                          const Vector<Real> &v,
+                                                          Real t = Real(1),
+                                                          bool printToStream = true,
+                                                          std::ostream &outStream = std::cout,
+                                                          int numSteps = ROL_NUM_CHECKDERIV_STEPS);
 
 // Definitions for parametrized (stochastic) objective functions
 private:

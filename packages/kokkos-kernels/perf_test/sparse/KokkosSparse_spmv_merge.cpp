@@ -154,8 +154,8 @@ void print_help() {
 }
 
 int main(int argc, char** argv) {
-  using Scalar = default_scalar;
-  using lno_t  = default_lno_t;
+  using Scalar = KokkosKernels::default_scalar;
+  using lno_t  = KokkosKernels::default_lno_t;
 
   bool compare         = false;
   lno_t loop           = 100;

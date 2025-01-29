@@ -36,7 +36,7 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_util/util/PairIter.hpp>
-#include <Kokkos_Core.hpp>
+#include "Kokkos_Macros.hpp"
 
 namespace stk
 {

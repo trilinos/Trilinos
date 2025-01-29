@@ -9,8 +9,8 @@
 
 #include "MueLu_MatlabUtils_def.hpp"
 
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA)
-#error "Muemex types require MATLAB, Epetra and Tpetra."
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_TPETRA)
+#error "Muemex types require MATLAB and Tpetra."
 #else
 
 /* Stuff for MATLAB R2006b vs. previous versions */
@@ -38,7 +38,9 @@ template class MuemexData<string>;
 template class MuemexData<double>;
 template class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
 template class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+#ifdef HAVE_MUELU_EPETRA
 template class MuemexData<RCP<Epetra_MultiVector> >;
+#endif
 template class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
 template class MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
 template class MuemexData<RCP<Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
@@ -147,12 +149,14 @@ std::vector<RCP<MuemexArg> > callMatlab(std::string function, int numOutputs, st
         case XPETRA_MULTIVECTOR_COMPLEX:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Xpetra_MultiVector_complex> >, MuemexArg>(args[i])->convertToMatlab();
           break;
+#ifdef HAVE_MUELU_EPETRA
         case EPETRA_CRSMATRIX:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Epetra_CrsMatrix> >, MuemexArg>(args[i])->convertToMatlab();
           break;
         case EPETRA_MULTIVECTOR:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Epetra_MultiVector> >, MuemexArg>(args[i])->convertToMatlab();
           break;
+#endif
         case AGGREGATES:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MAggregates> >, MuemexArg>(args[i])->convertToMatlab();
           break;
@@ -380,8 +384,10 @@ template RCP<Xpetra_Matrix_double> loadDataFromMatlab<RCP<Xpetra_Matrix_double> 
 template RCP<Xpetra_Matrix_complex> loadDataFromMatlab<RCP<Xpetra_Matrix_complex> >(const mxArray* mxa);
 template RCP<Xpetra_MultiVector_double> loadDataFromMatlab<RCP<Xpetra_MultiVector_double> >(const mxArray* mxa);
 template RCP<Xpetra_MultiVector_complex> loadDataFromMatlab<RCP<Xpetra_MultiVector_complex> >(const mxArray* mxa);
+#ifdef HAVE_MUELU_EPETRA
 template RCP<Epetra_CrsMatrix> loadDataFromMatlab<RCP<Epetra_CrsMatrix> >(const mxArray* mxa);
 template RCP<Epetra_MultiVector> loadDataFromMatlab<RCP<Epetra_MultiVector> >(const mxArray* mxa);
+#endif
 template RCP<MAggregates> loadDataFromMatlab<RCP<MAggregates> >(const mxArray* mxa);
 template RCP<MAmalInfo> loadDataFromMatlab<RCP<MAmalInfo> >(const mxArray* mxa);
 
@@ -399,8 +405,10 @@ template mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data);
 template mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_complex>& data);
 template mxArray* saveDataToMatlab(RCP<Xpetra_MultiVector_double>& data);
 template mxArray* saveDataToMatlab(RCP<Xpetra_MultiVector_complex>& data);
+#ifdef HAVE_MUELU_EPETRA
 template mxArray* saveDataToMatlab(RCP<Epetra_CrsMatrix>& data);
 template mxArray* saveDataToMatlab(RCP<Epetra_MultiVector>& data);
+#endif
 template mxArray* saveDataToMatlab(RCP<MAggregates>& data);
 template mxArray* saveDataToMatlab(RCP<MAmalInfo>& data);
 

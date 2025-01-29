@@ -41,11 +41,11 @@ void test_rocblas_safe_call() {
   bool caught_exception = false;
 
   rocblas_status myStatus = rocblas_status_success;
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(myStatus);
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(myStatus);
 
   try {
     myStatus = rocblas_status_internal_error;
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(myStatus);
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(myStatus);
   } catch (std::runtime_error& e) {
     caught_exception = true;
   }

@@ -11,6 +11,8 @@
       aggregation. Possible values: "classical", "distance laplacian",
       "unsupported vector smoothing"}
           
+\cbb{aggregation: distance laplacian metric}{string}{unweighted}{Metric used to compute the distance Laplacian. Possible values: "unweighted", "material"}
+          
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
           
 \cbb{aggregation: use ml scaling of drop tol}{bool}{false}{Enables ML-style scaling of drop tol, where the drop tol halves with each successive level.}
@@ -61,6 +63,10 @@
 \cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
           
 \cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+          
+\cbb{aggregation: output file: aggregate qualities}{bool}{false}{Whether to plot the aggregate quality.}
+          
+\cbb{aggregation: output file: material}{bool}{false}{Whether to plot the material.}
           
 \cbb{aggregation: mesh layout}{string}{Global Lexicographic}{Type of ordering for structured mesh aggregation. Possible values: "Global Lexicographic" and "Local Lexicographic".}
           

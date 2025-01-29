@@ -8,7 +8,7 @@
 # @HEADER
 
 
-set(REQUIRED_LIBS_NAMES "blas blas_win32")
+set(REQUIRED_LIBS_NAMES "blas blas_win32 openblas")
 
 #
 # Second, search for BLAS components (if allowed) using the standard

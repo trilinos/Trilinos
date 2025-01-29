@@ -104,7 +104,7 @@ struct GEMM {
     const int M = static_cast<int>(C.extent(0));
     const int N = static_cast<int>(C.extent(1));
 
-    const bool is_device_space = KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+    const bool is_device_space = KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>;
     const bool A_is_lr         = std::is_same<Kokkos::LayoutRight, typename AViewType::array_layout>::value;
     const bool A_is_tr         = ((transA[0] == 'T') || (transA[0] == 't') || (transA[0] == 'C') || (transA[0] == 'c'));
     const bool B_is_tr         = ((transB[0] == 'T') || (transB[0] == 't') || (transB[0] == 'C') || (transB[0] == 'c'));
@@ -272,5 +272,6 @@ struct GEMM {
                                          MEM_SPACE)
 
 #include <KokkosBlas3_gemm_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas3_gemm_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS3_GEMM_SPEC_HPP_

@@ -27,13 +27,15 @@ namespace NOX {
   */
   class ObserverPrint : public NOX::Observer {
   public:
-    ObserverPrint(const Teuchos::RCP<NOX::Utils>& printUtils);
+    ObserverPrint(const Teuchos::RCP<NOX::Utils>& printUtils,
+                  const size_t offset=0);
     // Derived methods
     void runPreIterate(const NOX::Solver::Generic& solver);
     void runPostIterate(const NOX::Solver::Generic& solver);
   private:
     void printStep(const NOX::Solver::Generic& solver);
     Teuchos::RCP<NOX::Utils> os_;
+    const size_t offset_;
   };
 }
 

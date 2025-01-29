@@ -817,10 +817,10 @@ struct SptrsvWrap {
       const int nsrow = colptr(j1 + 1) - i1;
 
       // create a view for the s-th supernocal column
-      // NOTE: we currently supports only default_layout = LayoutLeft
+      // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
       scalar_t *dataL = const_cast<scalar_t *>(values.data());
-      Kokkos::View<scalar_t **, default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> viewL(&dataL[i1], nsrow,
-                                                                                               nscol);
+      Kokkos::View<scalar_t **, KokkosKernels::default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> viewL(
+          &dataL[i1], nsrow, nscol);
 
       // extract part of the solution, corresponding to the diagonal block
       auto Xj = Kokkos::subview(X, range_type(j1, j2));
@@ -859,8 +859,9 @@ struct SptrsvWrap {
             KokkosBlas::TeamGemv<member_type, KokkosBlas::Trans::NoTranspose,
                                  KokkosBlas::Algo::Gemv::Unblocked>::invoke(team, one, Ljj, Y, zero, Xj);
           } else {
-            // NOTE: we currently supports only default_layout = LayoutLeft
-            Kokkos::View<scalar_t **, default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> Xjj(Xj.data(), nscol, 1);
+            // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+            Kokkos::View<scalar_t **, KokkosKernels::default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> Xjj(
+                Xj.data(), nscol, 1);
             if (unit_diagonal) {
               KokkosBatched::TeamTrsm<member_type, KokkosBatched::Side::Left, KokkosBatched::Uplo::Lower,
                                       KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::Unit,
@@ -898,8 +899,9 @@ struct SptrsvWrap {
   // Functor for Upper-triangular solve in CSR
   template <class ColptrType, class RowindType, class ValuesType, class LHSType>
   struct UpperTriSupernodalFunctor {
-    // NOTE: we currently supports only default_layout = LayoutLeft
-    using SupernodeView = typename Kokkos::View<scalar_t **, default_layout, temp_mem_space, Kokkos::MemoryUnmanaged>;
+    // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+    using SupernodeView =
+        typename Kokkos::View<scalar_t **, KokkosKernels::default_layout, temp_mem_space, Kokkos::MemoryUnmanaged>;
 
     bool invert_diagonal;
     const int *supercols;
@@ -1022,8 +1024,9 @@ struct SptrsvWrap {
           KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::Transpose, KokkosBlas::Algo::Gemv::Unblocked>::
               template invoke<const scalar_t, Ujj_type, Y_type, Xj_type>(team, one, Ujj, Y, zero, Xj);
         } else {
-          // NOTE: we currently supports only default_layout = LayoutLeft
-          Kokkos::View<scalar_t **, default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> Xjj(Xj.data(), nscol, 1);
+          // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+          Kokkos::View<scalar_t **, KokkosKernels::default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> Xjj(
+              Xj.data(), nscol, 1);
           KokkosBatched::TeamTrsm<member_type, KokkosBatched::Side::Left, KokkosBatched::Uplo::Lower,
                                   KokkosBatched::Trans::Transpose, KokkosBatched::Diag::NonUnit,
                                   KokkosBatched::Algo::Trsm::Unblocked>::invoke(team, one, Ujj, Xjj);
@@ -1113,10 +1116,10 @@ struct SptrsvWrap {
       const int nsrow2 = nsrow - nscol;
 
       // create a view of the s-th supernocal column of U
-      // NOTE: we currently supports only default_layout = LayoutLeft
+      // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
       scalar_t *dataU = const_cast<scalar_t *>(values.data());
-      Kokkos::View<scalar_t **, default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> viewU(&dataU[i1], nsrow,
-                                                                                               nscol);
+      Kokkos::View<scalar_t **, KokkosKernels::default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> viewU(
+          &dataU[i1], nsrow, nscol);
 
       // extract part of solution, corresponding to the diagonal block U(s, s)
       auto Xj = Kokkos::subview(X, range_type(j1, j2));
@@ -1152,8 +1155,9 @@ struct SptrsvWrap {
             KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::NoTranspose,
                                  KokkosBlas::Algo::Gemv::Unblocked>::invoke(team, one, Ujj, Y, zero, Xj);
           } else {
-            // NOTE: we currently supports only default_layout = LayoutLeft
-            Kokkos::View<scalar_t **, default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> Xjj(Xj.data(), nscol, 1);
+            // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+            Kokkos::View<scalar_t **, KokkosKernels::default_layout, temp_mem_space, Kokkos::MemoryUnmanaged> Xjj(
+                Xj.data(), nscol, 1);
             KokkosBatched::TeamTrsm<member_type, KokkosBatched::Side::Left, KokkosBatched::Uplo::Upper,
                                     KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit,
                                     KokkosBatched::Algo::Trsm::Unblocked>::invoke(team, one, Ujj, Xjj);
@@ -1363,8 +1367,9 @@ struct SptrsvWrap {
           timer.reset();
 #endif
 
-          // NOTE: we currently supports only default_layout = LayoutLeft
-          using supernode_view_type = Kokkos::View<scalar_t **, default_layout, device_t, Kokkos::MemoryUnmanaged>;
+          // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+          using supernode_view_type =
+              Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t, Kokkos::MemoryUnmanaged>;
           if (diag_kernel_type_host(lvl) == 3) {
             // using device-level kernels (functor is called to scatter the
             // results)
@@ -1423,9 +1428,10 @@ struct SptrsvWrap {
                   KokkosBlas::gemv(space, "N", one, Ljj, Y, zero, Xj);
                 } else {
                   char unit_diag = (unit_diagonal ? 'U' : 'N');
-                  // NOTE: we currently supports only default_layout =
+                  // NOTE: we currently supports only KokkosKernels::default_layout =
                   // LayoutLeft
-                  Kokkos::View<scalar_t **, default_layout, device_t, Kokkos::MemoryUnmanaged> Xjj(Xj.data(), nscol, 1);
+                  Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t, Kokkos::MemoryUnmanaged> Xjj(
+                      Xj.data(), nscol, 1);
                   KokkosBlas::trsm(space, "L", "L", "N", &unit_diag, one, Ljj, Xjj);
                   // TODO: space.fence();
                   Kokkos::fence();
@@ -1695,9 +1701,9 @@ struct SptrsvWrap {
                 int workoffset = work_offset_host(s);
 
                 // create a view for the s-th supernocal block column
-                // NOTE: we currently supports only default_layout = LayoutLeft
-                Kokkos::View<scalar_t **, default_layout, device_t, Kokkos::MemoryUnmanaged> viewU(&dataU[i1], nsrow,
-                                                                                                   nscol);
+                // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+                Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t, Kokkos::MemoryUnmanaged> viewU(
+                    &dataU[i1], nsrow, nscol);
 
                 if (invert_offdiagonal) {
                   auto Uij = Kokkos::subview(viewU, range_type(0, nsrow), Kokkos::ALL());
@@ -1720,10 +1726,10 @@ struct SptrsvWrap {
                                                                                      // instead of trmv/trsv
                     KokkosBlas::gemv(space, "N", one, Ujj, Y, zero, Xj);
                   } else {
-                    // NOTE: we currently supports only default_layout =
+                    // NOTE: we currently supports only KokkosKernels::default_layout =
                     // LayoutLeft
-                    Kokkos::View<scalar_t **, default_layout, device_t, Kokkos::MemoryUnmanaged> Xjj(Xj.data(), nscol,
-                                                                                                     1);
+                    Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t, Kokkos::MemoryUnmanaged> Xjj(
+                        Xj.data(), nscol, 1);
                     KokkosBlas::trsm(space, "L", "U", "N", "N", one, Ujj, Xjj);
                   }
                   // update off-diagonal blocks
@@ -1796,9 +1802,9 @@ struct SptrsvWrap {
                 int workoffset = work_offset_host(s);
 
                 // create a view for the s-th supernocal block column
-                // NOTE: we currently supports only default_layout = LayoutLeft
-                Kokkos::View<scalar_t **, default_layout, device_t, Kokkos::MemoryUnmanaged> viewU(&dataU[i1], nsrow,
-                                                                                                   nscol);
+                // NOTE: we currently supports only KokkosKernels::default_layout = LayoutLeft
+                Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t, Kokkos::MemoryUnmanaged> viewU(
+                    &dataU[i1], nsrow, nscol);
 
                 // extract part of the solution, corresponding to the diagonal
                 // block
@@ -1824,9 +1830,10 @@ struct SptrsvWrap {
                 if (invert_diagonal) {
                   KokkosBlas::gemv(space, "T", one, Ujj, Xj, zero, Y);
                 } else {
-                  // NOTE: we currently supports only default_layout =
+                  // NOTE: we currently supports only KokkosKernels::default_layout =
                   // LayoutLeft
-                  Kokkos::View<scalar_t **, default_layout, device_t, Kokkos::MemoryUnmanaged> Xjj(Xj.data(), nscol, 1);
+                  Kokkos::View<scalar_t **, KokkosKernels::default_layout, device_t, Kokkos::MemoryUnmanaged> Xjj(
+                      Xj.data(), nscol, 1);
                   KokkosBlas::trsm(space, "L", "L", "T", "N", one, Ujj, Xjj);
                 }
               }

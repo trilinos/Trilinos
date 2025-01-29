@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP
 
 // Include explicit specializations of BatchedGemm.
 // If ETI_ONLY is disabled, the primary template will
@@ -101,4 +101,4 @@ inline int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alp
                                UnifiedBVT, UnifiedCVT>::run(handle, alpha, A, B, beta, C);
 }
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP

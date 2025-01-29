@@ -1,5 +1,89 @@
 # Change Log
 
+## [4.5.01](https://github.com/kokkos/kokkos-kernels/tree/4.5.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.5.00...4.5.01)
+
+### Bug Fixes:
+- Fix the package version [\#2460](https://github.com/kokkos/kokkos-kernels/pull/2460)
+
+## [4.5.00](https://github.com/kokkos/kokkos-kernels/tree/4.5.00)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.4.01...4.5.00)
+
+### New Features
+
+#### Batched updates
+- Implement batched serial laswp [\#2395](https://github.com/kokkos/kokkos-kernels/pull/2395)
+- implement batched serial iamax [\#2399](https://github.com/kokkos/kokkos-kernels/pull/2399)
+- Implement batched serial pbtrs [\#2330](https://github.com/kokkos/kokkos-kernels/pull/2330)
+- Implement batched serial pbtrf [\#2322](https://github.com/kokkos/kokkos-kernels/pull/2322)
+- Implement batched serial pttrs [\#2277](https://github.com/kokkos/kokkos-kernels/pull/2277)
+
+#### BLAS
+- gemm perf_test: print matrix sizes [\#2362](https://github.com/kokkos/kokkos-kernels/pull/2362)
+
+#### LAPACK
+- Modify validity checks for output views sizes in svd [\#2350](https://github.com/kokkos/kokkos-kernels/pull/2350)
+
+#### ODE
+- Improved convergence and robustness of Runge-Kutta integrators [\#2229](https://github.com/kokkos/kokkos-kernels/pull/2229)
+
+#### Sparse
+- Don't use bulk sort in KokkosSparse::sort_crs_matrix sometimes [\#2353](https://github.com/kokkos/kokkos-kernels/pull/2353)
+- `OpenMPSmartStatic_SPMV.hpp`: throw if posix_memalign fails [\#2368](https://github.com/kokkos/kokkos-kernels/pull/2368)
+
+### Enhancements:
+- Eti extern marking [\#2292](https://github.com/kokkos/kokkos-kernels/pull/2292)
+
+#### Common utilities
+- Add KokkosKernels::eager_initialize() to common [\#2317](https://github.com/kokkos/kokkos-kernels/pull/2317)
+- Put default types in KokkosKernels namespace [\#2341](https://github.com/kokkos/kokkos-kernels/pull/2341)
+
+#### TPL support
+- Add MAGMA TPL support for GESV on HIP backend [\#2326](https://github.com/kokkos/kokkos-kernels/pull/2326)
+- BLAS - gemv: using fallback when mode is 't' or 'c' and onemkl is used [\#2272](https://github.com/kokkos/kokkos-kernels/pull/2272)
+
+### Bug Fixes:
+- SerialInverseLU: fix overflow in integer multiplication [\#2410](https://github.com/kokkos/kokkos-kernels/pull/2410)
+- Fix potential overflow issue in spiluk [\#2409](https://github.com/kokkos/kokkos-kernels/pull/2409)
+- Mult result conversion [\#2405](https://github.com/kokkos/kokkos-kernels/pull/2405)
+- Blas1 asum: workaround for openblas error with short vectors [\#2384](https://github.com/kokkos/kokkos-kernels/pull/2384)
+- Set `KokkosKernels_ENABLE_COMPONENT` variables to value instead of variable name [\#2380](https://github.com/kokkos/kokkos-kernels/pull/2380)
+- Block Sptrsv fixes [\#2376](https://github.com/kokkos/kokkos-kernels/pull/2376)
+- Fix set-but-unused in Test_ODE_BDF [\#2355](https://github.com/kokkos/kokkos-kernels/pull/2355)
+- sparse_sort_crs: fix column shuffle indices [\#2346](https://github.com/kokkos/kokkos-kernels/pull/2346)
+- Fix #2344: SVD hanging [\#2345](https://github.com/kokkos/kokkos-kernels/pull/2345)
+- Some compilers throw shadow warnings in static functions [\#2297](https://github.com/kokkos/kokkos-kernels/pull/2297)
+- A couple platforms do not correctly handle static complexes [\#2285](https://github.com/kokkos/kokkos-kernels/pull/2285)
+- Help gcc/8.3 with ctad issue [\#2265](https://github.com/kokkos/kokkos-kernels/pull/2265)
+
+### Deprecations and Cleanup:
+- Clean and replace forbidden names for macros and symbols (see [identifiers](https://en.cppreference.com/w/cpp/language/identifiers))
+  - Rename reserved identifiers [\#2373](https://github.com/kokkos/kokkos-kernels/pull/2373)
+  - search/replace KOKKOS_-prefixed macros [\#2372](https://github.com/kokkos/kokkos-kernels/pull/2372)
+  - Deprecate `__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__` [\#2406](https://github.com/kokkos/kokkos-kernels/pull/2406)
+  - Deprecate `__KOKKOSBATCHED_ENABLE_INTEL_MKL__` [\#2403](https://github.com/kokkos/kokkos-kernels/pull/2403)
+  - Deprecate `__KOKKOSBATCHED_PROMOTION__` [\#2392](https://github.com/kokkos/kokkos-kernels/pull/2392)
+- Update atomic function usage ahead of Kokkos deprecation and removal 
+  - Prefer `expected == atomic_compare_exchange(ptr, expected, desired)` [\#2387](https://github.com/kokkos/kokkos-kernels/pull/2387)
+  - Prefer `atomic_assign(ptr, val) -> atomic_store(ptr, val)` [\#2383](https://github.com/kokkos/kokkos-kernels/pull/2383)
+  - Replace atomic_{inc, dec}[rement] [\#2386](https://github.com/kokkos/kokkos-kernels/pull/2386)
+  - Do not specify template argument when using Kokkos atomics [\#2382](https://github.com/kokkos/kokkos-kernels/pull/2382)
+- Deprecate redundant team-level sort functions [\#2306](https://github.com/kokkos/kokkos-kernels/pull/2306)
+- Free allocated `MatrixPrec` [\#2407](https://github.com/kokkos/kokkos-kernels/pull/2407)
+- Reduce duplicated code in trsv [\#2388](https://github.com/kokkos/kokkos-kernels/pull/2388)
+- perf_tests: remove false dependence on google test [\#2385](https://github.com/kokkos/kokkos-kernels/pull/2385)
+- `kk_is_gpu_exec_space()` -> `is_gpu_exec_space_v` [\#2354](https://github.com/kokkos/kokkos-kernels/pull/2354)
+- remove unneeded volatile qualifier for Kokkos::Single [\#2333](https://github.com/kokkos/kokkos-kernels/pull/2333)
+
+### Documentation and Testing:
+
+- CI: `address` sanitizer and most of `undefined` sanitizer [\#2408](https://github.com/kokkos/kokkos-kernels/pull/2408)
+- Workflow volta70 [\#2356](https://github.com/kokkos/kokkos-kernels/pull/2356)
+- AT-2: adding non-TPL build for HIP backend [\#2329](https://github.com/kokkos/kokkos-kernels/pull/2329)
+- Workflows: Add remaining spr and bdw checks [\#2321](https://github.com/kokkos/kokkos-kernels/pull/2321)
+- Remove review trigger and group github-{BDW,H100,MI201} under github-AT2 [\#2320](https://github.com/kokkos/kokkos-kernels/pull/2320)
+- Don't error out if graph unit tests disabled [\#2305](https://github.com/kokkos/kokkos-kernels/pull/2305)
+
 ## [4.4.01](https://github.com/kokkos/kokkos-kernels/tree/4.4.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.4.00...4.4.01)
 

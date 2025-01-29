@@ -16,7 +16,7 @@
 
 namespace {
 
-using IntDualViewType = Kokkos::DualView<int*, stk::ngp::ExecSpace>;
+using UnsignedDualViewType = Kokkos::DualView<unsigned*, stk::ngp::ExecSpace>;
 
 void test_view_of_fields(const stk::mesh::BulkData& bulk,
                          stk::mesh::Field<double>& field1,
@@ -39,19 +39,29 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   Kokkos::deep_copy(fields, hostFields);
 
   unsigned numResults = 2;
-  IntDualViewType result = ngp_unit_test_utils::create_dualview<IntDualViewType>("result",numResults);
+  UnsignedDualViewType result = ngp_unit_test_utils::create_dualview<UnsignedDualViewType>("result",numResults);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 2),
                        KOKKOS_LAMBDA(const unsigned& i)
                        {
-                         result.d_view(i) = fields(i).get_ordinal() == i ? 1 : 0;
+                         result.d_view(i) = fields(i).get_ordinal();
                        });
 
-  result.modify<IntDualViewType::execution_space>();
-  result.sync<IntDualViewType::host_mirror_space>();
+  result.modify<UnsignedDualViewType::execution_space>();
+  result.sync<UnsignedDualViewType::host_mirror_space>();
 
-  EXPECT_EQ(1, result.h_view(0));
-  EXPECT_EQ(1, result.h_view(1));
+  EXPECT_EQ(hostFields(0).get_ordinal(), result.h_view(0));
+  EXPECT_EQ(hostFields(1).get_ordinal(), result.h_view(1));
+
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+  for (unsigned i = 0; i < 2; ++i) {
+#ifdef STK_USE_DEVICE_MESH  // Compiler can't resolve destructor type through NgpField using statement
+    fields(i).~DeviceField();
+#else
+    fields(i).~HostField();
+#endif
+  }
+#endif
 }
 
 TEST(UnitTestNgp, viewOfFields)

@@ -46,12 +46,13 @@ namespace phalanx_test {
 
   // Derived class
   class IdealGasLaw : public EquationOfState {
-    double mass_;  // mass
+    // double mass_;  // mass
     double gamma_; // ratio of specific heats
-    double r_;     // Boltzmann constant
+    // double r_;     // Boltzmann constant
   public:
     KOKKOS_FUNCTION
-    IdealGasLaw() : mass_(28.0), gamma_(5./3.), r_(1.38066e-23) {}
+    // IdealGasLaw() : mass_(28.0), gamma_(5./3.), r_(1.38066e-23) {}
+    IdealGasLaw() : gamma_(5./3.) {}
 
     KOKKOS_FUNCTION
     double a(const double& rho,

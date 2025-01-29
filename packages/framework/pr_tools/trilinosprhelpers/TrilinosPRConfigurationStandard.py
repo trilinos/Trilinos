@@ -17,7 +17,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
     Implements Standard mode Trilinos Pull Request Driver
     """
     def __init__(self, args):
-        super(TrilinosPRConfigurationStandard, self).__init__(args)
+        super().__init__(args)
 
 
     def execute_test(self):
@@ -54,6 +54,15 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         if not self.args.dry_run:
             gc.write_cmake_fragment()
 
+        if self.arg_skip_create_packageenables:
+            print("Optional --skip_create_packageenables found. " +
+                    "Creating dummy packageEnables.cmake and package_subproject_list.cmake " +
+                    "for CTest drivers.")
+            with open(self.arg_filename_packageenables, 'w'):
+                pass
+            with open(self.arg_filename_subprojects, 'w'):
+                pass
+
         # Execute the call to ctest.
         verbosity_flag = "-VV"
         if "BUILD_NUMBER" in os.environ:
@@ -78,6 +87,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-Dsubprojects_file:FILEPATH={self.arg_filename_subprojects}",
                f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
                 "-DUSE_EXPLICIT_TRILINOS_CACHEFILE:BOOL=" + ("ON" if self.arg_use_explicit_cachefile else "OFF"),
+                "-DSKIP_RUN_TESTS:BOOL=" + ("ON" if self.arg_skip_run_tests else "OFF"),
              ]
 
         if self.arg_extra_configure_args:

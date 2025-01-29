@@ -328,9 +328,6 @@ public:
   /** \brief Perform an implicit conversion to an RCP<const ObjType>. */
   operator RCP<const ObjType>() const
     { return getConstObj(); }
-  /** \brief Return the internal count. */
-  int count() const
-    { return constObj_.count(); }
 
 private:
   RCP<const ObjType> constObj_;

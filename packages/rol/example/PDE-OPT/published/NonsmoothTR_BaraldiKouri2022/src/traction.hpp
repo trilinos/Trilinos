@@ -44,7 +44,8 @@ public:
   Traction(void) {};
 
   Traction(int dim) : dim_(dim) {
-    assert(dim > 3 || dim < 2);
+    TEUCHOS_TEST_FOR_EXCEPTION(dim > 3 || dim < 2, std::invalid_argument,
+      ">>> PDE-OPT/published/NonsmoothTR_BaraldiKouri2022/src/traction.hpp: Problem dimension is not 2 or 3!");
     if (dim==2) {
       offset_ = 0;
       sidesets_.push_back(2);

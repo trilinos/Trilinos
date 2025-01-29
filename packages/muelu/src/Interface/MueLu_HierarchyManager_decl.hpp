@@ -122,6 +122,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
   // Items here get handled manually
   Teuchos::Array<int> nullspaceToPrint_;
   Teuchos::Array<int> coordinatesToPrint_;
+  Teuchos::Array<int> materialToPrint_;
   Teuchos::Array<int> aggregatesToPrint_;
   Teuchos::Array<int> elementToNodeMapsToPrint_;
 

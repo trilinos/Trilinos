@@ -51,7 +51,7 @@ long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::P
       const ParameterList& levelList = inList.sublist(levelName);
       for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
         const std::string& name = levelListEntry->first;
-        if (name == "A" || name == "P" || name == "R" || name == "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates" || name == "D0" || name == "Dk_1" || name == "Dk_2" || name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" || name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix" || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
+        if (name == "A" || name == "P" || name == "R" || name == "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Material" || name == "Coordinates" || name == "D0" || name == "Dk_1" || name == "Dk_2" || name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" || name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix" || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
 #ifdef HAVE_MUELU_INTREPID2  // For the IntrepidPCoarsenFactory
             || name == "pcoarsen: element to node map"
 #endif

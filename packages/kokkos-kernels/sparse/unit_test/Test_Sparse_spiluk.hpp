@@ -134,12 +134,12 @@ struct SpilukTest {
     const scalar_t MONE = scalar_t(-1);
 
     // Create a reference view e set to all 1's
-    ValuesType e_one("e_one", nrows * block_size);
+    ValuesType e_one("e_one", static_cast<size_t>(nrows) * block_size);
     Kokkos::deep_copy(e_one, ONE);
 
     // Create two views for spmv results
-    ValuesType bb("bb", nrows * block_size);
-    ValuesType bb_tmp("bb_tmp", nrows * block_size);
+    ValuesType bb("bb", static_cast<size_t>(nrows) * block_size);
+    ValuesType bb_tmp("bb_tmp", static_cast<size_t>(nrows) * block_size);
 
     // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
     KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
@@ -244,8 +244,8 @@ struct SpilukTest {
 
     Kokkos::resize(L_entries, spiluk_handle->get_nnzL());
     Kokkos::resize(U_entries, spiluk_handle->get_nnzU());
-    ValuesType L_values("L_values", spiluk_handle->get_nnzL() * block_items);
-    ValuesType U_values("U_values", spiluk_handle->get_nnzU() * block_items);
+    ValuesType L_values("L_values", spiluk_handle->get_nnzL() * static_cast<size_t>(block_items));
+    ValuesType U_values("U_values", spiluk_handle->get_nnzU() * static_cast<size_t>(block_items));
 
     spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map, U_entries,
                    U_values);
@@ -579,7 +579,7 @@ struct SpilukTest {
 
     RowMapType_hostmirror hrow_map("hrow_map", bnrows + 1);
     EntriesType_hostmirror hentries("hentries", bnnz);
-    ValuesType_hostmirror hvalues("hvalues", bnnz * block_items);
+    ValuesType_hostmirror hvalues("hvalues", static_cast<size_t>(bnnz) * block_items);
 
     Kokkos::deep_copy(hrow_map, brow_map);
     Kokkos::deep_copy(hentries, bentries);
@@ -591,7 +591,7 @@ struct SpilukTest {
       // Allocate A as input
       A_row_map_v[i] = RowMapType("A_row_map", bnrows + 1);
       A_entries_v[i] = EntriesType("A_entries", bnnz);
-      A_values_v[i]  = ValuesType("A_values", bnnz * block_items);
+      A_values_v[i]  = ValuesType("A_values", static_cast<size_t>(bnnz) * block_items);
 
       // Copy from host to device
       Kokkos::deep_copy(A_row_map_v[i], hrow_map);
@@ -619,8 +619,8 @@ struct SpilukTest {
 
       Kokkos::resize(L_entries_v[i], spiluk_handle->get_nnzL());
       Kokkos::resize(U_entries_v[i], spiluk_handle->get_nnzU());
-      L_values_v[i] = ValuesType("L_values", spiluk_handle->get_nnzL() * block_items);
-      U_values_v[i] = ValuesType("U_values", spiluk_handle->get_nnzU() * block_items);
+      L_values_v[i] = ValuesType("L_values", spiluk_handle->get_nnzL() * static_cast<size_t>(block_items));
+      U_values_v[i] = ValuesType("U_values", spiluk_handle->get_nnzU() * static_cast<size_t>(block_items));
     }  // Done handle creation and spiluk_symbolic on all streams
 
     // Numeric phase

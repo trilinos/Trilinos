@@ -128,25 +128,6 @@ IF (Piro_ENABLE_Tempus)
     Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
 ENDIF()
 
-# Optional StochasticGalerkin capability, depending upon Stokhos and NOX
-IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(HEADERS
-    Piro_Epetra_StokhosNOXObserver.hpp
-    Piro_Epetra_StokhosSolverFactory.hpp
-    Piro_Epetra_StokhosSolver.hpp
-    Piro_Epetra_StokhosMPSolver.hpp
-    Piro_Epetra_NECoupledModelEvaluator.hpp
-    )
-  APPEND_SET(SOURCES
-    Piro_Epetra_StokhosNOXObserver.cpp
-    Piro_Epetra_StokhosSolverFactory.cpp
-    Piro_Epetra_StokhosSolver.cpp
-    Piro_Epetra_StokhosMPSolver.cpp
-    Piro_Epetra_NECoupledModelEvaluator.cpp
-    )
-ENDIF()
-
-
 IF (Piro_ENABLE_ROL)
   APPEND_SET(HEADERS
     Piro_ThyraProductME_Objective_SimOpt.hpp

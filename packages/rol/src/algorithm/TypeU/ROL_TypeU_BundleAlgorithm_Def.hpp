@@ -48,7 +48,8 @@ BundleAlgorithm<Real>::BundleAlgorithm( ParameterList &parlist,
   Real omega        = blist.get("Locality Measure Coefficient",   two);
   unsigned maxSize  = blist.get("Maximum Bundle Size",            200);
   unsigned remSize  = blist.get("Removal Size for Bundle Update", 2);
-  if ( blist.get("Cutting Plane Solver",0) == 1 ) {
+  int cps = blist.get("Cutting Plane Solver",0);
+  if ( cps == 1 ) {
     bundle_ = makePtr<Bundle_U_TT<Real>>(maxSize,coeff,omega,remSize);
   }
   else {

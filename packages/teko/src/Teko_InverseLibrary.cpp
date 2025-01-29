@@ -367,6 +367,7 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
   }
 
   TEUCHOS_ASSERT(false);
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 //! Print the inverses and parameter lists available for use

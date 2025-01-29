@@ -24,6 +24,7 @@ namespace Tacho {
 template <typename ValueType, typename DeviceType> class NumericToolsBase {
 public:
   using value_type = ValueType;
+  using mag_type = typename ArithTraits<ValueType>::mag_type;
   using device_type = DeviceType;
   using exec_space = typename device_type::execution_space;
   using exec_memory_space = typename device_type::memory_space;
@@ -125,9 +126,10 @@ protected:
   virtual void print_stat_factor() {
     const double kilo(1024);
     printf("  Time\n");
+    printf("             time for extra tasks (allocation):               %10.6f s\n", stat.t_extra);
     printf("             time for copying A into supernodes:              %10.6f s\n", stat.t_copy);
     printf("             time for numeric factorization:                  %10.6f s\n", stat.t_factor);
-    printf("             total time spent:                                %10.6f s\n", (stat.t_copy + stat.t_factor));
+    printf("             total time spent:                                %10.6f s\n", (stat.t_extra + stat.t_copy + stat.t_factor));
     printf("\n");
     printf("  Memory\n");
     printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used / kilo / kilo);
@@ -242,7 +244,7 @@ public:
     }
   }
 
-  inline virtual void factorize(const value_type_array &ax, const ordinal_type verbose = 0) {
+  inline virtual void factorize(const value_type_array &ax, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) {
     TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The function should be overriden by derived classes");
   }
 

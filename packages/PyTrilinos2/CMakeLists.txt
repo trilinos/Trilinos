@@ -1,6 +1,3 @@
-# -*- cmake -*-
-
-
 # Set the package name
 TRIBITS_PACKAGE(PyTrilinos2 DISABLE_STRONG_WARNINGS)
 
@@ -27,11 +24,11 @@ PYTRILINOS2_CMAKE_ERROR
   ON )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_VERBOSE
-  PYTRILINOS2_B_VERBOSE
+  PYTRILINOS2_VERBOSE
   "Increase the verbosity of binder."
-  OFF ) 
+  OFF )
 
-SET(PyTrilinos2_BINDER_NUM_FILES "100" CACHE STRING "Maxinum number of generated files by binder.")
+SET(PyTrilinos2_BINDER_NUM_FILES "150" CACHE STRING "Maxinum number of generated files by binder.")
 
 MESSAGE("-- Python3_EXECUTABLE:")
 IF(NOT DEFINED ${Python3_EXECUTABLE})
@@ -184,7 +181,7 @@ FOREACH(line IN LISTS eti_files_without_dir)
 ENDFOREACH(line)
 file(WRITE ${all_ETI_files_list} ${CONTENTS})
 
-SET(ETI_classes "Tpetra_CrsMatrix;Tpetra_Vector;Tpetra_MultiVector")
+SET(ETI_classes "Tpetra_CrsMatrix;Tpetra_Vector;Tpetra_MultiVector;Tpetra_FEMultiVector;Tpetra_FECrsMatrix")
 SET(CONTENTS "")
 FOREACH(line IN LISTS ETI_classes)
   SET(CONTENTS "${CONTENTS}${line}\n")
@@ -212,6 +209,10 @@ add_custom_command(
 add_custom_target(generate_include_name DEPENDS ${binder_include_name})
 add_dependencies(generate_include_name generate_ETI_name)
 
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_MueLu
+)
+
 set(BINDER_OPTIONS "")
 list(APPEND BINDER_OPTIONS --root-module PyTrilinos2)
 list(APPEND BINDER_OPTIONS --prefix ${CMAKE_CURRENT_BINARY_DIR}/binder)
@@ -223,13 +224,18 @@ ELSE()
 ENDIF()
 list(APPEND BINDER_OPTIONS --bind Teuchos)
 list(APPEND BINDER_OPTIONS --bind Tpetra)
-list(APPEND BINDER_OPTIONS --bind MueLu)
-IF(PYTRILINOS2_B_VERBOSE)
+list(APPEND BINDER_OPTIONS --bind Thyra)
+list(APPEND BINDER_OPTIONS --bind ThyraTpetraAdapters)
+list(APPEND BINDER_OPTIONS --bind Stratimikos)
+IF(${PACKAGE_NAME}_ENABLE_MueLu)
+  list(APPEND BINDER_OPTIONS --bind MueLu)
+ENDIF()
+IF(PYTRILINOS2_VERBOSE)
   list(APPEND BINDER_OPTIONS -v)
 ENDIF()
 IF(PYTRILINOS2_SUPPRESS_ERRORS)
   list(APPEND BINDER_OPTIONS --suppress-errors)
-ENDIF()  
+ENDIF()
 list(APPEND BINDER_OPTIONS --config ${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyTrilinos2_config.cfg)
 list(APPEND BINDER_OPTIONS --)
 IF(TPL_ENABLE_CUDA)
@@ -241,6 +247,14 @@ if (NOT(MPI_BASE_DIR STREQUAL ""))
   list(APPEND BINDER_OPTIONS -I${MPI_BASE_DIR}/include)
 ENDIF()
 list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/mdspan)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/View/MDSpan)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimental)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimental/__p0009_bits)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimental/__p1684_bits)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimental/__p2389_bits)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimental/__p2630_bits)
+list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp/experimental/__p2642_bits)
 list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/src)
 list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/src)
 IF(NOT DEFINED PyTrilinos2_BINDER_GCC_TOOLCHAIN)
@@ -338,7 +352,9 @@ ADD_SUBDIRECTORY( src )
 file(COPY ${PyTrilinos2PyFiles} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos2/.)
 #file(COPY ${PyTrilinos2PyFilesSo} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos2/.)
 
-SET(PyTrilinos2_PYTHONPATH "${CMAKE_CURRENT_BINARY_DIR}:$ENV{PYTHONPATH}")
+SET(PyTrilinos2_PYTHONPATH "${CMAKE_CURRENT_BINARY_DIR}")
+
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 

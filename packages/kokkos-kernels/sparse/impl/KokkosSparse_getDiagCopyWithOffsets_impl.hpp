@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
-#define KOKKOS_SPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
+#ifndef KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
+#define KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
 
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_OrdinalTraits.hpp"
@@ -124,4 +124,4 @@ struct CrsMatrixGetDiagCopyWithOffsets {
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#endif  // KOKKOS_SPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
+#endif  // KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_

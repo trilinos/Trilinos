@@ -73,8 +73,8 @@ struct SortLowDegreeCrsMatrixFunctor {
       Kokkos::single(Kokkos::PerTeam(t), [&]() { reducer++; });
       return;
     }
-    KokkosKernels::TeamBitonicSort2<lno_t, lno_t, scalar_t, team_mem>(entries.data() + rowStart,
-                                                                      values.data() + rowStart, rowNum, t);
+    Kokkos::Experimental::sort_by_key_team(t, Kokkos::subview(entries, Kokkos::make_pair(rowStart, rowEnd)),
+                                           Kokkos::subview(values, Kokkos::make_pair(rowStart, rowEnd)));
   }
 
   rowmap_t rowmap;
@@ -96,7 +96,7 @@ typename entries_t::non_const_value_type sort_low_degree_rows_crs_matrix(
     const typename entries_t::non_const_value_type degreeLimit) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-  bool useRadix  = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+  bool useRadix  = !KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>;
   Impl::SortLowDegreeCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t> funct(useRadix, rowmap, entries,
                                                                                             values, degreeLimit);
   lno_t numRows   = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;

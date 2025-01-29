@@ -161,9 +161,10 @@ namespace MueLu {
   "<Parameter name=\"smoother: pre overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"smoother: post overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse: max size\" type=\"int\" value=\"2000\"/>"
-  "<Parameter name=\"coarse: type\" type=\"string\" value=\"SuperLU\"/>"
+  "<Parameter name=\"coarse: type\" type=\"string\" value=\"KLU\"/>"
   "<ParameterList name=\"coarse: params\"/>"
   "<Parameter name=\"coarse: overlap\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: backend\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
@@ -177,6 +178,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
   "<Parameter name=\"aggregation: distance laplacian directional weights\" type=\"Array(double)\" value=\"{1,1,1}\"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
+  "<Parameter name=\"aggregation: distance laplacian metric\" type=\"string\" value=\"unweighted\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: use ml scaling of drop tol\" type=\"bool\" value=\"false\"/>"
@@ -219,6 +221,8 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: aggregate qualities\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: material\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"strength-of-connection: params\"/>"
   "<Parameter name=\"aggregation: mesh layout\" type=\"string\" value=\"Global Lexicographic\"/>"
@@ -286,6 +290,7 @@ namespace MueLu {
   "<Parameter name=\"filtered matrix: Dirichlet threshold\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"matrix: compute analysis\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"emin: iterative method\" type=\"string\" value=\"cg\"/>"
   "<Parameter name=\"emin: num iterations\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"emin: num reuse iterations\" type=\"int\" value=\"1\"/>"
@@ -593,6 +598,8 @@ namespace MueLu {
       
          ("coarse: overlap","coarse: overlap")
       
+         ("aggregation: backend","aggregation: backend")
+      
          ("aggregation: type","aggregation: type")
       
          ("aggregation: mode","aggregation: mode")
@@ -618,6 +625,8 @@ namespace MueLu {
          ("aggregation: distance laplacian directional weights","aggregation: distance laplacian directional weights")
       
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
+      
+         ("aggregation: distance laplacian metric","aggregation: distance laplacian metric")
       
          ("aggregation: classical algo","aggregation: classical algo")
       
@@ -702,6 +711,10 @@ namespace MueLu {
          ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
       
          ("aggregation: output file: build colormap","aggregation: output file: build colormap")
+      
+         ("aggregation: output file: aggregate qualities","aggregation: output file: aggregate qualities")
+      
+         ("aggregation: output file: material","aggregation: output file: material")
       
          ("aggregation: params","aggregation: params")
       
@@ -836,6 +849,8 @@ namespace MueLu {
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
       
          ("filtered matrix: reuse graph","filtered matrix: reuse graph")
+      
+         ("matrix: compute analysis","matrix: compute analysis")
       
          ("emin: iterative method","emin: iterative method")
       

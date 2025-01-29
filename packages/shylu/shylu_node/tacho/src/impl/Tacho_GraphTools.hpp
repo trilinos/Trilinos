@@ -67,6 +67,11 @@ public:
       _perm(i) = i;
       _peri(i) = i;
     }
+    if (verbose) {
+      printf("Summary: GraphTools (Default)\n");
+      printf("=============================\n");
+      printf( " Use Natural Ordering\n\n" );
+    }
   }
 
   ordinal_type_array PermVector() const { return _perm; }

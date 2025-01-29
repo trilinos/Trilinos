@@ -112,7 +112,6 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
   STKIORequire(ss_part !=  nullptr);
 
   stk::mesh::FieldBase *distribution_factors_field = nullptr;
-  bool surface_df_defined = false; // Has the surface df field been defined yet?
 
   size_t block_count = sset->block_count();
   for (size_t i=0; i < block_count; i++) {
@@ -125,13 +124,14 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
       }
 
       if (sb->field_exists("distribution_factors")) {
-        if (!surface_df_defined) {
-          stk::topology::rank_t side_rank = static_cast<stk::topology::rank_t>(stk::io::part_primary_entity_rank(*sb_part));
-          std::string field_name = sset->name() + "_df";
-          distribution_factors_field = &meta.declare_field<double>(side_rank, field_name);
+        stk::topology::rank_t side_block_rank = static_cast<stk::topology::rank_t>(stk::io::part_primary_entity_rank(*sb_part));
+        std::string field_name = sset->name() + "_df";
+        distribution_factors_field = meta.get_field(side_block_rank, field_name);
+
+        if (distribution_factors_field == nullptr) {
+          distribution_factors_field = &meta.declare_field<double>(side_block_rank, field_name);
           stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
           stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
-          surface_df_defined = true;
         }
         stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
         int side_node_count = sb->topology()->number_nodes();
@@ -314,6 +314,22 @@ void set_sideset_topology(const Ioss::SideSet *ss, stk::mesh::Part *part, const 
   }
 }
 
+void adjust_par_dimen_for_shell_all_face_sides(stk::topology topo, int& par_dimen)
+{
+  switch (topo) {
+    case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
+    case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
+      par_dimen = 2;
+      break;
+    default: 
+      break;
+  }
+}
+
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, std::vector<ElemSidePartOrds> &sidesToMove, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
@@ -322,6 +338,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
     const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
+
+    bool useShellAllFaceSides = region->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
 
     stk::mesh::SideSet *stkSideSet = nullptr;
     stk::mesh::Part *stkSideSetPart = get_part_for_grouping_entity(*region, meta, sset);
@@ -410,9 +428,9 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     if(par_dimen == 0)
                     {
                         stk::topology elemTopo = bulk.bucket(elem).topology();
-                        stk::topology faceTopo = elemTopo.sub_topology(elemTopo.side_rank(), side_ordinal);
+                        stk::topology sideTopo = elemTopo.sub_topology(elemTopo.side_rank(side_ordinal), side_ordinal);
 
-                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(faceTopo.name(), false);
+                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(sideTopo.name(), false);
                         par_dimen = ioss_topo->parametric_dimension();
                     }
 
@@ -424,6 +442,11 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                          if(nullptr != stkSideSet) {
                            stkSideSet->add({elem, side_ordinal});
                          }
+                    }
+
+                    if (useShellAllFaceSides) {
+                      stk::topology elemTopo = bulk.bucket(elem).topology();
+                      adjust_par_dimen_for_shell_all_face_sides(elemTopo, par_dimen);
                     }
 
                     if (par_dimen == 1) {

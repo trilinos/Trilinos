@@ -126,7 +126,6 @@
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos_fwd.hpp"
 #ifdef HAVE_MUELU_DEPRECATED_CODE
-#include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #endif
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
@@ -134,6 +133,12 @@
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_MatrixFreeTentativePFactory_fwd.hpp"
 #include "MueLu_RegionRFactory_kokkos_fwd.hpp"
+
+#ifdef HAVE_MUELU_MATLAB
+#include "MueLu_SingleLevelMatlabFactory_fwd.hpp"
+#include "MueLu_TwoLevelMatlabFactory_fwd.hpp"
+#include "MueLu_MatlabSmoother_fwd.hpp"
+#endif
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"

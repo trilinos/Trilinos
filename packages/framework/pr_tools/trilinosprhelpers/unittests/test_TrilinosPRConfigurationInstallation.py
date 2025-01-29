@@ -168,6 +168,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             ctest_drop_site="testint.sandia.gov",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
+            skip_create_packageenables=False,
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,

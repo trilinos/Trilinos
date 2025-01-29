@@ -54,13 +54,14 @@
 namespace stk {
 namespace mesh {
 
-template<typename T, template <typename> class NgpDebugger>
+template<typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger>
 class HostField : public NgpFieldBase
 {
  public:
   using ExecSpace = stk::ngp::ExecSpace;
+  using MemSpace = NgpMemSpace;
   using value_type = T;
-  using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
+  using StkDebugger = typename NgpDebugger<T, NgpMemSpace>::StkFieldSyncDebuggerType;
 
   HostField()
     : NgpFieldBase(),
@@ -79,10 +80,10 @@ class HostField : public NgpFieldBase
     field->template make_field_sync_debugger<StkDebugger>();
   }
 
-  HostField(const HostField<T, NgpDebugger>&) = default;
-  HostField(HostField<T, NgpDebugger>&&) = default;
-  HostField<T, NgpDebugger>& operator=(const HostField<T, NgpDebugger>&) = default;
-  HostField<T, NgpDebugger>& operator=(HostField<T, NgpDebugger>&&) = default;
+  HostField(const HostField<T, NgpMemSpace, NgpDebugger>&) = default;
+  HostField(HostField<T, NgpMemSpace, NgpDebugger>&&) = default;
+  HostField<T, NgpMemSpace, NgpDebugger>& operator=(const HostField<T, NgpMemSpace, NgpDebugger>&) = default;
+  HostField<T, NgpMemSpace, NgpDebugger>& operator=(HostField<T, NgpMemSpace, NgpDebugger>&&) = default;
 
   void update_field(const ExecSpace& newExecSpace) override
   {
@@ -96,7 +97,7 @@ class HostField : public NgpFieldBase
     update_field();
   }
 
-  void set_field_states(HostField<T, NgpDebugger>* fields[]) {}
+  void set_field_states(HostField<T, NgpMemSpace, NgpDebugger>* fields[]) {}
 
   size_t num_syncs_to_host() const override { return field->num_syncs_to_host(); }
   size_t num_syncs_to_device() const override { return field->num_syncs_to_device(); }
@@ -194,7 +195,9 @@ class HostField : public NgpFieldBase
   void sync_to_host() override
   {
     sync_to_host(Kokkos::DefaultExecutionSpace());
-    Kokkos::fence();
+    if constexpr (!std::is_same_v<Kokkos::DefaultExecutionSpace,Kokkos::Serial>) {
+      Kokkos::fence();
+    }
   }
 
   void sync_to_host(const ExecSpace& execSpace) override

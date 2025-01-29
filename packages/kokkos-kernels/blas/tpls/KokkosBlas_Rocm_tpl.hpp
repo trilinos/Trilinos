@@ -22,14 +22,24 @@
 namespace KokkosBlas {
 namespace Impl {
 
-RocBlasSingleton::RocBlasSingleton() {
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_create_handle(&handle));
-
-  Kokkos::push_finalize_hook([&]() { KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_destroy_handle(handle)); });
-}
+RocBlasSingleton::RocBlasSingleton() { KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_create_handle(&handle)); }
 
 RocBlasSingleton& RocBlasSingleton::singleton() {
-  static RocBlasSingleton s;
+  std::unique_ptr<RocBlasSingleton>& instance = get_instance();
+  if (!instance) {
+    instance = std::make_unique<RocBlasSingleton>();
+    Kokkos::push_finalize_hook([&]() {
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_destroy_handle(instance->handle));
+      instance.reset();
+    });
+  }
+  return *instance;
+}
+
+bool RocBlasSingleton::is_initialized() { return get_instance() != nullptr; }
+
+std::unique_ptr<RocBlasSingleton>& RocBlasSingleton::get_instance() {
+  static std::unique_ptr<RocBlasSingleton> s;
   return s;
 }
 

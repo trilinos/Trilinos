@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_EXAMPLE_CG_SOLVE
-#define KOKKOS_EXAMPLE_CG_SOLVE
+#ifndef KOKKOSSPARSE_PCG_HPP
+#define KOKKOSSPARSE_PCG_HPP
 
 #include <cmath>
 #include <limits>
@@ -468,4 +468,4 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat, const y_vector_t &y
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_EXAMPLE_CG_SOLVE */
+#endif /* #ifndef KOKKOSSPARSE_PCG_HPP */

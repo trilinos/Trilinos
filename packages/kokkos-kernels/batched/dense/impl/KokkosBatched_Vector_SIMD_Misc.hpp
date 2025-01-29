@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_VECTOR_SIMD_MISC_HPP__
-#define __KOKKOSBATCHED_VECTOR_SIMD_MISC_HPP__
+#ifndef KOKKOSBATCHED_VECTOR_SIMD_MISC_HPP
+#define KOKKOSBATCHED_VECTOR_SIMD_MISC_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

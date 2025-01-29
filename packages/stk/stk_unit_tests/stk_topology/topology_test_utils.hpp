@@ -130,7 +130,10 @@ inline void check_side_node_ordinals(stk::topology topology, const std::vector<s
     unsigned numSideNodes = (sideTopo.num_nodes() > 0) ? sideTopo.num_nodes() : 1;
     std::vector<uint8_t> side_node_ordinals(numSideNodes);
     topology.side_node_ordinals(side, side_node_ordinals.data());
-    EXPECT_EQ(gold_side_node_ordinals[side], side_node_ordinals);
+
+    for (unsigned i = 0; i < numSideNodes; ++i) {
+      EXPECT_EQ(gold_side_node_ordinals[side][i], side_node_ordinals[i]);
+    }
   }
 }
 

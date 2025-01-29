@@ -40,8 +40,29 @@ namespace stk {
 namespace ngp {
 
 using ExecSpace = Kokkos::DefaultExecutionSpace;
-
 using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
+
+#ifndef KOKKOS_HAS_SHARED_HOST_PINNED_SPACE
+#ifndef _MSC_VER
+#warning "Kokkos::SharedHostPinnedSpace is not defined."
+#else
+#pragma message("Kokkos::SharedHostPinnedSpace is not defined.")
+#endif
+using HostPinnedSpace = Kokkos::HostSpace;
+#else
+using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
+#endif
+
+#ifndef KOKKOS_HAS_SHARED_SPACE
+#ifndef _MSC_VER
+#warning "Kokkos::SharedSpace is not defined."
+#else
+#pragma message("Kokkos::SharedSpace is not defined.")
+#endif
+using UVMMemSpace = Kokkos::HostSpace;
+#else
+using UVMMemSpace = Kokkos::SharedSpace;
+#endif
 
 #ifdef KOKKOS_ENABLE_CUDA
 using MemSpace = Kokkos::CudaSpace;
@@ -51,35 +72,7 @@ using MemSpace = Kokkos::HIPSpace;
 using MemSpace = ExecSpace::memory_space;
 #endif
 
-#ifdef KOKKOS_HAS_SHARED_SPACE
-using UVMMemSpace = Kokkos::SharedSpace;
-#else
-#ifdef KOKKOS_ENABLE_CUDA
-#ifdef KOKKOS_ENABLE_CUDA_UVM
-using UVMMemSpace = Kokkos::CudaUVMSpace;
-#else
-using UVMMemSpace = Kokkos::CudaHostPinnedSpace;
-#endif
-#elif defined(KOKKOS_ENABLE_HIP)
-using UVMMemSpace = Kokkos::HIPHostPinnedSpace;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using UVMMemSpace = Kokkos::OpenMP;
-#else
-using UVMMemSpace = Kokkos::HostSpace;
-#endif
-#endif
-
-#ifdef KOKKOS_HAS_SHARED_SPACE
-using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
-#else
-#ifdef KOKKOS_ENABLE_CUDA
-using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
-#elif defined(KOKKOS_ENABLE_HIP)
-using HostPinnedSpace = Kokkos::HIPHostPinnedSpace;
-#else
-using HostPinnedSpace = MemSpace;
-#endif
-#endif
+using HostMemSpace = HostExecSpace::memory_space;
 
 #ifdef KOKKOS_ENABLE_HIP
 template <typename ExecutionSpace>

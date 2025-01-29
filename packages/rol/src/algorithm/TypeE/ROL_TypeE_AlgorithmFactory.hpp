@@ -89,7 +89,8 @@ inline EAlgorithmE StringToEAlgorithmE(std::string s) {
 
 template<typename Real>
 inline Ptr<TypeE::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
-  EAlgorithmE ealg = StringToEAlgorithmE(parlist.sublist("Step").get("Type","Augmented Lagrangian"));
+  std::string stepType = parlist.sublist("Step").get("Type","Augmented Lagrangian");
+  EAlgorithmE ealg = StringToEAlgorithmE(stepType);
   switch(ealg) {
     case ALGORITHM_E_AUGMENTEDLAGRANGIAN: return makePtr<TypeE::AugmentedLagrangianAlgorithm<Real>>(parlist,secant);
     case ALGORITHM_E_FLETCHER:            return makePtr<TypeE::FletcherAlgorithm<Real>>(parlist,secant);

@@ -14,7 +14,7 @@
 # to trigger the right behavior in the function
 # tribits_tpl_find_include_dirs_and_libraries().
 #
-set(REQUIRED_LIBS_NAMES "lapack lapack_win32")
+set(REQUIRED_LIBS_NAMES "lapack lapack_win32 openblas")
 
 #
 # Second, search for LAPACK components (if allowed) using the standard

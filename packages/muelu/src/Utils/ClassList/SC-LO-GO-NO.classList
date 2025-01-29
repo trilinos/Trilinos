@@ -64,11 +64,9 @@ MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
-MLParameterListInterpreter - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 MultiVectorTransferFactory
 NotayAggregationFactory
 NullspaceFactory
-NullspaceFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory
@@ -148,3 +146,6 @@ RefMaxwell
 Maxwell1
 MultiPhys
 Maxwell_Utils
+SingleLevelMatlabFactory - #if defined(HAVE_MUELU_MATLAB)
+TwoLevelMatlabFactory - #if defined(HAVE_MUELU_MATLAB)
+MatlabSmoother - #if defined(HAVE_MUELU_MATLAB)

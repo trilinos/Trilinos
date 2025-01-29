@@ -1337,6 +1337,117 @@ TEST_F(NgpFieldBLASNode, field_swap_no_selector)
 
 #endif
 
+#ifdef STK_USE_DEVICE_MESH
 
+TEST_F(NgpFieldBLASNode, field_amax_device)
+{
+  if (get_parallel_size() > 2) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+  stkField1->sync_to_device();
+
+  double hostAMaxVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  for (auto& n : nodes) {
+    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
+    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
+    for (int i = 0; i < numComponents; ++i) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    }
+  }
+
+  double globalHostMax = hostAMaxVal;
+  stk::all_reduce_max(get_bulk().parallel(), &hostAMaxVal, &globalHostMax, 1u);
+
+  double devAmaxVal = 0.0;
+  stk::mesh::field_amax(devAmaxVal, *stkField1, selectRule, stk::ngp::ExecSpace());
+
+  EXPECT_EQ(globalHostMax, devAmaxVal);
+}
+
+TEST_F(NgpFieldBLASNode, field_amax_host)
+{
+  if (get_parallel_size() > 2) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+
+  double hostAMaxVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  for (auto& n : nodes) {
+    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
+    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
+    for (int i = 0; i < numComponents; ++i) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    }
+  }
+
+  double globalHostMax = hostAMaxVal;
+  stk::all_reduce_max(get_bulk().parallel(), &hostAMaxVal, &globalHostMax, 1u);
+
+  double devAmaxVal = 0.0;
+  stk::mesh::field_amax(devAmaxVal, *stkField1, selectRule, stk::ngp::HostExecSpace());
+
+  EXPECT_EQ(globalHostMax, devAmaxVal);
+}
+
+#else
+
+TEST_F(NgpFieldBLASNode, field_amax_exec_space)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+
+  double hostAMaxVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  for (auto& n : nodes) {
+    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
+    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
+    for (int i = 0; i < numComponents; ++i) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    }
+  }
+
+  double devAmaxVal = 0.0;
+  stk::mesh::field_amax(devAmaxVal, *stkField1, selectRule, stk::ngp::ExecSpace());
+
+  EXPECT_EQ(hostAMaxVal, devAmaxVal);
+}
+
+TEST_F(NgpFieldBLASNode, field_amax_no_selector)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+
+  double hostAMaxVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  for (auto& n : nodes) {
+    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
+    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
+    for (int i = 0; i < numComponents; ++i) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    }
+  }
+
+  double devAmaxVal = 0.0;
+  stk::mesh::field_amax(devAmaxVal, *stkField1, stk::ngp::ExecSpace());
+
+  EXPECT_EQ(hostAMaxVal, devAmaxVal);
+}
+
+#endif
 }
 

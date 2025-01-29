@@ -105,7 +105,6 @@
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #ifdef HAVE_MUELU_DEPRECATED_CODE
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #endif
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
@@ -115,13 +114,9 @@
 #include "MueLu_RegionRFactory_kokkos.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
-// This is distasteful, but (sadly) neccesary due to peculiarities in MueLu's build system.
-#include "../matlab/src/MueLu_SingleLevelMatlabFactory_decl.hpp"
-#include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
-#include "../matlab/src/MueLu_TwoLevelMatlabFactory_decl.hpp"
-#include "../matlab/src/MueLu_TwoLevelMatlabFactory_def.hpp"
-#include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
-#include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
+#include "MueLu_SingleLevelMatlabFactory.hpp"
+#include "MueLu_TwoLevelMatlabFactory.hpp"
+#include "MueLu_MatlabSmoother.hpp"
 #endif
 
 #ifdef HAVE_MUELU_INTREPID2
@@ -216,7 +211,6 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   if (factoryName == "CoalesceDropFactory_kokkos") return Build2<CoalesceDropFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_DEPRECATED_CODE
-  if (factoryName == "NullspaceFactory_kokkos") return Build2<NullspaceFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "SaPFactory_kokkos") return Build2<SaPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 #endif
   if (factoryName == "SemiCoarsenPFactory_kokkos") return Build2<SemiCoarsenPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
@@ -295,8 +289,8 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
     // Matlab factories
 #ifdef HAVE_MUELU_MATLAB
-  if (factoryName == "TwoLevelMatlabFactory") return Build2<TwoLevelMatlabFactory>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "SingleLevelMatlabFactory") return Build2<SingleLevelMatlabFactory>(paramList, factoryMapIn, factoryManagersIn);
+  if (factoryName == "TwoLevelMatlabFactory") return Build2<TwoLevelMatlabFactory>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "MatlabSmoother") return BuildMatlabSmoother(paramList, factoryMapIn, factoryManagersIn);
 #endif
 
@@ -594,9 +588,9 @@ RCP<FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
 }
 
 #ifdef HAVE_MUELU_MATLAB
-FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    RCP<FactoryBase>
-    FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatlabSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<FactoryBase>
+FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatlabSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
   if (paramList.begin() == paramList.end())
     return rcp(new SmootherFactory(rcp(new MatlabSmoother())));
 

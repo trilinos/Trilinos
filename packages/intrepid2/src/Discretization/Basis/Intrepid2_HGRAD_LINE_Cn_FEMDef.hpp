@@ -23,16 +23,16 @@ namespace Intrepid2 {
     
     template<EOperator opType>
     template<typename OutputViewType,
-             typename inputViewType,
-             typename workViewType,
-             typename vinvViewType>
+             typename InputViewType,
+             typename WorkViewType,
+             typename VinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_LINE_Cn_FEM::Serial<opType>::
     getValues(       OutputViewType output,
-               const inputViewType  input,
-                     workViewType   work,
-               const vinvViewType   vinv,
+               const InputViewType  input,
+                     WorkViewType   work,
+               const VinvViewType   vinv,
                const ordinal_type   operatorDn ) {    
       ordinal_type opDn = operatorDn;
 
@@ -42,12 +42,12 @@ namespace Intrepid2 {
       const ordinal_type order = card - 1;
       const double alpha = 0.0, beta = 0.0;
 
-      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
-      auto vcprop = Kokkos::common_view_alloc_prop(work);
+      typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(input);
       
       switch (opType) {
       case OPERATOR_VALUE: {
-        viewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts);     
+        ViewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts);     
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
@@ -75,7 +75,7 @@ namespace Intrepid2 {
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
         const ordinal_type dkcard = 1;
-        viewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts, dkcard);     
+        ViewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts, dkcard);     
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
@@ -326,22 +326,64 @@ namespace Intrepid2 {
                               posDfOrd);
     }  
   }
+
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perTeamSpaceSize,
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perTeamSpaceSize = 0;
+    perThreadSpaceSize = this->vinv_.extent(0)*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      const int numPoints = inputPoints.extent(0);
+      using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+      using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      ordinal_type sizePerPoint = this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
+      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, vinv_ );
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
+            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_GRAD>::getValues( output, input, work, vinv_ );
+          });
+          break;
+        default: {          
+          INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): getValues not implemented for this operator");
+          }
+    }
+  }
   
 }// namespace Intrepid2
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

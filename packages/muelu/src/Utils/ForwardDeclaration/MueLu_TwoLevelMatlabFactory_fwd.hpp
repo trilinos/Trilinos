@@ -10,6 +10,9 @@
 #ifndef MUELU_TWOLEVELMATLABFACTORY_FWD_HPP
 #define MUELU_TWOLEVELMATLABFACTORY_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_MATLAB)
+
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class TwoLevelMatlabFactory;
@@ -17,6 +20,8 @@ class TwoLevelMatlabFactory;
 
 #ifndef MUELU_TWOLEVELMATLABFACTORY_SHORT
 #define MUELU_TWOLEVELMATLABFACTORY_SHORT
+#endif
+
 #endif
 
 #endif  // MUELU_TWOLEVELMATLABFACTORY_FWD_HPP

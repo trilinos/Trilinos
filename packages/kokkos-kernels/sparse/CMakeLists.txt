@@ -18,13 +18,6 @@ LIST(APPEND SOURCES sparse/tpls/KokkosKernels_tpl_handles.cpp)
 #that should be instantiated based on input options
 #Generate @X@ variables in the template X.hpp.in and X.cpp.in
 #files containing the list of all needed macros
-KOKKOSKERNELS_GENERATE_ETI(Sparse_sptrsv_solve sptrsv_solve
-  COMPONENTS  sparse
-  HEADER_LIST ETI_HEADERS
-  SOURCE_LIST SOURCES
-  TYPE_LISTS  FLOATS ORDINALS OFFSETS LAYOUTS DEVICES
-)
-
 KOKKOSKERNELS_GENERATE_ETI(Sparse_spmv_struct spmv
   COMPONENTS  sparse
   HEADER_LIST ETI_HEADERS
@@ -154,6 +147,13 @@ KOKKOSKERNELS_GENERATE_ETI(Sparse_gmres gmres
 )
 
 KOKKOSKERNELS_GENERATE_ETI(Sparse_sptrsv_symbolic sptrsv_symbolic
+  COMPONENTS  sparse
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS  FLOATS ORDINALS OFFSETS LAYOUTS DEVICES
+)
+
+KOKKOSKERNELS_GENERATE_ETI(Sparse_sptrsv_solve sptrsv_solve
   COMPONENTS  sparse
   HEADER_LIST ETI_HEADERS
   SOURCE_LIST SOURCES

@@ -8,6 +8,8 @@
 // *****************************************************************************
 // @HEADER
 
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
+
 #include <Panzer_SetupPartitionedWorksetUtilities.hpp>
 #include "Panzer_STK_WorksetFactory.hpp"
 
@@ -119,6 +121,7 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
   }
   else {
     TEUCHOS_ASSERT(false);
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 }
 

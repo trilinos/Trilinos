@@ -62,7 +62,7 @@ class BulkData;
 class MetaData;
 class UnitTestFieldImpl;
 class FieldBase;
-template<typename T, template <typename> class NgpDebugger> class DeviceField;
+template<typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger> class DeviceField;
 
 namespace impl {
 class FieldRepository;
@@ -340,8 +340,8 @@ public:
   friend NgpFieldBase* impl::get_ngp_field(const FieldBase & stkField);
   friend void impl::set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
 
-  template <typename T, template <typename> class NgpDebugger> friend class HostField;
-  template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
+  template <typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger> friend class HostField;
+  template <typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger> friend class DeviceField;
   template <typename Scalar> friend class Field;
 
 protected:

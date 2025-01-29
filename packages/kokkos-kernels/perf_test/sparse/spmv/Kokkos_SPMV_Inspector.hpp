@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SPMV_INSPECTOR_HPP_
-#define KOKKOS_SPMV_INSPECTOR_HPP_
+#ifndef KOKKOSKERNELS_PERFTEST_SPMV_INSPECTOR_HPP
+#define KOKKOSKERNELS_PERFTEST_SPMV_INSPECTOR_HPP
 
 #include "Kokkos_SPMV.hpp"
 
@@ -125,4 +125,4 @@ void kk_inspector_matvec(AType A, XType x, YType y, int team_size, int vector_le
   Kokkos::parallel_for("KokkosSparse::PerfTest::SpMV_Inspector", policy, func);
 }
 
-#endif /* KOKKOS_SPMV_HPP_ */
+#endif  // KOKKOSKERNELS_PERFTEST_SPMV_INSPECTOR_HPP

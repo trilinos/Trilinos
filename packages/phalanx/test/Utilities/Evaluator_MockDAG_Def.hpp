@@ -14,8 +14,8 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_MDField.hpp"
 
-class CELL;
-class BASIS;
+struct CELL;
+struct BASIS;
 
 namespace PHX {
 

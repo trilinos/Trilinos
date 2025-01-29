@@ -120,6 +120,8 @@ struct SPGEMM_NOREUSE<CMatrix, AMatrix, BMatrix, false, KOKKOSKERNELS_IMPL_COMPI
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,                            \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spgemm_noreuse_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPGEMM_NOREUSE_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, EXEC_SPACE_TYPE,            \
                                                   MEM_SPACE_TYPE)                                                     \
   template struct SPGEMM_NOREUSE<                                                                                     \

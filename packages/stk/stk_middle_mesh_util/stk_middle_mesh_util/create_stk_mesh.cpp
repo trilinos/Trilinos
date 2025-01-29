@@ -288,20 +288,20 @@ void StkMeshCreator::setup_edge_sharing(std::shared_ptr<mesh::Mesh> mesh, MeshFi
     constexpr unsigned maxNumEdgeNodes = 3;
     std::vector<stk::mesh::Entity> edgeNodes(maxNumEdgeNodes);
     std::vector<mesh::MeshEntityPtr> edgeVerts(maxNumEdgeNodes);
-    
+
     const std::vector<mesh::MeshEntityPtr>& surfaceElems = mesh->get_elements();
     for(const mesh::MeshEntityPtr& elem : surfaceElems) {
       if (elem) {
         const stk::mesh::SideSetEntry& ssetEntry = (*stkElsField)(elem, 0, 0);
         stk::mesh::Entity stkEl = ssetEntry.element;
-        
+
         const bool stkElemIsFace = ssetEntry.side != stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
         if (stkElemIsFace) {
           stkEl = stk::mesh::get_side_entity_for_elem_side_pair(bulk, stkEl, ssetEntry.side);
         }
-        
+
         stk::topology stkTopo = bulk.bucket(stkEl).topology();
-        
+
         const stk::mesh::Entity* nodes = bulk.begin_nodes(stkEl);
 
         for(int dn=0; dn<elem->count_down(); ++dn) {
@@ -309,7 +309,7 @@ void StkMeshCreator::setup_edge_sharing(std::shared_ptr<mesh::Mesh> mesh, MeshFi
           STK_ThrowRequire((edgeEnt && edgeEnt->get_type() == mesh::MeshEntityType::Edge));
           edgeNodes.resize(edgeEnt->count_down());
           stkTopo.edge_nodes(nodes, dn, edgeNodes.data());
-          
+
           edgeVerts.resize(edgeEnt->count_down());
 
           for(int n=0; n<edgeEnt->count_down(); ++n) {

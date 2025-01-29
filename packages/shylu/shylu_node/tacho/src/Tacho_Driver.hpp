@@ -16,6 +16,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho.hpp"
+#include "Tacho_Util.hpp"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
@@ -24,7 +25,7 @@ namespace Tacho {
 
 /// forward decl
 class Graph;
-#if defined(TACHO_HAVE_METIS)
+#if defined(TACHO_HAVE_METIS) || defined(TACHO_HAVE_TRILINOS_SS)
 class GraphTools_Metis;
 #else
 class GraphTools;
@@ -42,6 +43,7 @@ template <typename ValueType, typename DeviceType, int Var> class NumericToolsLe
 template <typename ValueType, typename DeviceType> struct Driver {
 public:
   using value_type = ValueType;
+  using mag_type = typename ArithTraits<ValueType>::mag_type;
   using device_type = DeviceType;
   using exec_space = typename device_type::execution_space;
   using exec_memory_space = typename device_type::memory_space;
@@ -63,7 +65,7 @@ public:
   using crs_matrix_type = CrsMatrixBase<value_type, device_type>;
   using crs_matrix_type_host = CrsMatrixBase<value_type, host_device_type>;
 
-#if defined(TACHO_HAVE_METIS)
+#if defined(TACHO_HAVE_METIS) || defined(TACHO_HAVE_TRILINOS_SS)
   using graph_tools_type = GraphTools_Metis;
 #else
   using graph_tools_type = GraphTools;
@@ -111,6 +113,7 @@ private:
   ordinal_type_array_host _h_peri_graph;
 
   // ** symbolic factorization output
+  ordinal_type _nnz_u;
   // supernodes output
   ordinal_type _nsupernodes;
   ordinal_type_array _supernodes;
@@ -160,6 +163,8 @@ private:
   ordinal_type _variant;             // algorithmic variant in levelset 0: naive, 1: invert diagonals
   ordinal_type _nstreams;            // on cuda, multi streams are used
 
+  mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
+
   // parallelism and memory constraint is made via this parameter
   ordinal_type _max_num_superblocks; // # of superblocks in the memoyrpool
 
@@ -206,9 +211,14 @@ public:
   void setLevelSetOptionNumStreams(const ordinal_type nstreams);
   void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
+  void setPivotTolerance(const mag_type pivot_tol);
+  void useNoPivotTolerance();
+  void useDefaultPivotTolerance();
+
   ///
   /// get interface
   ///
+  ordinal_type getNumNonZerosU() const;
   ordinal_type getNumSupernodes() const;
   ordinal_type_array getSupernodes() const;
   ordinal_type_array getPermutationVector() const;
@@ -222,6 +232,7 @@ public:
   template <typename arg_size_type_array, typename arg_ordinal_type_array>
   int analyze(const ordinal_type m, const arg_size_type_array &ap, const arg_ordinal_type_array &aj,
               const bool duplicate = false) {
+
     _m = m;
 
     if (duplicate) {
@@ -270,6 +281,7 @@ public:
               const arg_perm_type_array &perm, const arg_perm_type_array &peri, const bool duplicate = false) {
     _m = m;
 
+    // this takes the user-specified perm, such that analyze() won't call graph partitioner
     if (duplicate) {
       /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
       _h_ap = size_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0));
@@ -373,6 +385,46 @@ public:
     _nnz_graph = _h_ap_graph(m_graph);
 
     return analyze();
+  }
+
+  template <typename arg_size_type_array, typename arg_ordinal_type_array>
+  int analyze(const ordinal_type m, const ordinal_type blk_size,
+              const arg_size_type_array &ap, const arg_ordinal_type_array &aj,
+              const bool duplicate = false) {
+
+    if (blk_size > 1) {
+      //condense graph before calling analyze
+      const size_type nnz = ap(m);
+      ordinal_type m_graph = m / blk_size;
+      size_type nnz_graph = nnz / (blk_size*blk_size);
+      TACHO_TEST_FOR_EXCEPTION((m != blk_size * m_graph || nnz != size_type(blk_size*blk_size) * nnz_graph),
+        std::logic_error, "Failed to initialize the condensed graph");
+
+      size_type_array_host ap_graph
+        (Kokkos::ViewAllocateWithoutInitializing("ap_graph"), 1+m_graph);
+      ordinal_type_array_host aj_graph
+        (Kokkos::ViewAllocateWithoutInitializing("aj_graph"), nnz_graph);
+      ordinal_type_array_host aw_graph
+        (Kokkos::ViewAllocateWithoutInitializing("wgs"), m_graph);
+      // condense the graph
+      nnz_graph = 0;
+      ap_graph(0) = 0;
+      for (ordinal_type i = 0; i < m; i += blk_size) {
+        for (size_type k = ap(i); k < ap(i+1); k++) {
+          if (aj(k)%blk_size == 0) {
+            aj_graph(nnz_graph) = aj(k)/blk_size;
+            nnz_graph++;
+          }
+          aw_graph(i/blk_size) = blk_size;
+          ap_graph((i/blk_size)+1) = nnz_graph;
+        }
+      }
+      TACHO_TEST_FOR_EXCEPTION((nnz != size_type(blk_size*blk_size) * nnz_graph),
+        std::logic_error, "Failed to condense graph");
+      return analyze(m, ap, aj, m_graph, ap_graph, aj_graph, aw_graph, duplicate);
+    } else {
+      return analyze(m, ap, aj, duplicate);
+    }
   }
 
   int initialize();

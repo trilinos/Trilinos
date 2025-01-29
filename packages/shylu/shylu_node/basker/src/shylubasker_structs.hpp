@@ -54,7 +54,6 @@ namespace BaskerNS
       #ifndef BASKER_KOKKOS
       FREE_INT_1DARRAY(iws);
       FREE_ENTRY_1DARRAY(ews);
-      C.Finalize();
       #endif
     }
 
@@ -118,7 +117,7 @@ namespace BaskerNS
   //Used to store information about the tree
   template <class Int, class Entry, class Exe_Space >
   struct  basker_tree
-  {  
+  {
     BASKER_INLINE
     basker_tree()
     {
@@ -129,13 +128,12 @@ namespace BaskerNS
     BASKER_INLINE
     ~basker_tree()
     {
-      //Finalize();
+      Finalize();
     }//end ~basker_tree
 
     BASKER_INLINE
     void Finalize()
     {
-      //printf("basker_tree Finalize todo \n");
       if(nroots > 0)
       {
         FREE_INT_1DARRAY(roots);
@@ -237,6 +235,7 @@ namespace BaskerNS
     INT_1DARRAY  rowptr;
     INT_1DARRAY  child;
     INT_1DARRAY  sibling;
+    INT_1DARRAY  leaf_nnz;
   };//end basker_tree
 
 
@@ -267,7 +266,7 @@ namespace BaskerNS
 
     ~basker_symbolic_tree()
     {
-      //Finalize();
+      Finalize();
     }//end ~basker_symbolic_tree
 
     BASKER_INLINE

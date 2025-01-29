@@ -67,12 +67,12 @@ class Test_parse_args(unittest.TestCase):
                                          target_branch_name='real_trash',
                                          pullrequest_build_name='Some_odd_compiler',
                                          genconfig_build_name='Some_odd_compiler_and_options',
-                                         dashboard_build_name='UNKNOWN',
+                                         dashboard_build_name=None,
                                          pullrequest_number='4242',
                                          jenkins_job_number='2424',
-                                         source_dir='UNKNOWN',
-                                         build_dir='UNKNOWN',
-                                         ctest_driver='UNKNOWN',
+                                         source_dir=None,
+                                         build_dir=None,
+                                         ctest_driver=None,
                                          ctest_drop_site='testing.sandia.gov',
                                          pullrequest_cdash_track='Pull Request',
                                          pullrequest_env_config_file='/dev/null/Trilinos_clone/pr_config/pullrequest.ini',
@@ -80,10 +80,13 @@ class Test_parse_args(unittest.TestCase):
                                          workspace_dir='/dev/null/Trilinos_clone',
                                          filename_packageenables='../packageEnables.cmake',
                                          filename_subprojects='../package_subproject_list.cmake',
+                                         skip_create_packageenables=False,
+                                         skip_run_tests=False,
                                          test_mode='standard',
                                          req_mem_per_core=3.0,
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
+                                         slots_per_gpu=2,
                                          ccache_enable=False,
                                          dry_run=False,
                                          use_explicit_cachefile=False,
@@ -97,9 +100,9 @@ class Test_parse_args(unittest.TestCase):
                 | - [R] genconfig-build-name        : Some_odd_compiler_and_options
                 | - [R] pullrequest-number          : 4242
                 | - [R] jenkins-job-number          : 2424
-                | - [R] source-dir                  : UNKNOWN
-                | - [R] build-dir                   : UNKNOWN
-                | - [R] ctest-driver                : UNKNOWN
+                | - [R] source-dir                  : None
+                | - [R] build-dir                   : None
+                | - [R] ctest-driver                : None
                 | - [R] ctest-drop-site             : testing.sandia.gov
                 |
                 | - [O] dry-run                     : False
@@ -157,7 +160,6 @@ class Test_parse_args(unittest.TestCase):
         '''
         No inputs
         '''
-        import difflib
         with self.m_argv, self.stdoutRedirect as m_stdout:
             returned_default = PullRequestLinuxDriverTest.parse_args()
 

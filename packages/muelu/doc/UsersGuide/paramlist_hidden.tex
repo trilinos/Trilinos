@@ -56,11 +56,13 @@
         
 \cbb{coarse: max size}{int}{2000}{Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.}
         
-\cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.}
+\cbb{coarse: type}{string}{"KLU"}{Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.}
         
 \cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to the appropriate package library.}
         
 \cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
+        
+\cbb{aggregation: backend}{string}{"default"}{Aggregation scheme. Possible values: "default", "host", "kokkos"}
         
 \cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.}
         
@@ -90,6 +92,8 @@
 \cbb{aggregation: distance laplacian directional weights}{Array(double)}{{1,1,1}}{Directional weights for the distance laplacian}
         
 \cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
+        
+\cbb{aggregation: distance laplacian metric}{string}{unweighted}{Metric used to compute the distance Laplacian. Possible values: "unweighted", "material"}
         
 \cbb{aggregation: classical algo}{string}{"default"}{Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         
@@ -182,6 +186,10 @@
 \cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
         
 \cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+        
+\cbb{aggregation: output file: aggregate qualities}{bool}{false}{Whether to plot the aggregate quality.}
+        
+\cbb{aggregation: output file: material}{bool}{false}{Whether to plot the material.}
         
 \cba{aggregation: params}{\parameterlist}{Sublist of options for use by aggregation.}
         
@@ -338,6 +346,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
         
 \cbb{filtered matrix: reuse graph}{bool}{true}{Set values to zero instead of constructing a new graph.}
+        
+\cbb{matrix: compute analysis}{bool}{false}{Perform matrix analysis. Checks several matrix properties and prints statistics.}
         
 \cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual), "sd" (steepest descent).}
         

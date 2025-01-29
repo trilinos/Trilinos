@@ -49,13 +49,12 @@ evaluateFields(typename TRAITS::EvalData workset)
   auto param_val = param->getValue();
   auto target_field_v = target_field.get_static_view();
   auto target_field_h = Kokkos::create_mirror_view(target_field_v);
-  
+
   for (int cell=0; cell < workset.num_cells; ++cell) {
     for (std::size_t pt=0; pt<target_field_v.extent(1); ++pt)
       target_field_h(cell,pt) = param_val;
   }
   Kokkos::deep_copy(target_field_v, target_field_h);
-
 }
 
 //**********************************************************************

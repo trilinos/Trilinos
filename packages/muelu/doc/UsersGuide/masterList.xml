@@ -353,7 +353,7 @@
       <name>coarse: type</name>
       <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
-      <default>"SuperLU"</default>
+      <default>"KLU"</default>
       <description>Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.</description>
     </parameter>
 
@@ -375,6 +375,15 @@
   </smoothing_and_coarse>
 
   <aggregation>
+
+    <parameter>
+      <name>aggregation: backend</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Aggregation scheme. Possible values: "default", "host", "kokkos"</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
     <parameter>
       <name>aggregation: type</name>
@@ -501,6 +510,14 @@
       <default>"default"</default>
       <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: distance laplacian metric</name>
+      <type>string</type>
+      <default>unweighted</default>
+      <description>Metric used to compute the distance Laplacian. Possible values: "unweighted", "material"</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -873,6 +890,22 @@
       <type>bool</type>
       <default>false</default>
       <description>Whether to output a random colormap in a separate XML file.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: aggregate qualities</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to plot the aggregate quality.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: material</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to plot the material.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -1506,6 +1539,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>matrix: compute analysis</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Perform matrix analysis. Checks several matrix properties and prints statistics.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>emin: iterative method</name>
       <type>string</type>
       <default>"cg"</default>
@@ -1785,7 +1827,7 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
     </parameter>
 
-    
+
   </rebalancing>
 
   <rap>
