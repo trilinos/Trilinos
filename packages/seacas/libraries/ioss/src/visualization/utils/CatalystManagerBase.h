@@ -25,8 +25,8 @@ namespace Iovs {
   {
 
   public:
-    CatalystManagerBase(){};
-    virtual ~CatalystManagerBase(){};
+    CatalystManagerBase() {};
+    virtual ~CatalystManagerBase() {};
 
     struct ParseResult
     {

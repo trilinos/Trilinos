@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -55,7 +55,7 @@ class TestPhactoriSegment(unittest.TestCase):
     self.assertEqual(testpt1, theSegment.ptB)
     testpt1 = theSegment.FindNearestPointOnSegmentToPoint([0.0, 0.0, 0.0])
     self.assertEqual(testpt1, [-0.3793103448275862, -0.06896551724137923, 0.24137931034482762])
-   
+
   def test_FindDistanceSquaredToPoint(self):
     theSegment = PhactoriSegment()
     theSegment.SetPoints([-1.0, -1.0, -1.0], [1.0, 2.0, 3.0])
@@ -223,5 +223,3 @@ if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
-
-

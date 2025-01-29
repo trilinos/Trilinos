@@ -26,7 +26,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 if (explore_added)
   if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
-    InstallSymLink(explore ${CMAKE_INSTALL_PREFIX}/bin/grope)
+    InstallSymLink(explore ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/grope)
   endif()
 endif()
 

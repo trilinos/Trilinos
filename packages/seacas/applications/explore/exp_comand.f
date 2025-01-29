@@ -170,7 +170,7 @@ C   --changing the table.
      4  'GVARS   ', 'NVARS   ', 'EVARS   ', 'NSVARS  ', 'SSVARS  ',
      5  '        ' /
       DATA LISTBL /
-     1  'TITLE   ', 'VARS    ', 'QAINFO  ', 'QA', 'INFORMATION', 
+     1  'TITLE   ', 'VARS    ', 'QAINFO  ', 'QA', 'INFORMATION',
      2  'COORDINA', 'MAP     ', 'NMAP    ', 'NODEMAP ',
      3  'BLOCKS  ', 'MATERIAL', 'LINK    ', 'CONNECTI', 'ATTRIBUT',
      4  'NSETS   ', 'NNODES  ', 'NFACTORS', 'INVCON  ',

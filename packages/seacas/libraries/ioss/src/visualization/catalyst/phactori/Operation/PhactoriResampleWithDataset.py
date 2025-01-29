@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -105,7 +105,7 @@ class PhactoriResampleWithDatasetOperation(PhactoriOperationSpecifics):
     self.InternalParaViewFilterPtr.CellLocator = 'Static Cell Locator'
 
     self.DebugPrintInputPortAndOutputPortInfo("pre filter update 1\n")
- 
+
     SetActiveSource(self.InternalParaViewFilterPtr)
     SetActiveSource(savedActiveSource)
 
@@ -119,7 +119,7 @@ class PhactoriResampleWithDatasetOperation(PhactoriOperationSpecifics):
     self.InternalParaViewFilterPtr.UpdatePipeline()
 
     self.DebugPrintInputPortAndOutputPortInfo("post filter update 1\n")
- 
+
     if PhactoriDbg(100):
       myDebugPrint3("self.InternalParaViewFilterPtr: " + str(self.InternalParaViewFilterPtr) + "\n", 100)
 

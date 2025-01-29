@@ -1,7 +1,7 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # See packages/seacas/LICENSE for details
 
 # script to run all tests and compare them to saved dump files.
@@ -24,7 +24,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _Fill
 
 echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
-${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd.dmp 
+${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd.dmp
 echo "end testrd" >> test.output
 
 echo "testrdv - single precision read test with varid..."
@@ -54,7 +54,7 @@ echo "testcp_nl - normal_model to large_model single precision copy test..."
 echo "begin testcp_nl" >> test.output
 ${PREFIX} ${SRCDIR}/testcp_nl >> test.output
 echo "end testcp_nl" >> test.output
-${NCDUMP} -d5,5 testcp_nl.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_nl.dmp 
+${NCDUMP} -d5,5 testcp_nl.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_nl.dmp
 
 echo "testwt_clb - single precision write test using concatenated puts..."
 echo "begin testwt_clb" >> test.output
@@ -90,13 +90,13 @@ echo "testwt1 ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt1" >> test.output
 ${PREFIX} ${SRCDIR}/testwt1 >> test.output
 echo "end testwt1" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test1.dmp 
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test1.dmp
 
 echo "testrd1 - single precision read test of a file with several side sets..."
 echo "testrd1 ... [Expect file create failure error, NOCLOBBER]"
 echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
 echo "begin testrd1" >> test.output
-${PREFIX} ${SRCDIR}/testrd1 | grep -v version > ${SRCDIR}/testrd1.dmp 
+${PREFIX} ${SRCDIR}/testrd1 | grep -v version > ${SRCDIR}/testrd1.dmp
 echo "end testrd1" >> test.output
 
 echo "testwt_ss - write files to test side sets..."
@@ -155,7 +155,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _Fill
 
 echo "testrd - read test of file with zero elements..."
 echo "begin testrd zero elements" >> test.output
-${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd_zeroe.dmp 
+${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd_zeroe.dmp
 echo "end testrd zero elements" >> test.output
 
 echo "testwt-one-attrib - read/write test of element attributes - read one at a time..."
@@ -193,7 +193,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _Fill
 
 echo "testrd - read long name file truncating to 32 characters on read..."
 echo "begin testrd (truncate)" >> test.output
-${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd-nm32.dmp 
+${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd-nm32.dmp
 echo "end testrd (truncate)" >> test.output
 
 echo "testrd-long-name - read long name file..."

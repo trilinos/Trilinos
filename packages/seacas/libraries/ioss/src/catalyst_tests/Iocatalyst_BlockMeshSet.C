@@ -12,8 +12,8 @@
 #include <Ioss_NodeBlock.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
-#include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst/Iocatalyst_CatalystManager.h>
+#include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst_tests/Iocatalyst_BlockMeshSet.h>
 #include <unordered_set>
 
@@ -41,12 +41,12 @@ namespace Iocatalyst {
     CatalystManager::getInstance().reset();
     iop.isCatalyst = true;
 
-    //Cat Writes
+    // Cat Writes
     writeIOSSFile(iop);
     Ioss::PropertyManager cdbProps = Ioss::PropertyManager(iop.dbProps);
     cdbProps.add(Ioss::Property("CATALYST_CONDUIT_NODE", iop.getCatalystConduitNode()));
 
-    //Cat Reads here
+    // Cat Reads here
     Ioss::DatabaseIO *cdbi =
         Ioss::IOFactory::create(CATALYST_DATABASE_TYPE, CATALYST_DUMMY_DATABASE, Ioss::READ_RESTART,
                                 Ioss::ParallelUtils::comm_world(), cdbProps);
@@ -70,20 +70,20 @@ namespace Iocatalyst {
     Ioss::copy_database(cir, cor, options);
   }
 
-  Ioss::DatabaseIO* BlockMeshSet::getCatalystDatabase(IOSSparams &iop)
+  Ioss::DatabaseIO *BlockMeshSet::getCatalystDatabase(IOSSparams &iop)
   {
     CatalystManager::getInstance().reset();
     iop.isCatalyst = true;
-    
-    //Write to Cat database
+
+    // Write to Cat database
     writeIOSSFile(iop);
 
     Ioss::PropertyManager cdbProps = Ioss::PropertyManager(iop.dbProps);
 
-    //Get Conduit
+    // Get Conduit
     cdbProps.add(Ioss::Property("CATALYST_CONDUIT_NODE", iop.getCatalystConduitNode()));
 
-    //Read to Cat Database
+    // Read to Cat Database
     Ioss::DatabaseIO *cdbi =
         Ioss::IOFactory::create(CATALYST_DATABASE_TYPE, CATALYST_DUMMY_DATABASE, Ioss::READ_RESTART,
                                 Ioss::ParallelUtils::comm_world(), cdbProps);
@@ -107,7 +107,7 @@ namespace Iocatalyst {
   void BlockMeshSet::openIOSSDatabase(IOSSparams &iop)
   {
     Ioss::PropertyManager properties = Ioss::PropertyManager(iop.dbProps);
-    std::string           dbType = iop.dbType;
+    std::string           dbType     = iop.dbType;
     if (iop.isCatalyst) {
       dbType = CATALYST_DATABASE_TYPE;
     }
@@ -258,7 +258,8 @@ namespace Iocatalyst {
   void BlockMeshSet::writeStructuredTransientFieldDefinitions(IOSSparams &iop)
   {
     for (auto bm : bms) {
-      //Modify this to access field dict in "bm" and populate ioss block with those fields (as well).
+      // Modify this to access field dict in "bm" and populate ioss block with those fields (as
+      // well).
       auto iossBlock = iop.region->get_structured_block(getStructuredBlockName(bm.getID()));
       iossBlock->field_add(Ioss::Field(IOSS_CELL_FIELD, Ioss::Field::REAL, IOSS_SCALAR_STORAGE,
                                        Ioss::Field::TRANSIENT));
@@ -359,7 +360,7 @@ namespace Iocatalyst {
       auto nodeBlock = iop.region->get_node_block("nodeblock");
       nodeBlock->field_add(Ioss::Field(IOSS_POINT_FIELD, Ioss::Field::REAL, IOSS_SCALAR_STORAGE,
                                        Ioss::Field::TRANSIENT));
-      
+
       writeUnstructuredAddedTransientFields(bm, iop);
     }
   }
@@ -373,23 +374,21 @@ namespace Iocatalyst {
   void BlockMeshSet::writeUnstructuredAddedCellTransientFields(BlockMesh bm, IOSSparams &iop)
   {
     auto cell_fields = bm.getTransientCellFieldMap();
-    auto elemBlock = iop.region->get_element_block(getUnstructuredBlockName(bm.getID()));
-    for (auto itr = cell_fields->begin(); itr != cell_fields->end(); ++itr) 
-    { 
-      elemBlock->field_add(Ioss::Field(itr->first, Ioss::Field::REAL, IOSS_SCALAR_STORAGE,
-                                       Ioss::Field::TRANSIENT));
-    } 
+    auto elemBlock   = iop.region->get_element_block(getUnstructuredBlockName(bm.getID()));
+    for (auto itr = cell_fields->begin(); itr != cell_fields->end(); ++itr) {
+      elemBlock->field_add(
+          Ioss::Field(itr->first, Ioss::Field::REAL, IOSS_SCALAR_STORAGE, Ioss::Field::TRANSIENT));
+    }
   }
 
   void BlockMeshSet::writeUnstructuredAddedPointTransientFields(BlockMesh bm, IOSSparams &iop)
   {
     auto point_fields = bm.getTransientPointFieldMap();
-    auto nodeBlock = iop.region->get_node_block("nodeblock");
-    for (auto itr = point_fields->begin(); itr != point_fields->end(); ++itr) 
-    { 
-      nodeBlock->field_add(Ioss::Field(itr->first, Ioss::Field::REAL, IOSS_SCALAR_STORAGE,
-                                       Ioss::Field::TRANSIENT));
-    } 
+    auto nodeBlock    = iop.region->get_node_block("nodeblock");
+    for (auto itr = point_fields->begin(); itr != point_fields->end(); ++itr) {
+      nodeBlock->field_add(
+          Ioss::Field(itr->first, Ioss::Field::REAL, IOSS_SCALAR_STORAGE, Ioss::Field::TRANSIENT));
+    }
   }
 
   void BlockMeshSet::writeUnstructuredTransientBulkData(IOSSparams &iop)
@@ -422,36 +421,36 @@ namespace Iocatalyst {
     writeUnstructuredAddedPointTransientFieldsBulkData(bm, iop);
   }
 
-  void BlockMeshSet::writeUnstructuredAddedCellTransientFieldsBulkData(BlockMesh bm, IOSSparams &iop)
+  void BlockMeshSet::writeUnstructuredAddedCellTransientFieldsBulkData(BlockMesh   bm,
+                                                                       IOSSparams &iop)
   {
     auto cell_fields = bm.getTransientCellFieldMap();
-    auto elemBlock = iop.region->get_element_block(getUnstructuredBlockName(bm.getID()));
+    auto elemBlock   = iop.region->get_element_block(getUnstructuredBlockName(bm.getID()));
     std::vector<double> values;
-    for (auto itr = cell_fields->begin(); itr != cell_fields->end(); ++itr) 
-    {
+    for (auto itr = cell_fields->begin(); itr != cell_fields->end(); ++itr) {
       int num_elements = elemBlock->get_field(itr->first).raw_count();
       for (int j = 0; j < num_elements; j++) {
-        values.push_back(itr->second + j*0.1);
+        values.push_back(itr->second + j * 0.1);
       }
       elemBlock->put_field_data(itr->first, values);
       values.clear();
-    } 
+    }
   }
 
-  void BlockMeshSet::writeUnstructuredAddedPointTransientFieldsBulkData(BlockMesh bm, IOSSparams &iop)
+  void BlockMeshSet::writeUnstructuredAddedPointTransientFieldsBulkData(BlockMesh   bm,
+                                                                        IOSSparams &iop)
   {
-    auto point_fields = bm.getTransientPointFieldMap();
-    auto nodeBlock = iop.region->get_node_block("nodeblock");
+    auto                point_fields = bm.getTransientPointFieldMap();
+    auto                nodeBlock    = iop.region->get_node_block("nodeblock");
     std::vector<double> values;
-    for (auto itr = point_fields->begin(); itr != point_fields->end(); ++itr) 
-    {
+    for (auto itr = point_fields->begin(); itr != point_fields->end(); ++itr) {
       int num_nodes = nodeBlock->get_field(itr->first).raw_count();
       for (int j = 0; j < num_nodes; j++) {
-        values.push_back(itr->second + j*0.1);
+        values.push_back(itr->second + j * 0.1);
       }
       nodeBlock->put_field_data(itr->first, values);
       values.clear();
-    } 
+    }
   }
 
   std::string BlockMeshSet::getStructuredBlockName(int index)

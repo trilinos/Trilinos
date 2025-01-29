@@ -65,9 +65,6 @@ namespace Cpup {
     bool map_element_ids() const { return mapIds_; }
     bool omit_nodesets() const { return omitNodesets_; }
     bool omit_sidesets() const { return omitSidesets_; }
-    int  compress_data() const { return compressData_; }
-    bool zlib() const { return zlib_; }
-    bool szip() const { return szip_; }
     bool subcycle_join() const { return subcycleJoin_; }
     bool keep_temporary() const { return keepTemporary_; }
     bool verify_valid_file() const { return verifyValidFile_; }
@@ -132,10 +129,7 @@ namespace Cpup {
     int  partCount_{-1};
     int  subcycle_{-1};
     int  cycle_{-1};
-    int  compressData_{0};
     int  maxOpenFiles_{0};
-    bool zlib_{true};
-    bool szip_{false};
     bool sumSharedNodes_{false};
     bool addProcessorIdField_{false};
     bool addProcessorIdMap_{false};

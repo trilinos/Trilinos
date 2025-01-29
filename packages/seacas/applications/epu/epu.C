@@ -1452,13 +1452,14 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
             }
             for (int ig = 0; ig < global_vars.count(InOut::IN); ig++) {
               if (proc_global_values[ig] != global_values[ig]) {
-                fmt::print(stderr,
-                           fmt::runtime("At step {:{}}, Global Variable {:{}}, P{:0{}} = {:15.8g}, P{:0{}} = "
-					"{:15.8g}\n"),
-                           time_step + 1, ts_max + 1, ig + 1,
-                           get_width(global_vars.count(InOut::IN)), start_part,
-                           get_width(interFace.processor_count()), start_part + p,
-                           get_width(interFace.processor_count()), proc_global_values[ig]);
+                fmt::print(
+                    stderr,
+                    fmt::runtime(
+                        "At step {:{}}, Global Variable {:{}}, P{:0{}} = {:15.8g}, P{:0{}} = "
+                        "{:15.8g}\n"),
+                    time_step + 1, ts_max + 1, ig + 1, get_width(global_vars.count(InOut::IN)),
+                    start_part, get_width(interFace.processor_count()), start_part + p,
+                    get_width(interFace.processor_count()), proc_global_values[ig]);
               }
             }
           }

@@ -122,7 +122,6 @@ TEST_F(Iocatalyst_DatabaseIOTest, CellIdsAndCellNodeIds)
   EXPECT_EQ(cidBuff[0], 1);
   EXPECT_EQ(cidBuff[cids.raw_count() - 1], 256);
 
-
   auto cnids = sb->get_fieldref("cell_node_ids");
   EXPECT_TRUE(cnids.get_type() == Ioss::Field::INTEGER);
   std::vector<int32_t> cnidsBuff(cnids.raw_count());

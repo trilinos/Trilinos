@@ -180,7 +180,7 @@ $ Test int and [] (shortcut for int)
 
 $ Test looping - print sin, cos from 0 to 90 by 5
 {Loop(19, _angle, 0, 5)}
-{_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
+{_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)}
 {EndLoop}
 
 $$$$ Test formatting and string concatenation
@@ -189,6 +189,11 @@ $$$$ Test formatting and string concatenation
 {IO(__loop_1+1)} Using the format {_FORMAT = "%." // tostring(__loop_1+1) // "g"},	PI = {PI}
 {endloop}
 Reset format to default: {_FORMAT = _SAVE}
+
+$$$$ Test formatting using the `format` function.  _FORMAT is not modified
+{loop(20)}
+{__loop_1+1} Using the format {_f = "%." // tostring(__loop_1+1) // "f"},	PI = {format(PI,_f)}
+{endloop}
 
 $$$$ Test string rescanning and executing
 {ECHO(OFF)}
@@ -200,12 +205,12 @@ $$$$ Test string rescanning and executing
 Original String:
 {Test}
 Rescanned String:
-{rescan(Test)} 
+{rescan(Test)}
 Original String:
 {Test2}
 Print Value of variable T = {T}
 Rescanned String:
-{rescan(Test2)} 
+{rescan(Test2)}
 Print Value of variable T = {T}
 
 Original String: {t1 = "atan2(0,-1)"}
@@ -257,4 +262,8 @@ This should not be echoed
 {loop(undefined)}
 This should not be echoed
 {endloop}
+$$$$ Test double brace echo off/on
+Nothing further on line: {{"not echoed"}}
+Noecho followed by non-parsing output: {{"not echoed"}}This should be echoed
+Echo, noecho setting variable, then echo that variable: {e="echo"}+{{d="echo"}}+{d}
 $End of test file

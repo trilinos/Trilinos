@@ -124,19 +124,6 @@ void Cpup::SystemInterface::enroll_options()
       "large subcycle runs.",
       nullptr);
 
-  options_.enroll(
-      "zlib", GetLongOption::NoValue,
-      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
-      nullptr);
-
-  options_.enroll("szip", GetLongOption::NoValue,
-                  "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
-
-  options_.enroll("compress_data", GetLongOption::MandatoryValue,
-                  "The output database will be written using compression (netcdf-4 mode only).\n"
-                  "\t\tValue ranges from 0..9 for zlib/gzip or even values 4..32 for szip.",
-                  nullptr, nullptr, true);
-
   options_.enroll("append", GetLongOption::NoValue,
                   "Append to database instead of opening a new database.\n"
                   "\t\tTimestep transfer will start after last timestep on database",
@@ -301,18 +288,7 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
 
   append_ = options_.retrieve("append") != nullptr;
 
-  if (options_.retrieve("szip") != nullptr) {
-    szip_ = true;
-    zlib_ = false;
-  }
-  zlib_ = (options_.retrieve("zlib") != nullptr);
-
-  if (szip_ && zlib_) {
-    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
-  }
-
   append_ = options_.retrieve("append") != nullptr;
-  compressData_ = options_.get_option_value("compress_data", compressData_);
   //subcycle_        = options_.get_option_value("subcycle", subcycle_);
   cycle_           = options_.get_option_value("cycle", cycle_);
   subcycleJoin_    = options_.retrieve("join_subcycles") != nullptr;

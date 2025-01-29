@@ -16,8 +16,8 @@
 #include <fmt/ostream.h>
 #include <iosfwd>
 #include <netcdf.h>
-#include <tokenize.h>
 #include <strings.h>
+#include <tokenize.h>
 
 #include "Ioss_BasisVariableType.h"
 #include "Ioss_CoordinateFrame.h"

@@ -105,9 +105,11 @@ if (TPL_ENABLE_MPI)
     set(JOIN_ARG   "--compose=mpiio")
     set(PJOIN_ARG   "--compose=pnetcdf")
     set(NPROCS "1")
+    set(NPROCS_BUG "1")
     set(SERIALIZE_ARG "--serialize_io_size=2")
   else()
     set(NPROCS "1")
+    set(NPROCS_BUG "1")
   endif()
 endif()
 
@@ -124,6 +126,37 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
   XHOSTTYPE Windows
   )
 
+  if (TPL_Netcdf_Enables_Netcdf4)
+  SET(IOSHELL_ARG --split_times 1 --in_type generated 10x10x10+shell:xXyYzZ+times:4+variables:element,2,nodal,3)
+  TRIBITS_ADD_ADVANCED_TEST(
+    io_shell_group_ungroup
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${IOSHELL_ARG} splits.g
+    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS splits.g_1 splits.g_2 splits.g_3 splits.g_4  grouped.g
+    TEST_2 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --extract_group splits.g_1 grouped.g split-extract.g_1
+    TEST_3 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --extract_group splits.g_2 grouped.g split-extract.g_2
+    TEST_4 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --extract_group splits.g_3 grouped.g split-extract.g_3
+    TEST_5 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --extract_group splits.g_4 grouped.g split-extract.g_4
+    TEST_6 EXEC exodiff ARGS -pedantic splits.g_1 split-extract.g_1
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_7 EXEC exodiff ARGS -pedantic splits.g_2 split-extract.g_2
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_8 EXEC exodiff ARGS -pedantic splits.g_3 split-extract.g_3
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_9 EXEC exodiff ARGS -pedantic splits.g_4 split-extract.g_4
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    COMM serial
+    FINAL_PASS_REGULAR_EXPRESSION
+  )
+  endif()
+
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
     TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
@@ -133,7 +166,7 @@ if (TPL_ENABLE_MPI)
        TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
           NOEXEPREFIX NOEXESUFFIX
           NUM_MPI_PROCS ${NPROCS}
-       TEST_2 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
+       TEST_2 EXEC exodiff ARGS -map -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
           DIRECTORY ../../../../applications/exodiff
           NOEXEPREFIX NOEXESUFFIX
           NUM_MPI_PROCS 1
@@ -199,6 +232,37 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
     COMM mpi serial
     FINAL_PASS_REGULAR_EXPRESSION
   )
+
+  if (TPL_Netcdf_Enables_Netcdf4)
+  SET(IOSHELL_ARG --split_times 1 --in_type generated 10x10x10+shell:xXyYzZ+times:4+variables:element,2,nodal,3)
+  TRIBITS_ADD_ADVANCED_TEST(
+    io_shell_ts_group_ungroup
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell    ARGS ${IOSHELL_ARG} splits_ts.g
+    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS splits_ts.g_1 splits_ts.g_2 splits_ts.g_3 splits_ts.g_4  grouped_ts.g
+    TEST_2 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS --extract_group splits_ts.g_1 grouped_ts.g split_ts-extract.g_1
+    TEST_3 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS --extract_group splits_ts.g_2 grouped_ts.g split_ts-extract.g_2
+    TEST_4 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS --extract_group splits_ts.g_3 grouped_ts.g split_ts-extract.g_3
+    TEST_5 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS --extract_group splits_ts.g_4 grouped_ts.g split_ts-extract.g_4
+    TEST_6 EXEC exodiff ARGS -pedantic splits_ts.g_1 split_ts-extract.g_1
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_7 EXEC exodiff ARGS -pedantic splits_ts.g_2 split_ts-extract.g_2
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_8 EXEC exodiff ARGS -pedantic splits_ts.g_3 split_ts-extract.g_3
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_9 EXEC exodiff ARGS -pedantic splits_ts.g_4 split_ts-extract.g_4
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    COMM serial
+    FINAL_PASS_REGULAR_EXPRESSION
+  )
+  endif()
 ENDIF()
 ENDIF()
 
@@ -342,7 +406,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} 8-block.cgns 8-block.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS ${NPROCS_BUG}
    TEST_2 EXEC exodiff ARGS -stat -pedantic -map -dumpmap ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.g
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
@@ -354,13 +418,15 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_file_per_state_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --file_per_state ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-link.cgns
      NOEXEPREFIX NOEXESUFFIX
-   TEST_1 EXEC io_shell ARGS ${JOIN_ARG} 8-block-link.cgns 8-block-rt.g
+     NUM_MPI_PROCS ${NPROCS}
+   TEST_1 EXEC io_shell ARGS 8-block-link.cgns 8-block-rt.g
      NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
    TEST_2 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-rt.g
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-  COMM serial
+  COMM mpi serial
   XHOSTTYPE Windows
   )
 
@@ -370,7 +436,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} cube.cgns cube.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS ${NPROCS_BUG}
    TEST_2 EXEC exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/cube.g cube.g
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
@@ -385,7 +451,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} two-block.cgns two-block.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS ${NPROCS_BUG}
    TEST_2 EXEC exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.g
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
@@ -398,7 +464,7 @@ IF (NOT SEACASIoss_ENABLE_THREADSAFE)
 TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_without_parents.cgns exodus_bc_parents.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS ${NPROCS_BUG}
    TEST_1 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_bc_parents.gold exodus_bc_parents.e
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
@@ -410,7 +476,7 @@ TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
 TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_bc_no_parents_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_without_parents.cgns exodus_Q2_bc_parents.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS ${NPROCS_BUG}
    TEST_1 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_Q2_bc_parents.gold exodus_Q2_bc_parents.e
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
@@ -458,7 +524,7 @@ ENDIF()
 TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/generated.cgns exodus_generated.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS ${NPROCS_BUG}
    TEST_1 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_generated.gold exodus_generated.e
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
@@ -476,18 +542,19 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-  COMM mpi
+  COMM mpi serial
   XHOSTTYPE Windows
   )
 ELSE()
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_0 EXEC struc_to_unstruc ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns exodus_struc.e
      NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
    TEST_1 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-  COMM serial
+  COMM mpi serial
   XHOSTTYPE Windows
   )
 ENDIF()
@@ -671,7 +738,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_assembly_copy
      NOEXEPREFIX NOEXESUFFIX
    TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-out.cgns
      NUM_MPI_PROCS 1
-  COMM mpi
+  COMM mpi serial
   )
 
 if (TPL_ENABLE_MPI)

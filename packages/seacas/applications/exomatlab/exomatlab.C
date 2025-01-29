@@ -51,7 +51,7 @@ namespace {
 // ========================================================================
 
 namespace {
-  std::string       codename;
+  std::string codename;
 } // namespace
 
 int main(int argc, char *argv[])

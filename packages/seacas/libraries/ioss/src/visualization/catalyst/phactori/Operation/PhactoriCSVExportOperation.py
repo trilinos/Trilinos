@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -67,7 +67,7 @@ class PhactoriCSVExportOperation(PhactoriOperationSpecifics):
     if (self.Precision < 1) or (self.Precision > 100):
       myDebugPrint3AndException("PhactoriCSVExportOperation:\n"
         "precision must be 1-100, not " + str(self.Precision) + "\n")
-    
+
 
   def ParseParametersFromJson(self, inJson):
     self.ParseOutputFilenameParametersFromJson(inJson)

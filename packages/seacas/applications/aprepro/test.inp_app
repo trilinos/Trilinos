@@ -180,7 +180,7 @@ $ Test int and [] (shortcut for int)
 
 $ Test looping - print sin, cos from 0 to 90 by 5
 {Loop(19, _angle, 0, 5)}
-{_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
+{_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)}
 {EndLoop}
 
 $$$$ Test formatting and string concatenation
@@ -200,12 +200,12 @@ $$$$ Test string rescanning and executing
 Original String:
 {Test}
 Rescanned String:
-{rescan(Test)} 
+{rescan(Test)}
 Original String:
 {Test2}
 Print Value of variable T = {T}
 Rescanned String:
-{rescan(Test2)} 
+{rescan(Test2)}
 Print Value of variable T = {T}
 
 Original String: {t1 = "atan2(0,-1)"}
