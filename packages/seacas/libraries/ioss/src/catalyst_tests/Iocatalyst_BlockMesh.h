@@ -82,11 +82,11 @@ namespace Iocatalyst {
     static Extent getCoordsForID(ID id, Extent bounds);
     static ID     getIDfromCoords(Extent coords, Extent bounds);
 
-    void          addTransientCellField(std::string f_name, double f_value);
-    void          addTransientPointField(std::string f_name, double f_value);
+    void addTransientCellField(std::string f_name, double f_value);
+    void addTransientPointField(std::string f_name, double f_value);
 
-    std::map<std::string, double>* getTransientCellFieldMap();
-    std::map<std::string, double>* getTransientPointFieldMap();
+    std::map<std::string, double> *getTransientCellFieldMap();
+    std::map<std::string, double> *getTransientPointFieldMap();
 
   private:
     Partition partition;

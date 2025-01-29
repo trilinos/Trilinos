@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -105,7 +105,7 @@ def CreateCoProcessor():
 #reuse same coprocesor instance (?), then have LocalWriteImages3 only do the images for a given output results bloxk:q
 
       #PhactoriScript.CreatePipeline(datadescription)
-    
+
     return Pipeline()
 
   class CoProcessor(coprocessing.CoProcessor):
@@ -254,7 +254,7 @@ def compareTearDeath(tList, dList):
   myDebugPrint2('compareTearDeath entered\n')
   myDebugPrint2('compareTearDeath returning\n')
 #end tear/death persistence; not used now but may be useful later
-   
+
 
 # ---------------------- Data Selection method ----------------------
 
@@ -280,14 +280,14 @@ def RequestDataDescription(datadescription):
 
   if GetBypassUserDataFlag() == False:
     fd = datadescription.GetUserData()
- 
+
     if fd == None:
       myDebugPrint2("no user data, returning {}\n")
       returnViewMapC = {}
       return returnViewMapC
 
   global gCatchAllExceptionsAndPassUpFlag
-  if gCatchAllExceptionsAndPassUpFlag: 
+  if gCatchAllExceptionsAndPassUpFlag:
     try:
       return RequestDataDescriptionSub(datadescription)
     except:
@@ -305,7 +305,7 @@ def RequestDataDescriptionSub(datadescription):
 
     if GetBypassUserDataFlag() == False:
       fd = datadescription.GetUserData()
- 
+
       if fd == None:
         myDebugPrint2("no user data, returning {}\n")
         returnViewMapC = {}
@@ -368,15 +368,15 @@ def DoCoProcessing(datadescription):
 
 
   fd = datadescription.GetUserData()
- 
+
   if GetBypassUserDataFlag() == False:
     if fd == None:
       myDebugPrint2("no user data, returning {}\n")
       returnViewMapC = {}
       return returnViewMapC
- 
+
   global gCatchAllExceptionsAndPassUpFlag
-  if gCatchAllExceptionsAndPassUpFlag: 
+  if gCatchAllExceptionsAndPassUpFlag:
     try:
       DoCoProcessingSub(datadescription)
     except:
@@ -396,13 +396,13 @@ def DoCoProcessingSub(datadescription):
 
 
     fd = datadescription.GetUserData()
- 
+
     if GetBypassUserDataFlag() == False:
       if fd == None:
         myDebugPrint2("no user data, returning {}\n")
         returnViewMapC = {}
         return returnViewMapC
- 
+
     global coprocessor
     global gFirstTimeInDoCoProcessing
     global gSkipCountdown
@@ -475,7 +475,7 @@ def DoCoProcessingSub(datadescription):
     coprocessor.WriteData(datadescription)
 
     coprocessor.LocalExportOperationsData3(datadescription)
-   
+
     # Write image capture (Last arg: rescale lookup table), if appropriate.
     coprocessor.LocalWriteImages3(datadescription,
         rescale_lookuptable=False)

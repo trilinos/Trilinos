@@ -540,14 +540,18 @@ namespace Ioss {
     {
       auto lhzc = this->m_zoneConnectivity;
       auto rhzc = rhs.m_zoneConnectivity;
-      Ioss::sort(lhzc.begin(), lhzc.end(), [](const ZoneConnectivity &l, const ZoneConnectivity &r) {
-					    return l.m_connectionName < r.m_connectionName;});
-      Ioss::sort(rhzc.begin(), rhzc.end(), [](const ZoneConnectivity &l, const ZoneConnectivity &r) {
-					    return l.m_connectionName < r.m_connectionName;});
+      Ioss::sort(lhzc.begin(), lhzc.end(),
+                 [](const ZoneConnectivity &l, const ZoneConnectivity &r) {
+                   return l.m_connectionName < r.m_connectionName;
+                 });
+      Ioss::sort(rhzc.begin(), rhzc.end(),
+                 [](const ZoneConnectivity &l, const ZoneConnectivity &r) {
+                   return l.m_connectionName < r.m_connectionName;
+                 });
       if (!vec_equal(lhzc, rhzc)) {
-	fmt::print(Ioss::OUTPUT(), "StructuredBlock: Zone Connectivity mismatch (size {} vs {})\n",
-		   this->m_zoneConnectivity.size(), rhs.m_zoneConnectivity.size());
-	same = false;
+        fmt::print(Ioss::OUTPUT(), "StructuredBlock: Zone Connectivity mismatch (size {} vs {})\n",
+                   this->m_zoneConnectivity.size(), rhs.m_zoneConnectivity.size());
+        same = false;
       }
     }
 
@@ -558,13 +562,17 @@ namespace Ioss {
     {
       auto lhbc = this->m_boundaryConditions;
       auto rhbc = rhs.m_boundaryConditions;
-      Ioss::sort(lhbc.begin(), lhbc.end(), [](const BoundaryCondition &l, const BoundaryCondition &r) {
-					    return l.m_bcName < r.m_bcName;});
-      Ioss::sort(rhbc.begin(), rhbc.end(), [](const BoundaryCondition &l, const BoundaryCondition &r) {
-					    return l.m_bcName < r.m_bcName;});
+      Ioss::sort(lhbc.begin(), lhbc.end(),
+                 [](const BoundaryCondition &l, const BoundaryCondition &r) {
+                   return l.m_bcName < r.m_bcName;
+                 });
+      Ioss::sort(rhbc.begin(), rhbc.end(),
+                 [](const BoundaryCondition &l, const BoundaryCondition &r) {
+                   return l.m_bcName < r.m_bcName;
+                 });
       if (!vec_equal(lhbc, rhbc)) {
-	fmt::print(Ioss::OUTPUT(), "StructuredBlock: Boundary Conditions mismatch\n");
-	same = false;
+        fmt::print(Ioss::OUTPUT(), "StructuredBlock: Boundary Conditions mismatch\n");
+        same = false;
       }
     }
 

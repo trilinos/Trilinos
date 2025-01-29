@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -80,11 +80,11 @@ C     IOSTAT    INTEGER         I/O Status ( -1 = EOF, 0 = normal )
 
     if (p) {
       gl_histadd(p);
-      int i = 0;
       /* Strip the trailing \n */
       p[strlen(p) - 1] = '\0';
 
-      while (i < strlen(p) && i < InputLength) {
+      size_t i = 0;
+      while (i < strlen(p) && i < (size_t)InputLength) {
         input[i] = p[i];
         ++i;
       }

@@ -357,6 +357,16 @@ namespace Iocatalyst {
       return true;
     }
 
+    std::vector<double> getTime()
+    {
+      std::vector<double> times;
+      auto               &node = this->DBNode;
+      if (node.has_path(getTimePath())) {
+        times.push_back(node[getTimePath()].as_float64());
+      }
+      return times;
+    }
+
     int64_t putField(const std::string &containerName, const Ioss::GroupingEntity *entityGroup,
                      const Ioss::Field &field, void *data, size_t data_size, bool deep_copy)
     {
@@ -1424,6 +1434,12 @@ namespace Iocatalyst {
 
     auto &impl = (*this->Impl.get());
     impl.readTime(region);
+  }
+
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    auto &impl = (*this->Impl.get());
+    return impl.getTime();
   }
 
   void *DatabaseIO::get_catalyst_conduit_node()

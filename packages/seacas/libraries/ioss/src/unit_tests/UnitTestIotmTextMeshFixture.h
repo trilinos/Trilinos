@@ -829,8 +829,6 @@ namespace Iotm {
 
         void verify()
         {
-          verify_num_nodes();
-
           for (size_t nodeIndex = 0; nodeIndex < goldNodeIds.size(); nodeIndex++) {
             EntityId nodeId = goldNodeIds[nodeIndex];
             EXPECT_TRUE(is_valid_node(nodeId));

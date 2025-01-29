@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -225,6 +225,7 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
 
     fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
     fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
+    fflush(stderr);
     EX_FUNC_VOID();
   }
 
@@ -239,6 +240,7 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
   if (err_num == EX_NULLENTITY) {
     if (exoptval & EX_NULLVERBOSE) {
       fprintf(stderr, "\nExodus Library Warning: [%s]\n\t%s\n", module_name, message);
+      fflush(stderr);
     }
   }
 
@@ -262,8 +264,8 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
       fprintf(stderr, "\nExodus Library Warning/Error: [%s]\n\t%s\n", module_name, message);
     }
     fprintf(stderr, "\t%s\n", ex_strerror(err_num));
+    fflush(stderr);
   }
-  fflush(stderr);
 
   /* with netCDF 3.4, (fatal) system error codes are > 0;
      so all EXODUS fatal error codes are > 0    */
@@ -345,6 +347,7 @@ const char *ex_strerror(int err_num)
   case EX_INTERNAL: return "Internal logic error in exodus library.";
   case EX_NOTROOTID: return "File id is not the root id; it is a subgroup id.";
   case EX_NULLENTITY: return "Null entity found.";
+  case EX_NOTFOUND: return "Could not find requested variable on database.";
   case EX_INTSIZEMISMATCH: return "Integer sizes must match for input and output file in ex_copy.";
   case EX_MSG: return "Message printed; no error implied.";
   default: return nc_strerror(err_num);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,7 +19,7 @@ static struct smalloc_debug_data
 {
   int                        order; /* which smalloc call is it? */
   size_t                     size;  /* size of malloc invocation */
-  double                    *ptr;   /* memory location returned */
+  void                      *ptr;   /* memory location returned */
   struct smalloc_debug_data *next;  /* pointer to next element */
 } *top = NULL;
 

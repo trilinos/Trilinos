@@ -196,11 +196,11 @@ Iocatalyst_DatabaseIOTest::getCatalystDatabaseFromConduit(conduit_cpp::Node    &
 Ioss::DatabaseIO *Iocatalyst_DatabaseIOTest::getDatabaseOnReadFromFileName(
     const std::string &fileName, const std::string &iossDatabaseType, Ioss::PropertyManager dbProps)
 {
-  Ioss::PropertyManager dbaseProps = Ioss::PropertyManager(dbProps);
-  auto                inputFileName = fileName;
-  Ioss::ParallelUtils pu;
-  int                 numRanks = pu.parallel_size();
-  int                 rank     = pu.parallel_rank();
+  Ioss::PropertyManager dbaseProps    = Ioss::PropertyManager(dbProps);
+  auto                  inputFileName = fileName;
+  Ioss::ParallelUtils   pu;
+  int                   numRanks = pu.parallel_size();
+  int                   rank     = pu.parallel_rank();
   if (iossDatabaseType == EXODUS_DATABASE_TYPE && numRanks > 1) {
     inputFileName += "." + std::to_string(numRanks) + "." + std::to_string(rank);
   }

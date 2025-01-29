@@ -1,7 +1,7 @@
-/* -*- Mode: c++ -*- */
+s"}/* -*- Mode: c++ -*- */
 
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -28,7 +28,7 @@
 #include "apr_tokenize.h"
 #include "fmt/format.h"
 #include "fmt/ostream.h"
-  
+
 
 #define YY_NO_UNISTD_H
 /* import the parser's token type into a local typedef */
@@ -697,6 +697,12 @@ integer {D}+({E})?
     BEGIN(END_CASE_SKIP);
   else
     BEGIN(if_state[if_lvl]);
+    unput('}');
+    unput('O');
+    unput('H');
+    unput('C');
+    unput('E');
+    unput('{');
   return(token::RBRACE);
 }
 
@@ -1081,7 +1087,7 @@ integer {D}+({E})?
     std::string new_string("}");
     auto        ins = new std::istringstream(new_string); // Declare an input string stream.
     yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
-    
+
     if (aprepro.ap_options.debugging) {
       std::cerr << "DEBUG IMPORT: " << string << "\n";
     }

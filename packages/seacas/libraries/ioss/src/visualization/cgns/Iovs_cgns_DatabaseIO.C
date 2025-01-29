@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -178,7 +178,8 @@ namespace Iovs_cgns {
 
       // ========================================================================
       // Repetitive code for each coordinate direction; use a lambda to consolidate...
-      auto coord_lambda = [=, &zoneData, &coord](const char *ordinate, int ordinal) {
+      auto coord_lambda = [&zoneData, &coord, &rdata, num_to_get, phys_dimension,
+                           this](const char *ordinate, int ordinal) {
         // Data required by upper classes store x0, y0, z0, ... xn,
         // yn, zn. Data stored in cgns file is x0, ..., xn, y0,
         // ..., yn, z0, ..., zn so we have to allocate some scratch
