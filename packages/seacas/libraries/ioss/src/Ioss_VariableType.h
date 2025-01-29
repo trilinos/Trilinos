@@ -143,8 +143,8 @@ namespace Ioss {
     VariableType(const std::string &type, int comp_count, bool delete_me = false);
 
   private:
-    const std::string name_;
-    int               componentCount;
+    const std::string name_{};
+    int               componentCount{};
 
     static bool build_variable_type(const std::string &raw_type);
   };

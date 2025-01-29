@@ -37,11 +37,11 @@ if (SEACASExodus_ENABLE_STATIC)
    set_target_properties(exodus_for_static PROPERTIES OUTPUT_NAME exodus_for)
    # This keeps the library out of the `all_libs` targets...
    set_target_properties(exodus_for_static PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
-   INSTALL(TARGETS exodus_for_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+   INSTALL(TARGETS exodus_for_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
    # For backwards compatibility, the Fortran exodus library was called libexoIIv2for.a
    # Create a symbolic link from libexodus_for.a to libexoIIv2for.a -- do only for static lib
-   InstallSymLink(libexodus_for.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2for.a)
+   InstallSymLink(libexodus_for.a ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libexoIIv2for.a)
 endif()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

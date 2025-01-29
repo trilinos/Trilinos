@@ -5,9 +5,9 @@
 // See packages/seacas/LICENSE for details
 
 #include "iocatalyst_export.h"
-#include <gtest/gtest.h>
-#include <SEACASIoss_config.h>
 #include <Ionit_Initializer.h>
+#include <SEACASIoss_config.h>
+#include <gtest/gtest.h>
 
 #ifdef SEACAS_HAVE_MPI
 #include <mpi.h>

@@ -449,16 +449,15 @@ template <> const std::string get_entity_type_test<Ioss::SideBlock>()
 
 TEST_CASE("Ioad_BlockNames")
 {
-  REQUIRE(get_entity_type_test<Ioss::SideBlock>() == Ioad::get_entity_type<Ioss::SideBlock>());
-  REQUIRE(get_entity_type_test<Ioss::SideSet>() == Ioad::get_entity_type<Ioss::SideSet>());
-  REQUIRE(get_entity_type_test<Ioss::NodeBlock>() == Ioad::get_entity_type<Ioss::NodeBlock>());
-  REQUIRE(get_entity_type_test<Ioss::EdgeBlock>() == Ioad::get_entity_type<Ioss::EdgeBlock>());
-  REQUIRE(get_entity_type_test<Ioss::FaceBlock>() == Ioad::get_entity_type<Ioss::FaceBlock>());
-  REQUIRE(get_entity_type_test<Ioss::ElementBlock>() ==
-          Ioad::get_entity_type<Ioss::ElementBlock>());
-  REQUIRE(get_entity_type_test<Ioss::NodeSet>() == Ioad::get_entity_type<Ioss::NodeSet>());
-  REQUIRE(get_entity_type_test<Ioss::EdgeSet>() == Ioad::get_entity_type<Ioss::EdgeSet>());
-  REQUIRE(get_entity_type_test<Ioss::FaceSet>() == Ioad::get_entity_type<Ioss::FaceSet>());
-  REQUIRE(get_entity_type_test<Ioss::ElementSet>() == Ioad::get_entity_type<Ioss::ElementSet>());
-  REQUIRE(get_entity_type_test<Ioss::CommSet>() == Ioad::get_entity_type<Ioss::CommSet>());
+  CHECK(get_entity_type_test<Ioss::SideBlock>() == Ioad::get_entity_type<Ioss::SideBlock>());
+  CHECK(get_entity_type_test<Ioss::SideSet>() == Ioad::get_entity_type<Ioss::SideSet>());
+  CHECK(get_entity_type_test<Ioss::NodeBlock>() == Ioad::get_entity_type<Ioss::NodeBlock>());
+  CHECK(get_entity_type_test<Ioss::EdgeBlock>() == Ioad::get_entity_type<Ioss::EdgeBlock>());
+  CHECK(get_entity_type_test<Ioss::FaceBlock>() == Ioad::get_entity_type<Ioss::FaceBlock>());
+  CHECK(get_entity_type_test<Ioss::ElementBlock>() == Ioad::get_entity_type<Ioss::ElementBlock>());
+  CHECK(get_entity_type_test<Ioss::NodeSet>() == Ioad::get_entity_type<Ioss::NodeSet>());
+  CHECK(get_entity_type_test<Ioss::EdgeSet>() == Ioad::get_entity_type<Ioss::EdgeSet>());
+  CHECK(get_entity_type_test<Ioss::FaceSet>() == Ioad::get_entity_type<Ioss::FaceSet>());
+  CHECK(get_entity_type_test<Ioss::ElementSet>() == Ioad::get_entity_type<Ioss::ElementSet>());
+  CHECK(get_entity_type_test<Ioss::CommSet>() == Ioad::get_entity_type<Ioss::CommSet>());
 }

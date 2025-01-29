@@ -76,10 +76,10 @@ int ex_put_field_metadata(int exoid, const ex_field field)
 #endif
 
   exi_persist_redef(exoid, __func__);
-  int          status         = 0;
-  static char *field_template = "Field@%s@%s";
-  char         attribute_name[NC_MAX_NAME + 1];
-  sprintf(attribute_name, field_template, field.name, "type");
+  int                status         = 0;
+  static const char *field_template = "Field@%s@%s";
+  char               attribute_name[NC_MAX_NAME + 1];
+  snprintf(attribute_name, NC_MAX_NAME + 1, field_template, field.name, "type");
   if ((status = ex_put_integer_attribute(exoid, field.entity_type, field.entity_id, attribute_name,
                                          field.nesting, field.type)) != EX_NOERR) {
     exi_persist_leavedef(exoid, __func__);
@@ -89,7 +89,7 @@ int ex_put_field_metadata(int exoid, const ex_field field)
 
   /* Do not write if empty... */
   if (field.type_name[0] != '\0') {
-    sprintf(attribute_name, field_template, field.name, "type_name");
+    snprintf(attribute_name, NC_MAX_NAME + 1, field_template, field.name, "type_name");
     if ((status = ex_put_text_attribute(exoid, field.entity_type, field.entity_id, attribute_name,
                                         field.type_name)) != EX_NOERR) {
       exi_persist_leavedef(exoid, __func__);
@@ -100,7 +100,7 @@ int ex_put_field_metadata(int exoid, const ex_field field)
 
   /* Default component_separator is '_'.  Avoid writing if that is what it is... */
   if (field.component_separator[0] != '_' || field.nesting > 1) {
-    sprintf(attribute_name, field_template, field.name, "separator");
+    snprintf(attribute_name, NC_MAX_NAME + 1, field_template, field.name, "separator");
     if ((status = ex_put_text_attribute(exoid, field.entity_type, field.entity_id, attribute_name,
                                         field.component_separator)) != EX_NOERR) {
       exi_persist_leavedef(exoid, __func__);
@@ -117,7 +117,7 @@ int ex_put_field_metadata(int exoid, const ex_field field)
     }
   }
   if (needs_cardinality) {
-    sprintf(attribute_name, field_template, field.name, "cardinality");
+    snprintf(attribute_name, NC_MAX_NAME + 1, field_template, field.name, "cardinality");
     if ((status = ex_put_integer_attribute(exoid, field.entity_type, field.entity_id,
                                            attribute_name, field.nesting, field.cardinality)) !=
         EX_NOERR) {
@@ -136,9 +136,9 @@ int exi_put_type_attribute(int exoid, const char *att_root, const char *name, co
 {
   int status = EX_NOERR;
   if (entry != NULL) {
-    static char *template = "%s@%s@%s";
+    static const char *template = "%s@%s@%s";
     char attribute_name[NC_MAX_NAME + 1];
-    sprintf(attribute_name, template, att_root, name, type);
+    snprintf(attribute_name, NC_MAX_NAME + 1, template, att_root, name, type);
     if (value_type == EX_INTEGER) {
       status = ex_put_integer_attribute(exoid, EX_GLOBAL, 0, attribute_name, cardinality, entry);
     }
@@ -300,8 +300,8 @@ int ex_put_field_suffices(int exoid, const ex_field field, const char *suffices)
   int  status;
   char errmsg[MAX_ERR_LENGTH];
 
-  char         attribute_name[NC_MAX_NAME + 1];
-  static char *field_template = "Field@%s@%s";
+  char               attribute_name[NC_MAX_NAME + 1];
+  static const char *field_template = "Field@%s@%s";
 
   if (field.type[0] != EX_FIELD_TYPE_USER_DEFINED) {
     snprintf(
@@ -329,7 +329,7 @@ int ex_put_field_suffices(int exoid, const ex_field field, const char *suffices)
     return EX_FATAL;
   }
 
-  sprintf(attribute_name, field_template, field.name, "suffices");
+  snprintf(attribute_name, NC_MAX_NAME + 1, field_template, field.name, "suffices");
   if ((status = ex_put_text_attribute(exoid, field.entity_type, field.entity_id, attribute_name,
                                       suffices)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,

@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2022 National Technology & Engineering Solutions
+# Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -325,7 +325,7 @@ class PhactoriRepresentationBlock:
 
   def SetFromRestartInfo(self, inJson):
     """given a map (json format), use the info in the map to set the
-       representation state--this reads the info created in 
+       representation state--this reads the info created in
        GetRestartInfo"""
 
     if 'mColorRangeMinMaxTracker' not in inJson:
@@ -392,4 +392,3 @@ class PhactoriRepresentationBlock:
     if PhactoriDbg():
       myDebugPrint3("SetUpForInterpretValuesAsCateories returning\n")
 #phactori_combine_to_single_python_file_subpiece_end_1
-

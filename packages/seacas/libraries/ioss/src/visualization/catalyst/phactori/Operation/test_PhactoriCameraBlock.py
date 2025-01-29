@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -230,7 +230,7 @@ class TestPhactoriCameraBlock(unittest.TestCase):
       }
     }
     return testname, myjson
-    
+
   @staticmethod
   def getjson_CameraLookDirectionWithDefaultLookAtPointZMinus1():
     testname = "CameraLookDirectionWithDefaultLookAtPointZMinus1"
@@ -255,7 +255,7 @@ class TestPhactoriCameraBlock(unittest.TestCase):
     baselineCamFocalPt = [5.0, -0.001999974250793457, -0.625]
     self.CheckCameraPostionAndFocalPoint(testOutFile, baselineCamPos, baselineCamFocalPt)
     self.RemoveTestOutputFiles2(testname);
-    
+
   @staticmethod
   def getjson_CameraLookDirectionWithDefaultLookAtPointZPlus1():
     testname = "CameraLookDirectionWithDefaultLookAtPointZPlus1"
@@ -687,4 +687,3 @@ if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
-

@@ -113,7 +113,7 @@ if (${PACKAGE_NAME}_ENABLE_TESTS)
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_unit_test
  TEST_0 EXEC aprepro_lib_test
-        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app 
+        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w

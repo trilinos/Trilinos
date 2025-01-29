@@ -598,7 +598,7 @@ void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &
 #endif
 }
 
-void Ioss::ParallelUtils::progress(const std::string &output) const
+void Ioss::ParallelUtils::progress(std::string_view output) const
 {
   static double begin = Utils::timer();
 

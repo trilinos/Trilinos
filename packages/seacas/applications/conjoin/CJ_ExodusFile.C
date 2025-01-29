@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -201,6 +201,16 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
     }
     else if (si.zlib()) {
       ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZLIB);
+    }
+    else if (si.zstd()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZSTD);
+    }
+    else if (si.bz2()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_BZ2);
+    }
+
+    if (si.quantize()) {
+      ex_set_option(outputId_, EX_OPT_QUANTIZE_NSD, si.quantize_nsd());
     }
   }
 

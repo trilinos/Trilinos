@@ -113,15 +113,15 @@ void IOShell::Interface::enroll_options()
   options_.enroll("netcdf5", Ioss::GetLongOption::NoValue,
                   "Output database will be a netcdf5 (CDF5) "
                   "file instead of the classical netcdf file format",
-                  nullptr);
+                  nullptr, nullptr, true);
 
   options_.enroll("shuffle", Ioss::GetLongOption::NoValue,
                   "Use a netcdf4 hdf5-based file and use hdf5s shuffle mode with compression.",
                   nullptr);
 
   options_.enroll("compress", Ioss::GetLongOption::MandatoryValue,
-                  "Specify the hdf5 zlib compression level [0..9] or szip [even, 4..32] to be used "
-                  "on the output file.",
+                  "Specify the compression level to be used.  Values depend on algorithm:\n"
+                  "\t\tzlib/bzip2:  0..9\t\tszip:  even, 4..32\t\tzstd:  -131072..22",
                   nullptr);
 
   options_.enroll(
@@ -132,7 +132,20 @@ void IOShell::Interface::enroll_options()
   options_.enroll(
       "szip", Ioss::GetLongOption::NoValue,
       "Use the SZip library if compression is enabled. Not as portable as zlib [exodus only]",
-      nullptr, nullptr, true);
+      nullptr);
+
+  options_.enroll("zstd", Ioss::GetLongOption::NoValue,
+                  "Use the Zstandard compression method if compression is enabled [exodus only].",
+                  nullptr);
+
+  options_.enroll("bzip2", Ioss::GetLongOption::NoValue,
+                  "Use the Bzip2 compression method if compression is enabled [exodus only].",
+                  nullptr);
+
+  options_.enroll("quantize_nsd", Ioss::GetLongOption::MandatoryValue,
+                  "Use the lossy quantize compression method.  Value specifies number of digits to "
+                  "retain (1..15) [exodus only]",
+                  nullptr, nullptr, true);
 
 #if defined(SEACAS_HAVE_MPI)
   options_.enroll(
@@ -228,8 +241,15 @@ void IOShell::Interface::enroll_options()
                   nullptr, nullptr, true);
 #endif
 
+  options_.enroll("select_change_sets", Ioss::GetLongOption::MandatoryValue,
+                  "Read only the specified change set(s) (comma-separated list) from the input "
+                  "file.  Use \"ALL\" for all change sets (default).",
+                  nullptr);
+  options_.enroll(
+      "extract_change_set", Ioss::GetLongOption::MandatoryValue,
+      "Write the data from the specified change_set (formerly group) to the output file.", nullptr);
   options_.enroll("extract_group", Ioss::GetLongOption::MandatoryValue,
-                  "Write the data from the specified group to the output file.", nullptr);
+                  "[deprecated] Use `--extract_change_set`.", nullptr);
 
   options_.enroll(
       "split_times", Ioss::GetLongOption::MandatoryValue,
@@ -424,6 +444,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     netcdf4     = false;
     netcdf5     = false;
     ints_32_bit = true;
+    zlib        = false;
   }
 
   if (options_.retrieve("netcdf4") != nullptr) {
@@ -442,40 +463,44 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   if (options_.retrieve("szip") != nullptr) {
     szip = true;
     zlib = false;
+    zstd = false;
+    bz2  = false;
   }
-  zlib = (options_.retrieve("zlib") != nullptr);
+  if (options_.retrieve("zstd") != nullptr) {
+    szip = false;
+    zlib = false;
+    zstd = true;
+    bz2  = false;
+  }
+  if (options_.retrieve("zlib") != nullptr) {
+    szip = false;
+    zlib = true;
+    zstd = false;
+    bz2  = false;
+  }
+  if (options_.retrieve("bzip2") != nullptr) {
+    szip = false;
+    zlib = false;
+    zstd = false;
+    bz2  = true;
+  }
 
-  if (szip && zlib) {
+  if (szip + zlib + zstd + bz2 > 1) {
     if (my_processor == 0) {
-      fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+      fmt::print(stderr,
+                 "ERROR: Only one of 'szip' or 'zlib' or 'zstd' or 'bzip2' can be specified.\n");
     }
     return false;
   }
-  compare         = (options_.retrieve("compare") != nullptr);
-  ignore_qa_info  = (options_.retrieve("ignore_qa_info") != nullptr);
-  ignore_node_map = (options_.retrieve("ignore_node_map") != nullptr);
-  ignore_elem_map = (options_.retrieve("ignore_element_map") != nullptr);
-  ignore_edge_map = (options_.retrieve("ignore_edge_map") != nullptr);
-  ignore_face_map = (options_.retrieve("ignore_face_map") != nullptr);
-  delete_qa       = (options_.retrieve("delete_qa_records") != nullptr);
-  delete_info     = (options_.retrieve("delete_info_records") != nullptr);
 
   {
-    const char *temp = options_.retrieve("absolute");
+    const char *temp = options_.retrieve("quantize_nsd");
     if (temp != nullptr) {
-      abs_tolerance = std::strtod(temp, nullptr);
-    }
-  }
-  {
-    const char *temp = options_.retrieve("relative");
-    if (temp != nullptr) {
-      rel_tolerance = std::strtod(temp, nullptr);
-    }
-  }
-  {
-    const char *temp = options_.retrieve("floor");
-    if (temp != nullptr) {
-      tol_floor = std::strtod(temp, nullptr);
+      quant        = true;
+      quantize_nsd = std::strtol(temp, nullptr, 10);
+      if (szip + zlib + zstd + bz2 == 0) {
+        zlib = true;
+      }
     }
   }
 
@@ -484,12 +509,20 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     if (temp != nullptr) {
       compression_level = std::strtol(temp, nullptr, 10);
 
+      if (szip + zlib + zstd + bz2 == 0) {
+        zlib = true;
+        if (my_processor == 0) {
+          fmt::print(stderr, "INFO: Compression level specified, but no algorithm.  Defaulting to "
+                             "'zlib' and setting netcdf-4 file type.\n");
+        }
+      }
+
       if (zlib) {
         if (compression_level < 0 || compression_level > 9) {
           if (my_processor == 0) {
             fmt::print(stderr,
                        "ERROR: Bad compression level {}, valid value is between 0 and 9 inclusive "
-                       "for gzip compression.\n",
+                       "for gzip/zlib compression.\n",
                        compression_level);
           }
           return false;
@@ -515,6 +548,34 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
           return false;
         }
       }
+    }
+  }
+
+  compare         = (options_.retrieve("compare") != nullptr);
+  ignore_qa_info  = (options_.retrieve("ignore_qa_info") != nullptr);
+  ignore_node_map = (options_.retrieve("ignore_node_map") != nullptr);
+  ignore_elem_map = (options_.retrieve("ignore_element_map") != nullptr);
+  ignore_edge_map = (options_.retrieve("ignore_edge_map") != nullptr);
+  ignore_face_map = (options_.retrieve("ignore_face_map") != nullptr);
+  delete_qa       = (options_.retrieve("delete_qa_records") != nullptr);
+  delete_info     = (options_.retrieve("delete_info_records") != nullptr);
+
+  {
+    const char *temp = options_.retrieve("absolute");
+    if (temp != nullptr) {
+      abs_tolerance = std::strtod(temp, nullptr);
+    }
+  }
+  {
+    const char *temp = options_.retrieve("relative");
+    if (temp != nullptr) {
+      rel_tolerance = std::strtod(temp, nullptr);
+    }
+  }
+  {
+    const char *temp = options_.retrieve("floor");
+    if (temp != nullptr) {
+      tol_floor = std::strtod(temp, nullptr);
     }
   }
 
@@ -622,7 +683,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     }
   }
 
-  groupName = options_.get_option_value("extract_group", groupName);
+  selectedChangeSets = options_.get_option_value("select_change_sets", selectedChangeSets);
+  changeSetName      = options_.get_option_value("extract_group", changeSetName);
+  changeSetName      = options_.get_option_value("extract_change_set", changeSetName);
 
   {
     const char *temp = options_.retrieve("field_suffix_separator");
@@ -730,6 +793,15 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
       Ioss::Utils::copyright(std::cerr, "1999-2022");
     }
     exit(EXIT_SUCCESS);
+  }
+
+  if (!changeSetName.empty() && !selectedChangeSets.empty()) {
+    if (my_processor == 0) {
+      fmt::print(
+          stderr,
+          "ERROR: Only one of 'extract_change_set' or 'select_change_sets'can be specified.\n");
+    }
+    return false;
   }
 
   // Parse remaining options as directory paths.

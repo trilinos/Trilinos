@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -107,6 +107,7 @@ namespace SEAMS {
   const char *do_switch(double x);
   const char *do_case(double x);
 
+  const char *do_format(double n, char *form);
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_print_array(const array *my_array_data);
 

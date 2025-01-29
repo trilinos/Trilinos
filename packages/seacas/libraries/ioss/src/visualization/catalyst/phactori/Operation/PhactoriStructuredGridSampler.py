@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -131,7 +131,7 @@ class PhactoriStructuredGridSampler(PhactoriOperationSpecifics):
       dataArrayNumCmpnts = -1
       defaultTuple = []
 
-  
+
   def CreateParaViewFilter(self, inInputFilter):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriStructuredGridSampler.CreateParaViewFilter entered\n", 100)
@@ -139,7 +139,7 @@ class PhactoriStructuredGridSampler(PhactoriOperationSpecifics):
     savedActiveSource = GetActiveSource()
 
     ##segmentListJson = ReadAndMpiBroadcastJsonFile(self.JsonListFileName)
-   
+
     self.myCopyOfInputFilter = inInputFilter
 
     UpdatePipelineWithCurrentTimeArgument(self.myCopyOfInputFilter)
@@ -151,4 +151,3 @@ class PhactoriStructuredGridSampler(PhactoriOperationSpecifics):
       myDebugPrint3("PhactoriStructuredGridSampler.CreateParaViewFilter returning\n", 100)
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

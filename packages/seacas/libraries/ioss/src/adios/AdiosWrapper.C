@@ -13,13 +13,12 @@ namespace Ioad {
   AdiosWrapper::AdiosWrapper(Ioss_MPI_Comm comm, const std::string &filename, bool is_input,
                              unsigned long rank, const Ioss::PropertyManager &properties)
 #if ADIOS2_USE_MPI
-    : adios2::ADIOS(comm),
+      : adios2::ADIOS(comm),
 #else
-    : adios2::ADIOS(),
+      : adios2::ADIOS(),
 #endif
-    adios2::IO(IOInit(properties, is_input)),
-    adios2::Engine(EngineInit(filename, is_input)), m_Rank(rank), m_Communicator(comm),
-    m_OpenStep(false)
+        adios2::IO(IOInit(properties, is_input)), adios2::Engine(EngineInit(filename, is_input)),
+        m_Rank(rank), m_Communicator(comm), m_OpenStep(false)
   {
   }
 
