@@ -205,6 +205,7 @@ namespace Amesos2 {
           global_ordinal_t colIndexBase = colMap->getIndexBase();
           // map from global to local
           host_ordinal_type_array  perm_g2l;
+          host_ordinal_type_array  perm_l2g;
           // workspace to transpose
           KV_GS pointers_t;
           KV_GO indices_t;
@@ -241,6 +242,7 @@ namespace Amesos2 {
               Kokkos::resize(lclMap, myNRows);
               if (myRank == 0) {
                 Kokkos::resize(perm_g2l, nRows);
+                Kokkos::resize(perm_l2g, nRows);
               } else {
                 Kokkos::resize(perm_g2l, 1);
               }
@@ -253,6 +255,7 @@ namespace Amesos2 {
               if (myRank == 0) {
                 for (int i=0; i < nRows; i++) {
                   perm_g2l(i) -= rowIndexBase;
+                  perm_l2g(perm_g2l(i)) = i;
                   if (i != perm_g2l(i)) need_to_perm = true;
                 }
               }
@@ -339,8 +342,9 @@ namespace Amesos2 {
               for (int i=1; i < nRows; i++) {
                 pointers(i+1) += pointers(i);
               }
-              for (int i=0; i<nRows; i++) {
-                int row = perm_g2l(i);
+              // nonzeroes in each column are sorted in ascending row
+              for (int row=0; row<nRows; row++) {
+                int i = perm_l2g(row);
                 for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
                   int col = indices_t(k);
                   transpose_map(k) = pointers(1+col);
