@@ -104,9 +104,6 @@
 #include "pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 
-// AztecOO includes
-#include "AztecOO.h"
-
 // MueLu Includes
 #  include "MueLu.hpp"
 #  include "MueLu_ParameterListInterpreter.hpp"
@@ -286,13 +283,13 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
 				 int maxits,
-				 double tol,	
+				 double tol,
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
 				 std::string &amgType,
 				  std::string &solveType);
-					
+
 
 
 /**********************************************************************************/
@@ -412,7 +409,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false);
   Teuchos::ParameterList problemStatistics;
-  
+
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Pamgen Setup")));
 
   std::string optMeshFile = "Poisson2D.xml";
@@ -433,18 +430,18 @@ int main(int argc, char *argv[]) {
   std::string rhsFilename;
   clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
 		  "generated rhs to that file in MatrixMarket format.");
-  
+
   // If coordsFilename is nonempty, dump the coords to that file
   // in MatrixMarket format.
   std::string coordsFilename;
   clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
 		  "generated coordinates to that file in MatrixMarket format.");
-  
+
   // Random number seed
   int randomSeed=24601;
   clp.setOption ("seed", &randomSeed, "Random Seed.");
-  
-  
+
+
   // Material diffusion strength and rotation (in 3D)
   // We'll get the 2D version of this later
   std::vector<double> diff_rotation_angle {0.0, 0.0, 0.0};
@@ -456,13 +453,13 @@ int main(int argc, char *argv[]) {
     sprintf(str1,"rot_%c_angle",letter[i]);
     sprintf(str2,"Rotation around %c axis, in degrees",letter[i]);
     clp.setOption(str1,&diff_rotation_angle[i],str2);
-      
+
     // Strength
     sprintf(str1,"strength_%c",letter[i]);
     sprintf(str2,"Strength of pre-rotation %c-diffusion",letter[i]);
     clp.setOption(str1,&diff_strength[i],str2);
   }
-  
+
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -470,7 +467,7 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
-  
+
   // Initialize RNG
   srand(randomSeed);
 
@@ -783,14 +780,14 @@ int main(int argc, char *argv[]) {
   delete [] sideSetIds;
 
 
- // Enumerate edges 
+ // Enumerate edges
   // NOTE: Only correct in serial
   FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
   FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
-  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized  
+  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized
   FieldContainer<int> P1_edgeToNode(1,2);//will be resized
   GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord);
- 
+
 
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Mesh Statistics")));
@@ -814,7 +811,7 @@ int main(int argc, char *argv[]) {
   double dist2           = 0.0;
   double dist3           = 0.0;
   double dist4           = 0.0;
- 
+
   int edge = P1_elemToEdge(0, 0);
   int node1 = P1_edgeToNode(edge, 0);
   int node2 = P1_edgeToNode(edge, 1);
@@ -843,14 +840,14 @@ int main(int argc, char *argv[]) {
 
   for(int i=0; i<numElems; i++) {
     // 0 - Material property
-    local_stat_max[0] = 1.0; 
-    local_stat_min[0] = 1.0; 
+    local_stat_max[0] = 1.0;
+    local_stat_min[0] = 1.0;
     local_stat_sum[0] += 1.0;
-    
+
     edge = P1_elemToEdge(i, 0);
     node1 = P1_edgeToNode(edge, 0);
     node2 = P1_edgeToNode(edge, 1);
-    
+
     // 1 - Max/min edge - ratio of max to min edge length
     edge_length_max = distance2(P1_nodeCoord, node1, node2);
     edge_length_min = edge_length_max;
@@ -866,7 +863,7 @@ int main(int argc, char *argv[]) {
     local_stat_max[1] = std::max(local_stat_max[1],maxmin_ratio);
     local_stat_min[1] = std::min(local_stat_min[1],maxmin_ratio);
     local_stat_sum[1] += maxmin_ratio;
-   
+
     // 2 - det of cell Jacobian (later)
 
     // 3 - Stretch
@@ -934,14 +931,14 @@ int main(int argc, char *argv[]) {
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
-  
+
 
 
   // Generate higher order mesh
   // NOTE: Only correct in serial
   int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
-  FieldContainer<int>    elemToNode(numElems,Pn_numNodesperElem); 
+  FieldContainer<int>    elemToNode(numElems,Pn_numNodesperElem);
   FieldContainer<double> nodeCoord(Pn_numNodes,dim);
   FieldContainer<int>   nodeOnBoundary(Pn_numNodes);
   std::vector<int> Pn_edgeNodes;
@@ -1028,7 +1025,7 @@ int main(int argc, char *argv[]) {
 
   //#define OUTPUT_REFERENCE_FUNCTIONS
 #ifdef OUTPUT_REFERENCE_FUNCTIONS
-  // Evaluate basis values and gradients at DOF points 
+  // Evaluate basis values and gradients at DOF points
   FieldContainer<double> DofCoords(numFieldsG,spaceDim);
   myHGradBasis.getDofCoords(DofCoords);
   FieldContainer<double> HGBValues_at_Dofs(numFieldsG,numFieldsG);
@@ -1038,30 +1035,30 @@ int main(int argc, char *argv[]) {
   printf("*** Dof Coords ***\n");
   for(int j=0; j<numFieldsG; j++)
     printf("[%d] %10.2e %10.2e\n",j,DofCoords(j,0),DofCoords(j,1));
-  
+
   printf("*** CubPoints & Weights ***\n");
   for(int j=0; j<numCubPoints; j++)
     printf("[%d] %10.2e %10.2e (%10.2e)\n",j,cubPoints(j,0),cubPoints(j,1),cubWeights(j));
-  
+
   printf("*** HGBValues @ Dofs ***\n");
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numFieldsG; j++) {
-      printf("%10.2e ",zwrap(HGBValues_at_Dofs(i,j)));      
+      printf("%10.2e ",zwrap(HGBValues_at_Dofs(i,j)));
     }
     printf("\n");
   }
-  
+
   printf("*** HGBValues ***\n");
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numCubPoints; j++) {
       printf("%10.2e ",zwrap(HGBValues(i,j)));
-      
+
     }
     printf("\n");
   }
-  
+
   printf("*** HGBGrad ***\n");
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
@@ -1069,7 +1066,7 @@ int main(int argc, char *argv[]) {
       printf("(%10.2e %10.2e)",zwrap(HGBGrads(i,j,0)),zwrap(HGBGrads(i,j,1)));
       printf("\n");
     }
-  }    
+  }
 
   printf("*** Pn_nodeIsOwned ***\n");
   for(int i=0; i<Pn_numNodes; i++)
@@ -1140,10 +1137,10 @@ int main(int argc, char *argv[]) {
   for (size_t i=0; i<Pn_cellNodes.size(); ++i)
     cellSeeds[Pn_cellNodes[i]] = i;
   int numCellSeeds = Pn_cellNodes.size();
-       
+
   // Generate map for nodes
   RCP<driver_map_type> globalMapG = rcp(new driver_map_type(INVALID_GO,&Pn_ownedGIDs[0],Pn_ownedNodes,0,Comm));
-    
+
   // Generate p1 map
   RCP<driver_map_type> P1_globalMap = rcp(new driver_map_type(INVALID_GO,&P1_ownedGIDs[0],P1_ownedNodes,0,Comm));
 
@@ -1151,7 +1148,7 @@ int main(int argc, char *argv[]) {
   Kokkos::DynRankView<local_ordinal_type,typename NO::device_type>  elemToNodeI2;
 
   CopyFieldContainer2D(elemToNode,elemToNodeI2);
-  
+
   if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   if (inputSolverList.isParameter("linear P1")) {
@@ -1220,10 +1217,10 @@ int main(int argc, char *argv[]) {
       iOwned++;
     }
   }
-    
+
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly")));
-  
+
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
@@ -1364,7 +1361,7 @@ int main(int argc, char *argv[]) {
     problemStatistics.set("Inverse Taper max", global_stat_max[5]);
     problemStatistics.set("Inverse Taper min", global_stat_min[5]);
     problemStatistics.set("Inverse Taper mean", global_stat_sum[5] / numElemsGlobal);
-    
+
     // 6 - Skew
     problemStatistics.set("Skew max", global_stat_max[6]);
     problemStatistics.set("Skew min", global_stat_min[6]);
@@ -1394,7 +1391,7 @@ int main(int argc, char *argv[]) {
     GenerateIdentityCoarsening_pn_to_p1(elemToNode, StiffMatrix_aux.getDomainMap(), StiffMatrix.getRangeMap(), P_identity, R_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
-  
+
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
 /**********************************************************************************/
@@ -1593,7 +1590,7 @@ int main(int argc, char *argv[]) {
                                       rcpFromRef(StiffMatrix),
 				      nCoord,
 				      exactNodalVals,
-                                      rhsVector,            
+                                      rhsVector,
 				      maxits,
 				      tol,
 				      femCoefficients,
@@ -1857,7 +1854,7 @@ std::vector<double> diffusion_tensor;
 
 template<typename Scalar>
 void materialTensor(Scalar material[][2], const Scalar& x, const Scalar& y) {
-  if(diffusion_tensor.size() == 0) 
+  if(diffusion_tensor.size() == 0)
     diffusion_tensor = ::TrilinosCouplings::IntrepidPoissonExample::getDiffusionMatrix2D();
   material[0][0] = (Scalar)diffusion_tensor[0];
   material[0][1] = (Scalar)diffusion_tensor[1];
@@ -2031,7 +2028,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
 				 int maxIts,
-				 double tol,	
+				 double tol,
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
@@ -2064,7 +2061,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     throw std::runtime_error("Error: ML does not support Tpetra objects");
   } else if (amgType == "MueLu") {
 
-    // Multigrid Hierarchy, the easy way  
+    // Multigrid Hierarchy, the easy way
     RCP<operator_type> A0op = A0;
     amgList.sublist("user data").set("Coordinates",nCoord);
     Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0op, amgList);
@@ -2092,11 +2089,11 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
     if(solveType == "cg")
       solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
-    else if (solveType == "gmres") { 
+    else if (solveType == "gmres") {
       solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
     else if (solveType == "fixed point" || solveType == "fixed-point") {
-      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
+      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
     else {
       std::cout << "\nERROR:  Invalid solver '"<<solveType<<"'" << std::endl;
@@ -2159,19 +2156,19 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> & edgeToNode, FieldContainer<double> & edgeCoord) {
   // Not especially efficient, but effective... at least in serial!
-  
+
   int numElems        = elemToNode.dimension(0);
   int numNodesperElem = elemToNode.dimension(1);
   int dim             = nodeCoord.dimension(1);
 
   // Sanity checks
   if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
+  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1))
     throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
 
   int edge_node0_id[4]={0,1,2,3};
   int edge_node1_id[4]={1,2,3,0};
-  
+
   // Run over all the elements and start enumerating edges
   typedef std::map<std::pair<int,int>,int> en_map_type;
   en_map_type e2n;
@@ -2188,7 +2185,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       std::pair<int,int> ep(lo,hi);
 
       int edge_id;
-      en_map_type::iterator iter = edge_map.find(ep);      
+      en_map_type::iterator iter = edge_map.find(ep);
       if(iter==edge_map.end()) {
         edge_map[ep] = num_edges;
         edge_id = num_edges;
@@ -2196,16 +2193,16 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       }
       else
         edge_id = (*iter).second;
-      
+
       elemToEdge(i,j) = edge_id;
       elemToEdgeOrient(i,j) = (lo==elemToNode(i,edge_node0_id[j]))?1:-1;
     }
-  }      
+  }
 
   // Fill out the edge centers (clobbering data if needed)
   edgeCoord.resize(num_edges,dim);
   for(int i=0; i<numElems; i++) {
-    for(int j=0; j<4; j++) {      
+    for(int j=0; j<4; j++) {
       int n0 = elemToNode(i,edge_node0_id[j]);
       int n1 = elemToNode(i,edge_node1_id[j]);
       for(int k=0; k<dim; k++)
@@ -2216,7 +2213,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
   // Edge to Node connectivity
   edgeToNode.resize(num_edges,2);
   for(int i=0; i<numElems; i++) {
-    for(int j=0; j<4; j++) {      
+    for(int j=0; j<4; j++) {
       int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
       int hi = std::max(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
       edgeToNode(elemToEdge(i,j),0) = lo;
@@ -2224,7 +2221,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
     }
   }
 
-  
+
   //#define DEBUG_EDGE_ENUMERATION
 #ifdef DEBUG_EDGE_ENUMERATION
   printf("**** Edge coordinates ***\n");
@@ -2264,7 +2261,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
 #endif
 
   int Pn_ExpectedNodesperElem = P1_numNodesperElem + (degree-1)*P1_numEdgesperElem + (degree-1)*(degree-1);
-  int Pn_ExpectedNumNodes     = P1_numNodes + (degree-1)*P1_numEdges + (degree-1)*(degree-1)*numElems;  
+  int Pn_ExpectedNumNodes     = P1_numNodes + (degree-1)*P1_numEdges + (degree-1)*(degree-1)*numElems;
 
   // Sanity checks
   if(P1_numNodesperElem !=4 || Pn_numNodesperElem !=Pn_ExpectedNodesperElem ) throw std::runtime_error("Error: PromoteMesh_Pn_Kirby only works on Quads!");
@@ -2272,26 +2269,26 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
      Pn_elemToNode.dimension(0)!=numElems || Pn_nodeCoord.dimension(0) != Pn_ExpectedNumNodes)
     throw std::runtime_error("Error: PromoteMesh_Pn_Kirby array size mismatch");
 
-  const CellTopologyData &cellTopoData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();                                                  
+  const CellTopologyData &cellTopoData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();
   shards::CellTopology cellTopo(&cellTopoData);
 
   // Kirby elements are ordered strictly in lex ordering from the bottom left to the top right
   /*
     Kirby Quad-9 Layout (p=2)
-    inode6 -- inode7 -- inode8    
+    inode6 -- inode7 -- inode8
     |                   |
     inode3    inode4    inode5
-    |                   |       
+    |                   |
     inode0 -- inode1 -- inode2
 
 
     Kirby Quad-16 Layout (p=3)
     inode12-- inode13-- inode14-- inode15
-    |                             |       
+    |                             |
     inode8    inode9    inode10   inode11
-    |                             |       
+    |                             |
     inode4    inode5    inode6    inode7
-    |                             |       
+    |                             |
     inode0 -- inode1 -- inode2 -- inode3
   */
 
@@ -2307,11 +2304,11 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   int center_root = degree+2;
 
   // Make the new el2node array
-  for(int i=0; i<numElems; i++)  {    
+  for(int i=0; i<numElems; i++)  {
     // P1 nodes
     for(int j=0; j<P1_numNodesperElem; j++)
       Pn_elemToNode(i,p1_node_in_pn[j]) = P1_elemToNode(i,j);
-  
+
     // P1 edges
     for(int j=0; j<P1_numEdgesperElem; j++){
       int orient   = P1_elemToEdgeOrient(i,j);
@@ -2325,7 +2322,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
     }
 
     // P1 cells
-    for(int j=0; j<degree-1; j++) 
+    for(int j=0; j<degree-1; j++)
       for(int k=0; k<degree-1; k++) {
         int node = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
         Pn_elemToNode(i,center_root+j*(degree+1)+k) = node;
@@ -2335,9 +2332,9 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   }
 
   // Get the p=n node locations
-  FieldContainer<double> RefNodeCoords(Pn_numNodesperElem,dim);  
-  FieldContainer<double> RefNodeCoords2(1,Pn_numNodesperElem,dim);  
-  FieldContainer<double> PhysNodeCoords(1,Pn_numNodesperElem,dim);  
+  FieldContainer<double> RefNodeCoords(Pn_numNodesperElem,dim);
+  FieldContainer<double> RefNodeCoords2(1,Pn_numNodesperElem,dim);
+  FieldContainer<double> PhysNodeCoords(1,Pn_numNodesperElem,dim);
   Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > BasisPn(degree,pointType);
   BasisPn.getDofCoords(RefNodeCoords);
 
@@ -2352,7 +2349,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
       RefNodeCoords2(0,i,k) = RefNodeCoords(i,k);
 
   // Make the new coordinates (inefficient, but correct)
- for(int i=0; i<numElems; i++)  {    
+ for(int i=0; i<numElems; i++)  {
    // Get Element coords
    FieldContainer<double> my_p1_nodes(1,P1_numNodesperElem,dim);
    for(int j=0; j<P1_numNodesperElem; j++) {
@@ -2361,7 +2358,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
        my_p1_nodes(0,j,k) = P1_nodeCoord(jj,k);
    }
 
-   // Map the reference node location to physical   
+   // Map the reference node location to physical
    Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
 
 
@@ -2383,7 +2380,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
  }
 
 #ifdef DEBUG_PROMOTE_MESH
- for(int i=0; i<numElems; i++)  { 
+ for(int i=0; i<numElems; i++)  {
    printf("[%2d] Effective  : ",i);
    for(int j=0; j<Pn_numNodesperElem; j++)
      printf("(%10.2f %10.2f) ",Pn_nodeCoord(Pn_elemToNode(i,j),0),Pn_nodeCoord(Pn_elemToNode(i,j),1));
@@ -2394,9 +2391,9 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   // Update the boundary conditions
 
   // P1 nodes
-  for(int i=0; i<P1_numNodes; i++) 
+  for(int i=0; i<P1_numNodes; i++)
     Pn_nodeOnBoundary(i) = P1_nodeOnBoundary(i);
-  
+
   // P1 edges
   // Not all that efficient
   for(int i=0; i<numElems; i++) {
@@ -2404,7 +2401,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
       int n0 = P1_elemToNode(i,edge_node0_id[j]);
       int n1 = P1_elemToNode(i,edge_node1_id[j]);
       if(P1_nodeOnBoundary(n0) && P1_nodeOnBoundary(n1)) {
-        for(int k=0; k<degree-1; k++) 
+        for(int k=0; k<degree-1; k++)
           Pn_nodeOnBoundary(P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k) =1;
       }
     }
@@ -2423,12 +2420,12 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
 
   printf("**** P=%d nodes  ***\n",degree);
   for(int i=0; i<Pn_numNodes; i++) {
-    printf("[%2d] %10.2e %10.2e (%d)\n",i,Pn_nodeCoord(i,0),Pn_nodeCoord(i,1),(int)Pn_nodeOnBoundary(i));   
+    printf("[%2d] %10.2e %10.2e (%d)\n",i,Pn_nodeCoord(i,0),Pn_nodeCoord(i,1),(int)Pn_nodeOnBoundary(i));
   }
-  
+
   printf("**** P=1 nodes  ***\n");
   for(int i=0; i<P1_numNodes; i++) {
-    printf("[%2d] %10.2e %10.2e (%d)\n",i,P1_nodeCoord(i,0),P1_nodeCoord(i,1),(int)P1_nodeOnBoundary(i));   
+    printf("[%2d] %10.2e %10.2e (%d)\n",i,P1_nodeCoord(i,0),P1_nodeCoord(i,1),(int)P1_nodeOnBoundary(i));
   }
 #endif
 
@@ -2459,20 +2456,20 @@ void CreateP1MeshFromPnMesh(int degree,
     // Kirby elements are ordered strictly in lex ordering from the bottom left to the top right
     /*
       Kirby Quad-9 Layout (p=2)
-      inode6 -- inode7 -- inode8    
+      inode6 -- inode7 -- inode8
       |                   |
       inode3    inode4    inode5
-      |                   |       
+      |                   |
       inode0 -- inode1 -- inode2
 
 
       Kirby Quad-16 Layout (p=3)
       inode12-- inode13-- inode14-- inode15
-      |                             |       
+      |                             |
       inode8    inode9    inode10   inode11
-      |                             |       
+      |                             |
       inode4    inode5    inode6    inode7
-      |                             |       
+      |                             |
       inode0 -- inode1 -- inode2 -- inode3
     */
 
@@ -2485,7 +2482,7 @@ void CreateP1MeshFromPnMesh(int degree,
 
       inode3 -- inode4 -- inode5
 
-      |   0    |     1    |       
+      |   0    |     1    |
 
       inode0 -- inode1 -- inode2
     */
@@ -2493,7 +2490,7 @@ void CreateP1MeshFromPnMesh(int degree,
     int dp1 = degree+1;
     for (int j=0; j<degree; ++j) {  //"y" direction
       for (int k=0; k<degree; ++k) {  //"x" direction
-      
+
         int lowerLeftNode = dp1*j + k;
         //Exodus ordering (counter-clockwise)
         P1_elemToNode(p1ElemCtr,0) = Pn_elemToNode(i,lowerLeftNode);
@@ -2534,7 +2531,7 @@ void CreateLinearSystem(int numWorksets,
 
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Allocate arrays")));
-  
+
   std::cout << "CreateLinearSystem:" << std::endl;
   std::cout << "     numCubPoints = " << numCubPoints << std::endl;
   std::cout << "     cubDim = " << cubDim << std::endl;
@@ -2628,7 +2625,7 @@ void CreateLinearSystem(int numWorksets,
       for(int i=0; i<worksetSize; i++)
         for(int j=0; j<numNodesPerElem; j++)
           printf("(%d,%d) [%10.2e %10.2e]\n",i,j,cellWorkset(i,j,0),cellWorkset(i,j,1));
-      
+
       printf("*** Jacobian ***\n");
       for(int i=0; i<worksetSize; i++)
         for(int j=0; j<numCubPoints; j++)
@@ -2640,7 +2637,7 @@ void CreateLinearSystem(int numWorksets,
           printf("(%d,%d) %10.2e\n",i,j,zwrap(worksetJacobDet(i,j)));
 
 #endif
-    
+
 
     /**********************************************************************************/
     /*          Cubature Points to Physical Frame and Compute Data                    */
@@ -2728,7 +2725,7 @@ void CreateLinearSystem(int numWorksets,
     }
 
 
-#ifdef DEBUG_OUTPUT      
+#ifdef DEBUG_OUTPUT
       printf("*** worksetSourceTerm ***\n");
       for(int i=0; i<worksetSize; i++)
         for(int j=0; j<numCubPoints; j++)
@@ -2746,20 +2743,20 @@ void CreateLinearSystem(int numWorksets,
         for(int j=0; j<numFieldsG; j++) {
           printf("(%d,%d) ",i,j);
           for(int k=0; k<numCubPoints; k++) {
-            printf("%10.2e ",zwrap(worksetHGBValues(i,j,k)));       
+            printf("%10.2e ",zwrap(worksetHGBValues(i,j,k)));
           }
           printf("\n");
         }
-      
+
       printf("*** worksetHGBValuesWeighted ***\n");
       for(int i=0; i<worksetSize; i++)
         for(int j=0; j<numFieldsG; j++) {
           printf("(%d,%d) ",i,j);
           for(int k=0; k<numCubPoints; k++) {
-            printf("%10.2e ",zwrap(worksetHGBValues(i,j,k)));       
+            printf("%10.2e ",zwrap(worksetHGBValues(i,j,k)));
           }
           printf("\n");
-        }     
+        }
 
       printf("*** worksetRHS ***\n");
       for(int i=0; i<worksetSize; i++)
@@ -2771,12 +2768,12 @@ void CreateLinearSystem(int numWorksets,
         printf("(%d) [ ",i);
         for(int j=0; j<numFieldsG; j++) {
           for(int k=0; k<numFieldsG; k++) {
-            printf("%10.2e ",zwrap(worksetStiffMatrix(i,j,k)));     
+            printf("%10.2e ",zwrap(worksetStiffMatrix(i,j,k)));
           }
           if(j!=numFieldsG-1) printf(";");
         }
         printf("]\n");
-      }     
+      }
 
 
 
@@ -2836,7 +2833,7 @@ void CreateLinearSystem(int numWorksets,
     for (int inode=0; inode<nodeCoord.dimension(0); inode++) {
       nCoordD[0][inode]=nodeCoord(inode,0);
       nCoordD[1][inode]=nodeCoord(inode,1);
-    }  
+    }
   }
 
   if (!(gl_StiffGraph->getImporter().is_null())) {
@@ -2896,7 +2893,7 @@ void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNo
   // It's just the identity matrix.
   // By construction, the node numbering on the P1 auxiliary mesh is the same as on the Pn base mesh
   // (see CreateP1MeshFromPnMesh).  The P2 map is the range map, the P1 auxiliary map is the domain map.
-  
+
   double one = 1.0;
   P = rcp(new crs_matrix_type(Pn_map,1));
 
@@ -2962,7 +2959,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     typename crs_matrix_type::nonconst_local_inds_host_view_type cols("cols", numEntriesInRow);
     typename crs_matrix_type::nonconst_values_host_view_type vals("vals", numEntriesInRow);
     A.getLocalRowCopy(lrid, cols, vals, numEntriesInRow);
-    
+
     for(size_t j=0; j<vals.extent(0); j++)
       vals(j) = (cols(j) == lrid) ? 1.0 : 0.0;
 
