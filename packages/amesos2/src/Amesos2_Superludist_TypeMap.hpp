@@ -77,6 +77,8 @@ namespace SLUD {
   }
 #endif  // HAVE_TEUCHOS_COMPLEX
 
+#undef EMPTY
+
 // multiplication of SLUD types
 template <typename slu_scalar_t, typename slu_mag_t>
 struct slu_dist_mult {};
