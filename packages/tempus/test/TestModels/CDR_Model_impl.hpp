@@ -405,7 +405,7 @@ void CDR_Model<Scalar>::evalModelImpl(
         for (int i = 0; i < 2; i++) {
           int row = x_ghosted_map_->GID(ne + i);
           // printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-          //      MyPID, row, ne+i,x_owned_map_.MyGID(row));
+          //       comm_->MyPID(), row, ne+i,x_owned_map_->MyGID(row));
           if (x_owned_map_->MyGID(row)) {
             if (nonnull(f)) {
               (*f)[x_owned_map_->LID(x_ghosted_map_->GID(ne + i))] +=
