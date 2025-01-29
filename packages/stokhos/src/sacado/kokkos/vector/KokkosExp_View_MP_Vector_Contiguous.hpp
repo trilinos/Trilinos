@@ -111,19 +111,19 @@ inline auto create_mirror(
     if constexpr ( ! std::is_same_v<typename ViewTraits<T, P...>::array_layout, LayoutStride>) {
       return src.layout();
     } else {
-      LayoutStride layout;
+      LayoutStride layout2;
 
       for (int idx = 0; idx <= 7; ++idx) {
-        layout.dimension[idx] = src.extent(idx);
-        layout.stride   [idx] = src.stride(idx);
+        layout2.dimension[idx] = src.extent(idx);
+        layout2.stride   [idx] = src.stride(idx);
       }
 
-      return layout;
+      return layout2;
     }
   }();
 
   layout.dimension[src_type::rank] = dimension_scalar(src);
-  
+
   const auto prop_copy = Impl::with_properties_if_unset(
     arg_prop, std::string(src.label()).append("_mirror"));
 
