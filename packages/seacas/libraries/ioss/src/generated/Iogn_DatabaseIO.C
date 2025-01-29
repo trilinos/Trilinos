@@ -590,6 +590,19 @@ namespace Iogn {
     }
   }
 
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double> timesteps;
+
+    int time_step_count = m_generatedMesh->timestep_count();
+    timesteps.reserve(time_step_count);
+    for (int i = 0; i < time_step_count; i++) {
+      timesteps.push_back(i);
+    }
+
+    return timesteps;
+  }
+
   void DatabaseIO::get_elemblocks()
   {
     // Attributes of an element block are:

@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -77,7 +77,7 @@ class PhactoriFindCellEdgeLengths(PhactoriOperationSpecifics):
       self.OutputShortestLongestIndex = 0
 
     keyval10 = "output cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.ProgrammableFilterOutputCellVariableName = inJson[keyval10]
 
   def CreateParaViewFilter(self, inInputFilter):

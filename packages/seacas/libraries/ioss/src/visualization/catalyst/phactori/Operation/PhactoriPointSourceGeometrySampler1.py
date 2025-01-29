@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -70,7 +70,7 @@ class PhactoriPointSourceGeometrySampler1(PhactoriOperationSpecifics):
         errStr = "PhactoriPointSourceGeometrySampler1::ValidateJsonPointList\n" \
           "point with index " + str(ptNdx) + "does not have three elements\n"
         myDebugPrint3AndException(errStr)
-      
+
 
   def ParseParametersFromJson(self, inJson):
     if 'filename' in inJson:
@@ -93,7 +93,7 @@ class PhactoriPointSourceGeometrySampler1(PhactoriOperationSpecifics):
 
     pidWithDataList = UseReduceOnIntegerList(localPidList, 0)
     return pidWithDataList, globalDistSqrdList
-    
+
   def UseMpiToGetGlobalQuadsClosest(self, inLocalQuadList, inLocalDistSqrdList):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriPointSourceGeometrySampler1.UseMpiToGetGlobalQuadsClosest entered\n", 100)
@@ -205,4 +205,3 @@ class PhactoriPointSourceGeometrySampler1(PhactoriOperationSpecifics):
     return self.ParaviewPointSource
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

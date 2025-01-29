@@ -399,6 +399,9 @@ namespace Ioex {
         }
       }
     }
+
+    open_root_group_nl();
+    open_child_group_nl(0);
   }
 
   ParallelDatabaseIO::~ParallelDatabaseIO() = default;
@@ -553,7 +556,7 @@ namespace Ioex {
 
 #if !defined(__IOSS_WINDOWS__)
     if (!path.empty()) {
-      chdir(current_cwd);
+      (void)chdir(current_cwd);
     }
     std::free(current_cwd);
 #endif
@@ -629,7 +632,7 @@ namespace Ioex {
     std::string path  = file.pathname();
     filename          = file.tailname();
     char *current_cwd = getcwd(nullptr, 0);
-    chdir(path.c_str());
+    (void)chdir(path.c_str());
 #endif
 
     bool do_timer = false;
@@ -684,7 +687,7 @@ namespace Ioex {
     }
 
 #if !defined(__IOSS_WINDOWS__)
-    chdir(current_cwd);
+    (void)chdir(current_cwd);
     std::free(current_cwd);
 #endif
 
@@ -692,6 +695,11 @@ namespace Ioex {
 
     if (is_ok) {
       ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
+
+      if (fileExists) {
+        open_root_group_nl();
+        open_child_group_nl(0);
+      }
 
       // Check properties handled post-create/open...
       if (properties.exists("COMPRESSION_METHOD")) {
@@ -714,6 +722,28 @@ namespace Ioex {
           }
 #endif
         }
+        else if (method == "zstd") {
+#if NC_HAS_ZSTD == 1
+          exo_method = EX_COMPRESS_ZSTD;
+#else
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WarnOut(),
+                       "The NetCDF library does not have ZStandard compression enabled."
+                       " 'zlib' will be used instead.\n\n");
+          }
+#endif
+        }
+        else if (method == "bzip2") {
+#if NC_HAS_BZ2 == 1
+          exo_method = EX_COMPRESS_BZ2;
+#else
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WarnOut(),
+                       "The NetCDF library does not have Bzip2 / BZ2 compression enabled."
+                       " 'zlib' will be used instead.\n\n");
+          }
+#endif
+        }
         else {
           if (myProcessor == 0) {
             fmt::print(Ioss::WarnOut(),
@@ -724,6 +754,12 @@ namespace Ioex {
         }
         ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
       }
+
+      if (properties.exists("COMPRESSION_QUANTIZE_NSD")) {
+        int quant_level = properties.get("COMPRESSION_QUANTIZE_NSD").get_int();
+        ex_set_option(m_exodusFilePtr, EX_OPT_QUANTIZE_NSD, quant_level);
+      }
+
       if (properties.exists("COMPRESSION_LEVEL")) {
         int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
         ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
@@ -913,17 +949,20 @@ namespace Ioex {
     }
   }
 
-  void ParallelDatabaseIO::get_step_times_nl()
+  std::vector<double> ParallelDatabaseIO::internal_get_step_times_nl(bool setRegionTimeSteps)
   {
     double              last_time      = DBL_MAX;
+    int                 tstepCount     = 0;
     int                 timestep_count = 0;
     std::vector<double> tsteps(0);
 
+    int &l_timestepCount = setRegionTimeSteps ? m_timestepCount : tstepCount;
+
     {
-      timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-      m_timestepCount = timestep_count;
+      timestep_count  = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+      l_timestepCount = timestep_count;
       if (timestep_count <= 0) {
-        return;
+        return tsteps;
       }
 
       // For an exodusII file, timesteps are global and are stored in the region.
@@ -959,9 +998,15 @@ namespace Ioex {
     last_time = std::min(last_time, max_time);
 
     Ioss::Region *this_region = get_region();
+    int           numSteps    = 0;
     for (int i = 0; i < max_step; i++) {
       if (tsteps[i] <= last_time) {
-        this_region->add_state(tsteps[i] * timeScaleFactor);
+        if (setRegionTimeSteps) {
+          this_region->add_state(tsteps[i] * timeScaleFactor);
+        }
+
+        tsteps[i] *= timeScaleFactor;
+        numSteps++;
       }
       else {
         if (myProcessor == 0 && max_time == std::numeric_limits<double>::max()) {
@@ -977,7 +1022,17 @@ namespace Ioex {
         }
       }
     }
+
+    tsteps.resize(numSteps);
+    return tsteps;
   }
+
+  std::vector<double> ParallelDatabaseIO::get_db_step_times_nl()
+  {
+    return internal_get_step_times_nl(false);
+  }
+
+  void ParallelDatabaseIO::get_step_times_nl() { internal_get_step_times_nl(true); }
 
   const Ioss::Map &ParallelDatabaseIO::get_map(ex_entity_type type) const
   {
@@ -3972,13 +4027,13 @@ namespace Ioex {
             index += comp_count;
           }
         }
-        auto eb_offset =
-            eb->get_offset(); // Offset of beginning of the element block elements for this block
-        int index = -1 * (field.get_index() +
-                          comp); // Negative since specifying index, not id to exodus API.
+        int map_index = -1 * (field.get_index() +
+                              comp); // Negative since specifying index, not id to exodus API.
 
-        ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, index,
-                                      proc_offset + eb_offset + 1, file_count, component.data());
+        size_t global_map_offset = eb->get_property("global_map_offset").get_int();
+        ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, map_index,
+                                      global_map_offset + proc_offset + 1, file_count,
+                                      component.data());
       }
     }
     else if (role == Ioss::Field::ATTRIBUTE) {
@@ -4805,11 +4860,10 @@ namespace Ioex {
     return num_to_get;
   }
 
-  template <typename INT>
-  void ParallelDatabaseIO::output_processor_id_map(Ioss::Region *region, INT /*dummy*/)
+  template <typename INT> void ParallelDatabaseIO::output_processor_id_map(Ioss::Region *region)
   {
     std::vector<INT> proc_id(elementCount, myProcessor);
-    const auto &blocks = region->get_element_blocks();
+    const auto      &blocks = region->get_element_blocks();
     for (const auto &block : blocks) {
       put_field_internal(block, block->get_field("proc_id"), Data(proc_id), 0);
     }
@@ -4870,10 +4924,10 @@ namespace Ioex {
       add_processor_id_map(region);
       output_other_metadata();
       if (int_byte_size_api() == 8) {
-	output_processor_id_map(region, int64_t(0));
+        output_processor_id_map<int64_t>(region);
       }
       else {
-	output_processor_id_map(region, int(0));
+        output_processor_id_map<int>(region);
       }
     }
   }

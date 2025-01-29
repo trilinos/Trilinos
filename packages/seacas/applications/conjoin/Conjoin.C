@@ -1535,6 +1535,9 @@ namespace {
 
     global->elementCount = goffset;
     global_element_map.resize(goffset);
+    if (goffset == 0) {
+      return;
+    }
 
     size_t max_id        = global_element_map[global->elementCount - 1].first;
     bool   is_contiguous = max_id == global_element_map.size();
@@ -2203,7 +2206,7 @@ namespace {
       for (size_t ns = 0; ns < set_ids.size(); ns++) {
 
         std::vector<INT> glob_ns_nodes(total_node_count + 1);
-        std::fill(glob_ns_nodes.begin(), glob_ns_nodes.end(), 0);
+        std::fill(glob_ns_nodes.begin(), glob_ns_nodes.end(), (INT)0);
 
         size_t lns = glob_sets[ns].position_;
         for (size_t p = 0; p < part_count; p++) {
@@ -2548,7 +2551,7 @@ namespace {
 
     for (size_t b = 0; b < global.count(Excn::ObjectType::EBLK); b++) {
       status.resize(glob_blocks[b].entity_count());
-      std::fill(status.begin(), status.end(), (1.0 - alive));
+      std::fill(status.begin(), status.end(), T(1.0 - alive));
       size_t boffset       = blocks[b].offset_;
       size_t goffset       = glob_blocks[b].offset_;
       size_t element_count = blocks[b].entity_count();

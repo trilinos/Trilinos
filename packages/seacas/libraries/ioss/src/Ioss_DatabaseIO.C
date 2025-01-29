@@ -1596,6 +1596,25 @@ namespace Ioss {
     return zero_copy_not_enabled(sb, field, this);
   }
 
+  void DatabaseIO::release_memory_nl()
+  {
+    nodeMap.release_memory();
+    edgeMap.release_memory();
+    faceMap.release_memory();
+    elemMap.release_memory();
+  }
+
+  void DatabaseIO::reset_database_nl()
+  {
+    release_memory_nl();
+    dbState      = STATE_INVALID;
+    nodeCount    = 0;
+    elementCount = 0;
+    sideTopology.clear();
+    blockAdjacency.clear();
+    blockAdjacenciesCalculated = false;
+    elementBlockBoundingBoxes.clear();
+  }
 } // namespace Ioss
 
 namespace {

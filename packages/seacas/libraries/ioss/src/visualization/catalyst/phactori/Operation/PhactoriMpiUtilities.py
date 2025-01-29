@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -172,7 +172,7 @@ def UseMpiToSendAllProcessesFloatArrayToOneProcess(thisProcessFloatArray, pidToC
     retVal = []
 
   if PhactoriDbg(100):
-    if len(globalFloatArray) == 0: 
+    if len(globalFloatArray) == 0:
       myDebugPrint3(str(len(globalFloatArray)) + "\n")
     else:
       myDebugPrint3(str(len(globalFloatArray)) + "  " + str(globalFloatArray[0]) + "  " + str(globalFloatArray[-1]) + "\n")

@@ -22,9 +22,6 @@
 #include <fstream>
 
 #include <exodusII.h>
-#if !defined __NVCC__
-#include <fmt/color.h>
-#endif
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
@@ -160,7 +157,7 @@ namespace {
 
   template <typename INT>
   void decompose_metis(const Ioss::Region &region, SystemInterface &interFace,
-                       std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
+                       std::vector<int> &elem_to_proc, INT dummy)
   {
     size_t element_count = region.get_property("element_count").get_int();
 
@@ -272,15 +269,13 @@ namespace {
 } // namespace
 
 template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                             const std::vector<float> &weights,
-                                             IOSS_MAYBE_UNUSED int     dummy);
+                                             const std::vector<float> &weights, int dummy);
 template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                             const std::vector<float> &weights,
-                                             IOSS_MAYBE_UNUSED int64_t dummy);
+                                             const std::vector<float> &weights, int64_t dummy);
 
 template <typename INT>
 std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                    const std::vector<float> &weights, IOSS_MAYBE_UNUSED INT dummy)
+                                    const std::vector<float> &weights, INT dummy)
 {
   progress(__func__);
   // Populate the 'elem_to_proc' vector with a mapping from element to processor.

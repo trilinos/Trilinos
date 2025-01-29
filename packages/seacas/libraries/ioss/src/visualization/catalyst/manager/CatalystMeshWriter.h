@@ -13,29 +13,28 @@ class vtkDataObject;
 
 namespace Iovs {
 
-class CatalystMeshWriter {
+  class CatalystMeshWriter
+  {
 
-public:
-
+  public:
     CatalystMeshWriter();
     ~CatalystMeshWriter();
 
     bool outputCatalystMeshOneFileON();
-    void setOutputCatalystMeshOneFilePrefix(std::string & prefix);
+    void setOutputCatalystMeshOneFilePrefix(std::string &prefix);
 
     bool outputCatalystMeshFilePerProcON();
-    void setOutputCatalystMeshFilePerProcPrefix(std::string & prefix);
+    void setOutputCatalystMeshFilePerProcPrefix(std::string &prefix);
 
-    void writeCatalystMeshOneFile(vtkDataObject* dobj, int timeStep);
-    void writeCatalystMeshFilePerProc(vtkDataObject* dobj, int timeStep);
+    void writeCatalystMeshOneFile(vtkDataObject *dobj, int timeStep);
+    void writeCatalystMeshFilePerProc(vtkDataObject *dobj, int timeStep);
 
-private:
-
-    bool catalystMeshOneFile;
-    bool catalystMeshFilePerProc;
+  private:
+    bool        catalystMeshOneFile;
+    bool        catalystMeshFilePerProc;
     std::string catalystMeshOneFilePrefix;
     std::string catalystMeshFilePerProcPrefix;
-};
+  };
 
 } // namespace Iovs
 
