@@ -12,6 +12,7 @@
 
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperBackwardEulerVertex.hpp"
 #include "Tempus_StepperTrapezoidal.hpp"
 #include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperNewmarkImplicitAForm.hpp"
@@ -74,6 +75,8 @@ Teuchos::RCP<Stepper<Scalar> > StepperFactory<Scalar>::createStepper(
     return createStepperForwardEuler(model, stepperPL);
   else if (stepperType == "Backward Euler")
     return createStepperBackwardEuler(model, stepperPL);
+  else if (stepperType == "Backward Euler Vertex")
+    return createStepperBackwardEulerVertex(model, stepperPL);
   else if (stepperType == "Trapezoidal Method")
     return createStepperTrapezoidal(model, stepperPL);
   else if (stepperType == "BDF2")
