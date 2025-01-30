@@ -1630,10 +1630,6 @@ public:
   }
 
   inline void extractCRS(bool lu) {
-    const ordinal_type nrhs = 1;
-    const ordinal_type m = _m;
-    const value_type one(1);
-    const value_type zero(0);
 
     // ========================
     // free CRS, 
@@ -1644,11 +1640,17 @@ public:
     this->releaseCRS(true);
 #endif
 
-#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
-     defined(KOKKOS_ENABLE_HIP)
     // ========================
     // workspace
+    const ordinal_type m = _m;
+    const ordinal_type nrhs = 1;
     Kokkos::resize(_w_vec, m, nrhs);
+
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
+    const value_type one(1);
+    const value_type zero(0);
+
     int ldw = _w_vec.stride(1);
 #if defined(KOKKOS_ENABLE_CUDA)
     cudaDataType computeType;
@@ -1747,7 +1749,6 @@ public:
 
       // ========================
       // shift to generate rowptr
-      using range_type = Kokkos::pair<int, int>;
       {
         using range_policy_type = Kokkos::RangePolicy<exec_space>;
         Kokkos::parallel_scan("shiftRowptr", range_policy_type(0, m+1), rowptr_sum(s0.rowptrU));
@@ -2411,7 +2412,6 @@ public:
                                                  const value_type_matrix &t) {
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
-    const ordinal_type ldt = t.stride(1);
     const ordinal_type old_nrhs = _w_vec.extent(1);
 
     auto &s0 = _h_supernodes(_h_level_sids(pbeg));
@@ -2421,6 +2421,8 @@ public:
     }
 #if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
      defined(KOKKOS_ENABLE_HIP)
+    const ordinal_type ldt = t.stride(1);
+
 #if defined(KOKKOS_ENABLE_CUDA)
     cudaDataType computeType = CUDA_R_64F;
     if (std::is_same<value_type, float>::value) {
