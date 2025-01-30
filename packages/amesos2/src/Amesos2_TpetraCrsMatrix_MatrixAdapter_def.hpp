@@ -122,7 +122,7 @@ namespace Amesos2 {
         // Create new GID list for RowMap
         Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("indexList", nRows);
         for (local_ordinal_t k = 0; k < nRows; k++) {
-          rowIndexList(k) = frow+k;
+          rowIndexList(k) = frow+k; // based on index-base of rowMap
         }
         // Create new GID list for ColMap
         Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("indexList", nCols);
@@ -138,10 +138,11 @@ namespace Amesos2 {
         RCP<import_t> importer = rcp (new import_t (rowMap, colMap));
         col_mv.doImport (row_mv, *importer, Tpetra::INSERT);
         {
+          // col_mv is imported from rowIndexList, which is based on index-base of rowMap
           auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
           for(int i=0; i<nCols; i++) colIndexList(i) = col_view(i,0);
         }
-        // Create new Row & Col Maps
+        // Create new Row & Col Maps (both based on indexBase of rowMap)
         contigRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
         contigColMap = rcp (new contiguous_map_type (numDoFs, colIndexList.data(), nCols, indexBase, colComm));
 
@@ -174,7 +175,7 @@ namespace Amesos2 {
                    host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                    bool column_major, EPhase current_phase) const
     {
-      LocalOrdinal ret = 0;
+      LocalOrdinal ret = -1;
       {
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather");
@@ -186,7 +187,6 @@ namespace Amesos2 {
         auto nRanks = comm->getSize();
         auto myRank = comm->getRank();
 
-        global_ordinal_t indexBase = rowMap->getIndexBase();
         global_ordinal_t nRows = this->mat_->getGlobalNumRows();
         auto lclMatrix = this->mat_->getLocalMatrixDevice();
 
@@ -200,8 +200,12 @@ namespace Amesos2 {
           Kokkos::deep_copy(lclRowptr, lclRowptr_d);
           Kokkos::deep_copy(lclColind, lclColind_d);
 
+          // index-bases
+          global_ordinal_t rowIndexBase = rowMap->getIndexBase();
+          global_ordinal_t colIndexBase = colMap->getIndexBase();
           // map from global to local
           host_ordinal_type_array  perm_g2l;
+          host_ordinal_type_array  perm_l2g;
           // workspace to transpose
           KV_GS pointers_t;
           KV_GO indices_t;
@@ -238,18 +242,20 @@ namespace Amesos2 {
               Kokkos::resize(lclMap, myNRows);
               if (myRank == 0) {
                 Kokkos::resize(perm_g2l, nRows);
+                Kokkos::resize(perm_l2g, nRows);
               } else {
                 Kokkos::resize(perm_g2l, 1);
               }
               for (int i=0; i < myNRows; i++) {
                 lclMap(i) = rowMap->getGlobalElement(i);
               }
-              Teuchos::gatherv<int, LocalOrdinal> (lclMap.data(), myNRows, perm_g2l.data(), 
+              Teuchos::gatherv<int, LocalOrdinal> (lclMap.data(), myNRows, perm_g2l.data(),
                                                    recvCounts.data(), recvDispls.data(),
                                                    0, *comm);
               if (myRank == 0) {
                 for (int i=0; i < nRows; i++) {
-                  perm_g2l(i) -= indexBase;
+                  perm_g2l(i) -= rowIndexBase;
+                  perm_l2g(perm_g2l(i)) = i;
                   if (i != perm_g2l(i)) need_to_perm = true;
                 }
               }
@@ -263,11 +269,11 @@ namespace Amesos2 {
             } else if (myRank != 0) {
               Kokkos::resize(pointers_t, 2);
             }
+            LocalOrdinal sendIdx = (myNRows > 0 ? 1 : 0); // To skip sending the first rowptr entry (note: 0, if local matrix is empty)
             LocalOrdinal *pointers_ = ((myRank != 0 || (column_major || need_to_perm)) ? pointers_t.data() : pointers.data());
-            Teuchos::gatherv<int, LocalOrdinal> (&lclRowptr_(1), myNRows, &pointers_[1], 
+            Teuchos::gatherv<int, LocalOrdinal> (&lclRowptr_(sendIdx), myNRows, &pointers_[1],
                                                  recvCounts.data(), recvDispls.data(),
                                                  0, *comm);
-
             if (myRank == 0) {
               // shift to global pointers
               pointers_[0] = 0;
@@ -275,8 +281,8 @@ namespace Amesos2 {
               LocalOrdinal displs = recvCounts(0);
               for (int p = 1; p < nRanks; p++) {
                 // skip "Empty" submatrix (no rows)
-		//  recvCounts(p) is zero, while pointers_[recvDispls(p+1)] now contains nnz from p-1
-		if (recvDispls(p+1) > recvDispls(p)) {
+                //  recvCounts(p) is zero, while pointers_[recvDispls(p+1)] now contains nnz from p-1
+                if (recvDispls(p+1) > recvDispls(p)) {
                   // save recvCounts from pth MPI
                   recvCounts(p) = pointers_[recvDispls(p+1)];
                   // shift pointers for pth MPI to global
@@ -284,7 +290,7 @@ namespace Amesos2 {
                     pointers_[i] += displs;
                   }
                   displs += recvCounts(p);
-		}
+                }
               }
               ret = pointers_[nRows];
             }
@@ -303,14 +309,14 @@ namespace Amesos2 {
             }
             // -- convert to global colids & convert to 0-base
             KV_GO lclColind_ ("localColind_", lclColind.extent(0));
-            for (int i = 0; i < int(lclColind.extent(0)); i++) lclColind_(i) = (colMap->getGlobalElement((lclColind(i))) - indexBase);
+            for (int i = 0; i < int(lclColind.extent(0)); i++) lclColind_(i) = (colMap->getGlobalElement((lclColind(i))) - colIndexBase);
             if (column_major || need_to_perm) {
               Kokkos::resize(indices_t, indices.extent(0));
-              Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices_t.data(), 
+              Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices_t.data(),
                                                    recvCounts.data(), recvDispls.data(),
                                                    0, *comm);
             } else {
-              Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices.data(), 
+              Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices.data(),
                                                    recvCounts.data(), recvDispls.data(),
                                                    0, *comm);
             }
@@ -336,8 +342,9 @@ namespace Amesos2 {
               for (int i=1; i < nRows; i++) {
                 pointers(i+1) += pointers(i);
               }
-              for (int i=0; i<nRows; i++) {
-                int row = perm_g2l(i);
+              // nonzeroes in each column are sorted in ascending row
+              for (int row=0; row<nRows; row++) {
+                int i = perm_l2g(row);
                 for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
                   int col = indices_t(k);
                   transpose_map(k) = pointers(1+col);
