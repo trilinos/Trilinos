@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -333,7 +333,7 @@ class PhactoriGeometricCellSampler1(PhactoriOperationSpecifics):
           myDebugPrint3("None\n")
         else:
           myDebugPrint3(str(oneCellDataArray.GetNumberOfTuples()) + "\n")
-     
+
     if dataArrayNumCmpnts != 0:
       defaultTuple = []
       for ii in range(0, dataArrayNumCmpnts):
@@ -513,7 +513,7 @@ class PhactoriGeometricCellSampler1(PhactoriOperationSpecifics):
     else:
       myDebugPrint3AndException("CreateInternalListOfDataControlledSampledCellsOnThisProcess:\n" +\
         "bad self.DataControlledSamplingMethod\n")
- 
+
 
     if PhactoriDbg(100):
       myDebugPrint3("CreateInternalListOfDataControlledSampledCellsOnThisProcess returning\n")
@@ -576,7 +576,7 @@ class PhactoriGeometricCellSampler1(PhactoriOperationSpecifics):
           myDebugPrint3("None\n")
         else:
           myDebugPrint3(str(oneCellDataArray.GetNumberOfTuples()) + "\n")
-     
+
     if dataArrayNumCmpnts != 0:
       defaultTuple = []
       for ii in range(0, dataArrayNumCmpnts):
@@ -647,7 +647,7 @@ class PhactoriGeometricCellSampler1(PhactoriOperationSpecifics):
       for leafKey in self.GeometricallySampledCellsByRecursionLeaf:
         cellListForLeaf = self.GeometricallySampledCellsByRecursionLeaf[leafKey]
         myDebugPrint3(str(len(cellListForLeaf)) + " cells for leaf " + str(leafKey) + "\n")
-      
+
     if PhactoriDbg(100):
       myDebugPrint3("CreateLeafRecursionTrackingStructure returning\n")
 
@@ -866,7 +866,7 @@ class PhactoriGeometricCellSampler1(PhactoriOperationSpecifics):
       scriptLines.append("        iter.GoToNextItem();\n")
       scriptLines.append("else:\n")
       scriptLines.append("  flatten(input, output)\n")
-  
+
       self.mainScriptString = "".join(scriptLines)
 
     myCellIndexesToSet = []
@@ -884,10 +884,10 @@ class PhactoriGeometricCellSampler1(PhactoriOperationSpecifics):
          myCellIndexesToSet.append(oneCellInfo.index)
          myMaskValuesToSet.append(maskValue)
          myLeafVisitCount.append(oneCellInfo.leafVisitCount)
-   
-    newstr1 = "cellIndexesToSet = " + str(myCellIndexesToSet) + "\n" 
-    newstr2 = "maskValuesToSet = " + str(myMaskValuesToSet) + "\n" 
-    newstr3 = "leafVisitCount = " + str(myLeafVisitCount) + "\n" 
+
+    newstr1 = "cellIndexesToSet = " + str(myCellIndexesToSet) + "\n"
+    newstr2 = "maskValuesToSet = " + str(myMaskValuesToSet) + "\n"
+    newstr3 = "leafVisitCount = " + str(myLeafVisitCount) + "\n"
     self.mProgFilterString = newstr1 + newstr2 + newstr3 + self.mainScriptString
 
     if PhactoriDbg(100):

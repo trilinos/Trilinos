@@ -40,7 +40,7 @@ Program TestExoRead_Part
    call exgnv (exoid, time_step, var_index, num_nodes, var_values,ierr)
    write (*, '("after exgnv, error = ", i3)' ) ierr
    write(*,*) var_values
-   
+
 !   call expnv (exoid, time_step, var_index, num_nodes, var_values,ierr)
    DeAllocate(var_values)
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1149,5 +1149,19 @@ TEST_CASE("half_sphere")
 
   std::string name = "half_sphere_8";
   SECTION(name) { check_split_assign(zones, load_balance_tolerance, 8, 0.9, 1.1); }
+  cleanup(zones);
+}
+
+TEST_CASE("hwt_cone")
+{
+  int                                       zone = 1;
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "520x200x200"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "50x200x50"));
+
+  double load_balance_tolerance = 1.4;
+
+  std::string name = "hwt_cone_16384";
+  SECTION(name) { check_split_assign(zones, load_balance_tolerance, 16384, 0.9, 1.4); }
   cleanup(zones);
 }

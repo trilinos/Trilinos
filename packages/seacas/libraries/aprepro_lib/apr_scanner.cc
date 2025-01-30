@@ -178,7 +178,7 @@ typedef unsigned int       flex_uint32_t;
  * to BEGIN to return to the state.  The YYSTATE alias is for lex
  * compatibility.
  */
-#define YY_START (((yy_start)-1) / 2)
+#define YY_START (((yy_start) - 1) / 2)
 #define YYSTATE  YY_START
 
 /* Action number for EOF rule of a given start state. */
@@ -1020,7 +1020,7 @@ int              loop_lvl   = 0;
 std::fstream    *tmp_file;
 const char      *temp_f;
 
-#if defined           __NVCC__
+#if defined __NVCC__
 #pragma diag_suppress code_is_unreachable
 #endif
 
@@ -1562,10 +1562,7 @@ YY_DECL
         YY_BREAK
       case 21:
         /* rule 21 can match eol */
-        YY_RULE_SETUP
-        { /* Do not increment line count */
-          ;
-        }
+        YY_RULE_SETUP { /* Do not increment line count */ ; }
         YY_BREAK
 
       case 22:
@@ -2131,6 +2128,12 @@ YY_DECL
             BEGIN(END_CASE_SKIP);
           else
             BEGIN(if_state[if_lvl]);
+          unput('}');
+          unput('O');
+          unput('H');
+          unput('C');
+          unput('E');
+          unput('{');
           return (token::RBRACE);
         }
         YY_BREAK
@@ -2356,8 +2359,8 @@ YY_DECL
 
       default: YY_FATAL_ERROR("fatal flex scanner internal error--no action found");
       } /* end of action switch */
-    }   /* end of scanning one token */
-  }     /* end of user's declarations */
+    } /* end of scanning one token */
+  } /* end of user's declarations */
 } /* end of yylex */
 /* %ok-for-header */
 

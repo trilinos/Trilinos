@@ -22,8 +22,8 @@ namespace Iovs_cgns {
   {
 
   public:
-    CatalystCGNSMeshBase(){};
-    virtual ~CatalystCGNSMeshBase(){};
+    CatalystCGNSMeshBase() {};
+    virtual ~CatalystCGNSMeshBase() {};
 
     // Description:
     // Calls the ParaView Catalyst pipeline to run co-processing for this time iteration.

@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -144,7 +144,7 @@ As mentioned previously, you can specify "exclude blocks" instead of
       numArrays = inInputFilter.PointData.GetNumberOfArrays()
       for ii in range (0, numArrays):
         myDebugPrint3("  " + str(ii) + ":  " + inInputFilter.PointData.GetArray(ii).GetName() + "\n")
-  
+
     if PhactoriDbg():
       myDebugPrint3("  extractblock inInputFilter cell data arrays:\n")
       numArrays = inInputFilter.CellData.GetNumberOfArrays()
@@ -163,7 +163,7 @@ As mentioned previously, you can specify "exclude blocks" instead of
       numArrays = newParaViewFilter.PointData.GetNumberOfArrays()
       for ii in range (0, numArrays):
         myDebugPrint3("  " + str(ii) + ":  " + newParaViewFilter.PointData.GetArray(ii).GetName() + "\n")
-  
+
     if PhactoriDbg():
       myDebugPrint3("  extractblock newParaViewFilter cell data arrays:\n")
       numArrays = newParaViewFilter.CellData.GetNumberOfArrays()

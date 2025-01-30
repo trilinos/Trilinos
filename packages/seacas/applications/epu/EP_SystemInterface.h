@@ -70,9 +70,13 @@ namespace Excn {
     bool omit_faceblocks() const { return omitFaceBlocks_; }
     bool int64() const { return intIs64Bit_; }
     void set_int64() const { intIs64Bit_ = true; }
-    int  compress_data() const { return compressData_; }
+    int  compress_data() const { return compressionLevel_; }
     bool zlib() const { return zlib_; }
     bool szip() const { return szip_; }
+    bool zstd() const { return zstd_; }
+    bool bz2() const { return bz2_; }
+    int  quantize_nsd() const { return quantizeNSD_; }
+    bool quantize() const { return quantizeNSD_ > 0; }
     bool subcycle_join() const { return subcycleJoin_; }
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
@@ -137,10 +141,13 @@ namespace Excn {
     int          stepInterval_{1};
     int          subcycle_{-1};
     int          cycle_{-1};
-    int          compressData_{0};
+    int          compressionLevel_{0};
+    int          quantizeNSD_{0};
     int          maxOpenFiles_{0};
-    bool         zlib_{true};
+    bool         zlib_{false};
     bool         szip_{false};
+    bool         zstd_{false};
+    bool         bz2_{false};
     bool         sumSharedNodes_{false};
     bool         addProcessorIdField_{false};
     bool         addProcessorIdMap_{false};

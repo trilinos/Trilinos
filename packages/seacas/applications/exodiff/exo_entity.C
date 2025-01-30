@@ -359,7 +359,7 @@ void Exo_Entity::internal_load_params()
       int    err   = ex_get_attr_names(fileId, exodus_type(), id_, names);
       if (err < 0) {
         Error(fmt::format(
-            "ExoII_Read::Get_Init_Data(): Failed to get {} attribute names!  Aborting...\n",
+            "Exo_Read::Get_Init_Data(): Failed to get {} attribute names!  Aborting...\n",
             label()));
       }
 

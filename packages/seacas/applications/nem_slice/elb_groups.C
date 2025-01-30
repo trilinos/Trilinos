@@ -197,10 +197,10 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
    * calculate how many processors to use for each group
    *   using method from the materials group, haven't really checked it
    */
-  if (machine->type == MESH) {
+  if (machine->type == MachineType::MESH) {
     nproc = machine->procs_per_box;
   }
-  else if (machine->type == HCUBE) {
+  else if (machine->type == MachineType::HCUBE) {
     nproc = ilog2i(machine->procs_per_box);
   }
   for (int i = 0; i < prob->num_groups; i++) {

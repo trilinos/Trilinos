@@ -31,6 +31,7 @@
 #include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Transform.h>
+#include <Ioss_Utils.h>
 
 #include "EJ_CodeTypes.h"
 #include "EJ_SystemInterface.h"
@@ -44,16 +45,22 @@
 #endif
 
 namespace {
+  std::string  tsFormat    = "[%H:%M:%S] ";
+  unsigned int debug_level = 0;
+
   bool valid_variable(const std::string &variable, size_t id, const StringIdVector &variable_list);
-  void define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool check_variable_mismatch(const std::string &type, const StringIdVector &variable_list,
+                               const Ioss::NameList &fields);
+
+  bool define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                             const StringIdVector &variable_list);
-  void define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                            const StringIdVector &variable_list, SystemInterface &interFace);
-  void define_element_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_element_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                              const StringIdVector &variable_list);
-  void define_nset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                           const StringIdVector &variable_list);
-  void define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                           const StringIdVector &variable_list);
   void define_nodal_nodeset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                                    const StringIdVector &variable_list, SystemInterface &interFace);
@@ -120,9 +127,6 @@ namespace {
     }
   }
 
-} // namespace
-
-namespace {
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region,
                              bool create_assemblies, bool debug);
   void transfer_assembly(const Ioss::Region &region, Ioss::Region &output_region, bool debug);
@@ -138,16 +142,29 @@ namespace {
 
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                                     const std::string &field_name);
+
+  // Used when combining two or more input set into a single output set (WIP)
+  // May reequire other operations to completly combine the entities...
+  // This only handles the entity count.
+  void add_to_entity_count(Ioss::GroupingEntity *ge, int64_t entity_count_increment)
+  {
+    auto ec_property = ge->get_property("entity_count");
+    auto old_count   = ec_property.get_int();
+
+    auto origin = ec_property.get_origin();
+    ge->property_erase("entity_count");
+    ge->property_add(Ioss::Property("entity_count", entity_count_increment + old_count, origin));
+
+    auto field_names = ge->field_describe();
+    for (const auto &field_name : field_names) {
+      const auto &field_ref = ge->get_fieldref(field_name);
+      const_cast<Ioss::Field &>(field_ref).reset_count(entity_count_increment + old_count);
+    }
+  }
 } // namespace
-
-std::string tsFormat = "[%H:%M:%S] ";
-
-// prototypes
 
 template <typename INT>
 double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh, INT dummy);
-
-unsigned int debug_level = 0;
 
 int main(int argc, char *argv[])
 {
@@ -292,15 +309,27 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
     properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
   }
 
-  if (interFace.compression_level() > 0 || interFace.szip()) {
+  if (interFace.compression_level() > 0 || interFace.szip() || interFace.quantize() ||
+      interFace.zlib() || interFace.zstd() || interFace.bz2()) {
     properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level()));
-    properties.add(Ioss::Property("COMPRESSION_SHUFFLE", true));
-    if (interFace.szip()) {
+    properties.add(Ioss::Property("COMPRESSION_SHUFFLE", 1));
+
+    if (interFace.zlib()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+    }
+    else if (interFace.szip()) {
       properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
     }
-    else if (interFace.zlib()) {
-      properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+    else if (interFace.zstd()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "zstd"));
+    }
+    else if (interFace.bz2()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "bzip2"));
+    }
+
+    if (interFace.quantize()) {
+      properties.add(Ioss::Property("COMPRESSION_QUANTIZE_NSD", interFace.quantize_nsd()));
     }
   }
 
@@ -467,21 +496,28 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
 
   output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
-  define_global_fields(output_region, part_mesh, interFace.global_var_names());
+  bool error = false;
+  error |= define_global_fields(output_region, part_mesh, interFace.global_var_names());
 
-  define_nodal_fields(output_region, part_mesh, interFace.node_var_names(), interFace);
+  error |= define_nodal_fields(output_region, part_mesh, interFace.node_var_names(), interFace);
   define_nodal_nodeset_fields(output_region, part_mesh, interFace.node_var_names(), interFace);
 
-  define_element_fields(output_region, part_mesh, interFace.elem_var_names());
+  error |= define_element_fields(output_region, part_mesh, interFace.elem_var_names());
 
   if (!interFace.omit_nodesets()) {
-    define_nset_fields(output_region, part_mesh, interFace.nset_var_names());
+    error |= define_nset_fields(output_region, part_mesh, interFace.nset_var_names());
   }
   if (!interFace.omit_sidesets()) {
-    define_sset_fields(output_region, part_mesh, interFace.sset_var_names());
+    error |= define_sset_fields(output_region, part_mesh, interFace.sset_var_names());
   }
 
   output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+
+  if (error) {
+    fmt::print(stderr,
+               "ERROR: Specified field(s) (see above) were not found. Fix input and rerun.\n\n");
+    exit(EXIT_FAILURE);
+  }
 
   // Get database times...
   // Different parts can have either no times or the times must match
@@ -772,6 +808,8 @@ namespace {
   void define_nodal_nodeset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                                    const StringIdVector &variable_list, SystemInterface &interFace)
   {
+    // This routine does not check that all variables in `variable_list` have been
+    // found since the checking has already been done in define_nodal_fields.
     if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
     }
@@ -803,17 +841,27 @@ namespace {
 
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const std::string &prefix = region.name();
+    bool               combine_similar = false;
+    const std::string &prefix          = region.name();
 
     const Ioss::NodeSetContainer &nss = region.get_nodesets();
     for (const auto &ns : nss) {
       if (!entity_is_omitted(ns)) {
         std::string name = ns->name();
-        if (output_region.get_nodeset(name) != nullptr) {
-          name = prefix + "_" + ns->name();
-          if (output_region.get_nodeset(name) != nullptr) {
-            fmt::print(stderr, "ERROR: Duplicate node sets named '{}'\n", name);
-            exit(EXIT_FAILURE);
+        auto       *ons  = output_region.get_nodeset(name);
+        if (ons != nullptr) {
+          if (combine_similar) {
+            // Combine nodesets with similar names...
+            size_t count = ns->entity_count();
+            add_to_entity_count(ons, count);
+            continue;
+          }
+          else {
+            name = prefix + "_" + ns->name();
+            if (output_region.get_nodeset(name) != nullptr) {
+              fmt::print(stderr, "ERROR: Duplicate node sets named '{}'\n", name);
+              exit(EXIT_FAILURE);
+            }
           }
         }
         ns->property_add(Ioss::Property("name_in_output", name));
@@ -1328,11 +1376,12 @@ namespace {
     oge->put_field_data(field_name, data);
   }
 
-  void define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                             const StringIdVector &variable_list)
   {
+    bool error = false;
     if (!variable_list.empty() && variable_list[0].first == "none") {
-      return;
+      return error;
     }
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields = pm->field_describe(Ioss::Field::REDUCTION);
@@ -1343,13 +1392,23 @@ namespace {
         }
       }
     }
+    // Now that we have defined all fields, check `variable_list` and make
+    // sure that all fields that have been explicitly specified now exist
+    // on `output_region`...
+    if (!variable_list.empty() && variable_list[0].first != "all") {
+      // The user has specified at least one variable...
+      Ioss::NameList fields = output_region.field_describe(Ioss::Field::REDUCTION);
+      error                 = check_variable_mismatch("Global", variable_list, fields);
+    }
+    return error;
   }
 
-  void define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                            const StringIdVector &variable_list, SystemInterface &interFace)
   {
+    bool error = false;
     if (!variable_list.empty() && variable_list[0].first == "none") {
-      return;
+      return error;
     }
     Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
     SMART_ASSERT(onb != nullptr);
@@ -1369,15 +1428,28 @@ namespace {
         }
       }
     }
+    // Now that we have defined all fields, check `variable_list` and make
+    // sure that all fields that have been explicitly specified now exist
+    // on `output_region`...
+    if (!variable_list.empty() && variable_list[0].first != "all") {
+      // The user has specified at least one variable...
+      Ioss::NameList fields = onb->field_describe(Ioss::Field::REDUCTION);
+      error                 = check_variable_mismatch("Nodal", variable_list, fields);
+    }
+    return error;
   }
 
-  void define_element_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_element_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                              const StringIdVector &variable_list)
   {
+    bool error = false;
     // Element Block Fields...
     if (!variable_list.empty() && variable_list[0].first == "none") {
-      return;
+      return error;
     }
+    bool           subsetting_fields = !variable_list.empty() && variable_list[0].first != "all";
+    Ioss::NameList defined_fields;
+
     for (const auto &pm : part_mesh) {
       const Ioss::ElementBlockContainer &iebs = pm->get_element_blocks();
       for (const auto &ieb : iebs) {
@@ -1395,21 +1467,37 @@ namespace {
               if (valid_variable(field_name, id, variable_list)) {
                 Ioss::Field field = ieb->get_field(field_name);
                 oeb->field_add(std::move(field));
+                if (subsetting_fields) {
+                  defined_fields.push_back(field_name);
+                }
               }
             }
           }
         }
       }
     }
+    // Now that we have defined all fields, check `variable_list` and make
+    // sure that all fields that have been explicitly specified now exist
+    // on `output_region`...
+    if (subsetting_fields) {
+      // The user has specified at least one variable...
+      Ioss::Utils::uniquify(defined_fields);
+      error = check_variable_mismatch("Element", variable_list, defined_fields);
+    }
+    return error;
   }
 
-  void define_nset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                           const StringIdVector &variable_list)
   {
+    bool error = false;
     // Nodeset fields...
     if (!variable_list.empty() && variable_list[0].first == "none") {
-      return;
+      return error;
     }
+
+    bool           subsetting_fields = !variable_list.empty() && variable_list[0].first != "all";
+    Ioss::NameList defined_fields;
 
     for (const auto &pm : part_mesh) {
       const Ioss::NodeSetContainer &ins = pm->get_nodesets();
@@ -1429,19 +1517,35 @@ namespace {
             if (valid_variable(field_name, id, variable_list)) {
               Ioss::Field field = in->get_field(field_name);
               ons->field_add(std::move(field));
+              if (subsetting_fields) {
+                defined_fields.push_back(field_name);
+              }
             }
           }
         }
       }
     }
+    // Now that we have defined all fields, check `variable_list` and make
+    // sure that all fields that have been explicitly specified now exist
+    // on `output_region`...
+    if (subsetting_fields) {
+      // The user has specified at least one variable...
+      Ioss::Utils::uniquify(defined_fields);
+      error = check_variable_mismatch("Nodeset", variable_list, defined_fields);
+    }
+    return error;
   }
 
-  void define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                           const StringIdVector &variable_list)
   {
+    bool error = false;
     if (!variable_list.empty() && variable_list[0].first == "none") {
-      return;
+      return error;
     }
+    bool           subsetting_fields = !variable_list.empty() && variable_list[0].first != "all";
+    Ioss::NameList defined_fields;
+
     const auto &os = output_region.get_sidesets();
 
     Ioss::SideBlockContainer out_eb;
@@ -1469,6 +1573,9 @@ namespace {
               if (valid_variable(field_name, id, variable_list)) {
                 Ioss::Field field = eb->get_field(field_name);
                 (*II)->field_add(std::move(field));
+                if (subsetting_fields) {
+                  defined_fields.push_back(field_name);
+                }
               }
             }
             ++II;
@@ -1476,6 +1583,15 @@ namespace {
         }
       }
     }
+    // Now that we have defined all fields, check `variable_list` and make
+    // sure that all fields that have been explicitly specified now exist
+    // on `output_region`...
+    if (subsetting_fields) {
+      // The user has specified at least one variable...
+      Ioss::Utils::uniquify(defined_fields);
+      error = check_variable_mismatch("Sideset", variable_list, defined_fields);
+    }
+    return error;
   }
 
   void transfer_fields(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
@@ -1514,6 +1630,25 @@ namespace {
       }
     }
     return false;
+  }
+
+  bool check_variable_mismatch(const std::string &type, const StringIdVector &variable_list,
+                               const Ioss::NameList &fields)
+  {
+    // Check all variables in `variable_list` and see if they are found in `fields`
+    if (variable_list.empty() || variable_list[0].first == "all") {
+      return false; // No error
+    }
+
+    bool error = false;
+    for (const auto &var : variable_list) {
+      if (std::find(fields.begin(), fields.end(), var.first) == std::end(fields)) {
+        fmt::print(stderr, "ERROR: {} Variable '{}' was not found in the list of valid fields.\n",
+                   type, var.first);
+        error = true;
+      }
+    }
+    return error;
   }
 
   void process_nset_omissions(RegionVector &part_mesh, const Omissions &omit)

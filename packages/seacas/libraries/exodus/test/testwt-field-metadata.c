@@ -82,7 +82,7 @@ int main(int argc, char **argv)
   /* Write element block names */
   for (int i = 0; i < num_elem_blk; i++) {
     char block_names[32];
-    sprintf(block_names, "block_%c", i + 'A');
+    snprintf(block_names, 32, "block_%c", i + 'A');
     EXCHECK(ex_put_name(exoid, EX_ELEM_BLOCK, blocks[i].id, block_names));
   }
 
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     int cardinality =
         field.cardinality[0] != 0 ? field.cardinality[0] : ex_field_cardinality(field.type[0]);
     for (int i = 0; i < cardinality; i++) {
-      const char *name = ex_component_field_name(&field, (int[]){i + 1});
+      const char *name = ex_component_field_name(&field, (int[]){i + 1, 0});
       assert(strcmp(var_names[vname++], name) == 0);
     }
   }
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
     int cardinality =
         field.cardinality[0] != 0 ? field.cardinality[0] : ex_field_cardinality(field.type[0]);
     for (int i = 0; i < cardinality; i++) {
-      const char *name = ex_component_field_name(&field, (int[]){i + 1});
+      const char *name = ex_component_field_name(&field, (int[]){i + 1, 0});
       assert(strcmp(var_names[vname++], name) == 0);
     }
   }

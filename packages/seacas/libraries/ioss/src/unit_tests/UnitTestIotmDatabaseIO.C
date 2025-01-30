@@ -50,20 +50,6 @@ namespace {
     return db_io;
   }
 
-  Iotm::DatabaseIO *create_output_db_io(const std::string &filename)
-  {
-    Ioss::Init::Initializer init_db;
-    Ioss::DatabaseUsage     db_usage = Ioss::WRITE_RESULTS;
-    Ioss::PropertyManager   properties;
-
-    properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
-    properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
-
-    auto *db_io = new Iotm::DatabaseIO(nullptr, filename, db_usage,
-                                       Ioss::ParallelUtils::comm_world(), properties);
-    return db_io;
-  }
-
   int get_parallel_size()
   {
     return Ioss::ParallelUtils(Ioss::ParallelUtils::comm_world()).parallel_size();

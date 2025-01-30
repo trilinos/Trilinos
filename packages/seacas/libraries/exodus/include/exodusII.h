@@ -55,12 +55,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "9.01"
+#define EXODUS_VERSION       "9.04"
 #define EXODUS_VERSION_MAJOR 9
-#define EXODUS_VERSION_MINOR 1
-#define EXODUS_RELEASE_DATE  "July 17, 2024"
+#define EXODUS_VERSION_MINOR 4
+#define EXODUS_RELEASE_DATE  "November 5, 2024"
 
-#define EX_API_VERS       9.01f
+#define EX_API_VERS       9.04f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -215,6 +215,7 @@ enum ex_inquiry {
   EX_INQ_NUM_ELEM_SET_VAR    = 69, /**< number of element set variables */
   EX_INQ_NUM_SIDE_SET_VAR    = 70, /**< number of sideset variables */
   EX_INQ_NUM_GLOBAL_VAR      = 71, /**< number of global variables */
+  EX_INQ_FILE_FORMAT         = 72, /**< netCDF file format */
   EX_INQ_INVALID             = -1
 };
 
@@ -242,9 +243,11 @@ NetCDF-4.?.? and later
 enum ex_option_type {
   EX_OPT_MAX_NAME_LENGTH =
       1, /**< Maximum length of names that will be returned/passed via api call. */
-  EX_OPT_COMPRESSION_TYPE,    /**<  Not currently used; default is gzip */
-  EX_OPT_COMPRESSION_LEVEL,   /**<  In the range [0..9]. A value of 0 indicates no compression */
+  EX_OPT_COMPRESSION_TYPE,    /**<  Default is gzip */
+  EX_OPT_COMPRESSION_LEVEL,   /**<  Range depends on compression type. */
   EX_OPT_COMPRESSION_SHUFFLE, /**<  1 if enabled, 0 if disabled */
+  EX_OPT_QUANTIZE_NSD,        /**< if > 0, Number of significant digits to retain in lossy quantize
+                                 compression */
   EX_OPT_INTEGER_SIZE_API, /**<  4 or 8 indicating byte size of integers used in api functions. */
   EX_OPT_INTEGER_SIZE_DB,  /**<  Query only, returns 4 or 8 indicating byte size of integers stored
                              on  the database. */
@@ -255,6 +258,8 @@ enum ex_compression_type {
   EX_COMPRESS_ZLIB = 1, /**< Use ZLIB-based compression (if available) */
   EX_COMPRESS_GZIP = 1, /**< Same as ZLIB, but typical alias used */
   EX_COMPRESS_SZIP,     /**< Use SZIP-based compression (if available) */
+  EX_COMPRESS_ZSTD,     /**< Use ZStandard compression (if available) */
+  EX_COMPRESS_BZ2,      /**< Use BZ2 / Bzip2 compression (if available) */
 };
 typedef enum ex_compression_type ex_compression_type;
 /** @}*/
@@ -341,13 +346,13 @@ typedef struct ex_basis
   /*
    clang-format off
    *
-   * subc_dim: dimension of the subcell associated with the specified DoF ordinal 
+   * subc_dim: dimension of the subcell associated with the specified DoF ordinal
    *      -- 0 node, 1 edge, 2 face, 3 volume [Range: 0..3]
    * subc_ordinal: ordinal of the subcell relative to its parent cell
-   *      -- 0..n for each ordinal with the same subc dim [Range: <= DoF ordinal] 
-   * subc_dof_ordinal: ordinal of the DoF relative to the subcell 
-   * subc_num_dof: cardinality of the DoF set associated with this subcell. 
-   * xi, eta, mu (ξ, η, ζ): Parametric coordinate location of the DoF 
+   *      -- 0..n for each ordinal with the same subc dim [Range: <= DoF ordinal]
+   * subc_dof_ordinal: ordinal of the DoF relative to the subcell
+   * subc_num_dof: cardinality of the DoF set associated with this subcell.
+   * xi, eta, mu (ξ, η, ζ): Parametric coordinate location of the DoF
    *      -- (Only first ndim values are valid)
    *
    clang-format on
@@ -1955,8 +1960,9 @@ enum ex_error_return_code {
   EX_LASTERR       = -1003, /**< in ex_err, use existing err_num value */
   EX_NULLENTITY    = -1006, /**< null entity found                        */
   EX_NOENTITY      = -1007, /**< no entities of that type on database    */
-  EX_INTSIZEMISMATCH = -1008, /**< integer sizes do not match on input/output databases in ex_copy  */
   EX_NOTFOUND      = -1008, /**< could not find requested variable on database */
+  EX_INTSIZEMISMATCH =
+      -1009, /**< integer sizes do not match on input/output databases in ex_copy  */
 
   EX_FATAL = -1, /**< fatal error flag def                     */
   EX_NOERR = 0,  /**< no error flag def                        */

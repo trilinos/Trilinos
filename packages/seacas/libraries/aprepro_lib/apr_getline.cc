@@ -248,14 +248,14 @@ namespace {
   void gl_puts(const char *const buf)
   {
     if (buf) {
-      int len = strlen(buf);
+      auto len = strlen(buf);
       write(1, buf, len);
     }
   }
 
   [[noreturn]] void gl_error(const char *const buf)
   {
-    int len = strlen(buf);
+    auto len = strlen(buf);
 
     gl_cleanup();
     write(2, buf, len);
@@ -268,7 +268,7 @@ namespace {
     if (gl_init_done < 0) { /* -1 only on startup */
       const char *cp = (const char *)getenv("COLUMNS");
       if (cp != nullptr) {
-        int w = strtol(cp, nullptr, 10);
+        auto w = strtoul(cp, nullptr, 10);
         if (w > 20)
           SEAMS::gl_setwidth(w);
       }
@@ -295,7 +295,7 @@ namespace {
 } // namespace
 
 namespace SEAMS {
-  void gl_setwidth(int w)
+  void gl_setwidth(size_t w)
   {
     if (w > 250) {
       w = 250;
@@ -604,9 +604,9 @@ namespace {
       gl_width = gl_termw - strlen(prompt);
     }
     else if (strcmp(prompt, last_prompt) != 0) {
-      int l1 = strlen(last_prompt);
-      int l2 = strlen(prompt);
-      gl_cnt = gl_cnt + l1 - l2;
+      auto l1 = strlen(last_prompt);
+      auto l2 = strlen(prompt);
+      gl_cnt  = gl_cnt + l1 - l2;
       copy_string(last_prompt, prompt, 80);
       gl_putc('\r');
       gl_puts(prompt);
@@ -744,11 +744,11 @@ namespace SEAMS {
       p++;
     }
     if (*p) {
-      int len = strlen(buf);
+      auto len = strlen(buf);
       if (strchr(p, '\n')) { /* previously line already has NL stripped */
         len--;
       }
-      if ((prev == nullptr) || ((int)strlen(prev) != len) || strncmp(prev, buf, (size_t)len) != 0) {
+      if ((prev == nullptr) || (strlen(prev) != len) || strncmp(prev, buf, len) != 0) {
         hist_buf[hist_last] = hist_save(buf);
         prev                = hist_buf[hist_last];
         hist_last           = (hist_last + 1) % HIST_SIZE;
@@ -800,7 +800,7 @@ namespace {
   /* makes a copy of the string */
   {
     char       *s   = nullptr;
-    size_t      len = strlen(p);
+    auto        len = strlen(p);
     const char *nl  = strpbrk(p, "\n\r");
 
     if (nl) {

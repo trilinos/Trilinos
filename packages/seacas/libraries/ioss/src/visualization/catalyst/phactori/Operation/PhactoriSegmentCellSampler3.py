@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -263,7 +263,7 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
         errStr = "PhactoriSegmentCellSampler3:ValidateJsonSegmentList\n" \
           "segment with index " + str(segNdx) + " point 2 does not have 3 components\n"
         myDebugPrint3AndException(errStr)
-      
+
     return True
 
   def ParseParametersFromJson(self, inJson):
@@ -420,7 +420,7 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriSegmentCellSampler3.ExportOperationData entered\n", 100)
 
-    if self.SegmentDefinitionFormat == "two geometric points": 
+    if self.SegmentDefinitionFormat == "two geometric points":
       self.ValidateJsonSegmentList(segmentListJson)
       self.SegmentList = []
       self.NearbyGeometryPointList = []
@@ -501,7 +501,7 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
     savedActiveSource = GetActiveSource()
 
     segmentListJson = ReadAndMpiBroadcastJsonFile(self.JsonListFileName)
-   
+
     self.myCopyOfInputFilter = inInputFilter
 
     UpdatePipelineWithCurrentTimeArgument(self.myCopyOfInputFilter)
@@ -568,7 +568,7 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
 
     pidWithDataList = UseReduceOnIntegerList(localPidList, 0)
     return pidWithDataList, globalDistSqrdList
-    
+
   def UseMpiToGetGlobalCellPointsClosestStructured(self, ioCellList, inLocalDistSqrdList):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriSegmentCellSampler3.UseMpiToGetGlobalCellPointsClosestStructured entered\n", 100)
@@ -758,12 +758,12 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
               thisCellDataTuple = outputCellArray.GetTuple(cellIndex)
             newCellInfo = PhactoriSampledCellInfo()
             newCellInfo.SetFromList([cellTestPoint, [-1,-1,-1], thisCellDataTuple, myPid, leafVisitCount, cellIndex, segIndex, -1])
-           
+
             inParameters.markedCellSet[segIndex].append(newCellInfo)
             if PhactoriDbg(100):
               myDebugPrint3("new cell close to segment:\n")
               myDebugPrint3(newCellInfo.ToStr())
-          
+
 
     if PhactoriDbg(100):
       for idx, cellsForThisSegment in enumerate(inParameters.markedCellSet):
@@ -1273,7 +1273,7 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
     scriptLines.append("        iter.GoToNextItem();\n")
     scriptLines.append("else:\n")
     scriptLines.append("  flatten(input, output)\n")
-  
+
     mainScriptString = "".join(scriptLines)
 
     myCellIndexesToSet = []
@@ -1287,10 +1287,10 @@ class PhactoriSegmentCellSampler3(PhactoriOperationSpecifics):
            myCellIndexesToSet.append(oneCellInfo.index)
            myMaskValuesToSet.append(maskValue)
            myLeafVisitCount.append(oneCellInfo.leafVisitCount)
-   
-    newstr1 = "cellIndexesToSet = " + str(myCellIndexesToSet) + "\n" 
-    newstr2 = "maskValuesToSet = " + str(myMaskValuesToSet) + "\n" 
-    newstr3 = "leafVisitCount = " + str(myLeafVisitCount) + "\n" 
+
+    newstr1 = "cellIndexesToSet = " + str(myCellIndexesToSet) + "\n"
+    newstr2 = "maskValuesToSet = " + str(myMaskValuesToSet) + "\n"
+    newstr3 = "leafVisitCount = " + str(myLeafVisitCount) + "\n"
     self.mProgFilterString = newstr1 + newstr2 + newstr3 + mainScriptString
 
     if PhactoriDbg(100):
