@@ -6086,7 +6086,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
            local_inds_device_value_t tend = tgtLocalRowPtrsDevice(sourceLID + 1);
            local_inds_device_value_t numInTgtRow = (tend - tstart);
 
-           KOKKOS_ASSERT(tstart < tvals.extent(0));
+           KOKKOS_ASSERT(tstart - tvals.extent(0) == 0);
            impl_scalar_type *tgtRowVals = reinterpret_cast<impl_scalar_type *>(&tvals(tstart));
            const local_inds_device_value_t *tgtColInds = &tgtLocalColIndsDevice(tstart);
 
