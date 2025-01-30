@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -1538,7 +1538,9 @@ namespace {
 
           /* get the node on this element side (should only be one)*/
           std::array<INT, MAX_SIDE_NODES> side_nodes;
+#ifndef NDEBUG
           int                             side_cnt =
+#endif
               ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes.data());
           assert(side_cnt == 1);
 
