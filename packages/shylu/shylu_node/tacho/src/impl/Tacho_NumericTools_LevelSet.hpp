@@ -2412,8 +2412,10 @@ public:
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
     const ordinal_type ldt = t.stride(1);
+    const ordinal_type old_nrhs = _w_vec.extent(1);
+
     auto &s0 = _h_supernodes(_h_level_sids(pbeg));
-    if (_w_vec.extent(1) != size_t(nrhs)) {
+    if (old_nrhs != nrhs) {
       // expand workspace
       Kokkos::resize(_w_vec, m, nrhs);
     }
@@ -2440,7 +2442,7 @@ public:
     // compute t = L^{-1}*w
     const value_type alpha (1);
     const value_type beta  (0);
-    if (_w_vec.extent(1) != size_t(nrhs)) {
+    if (old_nrhs != nrhs) {
       // attach to Cusparse/Rocsparse data struct
       int ldw = _w_vec.stride(1);
 #if defined(KOKKOS_ENABLE_CUDA)
