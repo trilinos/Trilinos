@@ -428,11 +428,9 @@ namespace {
     size_t max_face = std::string("Face Count").length();
     for (auto &eb : ebs) {
       const std::string &name = eb->name();
-      if (name.length() > max_name) {
-        max_name = name.length();
-      }
-      size_t face_width = Ioss::Utils::number_width(boundary_faces[name].size());
-      max_face          = face_width > max_face ? face_width : max_face;
+      max_name                = std::max(name.length(), max_name);
+      size_t face_width       = Ioss::Utils::number_width(boundary_faces[name].size());
+      max_face                = std::max(face_width, max_face);
     }
     max_name += 4; // Padding
     max_face += 4;
@@ -1938,7 +1936,7 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
   std::vector<std::vector<std::pair<size_t, size_t>>> shared_nodes(blocks.size() + 1);
 
   for (auto &owner_block : blocks) {
-    int  owner_zone = owner_block->get_property("zone").get_int();
+    int owner_zone = owner_block->get_property("zone").get_int();
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
       assert(zgc.m_donorProcessor >= 0);
       assert(zgc.m_ownerProcessor >= 0);
@@ -1950,10 +1948,10 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
         // don't store or access any "bulk" data on it.
         auto donor_block = region.get_structured_block(zgc.m_donorName);
         assert(donor_block != nullptr);
-        int donor_zone = donor_block->get_property("zone").get_int();
-        std::vector<int> i_range = zgc.get_range(1);
-        std::vector<int> j_range = zgc.get_range(2);
-        std::vector<int> k_range = zgc.get_range(3);
+        int              donor_zone = donor_block->get_property("zone").get_int();
+        std::vector<int> i_range    = zgc.get_range(1);
+        std::vector<int> j_range    = zgc.get_range(2);
+        std::vector<int> k_range    = zgc.get_range(3);
         for (auto &k : k_range) {
           for (auto &j : j_range) {
             for (auto &i : i_range) {
@@ -2392,7 +2390,9 @@ int Iocgns::Utils::get_step_times(int cgns_file_ptr, std::vector<double> &timest
 
   timesteps.reserve(num_timesteps);
   for (int i = 0; i < num_timesteps; i++) {
-    region->add_state(times[i] * timeScaleFactor);
+    if (nullptr != region) {
+      region->add_state(times[i] * timeScaleFactor);
+    }
     timesteps.push_back(times[i]);
   }
   return num_timesteps;

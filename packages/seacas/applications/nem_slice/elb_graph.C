@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -97,7 +97,7 @@ namespace {
     // The hope is that this code will speed up the entire routine even
     // though we are iterating the complete connectivity array twice.
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-      int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
+      int nnodes = get_elem_info(ElementInfo::NNODES, mesh->elem_type[ecnt]);
       for (int ncnt = 0; ncnt < nnodes; ncnt++) {
         INT node = mesh->connect[ecnt][ncnt];
         assert(node < (INT)mesh->num_nodes);
@@ -145,7 +145,7 @@ namespace {
 
     /* Find the surrounding elements for each node in the mesh */
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-      int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
+      int nnodes = get_elem_info(ElementInfo::NNODES, mesh->elem_type[ecnt]);
       for (int ncnt = 0; ncnt < nnodes; ncnt++) {
         INT node = mesh->connect[ecnt][ncnt];
 
@@ -203,14 +203,14 @@ namespace {
     }
 
     /* Find the adjacency for a nodal based decomposition */
-    if (problem->type == NODAL) {
+    if (problem->type == DecompType::NODAL) {
       graph->nadj = 0;
       for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
         graph->start[ncnt] = graph->nadj;
         assert(graph->nadj == graph->adj.size());
         for (size_t ecnt = 0; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
           size_t elem   = graph->sur_elem[ncnt][ecnt];
-          int    nnodes = get_elem_info(NNODES, mesh->elem_type[elem]);
+          int    nnodes = get_elem_info(ElementInfo::NNODES, mesh->elem_type[elem]);
           for (int i = 0; i < nnodes; i++) {
             INT entry = mesh->connect[elem][i];
 
@@ -245,18 +245,18 @@ namespace {
       int nsides     = 0;
 
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-        E_Type etype      = mesh->elem_type[ecnt];
-        E_Type etype_last = NULL_EL;
+        ElementType etype      = mesh->elem_type[ecnt];
+        ElementType etype_last = ElementType::NULL_EL;
         if (etype != etype_last) {
           etype_last = etype;
           element_3d = is_3d_element(mesh->elem_type[ecnt]);
           if (problem->face_adj == 0) {
-            nnodes = get_elem_info(NNODES, etype);
+            nnodes = get_elem_info(ElementInfo::NNODES, etype);
           }
-          nsides = get_elem_info(NSIDES, etype);
+          nsides = get_elem_info(ElementInfo::NSIDES, etype);
         }
 
-        if (etype != SPHERE || problem->no_sph == 1) {
+        if (etype != ElementType::SPHERE || problem->no_sph == 1) {
           graph->start[cnt] = graph->nadj;
           assert(graph->nadj == graph->adj.size());
 
@@ -287,7 +287,7 @@ namespace {
 
                 /* make sure we're not checking if the element
                    is connected to itself */
-                if (ecnt != (size_t)entry && mesh->elem_type[entry] != SPHERE) {
+                if (ecnt != (size_t)entry && mesh->elem_type[entry] != ElementType::SPHERE) {
                   /* If tmp_element[entry] != ecnt, then entry is not in list... */
                   if ((size_t)tmp_element[entry] != ecnt) {
 #if 0
@@ -297,11 +297,11 @@ namespace {
                     tmp_element[entry] = ecnt;
                     (graph->nadj)++;
                     graph->adj.push_back(entry);
-                    if (weight->type & EDGE_WGT) {
+                    if (weight->type & WeightingOptions::EDGE_WGT) {
                       weight->edges.push_back(1.0);
                     }
                   }
-                  else if (weight->type & EDGE_WGT) {
+                  else if (weight->type & WeightingOptions::EDGE_WGT) {
                     int iret = in_list(entry, (graph->nadj) - (graph->start[cnt]),
                                        &graph->adj[graph->start[cnt]]);
                     assert(iret >= 0);
@@ -480,7 +480,7 @@ namespace {
                        * is connected to only an edge of a quad/tet
                        */
 
-                      E_Type etype2 = mesh->elem_type[entry];
+                      ElementType etype2 = mesh->elem_type[entry];
 
                       /* make sure this is a 3d element*/
 
@@ -526,7 +526,7 @@ namespace {
                           /* if this element 1 is a hexshell, then only
                              require 4 of the 6 nodes to match between elements
                              1 and 2 */
-                          if (etype == HEXSHELL && side_cnt == 6) {
+                          if (etype == ElementType::HEXSHELL && side_cnt == 6) {
                             side_cnt = 4;
                           }
 
@@ -554,7 +554,7 @@ namespace {
                         if (sid > 0) {
                           (graph->nadj)++;
                           graph->adj.push_back(entry);
-                          if (weight->type & EDGE_WGT) {
+                          if (weight->type & WeightingOptions::EDGE_WGT) {
                             /*
                              * the edge weight is the number of nodes in the
                              * connecting face
@@ -581,7 +581,7 @@ namespace {
                           Gen_Error(0, cmesg);
                           cmesg = fmt::format("Element 1: {}", (ecnt + 1));
                           Gen_Error(0, cmesg);
-                          nnodes = get_elem_info(NNODES, etype);
+                          nnodes = get_elem_info(ElementInfo::NNODES, etype);
                           cmesg  = "connect table:";
                           for (int ii = 0; ii < nnodes; ii++) {
                             tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][ii] + 1));
@@ -598,7 +598,7 @@ namespace {
                           Gen_Error(0, cmesg);
                           cmesg = fmt::format("Element 2: {}", (entry + 1));
                           Gen_Error(0, cmesg);
-                          nnodes = get_elem_info(NNODES, etype2);
+                          nnodes = get_elem_info(ElementInfo::NNODES, etype2);
                           cmesg  = "connect table:";
                           for (int ii = 0; ii < nnodes; ii++) {
                             tmpstr = fmt::format(" {}", (size_t)(mesh->connect[entry][ii] + 1));
@@ -621,7 +621,7 @@ namespace {
                * 1d or 2d elements
                */
 
-              nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
+              nnodes = get_elem_info(ElementInfo::NNODES, mesh->elem_type[ecnt]);
 
               for (int ncnt = 0; ncnt < nnodes; ncnt++) {
                 /* node is the node number 'ncnt' of element 'ecnt' */
@@ -646,11 +646,11 @@ namespace {
 
                         (graph->nadj)++;
                         graph->adj.push_back(entry);
-                        if (weight->type & EDGE_WGT) {
+                        if (weight->type & WeightingOptions::EDGE_WGT) {
                           weight->edges.push_back(1.0);
                         }
                       }
-                      else if (weight->type & EDGE_WGT) {
+                      else if (weight->type & WeightingOptions::EDGE_WGT) {
                         weight->edges[iret + (graph->start[cnt])] += 1.0F;
                       }
                     }
@@ -680,7 +680,7 @@ namespace {
     }
 
     /* Adjust for a mesh with spheres */
-    if (problem->type == ELEMENTAL && sphere->num) {
+    if (problem->type == DecompType::ELEMENTAL && sphere->num) {
       /* Decrement adjacency entries */
       for (auto &elem : graph->adj) {
         for (size_t ecnt = 0; ecnt < mesh->num_el_blks; ecnt++) {

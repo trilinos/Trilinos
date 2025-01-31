@@ -351,6 +351,35 @@ mpisyncstart.enable true
     // }
   }
 
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double>      tsteps;
+    auto                     search_key = make_states_search_key(parallel_rank(), *get_region());
+    kelpie::ObjectCapacities oc;
+    pool.List(search_key, &oc);
+    if (oc.keys.size() == 1) {
+      lunasa::DataObject ldo;
+      pool.Need(oc.keys[0], oc.capacities[0], &ldo);
+
+      auto meta = static_cast<Iofaodel::meta_entry_t *>(ldo.GetMetaPtr());
+
+      auto entry = static_cast<Iofaodel::state_entry_t *>(
+          static_cast<void *>(static_cast<char *>(ldo.GetDataPtr()) + meta->value.offset));
+
+      auto data = static_cast<Iofaodel::state_entry_t::basic_type *>(
+          static_cast<void *>(entry->data + entry->value.offset));
+
+      for (size_t state(1); state <= entry->count; state++)
+        tsteps.push_back(data[state - 1]);
+    }
+    // TODO
+    // else {
+    // Report error of not having 1 set of time steps
+    // }
+
+    return tsteps;
+  }
+
   void DatabaseIO::read_region()
   {
 

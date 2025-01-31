@@ -96,7 +96,7 @@ def RemoveTripleQuotes(inlines):
         print(chgLine)
         outlines.append(chgLine)
         ndx = qend_ndx + 1
-    return outlines   
+    return outlines
 
 
 
@@ -248,7 +248,3 @@ phdrvof.close()
 if frmphimprtlnfound == False:
     print("error, from phactori import * not found in PhactoriDriver_modular.py")
     exit(-12)
-
-
-
-

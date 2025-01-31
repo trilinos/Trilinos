@@ -10,7 +10,7 @@
 
 #include <string>
 
-template <typename INT> class ExoII_Read;
+template <typename INT> class Exo_Read;
 
 template <typename INT> class Assembly : public Exo_Entity
 {
@@ -36,5 +36,5 @@ private:
   ex_entity_type            assembly_type{EX_INVALID};
   std::vector<ex_entity_id> entities{};
 
-  friend class ExoII_Read<INT>;
+  friend class Exo_Read<INT>;
 };

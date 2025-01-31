@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -25,7 +25,7 @@
 
 #include "chaco.h"      // for input_assign, interface
 #include "elb.h"        // for LB_Description<INT>, etc
-#include "elb_elem.h"   // for E_Type, get_elem_info, etc
+#include "elb_elem.h"   // for ElementType, get_elem_info, etc
 #include "elb_err.h"    // for Gen_Error
 #include "elb_graph.h"  // for generate_graph
 #include "elb_groups.h" // for get_group_info
@@ -89,7 +89,7 @@ namespace {
   template <typename INT>
   int identify_mechanisms(Machine_Description *machine, Problem_Description *problem,
                           Mesh_Description<INT> *mesh, LB_Description<INT> *lb,
-                          Graph_Description<INT> *graph, int check_type);
+                          Graph_Description<INT> *graph, Issues check_type);
 
   int extract_connected_lists(int nrow, const int *columns, const int *rows, int *list,
                               std::vector<int> &list_ptr);
@@ -180,9 +180,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
      working on the loadbalance
   */
 
-  if (problem->type == ELEMENTAL && problem->global_mech == 1 && problem->alloc_graph == ELB_TRUE) {
+  if (problem->type == DecompType::ELEMENTAL && problem->global_mech == 1 &&
+      problem->alloc_graph == ELB_TRUE) {
     fmt::print("\n==============Looking For Global Issues=================\n");
-    identify_mechanisms(machine, problem, mesh, lb, graph, GLOBAL_ISSUES);
+    identify_mechanisms(machine, problem, mesh, lb, graph, Issues::GLOBAL_ISSUES);
     fmt::print("============================================================\n");
     fmt::print("\n");
   }
@@ -198,10 +199,11 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     }
   }
 
-  if (((problem->type == NODAL) && (lb->type == INERTIAL)) ||
-      ((problem->type == ELEMENTAL) &&
-       (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
-        lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC))) {
+  if (((problem->type == DecompType::NODAL) && (lb->type == Balance::INERTIAL)) ||
+      ((problem->type == DecompType::ELEMENTAL) &&
+       (lb->type == Balance::INERTIAL || lb->type == Balance::ZPINCH ||
+        lb->type == Balance::BRICK || lb->type == Balance::ZOLTAN_RCB ||
+        lb->type == Balance::ZOLTAN_RIB || lb->type == Balance::ZOLTAN_HSFC))) {
     if (problem->read_coords != ELB_TRUE) {
       Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
       return 0;
@@ -240,9 +242,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
    * or ZOLTAN geometric load balancing,
    * I need to come up with coordinates for the elements.
    */
-  if ((problem->type == ELEMENTAL) &&
-      (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
-       lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC)) {
+  if ((problem->type == DecompType::ELEMENTAL) &&
+      (lb->type == Balance::INERTIAL || lb->type == Balance::ZPINCH || lb->type == Balance::BRICK ||
+       lb->type == Balance::ZOLTAN_RCB || lb->type == Balance::ZOLTAN_RIB ||
+       lb->type == Balance::ZOLTAN_HSFC)) {
     if (problem->read_coords != ELB_TRUE) {
       Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
       return 0;
@@ -257,13 +260,13 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       size_t cnt = 0;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
 
-        if (mesh->elem_type[ecnt] != SPHERE || problem->no_sph == 1) {
+        if (mesh->elem_type[ecnt] != ElementType::SPHERE || problem->no_sph == 1) {
           /*
            * for our purposes, the coordinate of the element will
            * be the average of the coordinates of the nodes that make
            * up that element
            */
-          size_t nnodes = get_elem_info(NNODES, mesh->elem_type[cnt]);
+          size_t nnodes = get_elem_info(ElementInfo::NNODES, mesh->elem_type[cnt]);
           for (size_t ncnt = 0; ncnt < nnodes; ncnt++) {
             x_elem_ptr[cnt] += x_ptr[(mesh->connect[ecnt][ncnt])];
             y_elem_ptr[cnt] += y_ptr[(mesh->connect[ecnt][ncnt])];
@@ -287,7 +290,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
        (lb->type==INERTIAL||ZPINCH||BRICK||ZOLTAN))"*/
 
   /* Allocate memory for the vertex to processor vector */
-  if (problem->type == ELEMENTAL) {
+  if (problem->type == DecompType::ELEMENTAL) {
     lb->vertex2proc =
         reinterpret_cast<int *>(malloc(((problem->num_vertices) + sphere->num) * sizeof(int)));
   }
@@ -300,23 +303,23 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     return 0;
   }
 
-  if (machine->type == HCUBE) {
+  if (machine->type == MachineType::HCUBE) {
     arch      = 0;
     num_level = ilog2i(static_cast<unsigned int>(machine->procs_per_box));
   }
-  if (machine->type == MESH) {
+  if (machine->type == MachineType::MESH) {
     arch      = machine->num_dims;
     num_level = 0;
   }
 
-  if (lb->refine == KL_REFINE) {
+  if (lb->refine == Balance::KL_REFINE) {
     refine = 1;
   }
   else {
     refine = 2;
   }
 
-  if (lb->type == INFILE) {
+  if (lb->type == Balance::INFILE) {
     assignfile = lb->file.c_str();
     fp         = fopen(assignfile, "r");
     if (fp == nullptr) {
@@ -331,21 +334,22 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   }
 
   switch (lb->type) {
-  case MULTIKL: glob_method = 1; break;
-  case SPECTRAL: glob_method = 2; break;
-  case INERTIAL: glob_method = 3; break;
-  case ZPINCH:
-  case BRICK:
-  case ZOLTAN_RCB:
-  case ZOLTAN_RIB:
-  case ZOLTAN_HSFC:
+  case Balance::MULTIKL: glob_method = 1; break;
+  case Balance::SPECTRAL: glob_method = 2; break;
+  case Balance::INERTIAL: glob_method = 3; break;
+  case Balance::ZPINCH:
+  case Balance::BRICK:
+  case Balance::ZOLTAN_RCB:
+  case Balance::ZOLTAN_RIB:
+  case Balance::ZOLTAN_HSFC:
     glob_method = 999; /* Chaco methods don't apply to ZPINCH, BRICK
                           ZOLTAN_RCB, ZOLTAN_RIB, ZOLTAN_HSFC */
     break;
-  case LINEAR: glob_method = 4; break;
-  case RANDOM: glob_method = 5; break;
-  case SCATTERED: glob_method = 6; break;
-  case INFILE: glob_method = 7; break;
+  case Balance::LINEAR: glob_method = 4; break;
+  case Balance::RANDOM: glob_method = 5; break;
+  case Balance::SCATTERED: glob_method = 6; break;
+  case Balance::INFILE: glob_method = 7; break;
+  default:; // do nothing
   }
 
   /* check if Chaco is supposed to make sure that the domains are connected */
@@ -397,12 +401,13 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
     fmt::print("=======================Call Chaco===========================\n");
     time1 = get_time();
-    if (lb->type == INFILE) {
+    if (lb->type == Balance::INFILE) {
       flag =
           input_assign(fp, const_cast<char *>(assignfile), problem->num_vertices, lb->vertex2proc);
     }
-    if (lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
-        lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC) {
+    if (lb->type == Balance::ZPINCH || lb->type == Balance::BRICK ||
+        lb->type == Balance::ZOLTAN_RCB || lb->type == Balance::ZOLTAN_RIB ||
+        lb->type == Balance::ZOLTAN_HSFC) {
       fmt::print(stderr, "KDD -- ZPINCH, BRICK, ZOLTAN_RCB, ZOLTAN_RIB, and "
                          "ZOLTAN_HSFC not supported with num_boxes > 1.\n");
       fmt::print(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
@@ -412,7 +417,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       flag = INTER_FACE(problem->num_vertices, (int *)Data(graph->start), (int *)Data(graph->adj),
                         Data(weight->vertices), Data(weight->edges), x_ptr, y_ptr, z_ptr,
                         const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
-                        tmp_lev, dim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
+                        tmp_lev, dim, goal, glob_method, refine, (int)solve->rqi_flag, solve->vmax,
                         lb->num_sects, solve->tolerance, seed);
     }
 
@@ -605,7 +610,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
          * num_level are already set for each box.
          */
         if (problem->num_groups > 1) {
-          if (machine->type == MESH) {
+          if (machine->type == MachineType::MESH) {
 
             /*
              * mesh and groups are in conflict.  the only way to resolve
@@ -646,7 +651,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         for (int cnt = 0; cnt < upper; cnt++) {
           tmpdim[cnt] = machine->dim[cnt];
         }
-        if (machine->type == MESH) {
+        if (machine->type == MachineType::MESH) {
           totalproc = tmpdim[0];
           if (tmpdim[1] != 0) {
             totalproc *= tmpdim[1];
@@ -660,40 +665,41 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         }
       }
 
-      if (lb->type == INFILE) {
+      if (lb->type == Balance::INFILE) {
         flag = input_assign(fp, const_cast<char *>(assignfile), tmp_nv, tmp_v2p);
       }
-      else if (lb->type == ZPINCH) {
+      else if (lb->type == Balance::ZPINCH) {
         flag = ZPINCH_assign(machine, tmp_nv, tmp_x, tmp_y, tmp_z, tmp_v2p);
         BALANCE_STATS(machine, nullptr, tmp_nv, tmp_v2p);
       }
-      else if (lb->type == BRICK) {
+      else if (lb->type == Balance::BRICK) {
         flag = BRICK_assign(machine, tmp_nv, tmp_x, tmp_y, tmp_z, tmp_v2p);
         BALANCE_STATS(machine, nullptr, tmp_nv, tmp_v2p);
       }
 #ifdef USE_ZOLTAN
-      else if (lb->type == ZOLTAN_RCB) {
+      else if (lb->type == Balance::ZOLTAN_RCB) {
         flag = ZOLTAN_assign("RCB", totalproc, tmp_nv, tmp_vwgts, tmp_x, tmp_y, tmp_z, lb->ignore_z,
                              tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
-      else if (lb->type == ZOLTAN_RIB) {
+      else if (lb->type == Balance::ZOLTAN_RIB) {
         flag = ZOLTAN_assign("RIB", totalproc, tmp_nv, tmp_vwgts, tmp_x, tmp_y, tmp_z, lb->ignore_z,
                              tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
-      else if (lb->type == ZOLTAN_HSFC) {
+      else if (lb->type == Balance::ZOLTAN_HSFC) {
         flag = ZOLTAN_assign("HSFC", totalproc, tmp_nv, tmp_vwgts, tmp_x, tmp_y, tmp_z,
                              lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
 #else
-      else if (lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC) {
+      else if (lb->type == Balance::ZOLTAN_RCB || lb->type == Balance::ZOLTAN_RIB ||
+               lb->type == Balance::ZOLTAN_HSFC) {
         Gen_Error(0, "fatal: Invalid load balance types -- Zoltan is not supported in this build");
         goto cleanup;
       }
 #endif
-      else if (lb->type == LINEAR) {
+      else if (lb->type == Balance::LINEAR) {
         fmt::print(stderr, "Using internal linear decomposition\n");
         /* assign the elements to the processors linearly */
         size_t cnt = mesh->num_elems / machine->num_procs;
@@ -719,7 +725,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
           assert(lb->vertex2proc[i] < machine->num_procs);
         }
       }
-      else if (lb->type == SCATTERED) {
+      else if (lb->type == Balance::SCATTERED) {
         // Bad decomposition, useful for maximizing communication for testing algorithms...
         /* each element 'e' assigned to processor 'e' % 'num_proc' */
 
@@ -741,7 +747,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         time1 = get_time();
         flag  = INTER_FACE(tmp_nv, (int *)tmp_start, (int *)tmp_adj, tmp_vwgts, tmp_ewgts, tmp_x,
                            tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
-                           arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
+                           arch, num_level, tmpdim, goal, glob_method, refine, (int)solve->rqi_flag,
                            solve->vmax, lb->num_sects, solve->tolerance, seed);
         time2 = get_time();
         fmt::print("========================================================\n");
@@ -814,7 +820,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     vec_free(weight->edges);
   }
 
-  if (problem->type == ELEMENTAL) {
+  if (problem->type == DecompType::ELEMENTAL) {
     /*
      * If this is an elemental load balance and there are spheres present
      * then adjust lb->vertex2proc accordingly. The spheres are then
@@ -824,7 +830,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       // If type == LINEAR || SCATTERED, then the spheres were handled above (unless the model
       // is
       // all spheres...)
-      if ((lb->type != LINEAR && lb->type != SCATTERED) || sphere->num == mesh->num_elems) {
+      if ((lb->type != Balance::LINEAR && lb->type != Balance::SCATTERED) ||
+          sphere->num == mesh->num_elems) {
 
         if (sphere->num != mesh->num_elems) {
           // If all spheres, don't need to open up space...
@@ -833,7 +840,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
              * First generate "holes" in the vertex2proc vector where the
              * sphere assignments will be.
              */
-            if (mesh->elem_type[ecnt] == SPHERE) {
+            if (mesh->elem_type[ecnt] == ElementType::SPHERE) {
               for (size_t cnt = (problem->num_vertices); cnt > ecnt; cnt--) {
                 lb->vertex2proc[cnt] = lb->vertex2proc[cnt - 1];
               }
@@ -854,7 +861,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         size_t cnt2  = 0;
 
         for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-          if (mesh->elem_type[ecnt] == SPHERE) {
+          if (mesh->elem_type[ecnt] == ElementType::SPHERE) {
             lb->vertex2proc[ecnt] = iproc;
             cnt2++;
 
@@ -883,7 +890,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       fmt::print("\n==============Looking For Local Issues==================\n");
 
       if (problem->face_adj == 1 && problem->alloc_graph == ELB_TRUE) {
-        identify_mechanisms(machine, problem, mesh, lb, graph, LOCAL_ISSUES);
+        identify_mechanisms(machine, problem, mesh, lb, graph, Issues::LOCAL_ISSUES);
       }
       else {
         /* need to free the bigger graph and create a face adjacent graph */
@@ -919,7 +926,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
           graph->adj[cnt]++;
         }
 
-        identify_mechanisms(machine, problem, mesh, lb, graph, LOCAL_ISSUES);
+        identify_mechanisms(machine, problem, mesh, lb, graph, Issues::LOCAL_ISSUES);
 
         problem->alloc_graph = tmp_alloc_graph;
         problem->face_adj    = tmp_adjacency;
@@ -962,7 +969,7 @@ cleanup:
     }
   }
 
-  if (lb->type == INFILE) {
+  if (lb->type == Balance::INFILE) {
     fclose(fp);
   }
 
@@ -1025,7 +1032,7 @@ int generate_maps(Machine_Description *machine, Problem_Description *problem,
   /*-----------------------------Execution Begins------------------------------*/
 
   /* Generate the map for a nodal load balance */
-  if (problem->type == NODAL) {
+  if (problem->type == DecompType::NODAL) {
     /*
      * Generate the nodal and elemental distribution for a nodal
      * decomposition.
@@ -1064,7 +1071,7 @@ namespace {
   template <typename INT>
   int identify_mechanisms(Machine_Description *machine, Problem_Description *problem,
                           Mesh_Description<INT> *mesh, LB_Description<INT> *lb,
-                          Graph_Description<INT> *graph, int check_type)
+                          Graph_Description<INT> *graph, Issues check_type)
   {
     std::vector<int> list_ptr;
 
@@ -1074,7 +1081,7 @@ namespace {
      */
 
     if (problem->find_cnt_domains == 1) {
-      if (check_type == GLOBAL_ISSUES) {
+      if (check_type == Issues::GLOBAL_ISSUES) {
         size_t           nrow = mesh->num_elems;
         std::vector<int> rows(nrow + 1);
         std::vector<int> list(nrow);
@@ -1112,7 +1119,7 @@ namespace {
         }
       }
 
-      if (check_type == LOCAL_ISSUES) {
+      if (check_type == Issues::LOCAL_ISSUES) {
 
         std::vector<int> proc_cnt(machine->num_procs);
         std::vector<INT> local_number(mesh->num_elems);
@@ -1236,7 +1243,7 @@ namespace {
       std::vector<int> proc_cnt(machine->num_procs);
       std::vector<INT> local_number(mesh->num_elems);
 
-      if (check_type == LOCAL_ISSUES) {
+      if (check_type == Issues::LOCAL_ISSUES) {
         for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
           int proc = lb->vertex2proc[ecnt];
           assert(proc < machine->num_procs);
@@ -1247,21 +1254,21 @@ namespace {
 
       size_t num_found = 0;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-        E_Type etype = mesh->elem_type[ecnt];
+        ElementType etype = mesh->elem_type[ecnt];
 
         /* need to check for volume elements */
         if (is_3d_element(etype)) {
 
-          int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
+          int nnodes = get_elem_info(ElementInfo::NNODES, mesh->elem_type[ecnt]);
 
           for (int ncnt = 0; ncnt < nnodes; ncnt++) {
             size_t node    = mesh->connect[ecnt][ncnt];
             problems[node] = 0;
           }
 
-          int nsides = get_elem_info(NSIDES, etype);
+          int nsides = get_elem_info(ElementInfo::NSIDES, etype);
           int proc   = 0;
-          if (check_type == LOCAL_ISSUES) {
+          if (check_type == Issues::LOCAL_ISSUES) {
             proc = lb->vertex2proc[ecnt];
           }
           else {
@@ -1292,28 +1299,29 @@ namespace {
                */
               for (size_t pcnt = 0; pcnt < nhold; pcnt++) {
 
-                size_t el2    = graph->sur_elem[node][pcnt];
-                E_Type etype2 = mesh->elem_type[el2];
+                size_t      el2    = graph->sur_elem[node][pcnt];
+                ElementType etype2 = mesh->elem_type[el2];
 
                 int proc2 = 0;
-                if (check_type == LOCAL_ISSUES) {
+                if (check_type == Issues::LOCAL_ISSUES) {
                   proc2 = lb->vertex2proc[el2];
                 }
                 assert(proc2 < machine->num_procs);
 
                 if (ecnt != el2 && proc == proc2) {
-                  if (etype2 == BAR2 || etype2 == BAR3 || etype2 == SHELL2 || etype2 == SHELL3) {
+                  if (etype2 == ElementType::BAR2 || etype2 == ElementType::BAR3 ||
+                      etype2 == ElementType::SHELL2 || etype2 == ElementType::SHELL3) {
                     problems[node] = el2 + 1;
                   }
-                  else if (etype2 == SHELL4 || etype2 == SHELL8 || etype2 == TSHELL3 ||
-                           etype2 == TSHELL6) {
+                  else if (etype2 == ElementType::SHELL4 || etype2 == ElementType::SHELL8 ||
+                           etype2 == ElementType::TSHELL3 || etype2 == ElementType::TSHELL6) {
                     /*
                      * look for an element connect to one of the shells faces (not edges)
                      * one can look at elements connected to 3 of the nodes - cannot use
                      * diagonals due to triangular shells
                      */
 
-                    int nsides2 = get_elem_info(NSIDES, etype2);
+                    int nsides2 = get_elem_info(ElementInfo::NSIDES, etype2);
 
                     size_t count = 0;
                     for (int cnt = 0; cnt < nsides2; cnt++) {
@@ -1359,10 +1367,10 @@ namespace {
           for (int ncnt = 0; ncnt < nnodes; ncnt++) {
             size_t node = mesh->connect[ecnt][ncnt];
             if (problems[node]) {
-              size_t el2    = problems[node] - 1;
-              E_Type etype2 = mesh->elem_type[el2];
+              size_t      el2    = problems[node] - 1;
+              ElementType etype2 = mesh->elem_type[el2];
 
-              if (check_type == LOCAL_ISSUES) {
+              if (check_type == Issues::LOCAL_ISSUES) {
                 fmt::print("WARNING: On Processor {} Local Element {}"
                            " ({}) has a mechanism through Global Node {}"
                            " with Local Element {} ({})\n",
@@ -1386,7 +1394,7 @@ namespace {
 
       if (num_found) {
         fmt::print("Total mechanisms found = {}\n", num_found);
-        if (check_type == LOCAL_ISSUES) {
+        if (check_type == Issues::LOCAL_ISSUES) {
           if (problem->mech_add_procs == 1) {
             machine->num_procs++;
             fmt::print("\n!!! Processor count increased to {} processors\n", machine->num_procs);
@@ -1425,9 +1433,9 @@ namespace {
       int internal = 1;
       int flag     = 0;
       for (size_t ecnt = 0; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
-        int    elem   = graph->sur_elem[ncnt][ecnt];
-        E_Type etype  = mesh->elem_type[elem];
-        int    nnodes = get_elem_info(NNODES, etype);
+        int         elem   = graph->sur_elem[ncnt][ecnt];
+        ElementType etype  = mesh->elem_type[elem];
+        int         nnodes = get_elem_info(ElementInfo::NNODES, etype);
         for (size_t i = 0; i < static_cast<size_t>(nnodes); i++) {
           int proc_n = lb->vertex2proc[mesh->connect[elem][i]];
           assert(proc_n < machine->num_procs);
@@ -1463,8 +1471,8 @@ namespace {
     /* Find the internal elements */
     time1 = get_time();
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-      E_Type etype  = mesh->elem_type[ecnt];
-      int    nnodes = get_elem_info(NNODES, etype);
+      ElementType etype  = mesh->elem_type[ecnt];
+      int         nnodes = get_elem_info(ElementInfo::NNODES, etype);
       for (size_t ncnt = 0; ncnt < static_cast<size_t>(nnodes); ncnt++) {
         int node = mesh->connect[ecnt][ncnt];
         int proc = lb->vertex2proc[node];
@@ -1493,25 +1501,6 @@ namespace {
                      Mesh_Description<INT> *mesh, Graph_Description<INT> *graph,
                      Problem_Description *problem)
   {
-    int sid;
-    int hflag1;
-    int hflag2;
-    int tflag1;
-    int tflag2;
-    int dflag;
-
-    INT nelem;
-    INT side_nodes[MAX_SIDE_NODES];
-    INT mirror_nodes[MAX_SIDE_NODES];
-    int side_cnt;
-
-    double time2;
-
-    std::string cmesg;
-    std::string tmpstr;
-
-    /*-----------------------------Execution Begins------------------------------*/
-
     /* Allocate memory */
     lb->int_nodes.resize(machine->num_procs);
     lb->bor_nodes.resize(machine->num_procs);
@@ -1541,14 +1530,18 @@ namespace {
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
         int  proce  = lb->vertex2proc[ecnt];
         auto etype  = mesh->elem_type[ecnt];
-        int  nsides = get_elem_info(NSIDES, etype);
+        int  nsides = get_elem_info(ElementInfo::NSIDES, etype);
         assert(nsides == 2);
 
         /* check each side of this element */
         for (int nscnt = 0; nscnt < nsides; nscnt++) {
 
           /* get the node on this element side (should only be one)*/
-          side_cnt = ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes);
+          std::array<INT, MAX_SIDE_NODES> side_nodes;
+#ifndef NDEBUG
+          int                             side_cnt =
+#endif
+              ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes.data());
           assert(side_cnt == 1);
 
           size_t nhold = graph->sur_elem[side_nodes[0]].size();
@@ -1586,64 +1579,59 @@ namespace {
       }
     }
     else {
+      std::array<INT, MAX_SIDE_NODES> side_nodes;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
         int proc = lb->vertex2proc[ecnt];
         assert(proc < machine->num_procs);
-        bool internal = true;
-        int  flag     = 0;
-        auto etype    = mesh->elem_type[ecnt];
-        int  dim1     = get_elem_info(NDIM, etype);
+        bool        internal = true;
+        int         flag     = 0;
+        ElementType etype    = mesh->elem_type[ecnt];
+        int         dim1     = get_elem_info(ElementInfo::NDIM, etype);
 
         /* need to check for hex's or tet's */
-        hflag1 = is_hex(etype);
+        bool hflag1 = is_hex(etype);
 
-        /* a tet10 cannot connect to a hex */
-        tflag1 = is_tet(etype);
+        /* a TET10 cannot connect to a HEX */
+        bool tflag1 = is_tet(etype);
 
-        int nsides = get_elem_info(NSIDES, etype);
+        int nsides = get_elem_info(ElementInfo::NSIDES, etype);
 
         /* check each side of this element */
         for (int nscnt = 0; nscnt < nsides; nscnt++) {
 
           /* get the list of nodes on this element side */
-          side_cnt = ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes);
+          int side_cnt =
+              ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes.data());
 
           /*
            * now determine how many side set nodes are needed to
            * determine if there is an element connected to this side.
            *
-           * 1-d - need one node
-           * 2-d - need two nodes, so find one intersection
-           * 3-d - need three nodes, so find two intersections
-           * note: must check to make sure that this number is not
-           *       larger than the number of nodes on the sides (ie - shell).
+           * 2-D - need two nodes, so find one intersection
+           * 3-D - need three nodes, so find two intersections
+           * NOTE: must check to make sure that this number is not
+           *       larger than the number of nodes on the sides (ie - SHELL).
            */
 
           int nnodes = mesh->num_dims;
           if (side_cnt < nnodes) {
             nnodes = side_cnt;
           }
-          if (nnodes > 1)
-            nnodes--; /* decrement to find the number of intersections needed */
+          nnodes--; /* decrement to find the number of intersections needed */
 
-          nelem = 0; /* reset this in case no intersections are needed */
+          INT nelem = 0; /* reset this in case no intersections are needed */
 
           /*
            * need to handle hex's differently because of
            * the tet/hex combination
            */
 
-          if (!hflag1) { /* not a hex */
+          if (!hflag1) { /* Not a hex */
 
-            if (etype == BAR2 || etype == BAR3) {
-              size_t nhold = graph->sur_elem[side_nodes[0]].size();
-              if (nhold > 1) {
-                for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
-                  hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
-                }
-              }
-            }
-            else if (!((etype == BAR2 || etype == SHELL2) && side_nodes[0] == side_nodes[1])) {
+            /* ignore degenerate bars */
+
+            if (!((etype == ElementType::BAR2 || etype == ElementType::SHELL2) &&
+                  side_nodes[0] == side_nodes[1])) {
 
               size_t nhold = graph->sur_elem[side_nodes[0]].size();
               for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
@@ -1682,7 +1670,7 @@ namespace {
              */
 
             /* first need to check for a degenerate element */
-            dflag = 0;
+            int dflag = 0;
             if (side_nodes[0] == side_nodes[1] || side_nodes[0] == side_nodes[3]) {
               dflag++;
             }
@@ -1827,9 +1815,9 @@ namespace {
 
               if (proc != proc2) {
 
-                E_Type etype2 = mesh->elem_type[elem];
+                ElementType etype2 = mesh->elem_type[elem];
 
-                int dim2 = get_elem_info(NDIM, etype2);
+                int dim2 = get_elem_info(ElementInfo::NDIM, etype2);
 
                 int diff = abs(dim1 - dim2);
 
@@ -1843,10 +1831,11 @@ namespace {
                 if (diff < 2) {
 
                   /* need to check for hex's */
-                  hflag2 = is_hex(etype2);
-                  tflag2 = is_tet(etype2);
+                  bool hflag2 = is_hex(etype2);
+                  bool tflag2 = is_tet(etype2);
 
                   /* check here for tet/hex combinations */
+                  int sid = 0;
                   if ((tflag1 && hflag2) || (hflag1 && tflag2)) {
                     /*
                      * have to call a special function to get the side id
@@ -1861,20 +1850,22 @@ namespace {
                      *           with the hex.
                      */
                     sid = get_side_id_hex_tet(mesh->elem_type[elem], mesh->connect[elem], side_cnt,
-                                              side_nodes);
+                                              side_nodes.data());
                   }
                   else {
                     /*
                      * get the side id of elem. Make sure that ecnt is
                      * trying to communicate to a valid side of elem
                      */
-                    side_cnt = get_ss_mirror(etype, side_nodes, (nscnt + 1), mirror_nodes);
+                    std::array<INT, MAX_SIDE_NODES> mirror_nodes;
+                    side_cnt =
+                        get_ss_mirror(etype, side_nodes.data(), (nscnt + 1), mirror_nodes.data());
 
                     /*
                      * small kludge to handle 6 node faces butted up against
                      * 4 node faces
                      */
-                    if (etype == HEXSHELL && side_cnt == 6) {
+                    if (etype == ElementType::HEXSHELL && side_cnt == 6) {
                       side_cnt = 4;
                     }
 
@@ -1883,7 +1874,8 @@ namespace {
                      * get the mirror of the side of ecnt
                      */
                     sid = get_side_id(mesh->elem_type[elem], mesh->connect[elem], side_cnt,
-                                      mirror_nodes, problem->skip_checks, problem->partial_adj);
+                                      mirror_nodes.data(), problem->skip_checks,
+                                      problem->partial_adj);
                   }
 
                   if (sid > 0) {
@@ -1905,15 +1897,15 @@ namespace {
                      * too many errors with bad meshes, print out
                      * more information here for diagnostics
                      */
-                    cmesg =
+                    std::string cmesg =
                         fmt::format("Error returned while getting side id for communication map.");
                     Gen_Error(0, cmesg);
                     cmesg = fmt::format("Element 1: {}", (ecnt + 1));
                     Gen_Error(0, cmesg);
-                    nnodes = get_elem_info(NNODES, etype);
+                    nnodes = get_elem_info(ElementInfo::NNODES, etype);
                     cmesg  = "connect table:";
                     for (int i = 0; i < nnodes; i++) {
-                      tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][i] + 1));
+                      std::string tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][i] + 1));
                       cmesg += tmpstr;
                     }
                     Gen_Error(0, cmesg);
@@ -1921,16 +1913,16 @@ namespace {
                     Gen_Error(0, cmesg);
                     cmesg = "side nodes:";
                     for (int i = 0; i < side_cnt; i++) {
-                      tmpstr = fmt::format(" {}", (size_t)(side_nodes[i] + 1));
+                      std::string tmpstr = fmt::format(" {}", (size_t)(side_nodes[i] + 1));
                       cmesg += tmpstr;
                     }
                     Gen_Error(0, cmesg);
                     cmesg = fmt::format("Element 2: {}", (size_t)(elem + 1));
                     Gen_Error(0, cmesg);
-                    nnodes = get_elem_info(NNODES, etype2);
+                    nnodes = get_elem_info(ElementInfo::NNODES, etype2);
                     cmesg  = "connect table:";
                     for (int i = 0; i < nnodes; i++) {
-                      tmpstr = fmt::format(" {}", (size_t)(mesh->connect[elem][i] + 1));
+                      std::string tmpstr = fmt::format(" {}", (size_t)(mesh->connect[elem][i] + 1));
                       cmesg += tmpstr;
                     }
                     Gen_Error(0, cmesg);
@@ -1948,8 +1940,7 @@ namespace {
         }
       } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
     }
-
-    time2 = get_time();
+    double time2 = get_time();
     fmt::print("Time for elemental categorization: {}s\n", time2 - time1);
 
     /* Find the internal and border nodes */
@@ -2363,7 +2354,7 @@ namespace {
       exit(-1);
     }
 
-    if (machine->type != MESH) {
+    if (machine->type != MachineType::MESH) {
       fmt::print(stderr, "KDD -- Machine must be a MESH "
                          "with # wedges * # slices processors.\n");
       fmt::print(stderr, "KDD -- Use nem_slice argument -m mesh=AxB, \n");
@@ -2569,7 +2560,7 @@ namespace {
       exit(-1);
     }
 
-    if (machine->type != MESH) {
+    if (machine->type != MachineType::MESH) {
       fmt::print(stderr, "KDD -- Machine must be a MESH "
                          "with nx * ny * nz processors.\n");
       fmt::print(stderr, "KDD -- Use nem_slice argument -m mesh=AxBxC, \n");

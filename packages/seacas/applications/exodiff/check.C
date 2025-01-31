@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,8 +12,8 @@
 #include "ED_SystemInterface.h"
 #include "Tolerance.h"
 #include "assembly.h"
-#include "exoII_read.h"
 #include "exo_block.h"
+#include "exo_read.h"
 #include "exodusII.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
@@ -25,17 +25,17 @@
 namespace {
 
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
+  bool Check_Nodal(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
                    const INT *id_map, bool check_only);
   template <typename INT>
-  bool Check_Element_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+  bool Check_Element_Block(Exo_Read<INT> &file1, Exo_Read<INT> &file2,
                            const std::vector<INT> &elmt_map, const std::vector<INT> &node_map);
   template <typename INT>
-  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &node_map, bool check_only);
+  bool Check_Nodeset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
+                     bool check_only);
   template <typename INT>
-  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &elmt_map, bool check_only);
+  bool Check_Sideset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &elmt_map,
+                     bool check_only);
 
   template <typename INT>
   bool Check_Element_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2);
@@ -43,13 +43,13 @@ namespace {
   bool Check_Element_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
                                         const std::vector<INT> &elmt_map,
                                         const std::vector<INT> &node_map);
-  template <typename INT> bool Check_Assembly(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
+  template <typename INT> bool Check_Assembly(Exo_Read<INT> &file1, Exo_Read<INT> &file2);
   template <typename INT>
   bool Check_Assembly_Params(const Assembly<INT> *assembly1, const Assembly<INT> *assembly2);
   bool close_compare(const std::string &st1, const std::string &st2);
 } // namespace
 
-template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
+template <typename INT> bool Check_Global(Exo_Read<INT> &file1, Exo_Read<INT> &file2)
 {
   bool is_same = true;
   if (file1.Dimension() != file2.Dimension()) {
@@ -82,7 +82,7 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
 }
 
 template <typename INT>
-void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool check_only,
+void Check_Compatible_Meshes(Exo_Read<INT> &file1, Exo_Read<INT> &file2, bool check_only,
                              const std::vector<INT> &node_map, const std::vector<INT> &elmt_map,
                              const INT *node_id_map)
 {
@@ -124,7 +124,7 @@ void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, boo
 
 namespace {
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
+  bool Check_Nodal(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
                    const INT *id_map, bool check_only)
   {
     bool is_same = true;
@@ -204,7 +204,7 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Element_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+  bool Check_Element_Block(Exo_Read<INT> &file1, Exo_Read<INT> &file2,
                            const std::vector<INT> &elmt_map, const std::vector<INT> &node_map)
   {
     bool is_same = true;
@@ -244,7 +244,7 @@ namespace {
     return is_same;
   }
 
-  template <typename INT> bool Check_Assembly(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
+  template <typename INT> bool Check_Assembly(Exo_Read<INT> &file1, Exo_Read<INT> &file2)
   {
     bool is_same = true;
     if (file1.Num_Assembly() != file2.Num_Assembly()) {
@@ -479,8 +479,8 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &node_map, bool /*unused*/)
+  bool Check_Nodeset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
+                     bool /*unused*/)
   {
     // Currently don't set diff flag for most of these since we
     // can continue (somewhat) with these differences...
@@ -605,8 +605,8 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &elmt_map, bool /*unused*/)
+  bool Check_Sideset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &elmt_map,
+                     bool /*unused*/)
   {
     // Currently don't set diff flag for most of these since we
     // can continue (somewhat) with these differences...
@@ -781,13 +781,13 @@ namespace {
   }
 } // namespace
 
-template bool Check_Global(ExoII_Read<int> &file1, ExoII_Read<int> &file2);
-template void Check_Compatible_Meshes(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
-                                      bool check_only, const std::vector<int> &node_map,
+template bool Check_Global(Exo_Read<int> &file1, Exo_Read<int> &file2);
+template void Check_Compatible_Meshes(Exo_Read<int> &file1, Exo_Read<int> &file2, bool check_only,
+                                      const std::vector<int> &node_map,
                                       const std::vector<int> &elmt_map, const int *node_id_map);
 
-template bool Check_Global(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
-template void Check_Compatible_Meshes(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
+template bool Check_Global(Exo_Read<int64_t> &file1, Exo_Read<int64_t> &file2);
+template void Check_Compatible_Meshes(Exo_Read<int64_t> &file1, Exo_Read<int64_t> &file2,
                                       bool check_only, const std::vector<int64_t> &node_map,
                                       const std::vector<int64_t> &elmt_map,
                                       const int64_t              *node_id_map);

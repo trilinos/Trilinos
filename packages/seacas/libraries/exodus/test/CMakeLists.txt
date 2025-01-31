@@ -168,15 +168,14 @@ IF ( NETCDF_NCDUMP_BINARY )
     )
 
   IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-
-#  TRIBITS_ADD_TEST(
-#   testall
-#   NOEXEPREFIX
-#   NOEXESUFFIX
-#   NAME exodus_unit_tests
-#   COMM mpi serial
-#   NUM_MPI_PROCS 1
-#  )
+  TRIBITS_ADD_TEST(
+   testall
+   NOEXEPREFIX
+   NOEXESUFFIX
+   NAME exodus_unit_tests
+   COMM mpi serial
+   NUM_MPI_PROCS 1
+  )
 
   if ( TPL_Netcdf_Enables_Netcdf4 )
     TRIBITS_ADD_TEST(
@@ -200,15 +199,15 @@ IF ( NETCDF_NCDUMP_BINARY )
   endif()
 
 #  if ( TPL_Netcdf_Enables_Netcdf5 )
-#    TRIBITS_ADD_TEST(
-#      testall
-#      NOEXEPREFIX
-#      NOEXESUFFIX
-#      NAME exodus_unit_tests_nc5_env
-#      ARGS netcdf5
-#      COMM mpi serial
-#      NUM_MPI_PROCS 1
-#    )
+    TRIBITS_ADD_TEST(
+      testall
+      NOEXEPREFIX
+      NOEXESUFFIX
+      NAME exodus_unit_tests_nc5_env
+      ARGS netcdf5
+      COMM mpi serial
+      NUM_MPI_PROCS 1
+    )
 #  endif()
    endif()
 ELSE()

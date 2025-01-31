@@ -48,7 +48,7 @@ namespace Ioss {
   class Map;
 } // namespace Ioss
 
-/** \brief A namespace for the generated database format.
+/** \brief A namespace for the textmesh database format.
  */
 namespace Iotm {
   class IOTM_EXPORT IOFactory : public Ioss::IOFactory
@@ -94,6 +94,9 @@ namespace Iotm {
     bool begin_state_nl(int state, double time) override;
 
     void get_step_times_nl() override;
+
+    std::vector<double> get_db_step_times_nl() override;
+
     void get_nodeblocks();
     void get_elemblocks();
     void get_nodesets();

@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -75,7 +75,7 @@ C   --   VAREL - IN - the selected element variables for the time step
          IF (NLISEL(IELB) .GT. 0) THEN
 
             IX0 = LENE(IELB-1)
-            IXB = LENE(IELB) - LENE(IELB-1) 
+            IXB = LENE(IELB) - LENE(IELB-1)
             DO IX = 1, IXB
                IEL = LISEL(IX0+IX)
                IF (iel .eq. 0) cycle

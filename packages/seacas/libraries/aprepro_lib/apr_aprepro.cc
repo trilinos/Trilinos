@@ -33,8 +33,8 @@
 #endif
 
 namespace {
-  const std::string version_short{"6.32"};
-  const std::string version_date{"(2024/05/20)"};
+  const std::string version_short{"6.35"};
+  const std::string version_date{"(2024/11/06)"};
   const std::string version_string = version_short + " " + version_date;
 
   void output_copyright();
@@ -137,7 +137,7 @@ namespace SEAMS {
 
   std::string Aprepro::long_version() const
   {
-    auto comment = getsym("_C_")->value.svar;
+    const auto &comment = getsym("_C_")->value.svar;
     return comment + " Algebraic Preprocessor (Aprepro) version " + version();
   }
 
@@ -447,7 +447,7 @@ namespace SEAMS {
                       const std::string &short_opt, size_t min_length)
     {
       // See if `option` starts with 1 or 2 leading `-`.
-      int number_dash = option[0] == '-' ? (option[1] == '-' ? 2 : 1) : 0;
+      size_t number_dash = option[0] == '-' ? (option[1] == '-' ? 2 : 1) : 0;
 
       // See if `option` contains a `=`, save position...
       auto equals = option.find('=');
@@ -632,7 +632,7 @@ namespace SEAMS {
     return ret_value;
   }
 
-  array *Aprepro::make_array(int r, int c)
+  array *Aprepro::make_array(size_t r, size_t c)
   {
     auto ptr = new array(r, c);
     array_allocations.push_back(ptr);

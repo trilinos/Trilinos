@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -50,9 +50,9 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     points.InsertNextPoint(pointList[5])
     points.InsertNextPoint(pointList[6])
     points.InsertNextPoint(pointList[7])
- 
+
     # Create a hexahedron from the points
-    hex = vtk.vtkHexahedron() 
+    hex = vtk.vtkHexahedron()
     hex.GetPointIds().SetId(0,0)
     hex.GetPointIds().SetId(1,1)
     hex.GetPointIds().SetId(2,2)
@@ -61,11 +61,11 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     hex.GetPointIds().SetId(5,5)
     hex.GetPointIds().SetId(6,6)
     hex.GetPointIds().SetId(7,7)
- 
+
     # Add the hexahedron to a cell array
     hexs = vtk.vtkCellArray()
     hexs.InsertNextCell(hex)
- 
+
     # Add the points and hexahedron to an unstructured grid
     uGrid = vtk.vtkUnstructuredGrid()
     uGrid.SetPoints(points)
@@ -163,7 +163,7 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
     testJson1 = {"segment direction reference point":13.5}
     self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
-    
+
 
   def test_CalculateGeometricProgressionSampleValues_linear(self):
     pcsntc1 = PhactoriCreateSegmentsNormalToCells()
@@ -242,7 +242,7 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     pcsntc1 = PhactoriCreateSegmentsNormalToCells()
     pcsntc1.CreateSegmentsForAllCells(xfrm1)
     pcsntc1.CreateParaViewSourcesForSegments()
-    
+
 
 if __name__ == '__main__':
     cc = Cone()

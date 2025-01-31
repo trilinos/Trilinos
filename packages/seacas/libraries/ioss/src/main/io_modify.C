@@ -969,13 +969,9 @@ namespace {
     if (Ioss::Utils::substr_equal(tokens[2], "add")) {
       // Must be at least 6 tokens...
       if (tokens.size() < 6) {
-        fmt::print(stderr,
-#if !defined __NVCC__
-                   fg(fmt::color::red),
-#endif
-                   "ERROR: ATTRIBUTE Command does not have enough tokens to be valid.\n"
-                   "\t\t{}\n",
-                   fmt::join(tokens, " "));
+        fmt::print(stderr, fg(fmt::color::red),
+                   "ERROR: ATTRIBUTE Command does not have enough tokens to be valid.\n");
+        fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
         handle_help("attribute");
         return false;
       }
@@ -1091,13 +1087,9 @@ namespace {
 
     // Must be at least 4 tokens...
     if (tokens.size() < 4) {
-      fmt::print(stderr,
-#if !defined __NVCC__
-                 fg(fmt::color::red),
-#endif
-                 "ERROR: RENAME Command does not have enough tokens to be valid.\n"
-                 "\t\t{}\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: RENAME Command does not have enough tokens to be valid.\n");
+      fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
       handle_help("rename");
       return false;
     }
@@ -1225,13 +1217,9 @@ namespace {
     // TIME   SCALE  {{scale}}
     // TIME   OFFSET {{offset}
     if (tokens.size() < 3) {
-      fmt::print(stderr,
-#if !defined __NVCC__
-                 fg(fmt::color::red),
-#endif
-                 "ERROR: TIME Command does not have enough tokens to be valid.\n"
-                 "\t\t{}\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: TIME Command does not have enough tokens to be valid.\n");
+      fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
       handle_help("time");
       return false;
     }
@@ -1264,13 +1252,9 @@ namespace {
     // GEOMETRY   OFFSET {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{offset}} ...
 
     if (tokens.size() < 3) {
-      fmt::print(stderr,
-#if !defined __NVCC__
-                 fg(fmt::color::red),
-#endif
-                 "ERROR: GEOMETRY Command does not have enough tokens to be valid.\n"
-                 "\t\t{}\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: GEOMETRY Command does not have enough tokens to be valid.\n");
+      fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
       handle_help("geometry");
       return false;
     }

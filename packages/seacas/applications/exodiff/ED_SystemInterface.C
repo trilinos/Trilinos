@@ -31,8 +31,7 @@ namespace {
   }
 
   std::string Parse_Variables(std::string xline, std::ifstream &cmd_file, bool &all_flag,
-                              Tolerance &def_tol, std::vector<std::string> &names,
-                              std::vector<Tolerance> &toler);
+                              Tolerance &def_tol, NameList &names, std::vector<Tolerance> &toler);
 
   bool str_equal(const std::string &s1, const std::string &s2)
   {
@@ -137,7 +136,7 @@ namespace {
     }
   }
 
-  void Check_Parsed_Names(const std::vector<std::string> &names, bool &all_flag)
+  void Check_Parsed_Names(const NameList &names, bool &all_flag)
   {
     int num_include = 0;
     int num_exclude = 0;
@@ -327,13 +326,6 @@ void SystemInterface::enroll_options()
   options_.enroll("ignore_steps", GetLongOption::NoValue,
                   "Don't compare any transient data; compare mesh only.", nullptr);
   options_.enroll(
-      "x", GetLongOption::MandatoryValue,
-      "Exclude time steps.  Does not consider the time steps given in the list of integers.\n"
-      "\t\tThe format is comma-separated and ranged integers (with no spaces), such as "
-      "\"1,5-9,28\".\n"
-      "\t\tThe first time step is the number '1'.",
-      nullptr);
-  options_.enroll(
       "exclude", GetLongOption::MandatoryValue,
       "Exclude time steps.  Does not consider the time steps given in the list of integers.\n"
       "\t\tThe format is comma-separated and ranged integers (with no spaces), such as "
@@ -496,6 +488,8 @@ void SystemInterface::enroll_options()
                   nullptr);
   options_.enroll("T", GetLongOption::MandatoryValue,
                   "Backward-compatible option for -TimeStepOffset", nullptr);
+  options_.enroll("x", GetLongOption::MandatoryValue, "Backward-compatible option for -exclude",
+                  nullptr);
 }
 
 bool SystemInterface::parse_options(int argc, char **argv)
@@ -662,7 +656,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (temp != nullptr) {
       // temp should be of the form <ts1>:<ts2>  where ts# is either a timestep number
       // (1-based) or 'last'
-      std::vector<std::string> tokens = SLIB::tokenize(temp, ":");
+      NameList tokens = SLIB::tokenize(temp, ":");
       if (tokens.size() == 2) {
         if (str_equal(tokens[0], "last")) {
           explicit_steps.first = -1;
@@ -1380,8 +1374,7 @@ void SystemInterface::Parse_Command_File()
 
 namespace {
   std::string Parse_Variables(std::string xline, std::ifstream &cmd_file, bool &all_flag,
-                              Tolerance &def_tol, std::vector<std::string> &names,
-                              std::vector<Tolerance> &toler)
+                              Tolerance &def_tol, NameList &names, std::vector<Tolerance> &toler)
   {
     toler.clear();
     names.clear();

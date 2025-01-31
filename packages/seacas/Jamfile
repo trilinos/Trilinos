@@ -168,7 +168,7 @@ explicit install-user-include0 ;
 install install-user-include0
   : [ glob $(seacas-root)/libraries/ioss/src/*.h
            $(seacas-root)/libraries/ioss/src/init/*.h ]
-  : <location>$(install-root)/io_system/include
+  : <location>$(install-root)/Sierra/include/io_system
   ;
 
 explicit install-user-include1 ;
@@ -222,7 +222,7 @@ install install-user-include6
   : [ glob $(seacas-root)/libraries/ioss/src/visualization/utils/*.h
            $(seacas-root)/libraries/ioss/src/visualization/exodus/*.h
            $(seacas-root)/libraries/ioss/src/visualization/cgns/*.h ]
-  : <location>$(install-root)/io_system/include
+  : <location>$(install-root)/Sierra/include/io_system
   ;
 
 
