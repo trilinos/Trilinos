@@ -1631,7 +1631,7 @@ namespace BaskerNS
         #ifdef BASKER_KOKKOS
         // ----------------------------------------------------------------------------------------------
         // Allocate & Initialize blocks
-        #if 1//def BASKER_PARALLEL_INIT_FACTOR
+        #ifdef BASKER_PARALLEL_INIT_FACTOR
         kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
           iF(this);
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
