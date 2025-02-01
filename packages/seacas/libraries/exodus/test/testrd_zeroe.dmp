@@ -13,7 +13,7 @@ num_side_sets =   0
  after ex_inquire, error = 0
 
 after ex_get_coord, error =   0
-x coords = 
+x coords =
   0.0
   1.0
   1.0
@@ -47,7 +47,7 @@ x coords =
   0.0
  10.0
  10.0
-y coords = 
+y coords =
   0.0
   0.0
   1.0
@@ -81,7 +81,7 @@ y coords =
   0.0
   0.0
  10.0
-z coords = 
+z coords =
   0.0
   0.0
   0.0
@@ -131,7 +131,7 @@ after ex_get_names, error =   0
 
 after ex_get_node_set_param, error =   0
 
-node set 20 parameters: 
+node set 20 parameters:
 num_nodes =  5
 name = ''
 
@@ -156,7 +156,7 @@ num nodeset attributes for nodeset 20 = 0
 
 after ex_get_node_set_param, error =   0
 
-node set 21 parameters: 
+node set 21 parameters:
 num_nodes =  3
 name = ''
 
@@ -193,16 +193,16 @@ after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
 after ex_get_concat_node_sets, error =   0
 
 concatenated node set info
-ids = 
+ids =
  20
  21
-num_nodes_per_set = 
+num_nodes_per_set =
   5
   3
-node_ind = 
+node_ind =
   0
   5
-node_list = 
+node_list =
  10
  11
  12
@@ -211,7 +211,7 @@ node_list =
  20
  21
  22
-dist_fact = 
+dist_fact =
 1.000
 2.000
 3.000
@@ -222,7 +222,7 @@ dist_fact =
 3.100
 
 after ex_get_qa, error =   0
-QA records = 
+QA records =
  'TESTWT'
  'testwt'
  '07/07/93'
@@ -235,7 +235,7 @@ QA records =
 after ex_inquire, error =   0
 
 after ex_get_info, error =   0
-info records = 
+info records =
  'This is the first information record.'
  ''
  ''

@@ -16,7 +16,10 @@
 #include "Ioss_Utils.h"
 #include "info_interface.h"
 
-Info::Interface::Interface() { enroll_options(); }
+Info::Interface::Interface(std::string app_version) : version(std::move(app_version))
+{
+  enroll_options();
+}
 
 void Info::Interface::enroll_options()
 {
@@ -143,11 +146,19 @@ void Info::Interface::enroll_options()
                   nullptr, nullptr, true);
 
 #endif
+  options_.enroll(
+      "list_change_sets", Ioss::GetLongOption::NoValue,
+      "Print a list of the names of all change_sets (previosly groups) in this file and then exit.",
+      nullptr);
   options_.enroll("list_groups", Ioss::GetLongOption::NoValue,
-                  "Print a list of the names of all groups in this file and then exit.", nullptr);
+                  "[deprecated] Use --list_change_sets", nullptr);
 
+  options_.enroll("change_set_name", Ioss::GetLongOption::MandatoryValue,
+                  "List information only for the specified comma-separated list of change_set(s) "
+                  "or `ALL` to list for all.",
+                  nullptr);
   options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
-                  "List information only for the specified group.", nullptr, nullptr, true);
+                  "[deprecated] Use --change_set_name.", nullptr, nullptr, true);
 
   options_.enroll("query_timesteps_only", Ioss::GetLongOption::NoValue,
                   "Only read and output the timestep data on the file", nullptr);
@@ -188,7 +199,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("version") != nullptr) {
-    // Version is printed up front, just exit...
+    fmt::print(stderr, "IO_INFO\tVersion: {}\n", version);
     exit(0);
   }
 
@@ -197,16 +208,18 @@ bool Info::Interface::parse_options(int argc, char **argv)
   ints64Bit_       = options_.retrieve("64-bit") != nullptr;
   computeVolume_   = options_.retrieve("compute_volume") != nullptr;
   computeBBox_     = options_.retrieve("compute_bbox") != nullptr;
-  listGroups_      = options_.retrieve("list_groups") != nullptr;
+  listChangeSets_  = options_.retrieve("list_change_sets") != nullptr ||
+                    options_.retrieve("list_groups") != nullptr;
   useGenericNames_ = options_.retrieve("use_generic_names") != nullptr;
   summary_         = options_.retrieve("summary") != nullptr;
   showConfig_      = options_.retrieve("configuration") != nullptr;
   queryTimeOnly_   = options_.retrieve("query_timesteps_only") != nullptr;
   fieldDetails_    = options_.retrieve("detailed_field_info") != nullptr;
 
-  filetype_  = options_.get_option_value("db_type", filetype_);
-  filetype_  = options_.get_option_value("in_type", filetype_);
-  groupname_ = options_.get_option_value("group_name", groupname_);
+  filetype_      = options_.get_option_value("db_type", filetype_);
+  filetype_      = options_.get_option_value("in_type", filetype_);
+  changeSetName_ = options_.get_option_value("change_set_name", changeSetName_);
+  changeSetName_ = options_.get_option_value("group_name", changeSetName_);
 
   {
     const char *temp = options_.retrieve("surface_split_scheme");

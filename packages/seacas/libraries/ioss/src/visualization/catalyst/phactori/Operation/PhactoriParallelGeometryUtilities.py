@@ -143,7 +143,7 @@ def GetPidWithLeastValueListV5(inLocalDistSqrdList):
 
   pidWithDataList = UseReduceOnIntegerList(localPidList, 0)
   return pidWithDataList, globalDistSqrdList
-    
+
 
 def UseMpiToGetGlobalCellPointsClosestV5(inInputFilter, inLocalCellPointList, inLocalDistSqrdList):
   if PhactoriDbg(100):

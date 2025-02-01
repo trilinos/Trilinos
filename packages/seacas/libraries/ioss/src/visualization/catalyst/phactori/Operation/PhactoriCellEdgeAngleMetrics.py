@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -86,10 +86,10 @@ class PhactoriCellEdgeAngleMetrics(PhactoriOperationSpecifics):
       self.OffsetIndex = 0
 
     keyval10 = "output angle cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.OutputAngleCellVariableName = inJson[keyval10]
     keyval10 = "output height cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.OutputHeightCellVariableName = inJson[keyval10]
 
     keyval11 = "do operation in createparaview method"

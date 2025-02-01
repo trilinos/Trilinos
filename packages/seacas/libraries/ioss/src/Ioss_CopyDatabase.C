@@ -447,7 +447,9 @@ namespace {
 
     // Get all properties of input database...
     transfer_properties(&region, &output_region);
-    transfer_qa_info(region, output_region);
+    if (!options.ignore_qa_info) {
+      transfer_qa_info(region, output_region);
+    }
 
     if (rank == 0 && options.output_summary) {
       fmt::print(std::cout, "\n\n Input Region summary for rank 0:\n");

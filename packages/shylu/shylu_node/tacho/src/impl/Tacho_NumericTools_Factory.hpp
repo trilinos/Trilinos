@@ -219,6 +219,10 @@ public:
       TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
       break;
     }
+    case 3: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
+      break;
+    }
     default: {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
     }

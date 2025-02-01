@@ -14,41 +14,42 @@
 
 namespace Iovs {
 
-class PhactoriParserInterface {
+  class PhactoriParserInterface
+  {
 
-public:
+  public:
+    enum VarType {
+      SCALAR,
+      VECTOR,
+      TENSOR,
+      ALLTYPE,
+      SCALAR_USED,
+      VECTOR_USED,
+      TENSOR_USED,
+      ALLTYPE_USED
+    };
 
-  enum VarType {
-    SCALAR,
-    VECTOR,
-    TENSOR,
-    ALLTYPE,
-    SCALAR_USED,
-    VECTOR_USED,
-    TENSOR_USED,
-    ALLTYPE_USED
+    typedef std::map<std::string, VarType>        varMap;
+    typedef std::pair<unsigned int, unsigned int> idRange;
+
+    struct ParseInfo
+    {
+      varMap      nodeVars;
+      varMap      elementVars;
+      varMap      globalVars;
+      bool        checkNodeIDRange = false;
+      idRange     nodeIDRange;
+      bool        checkElementIDRange = false;
+      idRange     elementIDRange;
+      std::string separator       = "_";
+      std::string jsonParseResult = "";
+      bool        parseFailed     = true;
+    };
+
+    static void parseFile(const std::string &filepath, ParseInfo &pinfo);
+
+    static void parseString(const std::string &s, ParseInfo &pinfo);
   };
-
-  typedef std::map<std::string, VarType> varMap;
-  typedef std::pair<unsigned int, unsigned int> idRange;
-
-  struct ParseInfo {
-    varMap nodeVars;
-    varMap elementVars;
-    varMap globalVars;
-    bool checkNodeIDRange = false;
-    idRange nodeIDRange;
-    bool checkElementIDRange = false;
-    idRange elementIDRange;
-    std::string separator = "_";
-    std::string jsonParseResult = "";
-    bool parseFailed = true;
-  };
-
-  static void parseFile(const std::string &filepath, ParseInfo &pinfo);
-
-  static void parseString(const std::string &s, ParseInfo &pinfo);
-};
 
 } // namespace Iovs
 

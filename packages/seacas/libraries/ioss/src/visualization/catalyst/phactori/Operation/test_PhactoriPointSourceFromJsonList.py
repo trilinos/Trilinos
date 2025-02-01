@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -55,11 +55,11 @@ class Test_PhactoriPointSourceFromJsonList(unittest.TestCase):
     ]
     with self.assertRaises(Exception):
       theSource.ValidateJsonPointList()
-  
+
     theSource.JsonList = []
     with self.assertRaises(Exception):
       theSource.ValidateJsonPointList()
-  
+
 
   def test_CreateVtkPolyDataFromJsonList(self):
     theSource = PhactoriPointSourceFromJsonList()
@@ -77,10 +77,8 @@ class Test_PhactoriPointSourceFromJsonList(unittest.TestCase):
     self.assertEqual(pt0, tuple(theSource.JsonList[0]))
     pt3 = vtkPts.GetPoint(3)
     self.assertEqual(pt3, tuple(theSource.JsonList[3]))
-    
+
 if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
-
-

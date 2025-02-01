@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -92,7 +92,7 @@ def DebugPrintBlockName(csData, blockIndex):
         myDebugPrint3("oneBlockMetaData is None (2)\n")
 
 def PhactoriRecusivelyDoMethodPerBlockFromParaViewFilter(inRecursionControlItem,  inPvFilter):
-  """grab client side data object, and use that to do recursion"""  
+  """grab client side data object, and use that to do recursion"""
   pvClientSideData = inPvFilter.GetClientSideObject().GetOutputDataObject(0)
   if pvClientSideData == None:
     if PhactoriDbg(100):

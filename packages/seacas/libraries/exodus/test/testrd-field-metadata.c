@@ -54,13 +54,13 @@ static char *my_strsep(char **stringp, const char *delim)
     }                                                                                              \
   } while (0)
 
-static char *get_type_name(char *type_name, size_t which)
+static char *get_type_name(const char *type_name, size_t which)
 {
   if (type_name != NULL && type_name[0] != '\0') {
     char *string = my_strdup(type_name);
     char *tofree = string;
     char *token  = my_strsep(&string, ",");
-    for (int i = 0; i < which; i++) {
+    for (size_t i = 0; i < which; i++) {
       token = my_strsep(&string, ",");
     }
     if (token != NULL) {
@@ -74,8 +74,8 @@ static char *get_type_name(char *type_name, size_t which)
   return NULL;
 }
 
-static void get_field_cardinality(ex_field *field, ex_basis *basis, int bas_cnt,
-                                  ex_quadrature *quad, int quad_cnt)
+static void get_field_cardinality(ex_field *field, const ex_basis *basis, int bas_cnt,
+                                  const ex_quadrature *quad, int quad_cnt)
 {
   for (int j = 0; j < field->nesting; j++) {
     if (field->cardinality[j] == 0) {
@@ -120,7 +120,7 @@ static void get_field_cardinality(ex_field *field, ex_basis *basis, int bas_cnt,
   }
 }
 
-static void print_basis_metadata(ex_basis *basis, size_t num_basis)
+static void print_basis_metadata(const ex_basis *basis, size_t num_basis)
 {
   for (size_t j = 0; j < num_basis; j++) {
     printf("\nBasis Metadata: Name: `%s`, Cardinality: %d\n", basis[j].name, basis[j].cardinality);
@@ -136,7 +136,7 @@ static void print_basis_metadata(ex_basis *basis, size_t num_basis)
   }
 }
 
-static void print_quad_metadata(ex_quadrature *quad, size_t num_quad)
+static void print_quad_metadata(const ex_quadrature *quad, size_t num_quad)
 {
   for (size_t j = 0; j < num_quad; j++) {
     printf("\nQuadrature Metadata: Name: `%s`, Cardinality: %d\n", quad[j].name,
@@ -152,7 +152,7 @@ static void print_quad_metadata(ex_quadrature *quad, size_t num_quad)
   }
 }
 
-static void print_field_metadata(ex_field *field)
+static void print_field_metadata(const ex_field *field)
 {
   printf("\n");
   printf("Field Metadata: Name: `%s`, Nesting: %d\n", field->name, field->nesting);

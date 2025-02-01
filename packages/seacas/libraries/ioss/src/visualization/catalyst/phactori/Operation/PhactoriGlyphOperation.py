@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2021 National Technology & Engineering Solutions
+# Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -52,7 +52,7 @@ class PhactoriGlyphOperation(PhactoriOperationSpecifics):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriGlyphOperation.ParseParametersFromJson "
           "entered\n", 100)
- 
+
     key1 = "scale factor"
     if key1 in inJson:
       self.scaleFactor = inJson[key1]

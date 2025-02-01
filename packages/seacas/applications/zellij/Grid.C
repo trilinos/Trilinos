@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -793,7 +793,7 @@ template <typename INT> void Grid::output_node_map(const Cell &cell, INT /*dummy
   auto count = cell.added_node_count(Mode::PROCESSOR, m_equivalenceNodes);
 
   if (parallel_size() == 1) {
-    auto             gid = cell.m_globalNodeIdOffset + 1;
+    INT              gid = cell.m_globalNodeIdOffset + 1;
     std::vector<INT> map(count);
     std::iota(map.begin(), map.end(), gid);
     int exoid = output_region(rank)->get_database()->get_file_pointer();
@@ -852,7 +852,7 @@ template <typename INT> void Grid::output_element_map(Cell &cell, INT /*dummy*/)
       auto *block = cell.region()->get_element_block(output_element_block->name());
       if (block != nullptr) {
 
-        auto             gid = cell.m_globalElementIdOffset[block->name()] + 1 + global_id_offset;
+        INT              gid = cell.m_globalElementIdOffset[block->name()] + 1 + global_id_offset;
         auto             element_count = block->entity_count();
         std::vector<INT> map(element_count);
 

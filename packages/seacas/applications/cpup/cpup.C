@@ -23,6 +23,7 @@
 #include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
+#include <Ioss_use_fmt.h>
 
 #include <cgns/Iocgns_Utils.h>
 
@@ -34,22 +35,6 @@
 #endif
 
 unsigned int debug_level = 0;
-
-#if FMT_VERSION >= 90000
-#include "Ioss_ZoneConnectivity.h"
-#include "Ioss_StructuredBlock.h"
-
-namespace fmt {
-  template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
-  {
-  };
-} // namespace fmt
-namespace fmt {
-  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
-  {
-  };
-} // namespace fmt
-#endif
 
 namespace {
   std::string tsFormat = "[{:%H:%M:%S}] ";
@@ -390,7 +375,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
             }
 
             // Now transfer the fields on the embedded node block...
-            auto pnb = pblock->get_node_block();
+            const auto &pnb = pblock->get_node_block();
             fields.clear();
             pnb.field_describe(Ioss::Field::TRANSIENT, &fields);
             for (const auto &field_name : fields) {

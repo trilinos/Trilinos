@@ -4,21 +4,11 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ionit_Initializer.h"
-#include "Ioss_Compare.h"
-#include "Ioss_CopyDatabase.h"
-#include "Ioss_FileInfo.h"
-#include "Ioss_MemoryUtils.h"
-#include "Ioss_MeshCopyOptions.h"
-#include "Ioss_MeshType.h"
-#include "Ioss_ParallelUtils.h"
-#include "Ioss_SerializeIO.h"
-#include "Ioss_SurfaceSplit.h"
-#include "Ioss_Utils.h"
 #include <cstdlib>
 #include <exception>
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <limits>
 #include <stdint.h>
 #include <stdio.h>
@@ -26,15 +16,26 @@
 #include <tokenize.h>
 #include <vector>
 
+#include "Ionit_Initializer.h"
+#include "Ioss_Compare.h"
+#include "Ioss_CopyDatabase.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DataSize.h"
 #include "Ioss_DatabaseIO.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h"
 #include "Ioss_IOFactory.h"
+#include "Ioss_MemoryUtils.h"
+#include "Ioss_MeshCopyOptions.h"
+#include "Ioss_MeshType.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
 #include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
 #include "Ioss_ScopeGuard.h"
+#include "Ioss_SerializeIO.h"
+#include "Ioss_SurfaceSplit.h"
+#include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 #include "shell_interface.h"
 
@@ -42,38 +43,39 @@
 
 namespace {
   std::string codename;
-  std::string version = "6.8 (2024/05/31)";
+  std::string version = "7.0 (2024/11/08)";
 
   bool mem_stats = false;
 
-  void file_copy(IOShell::Interface &interFace, int rank);
+  bool file_copy(IOShell::Interface &interFace, int rank);
   bool file_compare(IOShell::Interface &interFace, int rank);
 
   Ioss::PropertyManager set_properties(IOShell::Interface &interFace);
   Ioss::MeshCopyOptions set_mesh_copy_options(IOShell::Interface &interFace)
   {
     Ioss::MeshCopyOptions options{};
-    options.selected_times    = interFace.selected_times;
-    options.rel_tolerance     = interFace.rel_tolerance;
-    options.abs_tolerance     = interFace.abs_tolerance;
-    options.tol_floor         = interFace.tol_floor;
-    options.verbose           = !interFace.quiet;
-    options.output_summary    = true;
-    options.memory_statistics = interFace.memory_statistics;
-    options.debug             = interFace.debug;
-    options.ints_64_bit       = interFace.ints_64_bit;
-    options.delete_timesteps  = interFace.delete_timesteps;
-    options.minimum_time      = interFace.minimum_time;
-    options.maximum_time      = interFace.maximum_time;
-    options.time_scale        = interFace.time_scale;
-    options.time_offset       = interFace.time_offset;
-    options.data_storage_type = interFace.data_storage_type;
-    options.delay             = interFace.timestep_delay;
-    options.reverse           = interFace.reverse;
-    options.add_proc_id       = interFace.add_processor_id_field;
-    options.boundary_sideset  = interFace.boundary_sideset;
-    options.ignore_qa_info    = interFace.ignore_qa_info;
-    options.omitted_blocks    = !interFace.omitted_blocks.empty();
+    options.selected_times       = interFace.selected_times;
+    options.rel_tolerance        = interFace.rel_tolerance;
+    options.abs_tolerance        = interFace.abs_tolerance;
+    options.tol_floor            = interFace.tol_floor;
+    options.verbose              = !interFace.quiet;
+    options.output_summary       = true;
+    options.memory_statistics    = interFace.memory_statistics;
+    options.debug                = interFace.debug;
+    options.ints_64_bit          = interFace.ints_64_bit;
+    options.delete_timesteps     = interFace.delete_timesteps;
+    options.minimum_time         = interFace.minimum_time;
+    options.maximum_time         = interFace.maximum_time;
+    options.time_scale           = interFace.time_scale;
+    options.time_offset          = interFace.time_offset;
+    options.data_storage_type    = interFace.data_storage_type;
+    options.delay                = interFace.timestep_delay;
+    options.reverse              = interFace.reverse;
+    options.add_proc_id          = interFace.add_processor_id_field;
+    options.boundary_sideset     = interFace.boundary_sideset;
+    options.ignore_qa_info       = interFace.ignore_qa_info;
+    options.omitted_blocks       = !interFace.omitted_blocks.empty();
+    options.selected_change_sets = interFace.selectedChangeSets;
 
     options.omitted_sets = interFace.omitted_sets;
     Ioss::sort(options.omitted_sets);
@@ -81,6 +83,21 @@ namespace {
       name = Ioss::Utils::lowercase(name);
     }
     return options;
+  }
+
+  bool open_change_set(const std::string &cs_name, Ioss::Region &region, int rank)
+  {
+    bool success = true;
+    if (!cs_name.empty()) {
+      success = region.load_internal_change_set_mesh(cs_name);
+      if (!success) {
+        if (rank == 0) {
+          fmt::print(stderr, "ERROR: Unable to open change_set '{}' in file '{}'\n", cs_name,
+                     region.get_database()->get_filename());
+        }
+      }
+    }
+    return success;
   }
 
 #ifdef SEACAS_HAVE_MPI
@@ -166,7 +183,7 @@ int main(int argc, char *argv[])
       success = file_compare(interFace, rank);
     }
     else {
-      file_copy(interFace, rank);
+      success = file_copy(interFace, rank);
     }
   }
   catch (std::exception &e) {
@@ -213,17 +230,17 @@ int main(int argc, char *argv[])
 #endif
   }
   if (rank == 0) {
-    fmt::print(stderr, "\n{} execution successful.\n", codename);
+    fmt::print(stderr, "\n{} execution {}.\n", codename, success ? "successful" : "failed");
   }
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 namespace {
-  void file_copy(IOShell::Interface &interFace, int rank)
+  bool file_copy(IOShell::Interface &interFace, int rank)
   {
+    bool                  success    = true;
     Ioss::PropertyManager properties = set_properties(interFace);
 
-    bool first = true;
     for (const auto &inpfile : interFace.inputFile) {
 
       //========================================================================
@@ -259,17 +276,6 @@ namespace {
         dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
-      if (!interFace.groupName.empty()) {
-        bool success = dbi->open_group(interFace.groupName);
-        if (!success) {
-          if (rank == 0) {
-            fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n",
-                       interFace.groupName, inpfile);
-          }
-          return;
-        }
-      }
-
       if (!interFace.omitted_blocks.empty()) {
         std::vector<std::string> inclusions{};
         dbi->set_block_omissions(interFace.omitted_blocks, inclusions);
@@ -278,6 +284,17 @@ namespace {
       // NOTE: 'region' owns 'db' pointer at this time...
       Ioss::Region region(dbi, "region_1");
 
+      // Change_set specified...  We will read the specified changeSet from the input file
+      if (!interFace.changeSetName.empty()) {
+        success = Ioss::Utils::check_valid_change_set_name(interFace.changeSetName, region, rank);
+        if (success) {
+          success = open_change_set(interFace.changeSetName, region, rank);
+        }
+        if (!success) {
+          return success;
+        }
+      }
+
       if (region.mesh_type() == Ioss::MeshType::HYBRID) {
         if (rank == 0) {
           fmt::print(stderr,
@@ -285,7 +302,7 @@ namespace {
                      "'Structured' mesh is supported at this time.\n",
                      region.mesh_type_string());
         }
-        return;
+        return success;
       }
 
       // Get length of longest name on input file...
@@ -306,6 +323,7 @@ namespace {
       if (int_byte_size_api == 8) {
         interFace.ints_64_bit = true;
       }
+
       //========================================================================
       // OUTPUT Database...
       //========================================================================
@@ -335,8 +353,15 @@ namespace {
       int flush_interval = interFace.flush_interval; // Default is zero -- do not flush until end
       properties.add(Ioss::Property("FLUSH_INTERVAL", flush_interval));
 
+      int change_set_count = dbi->num_internal_change_set();
+
       if (interFace.split_times == 0 || interFace.delete_timesteps || ts_count == 0 || append ||
-          interFace.inputFile.size() > 1) {
+          interFace.inputFile.size() > 1 ||
+          (change_set_count > 1 && interFace.changeSetName.empty())) {
+        if (interFace.inputFile.size() > 1 ||
+            (change_set_count > 1 && interFace.changeSetName.empty())) {
+          properties.add(Ioss::Property("ENABLE_FILE_GROUPS", "YES"));
+        }
         Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
             interFace.outFiletype, interFace.outputFile, Ioss::WRITE_RESTART,
             Ioss::ParallelUtils::comm_world(), properties);
@@ -355,19 +380,66 @@ namespace {
         if (interFace.inputFile.size() > 1) {
           properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND_GROUP));
 
-          if (!first) {
-            // Putting each file into its own output group...
-            // The name of the group will be the basename portion of the filename...
-            Ioss::FileInfo file(inpfile);
-            dbo->create_subgroup(file.tailname());
-          }
-          else {
-            first = false;
+          // Putting each file into its own change_set in the output file...
+          // The name of the change_set will be the basename portion of the filename...
+          Ioss::FileInfo file(inpfile);
+
+          success = dbo->create_internal_change_set(file.tailname());
+          if (!success) {
+            if (rank == 0) {
+              fmt::print(stderr, "ERROR: Unable to create change set {} in output file.\n",
+                         file.tailname());
+            }
+            return success;
           }
         }
 
-        // Do normal copy...
-        Ioss::copy_database(region, output_region, options);
+        if (change_set_count > 1 && interFace.changeSetName.empty()) {
+          bool           first = true;
+          Ioss::NameList cs_names;
+          if (!options.selected_change_sets.empty() && options.selected_change_sets != "ALL") {
+            cs_names = Ioss::tokenize(options.selected_change_sets, ",");
+            success  = true;
+            for (const auto &cs_name : cs_names) {
+              success &= Ioss::Utils::check_valid_change_set_name(cs_name, region);
+            }
+            if (!success) {
+              return false;
+            }
+          }
+          else {
+            cs_names = dbi->internal_change_set_describe();
+          }
+          for (const auto &cs_name : cs_names) {
+            success = region.load_internal_change_set_mesh(cs_name);
+            if (!success) {
+              if (rank == 0) {
+                fmt::print(stderr, "ERROR: Unable to open change set {} in input file.\n", cs_name);
+              }
+              return success;
+            }
+            output_region.reset_region();
+            output_region.get_database()->release_memory();
+            success = dbo->create_internal_change_set(cs_name);
+            if (!success) {
+              if (rank == 0) {
+                fmt::print(stderr, "ERROR: Unable to create change set {} in output file.\n",
+                           cs_name);
+              }
+              return success;
+            }
+            fmt::print(stderr, "Copying change set {}\n", cs_name);
+            if (!first) {
+              options.ignore_qa_info = true;
+            }
+            Ioss::copy_database(region, output_region, options);
+            first = false;
+          }
+        }
+        else {
+          // Do normal copy...
+          Ioss::copy_database(region, output_region, options);
+        }
 
         if (mem_stats) {
           dbo->release_memory();
@@ -453,6 +525,7 @@ namespace {
         dbi->progress("Memory Released... ");
       }
     } // loop over input files
+    return true;
   }
 
   bool file_compare(IOShell::Interface &interFace, int rank)
@@ -491,17 +564,6 @@ namespace {
 
     if (interFace.ints_64_bit) {
       dbi1->set_int_byte_size_api(Ioss::USE_INT64_API);
-    }
-
-    if (!interFace.groupName.empty()) {
-      bool success = dbi1->open_group(interFace.groupName);
-      if (!success) {
-        if (rank == 0) {
-          fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n", interFace.groupName,
-                     inpfile);
-        }
-        return false;
-      }
     }
 
     // NOTE: 'input_region1' owns 'dbi1' pointer at this time...
@@ -553,17 +615,6 @@ namespace {
 
     if (interFace.ints_64_bit) {
       dbi2->set_int_byte_size_api(Ioss::USE_INT64_API);
-    }
-
-    if (!interFace.groupName.empty()) {
-      bool success = dbi2->open_group(interFace.groupName);
-      if (!success) {
-        if (rank == 0) {
-          fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n", interFace.groupName,
-                     inpfile);
-        }
-        return false;
-      }
     }
 
     // NOTE: 'input_region2' owns 'dbi2' pointer at this time...
@@ -631,16 +682,27 @@ namespace {
       properties.add(Ioss::Property("IGNORE_INFO_RECORDS", "YES"));
     }
 
-    if (interFace.compression_level > 0 || interFace.shuffle || interFace.szip) {
+    if (interFace.compression_level > 0 || interFace.shuffle || interFace.szip || interFace.quant ||
+        interFace.zlib || interFace.zstd || interFace.bz2) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
       properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level));
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle)));
 
-      if (interFace.szip) {
+      if (interFace.zlib) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+      }
+      else if (interFace.szip) {
         properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
       }
-      else if (interFace.zlib) {
-        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+      else if (interFace.zstd) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "zstd"));
+      }
+      else if (interFace.bz2) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "bzip2"));
+      }
+
+      if (interFace.quant) {
+        properties.add(Ioss::Property("COMPRESSION_QUANTIZE_NSD", interFace.quantize_nsd));
       }
     }
 

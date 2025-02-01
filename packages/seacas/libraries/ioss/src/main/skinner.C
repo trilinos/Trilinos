@@ -65,11 +65,9 @@ namespace {
     size_t max_face = std::string("Face Count").length();
     for (auto &eb : ebs) {
       const std::string &name = eb->name();
-      if (name.length() > max_name) {
-        max_name = name.length();
-      }
-      size_t face_width = Ioss::Utils::number_width(boundary_faces[name].size());
-      max_face          = face_width > max_face ? face_width : max_face;
+      max_name                = std::max(max_name, name.length());
+      size_t face_width       = Ioss::Utils::number_width(boundary_faces[name].size());
+      max_face                = std::max(max_face, face_width);
     }
     max_name += 4; // Padding
     max_face += 4;

@@ -50,7 +50,7 @@ if (SEACASExodus_ENABLE_SHARED)
       # This keeps the library out of the `all_libs` targets...
       set_target_properties(exodus_shared PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
       set_target_properties(exodus_shared PROPERTIES OUTPUT_NAME exodus)
-      INSTALL(TARGETS exodus_shared DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+      INSTALL(TARGETS exodus_shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
    endif()
 endif()
 
@@ -68,11 +68,11 @@ if (SEACASExodus_ENABLE_STATIC)
    # This keeps the library out of the `all_libs` targets...
    set_target_properties(exodus_static PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
    set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
-   INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+   INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
    # For backwards compatibility, the C exodus library was called libexoIIv2c.a
    # Create a symbolic link from libexodus.a to libexoIIv2c.a -- do only for static lib
-   InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2c.a)
+   InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libexoIIv2c.a)
 endif()
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")

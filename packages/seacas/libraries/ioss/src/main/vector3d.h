@@ -29,18 +29,18 @@ public:
   vector3d &operator*=(double scalar);
   vector3d &operator/=(double scalar);
 
+  friend vector3d operator*(double scalar, const vector3d &from);
+  friend vector3d operator*(const vector3d &lhs, double scalar);
+  friend vector3d operator/(const vector3d &lhs, double scalar);
+
+  friend vector3d operator+(const vector3d &lhs, const vector3d &rhs);
+  friend vector3d operator-(const vector3d &lhs, const vector3d &rhs);
+
   double          length() const;
   double          normalize(double tolerance = 1e-06);
   vector3d        cross(const vector3d &from) const;
   static vector3d plane_normal(const vector3d &v1, const vector3d &v2, const vector3d &v3);
 };
-
-vector3d operator*(double scalar, const vector3d &from);
-vector3d operator*(const vector3d &lhs, double scalar);
-vector3d operator/(const vector3d &lhs, double scalar);
-
-vector3d operator+(const vector3d &lhs, const vector3d &rhs);
-vector3d operator-(const vector3d &lhs, const vector3d &rhs);
 
 //----------------------------------------------------------------------------
 inline vector3d vector3d::cross(const vector3d &from) const

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,17 +8,12 @@
 class vector3d
 {
 public:
-  // construction
-  vector3d();
+  vector3d() = default;
   vector3d(double X, double Y, double Z);
-  explicit vector3d(double location[3]);
-  vector3d(const vector3d &from);
+  explicit vector3d(const double location[3]);
 
   double x{}, y{}, z{};
 
-  vector3d &operator=(const vector3d &from);
-  bool      operator==(const vector3d &from) const;
-  bool      operator!=(const vector3d &from) const;
   void      set(double X, double Y, double Z);
   void      set(const double location[3]);
   vector3d &reverse();
@@ -33,16 +28,19 @@ public:
   vector3d &operator*=(double scalar);
   vector3d &operator/=(double scalar);
 
+  friend bool operator==(const vector3d &lhs, const vector3d &rhs);
+  friend bool operator!=(const vector3d &lhs, const vector3d &rhs);
+
+  friend vector3d operator*(double scalar, const vector3d &from);
+  friend vector3d operator*(const vector3d &lhs, double scalar);
+  friend vector3d operator/(const vector3d &lhs, double scalar);
+
+  friend vector3d operator+(const vector3d &lhs, const vector3d &rhs);
+  friend vector3d operator-(const vector3d &lhs, const vector3d &rhs);
+
   double   length() const;
   vector3d cross(const vector3d &from) const;
 };
-
-vector3d operator*(double scalar, const vector3d &from);
-vector3d operator*(const vector3d &lhs, double scalar);
-vector3d operator/(const vector3d &lhs, double scalar);
-
-vector3d operator+(const vector3d &lhs, const vector3d &rhs);
-vector3d operator-(const vector3d &lhs, const vector3d &rhs);
 
 //----------------------------------------------------------------------------
 inline vector3d vector3d::cross(const vector3d &from) const

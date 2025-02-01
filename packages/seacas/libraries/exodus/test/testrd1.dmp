@@ -14,7 +14,7 @@ num_node_sets =   2
 num_side_sets =   5
 
 after ex_get_coord, error =   0
-x coords = 
+x coords =
   0.0
   1.0
   1.0
@@ -43,7 +43,7 @@ x coords =
   3.0
   6.0
   0.0
-y coords = 
+y coords =
   0.0
   0.0
   1.0
@@ -72,7 +72,7 @@ y coords =
   2.0
   2.0
   2.0
-z coords = 
+z coords =
   0.0
   0.0
   0.0
@@ -112,25 +112,25 @@ after ex_get_prop_array, error =   0
 
 after ex_get_elem_map, error =   0
 element map id = 111
-elem_map(0) = 1 
-elem_map(1) = 2 
-elem_map(2) = 3 
-elem_map(3) = 4 
-elem_map(4) = 5 
-elem_map(5) = 6 
-elem_map(6) = 7 
-elem_map(7) = 8 
+elem_map(0) = 1
+elem_map(1) = 2
+elem_map(2) = 3
+elem_map(3) = 4
+elem_map(4) = 5
+elem_map(5) = 6
+elem_map(6) = 7
+elem_map(7) = 8
 
 after ex_get_elem_map, error =   0
 element map id = 222
-elem_map(0) = 2 
-elem_map(1) = 4 
-elem_map(2) = 6 
-elem_map(3) = 8 
-elem_map(4) = 10 
-elem_map(5) = 12 
-elem_map(6) = 14 
-elem_map(7) = 16 
+elem_map(0) = 2
+elem_map(1) = 4
+elem_map(2) = 6
+elem_map(3) = 8
+elem_map(4) = 10
+elem_map(5) = 12
+elem_map(6) = 14
+elem_map(7) = 16
 
 after ex_inquire, error = 0
 
@@ -150,34 +150,34 @@ after ex_get_prop_array, error =   0
 
 after ex_get_node_map, error =   0
 node map id = 333
-node_map(0) = 3 
-node_map(1) = 6 
-node_map(2) = 9 
-node_map(3) = 12 
-node_map(4) = 15 
-node_map(5) = 18 
-node_map(6) = 21 
-node_map(7) = 24 
-node_map(8) = 27 
-node_map(9) = 30 
-node_map(10) = 33 
-node_map(11) = 36 
-node_map(12) = 39 
-node_map(13) = 42 
-node_map(14) = 45 
-node_map(15) = 48 
-node_map(16) = 51 
-node_map(17) = 54 
-node_map(18) = 57 
-node_map(19) = 60 
-node_map(20) = 63 
-node_map(21) = 66 
-node_map(22) = 69 
-node_map(23) = 72 
-node_map(24) = 75 
-node_map(25) = 78 
-node_map(26) = 81 
-node_map(27) = 84 
+node_map(0) = 3
+node_map(1) = 6
+node_map(2) = 9
+node_map(3) = 12
+node_map(4) = 15
+node_map(5) = 18
+node_map(6) = 21
+node_map(7) = 24
+node_map(8) = 27
+node_map(9) = 30
+node_map(10) = 33
+node_map(11) = 36
+node_map(12) = 39
+node_map(13) = 42
+node_map(14) = 45
+node_map(15) = 48
+node_map(16) = 51
+node_map(17) = 54
+node_map(18) = 57
+node_map(19) = 60
+node_map(20) = 63
+node_map(21) = 66
+node_map(22) = 69
+node_map(23) = 72
+node_map(24) = 75
+node_map(25) = 78
+node_map(26) = 81
+node_map(27) = 84
 
 after ex_inquire, error = 0
 
@@ -363,7 +363,7 @@ after ex_get_node_set_ids, error =   0
 
 after ex_get_node_set_param, error =   0
 
-node set 20 parameters: 
+node set 20 parameters:
 num_nodes =  5
 
 after ex_get_node_set, error =   0
@@ -385,7 +385,7 @@ dist factors for node set 20
 
 after ex_get_node_set_param, error =   0
 
-node set 21 parameters: 
+node set 21 parameters:
 num_nodes =  3
 
 after ex_get_node_set, error =   0
@@ -421,16 +421,16 @@ after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
 after ex_get_concat_node_sets, error =   0
 
 concatenated node set info
-ids = 
+ids =
  20
  21
-num_nodes_per_set = 
+num_nodes_per_set =
   5
   3
-node_ind = 
+node_ind =
   0
   5
-node_list = 
+node_list =
  10
  11
  12
@@ -439,7 +439,7 @@ node_list =
  20
  21
  22
-dist_fact = 
+dist_fact =
 1.000
 2.000
 3.000
@@ -637,37 +637,37 @@ after ex_inquire: EX_INQ_SS_DF_LEN = 8,  error = 0
 
 after ex_get_concat_side_sets, error =   0
 concatenated side set info
-ids = 
+ids =
  30
  31
  32
  33
  34
-num_elem_per_set = 
+num_elem_per_set =
   2
   2
   7
   4
   2
-num_dist_per_set = 
+num_dist_per_set =
   4
   4
   0
   0
   0
-elem_ind = 
+elem_ind =
   0
   2
   4
  11
  15
-dist_ind = 
+dist_ind =
   0
   4
   8
   8
   8
-elem_list = 
+elem_list =
   3
   3
   1
@@ -685,7 +685,7 @@ elem_list =
   5
   6
   7
-side_list = 
+side_list =
   6
   4
   4
@@ -703,7 +703,7 @@ side_list =
   4
   1
   1
-dist_fact = 
+dist_fact =
 30.000
 30.100
 30.200
@@ -714,7 +714,7 @@ dist_fact =
 31.300
 
 after ex_get_qa, error =   0
-QA records = 
+QA records =
  'TESTWT1'
  'testwt1'
  '03/16/94'
@@ -727,7 +727,7 @@ QA records =
 after ex_inquire, error =   0
 
 after ex_get_info, error =   0
-info records = 
+info records =
  'This is the first information record.'
  'This is the second information record.'
  'This is the third information record.'

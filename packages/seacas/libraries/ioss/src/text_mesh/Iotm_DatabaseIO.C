@@ -643,6 +643,19 @@ namespace Iotm {
     }
   }
 
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double> timesteps;
+
+    int time_step_count = m_textMesh->timestep_count();
+    timesteps.reserve(time_step_count);
+    for (int i = 0; i < time_step_count; i++) {
+      timesteps.push_back(i);
+    }
+
+    return timesteps;
+  }
+
   void DatabaseIO::update_block_omissions_from_assemblies()
   {
     m_textMesh->update_block_omissions_from_assemblies(

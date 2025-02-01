@@ -7,8 +7,11 @@
  */
 #pragma once
 
+/* Define element info requests */
+enum class ElementInfo { NNODES = 0, NDIM = 2, NSIDE_NODES = 4, NSIDES = 5 };
+
 /* Define element types */
-enum E_Type {
+enum class ElementType {
   SPHERE,
   BAR2,
   BAR3,
@@ -49,61 +52,57 @@ enum E_Type {
   PYRAMID19,
   SHELL2,
   SHELL3,
+  BAR1D2,
+  BAR1D3,
   NULL_EL
 };
 
-extern const char *elem_name_from_enum(E_Type elem_type);
+extern const char *elem_name_from_enum(ElementType elem_type);
 
-extern E_Type get_elem_type(const char *elem_name, /* ExodusII element name */
-                            int         num_nodes, /* Number of nodes in the element */
-                            int         num_dim    /* Number of dimensions of the mesh */
+extern ElementType get_elem_type(const char *elem_name, /* ExodusII element name */
+                                 int         num_nodes, /* Number of nodes in the element */
+                                 int         num_dim    /* Number of dimensions of the mesh */
 );
 
-extern int get_elem_info(int    info,     /* The requested information */
-                         E_Type elem_type /* The element type */
-);
-
-template <typename INT>
-int get_side_id(E_Type etype, const INT *connect, int nsnodes, INT side_nodes[], int skip_check,
-                int partial_adj);
-
-template <typename INT>
-int get_side_id_hex_tet(E_Type     etype,       /* The element type */
-                        const INT *conn,        /* The element connectivity */
-                        int        nsnodes,     /* The number of side nodes */
-                        const INT  side_nodes[] /* The list of side node IDs */
+extern int get_elem_info(ElementInfo info,     /* The requested information */
+                         ElementType elem_type /* The element type */
 );
 
 template <typename INT>
-int ss_to_node_list(E_Type     etype,         /* The element type */
-                    const INT *connect,       /* The element connectivity */
-                    int        side_num,      /* The element side number */
-                    INT        ss_node_list[] /* The list of side node IDs */
+int get_side_id(ElementType etype, const INT *connect, int nsnodes, INT side_nodes[],
+                int skip_check, int partial_adj);
+
+template <typename INT>
+int get_side_id_hex_tet(ElementType etype,       /* The element type */
+                        const INT  *conn,        /* The element connectivity */
+                        int         nsnodes,     /* The number of side nodes */
+                        const INT   side_nodes[] /* The list of side node IDs */
 );
 
 template <typename INT>
-int get_ss_mirror(E_Type     etype,             /* The element type */
-                  const INT *ss_node_list,      /* The list of side node IDs */
-                  int        side_num,          /* The element side number */
-                  INT        mirror_node_list[] /* The list of the mirror side node IDs */
+int ss_to_node_list(ElementType etype,         /* The element type */
+                    const INT  *connect,       /* The element connectivity */
+                    int         side_num,      /* The element side number */
+                    INT         ss_node_list[] /* The list of side node IDs */
 );
 
-/* Define element info requests */
-#define NNODES      0
-#define NDIM        2
-#define NSIDE_NODES 4
-#define NSIDES      5
+template <typename INT>
+int get_ss_mirror(ElementType etype,             /* The element type */
+                  const INT  *ss_node_list,      /* The list of side node IDs */
+                  int         side_num,          /* The element side number */
+                  INT         mirror_node_list[] /* The list of the mirror side node IDs */
+);
 
 /* Define for the maximum number of nodes on an element side/face */
-#define MAX_SIDE_NODES 9
+const int MAX_SIDE_NODES = 9;
 /*
  * Define for the maximum number of sides (and hence communications
  * entries) that an element can have
  */
-#define MAX_ELEM_SIDES 6
+const int MAX_ELEM_SIDES = 6;
 
-int is_hex(E_Type etype);
-int is_tet(E_Type etype);
-int is_wedge(E_Type etype);
-int is_pyramid(E_Type etype);
-int is_3d_element(E_Type etype);
+bool is_hex(ElementType etype);
+bool is_tet(ElementType etype);
+bool is_wedge(ElementType etype);
+bool is_pyramid(ElementType etype);
+bool is_3d_element(ElementType etype);
