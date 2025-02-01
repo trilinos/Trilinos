@@ -1161,7 +1161,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
       return info_scotch;
     } else if(Options.verbose == BASKER_TRUE) {
-      printf( "\n part_scotch done (num_threads = %d,%lu)\n",num_threads,part_tree.leaf_nnz.extent(0) );
+      printf( "\n part_scotch done (num_threads = %d,%lu)\n",int(num_threads),part_tree.leaf_nnz.extent(0) );
       //for (Int i = 0; i < num_threads; i++) printf( " nnz_leaf[%d] = %d\n",i,part_tree.leaf_nnz[i] ); printf( "\n" );
     }
     nd_flag = BASKER_TRUE;

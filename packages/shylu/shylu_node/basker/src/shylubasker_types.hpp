@@ -162,7 +162,7 @@ enum BASKER_INCOMPLETE_CODE
 #define MALLOC_INT_1DARRAY_PAIRS(a,s)   \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC malloc_pairs_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {                      \
+    if (s > 0 && Int(a.extent(0)) != s) {                 \
       Kokkos::resize(a, s);                               \
       if(a.data() == NULL)                                \
         throw std::bad_alloc();                           \
@@ -171,7 +171,7 @@ enum BASKER_INCOMPLETE_CODE
 #define MALLOC_INT_1DARRAY(a,s)   \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC int_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {              \
+    if (s > 0 && Int(a.extent(0)) != s) {         \
       Kokkos::resize(a, s);                       \
       if(a.data() == NULL)                        \
         throw std::bad_alloc();                   \
@@ -181,16 +181,16 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s0>0, "BASKER ASSERT MALLOC int_rank2d: size to alloc > 0 fails"); \
     BASKER_ASSERT(s1>0, "BASKER ASSERT MALLOC int_rank2d: size to alloc > 0 fails"); \
-    if (a.extent(0) != s0 || a.extent(1) != s1) { \
-      Kokkos::resize(a, s0,s1);                   \
-      if(a.data() == NULL)                        \
-        throw std::bad_alloc();                   \
-    }                                             \
+    if (Int(a.extent(0)) != s0 || Int(a.extent(1)) != s1) { \
+      Kokkos::resize(a, s0,s1);                             \
+      if(a.data() == NULL)                                  \
+        throw std::bad_alloc();                             \
+    }                                                       \
   }
 #define MALLOC_INT_2DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0,"BASKER ASSERT MALLOC int_2d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {                                               \
+    if (s > 0 && Int(a.extent(0)) != s) {                                          \
       a = INT_2DARRAY(Kokkos::view_alloc("int_2d", Kokkos::SequentialHostInit),s); \
       if(a.data() == NULL)                                                         \
         throw std::bad_alloc();                                                    \
@@ -199,7 +199,7 @@ enum BASKER_INCOMPLETE_CODE
 #define MALLOC_ENTRY_1DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC entry_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {                  \
+    if (s > 0 && Int(a.extent(0)) != s) {             \
       Kokkos::resize(a, s);                           \
       if(a.data() == NULL)                            \
         throw std::bad_alloc();                       \
@@ -208,16 +208,16 @@ enum BASKER_INCOMPLETE_CODE
 #define MALLOC_ENTRY_2DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC entry_2d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {   \
+    if (s > 0 && Int(a.extent(0)) != s) {   \
       a = ENTRY_2DARRAY(Kokkos::view_alloc("matrix_2d", Kokkos::SequentialHostInit),s); \
-      if(a.data() == NULL)             \
-        throw std::bad_alloc();        \
-    }                                  \
+      if(a.data() == NULL)                  \
+        throw std::bad_alloc();             \
+    }                                       \
   }
 #define MALLOC_BOOL_1DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC bool_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {                 \
+    if (s > 0 && Int(a.extent(0)) != s) {            \
       Kokkos::resize(a, s);                          \
       if(a.data() == NULL)                           \
         throw std::bad_alloc();                      \
@@ -226,56 +226,56 @@ enum BASKER_INCOMPLETE_CODE
 #define MALLOC_BOOL_2DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC bool_2d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {  \
-      Kokkos::resize(a, s);           \
-      if(a.data() == NULL)            \
-        throw std::bad_alloc();       \
-    }                                 \
+    if (s > 0 && Int(a.extent(0)) != s) {  \
+      Kokkos::resize(a, s);                \
+      if(a.data() == NULL)                 \
+        throw std::bad_alloc();            \
+    }                                      \
   }
 #define MALLOC_MATRIX_1DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {     \
+    if (s > 0 && Int(a.extent(0)) != s) {  \
       a = MATRIX_1DARRAY(Kokkos::view_alloc("matrix_1d", Kokkos::SequentialHostInit),s); \
-      if(a.data() == NULL)               \
-        throw std::bad_alloc();          \
-    }                                    \
+      if(a.data() == NULL)                 \
+        throw std::bad_alloc();            \
+    }                                      \
   }
 #define MALLOC_MATRIX_2DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_2d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {     \
+    if (s > 0 && Int(a.extent(0)) != s) {  \
       a = MATRIX_2DARRAY(Kokkos::view_alloc("matrix_2d", Kokkos::SequentialHostInit),s); \
-      if(a.data() == NULL)               \
-        throw std::bad_alloc();          \
-    }                                    \
+      if(a.data() == NULL)                 \
+        throw std::bad_alloc();            \
+    }                                      \
   }
 #define MALLOC_MATRIX_VIEW_1DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_view_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {               \
+    if (s > 0 && Int(a.extent(0)) != s) {  \
       a = MATRIX_VIEW_1DARRAY(Kokkos::view_alloc("matrix_view_1d", Kokkos::SequentialHostInit),s); \
-      if(a.data() == NULL)                         \
-        throw std::bad_alloc();                    \
-    }                                              \
+      if(a.data() == NULL)                 \
+        throw std::bad_alloc();            \
+    }                                      \
   }
 #define MALLOC_MATRIX_VIEW_2DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_view_2d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {               \
+    if (s > 0 && Int(a.extent(0)) != s) {  \
       a = MATRIX_VIEW_2DARRAY(Kokkos::view_alloc("matrix_view_2d", Kokkos::SequentialHostInit),s); \
-      if(a.data() == NULL)                         \
-        throw std::bad_alloc();                    \
-    }                                              \
+      if(a.data() == NULL)                 \
+        throw std::bad_alloc();            \
+    }                                      \
   }
 #define MALLOC_THREAD_1DARRAY(a,s) \
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC thread_1d: size to alloc >= 0 fails"); \
-    if (s > 0 && a.extent(0) != s) {     \
+    if (s > 0 && Int(a.extent(0)) != s) {  \
       a = THREAD_1DARRAY(Kokkos::view_alloc("thread_1d", Kokkos::SequentialHostInit),s); \
-      if(a.data() == NULL)               \
-        throw std::bad_alloc();          \
-    }                                    \
+      if(a.data() == NULL)                 \
+        throw std::bad_alloc();            \
+    }                                      \
   }
 
 //REALLOC (no copy)

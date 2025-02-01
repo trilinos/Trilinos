@@ -357,6 +357,7 @@ namespace BaskerNS
     Kokkos::Timer timer;
     #endif
 
+    int err = 0;
     if(Options.verbose == BASKER_TRUE)
     {
       std::cout << "\n == Basker Symbolic ==" << std::endl;
@@ -533,21 +534,6 @@ namespace BaskerNS
       symb_flag = BASKER_TRUE;
     }
 
-
-    if(Options.verbose == BASKER_TRUE)
-    {
-      printf(" == Basker Symbolic Done ==\n\n"); fflush(stdout);
-    }
-
-    #ifdef BASKER_TIMER
-    time = timer.seconds();
-    stats.time_sfactor += time;
-    std::cout << "Basker Symbolic total time: " << time
-              << std::endl << std::endl;
-    std::cout.precision(old_precision);
-    std::cout.flags(old_settings);
-    #endif
-
     // NDE store matrix dims here for comparison in Factor
     sym_gn = A.ncol;
     sym_gm = A.nrow;
@@ -577,14 +563,30 @@ namespace BaskerNS
       }
     }
     printf("];\n");*/
-    if (btf_tabs_offset != 0) {
+    bool allocate_nd_workspace = (Options.blk_matching == 0 && Options.static_delayed_pivot == 0);
+    if (btf_tabs_offset != 0 && allocate_nd_workspace) {
       // setup data-structure for ND
       bool doSymbolic = true;
       bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
       bool alloc_BTFA = (Options.static_delayed_pivot != 0);
-      int err = sfactor_copy2(doSymbolic, alloc_BTFA, copy_BTFA);
+      err = sfactor_copy2(doSymbolic, alloc_BTFA, copy_BTFA);
     }
-    return 0;
+
+    #ifdef BASKER_TIMER
+    time = timer.seconds();
+    stats.time_sfactor += time;
+    std::cout << "Basker Symbolic total time: " << time
+              << std::endl << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
+
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf(" == Basker Symbolic Done ==\n\n"); fflush(stdout);
+    }
+
+    return err;
   } //end Symbolic()
 
 
@@ -1940,6 +1942,7 @@ namespace BaskerNS
     // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
     Kokkos::Timer timer_sfactorcopy;
     double sfactorcopy_time = 0.0;
+    bool doSymbolic_ND = (Options.blk_matching != 0 || Options.static_delayed_pivot != 0);
     if (btf_tabs_offset != 0) {
       bool flag = true;
       #ifdef BASKER_KOKKOS
@@ -1953,25 +1956,27 @@ namespace BaskerNS
       }*/
 
       Kokkos::Timer nd_setup2_timer;
-      #if 1//def BASKER_PARALLEL_INIT_WORKSPACE
-      kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
-        iWS(flag, this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
-      Kokkos::fence();
-      #else
-      for (Int p = 0; p < num_threads; p++) {
-        this->t_init_workspace(flag, p);
+      // if sfactor_copy2 has been called in symbolic
+      // then all the blocks have been allocated and can initialize them in parallel-for
+      // if not, then use non-parallel for
+      if (doSymbolic_ND) {
+        for (Int p = 0; p < num_threads; p++) {
+          this->t_init_workspace(flag, p);
+        }
+      } else {
+        kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
+          iWS(flag, this);
+        Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
+        Kokkos::fence();
       }
-      #endif
       if(Options.verbose == BASKER_TRUE) {
         std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
       }
       #endif
     }
-    bool doSymbolic = false;
     bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
     bool alloc_BTFA = (Options.static_delayed_pivot != 0);
-    err = sfactor_copy2(doSymbolic, alloc_BTFA, copy_BTFA);
+    err = sfactor_copy2(doSymbolic_ND, alloc_BTFA, copy_BTFA);
 
     if(Options.verbose == BASKER_TRUE) {
       sfactorcopy_time += timer_sfactorcopy.seconds();
