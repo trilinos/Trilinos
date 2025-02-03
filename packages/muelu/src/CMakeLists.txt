@@ -358,7 +358,6 @@ APPEND_GLOB(HEADERS */*/*/*.hpp)
 ###############################################
 SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
 APPEND_GLOB(SOURCES */*.cpp)
-APPEND_GLOB(SOURCES ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
 
 #
 # Explicit instantiation
