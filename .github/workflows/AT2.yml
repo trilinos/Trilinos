@@ -375,7 +375,7 @@ jobs:
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name ${GENCONFIG_BUILD_NAME}
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
