@@ -76,6 +76,7 @@ set(promoted_warnings
     sequence-point
     sign-compare
     strict-aliasing
+    switch
     type-limits
     uninitialized
     unused-function
