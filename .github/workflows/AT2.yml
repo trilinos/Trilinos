@@ -190,7 +190,7 @@ jobs:
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \ 
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
@@ -275,7 +275,7 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME} rhel8_cuda-11-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables
+          export GENCONFIG_BUILD_NAME=rhel8_cuda-11-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
