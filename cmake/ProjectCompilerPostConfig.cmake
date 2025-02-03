@@ -95,4 +95,6 @@ elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
     disable_warnings_for_deprecated_packages()
 endif()
 
-disable_warnings("${explicitly_disabled_warnings}")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    disable_warnings("${explicitly_disabled_warnings}")
+endif()
