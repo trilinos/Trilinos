@@ -72,7 +72,7 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
     }
     dv = dual_view_type (); // free first, in order to save memory
     // If current size is 0, the DualView's Views likely lack a label.
-    dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), newSize);
+    dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
     return true; // we did reallocate
   }
   else {
@@ -81,7 +81,7 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
         execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
       }
       // If current size is 0, the DualView's Views likely lack a label.
-      dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), 0);
+      dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), 0);
       return true; // we did reallocate
     }
     // Instead of writing curSize >= tooBigFactor * newSize, express
@@ -95,12 +95,13 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
       }
       dv = dual_view_type (); // free first, in order to save memory
       // If current size is 0, the DualView's Views likely lack a label.
-      dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), newSize);
+      dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
       return true; // we did reallocate
     }
     else {
-      dv.d_view = Kokkos::subview (dv.d_view, range_type (0, newSize));
-      dv.h_view = Kokkos::subview (dv.h_view, range_type (0, newSize));
+      auto d_view = Kokkos::subview (dv.view_device(), range_type (0, newSize));
+      auto h_view = Kokkos::subview (dv.view_host(), range_type (0, newSize));
+      dv = Kokkos::DualView<ValueType*, DeviceType>(d_view, h_view);
       return false; // we did not reallocate
     }
   }

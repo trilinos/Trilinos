@@ -365,7 +365,7 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
-    , k_numAllocPerRow_ (numEntPerRow.h_view)
+    , k_numAllocPerRow_ (numEntPerRow.view_host())
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
@@ -382,7 +382,7 @@ namespace Tpetra {
 
     if (debug_) {
       for (size_t r = 0; r < lclNumRows; ++r) {
-        const size_t curRowCount = numEntPerRow.h_view(r);
+        const size_t curRowCount = numEntPerRow.view_host()(r);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
            std::invalid_argument, "numEntPerRow(" << r << ") "
@@ -405,7 +405,7 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , k_numAllocPerRow_ (numEntPerRow.h_view)
+    , k_numAllocPerRow_ (numEntPerRow.view_host())
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
@@ -422,7 +422,7 @@ namespace Tpetra {
 
     if (debug_) {
       for (size_t r = 0; r < lclNumRows; ++r) {
-        const size_t curRowCount = numEntPerRow.h_view(r);
+        const size_t curRowCount = numEntPerRow.view_host()(r);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
            std::invalid_argument, "numEntPerRow(" << r << ") "

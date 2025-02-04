@@ -820,7 +820,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
   View<packet_type*, HostSpace, MemoryUnmanaged>
     exports_h (exports.getRawPtr (), exports.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
-  Kokkos::deep_copy (execution_space(), exports_h, exports_dv.d_view);
+  Kokkos::deep_copy (execution_space(), exports_h, exports_dv.view_device());
   execution_space().fence();
 }
 
