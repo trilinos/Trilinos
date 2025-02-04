@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -731,60 +731,65 @@ namespace Ioex {
       {
         Ioss::SerializeIO serializeIO_(this);
         timestepCount       = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-        int exTimestepCount = timestepCount;
-        // Need to sync timestep count across ranks if parallel...
-        if (isParallel) {
-          auto min_timestep_count =
-              util().global_minmax(timestepCount, Ioss::ParallelUtils::DO_MIN);
-          if (min_timestep_count == 0) {
-            auto max_timestep_count =
-                util().global_minmax(timestepCount, Ioss::ParallelUtils::DO_MAX);
-            if (max_timestep_count != 0) {
-              if (myProcessor == 0) {
-                // NOTE: Don't want to warn on all processors if the
-                // timestep count is zero on some, but not all ranks.
-                fmt::print(Ioss::WarnOut(),
-                           "At least one database has no timesteps.  No times will be read on ANY"
-                           " database for consistency.\n");
-              }
-            }
-          }
-          timestepCount = min_timestep_count;
-        }
-
-        if (timestepCount <= 0) {
-          return tsteps;
-        }
-
-        // For an exodus file, timesteps are global and are stored in the region.
-        // Read the timesteps and add to the region
-        tsteps.resize(exTimestepCount, -std::numeric_limits<double>::max());
-
-        // The `EXODUS_CALL_GET_ALL_TIMES=NO` is typically only used in
-        // isSerialParallel mode and the client is responsible for
-        // making sure that the step times are handled correctly.  All
-        // databases will know about the number of timesteps, but if
-        // this is skipped, then the times will all be zero.  Use case
-        // is that in isSerialParallel, each call to
-        // `ex_get_all_times` for all files is performed sequentially,
-        // so if you have hundreds to thousands of files, the time for
-        // the call is additive and since timesteps are record
-        // variables in netCDF, accessing the data for all timesteps
-        // involves lseeks throughout the file.
-        bool call_ex_get_all_times = true;
-        Ioss::Utils::check_set_bool_property(properties, "EXODUS_CALL_GET_ALL_TIMES",
-                                             call_ex_get_all_times);
-        if (call_ex_get_all_times) {
-          int error = ex_get_all_times(get_file_pointer(), Data(tsteps));
-          if (error < 0) {
-            Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-          }
-        }
-
-        // See if the "last_written_time" attribute exists and if it
-        // does, check that it matches the largest time in 'tsteps'.
-        exists = Ioex::read_last_time_attribute(get_file_pointer(), &last_time);
       }
+      int exTimestepCount = timestepCount;
+      // Need to sync timestep count across ranks if parallel...
+      if (isParallel) {
+	auto min_timestep_count =
+	  util().global_minmax(timestepCount, Ioss::ParallelUtils::DO_MIN);
+	if (min_timestep_count == 0) {
+	  auto max_timestep_count =
+	    util().global_minmax(timestepCount, Ioss::ParallelUtils::DO_MAX);
+	  if (max_timestep_count != 0) {
+	    if (myProcessor == 0) {
+	      // NOTE: Don't want to warn on all processors if the
+	      // timestep count is zero on some, but not all ranks.
+	      fmt::print(Ioss::WarnOut(),
+			 "At least one database has no timesteps.  No times will be read on ANY"
+			 " database for consistency.\n");
+	    }
+	  }
+	}
+	timestepCount = min_timestep_count;
+      }
+
+      if (timestepCount <= 0) {
+	return tsteps;
+      }
+
+      // For an exodus file, timesteps are global and are stored in the region.
+      // Read the timesteps and add to the region
+      tsteps.resize(exTimestepCount, -std::numeric_limits<double>::max());
+
+      // The `EXODUS_CALL_GET_ALL_TIMES=NO` is typically only used in
+      // isSerialParallel mode and the client is responsible for
+      // making sure that the step times are handled correctly.  All
+      // databases will know about the number of timesteps, but if
+      // this is skipped, then the times will all be zero.  Use case
+      // is that in isSerialParallel, each call to
+      // `ex_get_all_times` for all files is performed sequentially,
+      // so if you have hundreds to thousands of files, the time for
+      // the call is additive and since timesteps are record
+      // variables in netCDF, accessing the data for all timesteps
+      // involves lseeks throughout the file.
+      bool call_ex_get_all_times = true;
+      Ioss::Utils::check_set_bool_property(properties, "EXODUS_CALL_GET_ALL_TIMES",
+					   call_ex_get_all_times);
+      if (call_ex_get_all_times) {
+	Ioss::SerializeIO serializeIO_(this);
+	int error = ex_get_all_times(get_file_pointer(), Data(tsteps));
+	if (error < 0) {
+	  Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+	}
+      }
+
+      // See if the "last_written_time" attribute exists and if it
+      // does, check that it matches the largest time in 'tsteps'.
+      {
+	Ioss::SerializeIO serializeIO_(this);
+	exists = Ioex::read_last_time_attribute(get_file_pointer(), &last_time);
+      }
+
       if (exists && isParallel) {
         // Assume that if it exists on 1 processor, it exists on
         // all... Sync value among processors since could have a
