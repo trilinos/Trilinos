@@ -33,27 +33,27 @@ namespace Belos {
   class CGIterationStateBase {
 
   public:
-    virtual void initialize(Teuchos::RCP<const MV> tmp, int _numRHS) {
+    virtual void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
       TEUCHOS_ASSERT(!R.is_null());
       TEUCHOS_ASSERT(!Z.is_null());
       TEUCHOS_ASSERT(!P.is_null());
       TEUCHOS_ASSERT(!AP.is_null());
       isInitialized_ = true;
-      numRHS_ = _numRHS;
+      numVectors_ = _numVectors;
     }
 
     bool isInitialized() const { return isInitialized_; }
 
-    int numRHS() const { return numRHS_; }
+    int numVectors() const { return numVectors_; }
 
-    virtual bool matches(Teuchos::RCP<const MV> tmp, int _numRHS=1) const {
+    virtual bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
       using MVT = MultiVecTraits<ScalarType, MV>;
       return (isInitialized() &&
               !R.is_null() &&
               !Z.is_null() &&
               !P.is_null() &&
               !AP.is_null() &&
-              (numRHS() == _numRHS) &&
+              (numVectors() == _numVectors) &&
               (MVT::GetGlobalLength(*tmp) == MVT::GetGlobalLength(*R)));
     }
 
@@ -72,7 +72,7 @@ namespace Belos {
   private:
 
     bool isInitialized_;
-    int numRHS_;
+    int numVectors_;
 
   };
 

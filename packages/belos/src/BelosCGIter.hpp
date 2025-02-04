@@ -62,9 +62,9 @@ namespace Belos {
 
     virtual ~CGIterationState() = default;
 
-    void initialize(Teuchos::RCP<const MV> tmp, int _numRHS) {
+    void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
       using MVT = MultiVecTraits<ScalarType, MV>;
-      TEUCHOS_ASSERT(_numRHS == 1);
+      TEUCHOS_ASSERT(_numVectors == 1);
 
       // S = (R, Z)
       // This allows to compute the inner products (R, S) = ((R, R), (R, Z)) using a single reduction.
@@ -78,11 +78,11 @@ namespace Belos {
       this->P = MVT::Clone( *tmp, 1 );
       this->AP = MVT::Clone(*tmp, 1);
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numRHS);
+      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
     }
 
-    bool matches(Teuchos::RCP<const MV> tmp, int _numRHS=1) const {
-      return (CGIterationStateBase<ScalarType, MV>::matches(tmp, _numRHS) &&
+    bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
+      return (CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors) &&
               !S.is_null());
     }
 

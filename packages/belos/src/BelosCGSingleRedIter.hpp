@@ -62,10 +62,10 @@ namespace Belos {
 
     virtual ~CGSingleRedIterationState() = default;
 
-    void initialize(Teuchos::RCP<const MV> tmp, int _numRHS) {
+    void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
       using MVT = MultiVecTraits<ScalarType, MV>;
 
-      TEUCHOS_ASSERT(_numRHS == 1);
+      TEUCHOS_ASSERT(_numVectors == 1);
 
       // W = (AZ, R, Z)
       W = MVT::Clone( *tmp, 3 );
@@ -101,11 +101,11 @@ namespace Belos {
       index[0] = 1;
       this->P = MVT::CloneViewNonConst( *V, index );
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numRHS);
+      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
     }
 
-    bool matches(Teuchos::RCP<const MV> tmp, int _numRHS=1) const {
-      return (CGIterationStateBase<ScalarType, MV>::matches(tmp, _numRHS) &&
+    bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
+      return (CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors) &&
               !W.is_null() &&
               !V.is_null() &&
               !U.is_null() &&

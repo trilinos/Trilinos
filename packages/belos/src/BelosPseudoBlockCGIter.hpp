@@ -64,18 +64,18 @@ namespace Belos {
 
     virtual ~PseudoBlockCGIterationState() = default;
 
-    void initialize(Teuchos::RCP<const MV> tmp, int _numRHS) {
+    void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
       using MVT = MultiVecTraits<ScalarType, MV>;
-      this->R = MVT::Clone( *tmp, _numRHS );
-      this->Z = MVT::Clone( *tmp, _numRHS );
-      this->P = MVT::Clone( *tmp, _numRHS );
-      this->AP = MVT::Clone(*tmp, _numRHS );
+      this->R = MVT::Clone( *tmp, _numVectors );
+      this->Z = MVT::Clone( *tmp, _numVectors );
+      this->P = MVT::Clone( *tmp, _numVectors );
+      this->AP = MVT::Clone(*tmp, _numVectors );
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numRHS);
+      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
     }
 
-    bool matches(Teuchos::RCP<const MV> tmp, int _numRHS=1) const {
-      return CGIterationStateBase<ScalarType, MV>::matches(tmp, _numRHS);
+    bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
+      return CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors);
     }
 };
 
