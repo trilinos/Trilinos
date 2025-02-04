@@ -264,11 +264,11 @@ ENDIF()
 #
 # Just build this executable; don't run it as a test (yet).
 #
-# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# Intrepid2 has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
 IF(${PACKAGE_NAME}_ENABLE_Belos AND
-   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid2 AND
    ${PACKAGE_NAME}_ENABLE_Pamgen AND
    ${PACKAGE_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
