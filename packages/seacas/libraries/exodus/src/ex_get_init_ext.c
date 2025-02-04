@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -28,14 +28,21 @@ static void exi_get_entity_count(int exoid, ex_init_params *info)
 {
   int include_parent_group = 0; // Only want dims in current group
   int ndims                = 0;
+#if NC_HAS_NC4
   nc_inq_dimids(exoid, &ndims, NULL, include_parent_group);
   int *dimids = calloc(ndims, sizeof(int));
   nc_inq_dimids(exoid, &ndims, dimids, include_parent_group);
-
+#else
+  nc_inq(exoid, &ndims, NULL, NULL, NULL);
+#endif
   for (int dimid = 0; dimid < ndims; dimid++) {
     char   dim_nm[NC_MAX_NAME + 1] = {'\0'};
     size_t dim_sz;
+#if NC_HAS_NC4
     nc_inq_dim(exoid, dimids[dimid], dim_nm, &dim_sz);
+#else
+    nc_inq_dim(exoid, dimid, dim_nm, &dim_sz);
+#endif    
     /* For assemblies, we check for a dim starting with "num_entity_assembly" */
     if (strncmp(dim_nm, "num_entity_assembly", 19) == 0) {
       info->num_assembly++;
@@ -44,7 +51,9 @@ static void exi_get_entity_count(int exoid, ex_init_params *info)
       info->num_blob++;
     }
   }
+#if NC_HAS_NC4
   free(dimids);
+#endif
 }
 
 /* Used to reduce repeated code below */
