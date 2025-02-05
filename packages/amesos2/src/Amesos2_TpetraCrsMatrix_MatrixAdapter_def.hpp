@@ -128,6 +128,9 @@ namespace Amesos2 {
         }
         // Create new GID list for ColMap
         Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("colIndexList", nCols);
+        for (local_ordinal_t k = 0; k < nCols; k++) {
+          colIndexList(k) = indexBase-1; // initialize to catch col GIDs that are not in row GIDs
+        }
         typedef Tpetra::MultiVector<global_ordinal_t,
                                     local_ordinal_t,
                                     global_ordinal_t,
@@ -144,7 +147,7 @@ namespace Amesos2 {
           auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
           for(int i=0; i<nCols; i++) {
             if (col_view(i,0) < indexBase) {
-              // This indicate colMap has GIDs that are not in rowMap (rectangular matrix)
+              // This indicates colMap has GIDs that are not in rowMap (rectangular matrix)
               contigRowMap = RCP<map_t>();
               contigColMap = RCP<map_t>();
               return RCP<ConcreteMatrixAdapter<matrix_t>>();
