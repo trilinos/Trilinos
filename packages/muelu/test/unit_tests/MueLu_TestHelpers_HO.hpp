@@ -79,7 +79,7 @@ Build1DPseudoPoissonHigherOrder(GlobalOrdinal nx, int degree,
   int Nproc                           = comm->getSize();
 
   // Get maps
-  RCP<CrsMatrix> Acrs      = rcp_dynamic_cast<CrsMatrixWrap>(A)->getCrsMatrix();
+  RCP<CrsMatrix> Acrs      = toCrsMatrix(A);
   RCP<const Map> p1_colmap = Acrs->getColMap();
   RCP<const Map> p1_rowmap = Acrs->getRowMap();
 

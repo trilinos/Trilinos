@@ -77,7 +77,7 @@ void StratimikosSmoother<double, LocalOrdinal, GlobalOrdinal, Node>::SetupStrati
   if (recurMgOnFilteredA_) {
     RCP<Matrix> filteredA;
     ExperimentalDropVertConnections(filteredA, currentLevel);
-    thyraA = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(filteredA)->getCrsMatrix());
+    thyraA = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(toCrsMatrix(filteredA));
   } else
     thyraA = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A_)->getCrsMatrix());
 

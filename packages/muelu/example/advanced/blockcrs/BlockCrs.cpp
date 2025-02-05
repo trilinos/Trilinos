@@ -281,7 +281,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::string matrixType = galeriParameters.GetMatrixType();
       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Axp;
       MueLuExamples::generate_user_matrix_and_nullspace<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixType, lib, galeriList, comm, Axp, nullspace);
-      Acrs = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Axp);
+      Acrs = toTpetra(Axp);
     }
     // Block this bad boy
     Ablock = Tpetra::convertToBlockCrsMatrix<SC, LO, GO, NO>(*Acrs, blocksize);

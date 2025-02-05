@@ -965,8 +965,8 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
 
   // Apply
   if (InitialGuessIsZero || supportInitialGuess) {
-    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = Utilities::MV2NonConstTpetraMV(X);
-    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = Utilities::MV2TpetraMV(B);
+    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = toTpetra(X);
+    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = toTpetra(B);
     prec_->apply(tpB, tpX);
   } else {
     typedef Teuchos::ScalarTraits<Scalar> TST;
@@ -980,8 +980,8 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
 
     RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
-    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = Utilities::MV2NonConstTpetraMV(*Correction);
-    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = Utilities::MV2TpetraMV(*Residual);
+    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = toTpetra(*Correction);
+    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = toTpetra(*Residual);
 
     prec_->apply(tpB, tpX);
 

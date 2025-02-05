@@ -144,7 +144,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
     A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
     if (useAMGX) {
 #if defined(HAVE_MUELU_AMGX)
-      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Ac      = Utilities::Op2NonConstTpetraCrs(A);
+      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Ac      = toTpetra(A);
       RCP<Tpetra::Operator<SC, LO, GO, NO>> At       = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC, LO, GO, NO>>(Ac);
       RCP<MueLu::TpetraOperator<SC, LO, GO, NO>> Top = MueLu::CreateTpetraPreconditioner(At, mueluList);
       Prec                                           = Teuchos::rcp(new Xpetra::TpetraOperator<SC, LO, GO, NO>(Top));
@@ -259,7 +259,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Atpetra;
   Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO>> Xtpetra, Btpetra;
   if (lib == Xpetra::UseTpetra) {
-    Atpetra = Utilities::Op2NonConstTpetraCrs(A);
+    Atpetra = toTpetra(A);
     Xtpetra = rcp(&Xpetra::toTpetra(*X), false);
     Btpetra = rcp(&Xpetra::toTpetra(*B), false);
   }

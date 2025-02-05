@@ -133,8 +133,8 @@ coarse_file_sublist.set("R", "{1}");*/
   if (L->IsAvailable("R"))
     restr = L->template Get<RCP<Xpetra::Matrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>>("R");
 
-  RCP<crs_matrix_type> tpetra_prolong = MueLuUtilities::Op2NonConstTpetraCrs(prolong);
-  RCP<crs_matrix_type> tpetra_restr   = MueLuUtilities::Op2NonConstTpetraCrs(restr);
+  RCP<crs_matrix_type> tpetra_prolong = toTpetra(prolong);
+  RCP<crs_matrix_type> tpetra_restr   = toTpetra(restr);
 
   int mypid = GlobalComm_->getRank();
   GlobalComm_->barrier();

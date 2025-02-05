@@ -194,10 +194,10 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
     regionMats = rcp(new CrsMatrixWrap(revisedRowMap, revisedColMap, 9));
 
     // Extract current region CrsMatrix
-    RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionMats)->getCrsMatrix();
+    RCP<CrsMatrix> regionCrsMat = toCrsMatrix(regionMats);
 
     // Extract current quasi-region CrsMatrix
-    RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats)->getCrsMatrix();
+    RCP<CrsMatrix> quasiRegionCrsMat = toCrsMatrix(quasiRegionMats);
 
     // Pull out the data from the quasi-region CrsMatrix
     ArrayRCP<const size_t> rowptrQuasiRegion;
@@ -295,7 +295,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
   regDiag->update(-SC_ONE, *regCorrection, SC_ONE, *regNspViolation, SC_ONE);
 
   // Extract current region matrix in as CrsMatrix
-  RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionMats)->getCrsMatrix();
+  RCP<CrsMatrix> regionCrsMat = toCrsMatrix(regionMats);
   regionCrsMat->replaceDiag(*regDiag);
 
   tm = Teuchos::null;
@@ -348,10 +348,10 @@ void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOr
                                         regMat->getCrsGraph()->getLocalMaxNumRowEntries()));
 
     // Extract current quasi-region CrsMatrix
-    RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegMat)->getCrsMatrix();
+    RCP<CrsMatrix> quasiRegionCrsMat = toCrsMatrix(quasiRegMat);
 
     // Extract current region CrsMatrix
-    RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regMat)->getCrsMatrix();
+    RCP<CrsMatrix> regionCrsMat = toCrsMatrix(regMat);
 
     // Pull out the data from the region CrsMatrix
     Teuchos::ArrayRCP<const size_t> rowptrRegion;

@@ -248,7 +248,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // TODO: We could merge pass 1 and 2.
 
-  auto crsA  = rcp_dynamic_cast<CrsMatrixWrap>(A, true)->getCrsMatrix();
+  auto crsA  = toCrsMatrix(A);
   auto lclA  = crsA->getLocalMatrixDevice();
   auto range = range_type(0, lclA.numRows());
 
@@ -1016,7 +1016,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // TODO: We could merge pass 1 and 2.
 
-  auto crsA  = rcp_dynamic_cast<CrsMatrixWrap>(A, true)->getCrsMatrix();
+  auto crsA  = toCrsMatrix(A);
   auto lclA  = crsA->getLocalMatrixDevice();
   auto range = range_type(0, numNodes);
 
