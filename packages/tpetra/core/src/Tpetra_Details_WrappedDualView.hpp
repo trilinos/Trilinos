@@ -29,8 +29,8 @@
   if (envVarSet && (std::strcmp(envVarSet,"1") == 0)) \
     std::cout << (fn) << " called from " << callerstr \
               << " at " << filestr << ":"<<linnum \
-              << " host cnt " << dualView.h_view.use_count()  \
-              << " device cnt " << dualView.d_view.use_count()  \
+              << " host cnt " << dualView.view_host().use_count()  \
+              << " device cnt " << dualView.view_device().use_count()  \
               << std::endl; \
   }
 
@@ -210,7 +210,7 @@ public:
   }
 
   size_t extent(const int i) const {
-    return dualView.h_view.extent(i);
+    return dualView.view_host().extent(i);
   }
 
   void stride(size_t * stride_) const {
@@ -219,11 +219,11 @@ public:
 
 
   size_t origExtent(const int i) const {
-    return originalDualView.h_view.extent(i);
+    return originalDualView.view_host().extent(i);
   }
 
   const char * label() const {
-    return dualView.d_view.label();
+    return dualView.view_device().label();
   }
 
 
@@ -551,11 +551,11 @@ public:
   }
 
   int host_view_use_count() const {
-    return originalDualView.h_view.use_count();
+    return originalDualView.view_host().use_count();
   }
 
   int device_view_use_count() const {
-    return originalDualView.d_view.use_count();
+    return originalDualView.view_device().use_count();
   }
 
 
@@ -597,7 +597,7 @@ private:
   }
 
   bool memoryIsAliased() const {
-    return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
+    return deviceMemoryIsHostAccessible && dualView.view_host().data() == dualView.view_device().data();
   }
 
 
@@ -631,22 +631,22 @@ private:
   void throwIfViewsAreDifferentSizes() const {    
     // Here we check *size* (the product of extents) rather than each extent individually.
     // This is mostly designed to catch people resizing one view, but not the other.
-    if(dualView.d_view.size() != dualView.h_view.size()) {    
+    if(dualView.view_device().size() != dualView.view_host().size()) {    
         std::ostringstream msg;
-        msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
+        msg << "Tpetra::Details::WrappedDualView (name = " << dualView.view_device().label()
             << "; host and device views are different sizes: "
-            << dualView.h_view.size() << " vs " <<dualView.h_view.size();
+            << dualView.view_host().size() << " vs " <<dualView.view_host().size();
         throw std::runtime_error(msg.str());
     }
   }
 
   void throwIfHostViewAlive() const {
     throwIfViewsAreDifferentSizes();
-    if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
+    if (dualView.view_host().use_count() > dualView.view_device().use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
-          << "; host use_count = " << dualView.h_view.use_count()
-          << "; device use_count = " << dualView.d_view.use_count() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.view_device().label()
+          << "; host use_count = " << dualView.view_host().use_count()
+          << "; device use_count = " << dualView.view_device().use_count() << "): "
           << "Cannot access data on device while a host view is alive";
       throw std::runtime_error(msg.str());
     }
@@ -654,18 +654,18 @@ private:
 
   void throwIfDeviceViewAlive() const {
     throwIfViewsAreDifferentSizes();
-    if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
+    if (dualView.view_device().use_count() > dualView.view_host().use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
-          << "; host use_count = " << dualView.h_view.use_count()
-          << "; device use_count = " << dualView.d_view.use_count() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.view_device().label()
+          << "; host use_count = " << dualView.view_host().use_count()
+          << "; device use_count = " << dualView.view_device().use_count() << "): "
           << "Cannot access data on host while a device view is alive";
       throw std::runtime_error(msg.str());
     }
   }
  
   bool iAmASubview() {
-    return originalDualView.h_view != dualView.h_view;
+    return originalDualView.view_host() != dualView.view_host();
   }
 
   mutable DualViewType originalDualView;

@@ -72,10 +72,10 @@ namespace { // (anonymous)
 
     TEST_EQUALITY_CONST( X.extent (0), numRows );
     TEST_EQUALITY_CONST( X.extent (1), numCols );
-    TEST_EQUALITY_CONST( X.d_view.extent (0), numRows );
-    TEST_EQUALITY_CONST( X.d_view.extent (1), numCols );
-    TEST_EQUALITY_CONST( X.h_view.extent (0), numRows );
-    TEST_EQUALITY_CONST( X.h_view.extent (1), numCols );
+    TEST_EQUALITY_CONST( X.view_device().extent (0), numRows );
+    TEST_EQUALITY_CONST( X.view_device().extent (1), numCols );
+    TEST_EQUALITY_CONST( X.view_host().extent (0), numRows );
+    TEST_EQUALITY_CONST( X.view_host().extent (1), numCols );
     out << endl;
 
     newNumRows = numRows;
@@ -91,10 +91,10 @@ namespace { // (anonymous)
 
     TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
     TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (1), newNumCols );
     out << endl;
 
     newNumRows = numRows;
@@ -110,10 +110,10 @@ namespace { // (anonymous)
 
     TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
     TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (1), newNumCols );
     out << endl;
 
     newNumRows = 0;
@@ -129,10 +129,10 @@ namespace { // (anonymous)
 
     TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
     TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (1), newNumCols );
     out << endl;
 
     newNumRows = 0;
@@ -150,10 +150,10 @@ namespace { // (anonymous)
 
     TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
     TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_device().extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.view_host().extent (1), newNumCols );
     out << endl;
   }
 

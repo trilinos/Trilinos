@@ -2074,7 +2074,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
     // then all their owning process ranks, and then the values.
     if(exports.extent(0) != totalNumBytes)
     {
-      const std::string oldLabel = exports.d_view.label ();
+      const std::string oldLabel = exports.view_device().label ();
       const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
       exports = Kokkos::DualView<packet_type*, buffer_device_type>(newLabel, totalNumBytes);
     }
