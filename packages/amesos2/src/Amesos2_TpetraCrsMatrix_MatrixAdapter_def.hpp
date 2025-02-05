@@ -98,15 +98,17 @@ namespace Amesos2 {
                     const EPhase current_phase) const
     {
       typedef Tpetra::Map< local_ordinal_t, global_ordinal_t, node_t> contiguous_map_type;
-      auto rowMap = this->mat_->getRowMap();
-      auto colMap = this->mat_->getColMap();
-      auto rowComm = rowMap->getComm();
-      auto colComm = colMap->getComm();
-
+      using Teuchos::RCP;
+      using Teuchos::rcp;
 #ifdef HAVE_AMESOS2_TIMERS
       auto reindexTimer = Teuchos::TimeMonitor::getNewTimer("Time to re-index matrix gids");
       Teuchos::TimeMonitor ReindexTimer(*reindexTimer);
 #endif
+
+      auto rowMap = this->mat_->getRowMap();
+      auto colMap = this->mat_->getColMap();
+      auto rowComm = rowMap->getComm();
+      auto colComm = colMap->getComm();
 
       GlobalOrdinal indexBase = rowMap->getIndexBase();
       GlobalOrdinal numDoFs = this->mat_->getGlobalNumRows();
@@ -120,12 +122,12 @@ namespace Amesos2 {
         global_ordinal_t frow = tmpMap->getMinGlobalIndex();
 
         // Create new GID list for RowMap
-        Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("indexList", nRows);
+        Kokkos::View<global_ordinal_t*, HostExecSpaceType> rowIndexList ("rowIndexList", nRows);
         for (local_ordinal_t k = 0; k < nRows; k++) {
           rowIndexList(k) = frow+k; // based on index-base of rowMap
         }
         // Create new GID list for ColMap
-        Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("indexList", nCols);
+        Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("colIndexList", nCols);
         typedef Tpetra::MultiVector<global_ordinal_t,
                                     local_ordinal_t,
                                     global_ordinal_t,
@@ -140,7 +142,15 @@ namespace Amesos2 {
         {
           // col_mv is imported from rowIndexList, which is based on index-base of rowMap
           auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
-          for(int i=0; i<nCols; i++) colIndexList(i) = col_view(i,0);
+          for(int i=0; i<nCols; i++) {
+            if (col_view(i,0) < indexBase) {
+              // This indicate colMap has GIDs that are not in rowMap (rectangular matrix)
+              contigRowMap = RCP<map_t>();
+              contigColMap = RCP<map_t>();
+              return RCP<ConcreteMatrixAdapter<matrix_t>>();
+            }
+            colIndexList(i) = col_view(i,0);
+          }
         }
         // Create new Row & Col Maps (both based on indexBase of rowMap)
         contigRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
@@ -151,6 +161,10 @@ namespace Amesos2 {
         contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
       } else {
         // Build Matrix with contiguous Maps
+        if (contigRowMap.is_null() || contigColMap.is_null()) {
+          // symbolic construction of contiguous maps have failed (rectangular matrix)
+          return RCP<ConcreteMatrixAdapter<matrix_t>>();
+        }
         auto lclMatrix = this->mat_->getLocalMatrixDevice();
         auto importer  = this->mat_->getCrsGraph()->getImporter();
         auto exporter  = this->mat_->getCrsGraph()->getExporter();

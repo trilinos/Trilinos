@@ -453,7 +453,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
         Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
     }
 
-    local_ordinal_type nnz_ret = 0;
+    local_ordinal_type nnz_ret = -1;
     bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
     {
 #ifdef HAVE_AMESOS2_TIMERS
@@ -463,12 +463,16 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                       column_major, current_phase);
+          if (!contig_mat.is_null()) {
+            // reindex did not fail (e.g., not rectangular matrix)
+            nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
+                                         column_major, current_phase);
+          }
         } else {
           nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
                                            column_major, current_phase);
         }
+        // reindex failed (e.g., rectangular matrix) or
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
         // in case of the failure, it falls back to the original "do_get"
         if (nnz_ret < 0) gather_supported = false;
