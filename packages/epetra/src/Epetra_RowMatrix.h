@@ -218,13 +218,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
 
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
-       \f[\| A \|_\infty = \max_{1\lei\len} \sum_{i=1}^m |a_{ij}| \f].
+       \f[\| A \|_\infty = \max_{1\leq i\leq n} \sum_{i=1}^m |a_{ij}| \f].
     */
     virtual double NormInf() const = 0;
 
     //! Returns the one norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_1\f$ such that
-       \f[\| A \|_1= \max_{1\lej\len} \sum_{j=1}^n |a_{ij}| \f].
+       \f[\| A \|_1= \max_{1\leq j\leq n} \sum_{j=1}^n |a_{ij}| \f].
     */
     virtual double NormOne() const = 0;
 

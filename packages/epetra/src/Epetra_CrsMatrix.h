@@ -1042,14 +1042,14 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Returns the infinity norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_\infty\f$ such that
-     \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f]
+     \f[\| A \|_\infty = \max_{1\leq i\leq m} \sum_{j=1}^n |a_{ij}| \f]
      \warning The NormInf() method will not properly calculate the infinity norm for a matrix that has entries that are
      replicated on multiple processors.  */
   double NormInf() const;
 
   //! Returns the one norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_1\f$ such that
-     \f[\| A \|_1= \max_{1\lej\len} \sum_{i=1}^m |a_{ij}| \f].
+     \f[\| A \|_1= \max_{1\leq j\leq n} \sum_{i=1}^m |a_{ij}| \f].
      \warning The NormOne() method will not properly calculate the one norm for a matrix that has entries that are
      replicated on multiple processors.
   */
