@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
       std::cout << "Done with Symbolic"
                 << "\nError code: " << error
                 << "\nTime: " 
-        	      << totalTime(stime, myTime()) << std::endl;
+                << totalTime(stime, myTime()) << std::endl;
 
       double ftime = myTime();
       try
@@ -95,13 +95,14 @@ int main(int argc, char* argv[])
       }
       catch (std::runtime_error& e)
       {
-        std::cout << " ** Factor threw exception **" << std::endl;
+        std::cout << " ** Factor threw exception **" << std::endl
+                  << e.what () << std::endl;
         error = 1;
       }
       std::cout << "Done with Factor"
                 << "\nError code: " << error
                 << "\nTime: " 
-	              << totalTime(ftime, myTime()) << std::endl;
+                << totalTime(ftime, myTime()) << std::endl;
       //mybasker.DEBUG_PRINT();
     
       if (error == 0) {
