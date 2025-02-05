@@ -634,6 +634,44 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
               MueLu_runDroppingFunctors(drop_boundaries,
                                         preserve_diagonals,
                                         cut_drop);
+            } else if (distanceLaplacianMetric == "material") {
+              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
+              if (material->getNumVectors() == 1) {
+                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
+
+                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
+                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
+                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+
+                MueLu_runDroppingFunctors(drop_boundaries,
+                                          preserve_diagonals,
+                                          cut_drop);
+              } else {
+                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
+
+                {
+                  std::stringstream ss;
+                  ss << "material tensor mean =" << std::endl;
+                  size_t k = 0;
+                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
+                    ss << "   ";
+                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
+                      ss << material->getVector(k)->meanValue() << " ";
+                      ++k;
+                    }
+                    ss << std::endl;
+                  }
+                  GetOStream(Runtime0) << ss.str();
+                }
+
+                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
+                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
+                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+
+                MueLu_runDroppingFunctors(drop_boundaries,
+                                          preserve_diagonals,
+                                          cut_drop);
+              }
             }
           } else if (distanceLaplacianAlgoStr == "scaled cut") {
             if (distanceLaplacianMetric == "unweighted") {
@@ -644,6 +682,44 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
               MueLu_runDroppingFunctors(drop_boundaries,
                                         preserve_diagonals,
                                         cut_drop);
+            } else if (distanceLaplacianMetric == "material") {
+              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
+              if (material->getNumVectors() == 1) {
+                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
+
+                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
+                auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
+                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+
+                MueLu_runDroppingFunctors(drop_boundaries,
+                                          preserve_diagonals,
+                                          cut_drop);
+              } else {
+                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
+
+                {
+                  std::stringstream ss;
+                  ss << "material tensor mean =" << std::endl;
+                  size_t k = 0;
+                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
+                    ss << "   ";
+                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
+                      ss << material->getVector(k)->meanValue() << " ";
+                      ++k;
+                    }
+                    ss << std::endl;
+                  }
+                  GetOStream(Runtime0) << ss.str();
+                }
+
+                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
+                auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
+                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+
+                MueLu_runDroppingFunctors(drop_boundaries,
+                                          preserve_diagonals,
+                                          cut_drop);
+              }
             }
           } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
             if (distanceLaplacianMetric == "unweighted") {
@@ -654,6 +730,44 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
               MueLu_runDroppingFunctors(drop_boundaries,
                                         preserve_diagonals,
                                         cut_drop);
+            } else if (distanceLaplacianMetric == "material") {
+              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
+              if (material->getNumVectors() == 1) {
+                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
+
+                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
+                auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
+                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+
+                MueLu_runDroppingFunctors(drop_boundaries,
+                                          preserve_diagonals,
+                                          cut_drop);
+              } else {
+                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
+
+                {
+                  std::stringstream ss;
+                  ss << "material tensor mean =" << std::endl;
+                  size_t k = 0;
+                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
+                    ss << "   ";
+                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
+                      ss << material->getVector(k)->meanValue() << " ";
+                      ++k;
+                    }
+                    ss << std::endl;
+                  }
+                  GetOStream(Runtime0) << ss.str();
+                }
+
+                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
+                auto comparison = CutDrop::ScaledDistanceLaplacianComparison(*A, dist2, results);
+                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+
+                MueLu_runDroppingFunctors(drop_boundaries,
+                                          preserve_diagonals,
+                                          cut_drop);
+              }
             }
 
             auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
