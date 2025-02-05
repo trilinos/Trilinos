@@ -25,6 +25,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -44,6 +45,40 @@
 
 namespace Belos {
 
+  //! @name PseudoBlockCGIteration Structures
+  //@{
+
+  /** \brief Structure to contain pointers to PseudoBlockCGIteration state variables.
+   *
+   * This struct is utilized by PseudoBlockCGIteration::initialize() and PseudoBlockCGIteration::getState().
+   */
+  template <class ScalarType, class MV>
+  class PseudoBlockCGIterationState : public CGIterationStateBase<ScalarType, MV> {
+
+  public:
+    PseudoBlockCGIterationState() = default;
+
+    PseudoBlockCGIterationState(Teuchos::RCP<const MV> tmp) {
+      initialize(tmp);
+    }
+
+    virtual ~PseudoBlockCGIterationState() = default;
+
+    void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
+      using MVT = MultiVecTraits<ScalarType, MV>;
+      this->R = MVT::Clone( *tmp, _numVectors );
+      this->Z = MVT::Clone( *tmp, _numVectors );
+      this->P = MVT::Clone( *tmp, _numVectors );
+      this->AP = MVT::Clone(*tmp, _numVectors );
+
+      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
+    }
+
+    bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
+      return CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors);
+    }
+};
+
   template<class ScalarType, class MV, class OP>
   class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
@@ -52,10 +87,10 @@ namespace Belos {
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT;
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
-    typedef typename SCT::magnitudeType MagnitudeType;
+    using MVT = MultiVecTraits<ScalarType, MV>;
+    using OPT = OperatorTraits<ScalarType, MV, OP>;
+    using SCT = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename SCT::magnitudeType;
 
     //! @name Constructors/Destructor
     //@{
@@ -71,7 +106,7 @@ namespace Belos {
                           Teuchos::ParameterList &params );
 
     //! Destructor.
-    virtual ~PseudoBlockCGIter() {};
+    virtual ~PseudoBlockCGIter() = default;
     //@}
 
 
@@ -113,15 +148,14 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initializeCG(CGIterationState<ScalarType,MV>& newstate);
+    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
      */
     void initialize()
     {
-      CGIterationState<ScalarType,MV> empty;
-      initializeCG(empty);
+      initializeCG(Teuchos::null, Teuchos::null);
     }
 
     /*! \brief Get the current state of the linear solver.
@@ -131,13 +165,21 @@ namespace Belos {
      * \returns A CGIterationState object containing const pointers to the current
      * solver state.
      */
-    CGIterationState<ScalarType,MV> getState() const {
-      CGIterationState<ScalarType,MV> state;
-      state.R = R_;
-      state.P = P_;
-      state.AP = AP_;
-      state.Z = Z_;
+    Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
+      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV>());
+      state->R = R_;
+      state->P = P_;
+      state->AP = AP_;
+      state->Z = Z_;
       return state;
+    }
+
+    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
+      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(state, true);
+      R_ = s->R;
+      Z_ = s->Z;
+      P_ = s->P;
+      AP_ = s->AP;
     }
 
     //@}
@@ -185,7 +227,7 @@ namespace Belos {
 
     //! Sets whether or not to store the diagonal for condition estimation
     void setDoCondEst(bool val) {
-     if (numEntriesForCondEst_) doCondEst_=val;
+     if (numEntriesForCondEst_ != 0) doCondEst_=val;
     }
 
     //! Gets the diagonal for condition estimation
@@ -193,7 +235,7 @@ namespace Belos {
       // NOTE (mfh 30 Jul 2015) See note on getOffDiag() below.
       // getDiag() didn't actually throw for me in that case, but why
       // not be cautious?
-      typedef typename Teuchos::ArrayView<MagnitudeType>::size_type size_type;
+      using size_type = typename Teuchos::ArrayView<MagnitudeType>::size_type;
       if (static_cast<size_type> (iter_) >= diag_.size ()) {
         return diag_ ();
       } else {
@@ -208,7 +250,7 @@ namespace Belos {
       // debug mode) when the maximum number of iterations has been
       // reached, because iter_ == offdiag_.size() in that case.  The
       // new logic fixes this.
-      typedef typename Teuchos::ArrayView<MagnitudeType>::size_type size_type;
+      using size_type = typename Teuchos::ArrayView<MagnitudeType>::size_type;
       if (static_cast<size_type> (iter_) >= offdiag_.size ()) {
         return offdiag_ ();
       } else {
@@ -291,8 +333,8 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
-  {
+  void PseudoBlockCGIter<ScalarType, MV, OP>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType, MV> > newstate, Teuchos::RCP<MV> R_0) {
+
     // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
@@ -306,14 +348,11 @@ namespace Belos {
     int numRHS = MVT::GetNumberVecs(*tmp);
     numRHS_ = numRHS;
 
-    // Initialize the state storage
-    // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
-    if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
-      R_ = MVT::Clone( *tmp, numRHS_ );
-      Z_ = MVT::Clone( *tmp, numRHS_ );
-      P_ = MVT::Clone( *tmp, numRHS_ );
-      AP_ = MVT::Clone( *tmp, numRHS_ );
-    }
+    // Initialize the state storage if it isn't already.
+    TEUCHOS_ASSERT(!newstate.is_null());
+    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, numRHS_))
+      newstate->initialize(tmp, numRHS_);
+    setState(newstate);
 
     // Tracking information for condition number estimation
     if(numEntriesForCondEst_ > 0) {
@@ -321,25 +360,19 @@ namespace Belos {
       offdiag_.resize(numEntriesForCondEst_-1);
     }
 
-    // NOTE:  In CGIter R_, the initial residual, is required!!!
-    //
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    {
 
-    if (!Teuchos::is_null(newstate.R)) {
-
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*R_0) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*R_0) != numRHS_,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
-      if (newstate.R != R_) {
+      if (R_0 != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+        MVT::Assign( *R_0, *R_ );
       }
 
       // Compute initial direction vectors
@@ -357,14 +390,9 @@ namespace Belos {
         lp_->applyRightPrec( *R_, *Z_ );
       }
       else {
-        Z_ = R_;
+        MVT::Assign( *R_, *Z_ );
       }
-      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
-    }
-    else {
-
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
-                         "Belos::CGIter::initialize(): CGStateIterState does not have initial residual.");
+      MVT::Assign( *Z_, *P_ );
     }
 
     // The solver is initialized
@@ -380,14 +408,17 @@ namespace Belos {
     //
     // Allocate/initialize data structures
     //
-    if (initialized_ == false) {
+    if (!initialized_) {
       initialize();
     }
 
     // Allocate memory for scalars.
     int i=0;
     std::vector<int> index(1);
-    std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ ), beta( numRHS_ );
+    std::vector<ScalarType> rHz( numRHS_ );
+    std::vector<ScalarType> rHz_old( numRHS_ );
+    std::vector<ScalarType> pAp( numRHS_ );
+    std::vector<ScalarType> beta( numRHS_ );
     Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
@@ -477,7 +508,7 @@ namespace Belos {
         index[0] = i;
         Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
         Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv( one, *Z_i, beta[i], *P_i, *P_i );       
+        MVT::MvAddMv( one, *Z_i, beta[i], *P_i, *P_i );
       }
 
       // Condition estimate (if needed)
