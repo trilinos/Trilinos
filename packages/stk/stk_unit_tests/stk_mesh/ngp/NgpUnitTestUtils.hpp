@@ -29,7 +29,7 @@ DualViewType create_dualview(const std::string& name, unsigned size)
 {
   DualViewType result(name, size);
 
-  Kokkos::deep_copy(result.h_view, 0);
+  Kokkos::deep_copy(result.view_host(), 0);
   result.template modify<typename DualViewType::host_mirror_space>();
   result.template sync<typename DualViewType::execution_space>();
 
