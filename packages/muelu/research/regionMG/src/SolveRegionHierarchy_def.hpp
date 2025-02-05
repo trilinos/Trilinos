@@ -192,11 +192,11 @@ void MgCycle(const int levelID,  ///< ID of current level
 
         // From here on we switch to Tpetra for simplicity
         // we could also implement a similar Epetra branch
-        using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+        using Tpetra_Vector = Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
         //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
-        RCP<Tpetra_MultiVector> tX       = Utilities::MV2NonConstTpetraMV2(*compX);
-        RCP<const Tpetra_MultiVector> tB = Utilities::MV2TpetraMV(compRhs);
+        RCP<Tpetra_Vector> tX       = toTpetra(compX);
+        RCP<const Tpetra_Vector> tB = toTpetra(compRhs);
 
         /* Solve!
          *

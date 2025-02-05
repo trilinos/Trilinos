@@ -59,7 +59,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AMGXOperator, Apply, Scalar, LocalOrdinal, Glo
 
     // matrix
     RCP<Matrix> Op                                                         = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, -1, Xpetra::UseTpetra);
-    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(Op);
+    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = toTpetra(Op);
     RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tOp  = tpA;
     Teuchos::ParameterList params, dummyList;
     params.set("use external multigrid package", "amgx");
@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AMGXOperator, Apply, Scalar, LocalOrdinal, Glo
     RHS->putScalar((double)1.0);
     X->putScalar((double)0.0);
 
-    aH->apply(*(MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RHS)), *(MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(X)));
+    aH->apply(*(toTpetra(RHS)), *(toTpetra(X)));
     // if(comm->getSize() == 1) TEST_EQUALITY(aH->iters()==16,true);
     TEST_EQUALITY(aH->getStatus() == 0, true);
 

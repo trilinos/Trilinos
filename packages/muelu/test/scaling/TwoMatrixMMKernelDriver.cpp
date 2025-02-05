@@ -108,10 +108,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A,
 
   typedef typename Kokkos::View<MKL_INT *, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type> mkl_int_type;
 
-  RCP<const crs_matrix_type> Au  = Utilities::Op2TpetraCrs(rcp(&A, false));
-  RCP<const crs_matrix_type> B1u = Utilities::Op2TpetraCrs(rcp(&B1, false));
-  RCP<const crs_matrix_type> B2u = Utilities::Op2TpetraCrs(rcp(&B2, false));
-  RCP<const crs_matrix_type> Cu  = Utilities::Op2TpetraCrs(rcp(&C, false));
+  RCP<const crs_matrix_type> Au  = toTpetra(rcp(&A, false));
+  RCP<const crs_matrix_type> B1u = toTpetra(rcp(&B1, false));
+  RCP<const crs_matrix_type> B2u = toTpetra(rcp(&B2, false));
+  RCP<const crs_matrix_type> Cu  = toTpetra(rcp(&C, false));
   RCP<crs_matrix_type> Cnc       = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
   const KCRS &Amat  = Au->getLocalMatrixDevice();
@@ -308,10 +308,10 @@ void MM2_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
     LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     RCP<const import_type> Cimport;
-    RCP<const crs_matrix_type> Au  = Utilities::Op2TpetraCrs(rcp(&A, false));
-    RCP<const crs_matrix_type> B1u = Utilities::Op2TpetraCrs(rcp(&B1, false));
-    RCP<crs_matrix_type> B2u       = Teuchos::rcp_const_cast<crs_matrix_type>(Utilities::Op2TpetraCrs(rcp(&B2, false)));
-    RCP<const crs_matrix_type> Cu  = Utilities::Op2TpetraCrs(rcp(&C, false));
+    RCP<const crs_matrix_type> Au  = toTpetra(rcpFromRef(A));
+    RCP<const crs_matrix_type> B1u = toTpetra(rcp(&B1, false));
+    RCP<crs_matrix_type> B2u       = Teuchos::rcp_const_cast<crs_matrix_type>(toTpetra(rcp(&B2, false)));
+    RCP<const crs_matrix_type> Cu  = toTpetra(rcp(&C, false));
     RCP<crs_matrix_type> Cnc       = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
     // **********************************

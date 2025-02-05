@@ -906,7 +906,7 @@ LocalOrdinal SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ArrayRCP<LO> rcpColumns;
   ArrayRCP<SC> rcpValues;
 
-  RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs = toCrsMatrix(P);
   LO nnz              = Pptr[Ndofs];
   PCrs->allocateAllValues(nnz, rcpRowPtr, rcpColumns, rcpValues);
 
@@ -927,7 +927,7 @@ LocalOrdinal SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<CrsMatrix> RCrs;
   if (buildRestriction) {
     R    = rcp(new CrsMatrixWrap(coarseMap, rowMap, 0));
-    RCrs = rcp_dynamic_cast<CrsMatrixWrap>(R)->getCrsMatrix();
+    RCrs = toCrsMatrix(R);
     nnz  = Rptr[coarseMap->getLocalNumElements()];
     RCrs->allocateAllValues(nnz, RrcpRowPtr, RrcpColumns, RrcpValues);
 

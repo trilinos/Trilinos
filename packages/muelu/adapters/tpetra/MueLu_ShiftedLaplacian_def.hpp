@@ -101,7 +101,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setProblemMatrix(RCP<Matrix>& A) {
   A_ = A;
   if (A_ != Teuchos::null)
-    TpetraA_ = Utilities::Op2NonConstTpetraCrs(A_);
+    TpetraA_ = toTpetra(A_);
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
   if (LinearProblem_ != Teuchos::null)
     LinearProblem_->setOperator(TpetraA_);

@@ -344,8 +344,8 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdina
     typedef Tpetra::CrsMatrix<SC, LO, GO, NO> crs_matrix_type;
     typedef Tpetra::Import<LO, GO, NO> import_type;
 
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(A);
-    RCP<const crs_matrix_type> Pu = Utilities::Op2TpetraCrs(P);
+    RCP<const crs_matrix_type> Au = toTpetra(A);
+    RCP<const crs_matrix_type> Pu = toTpetra(P);
     if (Au->getComm()->getSize() == 1) return;
 
     // ==================

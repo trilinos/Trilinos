@@ -473,19 +473,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, 
     TEST_EQUALITY(mv.getData(0).size(), tpetraMV.getData(0).size());
   };
 
-  auto tpetraMV = Utils::MV2TpetraMV(vector);
+  auto tpetraMV = toTpetra(vector);
   compareMV(*vector, *tpetraMV);
 
-  auto tpetraMV2 = Utils::MV2TpetraMV(*vector);
+  auto tpetraMV2 = toTpetra(*vector);
   compareMV(*vector, tpetraMV2);
 
-  auto nonConstTpetraMV = Utils::MV2NonConstTpetraMV(vector);
+  auto nonConstTpetraMV = toTpetra(vector);
   compareMV(*vector, *nonConstTpetraMV);
 
-  auto nonConstTpetraMV2 = Utils::MV2NonConstTpetraMV2(*vector);
+  auto nonConstTpetraMV2 = toTpetra(vector);
   compareMV(*vector, *nonConstTpetraMV2);
 
-  auto nonConstTpetraMV3 = Utils::MV2NonConstTpetraMV(*vector);
+  auto nonConstTpetraMV3 = toTpetra(*vector);
   compareMV(*vector, nonConstTpetraMV3);
 
   using TpetraMat        = Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -500,16 +500,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, 
     TEST_EQUALITY(xpetraMat.getGlobalNumEntries(), tpetraMat.getGlobalNumEntries());
   };
 
-  auto tpetraCrsMat = Utils::Op2TpetraCrs(A);
+  auto tpetraCrsMat = toTpetra(A);
   compareMat(*A, *tpetraCrsMat);
 
-  auto nonConstTpetraCrs = Utils::Op2NonConstTpetraCrs(A);
+  auto nonConstTpetraCrs = toTpetra(A);
   compareMat(*A, *nonConstTpetraCrs);
 
-  auto tpetraCrs = Utils::Op2TpetraCrs(*A);
+  auto tpetraCrs = *toTpetra(A);
   compareMat(*A, tpetraCrs);
 
-  auto nonConstTpetraCrs2 = Utils::Op2NonConstTpetraCrs(*A);
+  auto nonConstTpetraCrs2 = *toTpetra(A);
   compareMat(*A, nonConstTpetraCrs2);
 
   auto crsMat = CrsMatrixFactory::Build(map);
@@ -529,7 +529,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, 
   auto nonConstTpetraRow = Utils::Op2NonConstTpetraRow(A);
   compareMat(*A, *nonConstTpetraRow);
 
-  auto tpetraMap = Utils::Map2TpetraMap(*map);
+  auto tpetraMap = toTpetra(map);
   TEST_INEQUALITY(tpetraMap, Teuchos::null);
   TEST_EQUALITY_CONST(tpetraMap->getGlobalNumElements(), map->getGlobalNumElements());
 

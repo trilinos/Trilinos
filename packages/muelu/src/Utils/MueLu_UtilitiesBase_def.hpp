@@ -1033,7 +1033,7 @@ DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
   Kokkos::View<bool*, typename NO::device_type::memory_space> boundaryNodes;
 
   if (helpers::isTpetraBlockCrs(A)) {
-    const Tpetra::BlockCrsMatrix<SC, LO, GO, NO>& Am = helpers::Op2TpetraBlockCrs(A);
+    const Tpetra::BlockCrsMatrix<SC, LO, GO, NO>& Am = toTpetraBlock(A);
     auto b_graph                                     = Am.getCrsGraph().getLocalGraphDevice();
     auto b_rowptr                                    = Am.getCrsGraph().getLocalRowPtrsDevice();
     auto values                                      = Am.getValuesDevice();

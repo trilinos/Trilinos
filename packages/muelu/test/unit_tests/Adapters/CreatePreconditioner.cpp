@@ -89,12 +89,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner, Scalar, L
     RCP<MultiVector> nullspace             = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(Op->getDomainMap(), 1);
     nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
-    RCP<tpetra_crsmatrix_type> tpA = MueLu::Utilities<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Op);
+    RCP<tpetra_crsmatrix_type> tpA = toTpetra(Op);
 
     out << "========== Create Preconditioner from xmlFile ==========" << std::endl;
     out << "xmlFileName: " << xmlFileName << std::endl;
     RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner<SC, LO, GO, NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
 #endif
@@ -213,16 +213,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner_XMLOnList,
     RCP<MultiVector> nullspace             = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(Op->getDomainMap(), 1);
     nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA = MueLu::Utilities<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Op);
+    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA = toTpetra(Op);
 
     RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner<SC, LO, GO, NO>(RCP<tpetra_operator_type>(tpA), mylist);
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
     mylist.set("xml parameter file", "testWithRebalance.xml");
 
-    RCP<Tpetra::MultiVector<real_type, LO, GO, NO> > tpcoordinates = MueLu::Utilities<real_type, LO, GO, NO>::MV2NonConstTpetraMV(coordinates);
-    RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpnullspace          = Utils::MV2NonConstTpetraMV(nullspace);
+    RCP<Tpetra::MultiVector<real_type, LO, GO, NO> > tpcoordinates = toTpetra(coordinates);
+    RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpnullspace          = toTpetra(nullspace);
 
     std::string mueluXML = mylist.get("xml parameter file", "");
     Teuchos::ParameterList mueluList;
@@ -232,7 +232,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner_XMLOnList,
     userParamList.set<RCP<Tpetra::MultiVector<SC, LO, GO, NO> > >("Nullspace", tpnullspace);
     tH = MueLu::CreateTpetraPreconditioner<SC, LO, GO, NO>(RCP<tpetra_operator_type>(tpA), mueluList);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
 #endif
@@ -360,9 +360,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner_PDESystem,
       RCP<MultiVector> X1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
-      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA                    = MueLu::Utilities<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Op);
-      RCP<Tpetra::MultiVector<real_type, LO, GO, NO> > tpcoordinates = MueLu::Utilities<real_type, LO, GO, NO>::MV2NonConstTpetraMV(coordinates);
-      RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpnullspace          = Utils::MV2NonConstTpetraMV(nullspace);
+      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA                    = toTpetra(Op);
+      RCP<Tpetra::MultiVector<real_type, LO, GO, NO> > tpcoordinates = toTpetra(coordinates);
+      RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpnullspace          = toTpetra(nullspace);
 
       Teuchos::ParameterList paramList;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *tpA->getDomainMap()->getComm());
@@ -370,7 +370,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner_PDESystem,
       userParamList.set<RCP<Tpetra::MultiVector<real_type, LO, GO, NO> > >("Coordinates", tpcoordinates);
       userParamList.set<RCP<Tpetra::MultiVector<SC, LO, GO, NO> > >("Nullspace", tpnullspace);
       RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner<SC, LO, GO, NO>(RCP<tpetra_operator_type>(tpA), paramList);
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+      tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
       std::cout << "Skip PetraOperator::CreatePreconditioner_PDESystem: Tpetra is not available (with GO=int enabled)" << std::endl;
@@ -480,17 +480,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, ReusePreconditioner, Scalar, Lo
     RCP<MultiVector> X1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA = MueLu::Utilities<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Op);
+    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA = toTpetra(Op);
 
     RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner<SC, LO, GO, NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
     // Reuse preconditioner
     MueLu::ReuseTpetraPreconditioner(tpA, *tH);
 
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
     std::cout << "Skip PetraOperator::ReusePreconditioner: Tpetra is not available (with GO=int enabled)" << std::endl;
@@ -587,21 +587,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, ReusePreconditioner2, Scalar, L
     RCP<MultiVector> X1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA    = MueLu::Utilities<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Op);
+    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA    = toTpetra(Op);
     RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner<SC, LO, GO, NO>(RCP<tpetra_operator_type>(tpA), params);
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
     // Reuse preconditioner
 
     matrixFile                                   = "TestMatrices/fuego1.mm";
     RCP<Matrix> Op2                              = Xpetra::IO<SC, LO, GO, Node>::Read(matrixFile, rowmap, null, null, null);
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA2 = MueLu::Utilities<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Op2);
+    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA2 = toTpetra(Op2);
 
     MueLu::ReuseTpetraPreconditioner(tpA2, *tH);
 
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
   } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
