@@ -3602,23 +3602,17 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
-    if (this->isFillComplete ()) {
-      const auto D_lcl = diag.getLocalViewDevice(Access::OverwriteAll);
-      // 1-D subview of the first (and only) column of D_lcl.
-      const auto D_lcl_1d =
-        Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
+    const auto D_lcl = diag.getLocalViewDevice(Access::OverwriteAll);
+    // 1-D subview of the first (and only) column of D_lcl.
+    const auto D_lcl_1d =
+      Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
-      const auto lclRowMap = rowMap.getLocalMap ();
-      const auto lclColMap = colMap.getLocalMap ();
-      using ::Tpetra::Details::getDiagCopyWithoutOffsets;
-      (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
-                                        lclColMap,
-                                        getLocalMatrixDevice ());
-    }
-    else {
-      using ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete;
-      (void) getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
-    }
+    const auto lclRowMap = rowMap.getLocalMap ();
+    const auto lclColMap = colMap.getLocalMap ();
+    using ::Tpetra::Details::getDiagCopyWithoutOffsets;
+    (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
+				      lclColMap,
+				      getLocalMatrixDevice ());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
