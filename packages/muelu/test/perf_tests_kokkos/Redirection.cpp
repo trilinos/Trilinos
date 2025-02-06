@@ -119,7 +119,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
     if (lib == Xpetra::UseTpetra) {
       typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tCrsMatrix;
-      RCP<const tCrsMatrix> tA = Utilities::Op2TpetraCrs(A);
+      RCP<const tCrsMatrix> tA = toTpetra(A);
       TEUCHOS_TEST_FOR_EXCEPTION(tA.is_null(), MueLu::Exceptions::RuntimeError,
                                  "A is not a Tpetra CrsMatrix");
 

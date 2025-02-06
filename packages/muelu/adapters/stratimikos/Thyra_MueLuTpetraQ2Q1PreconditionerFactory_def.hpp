@@ -848,7 +848,7 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
   for (int i = 0; i < valA.size(); i++) valB[i] = Teuchos::ScalarTraits<SC>::magnitude(valA[i]);
 
   RCP<Matrix> B       = rcp(new CrsMatrixWrap(A.getRowMap(), A.getColMap(), 0));
-  RCP<CrsMatrix> Bcrs = rcp_dynamic_cast<CrsMatrixWrap>(B)->getCrsMatrix();
+  RCP<CrsMatrix> Bcrs = toCrsMatrix(B);
   Bcrs->setAllValues(iaB, jaB, valB);
   Bcrs->expertStaticFillComplete(A.getDomainMap(), A.getRangeMap());
 

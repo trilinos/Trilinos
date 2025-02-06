@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
     // Cyr and would be Teko operators.
 
     int numElem             = A12->getRangeMap()->getLocalNumElements() + A21->getRangeMap()->getLocalNumElements();
-    RCP<const tMap> fullMap = Utilities::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
+    RCP<const tMap> fullMap = toTpetra(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm));
 
     RCP<tOperator> A;
     if (!binary)
