@@ -123,6 +123,9 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   SARMA           "cmake/TPLs/"    EX
   CDT             "cmake/TPLs/"    EX
   mpi_advance     "cmake/TPLs/"    EX
+  LLVM            "cmake/TPLs/"    EX
+  Binder          "cmake/TPLs/"    EX
+  pybind11        "cmake/TPLs/"    EX
   )
 
 # NOTES:
