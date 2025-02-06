@@ -6,13 +6,13 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperBackwardEulerVertex_decl_hpp
-#define Tempus_StepperBackwardEulerVertex_decl_hpp
+#ifndef Tempus_StepperExponentialEuler_decl_hpp
+#define Tempus_StepperExponentialEuler_decl_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperBackwardEulerVertexAppAction.hpp"
+#include "Tempus_StepperExponentialEulerAppAction.hpp"
 #include "Tempus_StepperOptimizationInterface.hpp"
 
 
@@ -72,7 +72,7 @@ namespace Tempus {
  *  \f]
  */
 template<class Scalar>
-class StepperBackwardEulerVertex :
+class StepperExponentialEuler :
     virtual public Tempus::StepperImplicit<Scalar>,
     virtual public Tempus::StepperOptimizationInterface<Scalar>
 {
@@ -83,10 +83,10 @@ public:
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
   */
-  StepperBackwardEulerVertex();
+  StepperExponentialEuler();
 
   /// Constructor
-  StepperBackwardEulerVertex(
+  StepperExponentialEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
@@ -94,14 +94,14 @@ public:
     std::string ICConsistency,
     bool ICConsistencyCheck,
     bool zeroInitialGuess,
-    const Teuchos::RCP<StepperBackwardEulerVertexAppAction<Scalar> >& stepperBEAppAction);
+    const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperBEAppAction);
 
   /// \name Basic stepper methods
   //@{
     virtual void setAppAction(
-      Teuchos::RCP<StepperBackwardEulerVertexAppAction<Scalar> > appAction);
+      Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperBackwardEulerVertexAppAction<Scalar> > getAppAction() const
+    virtual Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > getAppAction() const
     { return stepperBEAppAction_; }
 
     /// Set the predictor
@@ -199,7 +199,7 @@ private:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >                       predictorStepper_;
-  Teuchos::RCP<StepperBackwardEulerVertexAppAction<Scalar> > stepperBEAppAction_;
+  Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > stepperBEAppAction_;
 
 };
 
@@ -212,18 +212,18 @@ private:
  *  \f$\ddot{x}\f$ is not used and set to null.
  */
 template <typename Scalar>
-class StepperBackwardEulerVertexTimeDerivative
+class StepperExponentialEulerTimeDerivative
   : virtual public Tempus::TimeDerivative<Scalar>
 {
 public:
 
   /// Constructor
-  StepperBackwardEulerVertexTimeDerivative(
+  StepperExponentialEulerTimeDerivative(
     Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld)
   { initialize(s, xOld); }
 
   /// Destructor
-  virtual ~StepperBackwardEulerVertexTimeDerivative() {}
+  virtual ~StepperExponentialEulerTimeDerivative() {}
 
   /// Compute the time derivative.
   virtual void compute(
@@ -250,12 +250,12 @@ private:
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
 template<class Scalar>
-Teuchos::RCP<StepperBackwardEulerVertex<Scalar> >
-createStepperBackwardEulerVertex(
+Teuchos::RCP<StepperExponentialEuler<Scalar> >
+createStepperExponentialEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
   Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus
 
-#endif // Tempus_StepperBackwardEulerVertex_decl_hpp
+#endif // Tempus_StepperExponentialEuler_decl_hpp
