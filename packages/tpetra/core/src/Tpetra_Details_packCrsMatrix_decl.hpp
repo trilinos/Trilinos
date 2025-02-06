@@ -109,8 +109,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// \param exports [in/out] Output pack buffer; resized if needed.
 ///
 /// \param numPacketsPerLID [out] On output,
-///   numPacketsPerLID.d_view[k] is the number of bytes packed for row
-///   exportLIDs.d_view[k] of the local matrix.
+///   numPacketsPerLID.view_device()[k] is the number of bytes packed for row
+///   exportLIDs.view_device()[k] of the local matrix.
 ///
 /// \param exportLIDs [in] Local indices of the rows to pack.
 ///

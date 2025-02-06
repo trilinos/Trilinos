@@ -6269,7 +6269,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Allocate 'exports', and copy exports_a back into it.
       const size_t newAllocSize = static_cast<size_t> (exports_a.size ());
       if (static_cast<size_t> (exports.extent (0)) < newAllocSize) {
-        const std::string oldLabel = exports.d_view.label ();
+        const std::string oldLabel = exports.view_device().label ();
         const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
         exports = exports_type (newLabel, newAllocSize);
       }
@@ -6572,7 +6572,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (static_cast<size_t> (exports.extent (0)) < allocSize) {
       using exports_type = Kokkos::DualView<char*, buffer_device_type>;
 
-      const std::string oldLabel = exports.d_view.label ();
+      const std::string oldLabel = exports.view_device().label ();
       const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
       exports = exports_type (newLabel, allocSize);
     }

@@ -36,11 +36,11 @@ castAwayConstDualView (const Kokkos::DualView<const ValueType*, DeviceType>& inp
   typedef typename input_dual_view_type::t_host::non_const_type out_host_view_type;
 
   out_dev_view_type output_view_dev
-    (const_cast<ValueType*> (input_dv.d_view.data ()),
-     input_dv.d_view.extent (0));
+    (const_cast<ValueType*> (input_dv.view_device().data ()),
+     input_dv.view_device().extent (0));
   out_host_view_type output_view_host
-    (const_cast<ValueType*> (input_dv.h_view.data ()),
-     input_dv.h_view.extent (0));
+    (const_cast<ValueType*> (input_dv.view_host().data ()),
+     input_dv.view_host().extent (0));
 
   Kokkos::DualView<ValueType*, DeviceType> output_dv(output_view_dev,output_view_host);
   if(input_dv.need_sync_host()) output_dv.modify_device();

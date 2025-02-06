@@ -103,8 +103,8 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 /// \param exports [in/out] Output pack buffer; resized if needed.
 ///
 /// \param numPacketsPerLID [out] On output,
-///   numPacketsPerLID.d_view[k] is the number of bytes packed for row
-///   exportLIDs.d_view[k] of the local graph.
+///   numPacketsPerLID.view_device()[k] is the number of bytes packed for row
+///   exportLIDs.view_device()[k] of the local graph.
 ///
 /// \param exportLIDs [in] Local indices of the rows to pack.
 ///

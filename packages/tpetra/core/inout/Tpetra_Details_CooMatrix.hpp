@@ -1221,13 +1221,13 @@ protected:
         numPacketsPerLID_tmp.modify_host ();
       }
       // Fill numPacketsPerLID with zeros.
-      Kokkos::deep_copy (numPacketsPerLID.h_view, static_cast<size_t> (0));
+      Kokkos::deep_copy (numPacketsPerLID.view_host(), static_cast<size_t> (0));
       return;
     }
 
     const size_t numExports = exportLIDs.extent (0);
     if (numExports == 0) {
-      Details::reallocDualViewIfNeeded (exports, 0, exports.h_view.label ());
+      Details::reallocDualViewIfNeeded (exports, 0, exports.view_host().label ());
       return; // nothing to send
     }
     RCP<const Comm<int> > comm = src->getMap ().is_null () ?
@@ -1264,7 +1264,7 @@ protected:
       if (gblRow == ::Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
         // Mark the error later; just count for now.
         ++numInvalidRowInds;
-        numPacketsPerLID.h_view[k] = 0;
+        numPacketsPerLID.view_host()[k] = 0;
         continue;
       }
 
@@ -1276,7 +1276,7 @@ protected:
       if (errCode != 0) {
         std::ostream& err = this->markLocalErrorAndGetStream ();
         err << prefix << errStrm.str () << endl;
-        numPacketsPerLID.h_view[k] = 0;
+        numPacketsPerLID.view_host()[k] = 0;
         continue;
       }
 
@@ -1294,11 +1294,11 @@ protected:
         // leave the output arguments in a rational state, we zero out
         // all remaining entries of numPacketsPerLID before returning.
         for (size_t k2 = k; k2 < numExports; ++k2) {
-          numPacketsPerLID.h_view[k2] = 0;
+          numPacketsPerLID.view_host()[k2] = 0;
         }
         return;
       }
-      numPacketsPerLID.h_view[k] = static_cast<size_t> (numPackets);
+      numPacketsPerLID.view_host()[k] = static_cast<size_t> (numPackets);
       totalNumPackets = static_cast<int> (newTotalNumPackets);
     }
 
@@ -1352,9 +1352,9 @@ protected:
     std::vector<SC> vals;
 
     int outBufCurPos = 0;
-    packet_type* outBuf = exports.h_view.data ();
+    packet_type* outBuf = exports.view_host().data ();
     for (size_t k = 0; k < numExports; ++k) {
-      const LO lclRow = exportLIDs.h_view[k];
+      const LO lclRow = exportLIDs.view_host()[k];
       // We're packing the source object's data, so we need to use the
       // source object's Map to convert from local to global indices.
       const GO gblRow = src->map_->getGlobalElement (lclRow);
