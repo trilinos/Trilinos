@@ -85,8 +85,8 @@ makeStaticLocalMultiVector (const MultiVectorType& gblMv,
     // even if the scalar type doesn't define it; it just returns some
     // undefined value in the latter case.
     const IST nan = Kokkos::ArithTraits<IST>::nan ();
-    Kokkos::deep_copy (dv.d_view, nan);
-    Kokkos::deep_copy (dv.h_view, nan);
+    Kokkos::deep_copy (dv.view_device(), nan);
+    Kokkos::deep_copy (dv.view_host(), nan);
   }
   return MultiVectorType (lclMap, dv);
 }
