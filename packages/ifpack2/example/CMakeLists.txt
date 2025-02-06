@@ -36,6 +36,38 @@ ASSERT_DEFINED (
 )
 
 IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
+# Correctness test with maximum block size (32)
+# Use a small grid so that GPU memory requirement isn't too large
+# Block TriDi
+TRIBITS_ADD_TEST(
+  BlockTriDiagonalSolver
+  NAME BlockTriDiLargeBlock
+  ARGS "--matrixType=Laplace3D --blockSize=32 --nx=20 --ny=20 --nz=20"
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+)
+# Block TriDi with Schur line splitting
+TRIBITS_ADD_TEST(
+  BlockTriDiagonalSolver
+  NAME BlockTriDiLargeBlockSchur
+  ARGS "--matrixType=Laplace3D --blockSize=32 --nx=20 --ny=20 --nz=20 --sublinesPerLine=1 --sublinesPerLineSchur=2"
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+)
+# Block Jacobi
+TRIBITS_ADD_TEST(
+  BlockTriDiagonalSolver
+  NAME BlockTriDiLargeBlockJacobi
+  ARGS "--matrixType=Laplace3D --blockSize=32 --nx=20 --ny=20 --nz=20 --sublinesPerLine=-1"
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+)
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
 
   set(blockSize 11)
   set(nx 256)
