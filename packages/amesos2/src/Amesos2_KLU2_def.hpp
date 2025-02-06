@@ -453,7 +453,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
         Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
     }
 
-    local_ordinal_type nnz_ret = 0;
+    local_ordinal_type nnz_ret = -1;
     bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
     {
 #ifdef HAVE_AMESOS2_TIMERS
