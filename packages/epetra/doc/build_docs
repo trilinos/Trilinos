@@ -13,14 +13,10 @@ echo
 
 doxygen DoxyfileWeb
 
-echo
-echo "Generating epetra/thyra doxygen documentation ..."
-echo
+# --  Uncomment below if you want 
+# --  "Epetra Package Browser (Single Doxygen Collection)"
+#echo
+#echo "Generating doxygen browser documentation for all of epetra ..."
+#echo
 
-doxygen ../thyra/doc/Doxyfile
-
-echo
-echo "Generating doxygen browser documentation for all of epetra ..."
-echo
-
-doxygen ../browser/doc/Doxyfile
+#doxygen ../browser/doc/Doxyfile
