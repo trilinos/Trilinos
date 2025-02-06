@@ -134,7 +134,7 @@ public:
       kokkos_gids = view_ids_t(
         Kokkos::ViewAllocateWithoutInitializing("gids"), nids);
 
-      auto host_gids = kokkos_gids.h_view;
+      auto host_gids = kokkos_gids.view_host();
       for(size_t n = 0; n < nids; ++n) {
         host_gids(n) = gids_[n];
       }
@@ -150,7 +150,7 @@ public:
       typedef Kokkos::DualView<scalar_t **, device_t> view_weights_t;
       kokkos_weights = view_weights_t(
         Kokkos::ViewAllocateWithoutInitializing("weights"), nids, 0);
-      auto host_kokkos_weights = kokkos_weights.h_view;
+      auto host_kokkos_weights = kokkos_weights.view_host();
       for(size_t n = 0; n < nids; ++n) {
         host_kokkos_weights(n,0) = weights_[n];
       }
@@ -165,7 +165,7 @@ public:
       typedef Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft, device_t> kokkos_coords_t;
       kokkos_coords = kokkos_coords_t(
         Kokkos::ViewAllocateWithoutInitializing("coords"), nids, dim);
-      auto host_kokkos_coords = kokkos_coords.h_view;
+      auto host_kokkos_coords = kokkos_coords.view_host();
 
       for(size_t n = 0; n < nids; ++n) {
         for(int idx = 0; idx < dim; ++idx) {
@@ -190,7 +190,7 @@ public:
     ids = kokkos_gids.template view<device_t>();
   }
 
-  int getNumWeightsPerID() const { return (kokkos_weights.h_view.size() != 0); }
+  int getNumWeightsPerID() const { return (kokkos_weights.view_host().size() != 0); }
 
   void getWeightsView(const scalar_t *&wgt, int &stride,
                       int idx = 0) const override

@@ -441,7 +441,7 @@ namespace Zoltan2 {
 
         // D^{-1/2}
         dual_view_t dv ("MV::DualView", numRows, 1);
-        auto deginvsqrt = dv.d_view;
+        auto deginvsqrt = dv.view_device();
 
         // Get the diagonal offsets
         offset_view_t diagOffsets(Kokkos::view_alloc("Diag Offsets", Kokkos::WithoutInitializing), numRows);
