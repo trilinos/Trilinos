@@ -147,9 +147,7 @@ namespace Amesos2 {
         {
           // col_mv is imported from rowIndexList, which is based on index-base of rowMap
           auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
-          for(int i=0; i<nCols; i++) {
-            colIndexList(i) = col_view(i,0);
-          }
+          for(int i=0; i<nCols; i++) colIndexList(i) = col_view(i,0);
         }
         // Create new Row & Col Maps (both based on indexBase of rowMap)
         contigRowMap = rcp (new contiguous_map_type (numDoFs, rowIndexList.data(), nRows, indexBase, rowComm));
@@ -160,10 +158,6 @@ namespace Amesos2 {
         contiguous_t_mat = rcp( new matrix_t(contigRowMap, contigColMap, lclMatrix));
       } else {
         // Build Matrix with contiguous Maps
-        if (contigRowMap.is_null() || contigColMap.is_null()) {
-          // symbolic construction of contiguous maps have failed (rectangular matrix)
-          return RCP<ConcreteMatrixAdapter<matrix_t>>();
-        }
         auto lclMatrix = this->mat_->getLocalMatrixDevice();
         auto importer  = this->mat_->getCrsGraph()->getImporter();
         auto exporter  = this->mat_->getCrsGraph()->getExporter();
