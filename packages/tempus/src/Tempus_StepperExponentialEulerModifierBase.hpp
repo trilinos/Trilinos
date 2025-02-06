@@ -6,17 +6,17 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperBackwardEulerVertexModifierBase_hpp
-#define Tempus_StepperBackwardEulerVertexModifierBase_hpp
+#ifndef Tempus_StepperExponentialEulerModifierBase_hpp
+#define Tempus_StepperExponentialEulerModifierBase_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperBackwardEulerVertexAppAction.hpp"
+#include "Tempus_StepperExponentialEulerAppAction.hpp"
 
 
 namespace Tempus {
 
-/** \brief Base modifier for StepperBackwardEulerVertex.
+/** \brief Base modifier for StepperExponentialEuler.
  *
  *  This class provides a means to modify values (e.g., solution variables
  *  through SolutionHistory, and stepper member data through the Stepper),
@@ -30,12 +30,12 @@ namespace Tempus {
  *  derived from the default modifier (i.e., USER BEWARE!!).
  *
  *  The locations for these AppAction calls
- *  (StepperBackwardEulerVertexAppAction::ACTION_LOCATION) are shown in the
- *  algorithm documentation of the StepperBackwardEulerVertex.
+ *  (StepperExponentialEulerAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperExponentialEuler.
  */
 template<class Scalar>
-class StepperBackwardEulerVertexModifierBase
-  : virtual public Tempus::StepperBackwardEulerVertexAppAction<Scalar>
+class StepperExponentialEulerModifierBase
+  : virtual public Tempus::StepperExponentialEulerAppAction<Scalar>
 {
 private:
 
@@ -50,20 +50,20 @@ private:
    */
   void execute(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperBackwardEulerVertex<Scalar> > stepper,
-    const typename StepperBackwardEulerVertexAppAction<Scalar>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<StepperExponentialEuler<Scalar> > stepper,
+    const typename StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION actLoc)
   { this->modify(sh, stepper, actLoc); }
 
 public:
 
-  /// Modify BackwardEulerVertex Stepper.
+  /// Modify ExponentialEuler Stepper.
   virtual void modify(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperBackwardEulerVertex<Scalar> > /* stepper */,
-    const typename StepperBackwardEulerVertexAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+    Teuchos::RCP<StepperExponentialEuler<Scalar> > /* stepper */,
+    const typename StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
 
 };
 
 } // namespace Tempus
 
-#endif // Tempus_StepperBackwardEulerVertexModifierBase_hpp
+#endif // Tempus_StepperExponentialEulerModifierBase_hpp
