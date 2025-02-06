@@ -128,8 +128,10 @@ namespace Amesos2 {
         }
         // Create new GID list for ColMap
         Kokkos::View<global_ordinal_t*, HostExecSpaceType> colIndexList ("colIndexList", nCols);
+        // initialize to catch col GIDs that are not in row GIDs
+        // they will be all assigned to (n+1)th columns
         for (local_ordinal_t k = 0; k < nCols; k++) {
-          colIndexList(k) = indexBase-1; // initialize to catch col GIDs that are not in row GIDs
+          colIndexList(k) = numDoFs+indexBase;
         }
         typedef Tpetra::MultiVector<global_ordinal_t,
                                     local_ordinal_t,
@@ -146,12 +148,6 @@ namespace Amesos2 {
           // col_mv is imported from rowIndexList, which is based on index-base of rowMap
           auto col_view = col_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
           for(int i=0; i<nCols; i++) {
-            if (col_view(i,0) < indexBase) {
-              // This indicates colMap has GIDs that are not in rowMap (rectangular matrix)
-              contigRowMap = RCP<map_t>();
-              contigColMap = RCP<map_t>();
-              return RCP<ConcreteMatrixAdapter<matrix_t>>();
-            }
             colIndexList(i) = col_view(i,0);
           }
         }
@@ -324,9 +320,11 @@ namespace Amesos2 {
                 recvDispls(p+1) = recvDispls(p) + recvCounts(p);
               }
             }
-            // -- convert to global colids & convert to 0-base
+            // -- convert to global colids & ** convert to base-zero **
             KV_GO lclColind_ ("localColind_", lclColind.extent(0));
-            for (int i = 0; i < int(lclColind.extent(0)); i++) lclColind_(i) = (colMap->getGlobalElement((lclColind(i))) - colIndexBase);
+            for (int i = 0; i < int(lclColind.extent(0)); i++) {
+              lclColind_(i) = (colMap->getGlobalElement((lclColind(i))) - colIndexBase);
+            }
             if (column_major || need_to_perm) {
               Kokkos::resize(indices_t, indices.extent(0));
               Teuchos::gatherv<int, LocalOrdinal> (lclColind_.data(), lclColind_.extent(0), indices_t.data(),
@@ -343,6 +341,7 @@ namespace Amesos2 {
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
+            // (note: column idexes are now in base-0)
             if (column_major) {
               // Map to transpose
               Kokkos::resize(transpose_map, ret);
@@ -364,9 +363,14 @@ namespace Amesos2 {
                 int i = perm_l2g(row);
                 for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
                   int col = indices_t(k);
-                  transpose_map(k) = pointers(1+col);
-                  indices(pointers(1+col)) = row;
-                  pointers(1+col) ++;
+                  if (col < nRows) {
+                    transpose_map(k) = pointers(1+col);
+                    indices(pointers(1+col)) = row;
+                    pointers(1+col) ++;
+                  } else {
+                    // extra columns
+                    transpose_map(k) = -1;
+                  }
                 }
               }
             } else if (need_to_perm) {
@@ -383,9 +387,13 @@ namespace Amesos2 {
                 int row = perm_g2l(i);
                 for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
                   int col = indices_t(k);
-                  transpose_map(k) = pointers(1+row);
-                  indices(pointers(1+row)) = col;
-                  pointers(1+row) ++;
+                  if (col < nRows) {
+                    transpose_map(k) = pointers(1+row);
+                    indices(pointers(1+row)) = col;
+                    pointers(1+row) ++;
+                  } else {
+                    transpose_map(k) = -1;
+                  }
                 }
               }
             } else {
@@ -426,7 +434,9 @@ namespace Amesos2 {
 #endif
             if (transpose_map.extent(0) > 0) {
               for (int k=0; k<ret; k++) {
-                nzvals(transpose_map(k)) = nzvals_t(k);
+                if (transpose_map(k) >= 0) {
+                  nzvals(transpose_map(k)) = nzvals_t(k);
+                }
               }
             }
           }
