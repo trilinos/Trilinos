@@ -587,7 +587,7 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
       Kokkos::resize(colptr_view_, this->globalNumCols_ + 1); //this will be wrong for case of gapped col ids, e.g. 0,2,4,9; num_cols = 10 ([0,10)) but num GIDs = 4...
     }
 
-    local_ordinal_type nnz_ret = 0;
+    local_ordinal_type nnz_ret = -1;
     bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
     {
     #ifdef HAVE_AMESOS2_TIMERS
