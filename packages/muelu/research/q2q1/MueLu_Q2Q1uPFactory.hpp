@@ -590,7 +590,7 @@ void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fin
 
     // FIXME: remove magic number 30
     RCP<Matrix> amalgA        = MatrixFactory::Build(nodeMap, nodeMap, 30);
-    RCP<CrsMatrix> amalgA_crs = rcp_dynamic_cast<CrsMatrixWrap>(amalgA)->getCrsMatrix();
+    RCP<CrsMatrix> amalgA_crs = toCrsMatrix(amalgA);
 
     // FIXME: this should be written similar to CoalesceDropFactory Merge
     for (LO row = 0; row < as<LO>(AForPat->getRowMap()->getLocalNumElements()); row += NDim) {
@@ -1665,7 +1665,7 @@ void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase() + offset, rowMap->getComm());
 
   P                   = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
-  RCP<CrsMatrix> Pcrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> Pcrs = toCrsMatrix(P);
 
   ArrayRCP<size_t> iaP;
   ArrayRCP<LO> jaP;

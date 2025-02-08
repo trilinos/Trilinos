@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
         break;
 
         case TYPE_LAST:
+        default:
           ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Error: Unsupported problem type!");
         break;
       }

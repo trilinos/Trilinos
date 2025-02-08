@@ -76,6 +76,7 @@ set(promoted_warnings
     sequence-point
     sign-compare
     strict-aliasing
+    switch
     type-limits
     uninitialized
     unused-function
@@ -95,4 +96,6 @@ elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
     disable_warnings_for_deprecated_packages()
 endif()
 
-disable_warnings("${explicitly_disabled_warnings}")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    disable_warnings("${explicitly_disabled_warnings}")
+endif()

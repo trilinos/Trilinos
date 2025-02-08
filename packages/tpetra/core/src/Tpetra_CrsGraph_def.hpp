@@ -7465,7 +7465,7 @@ namespace Tpetra {
     output = this->haveLocalConstants_ == graph.haveLocalConstants_ ? output : false;
     output = this->haveGlobalConstants_ == graph.haveGlobalConstants_ ? output : false;
     output = this->haveLocalOffRankOffsets_ == graph.haveLocalOffRankOffsets_ ? output : false;
-    output = this->sortGhostsAssociatedWithEachProcessor_ == this->sortGhostsAssociatedWithEachProcessor_ ? output : false;
+    output = this->sortGhostsAssociatedWithEachProcessor_ == graph.sortGhostsAssociatedWithEachProcessor_ ? output : false;
 
     // Compare nonlocals_ -- std::map<GlobalOrdinal, std::vector<GlobalOrdinal> >
     // nonlocals_ isa std::map<GO, std::vector<GO> >
