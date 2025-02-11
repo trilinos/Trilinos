@@ -476,8 +476,8 @@ private:
     }
 
     // Convenience typedefs
-    typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-    typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+    typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+    typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
 
     if (impConvTest_.is_null()) {
       impConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
