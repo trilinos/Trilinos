@@ -70,6 +70,7 @@ set(promoted_warnings
     format-zero-length
     init-self
     int-to-pointer-cast
+    non-virtual-dtor
     parentheses
     reorder
     return-type
