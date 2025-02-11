@@ -42,6 +42,8 @@ namespace Belos {
       numVectors_ = _numVectors;
     }
 
+    virtual ~CGIterationStateBase() = default;
+
     bool isInitialized() const { return isInitialized_; }
 
     int numVectors() const { return numVectors_; }
