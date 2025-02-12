@@ -342,7 +342,7 @@ namespace Belos {
     //TODO: Is there a better way to handle this?
         std::cout << "GetRawHostPtr: Modifying on host." << std::endl;
         dm.modify_host();
-        return reinterpret_cast<Scalar*>(dm.h_view.data());
+        return reinterpret_cast<Scalar*>(dm.view_host().data());
     //TODO: Is there any way that the user could hold on to this pointer...
     // and everything works fine the first time they pass to LAPACK. 
     // But then... they call MvTimesMatAddMv which syncs to device. 
@@ -353,7 +353,7 @@ namespace Belos {
 
     //! \brief Returns a raw pointer to const data on the host.
     static Scalar const * GetConstRawHostPtr(const Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
-        return reinterpret_cast<Scalar const *>(dm.h_view.data());
+        return reinterpret_cast<Scalar const *>(dm.view_host().data());
     }
 
     //! \brief Marks host data modified to avoid device sync errors. 
@@ -438,7 +438,7 @@ namespace Belos {
       if(initZero){
         std::cout << "in reshape initZero." << std::endl;
         dm.realloc(numRows,numCols); //changes size of both host and device view.
-        Kokkos::deep_copy(dm.d_view, 0.0);
+        Kokkos::deep_copy(dm.view_device(), 0.0);
         dm.modify_device();
         std::cout << "Reshape: Modified on device." << std::endl;
       }
@@ -458,13 +458,13 @@ namespace Belos {
     //Mark as modified on host, since we don't know if it will be. 
         std::cout << "Value: Modifying on host." << std::endl;
       dm.modify_host();
-      return reinterpret_cast<Scalar&>(dm.h_view(i,j));
+      return reinterpret_cast<Scalar&>((dm.view_host())(i,j));
       // TODO Will this result in extra syncs? Is always marking modified the best way?
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
     static const Scalar & ValueConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
-      return reinterpret_cast<Scalar const &>(dm.h_view(i,j));
+      return reinterpret_cast<Scalar const &>((dm.view_host())(i,j));
       //TODO check const semantics here?
     }
 
@@ -482,7 +482,7 @@ namespace Belos {
       std::cout << "Called Sync Device to Host. " << std::endl;
         std::cout << "Matrix extents are: " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
       if(dm.need_sync_host()){
-        if(dm.h_view.span_is_contiguous() && dm.d_view.span_is_contiguous()){
+        if(dm.view_host().span_is_contiguous() && dm.view_device().span_is_contiguous()){
         std::cout << "Syncing d2h the easy way... " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
         //Stupidness to print type info: int int1 = dm.d_view;
         dm.sync_host();}
@@ -500,7 +500,7 @@ namespace Belos {
     static void SyncHostToDevice(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
       std::cout << "Called Sync Host to Device. " << std::endl;
       if(dm.need_sync_device()){
-        if(dm.h_view.span_is_contiguous() && dm.d_view.span_is_contiguous()){
+        if(dm.view_host().span_is_contiguous() && dm.view_device().span_is_contiguous()){
           std::cout << "h2d sync easy way..." << std::endl;
           dm.sync_device();
         }
@@ -519,21 +519,21 @@ namespace Belos {
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& thisDM, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& sourceDM) {
-      KokkosBlas::axpy(1.0,sourceDM.d_view, thisDM.d_view); //axpy(alpha,x,y), y = y + alpha*x
+      KokkosBlas::axpy(1.0,sourceDM.view_device(), thisDM.view_device()); //axpy(alpha,x,y), y = y + alpha*x
       thisDM.modify_device();
         std::cout << "Add: Modified on device." << std::endl;
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
-      Kokkos::deep_copy( dm.d_view, value);
+      Kokkos::deep_copy( dm.view_device(), value);
       dm.modify_device();
         std::cout << "PutScalar: Modified on device." << std::endl;
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
     static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) { 
-      KokkosBlas::scal( dm.d_view, value, dm.d_view);
+      KokkosBlas::scal( dm.view_device(), value, dm.view_device());
       dm.modify_device();
         std::cout << "Scale: Modified on device." << std::endl;
     }
@@ -543,7 +543,7 @@ namespace Belos {
     static void Randomize( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
       int rand_seed = std::rand();
       Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
-      Kokkos::fill_random(dm.d_view, pool, -1,1);
+      Kokkos::fill_random(dm.view_device(), pool, -1,1);
       dm.modify_device();
       std::cout << "Randomize: Modified on device." << std::endl;
     }
@@ -563,7 +563,7 @@ namespace Belos {
       Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
           KOKKOS_LAMBDA(size_t i, size_t j, mag_t& lfrobNorm)
           {
-          mag_t absVal = KAT::abs(dm.d_view(i, j));
+          mag_t absVal = KAT::abs((dm.view_device())(i, j));
           lfrobNorm += absVal * absVal;
           }, frobNorm);
       return Kokkos::sqrt(frobNorm);
@@ -578,7 +578,7 @@ namespace Belos {
           //KOKKOS_LAMBDA(
       for(int j = 0; j < dm.extent_int(1); j++){ //cols
         for(int i = 0; i < dm.extent_int(0); i++){  //rows
-          sum += KAT::abs(dm.h_view(i,j));
+          sum += KAT::abs((dm.view_host())(i,j));
         }
         if(KAT::abs(sum) > KAT::abs(max_sum)){
           max_sum = sum;
