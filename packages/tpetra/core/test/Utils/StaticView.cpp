@@ -507,19 +507,19 @@ namespace { // (anonymous)
           (row_size, col_size);
         TEST_ASSERT( size_t (view.extent (0)) == row_size );
         TEST_ASSERT( size_t (view.extent (1)) == col_size );
-        TEST_ASSERT( size_t (view.d_view.extent (0)) == row_size );
-        TEST_ASSERT( size_t (view.d_view.extent (1)) == col_size );
-        TEST_ASSERT( size_t (view.h_view.extent (0)) == row_size );
-        TEST_ASSERT( size_t (view.h_view.extent (1)) == col_size );
+        TEST_ASSERT( size_t (view.view_device().extent (0)) == row_size );
+        TEST_ASSERT( size_t (view.view_device().extent (1)) == col_size );
+        TEST_ASSERT( size_t (view.view_host().extent (0)) == row_size );
+        TEST_ASSERT( size_t (view.view_host().extent (1)) == col_size );
         TEST_ASSERT( ! (view.need_sync_device () && view.need_sync_host ()) );
 
         if (row_size != 0 && col_size != 0) {
-          const ValueType* rawPtr_d = view.d_view.data ();
+          const ValueType* rawPtr_d = view.view_device().data ();
           TEST_ASSERT( rawPtr_d != nullptr );
           TEST_ASSERT( reinterpret_cast<size_t> (rawPtr_d) %
                        sizeof (ValueType) == 0 );
 
-          const ValueType* rawPtr_h = view.h_view.data ();
+          const ValueType* rawPtr_h = view.view_host().data ();
           TEST_ASSERT( rawPtr_h != nullptr );
           TEST_ASSERT( reinterpret_cast<size_t> (rawPtr_h) %
                        sizeof (ValueType) == 0 );
@@ -536,8 +536,8 @@ namespace { // (anonymous)
             Kokkos::subview (referenceView,
                              std::pair<size_t, size_t> (0, row_size),
                              std::pair<size_t, size_t> (0, col_size));
-          TEST_ASSERT( refView.d_view.data () != rawPtr_d );
-          TEST_ASSERT( refView.h_view.data () != rawPtr_h );
+          TEST_ASSERT( refView.view_device().data () != rawPtr_d );
+          TEST_ASSERT( refView.view_host().data () != rawPtr_h );
 
           refView.clear_sync_state ();
           view.clear_sync_state ();
@@ -555,30 +555,30 @@ namespace { // (anonymous)
           if (ok_to_test_sync) {
             refView.modify_host ();
             view.modify_host ();
-            view2dIota (view.h_view, initVal);
-            view2dIota (refView.h_view, initVal);
-            TEST_ASSERT( view2dSame (view.h_view, refView.h_view) );
+            view2dIota (view.view_host(), initVal);
+            view2dIota (refView.view_host(), initVal);
+            TEST_ASSERT( view2dSame (view.view_host(), refView.view_host()) );
 
             refView.sync_device ();
             view.sync_device ();
 
             refView.modify_device ();
             view.modify_device ();
-            view2dIota (view.d_view, initVal);
-            view2dIota (refView.d_view, initVal);
-            TEST_ASSERT( view2dSame (view.d_view, refView.d_view) );
+            view2dIota (view.view_device(), initVal);
+            view2dIota (refView.view_device(), initVal);
+            TEST_ASSERT( view2dSame (view.view_device(), refView.view_device()) );
           }
           else {
             refView.modify_device ();
             view.modify_device ();
-            view2dIota (view.d_view, initVal);
-            view2dIota (refView.d_view, initVal);
-            TEST_ASSERT( view2dSame (view.d_view, refView.d_view) );
+            view2dIota (view.view_device(), initVal);
+            view2dIota (refView.view_device(), initVal);
+            TEST_ASSERT( view2dSame (view.view_device(), refView.view_device()) );
           }
         }
 
-        TEST_NOTHROW( out << "Device View label: " << view.d_view.label () );
-        TEST_NOTHROW( out << "Host View label: " << view.h_view.label () );
+        TEST_NOTHROW( out << "Device View label: " << view.view_device().label () );
+        TEST_NOTHROW( out << "Host View label: " << view.view_host().label () );
       }
     }
   }

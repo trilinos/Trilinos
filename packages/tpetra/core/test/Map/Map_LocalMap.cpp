@@ -304,7 +304,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, KokkosView, LO, GO, NT )
 
     dual_view_t my_dual_view("test view with local maps",1);
 
-    my_dual_view.h_view(0) = local_map_t();
+    my_dual_view.view_host()(0) = local_map_t();
 
     my_dual_view.sync_device();
 }
