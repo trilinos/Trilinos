@@ -43,9 +43,11 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
-  typedef Tpetra::Map<>::node_type NO;
 
+#if defined(HAVE_AMESOS2_XPETRA) && defined(HAVE_AMESOS2_ZOLTAN2)
+  typedef Tpetra::Map<>::node_type NO;
   typedef Tpetra::RowGraph<LO, GO, NO> Graph;
+#endif
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
 
