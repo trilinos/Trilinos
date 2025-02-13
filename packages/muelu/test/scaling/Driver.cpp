@@ -201,7 +201,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   int writeMatricesOPT = -2;
   clp.setOption("write", &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
   std::string dsolveType = "belos", solveType;
-  clp.setOption("solver", &dsolveType, "solve type: (none | belos | standalone | matvec)");
+  clp.setOption("solver", &dsolveType, "solve type: (none | belos | standalone | matvec | simple_cg )");
   std::string belosType = "cg";
   clp.setOption("belosType", &belosType, "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
   bool computeCondEst = false;
@@ -519,16 +519,17 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         userParamList.set("Node Comm", nodeComm);
       }
 #endif
-      out2 << "*********** MueLu ParameterList ***********" << std::endl;
-      out2 << mueluList;
-      out2 << "*******************************************" << std::endl;
-
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
       // Build the preconditioner numRebuilds+1 times
-      MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
-      PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+      if (solvePreconditioned) {
+        out2 << "*********** MueLu ParameterList ***********" << std::endl;
+        out2 << mueluList;
+        out2 << "*******************************************" << std::endl;
 
+        MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
+        PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+      }
       comm->barrier();
       tm = Teuchos::null;
 
