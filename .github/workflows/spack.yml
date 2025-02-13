@@ -33,4 +33,4 @@ jobs:
           spack develop --no-clone --path $GITHUB_WORKSPACE trilinos@develop
           spack add trilinos@develop
           spack concretize -f
-          spack install --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos -j16
+          spack install --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos --cdash-track='Pull Request' --cdash-build='PR-${{ github.event.pull_request.number }}-spack' -j16
