@@ -1864,12 +1864,14 @@ namespace Ifpack2 {
                          const BlockHelperDetails::PartInterface<MatrixType> &interf,
                          BlockTridiags<MatrixType> &btdm,
                          BlockHelperDetails::AmD<MatrixType> &amd,
-                         const bool overlap_communication_and_computation) {
+                         const bool overlap_communication_and_computation,
+                         const Teuchos::RCP<AsyncableImport<MatrixType> > &async_importer,
+                         bool useSeqMethod) {
       IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::SymbolicPhase", SymbolicPhase);
 
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
 
-      // using node_memory_space = typename impl_type::node_memory_space;
+      using execution_space = typename impl_type::execution_space;
       using host_execution_space = typename impl_type::host_execution_space;
 
       using local_ordinal_type = typename impl_type::local_ordinal_type;
@@ -2175,6 +2177,22 @@ namespace Ifpack2 {
         if (interf.n_subparts_per_part > 1)
           btdm.e_values = vector_type_4d_view("btdm.e_values", 2, interf.part2packrowidx0_back, blocksize, blocksize);
       }
+      // Precompute offsets of each A and x entry to speed up residual.
+      // Applies if all of these are true:
+      // - hasBlockCrsMatrix
+      // - execution_space is a GPU
+      // - !useSeqMethod (since this uses a different scheme for indexing A,x)
+      //
+      // Reading A, x take up to 4 and 6 levels of indirection respectively,
+      // but precomputing the offsets reduces it to 2 for both (get index, then value)
+      if(BlockHelperDetails::is_device<execution_space>::value && !useSeqMethod && hasBlockCrsMatrix)
+      {
+        bool is_async_importer_active = !async_importer.is_null();
+        local_ordinal_type_1d_view dm2cm = is_async_importer_active ? async_importer->dm2cm : local_ordinal_type_1d_view();
+        bool ownedRemoteSeparate = overlap_communication_and_computation || !is_async_importer_active;
+        BlockHelperDetails::precompute_A_x_offsets<MatrixType>(amd, interf, g, dm2cm, blocksize, ownedRemoteSeparate);
+      }
+
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
 
@@ -4970,7 +4988,8 @@ namespace Ifpack2 {
 
       BlockHelperDetails::ComputeResidualVector<MatrixType>
         compute_residual_vector(amd, G->getLocalGraphDevice(), g.getLocalGraphDevice(), blocksize, interf,
-                                is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
+                                is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view,
+                                hasBlockCrsMatrix);
 
       // norm manager workspace resize
       if (is_norm_manager_active)
@@ -4998,6 +5017,7 @@ namespace Ifpack2 {
               // real use case does not use overlap comp and comm
               if (overlap_communication_and_computation || !is_async_importer_active) {
                 if (is_async_importer_active) async_importer->asyncSendRecv(YY);
+                // OverlapTag, compute_owned = true
                 compute_residual_vector.run(pmv, XX, YY, remote_multivector, true);
                 if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) {
                   if (is_async_importer_active) async_importer->cancel();
@@ -5005,12 +5025,14 @@ namespace Ifpack2 {
                 }
                 if (is_async_importer_active) {
                   async_importer->syncRecv();
+                  // OverlapTag, compute_owned = false
                   compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
                 }
               } else {
                 if (is_async_importer_active)
                   async_importer->syncExchange(YY);
                 if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
+                // AsyncTag
                 compute_residual_vector.run(pmv, XX, YY, remote_multivector);
               }
             }

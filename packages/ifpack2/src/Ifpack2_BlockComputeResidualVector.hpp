@@ -24,6 +24,7 @@ namespace Ifpack2 {
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using size_type_1d_view = typename impl_type::size_type_1d_view;
+      using i64_3d_view  = typename impl_type::i64_3d_view;
       using impl_scalar_type_1d_view_tpetra = Unmanaged<typename impl_type::impl_scalar_type_1d_view_tpetra>;
       // rowptr points to the start of each row of A_colindsub.
       size_type_1d_view rowptr, rowptr_remote;
@@ -34,6 +35,10 @@ namespace Ifpack2 {
       // seq_method_, then A_colindsub contains owned LIDs and A_colindsub_remote
       // contains the remote ones.
       local_ordinal_type_1d_view A_colindsub, A_colindsub_remote;
+      // Precomputed direct offsets to A,x blocks, for owned entries (OverlapTag case) or all entries (AsyncTag case)
+      i64_3d_view A_x_offsets;
+      // Precomputed direct offsets to A,x blocks, for non-owned entries (OverlapTag case). For AsyncTag case this is left empty.
+      i64_3d_view A_x_offsets_remote;
 
       // Currently always true.
       bool is_tpetra_block_crs;
@@ -109,6 +114,154 @@ namespace Ifpack2 {
       local_ordinal_type nparts;
     };
 
+    // Precompute offsets of each A and x entry to speed up residual.
+    // (Applies for hasBlockCrsMatrix == true and OverlapTag/AsyncTag)
+    // Reading A, x take up to 4, 6 levels of indirection respectively,
+    // but precomputing the offsets reduces it to 2 for both.
+    //
+    // This function allocates and populates these members of AmD:
+    // A_x_offsets, A_x_offsets_remote
+    template<typename MatrixType>
+    void precompute_A_x_offsets(
+      AmD<MatrixType> &amd,
+      const PartInterface<MatrixType> &interf,
+      const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_crs_graph_type> &g,
+      const typename ImplType<MatrixType>::local_ordinal_type_1d_view &dm2cm,
+      int blocksize,
+      bool ownedRemoteSeparate)
+    {
+        using impl_type = ImplType<MatrixType>;
+        using i64_3d_view = typename impl_type::i64_3d_view;
+        using size_type = typename impl_type::size_type;
+        using local_ordinal_type = typename impl_type::local_ordinal_type;
+        using execution_space = typename impl_type::execution_space;
+        auto local_graph = g->getLocalGraphDevice();
+        const auto A_block_rowptr = local_graph.row_map;
+        const auto A_colind = local_graph.entries;
+        local_ordinal_type numLocalRows = interf.rowidx2part.extent(0);
+        int blocksize_square = blocksize * blocksize;
+        // shallow-copying views to avoid capturing the amd, interf objects in lambdas
+        auto lclrow = interf.lclrow;
+        auto A_colindsub = amd.A_colindsub;
+        auto A_colindsub_remote = amd.A_colindsub_remote;
+        auto rowptr = amd.rowptr;
+        auto rowptr_remote = amd.rowptr_remote;
+        bool is_dm2cm_active = dm2cm.extent(0);
+        if(ownedRemoteSeparate) {
+          // amd.rowptr points to owned entries only, and amd.rowptr_remote points to nonowned.
+          local_ordinal_type maxOwnedEntriesPerRow = 0;
+          local_ordinal_type maxNonownedEntriesPerRow = 0;
+          Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(0, numLocalRows),
+            KOKKOS_LAMBDA(local_ordinal_type i, local_ordinal_type& lmaxOwned, local_ordinal_type& lmaxNonowned)
+            {
+              const local_ordinal_type lr = lclrow(i);
+              local_ordinal_type rowNumOwned = rowptr(lr+1) - rowptr(lr);
+              if(rowNumOwned > lmaxOwned)
+                lmaxOwned = rowNumOwned;
+              //rowptr_remote won't be allocated for single-rank problems
+              if(rowptr_remote.extent(0)) {
+                local_ordinal_type rowNumNonowned = rowptr_remote(lr+1) - rowptr_remote(lr);
+                if(rowNumNonowned > lmaxNonowned)
+                  lmaxNonowned = rowNumNonowned;
+              }
+              else {
+                lmaxNonowned = 0;
+              }
+            }, Kokkos::Max<local_ordinal_type>(maxOwnedEntriesPerRow), Kokkos::Max<local_ordinal_type>(maxNonownedEntriesPerRow));
+          // Allocate the two offsets views now that we know the dimensions
+          // For each one, the middle dimension is 0 for A offsets and 1 for x offsets.
+          // Packing them together in one view improves cache line utilization
+          amd.A_x_offsets = i64_3d_view("amd.A_x_offsets", numLocalRows, 2, maxOwnedEntriesPerRow);
+          amd.A_x_offsets_remote = i64_3d_view("amd.A_x_offsets_remote", numLocalRows, 2, maxNonownedEntriesPerRow);
+          auto A_x_offsets = amd.A_x_offsets;
+          auto A_x_offsets_remote = amd.A_x_offsets_remote;
+          // Now, populate all the offsets. Use ArithTraits<int64_t>::min to say that no entry is not present.
+          Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numLocalRows),
+            KOKKOS_LAMBDA(local_ordinal_type i)
+            {
+              const local_ordinal_type lr = lclrow(i);
+              const size_type A_k0 = A_block_rowptr(lr);
+              // Owned entries
+              size_type rowBegin = rowptr(lr);
+              local_ordinal_type rowNumOwned = rowptr(lr+1) - rowBegin;
+              for(local_ordinal_type entry = 0; entry < maxOwnedEntriesPerRow; entry++) {
+                if(entry < rowNumOwned) {
+                  const size_type j = A_k0 + A_colindsub(rowBegin + entry);
+                  const local_ordinal_type A_colind_at_j = A_colind(j);
+                  const auto loc = is_dm2cm_active ? dm2cm(A_colind_at_j) : A_colind_at_j;
+                  A_x_offsets(i, 0, entry) = j * blocksize_square;
+                  A_x_offsets(i, 1, entry) = loc * blocksize;
+                }
+                else {
+                  A_x_offsets(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
+                  A_x_offsets(i, 1, entry) = Kokkos::ArithTraits<int64_t>::min();
+                }
+              }
+              // Nonowned entries
+              if(rowptr_remote.extent(0)) {
+                rowBegin = rowptr_remote(lr);
+                local_ordinal_type rowNumNonowned = rowptr_remote(lr+1) - rowBegin;
+                for(local_ordinal_type entry = 0; entry < maxNonownedEntriesPerRow; entry++) {
+                  if(entry < rowNumNonowned) {
+                    const size_type j = A_k0 + A_colindsub_remote(rowBegin + entry);
+                    const local_ordinal_type A_colind_at_j = A_colind(j);
+                    const auto loc = A_colind_at_j - numLocalRows;
+                    A_x_offsets_remote(i, 0, entry) = j * blocksize_square;
+                    A_x_offsets_remote(i, 1, entry) = loc * blocksize;
+                  }
+                  else {
+                    A_x_offsets_remote(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
+                    A_x_offsets_remote(i, 1, entry) = Kokkos::ArithTraits<int64_t>::min();
+                  }
+                }
+              }
+            });
+        }
+        else {
+          // amd.rowptr points to both owned and nonowned entries, so it tells us how many columns (last dim) A_x_offsets should have.
+          local_ordinal_type maxEntriesPerRow = 0;
+          Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(0, numLocalRows),
+            KOKKOS_LAMBDA(local_ordinal_type i, local_ordinal_type& lmax)
+            {
+              const local_ordinal_type lr = lclrow(i);
+              local_ordinal_type rowNum = rowptr(lr+1) - rowptr(lr);
+              if(rowNum > lmax)
+                lmax = rowNum;
+            }, Kokkos::Max<local_ordinal_type>(maxEntriesPerRow));
+          amd.A_x_offsets = i64_3d_view("amd.A_x_offsets", numLocalRows, 2, maxEntriesPerRow);
+          auto A_x_offsets = amd.A_x_offsets;
+          //Populate A,x offsets. Use ArithTraits<int64_t>::min to say that no entry is not present.
+          //For x offsets, add a shift blocksize*numLocalRows to represent that it indexes into x_remote instead of x.
+          Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numLocalRows),
+            KOKKOS_LAMBDA(local_ordinal_type i)
+            {
+              const local_ordinal_type lr = lclrow(i);
+              const size_type A_k0 = A_block_rowptr(lr);
+              // Owned entries
+              size_type rowBegin = rowptr(lr);
+              local_ordinal_type rowOwned = rowptr(lr+1) - rowBegin;
+              for(local_ordinal_type entry = 0; entry < maxEntriesPerRow; entry++) {
+                if(entry < rowOwned) {
+                  const size_type j = A_k0 + A_colindsub(rowBegin + entry);
+                  A_x_offsets(i, 0, entry) = j * blocksize_square;
+                  const local_ordinal_type A_colind_at_j = A_colind(j);
+                  if(A_colind_at_j < numLocalRows) {
+                    const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                    A_x_offsets(i, 1, entry) = loc * blocksize;
+                  }
+                  else {
+                    A_x_offsets(i, 1, entry) = A_colind_at_j * blocksize;
+                  }
+                }
+                else {
+                  A_x_offsets(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
+                  A_x_offsets(i, 1, entry) = Kokkos::ArithTraits<int64_t>::min();
+                }
+              }
+            });
+        }
+    }
+
     ///
     /// compute local residula vector y = b - R x
     ///
@@ -182,6 +335,7 @@ namespace Ifpack2 {
       using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra; // block multivector (layout left)
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using btdm_scalar_type_4d_view = typename impl_type::btdm_scalar_type_4d_view;
+      using i64_3d_view  = typename impl_type::i64_3d_view;
       static constexpr int vector_length = impl_type::vector_length;
 
       /// team policy member type (used in cuda)
@@ -219,6 +373,11 @@ namespace Ifpack2 {
       const ConstUnmanaged<local_ordinal_type_1d_view> partptr;
       const ConstUnmanaged<local_ordinal_type_1d_view> lclrow;
       const ConstUnmanaged<local_ordinal_type_1d_view> dm2cm;
+
+      // block offsets
+      const ConstUnmanaged<i64_3d_view> A_x_offsets;
+      const ConstUnmanaged<i64_3d_view> A_x_offsets_remote;
+
       const bool is_dm2cm_active;
       const bool hasBlockCrsMatrix;
 
@@ -229,7 +388,8 @@ namespace Ifpack2 {
                             const LocalCrsGraphType &point_graph,
                             const local_ordinal_type &blocksize_requested_,
                             const PartInterface<MatrixType> &interf,
-                            const local_ordinal_type_1d_view &dm2cm_)
+                            const local_ordinal_type_1d_view &dm2cm_,
+                            bool hasBlockCrsMatrix_)
         : rowptr(amd.rowptr), rowptr_remote(amd.rowptr_remote),
           colindsub(amd.A_colindsub), colindsub_remote(amd.A_colindsub_remote),
           tpetra_values(amd.tpetra_values),
@@ -243,9 +403,11 @@ namespace Ifpack2 {
           partptr(interf.partptr),
           lclrow(interf.lclrow),
           dm2cm(dm2cm_),
+          A_x_offsets(amd.A_x_offsets),
+          A_x_offsets_remote(amd.A_x_offsets_remote),
           is_dm2cm_active(dm2cm_.span() > 0),
-          hasBlockCrsMatrix(A_block_rowptr.extent(0) == A_point_rowptr.extent(0))
-      { }
+          hasBlockCrsMatrix(hasBlockCrsMatrix_)
+      {}
 
       inline
       void
@@ -471,7 +633,6 @@ namespace Ifpack2 {
       void
       operator() (const GeneralTag<B, async, overlap, haveBlockMatrix>&, const local_ordinal_type &rowidx) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
-        const local_ordinal_type blocksize_square = blocksize*blocksize;
 
         // constants
         const local_ordinal_type partidx = rowidx2part(rowidx);
@@ -485,7 +646,6 @@ namespace Ifpack2 {
         impl_scalar_type yy[B == 0 ? max_blocksize : B] = {};
 
         const local_ordinal_type lr = lclrow(rowidx);
-        const local_ordinal_type row = lr*blocksize;
 
         auto colindsub_used = overlap ? colindsub_remote : colindsub;
         auto rowptr_used = overlap ? rowptr_remote : rowptr;
@@ -497,6 +657,7 @@ namespace Ifpack2 {
           }
           else {
             // y := b
+            const local_ordinal_type row = lr*blocksize;
             memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
           }
 
@@ -506,6 +667,7 @@ namespace Ifpack2 {
             const size_type j = A_k0 + colindsub_used[k];
             const local_ordinal_type A_colind_at_j = A_colind[j];
             if constexpr (haveBlockMatrix) {
+              const local_ordinal_type blocksize_square = blocksize*blocksize;
               const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
               if ((!async && !overlap) || (async && A_colind_at_j < num_local_rows)) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
@@ -549,7 +711,6 @@ namespace Ifpack2 {
       void
       operator() (const GeneralTag<B, async, overlap, true>&, const member_type &member) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
-        const local_ordinal_type blocksize_square = blocksize*blocksize;
 
         // constants
         const local_ordinal_type rowidx = member.league_rank();
@@ -568,8 +729,6 @@ namespace Ifpack2 {
         subview_1D_right_t xx(nullptr, blocksize);
         subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
         auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
-        auto colindsub_used = overlap ? colindsub_remote : colindsub;
-        auto rowptr_used = overlap ? rowptr_remote : rowptr;
 
         // Get shared allocation for a local copy of x, Ax, and A
         impl_scalar_type * local_Ax = reinterpret_cast<impl_scalar_type *>(member.team_scratch(0).get_shmem(blocksize*sizeof(impl_scalar_type)));
@@ -587,35 +746,52 @@ namespace Ifpack2 {
           });
           member.team_barrier();
 
-          const size_type A_k0 = A_block_rowptr[lr];
-          Kokkos::parallel_for
-            (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]),
-            [&](const size_type& k) {
-              const size_type j = A_k0 + colindsub_used[k];
-              const local_ordinal_type A_colind_at_j = A_colind[j];
-              // Pull x into local memory
-              if ((async && A_colind_at_j < num_local_rows) || (!async && !overlap)) {
-                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                xx.assign_data( &x(loc*blocksize, col) );
-              } else {
-                const auto loc = A_colind_at_j - num_local_rows;
-                xx.assign_data( &x_remote(loc*blocksize, col) );
-              }
+          int numEntries;
+          if constexpr(!overlap) {
+            numEntries = A_x_offsets.extent(2);
+          }
+          else {
+            numEntries = A_x_offsets_remote.extent(2);
+          }
 
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),[&](const local_ordinal_type & i){
-                local_x[i] = xx(i);
-              });
-            
-              // MatVec op Ax += A*x
-              A_block_cst.assign_data( &tpetra_values(j*blocksize_square) );
-              Kokkos::parallel_for(
-                Kokkos::ThreadVectorRange(member, blocksize),
-                [&](const local_ordinal_type &k0) {
-                  impl_scalar_type val = 0;
-                  for(int k1=0; k1<blocksize; k1++)
-                    val += A_block_cst(k0,k1)*local_x[k1];
-                  Kokkos::atomic_add(local_Ax+k0, val);
-              });
+          Kokkos::parallel_for
+            (Kokkos::TeamThreadRange(member, 0, numEntries),
+            [&](const int k) {
+              int64_t A_offset = overlap ? A_x_offsets_remote(rowidx, 0, k) : A_x_offsets(rowidx, 0, k);
+              int64_t x_offset = overlap ? A_x_offsets_remote(rowidx, 1, k) : A_x_offsets(rowidx, 1, k);
+              if(A_offset != Kokkos::ArithTraits<int64_t>::min()) {
+                A_block_cst.assign_data(tpetra_values.data() + A_offset);
+                // Pull x into local memory
+                if constexpr(async) {
+                  size_type remote_cutoff = blocksize * num_local_rows;
+                  if(x_offset >= remote_cutoff)
+                    xx.assign_data(&x_remote(x_offset - remote_cutoff, col));
+                  else
+                    xx.assign_data(&x(x_offset, col));
+                }
+                else {
+                  if constexpr(!overlap) {
+                    xx.assign_data(&x(x_offset, col));
+                  }
+                  else {
+                    xx.assign_data(&x_remote(x_offset, col));
+                  }
+                }
+
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),[&](const local_ordinal_type & i){
+                  local_x[i] = xx(i);
+                });
+              
+                // MatVec op Ax += A*x
+                Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, blocksize),
+                  [&](const local_ordinal_type &k0) {
+                    impl_scalar_type val = 0;
+                    for(int k1=0; k1<blocksize; k1++)
+                      val += A_block_cst(k0,k1)*local_x[k1];
+                    Kokkos::atomic_add(local_Ax+k0, val);
+                });
+              }
             });
           member.team_barrier();
           // Update y = b - local_Ax
@@ -636,7 +812,6 @@ namespace Ifpack2 {
       void
       operator() (const GeneralTag<B, async, overlap, false>&, const member_type &member) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
-        const local_ordinal_type blocksize_square = blocksize*blocksize;
 
         // constants
         const local_ordinal_type rowidx = member.league_rank();
