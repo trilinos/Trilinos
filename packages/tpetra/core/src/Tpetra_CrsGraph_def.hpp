@@ -7608,7 +7608,6 @@ namespace Tpetra {
         return size_t(0);
       }
     );
-    Kokkos::fence("here 10");
     Kokkos::deep_copy(tgtCrsGraph.k_numRowEntries_, k_numRowEnt);
     tgtCrsGraph.setLocallyModified();
   }
