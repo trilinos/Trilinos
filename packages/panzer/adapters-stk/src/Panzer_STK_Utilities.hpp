@@ -8,15 +8,15 @@
 // *****************************************************************************
 // @HEADER
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-
 #ifndef __Panzer_STK_Utilities_hpp__
 #define __Panzer_STK_Utilities_hpp__
 
 #include "Panzer_STK_Interface.hpp"
 
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
+#endif
 
 namespace panzer {
   class GlobalIndexer;
@@ -34,8 +34,12 @@ namespace panzer_stk {
   */
 void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName);
 
+#ifdef PANZER_HAVE_EPETRA_STACK
+
 void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
 void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
+
+#endif // PANZER_HAVE_EPETRA_STACK
 
 /** Using a container, compute the sorted permutation vector
   * do not modifiy the original container.
@@ -98,5 +102,3 @@ void sorted_permutation(const RAContainer & cont,std::vector<std::size_t> & perm
 }
 
 #endif
-
-#endif // PANZER_HAVE_EPETRA_STACK

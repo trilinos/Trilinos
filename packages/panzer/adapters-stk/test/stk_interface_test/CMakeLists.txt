@@ -146,6 +146,12 @@ IF (PANZER_HAVE_EPETRA_STACK)
     SOURCES   tScatterSpeed_Epetra.cpp
   )
 ENDIF()
+# Disabled until further guidance
+# TRIBITS_ADD_EXECUTABLE(
+#     ScatterSpeed_Tpetra
+#     SOURCES tScatterSpeed_Tpetra.cpp
+#   )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tUniformRef
 #  SOURCES tUniformRef.cpp ${UNIT_TEST_DRIVER}
