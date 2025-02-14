@@ -19,8 +19,8 @@
 
 /// matrix generator
 template <typename CrsMatrixBaseTypeHost>
-int generate2dLaplace(int nx, CrsMatrixBaseTypeHost &A) {
-  // generate Laplace matrix on 5pt stencile
+int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A) {
+  // generate Laplace matrix on 5pt stencil
   int n = nx*nx;
   int nnz = n + 4*nx*(nx-1);
 
@@ -68,7 +68,7 @@ int generate2dLaplace(int nx, CrsMatrixBaseTypeHost &A) {
 
 // main test driver
 template <typename value_type>
-int driver(std::string file, std::string method_name, int variant, int nrhs) {
+int driver(const std::string file, const std::string method_name, const int variant, const int nrhs) {
   int nx = 10;
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
   if (method_name == "chol")
