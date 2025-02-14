@@ -122,12 +122,12 @@ BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
     Kokkos::View<scalar_t **, device_t> &weights)
 {
   idsView_ = Kokkos::DualView<gno_t *, device_t>("idsView_", ids.extent(0));
-  Kokkos::deep_copy(idsView_.h_view, ids);
+  Kokkos::deep_copy(idsView_.view_host(), ids);
 
   weightsView_ = Kokkos::DualView<scalar_t **, device_t>("weightsView_",
                                                          weights.extent(0),
                                                          weights.extent(1));
-  Kokkos::deep_copy(weightsView_.h_view, weights);
+  Kokkos::deep_copy(weightsView_.view_host(), weights);
 
   weightsView_.modify_host();
   weightsView_.sync_host();
