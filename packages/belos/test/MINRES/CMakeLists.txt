@@ -18,9 +18,9 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       )
 
     ASSERT_DEFINED(Anasazi_SOURCE_DIR)
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGComplexFiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestMINRESComplexFiles
       SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
-      SOURCE_FILES mhd1280b.cua 
+      SOURCE_FILES mhd1280b.cua
       EXEDEPS minres_complex_hb
     )
 

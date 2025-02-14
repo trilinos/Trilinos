@@ -138,8 +138,8 @@ namespace Belos {
   //@}
 
 
-template<class ScalarType, class MV, class OP>
-class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM>
+class CGIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
 
