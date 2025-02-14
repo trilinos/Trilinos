@@ -2178,11 +2178,13 @@ namespace Ifpack2 {
           btdm.e_values = vector_type_4d_view("btdm.e_values", 2, interf.part2packrowidx0_back, blocksize, blocksize);
       }
       // Precompute offsets of each A and x entry to speed up residual.
-      // (Applies for hasBlockCrsMatrix == true and OverlapTag/AsyncTag)
-      // Reading A, x take up to 4, 6 levels of indirection respectively,
-      // but precomputing the offsets reduces it to 2 for both.
-      std::cout << "useSeqMethod ? " << useSeqMethod << '\n';
-      std::cout << "hasBlock? " << hasBlockCrsMatrix << '\n';
+      // Applies if all of these are true:
+      // - hasBlockCrsMatrix
+      // - execution_space is a GPU
+      // - !useSeqMethod (since this uses a different scheme for indexing A,x)
+      //
+      // Reading A, x take up to 4 and 6 levels of indirection respectively,
+      // but precomputing the offsets reduces it to 2 for both (get index, then value)
       if(BlockHelperDetails::is_device<execution_space>::value && !useSeqMethod && hasBlockCrsMatrix)
       {
         bool is_async_importer_active = !async_importer.is_null();
